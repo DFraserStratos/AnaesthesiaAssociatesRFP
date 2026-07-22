@@ -31,7 +31,7 @@ Keep the density and drill-down; improve legibility (convention 11).
 ## Work items
 
 1. **One-day dashboard** (admin home):
-   - Grid: one row per anaesthetist (surname-alphabetical), columns spanning 07:00–18:00+, each List rendered as a block across its time span, coloured by status, labelled (hospital/surgeon or annotation e.g. "covered by NW 26/5" — seed a few in Phase 02's data or add now via seed tweak), on-leave rows visually distinct.
+   - Grid: one row per anaesthetist (surname-alphabetical), columns spanning 07:00–18:00+, each List rendered as a block across its time span, coloured by status, labelled (hospital/surgeon or annotation e.g. "covered by NW 26/5" — seed a few in Phase 02's data or add now via seed tweak), on-leave rows visually distinct. The grid renders the demo's 14 seeded anaesthetists; a small footer note states that at production scale (~85) this view pages/virtualises (the legacy dashboard's "1 of 3" pager) — scale is narrated, not simulated (N4, and the Phase 02 canvas scale test carries the structural proof).
    - Legend (shared component), mini month calendar, day navigation (◀ Today ▶, ±1 week, ±4 weeks), date picker, internal-notes panel (persisted per day in the store).
    - Click a block → **List drawer/panel**: state, cards summary, actions (open detail, reassign; "review for authorisation" appears in Phase 07).
    - **Conflict flags**: a List scheduled on a hospital holiday, or where the anaesthetist's availability says unavailable → warning icon + tooltip. Reconciliation is surfaced as *advisory* (the RFP leaves hard-vs-soft open — note the reading in UI copy and the Decisions log).
@@ -44,10 +44,18 @@ Keep the density and drill-down; improve legibility (convention 11).
    route (the RFP: "set explicitly (by hospital advice, or by AA staff where the hospital does not
    specify)"), insurer, billable-party override (capture the guardian's name/relationship/contact
    as a BillableParty record), patient payment category, governing-contract pick where relevant,
-   and the procedure's **`billingReference`** (the hospital's contract/approval reference — what
-   the review's "reference completeness" check looks for) —
+   the procedure's **`billingReference`** (the hospital's contract/approval reference — what
+   the review's "reference completeness" check looks for), the typed **price override** (fixed
+   fee / $ adjustment / % adjustment, each demanding its **mandatory reason** — the full editor
+   the RFP's priceOverride describes; mobile's Adjustment/Charge fields write the $ and fixed
+   variants, the office holds the complete set), and **per-line funder allocation** for the
+   two-funder split — on a Procedure whose fee splits across two funders, edit each BillingLine's
+   funder override with the conservation rule surfaced inline (line amounts must reconcile to the
+   procedure fee; the seeded two-funder card is the demo case — funding arrangements are office
+   knowledge, so this capture is office-side, consistent with route-setting) —
    via a billing section on the shared Card/Procedure detail (office-editable where the mobile app
-   shows it read-only); create a booking on a free List ("phone call from surgeon's rooms" path).
+   shows it read-only); create a booking on a free List ("phone call from surgeon's rooms" path);
+   **cancel a Card** on a DRAFT or SUBMITTED List (the audited soft-cancel, reason required).
    Every change audited with source=office.
 2a. **Card reassignment** (distinct from List reassignment, item 3 — the RFP's routine case: a
    hospital/surgeon moves one patient's booking): a "Move to another list" action on a Card opens
@@ -83,6 +91,8 @@ Authorisation queue, master data screens, audit viewer (Phase 07). Billing monit
 - [ ] The seeded all-day booking (Rutherford/Forte Health) renders as two adjacent same-context blocks spanning the full day — no special "all-day" entity, just both Lists sharing hospital/surgeon per the RFP.
 - [ ] Drill into a List → edit a Card as office on a SUBMITTED list (allowed) — then switch persona to anaesthetist and confirm the same edit is blocked.
 - [ ] Correct a Procedure's billing setup as office (e.g. flip a seeded card to Billable Party with a guardian payer, or change its route) and see the change in the Card's audit trail.
+- [ ] Apply a % price override with a reason (blocked without one); edit the seeded two-funder card's line allocation — a non-conserving split is rejected inline, a conserving one saves and shows in the audit trail.
+- [ ] Cancel a card on a SUBMITTED list as office (reason required, audited); the same action is unavailable to the anaesthetist persona on that list.
 - [ ] Book a card onto a free List via the phone-advice path; it appears on the grid and in the anaesthetist's mobile view.
 - [ ] Move a single Card to a different List (different session or anaesthetist): it appears in the new List, the old List's other Cards are untouched, and the move is visible in the Card's own audit trail; a target with a different surgeon/hospital shows the advisory mismatch flag before confirm.
 - [ ] Override a List's start/end times as office: the day grid's block resizes to the new span and the change is audited.

@@ -13,7 +13,8 @@ the presenter a step-by-step walkthrough keyed to the RFP's evaluation interests
 ## Work items
 
 1. **Demo control panel, finished** (`/demo/control`): reset (with confirm); clock display +
-   *advance 1 day* / *advance to next morning* / *jump to procedure day*; event triggers grouped
+   *advance 1 day* / *advance to next morning* / *jump to procedure day* / *advance minutes/hours*
+   (the time-of-day behind Start/Finish Now); event triggers grouped
    (hospital HL7 message, FHIR message, PDF arrival, Xero payment full/partial, webhook-missed
    payment, integration failure, billing failure, archive job, payables run); scenario jump
    buttons (below). Every trigger states what it will do before firing.

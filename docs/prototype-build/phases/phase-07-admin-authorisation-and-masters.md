@@ -55,8 +55,10 @@ technique may appear as secondary detail under the operation.
    Permanent Lists (incl. the usual-surgeon column), RVG codes, Modifier codes. Read-heavy is fine; full edit where the demo needs it
    (contracts, unit value, permanent lists, holidays, anaesthetist add). **Invariant guard:** the
    mandatory default Type 1 contract of every Hospital and direct-billing Insurer cannot be
-   deleted or effective-dated out of existence (the RFP guarantees the billing engine a "no
-   contract found"-free world — the edit forms and store must protect it; Vitest-proven). Editing
+   deleted or effective-dated out of existence — and **creating a Hospital, or flipping an Insurer
+   to `acceptsDirectClaims`, atomically creates its default Type 1** (the RFP's "simple, one-off
+   admin step"; the guarantee holds from the moment the counterparty exists, both halves
+   Vitest-proven — the RFP guarantees the billing engine a "no contract found"-free world). Editing
    its non-essential fields is fine.
 3. **Audit viewer**: global filterable feed (entity type, source: office/anaesthetist/integration/
    system, date) + per-entity history timeline reachable from any Card/Procedure/List (a "History"
@@ -64,7 +66,11 @@ technique may appear as secondary detail under the operation.
 4. **RBAC demonstration**: the authorisation screen states it requires the OfficeAdmin role; the
    audit log records the acting role on every entry; a short "roles in this prototype" info panel
    (anaesthetist vs office) linked from the admin home — the demo's answer to the RFP's
-   role-based-access requirement.
+   role-based-access requirement. The panel covers **view scoping as well as edit rights** (the
+   RFP: "controls around view, access, edit rights etc"): the anaesthetist apps are scoped to the
+   active persona's own Lists/Cards; colleague availability views expose session status only,
+   never card or patient detail; authorisation, masters, audit and billing monitor exist solely
+   in the admin app — all demonstrated live by the persona switch.
 
 ## Out of scope
 
@@ -74,10 +80,10 @@ Billing execution and the billing monitor (Phases 08–09), Xero (10), integrati
 
 - [ ] Authorisation queue shows the seeded SUBMITTED lists; the sanity-check screen surfaces a flagged oddity (override present / informational insurer).
 - [ ] Authorising a list plays the mockup's choreography (green tick banner, table dims with per-row lock icons, "Authorised · locked" pill, queue badge decrements), locks its cards (edit attempts blocked for every persona), removes it from the queue, and lands it in the billing-queue placeholder.
-- [ ] The seeded Souter Southern Cross PM list reviews exactly as `Admin Review.dc.html` shows it (4 cards, 2 flags, matching totals), except ROUTE shows billing routes per the correction.
+- [ ] The seeded Souter Southern Cross PM list reviews with the mockup's anatomy (same 4 cards, same 2 flags, same layout) — but its UNITS/FEE figures come from the **real Phase 01 calculator** (tiered T1/T2 time, real modifier values), so they will differ from the mockup's simplified numbers; verify a spot-check against the tiered rule by hand instead of against the mockup (Decisions log 2026-07-21: the mockup's maths must not be inherited). ROUTE shows billing routes per the correction.
 - [ ] A phone note attaches to the list and appears in its audit trail; no Returned action exists anywhere.
 - [ ] Master data: change an anaesthetist's unit value and see a fresh BTM fee computation change; add a hospital holiday and see Phase 06's conflict flag appear; add an anaesthetist and see their canvas rows generate forward.
-- [ ] Attempting to delete or end-date a hospital's default Type 1 contract is blocked with an explanation (and the guard test proves it).
+- [ ] Attempting to delete or end-date a hospital's default Type 1 contract is blocked with an explanation (and the guard test proves it); creating a new hospital shows its auto-created default Type 1 in the Contracts master immediately.
 - [ ] Audit viewer reconstructs the full story of a card that's been edited, reassigned and authorised (mixed sources and roles visible).
 - [ ] `npm run build` + `npx vitest run` green.
 

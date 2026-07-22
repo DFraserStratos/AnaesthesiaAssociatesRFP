@@ -30,18 +30,23 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
      against it and surface the "unarchive step TBC in sandbox" note from Appendix 2 (demo: the
      archived contact visibly returns to use).
    Then create the ACCREC (to payer) + DRAFT ACCPAY (to anaesthetist, undiscounted payable) linked
-   by GUIDs on the BillingCase. The billing monitor's Xero stage goes live (success/failure per
-   invoice; one triggerable failure + retry).
+   by GUIDs on the BillingCase — **atomically as a pair** (the RFP: both records "created at the
+   same time, from the same Billing Engine transaction"): the triggerable handoff failure leaves
+   *neither* half, and retry is idempotent — a BillingCase that already holds GUIDs is never
+   re-created, so no orphan ACCREC or duplicate pair can exist. The billing monitor's Xero stage
+   goes live (success/failure per invoice; one triggerable failure + retry).
 2a. **Intake checks** (Appendix 2's front half, demoed at billing/booking time): a repeat patient
    **deduplicates via NHI** in the practice system (one hidden ID → one Xero contact for life —
    seeded repeat patients prove it), and before billing a new episode the system surfaces any
    **outstanding unpaid balances** from prior episodes for staff attention (banner on the card /
    billing monitor row).
 3. **Payment detection**:
-   - Demo control **"Payment received"** (pick an open ACCREC; full or partial amount) = the Xero webhook; handler checks invoice state, flips ACCPAY DRAFT→AUTHORISED (pro-rata for partials), idempotent by InvoiceID.
+   - Demo control **"Payment received"** (pick an open ACCREC; full or partial amount) = the Xero webhook; handler checks invoice state, flips ACCPAY DRAFT→AUTHORISED (pro-rata for partials), idempotent by InvoiceID **plus a per-payment id** (so two *distinct* partials both apply while a replayed event is a no-op).
+   - **Successive partials accumulate** (the RFP: partials "passed through for payment to the anaesthetist proportionally... The Accounts Payable record is adjusted in a similar fashion"): the pair tracks cumulative **received / authorised / disbursed** amounts — each receipt raises the ACCPAY's authorised amount pro-rata, and a partial arriving *after* a payables run increases the payable again without touching prior disbursements. Nothing can double-pay: a payables run only ever pays `authorised − alreadyDisbursed`.
    - **Daily reconciliation poll** runs on clock advance and catches a seeded "webhook missed" payment (idempotency provable: fire webhook then advance clock — no double effect).
-4. **Payables run & disbursement**: demo/office action "Run payables" — pays all AUTHORISED
-   ACCPAYs, creating Disbursement records (payablesRunId). Every invoice's money state readable as
+4. **Payables run & disbursement**: demo/office action "Run payables" — pays every ACCPAY's
+   outstanding authorised balance (`authorised − alreadyDisbursed`), creating Disbursement records
+   (payablesRunId). Every invoice's money state readable as
    two independent flags with dates: paid-into-AA / disbursed-to-anaesthetist (trust-account
    behaviour).
 5. **Contact archiving job**: clock-advance-triggered (and manually runnable) job archiving
@@ -68,9 +73,14 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
    the sync handlers.
    - Mobile + web **Outstanding balances**: flat list of the anaesthetist's **individual ACCPAY invoices — one row per invoice, no Card-level or other rollup** (the RFP's "line item(s)" phrasing refers to these rows; queries about a row go to office staff, not drill-downs), appearing the **next day** after invoice generation (clock rule) — demo: generate → not visible → advance day → visible.
    - Receivables aging + Overdue page compute from the mirror's invoice/payment states (the anaesthetist-perspective view of what remains uncollected).
-   - **GST-period activity summary**: date-ranged received amounts + GST component per the anaesthetist's GST-period setting (already on the master from Phase 02's seed).
+   - **GST-period activity report**: per the RFP, a **date-ranged list of amounts received — one row per receipt, each with its GST component** — with period totals as a footer, per the anaesthetist's GST-period setting (already on the master from Phase 02's seed); a transaction list, not a totals-only summary.
 7. **Tests**: NHI-never-in-Xero (assert the Xero slice's serialised state contains no seeded NHI
-   strings); webhook idempotency; partial-payment pro-rata; archive-job criteria (incl.
+   strings); webhook idempotency (replayed event no-op; two distinct partials both apply);
+   **successive partials with a payables run between them** — first partial → authorise pro-rata →
+   disburse → second partial → authorised amount rises again → next run pays only the increment
+   (total disbursed = total received's pro-rata share, no double-pay); **pair-atomic handoff** (a
+   failed handoff leaves neither ACCREC nor ACCPAY; retry creates exactly one pair);
+   partial-payment pro-rata; archive-job criteria (incl.
    organisational contacts never archived; a fully-paid, inactive billable-party contact IS
    eligible); repeat-patient dedupe (one contact across episodes);
    next-day visibility rule.
@@ -84,11 +94,11 @@ out of scope); integrations (11).
 
 - [ ] Authorise → invoices → Xero tab shows the right contact per counterparty type: a hospital invoice hits its persistent organisation contact (no hidden ID), a patient invoice runs the hidden-ID workflow (repeat patient reuses; NHI nowhere) — and the ACCREC + DRAFT ACCPAY pair carries similar numbers.
 - [ ] A repeat patient with an unpaid prior episode surfaces the outstanding-balance banner before the new episode bills; invoicing a patient whose contact was archived brings it back into use with the unarchive-TBC note.
-- [ ] Full payment webhook flips the paired ACCPAY to AUTHORISED; a partial payment authorises pro-rata and Overdue shows the remaining balance.
+- [ ] Full payment webhook flips the paired ACCPAY to AUTHORISED; a partial payment authorises pro-rata and Overdue shows the remaining balance; a second partial after a payables run raises the payable again and the next run pays only the increment (no double-pay).
 - [ ] Paying a pre-payment pre-invoice via the payment webhook clears that card's completion block without an override (closes Phase 09's deferred verification of the pre-payment gate).
 - [ ] Webhook + poll double-delivery causes no duplicate effect.
 - [ ] Payables run pays AUTHORISED ACCPAYs; the invoice shows paid-in ✓ / disbursed ✓ as separate states with dates.
-- [ ] Anaesthetist balances appear only after advancing to the next day; GST summary totals match payments received in the period.
+- [ ] Anaesthetist balances appear only after advancing to the next day; the GST report lists one row per amount received with its GST component, and its footer totals match the payments received in the period.
 - [ ] The audit viewer reconstructs one invoice's automated trail end-to-end: billing run → Xero handoff → payment webhook → ACCPAY flip → payables run (all source=system entries).
 - [ ] Archive job archives eligible contacts only; count and rationale visible; changing the inactivity-window setting changes what's eligible on the next run (proving it's not hardcoded).
 - [ ] `npm run build` + `npx vitest run` green (incl. the no-NHI-in-Xero test).

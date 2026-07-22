@@ -42,9 +42,9 @@ there.
    - **ASA selector** (AS1–AS4) seeding the M stepper with its unit value — overridable (RFP: all seeded values overridable).
    - **RVG base-code picker:** searchable curated dropdown grouped by anatomical site; range codes prompt for a value within the range; codes that absorb positioning show a note and P1 is disabled with an explanation.
    - **Modifier chips** (PA, A, ASE, OB, AI1, P1, post-op) adding to M; visually distinct from the ASA seed.
-   - **Start / Finish:** Start Now / Finish Now buttons stamping demo-clock time + editable time fields; elapsed-minutes display.
-   - **B / T / M steppers:** B and T auto-computed from code/times but overridable; total units + computed fee at the anaesthetist's own unit value, live.
-   - **Adjustment ($) and Charge ($)** fields, internal notes, op notes.
+   - **Start / Finish:** Start Now / Finish Now buttons stamping the demo clock's `now()` (Phase 01's time-of-day — advanceable from the control panel so a realistic duration is demoable) + editable time fields; elapsed-minutes display.
+   - **B / T / M steppers:** B and T auto-computed from code/times but overridable; total units + computed fee at the anaesthetist's own unit value, live. All captured inputs — ASA class, selected modifiers, the range-code choice, overridden B/T/M — **persist on the Procedure as data** (Phase 01's captured-inputs fields), not just the computed totals.
+   - **Adjustment ($) and Charge ($)** fields, internal notes, op notes. Adjustment/Charge are not free-floating numbers: they write the Procedure's **typed `priceOverride`** ($ adjustment and fixed-fee charge respectively) and prompt for the **mandatory reason** (the RFP: overrides "should carry a reason/note, both for office reference and for the audit trail"); the %-adjustment variant is office-side (Phase 06's billing setup carries the full typed editor).
    - **Non-RVG billing lines** (the RFP's parallel billing methods reach mobile here): an "add
      billing line" control per Procedure — an **ancillary fixed-amount line** (description +
      amount, e.g. an ACC pre-op flat-fee code), or a **rate×time (hourly)** line (hours × agreed
@@ -63,8 +63,9 @@ there.
    to hospital advice or AA staff, so the office sets/corrects billing setup in the admin app —
    Phase 06 — while the anaesthetist's ad-hoc creation path captures initial route per Phase 03).
 4. **List submission** (activates Phase 03's reserved footer): the **"Completed"** button on the
-   Cards screen — disabled until **every Card is marked Complete** (the store's rule: completion
-   is validation-gated, submission is completion-gated); the explanatory sheet names the
+   Cards screen — disabled until **every non-cancelled Card is marked Complete** (the store's
+   rule: completion is validation-gated, submission is completion-gated; cancelled cards sit
+   outside the count); the explanatory sheet names the
    not-yet-complete cards and their outstanding validation failures. Confirmation dialog explains
    what SUBMITTED means (office review; no further edits); on confirm, the store's `submitList`
    runs and the list flips to read-only with the completed-unbilled badge.
@@ -78,7 +79,8 @@ Any billing-engine execution (Phase 08). Pre-payment and post-op flows (Phase 09
 
 ## Manual test checklist
 
-- [ ] Full BTM capture on a seeded today-card: ASA seeds M; picking a range code prompts within range; Start/Finish Now stamp demo-clock times; a 2h+ case's T units match the tiered rule; fee = units × that anaesthetist's own unit value (check against another anaesthetist to prove per-person rates).
+- [ ] Full BTM capture on a seeded today-card: ASA seeds M; picking a range code prompts within range; Start/Finish Now stamp the demo clock's time-of-day (advance the clock between taps for a real duration); a 2h+ case's T units match the tiered rule; fee = units × that anaesthetist's own unit value (check against another anaesthetist to prove per-person rates); the captured inputs (ASA, modifiers, range choice, overridden B/T/M) are visible as stored data in the inspector, not just totals.
+- [ ] An Adjustment or Charge entry demands a reason and lands as a typed priceOverride in the audit trail.
 - [ ] P1 is disabled with an explanation when the base code absorbs positioning; enabled otherwise.
 - [ ] An additional procedure only allows time capture (B/M structurally disabled with the explanation) — and a copied Card's procedure renders the same way (time-only, with the copy explanation).
 - [ ] Completed toggle blocks with named field failures on an incomplete card, passes when fixed.

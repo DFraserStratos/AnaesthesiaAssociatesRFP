@@ -45,7 +45,10 @@ RFP pages 46–49 (Appendix 5) remain the functional reference for what each pag
    - **Leave bookings** list and **Unassigned anaesthetists (next 5 days)** locum panel (name, session, mobile).
 3. **Lists page**: date-range picker (default: today +4 weeks) → table of the anaesthetist's Lists
    (Date, From, To, Description = surgeon/hospital or status text, colour-coded row), the 2-per-day
-   rhythm visible; status legend; drill into List detail (shared components, desktop layout).
+   rhythm visible; **From/To read the List's actual start/end times** — including any office
+   override (D2), never hardcoded session defaults — and the dashboard week strip labels its
+   blocks with the same actual times; status legend; drill into List detail (shared components,
+   desktop layout).
    **Card actions carry over too**: card copy and ad-hoc/photo creation (M6/M7, incl. the NHI
    lookup) are available from the web List detail via the shared components — the RFP: mobile-app
    statements "apply equally to the anaesthetists' web app view" — re-laid-out for desktop
@@ -55,9 +58,10 @@ RFP pages 46–49 (Appendix 5) remain the functional reference for what each pag
 5. **Overdue page**: accounts-outstanding table ordered by date (Patient, Contract, Surgeon, First
    Acct date, aging columns, ACC flag) per Appendix 5. Reads the billing slice; honest empty/seeded
    state until Phase 10. Flat list, no rollup (RFP explicit).
-6. **BTM/GST page shell**: GST-period activity summary layout (period selector monthly /
-   bi-monthly / six-monthly, date-ranged received amounts + GST component) with honest empty state;
-   Phase 10 wires real payment data.
+6. **BTM/GST page shell**: GST-period activity report layout — per the RFP, a **date-ranged list
+   of amounts received, one row per receipt, each with its GST component**, with period totals as
+   a footer (a transaction list, not a totals-only summary; period selector monthly / bi-monthly /
+   six-monthly) — with honest empty state; Phase 10 wires real payment data.
 7. **Persona parity checks**: same lifecycle rules as mobile (can't edit SUBMITTED, no authorise
    controls anywhere in this app).
 

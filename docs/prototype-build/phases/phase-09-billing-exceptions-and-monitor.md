@@ -12,8 +12,11 @@ RFP flags as open questions — the demo should handle them confidently and labe
 
 ## Work items
 
-1. **Pre-payment flow** (B7): the pre-payment flag is typed per the RFP — **full** or **split** —
-   on the seeded Card. "Raise pre-procedure invoice" (office, pre-day) produces a
+1. **Pre-payment flow** (B7): the full-vs-split typing and any deposit amount live on the
+   Procedure's **prepayment detail** (`{type: 'full'|'split', depositAmount?}`, alongside its
+   `selfFundedPrepayment` payment category — Phase 01's type); the Card-level "pre-payment
+   required" flag is **derived** from its procedures, not stored separately. "Raise pre-procedure
+   invoice" (office, pre-day) produces a
    `prePayment`-timing invoice through the normal document pipeline covering the **patient-funded
    (BillableParty-route) procedures only**: their full estimated fee, or the agreed deposit
    portion for split. On a mixed card (one procedure hospital-billed, another patient-billed —

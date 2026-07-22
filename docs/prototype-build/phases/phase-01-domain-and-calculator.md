@@ -17,19 +17,32 @@ the RFP's hardest business rules before any screen depends on them.
 
 Model exactly the entities in `Data-Model-and-Flow.html` §1–§2 (read it before writing types):
 Schedule/Day (implicit — derive days from the horizon), List, Card (incl. an optional
-**integration correlation ref** — `{sourceFeedId, externalAppointmentId}`, from the HL7 SCH
-appointment ID (the RFP sample's `1661243`) or the FHIR Appointment identifier — how S13/S14/S15
+**integration correlation ref** — `{sourceFeedId, externalAppointmentId}`, from the HL7 **SCH-2
+filler appointment ID** (the RFP sample's `1661243` — note it sits in SCH-2; the sample's SCH-1 is
+empty) or the FHIR Appointment identifier — how S13/S14/S15
 updates locate the booking they modify: MSH-10 dedupes *messages*, this key correlates
-*appointments*), Procedure (add
+*appointments* — and a **`cancelled` state** for the audited soft-cancel: cancelled Cards are
+retained and visible, excluded from completion/submission validation and billing, never
+hard-deleted; the manual cancel action and the S15 cancellation share the mechanism), Procedure (add
 `patientPaymentCategory?: 'selfFundedPostProcedure' | 'selfFundedPrepayment' | 'insuredReimbursement'`,
-set only when `billingRoute = BillableParty` — the RFP's three patient categories, each with a
-different expected payment workflow: post-procedure invoicing, pre-payment full/split, or
+set only when `billingRoute = BillableParty` (and **required by the validator on that route** —
+the RFP: patients "fall into one of three categories", and the category determines recipient
+wording and payment workflow) — post-procedure invoicing, pre-payment full/split, or
 insured-patient-claims-back — distinct from the `Insurer` route, which is AA billing a
-direct-claim insurer like nib itself; also add an informational **`accRelated` flag** — it sources
+direct-claim insurer like nib itself; when the category is `selfFundedPrepayment`, a typed
+**prepayment detail** rides with it — `{ type: 'full' | 'split', depositAmount?: number }` —
+the home of the RFP's full-vs-split distinction (Phase 09's Card-level "pre-payment required"
+flag is *derived* from the card's procedures, not stored separately); also add an informational **`accRelated` flag** — it sources
 W4's ACC column and the review's ACC-route advisory, since the RFP says ACC patients "are never
-billed directly" yet ACC is otherwise "invisible to the billing engine" — and an optional
+billed directly" yet ACC is otherwise "invisible to the billing engine" — an optional
 **`billingReference`** — the hospital's contract/approval reference noted with the booking, the
-concrete object of the office's "reference completeness" sanity check), BillingLine (chargeBasis RVG | fixed | rate×time,
+concrete object of the office's "reference completeness" sanity check — and the **captured BTM
+inputs persisted as data, not just computed totals**: `asaClass` (AS1–AS4), the selected modifier
+codes, `baseUnitsSelected` (the anaesthetist's chosen value where the base code is a range), and
+the B/T/M unit values as captured/overridden with seeded-vs-overridden provenance — RFP design
+principle 10 requires an invoice to be reproducible against what was true when raised, and the
+RFP's "core data the system will capture per Card" list names the selected base code (with range
+override), times and applicable modifier codes as stored data), BillingLine (chargeBasis RVG | fixed | rate×time,
 units/amount, description, and an optional **funder override** — when set, the line bills to that
 counterparty instead of the Procedure's resolved route, which is how the RFP's
 one-procedure-two-funders split is represented; a per-procedure conservation rule — line amounts
@@ -69,7 +82,12 @@ PaymentIn/Disbursement, IntegrationMessage. Billing/Xero/integration entities ar
 ### 2. Demo clock (`src/domain/clock.ts`)
 
 `DEMO_TODAY` (2026-07-21 — the design mockups' content date) as the pinned origin; helpers `today()`, `advanceDays(n)` designed to be
-driven by store state in Phase 02. All domain logic uses this, never the real date. Export date
+driven by store state in Phase 02. The clock also carries a **deterministic time-of-day**:
+`now()` returns date + time (seeded at a fixed morning time on `DEMO_TODAY`, e.g. 08:00), with
+`advanceMinutes(n)` alongside `advanceDays(n)` — Phase 04's Start Now / Finish Now buttons stamp
+`now()`, and the tiered time-unit maths needs real elapsed minutes, so the clock must supply
+times, not just dates (the −5/+5 nudge buttons then edit the stamped values). All domain logic
+uses this, never the real date. Export date
 helpers (horizon generation: `DEMO_TODAY − 14d … +4 months`) the seeder will need.
 
 ### 3. NHI validation (`src/domain/nhi.ts`)
@@ -84,7 +102,10 @@ known-good and known-bad values for both formats, including wrong-check-digit ca
 A small **demo subset** of NZHIS Level 4 ethnicity codes (e.g. the well-documented Level 1 groups
 — European, Māori, Pacific Peoples, Asian, MELAA, Other — each with 1–2 Level 4 codes) as a typed
 lookup table, explicitly commented `// demo subset — not the authoritative HISO/Ministry of Health
-code table`. `validateEthnicityCode(code)` returns a verdict + the human-readable group name.
+code table`. `validateEthnicityCode(code)` returns a **three-way verdict** + the human-readable
+group name where known: `valid` (in the demo subset), `outsideDemoSubset` (well-formed but not
+curated here — honest copy: "may be a valid NZHIS L4 code; this demo validates against a curated
+subset"), or `malformed`. Never label a possibly-real L4 code "invalid".
 `lookupNhi(nhi)` — a **simulated** patient lookup (canned, keyed by seeded NHIs; framed in its
 call-site comment as "simulates the NHI FHIR API via the Digital Services Hub — no real network
 call") returning `{ name, dob, ethnicityCode }` for the ad-hoc card-creation flow (Phase 03) to
@@ -108,15 +129,21 @@ consume. Unit tests: known ethnicity codes validate, an unknown code fails with 
   2nd-procedure ordinal rules); rate×time billing lines; typed overrides (fixed / $ adj / % adj).
 - `splitBillingUnits(procedures)`: procedures flagged `isAdditional` yield **time units only**.
 - `validateCardForBilling(card)`: minimum-data rules (route resolved; RVG base code or a non-RVG
-  billing line; start/handover times when RVG; billable party present when route=BillableParty;
-  insurer present **and `acceptsDirectClaims`** when route=Insurer — the RFP: that route is "only
-  available where that Insurer accepts direct claims from AA").
+  billing line; start/handover times when RVG; when route=BillableParty, a `patientPaymentCategory`
+  is set and the payer is resolvable — **the patient by default** (the RFP: "billableParty
+  (→ Patient by default)... In the common case this is the patient themself"), so no BillableParty
+  override record is demanded; the typed override is required only when someone other than the
+  patient pays; insurer present **and `acceptsDirectClaims`** when route=Insurer — the RFP: that
+  route is "only available where that Insurer accepts direct claims from AA". Cancelled Cards are
+  excluded from validation entirely).
   Returns structured failures (field + message) — the mobile UI will render these verbatim.
 - **Tests**: tiered-time boundaries (exactly 2h, 2h01m, a 5h case), P1 absorption vs non-absorbing
   base, range base codes, each contract type, each override type, split billing, **two-funder line
   allocation conserves the procedure fee** (and a non-conserving allocation fails validation),
   validation failure shapes (incl. Insurer route without an insurer / with a non-direct-claims
-  insurer rejected), NHI both formats.
+  insurer rejected; BillableParty route without a `patientPaymentCategory` rejected; BillableParty
+  route with no override record but a patient present **passes** — patient-is-default-payer),
+  ethnicity three-way verdicts (valid / outsideDemoSubset / malformed), NHI both formats.
 
 ## Out of scope
 
