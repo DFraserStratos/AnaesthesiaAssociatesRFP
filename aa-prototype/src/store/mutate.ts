@@ -139,6 +139,13 @@ export function mutate(
   const patch = recipe(state)
   const atISO = clockISO(state.clock)
   const metaList = Array.isArray(metas) ? (metas as readonly MutationMeta[]) : [metas as MutationMeta]
+  // Convention 7: no mutation without an audit entry. Callers that build their
+  // metas in the recipe pass an array the recipe pushes into, so this is
+  // checked after `recipe(state)` has run — an empty list is a programming
+  // error (a raw write with zero audit entries and zero lastModified stamps).
+  if (metaList.length === 0) {
+    throw new Error('mutate() requires at least one audit meta (convention 7: no mutation without an audit entry)')
+  }
 
   let counters = patch.counters ?? state.counters
   const entries: AuditEntry[] = []

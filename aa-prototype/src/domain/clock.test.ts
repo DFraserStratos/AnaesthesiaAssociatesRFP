@@ -24,6 +24,15 @@ describe('demo clock state', () => {
     expect(d.getHours()).toBe(8)
     expect(d.getMinutes()).toBe(0)
   })
+
+  it('now() reads the stated time of day even on a DST-transition day', () => {
+    // NZ DST starts Sun 27 Sep 2026 (02:00 -> 03:00). Adding elapsed minutes to
+    // midnight would drift to 09:00; building from the parts holds it at 08:00.
+    const d = now({ todayISO: '2026-09-27', minutesSinceMidnight: 8 * 60 })
+    expect(d.getDate()).toBe(27)
+    expect(d.getHours()).toBe(8)
+    expect(d.getMinutes()).toBe(0)
+  })
 })
 
 describe('advanceMinutes', () => {

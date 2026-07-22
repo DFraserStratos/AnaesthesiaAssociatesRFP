@@ -33,7 +33,10 @@ function withEthnicity(patient: Patient, code: string | undefined): Patient {
   if (code === undefined) return patient
   const verdict = validateEthnicityCode(code)
   if (verdict.verdict === 'valid') {
-    return { ...patient, ethnicityCode: verdict.code }
+    // Drop any prior quarantine flag: a re-intake with a valid code must not
+    // leave a stale ethnicityPending alongside the stored code (7th review A11).
+    const { ethnicityPending: _cleared, ...rest } = patient
+    return { ...rest, ethnicityCode: verdict.code }
   }
   // Quarantined pending correction (7th review A11) — never stored as the code.
   return {

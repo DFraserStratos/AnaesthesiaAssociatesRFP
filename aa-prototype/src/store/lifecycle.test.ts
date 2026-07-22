@@ -430,6 +430,31 @@ describe('setAvailability', () => {
     expect(listForSlot(api.getState(), ANAE.ngata, TUE21, 'AM')?.statusKey).toBe('free')
   })
 
+  it('replaces rather than stacks availability conflicts on repeated toggles', () => {
+    const api = store()
+    // Souter's design-day AM list is booked (private, cards): every toggle
+    // conflict-flags rather than restatusing, so the flags could pile up.
+    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
+    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'available')
+    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
+    const list = listForSlot(api.getState(), ANAE.souter, TUE21, 'AM')
+    expect(list?.conflicts.filter((c) => c.kind === 'availability').length).toBe(1)
+  })
+
+  it("un-blocking an empty holiday list back to available clears its availability conflict", () => {
+    const api = store()
+    // Hughes AM is truly free: mark unavailable (restatus), then holiday on the
+    // now-unavailable list conflict-flags, then available restatuses to free.
+    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'unavailable')
+    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'holiday')
+    const flagged = listForSlot(api.getState(), ANAE.hughes, TUE21, 'AM')
+    expect(flagged?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
+    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'available')
+    const cleared = listForSlot(api.getState(), ANAE.hughes, TUE21, 'AM')
+    expect(cleared?.statusKey).toBe('free')
+    expect(cleared?.conflicts.some((c) => c.kind === 'availability')).toBe(false)
+  })
+
   it('anaesthetists set only their own availability; integrations never do', () => {
     const api = store()
     const notOwn = setAvailability(api, SOUTER, ANAE.hughes, TUE21, 'AM', 'holiday')

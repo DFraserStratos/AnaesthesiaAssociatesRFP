@@ -114,4 +114,14 @@ export const PERMANENT_LISTS: readonly PermanentList[] = [
   pl(ANAE.strand, 2, 'AM', 'private', HOSP.ces, SURG.reid),
   pl(ANAE.strand, 3, 'PM', 'private', HOSP.ces, SURG.whitford),
   pl(ANAE.strand, 4, 'AM', 'private', HOSP.ces, SURG.reid),
+
+  // --- Fitzgerald: her design days (Tue 21 AM, Thu 23 AM/PM) plus the
+  // weekdays the scenario cards land on (Tue 14 bariatric, Wed 15 rate x time,
+  // Wed 29 prepayment). Tue PM is deliberately left off — Tue 21 PM (St
+  // George's, surgeon TBC) is a one-off pinned by the index.ts fixup, not a
+  // weekly pattern. ---
+  pl(ANAE.fitzgerald, 2, 'AM', 'private', HOSP.sx, SURG.doyle),
+  pl(ANAE.fitzgerald, 3, 'AM', 'private', HOSP.forte, SURG.lim),
+  pl(ANAE.fitzgerald, 4, 'AM', 'private', HOSP.sx, SURG.patel),
+  pl(ANAE.fitzgerald, 4, 'PM', 'preop', null, null, PREOP_NOTE),
 ] as const

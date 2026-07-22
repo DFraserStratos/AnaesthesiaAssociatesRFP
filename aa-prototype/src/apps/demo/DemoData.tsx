@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import { StatusChip } from '../../shared'
-import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
+import { ANAE, SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
 import {
   authoriseList,
@@ -82,7 +82,7 @@ const selectStyle: React.CSSProperties = {
 // ---------------------------------------------------------------------------
 
 const PERSONA_ACTORS: Record<string, Actor> = {
-  souter: { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' },
+  souter: { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter },
   kirsty: { who: 'Kirsty W.', role: 'office', source: 'office' },
   integration: { who: 'HL7 feed', role: 'system', source: 'integration' },
 }

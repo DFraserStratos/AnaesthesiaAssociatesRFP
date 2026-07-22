@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { cancelCard, completeCard, editCard, editProcedure } from './lifecycle'
 import { auditForEntity, proceduresForCard } from './selectors'
-import type { Actor } from './mutate'
+import { mutate, type Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -79,6 +79,17 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
     expect(audit.length).toBe(before + 2)
     const [first, second] = audit.slice(-2)
     expect(first?.id).not.toBe(second?.id)
+    // Sequential, not merely distinct: the counter increments by exactly one.
+    const ordinal = (id: string | undefined): number => Number((id ?? '').replace(/^A/, ''))
+    expect(ordinal(second?.id)).toBe(ordinal(first?.id) + 1)
+  })
+
+  it('refuses a write carrying no audit meta (convention 7)', () => {
+    const api = createAppStore()
+    const before = api.getState().audit.length
+    expect(() => mutate(api, OFFICE, [], () => ({}))).toThrow(/audit meta/)
+    // Nothing committed: the audit log is untouched.
+    expect(api.getState().audit.length).toBe(before)
   })
 })
 
@@ -86,10 +97,16 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
 // storeDiscipline — the source scan (same pattern as domainPurity)
 // ---------------------------------------------------------------------------
 
-const SOURCES = import.meta.glob(
-  ['./**/*.ts', '../apps/**/*.tsx', '../shell/**/*.tsx', '!./**/*.test.ts'],
-  { query: '?raw', import: 'default', eager: true },
-) as Record<string, string>
+// The whole src tree (every .ts/.tsx under src), minus tests. Widened from the
+// original store+apps+shell-only net, which missed src root (router.tsx),
+// shared/, theme/, and any .ts under apps/shell — holes in a "grep-provable"
+// discipline. Vite normalises keys relative to this file: store/ siblings keep
+// `./name.ts`, everything else is `../dir/name.ts`.
+const SOURCES = import.meta.glob(['../**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
 
 describe('storeDiscipline', () => {
   const files = Object.keys(SOURCES)

@@ -14,9 +14,31 @@ const SOURCES = import.meta.glob('./**/*.{ts,tsx}', {
   eager: true,
 }) as Record<string, string>
 
-/** UI-world module specifiers forbidden anywhere in src/domain/. */
-const FORBIDDEN_IMPORT =
-  /(?:from\s+|import\s*\(\s*|require\s*\(\s*)['"](react|react-dom|react-router-dom|lucide-react|zustand|@testing-library)(?:\/|['"])/
+const IMPORT_LEAD = /(?:from\s+|import\s*\(\s*|require\s*\(\s*)/
+
+/** UI-world package specifiers forbidden anywhere in src/domain/. */
+const FORBIDDEN_PACKAGE = new RegExp(
+  IMPORT_LEAD.source + `['"](react|react-dom|react-router-dom|lucide-react|zustand|@testing-library)(?:\\/|['"])`,
+)
+
+/**
+ * Relative imports that reach OUT of the domain into the store/theme/app
+ * layers, at any nesting depth (`../store`, `../../theme`, …). The literal
+ * package regex above cannot see these.
+ */
+const FORBIDDEN_RELATIVE = new RegExp(
+  IMPORT_LEAD.source + `['"](?:\\.\\.\\/)+(store|theme|apps|shell|shared)\\/`,
+)
+
+/** Bare side-effect imports (`import '...'`) — no pure-domain module needs one. */
+const BARE_SIDE_EFFECT = /(?:^|\n)\s*import\s+['"][^'"]+['"]/
+
+/**
+ * The ONE sanctioned relative bridge: statusKeyParity.test.ts imports
+ * `../theme/statusColours` on purpose, to assert the domain/theme status-key
+ * parity at runtime (see its header). Everything else is forbidden.
+ */
+const RELATIVE_BRIDGE_FILES = new Set(['./statusKeyParity.test.ts'])
 
 describe('domain purity', () => {
   const files = Object.keys(SOURCES)
@@ -32,7 +54,35 @@ describe('domain purity', () => {
   it('imports no React/DOM/UI libraries anywhere', () => {
     for (const file of files) {
       const source = SOURCES[file] ?? ''
-      expect(FORBIDDEN_IMPORT.test(source), `${file} must not import UI libraries`).toBe(false)
+      expect(FORBIDDEN_PACKAGE.test(source), `${file} must not import UI libraries`).toBe(false)
+    }
+  })
+
+  it('reaches into no store/theme/app layer by relative path (the parity bridge excepted)', () => {
+    for (const file of files) {
+      if (RELATIVE_BRIDGE_FILES.has(file)) continue
+      const source = SOURCES[file] ?? ''
+      expect(FORBIDDEN_RELATIVE.test(source), `${file} must not import the store/theme/app layers`).toBe(false)
+    }
+  })
+
+  it('uses no bare side-effect imports', () => {
+    for (const file of files) {
+      const source = SOURCES[file] ?? ''
+      expect(BARE_SIDE_EFFECT.test(source), `${file} must not use a bare side-effect import`).toBe(false)
+    }
+  })
+
+  it('calls neither Date.now() nor Math.random() in non-test domain sources (convention 5)', () => {
+    // Strip comments first: the clock's header legitimately *names* Date.now()
+    // in prose ("never call Date.now()"), which is the opposite of calling it.
+    const stripComments = (src: string): string =>
+      src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+    for (const file of files) {
+      if (file.endsWith('.test.ts')) continue
+      const code = stripComments(SOURCES[file] ?? '')
+      expect(/Date\.now\s*\(/.test(code), `${file} must not call Date.now()`).toBe(false)
+      expect(/Math\.random\s*\(/.test(code), `${file} must not call Math.random()`).toBe(false)
     }
   })
 })

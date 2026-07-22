@@ -610,6 +610,8 @@ export function setAvailability(
       if (kind === 'available') {
         next.statusKey = 'free'
         delete next.notes
+        // Un-blocking resolves any prior availability conflict on this slot.
+        next.conflicts = next.conflicts.filter((c) => c.kind !== 'availability')
       } else {
         next.statusKey = kind
         if (note !== undefined) next.notes = note
@@ -630,9 +632,14 @@ export function setAvailability(
         kind === 'available'
           ? 'Marked available, but this List carries booking context. Review and clear it manually.'
           : `Marked ${kind}, but this List carries booking context. Review and rebook or clear it.`
+      // Replace, never stack: repeated toggles must leave at most one
+      // availability conflict, and the latest message wins.
       lists = {
         ...lists,
-        [list.id]: { ...list, conflicts: [...list.conflicts, { kind: 'availability', message }] },
+        [list.id]: {
+          ...list,
+          conflicts: [...list.conflicts.filter((c) => c.kind !== 'availability'), { kind: 'availability', message }],
+        },
       }
       metas.push({
         entityType: 'list',

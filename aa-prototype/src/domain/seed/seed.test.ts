@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildSeed, SEED_LIST_IDS, SEED_MARKERS } from './index'
+import { buildSeed, listIdForSlot, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS } from './index'
 import { ANAESTHETISTS } from './cast'
 import { PERMANENT_LISTS } from './permanentLists'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
@@ -105,6 +105,18 @@ describe('the canvas', () => {
     expect(ruthAm?.surgeonId).toBe('S-OKAFOR')
     expect(ruthPm?.hospitalId).toBe('H-FORTE')
     expect(ruthPm?.surgeonId).toBe('S-OKAFOR')
+
+    // Fitzgerald's template-derived design days (her Permanent Lists were the
+    // one gap that left these rows Free and contradicting the mockups).
+    const fitzTueAm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-21', 'AM')]
+    const fitzThuAm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-23', 'AM')]
+    const fitzThuPm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-23', 'PM')]
+    expect(fitzTueAm?.statusKey).toBe('private')
+    expect(fitzTueAm?.hospitalId).toBe(HOSP.sx)
+    expect(fitzTueAm?.surgeonId).toBe(SURG.doyle)
+    expect(fitzThuAm?.hospitalId).toBe(HOSP.sx)
+    expect(fitzThuAm?.surgeonId).toBe(SURG.patel)
+    expect(fitzThuPm?.statusKey).toBe('preop')
   })
 
   it('flags booked Lists on hospital holidays (conflict, never a restatus)', () => {

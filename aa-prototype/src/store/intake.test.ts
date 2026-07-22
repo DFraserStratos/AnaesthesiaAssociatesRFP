@@ -79,6 +79,7 @@ describe('upsertPatient', () => {
       dobISO: '1980-01-01',
       ethnicityCode: '21111',
     })
+    expect(good.ok).toBe(true)
     if (good.ok) expect(good.value.patient.ethnicityCode).toBe('21111')
 
     const bad = upsertPatient(api, OFFICE, {
@@ -86,10 +87,39 @@ describe('upsertPatient', () => {
       dobISO: '1980-01-01',
       ethnicityCode: '99',
     })
+    expect(bad.ok).toBe(true)
     if (bad.ok) {
       expect(bad.value.patient.ethnicityCode).toBeUndefined()
       expect(bad.value.patient.ethnicityPending?.receivedCode).toBe('99')
     }
+  })
+
+  it('clears a stale quarantine flag when a valid code is later supplied', () => {
+    const api = createAppStore()
+    // First intake: unseen NHI, malformed ethnicity -> quarantined, no code.
+    const first = upsertPatient(api, OFFICE, {
+      nhi: 'ACA31FM',
+      name: 'Riki Tamati',
+      dobISO: '1990-03-03',
+      ethnicityCode: '99',
+    })
+    expect(first.ok).toBe(true)
+    if (!first.ok) return
+    expect(first.value.patient.ethnicityCode).toBeUndefined()
+    expect(first.value.patient.ethnicityPending?.receivedCode).toBe('99')
+
+    // Re-intake the same NHI with a valid code: reused, code set, flag gone.
+    const second = upsertPatient(api, OFFICE, {
+      nhi: 'ACA31FM',
+      name: 'Riki Tamati',
+      dobISO: '1990-03-03',
+      ethnicityCode: '21111',
+    })
+    expect(second.ok).toBe(true)
+    if (!second.ok) return
+    expect(second.value.outcome).toBe('reused')
+    expect(second.value.patient.ethnicityCode).toBe('21111')
+    expect(second.value.patient.ethnicityPending).toBeUndefined()
   })
 })
 

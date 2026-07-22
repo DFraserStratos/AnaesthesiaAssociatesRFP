@@ -13,7 +13,7 @@
  * times, not just dates).
  */
 
-import { addDays, addMinutes, addMonths, format, parseISO } from 'date-fns'
+import { addDays, addMonths, format, parseISO } from 'date-fns'
 
 /** ISO `YYYY-MM-DD` formatting helper (local time — the demo has one timezone). */
 function toISODate(d: Date): string {
@@ -48,10 +48,15 @@ export function today(state: DemoClockState): string {
 
 /**
  * The demo "now" as a Date — deterministic, built from the state value only
- * (never an argless `new Date()`; PROGRESS convention 5).
+ * (never an argless `new Date()`; PROGRESS convention 5). Constructed from the
+ * date + time-of-day parts (not by adding elapsed minutes to midnight) so it
+ * agrees with the store's string-built `clockISO` even across a DST transition
+ * (e.g. NZ DST start Sun 27 Sep 2026, inside the 4-month horizon).
  */
 export function now(state: DemoClockState): Date {
-  return addMinutes(parseISO(state.todayISO), state.minutesSinceMidnight)
+  const h = Math.floor(state.minutesSinceMidnight / 60)
+  const m = state.minutesSinceMidnight % 60
+  return parseISO(`${state.todayISO}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`)
 }
 
 /**

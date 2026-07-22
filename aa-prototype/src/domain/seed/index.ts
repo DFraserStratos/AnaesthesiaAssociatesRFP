@@ -295,11 +295,6 @@ function buildSeedInternal(): SeedBuild {
   return { state, scenario: cardsBuild.scenario }
 }
 
-/** The pristine seed state. Deterministic: two calls are deep-equal. */
-export function buildSeed(): SeedState {
-  return buildSeedInternal().state
-}
-
 /** Pinned slot-derived list ids the markers and tests reference. */
 export const SEED_LIST_IDS = {
   souterAm21: listIdForSlot(ANAE.souter, DEMO_TODAY, 'AM'),
@@ -309,6 +304,22 @@ export const SEED_LIST_IDS = {
   morrisonMon20: listIdForSlot(ANAE.morrison, '2026-07-20', 'AM'),
   whitakerFri17: listIdForSlot(ANAE.whitaker, '2026-07-17', 'AM'),
 } as const
+
+/**
+ * The seed is built ONCE at module load and shared. The store only ever reads
+ * it and applies immutable (spread) updates through `mutate()` (storeDiscipline
+ * enforces this), and `freshAppState()` spreads the top level per store, so the
+ * cached graph is never mutated in place. This removes the second full build
+ * that `SEED_MARKERS` used to trigger just to read ~20 scenario ids.
+ *
+ * Declared after SEED_LIST_IDS because `buildSeedInternal()` reads it.
+ */
+const SEED_BUILD: SeedBuild = buildSeedInternal()
+
+/** The pristine seed state. Deterministic: two calls are deep-equal. */
+export function buildSeed(): SeedState {
+  return SEED_BUILD.state
+}
 
 // ---------------------------------------------------------------------------
 // Seeded-scenario markers (the inspector's finder + the seed tests)
@@ -465,4 +476,4 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
 }
 
 /** Every seeded checklist state, one click away in the `/demo/data` finder. */
-export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = buildMarkers(buildSeedInternal().scenario)
+export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = buildMarkers(SEED_BUILD.scenario)

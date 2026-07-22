@@ -90,6 +90,10 @@ function minutesToTime(total: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
+/** The seed clock instant (Tue 21 Jul 08:00 = DEMO_TODAY at 08:00): the
+ *  modification stamp for cards that have not yet been completed. */
+const SEED_NOW_ISO = iso(TUE21, '08:00')
+
 const REF_PREFIX: Record<string, string> = {
   [HOSP.stg]: 'SG',
   [HOSP.sx]: 'SX',
@@ -160,7 +164,11 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       completed: spec.completedAtISO !== undefined,
       attachments: [],
       lastModifiedBy: spec.completedAtISO !== undefined ? who : 'Kirsty W.',
-      lastModifiedAtISO: spec.completedAtISO ?? iso(list.dateISO, '07:00'),
+      // Completed cards carry their completion time; not-yet-completed cards
+      // are stamped at the seed clock (Tue 21 Jul 08:00), never their list's
+      // own date, so cards on upcoming lists don't read "modified in the
+      // future" relative to the demo clock (2026-07-23 review fix).
+      lastModifiedAtISO: spec.completedAtISO ?? SEED_NOW_ISO,
     }
     if (spec.scheduledTime !== undefined) card.scheduledTime = spec.scheduledTime
     if (spec.completedAtISO !== undefined) card.completedAtISO = spec.completedAtISO
@@ -380,7 +388,9 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     startISO: iso(TUE21, '16:05'),
     handoverISO: iso(TUE21, '17:20'),
     asaClass: 'AS1',
-    selectedModifierCodes: ['PA5'],
+    // Age-extreme modifier (Margaret Ellison, over 70): A1 = 1 unit, keeping
+    // the pinned $344.50 fee (RVG-over-mockup relabel, 2026-07-23 review fix).
+    selectedModifierCodes: ['A1'],
     billingRoute: 'hospital',
     governingContractId: CONTRACT.sxap,
     billingReference: 'SX-2026-1204',
