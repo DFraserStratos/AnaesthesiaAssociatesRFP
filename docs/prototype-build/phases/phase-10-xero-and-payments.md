@@ -57,6 +57,10 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
    near the soft limit) which the archive job visibly reduces — scale is narrated with counters,
    not simulated records (N4/§10); archived contacts retain history; repeat patients reuse
    their contact.
+5a. **Automated money events are audited** (N3/A7; RFP: "audit trails of manual and automated
+   actions are required"): Xero handoff outcomes, webhook/poll payment updates, ACCPAY flips,
+   payables-run disbursements and archive-job actions all write audit entries with source=system,
+   visible in the Phase 07 audit viewer alongside manual actions.
 6. **Anaesthetist views go live** — all reading the **billing engine's own mirror, never the
    Xero-sim slice** (RFP: the app never queries Xero; the Billing Engine's database is the sole
    source, kept in sync by the webhook/poll writes). Structurally: view selectors import from
@@ -85,6 +89,7 @@ out of scope); integrations (11).
 - [ ] Webhook + poll double-delivery causes no duplicate effect.
 - [ ] Payables run pays AUTHORISED ACCPAYs; the invoice shows paid-in ✓ / disbursed ✓ as separate states with dates.
 - [ ] Anaesthetist balances appear only after advancing to the next day; GST summary totals match payments received in the period.
+- [ ] The audit viewer reconstructs one invoice's automated trail end-to-end: billing run → Xero handoff → payment webhook → ACCPAY flip → payables run (all source=system entries).
 - [ ] Archive job archives eligible contacts only; count and rationale visible; changing the inactivity-window setting changes what's eligible on the next run (proving it's not hardcoded).
 - [ ] `npm run build` + `npx vitest run` green (incl. the no-NHI-in-Xero test).
 

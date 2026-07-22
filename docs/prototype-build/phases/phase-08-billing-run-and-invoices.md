@@ -20,6 +20,9 @@ follow in Phase 09.
    - **Rate** via the Phase 01 pure functions: RVG/BTM, fixed fee (Type 3 + price-list incl. 2nd-procedure ordinal), rate×time (contract-permitted), Type 2 agreed rate/discount, typed overrides with reason. The seeded **surgeon-held bariatric contract must be exercised** by at least one runnable card (proving non-hospital contract holders rate correctly), and the seeded **rate×time card** must bill hours × the agreed rate (Method 3, contract-permitted).
    - **Enforce split billing**: `isAdditional` procedures contribute time units only (the calculator guarantees it — the run must not bypass it); per-funder billing lines split into separate counterparty groups (one procedure, two funders → two invoices).
    - **Group by counterparty per Card** → create Invoices (+ lines with snapshot amounts) and a BillingCase per invoice. One Card → potentially many invoices; same-counterparty procedures share one. **Labelled reading** (REQUIREMENTS §11): the RFP's Split Billing section says "two separate invoices must be generated" in either split scenario, while its grouping sections twice say same-counterparty procedures are "billed together on a single invoice" — resolved by the RFP's own cross-reference: the split-billing two-invoice outcome arises because the additional procedure has a *different funder*. Note the reading in UI copy on the invoice/monitor surface and keep it as a discovery question.
+   - **The run is audited like any manual action** (N3/A7; RFP: "audit trails of manual and
+     automated actions are required"): invoice creation, `billedAt`, and per-card outcomes write
+     audit entries with source=system/billing, reconstructable in the Phase 07 audit viewer.
    - Set `billedAt` on the List — the trigger that removes it from the anaesthetist views (the RFP's proposed reading: invoice generation, not AUTHORISED, not payment). Define it precisely as **completion of the List's billing run** — the "unambiguous system event" the RFP asks to be confirmed: a per-card failure (Phase 09 isolation) doesn't hold the List on screen (its invoice lands on retry), and a Xero handoff failure (Phase 10) doesn't restore visibility — the billing monitor owns both.
 2. **Invoice documents**: on-screen invoice preview — two layouts per the RFP: contract-holder and
    patient (header, addressee, case reference, line items with units/rate/amount, GST, total;
@@ -46,6 +49,7 @@ follow in Phase 09.
    immunity** (mutating the contract after billing doesn't change the stored invoice);
    **default fallback** (a hospital's Type 2 contract effective-dated out → rating falls back to
    that hospital's default Type 1 at standard rates, no failure);
+   the run writes audit entries (source=system) for invoice creation and `billedAt`;
    same-counterparty grouping.
 
 ## Out of scope

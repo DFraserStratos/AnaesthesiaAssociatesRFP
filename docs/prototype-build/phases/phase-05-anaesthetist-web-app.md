@@ -1,6 +1,6 @@
 # Phase 05 — Anaesthetist Web App
 
-**Requirements covered:** W1–W4, M11 shell (live data lands in Phase 10)
+**Requirements covered:** W1–W4, M6/M7 web parity, M11 shell (live data lands in Phase 10)
 **Depends on:** Phases 03–04 (reuses the mobile card/list components).
 **Estimated:** 1 session.
 
@@ -46,6 +46,10 @@ RFP pages 46–49 (Appendix 5) remain the functional reference for what each pag
 3. **Lists page**: date-range picker (default: today +4 weeks) → table of the anaesthetist's Lists
    (Date, From, To, Description = surgeon/hospital or status text, colour-coded row), the 2-per-day
    rhythm visible; status legend; drill into List detail (shared components, desktop layout).
+   **Card actions carry over too**: card copy and ad-hoc/photo creation (M6/M7, incl. the NHI
+   lookup) are available from the web List detail via the shared components — the RFP: mobile-app
+   statements "apply equally to the anaesthetists' web app view" — re-laid-out for desktop
+   (dialog/panel, not bottom sheet, per convention 16).
 4. **Availability page**: pick a date → grid of ALL anaesthetists × AM/PM with status colours and
    annotation text — the locum-finder view. Search/filter by name; free sessions visually prominent.
 5. **Overdue page**: accounts-outstanding table ordered by date (Patient, Contract, Surgeon, First
@@ -65,6 +69,7 @@ Admin functions, live billing numbers (Phases 08–10), contract management.
 
 - [ ] Dashboard shows all five panels with seeded data; the week strip matches the same persona's mobile Forward Lists for the same dates.
 - [ ] Lists page shows the 2-lists-per-day structure across a month range; drill-down opens the shared List/Card detail and a BTM edit behaves exactly like mobile (validation, guards).
+- [ ] Card copy and ad-hoc creation (incl. NHI lookup and the photo path) work from the web List detail exactly as on mobile, in desktop layout.
 - [ ] A free AM slot for tomorrow is findable in the Availability grid in under 10 seconds (the locum use case).
 - [ ] Overdue table renders ordered by date with aging buckets and ACC flags (or its honest empty state).
 - [ ] Mobile app is visually unchanged after the shared-component extraction.

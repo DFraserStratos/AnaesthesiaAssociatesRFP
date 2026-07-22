@@ -15,7 +15,11 @@ integration monitor demonstrates reliability handling; NHI dual-format complianc
 1. **Message library** (`src/domain/integrations/`): 6–8 canned HL7 v2.3.1 SIU messages styled on
    the RFP sample (MSH/SCH/PID/AIS/AIP segments): S12 new booking, S13 reschedule, S14
    modification, S15 cancellation, one malformed (for the failure demo), one with a new-format NHI.
-   Each carries a unique message control ID (MSH-10) and maps to a canned FHIR R4 translation
+   Each carries a unique message control ID (MSH-10) **and an SCH appointment ID** (the RFP
+   sample's `1661243`) — two different keys doing two different jobs: MSH-10 dedupes *messages*
+   (item 5), while the appointment ID correlates *appointments* — an integration-created Card
+   stores `{sourceFeedId, externalAppointmentId}` (Phase 01's correlation ref), and S13/S14/S15
+   locate the Card they modify by that key, never by patient guesswork. Each maps to a canned FHIR R4 translation
    (Appointment + Patient + Practitioner bundle, NZ-profile touches: NHI identifier system, an
    **NZHIS ethnicity extension actually run through Phase 01's `validateEthnicityCode`** (not just
    displayed — one canned message should carry an out-of-range code to prove the validator is
@@ -67,7 +71,7 @@ Real endpoints, SFTP, general-purpose parsing (canned messages only), Keycloak/O
 ## Manual test checklist
 
 - [ ] Replay S12 → new Card appears on the correct hospital/anaesthetist List (visible live in the mobile app view of that List); audit shows source=integration.
-- [ ] S14 modification updates an existing Card; S15 cancels it (per the recorded cancellation-behaviour decision); S13 reschedules (time change visible).
+- [ ] S14 modification updates an existing Card, located by its stored `{sourceFeedId, externalAppointmentId}` correlation ref; S15 cancels it (per the recorded cancellation-behaviour decision); S13 reschedules (time change visible). The monitor shows both keys (message control ID and appointment ID) per message.
 - [ ] FHIR-native message shows no HL7 pane and produces the same class of schedule effect.
 - [ ] The malformed message lands in the monitor as failed (dead-letter, alert raised), and fixing the feed mapping + reprocess recovers it; the feed-configuration view shows the differing per-hospital mappings.
 - [ ] Replaying an already-processed message shows as a deduplicated no-op (same message control ID, no duplicate Card).

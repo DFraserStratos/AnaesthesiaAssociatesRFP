@@ -43,7 +43,9 @@ Keep the density and drill-down; improve legibility (convention 11).
    Procedure's billing setup** — billing
    route (the RFP: "set explicitly (by hospital advice, or by AA staff where the hospital does not
    specify)"), insurer, billable-party override (capture the guardian's name/relationship/contact
-   as a BillableParty record), patient payment category, governing-contract pick where relevant —
+   as a BillableParty record), patient payment category, governing-contract pick where relevant,
+   and the procedure's **`billingReference`** (the hospital's contract/approval reference — what
+   the review's "reference completeness" check looks for) —
    via a billing section on the shared Card/Procedure detail (office-editable where the mobile app
    shows it read-only); create a booking on a free List ("phone call from surgeon's rooms" path).
    Every change audited with source=office.

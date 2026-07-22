@@ -16,12 +16,20 @@ the RFP's hardest business rules before any screen depends on them.
 ### 1. Domain types (`src/domain/types.ts`)
 
 Model exactly the entities in `Data-Model-and-Flow.html` §1–§2 (read it before writing types):
-Schedule/Day (implicit — derive days from the horizon), List, Card, Procedure (add
+Schedule/Day (implicit — derive days from the horizon), List, Card (incl. an optional
+**integration correlation ref** — `{sourceFeedId, externalAppointmentId}`, from the HL7 SCH
+appointment ID (the RFP sample's `1661243`) or the FHIR Appointment identifier — how S13/S14/S15
+updates locate the booking they modify: MSH-10 dedupes *messages*, this key correlates
+*appointments*), Procedure (add
 `patientPaymentCategory?: 'selfFundedPostProcedure' | 'selfFundedPrepayment' | 'insuredReimbursement'`,
 set only when `billingRoute = BillableParty` — the RFP's three patient categories, each with a
 different expected payment workflow: post-procedure invoicing, pre-payment full/split, or
 insured-patient-claims-back — distinct from the `Insurer` route, which is AA billing a
-direct-claim insurer like nib itself), BillingLine (chargeBasis RVG | fixed | rate×time,
+direct-claim insurer like nib itself; also add an informational **`accRelated` flag** — it sources
+W4's ACC column and the review's ACC-route advisory, since the RFP says ACC patients "are never
+billed directly" yet ACC is otherwise "invisible to the billing engine" — and an optional
+**`billingReference`** — the hospital's contract/approval reference noted with the booking, the
+concrete object of the office's "reference completeness" sanity check), BillingLine (chargeBasis RVG | fixed | rate×time,
 units/amount, description, and an optional **funder override** — when set, the line bills to that
 counterparty instead of the Procedure's resolved route, which is how the RFP's
 one-procedure-two-funders split is represented; a per-procedure conservation rule — line amounts
@@ -100,12 +108,15 @@ consume. Unit tests: known ethnicity codes validate, an unknown code fails with 
   2nd-procedure ordinal rules); rate×time billing lines; typed overrides (fixed / $ adj / % adj).
 - `splitBillingUnits(procedures)`: procedures flagged `isAdditional` yield **time units only**.
 - `validateCardForBilling(card)`: minimum-data rules (route resolved; RVG base code or a non-RVG
-  billing line; start/handover times when RVG; billable party present when route=BillableParty).
+  billing line; start/handover times when RVG; billable party present when route=BillableParty;
+  insurer present **and `acceptsDirectClaims`** when route=Insurer — the RFP: that route is "only
+  available where that Insurer accepts direct claims from AA").
   Returns structured failures (field + message) — the mobile UI will render these verbatim.
 - **Tests**: tiered-time boundaries (exactly 2h, 2h01m, a 5h case), P1 absorption vs non-absorbing
   base, range base codes, each contract type, each override type, split billing, **two-funder line
   allocation conserves the procedure fee** (and a non-conserving allocation fails validation),
-  validation failure shapes, NHI both formats.
+  validation failure shapes (incl. Insurer route without an insurer / with a non-direct-claims
+  insurer rejected), NHI both formats.
 
 ## Out of scope
 

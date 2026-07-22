@@ -3,11 +3,13 @@
 **Purpose:** the user is running Codex as an external, independent reviewer of this build plan.
 This prompt starts a fresh chat whose job is to receive Codex's findings, **independently verify
 each one against the actual source documents and the actual current state of the plan**, and only
-then fix the planning docs. Two rounds of this loop have already happened; this prompt gets a new
-session caught up so it doesn't redo settled work or blindly defer to a paraphrase.
+then fix the planning docs. Multiple rounds of this loop have already happened (see the Decisions
+log); this prompt gets a new session caught up so it doesn't redo settled work or blindly defer
+to a paraphrase.
 
 **How to use:** paste the prompt below verbatim into a new chat. Then paste Codex's findings as
-your next message.
+your next message. **Also give Codex the "Settled rulings" block at the bottom of this file** when
+you start its fresh-context review — it stops the reviewer re-raising closed issues.
 
 ---
 
@@ -81,11 +83,12 @@ writing code.
 
 The user has been running Codex as an independent, adversarial reviewer against this plan, in
 rounds. Each round: Codex reads the plan and the RFP and reports a numbered list of findings, each
-citing a plan-doc location and an RFP.md location. Two rounds have already happened (see
-PROGRESS.md's Decisions log, entries dated 2026-07-22) — of ~26 findings across both rounds, most
-were real and got fixed; a few were misreadings (e.g. a denominator confusion between two RFP
-percentages) that got clarified rather than "fixed"; the pre-payment handling got revised twice
-as understanding sharpened.
+citing a plan-doc location and an RFP.md location. Multiple rounds have already happened (see
+PROGRESS.md's Decisions log — one dated entry per round) — most findings were real and got fixed;
+some were misreadings that got clarified rather than "fixed"; several rulings (pre-payment,
+billedAt, post-op addendum) were re-raised across rounds and are now CLOSED — see the "Settled
+rulings" list at the bottom of this file and treat a re-raise without new RFP evidence as a
+reject-with-citation, not a fresh question.
 
 **Your job when I paste a new batch of findings:**
 
@@ -121,4 +124,52 @@ Think about each one before you touch a file.
 
 Confirm you've read PROGRESS.md, REQUIREMENTS.md, and skimmed the phase docs and Data-Model-and-
 Flow.html, then tell me you're ready for the findings.
+```
+
+---
+
+## Settled rulings — give this block to Codex with each fresh review
+
+Copy-paste the block below into Codex's review prompt. These issues have been litigated (some
+repeatedly) and are closed; the full reasoning lives in PROGRESS.md's Decisions log.
+
+```
+The following design rulings are SETTLED for this plan. Do not report them as findings unless you
+can cite RFP text that the plan's Decisions log has not already considered — a re-raise without
+new evidence will be rejected.
+
+1. PRE-PAYMENT GATE (raised and closed 4 times). The gate is a hard block on marking the Card's
+   Outcome complete while the pre-invoice is unpaid, lifted only by an audited office-only
+   override with a required reason; a "pre-payment outstanding" flag surfaces the unpaid state
+   pre-procedure (mobile card, admin day view, review). The pre-invoice covers only the
+   patient-funded (BillableParty-route) portion of a mixed card. A browser prototype cannot gate
+   a theatre list, and gating "Start Now" would block recording a clinical fact — both considered
+   and rejected.
+2. billedAt / LIST DISAPPEARANCE (raised and closed 3 times). billedAt = completion of the List's
+   billing run (the RFP itself calls the trigger "a build detail to confirm"). A per-card failure
+   or a Xero handoff failure does NOT restore anaesthetist visibility — the billing monitor owns
+   both.
+3. POST-OP CHARGES ON LOCKED CARDS. Handled as a linked addendum Card running its own
+   capture→submit→authorise→bill cycle; the original stays immutable. A labelled §11 reading —
+   writing to the locked Procedure record would collide with the RFP's own immutability rule.
+4. CARD MOVES INTO SUBMITTED LISTS. reassignCard may target a SUBMITTED List, including with a
+   not-yet-completed Card: the all-Cards-completed rule gates the DRAFT→SUBMITTED transition, not
+   later office rebooking; the authorisation review flags not-completed Cards. Surgeon/hospital
+   pairing mismatches are advisory, not guarded.
+5. INVOICE GROUPING vs SPLIT BILLING. Same-counterparty procedures share one invoice; the RFP's
+   "two separate invoices" split-billing rule is read as the different-funder case (the RFP's own
+   cross-reference) — a labelled §11 reading and discovery question.
+6. NHI IN XERO. Appendix 2's never-in-Xero reading is implemented and test-enforced; the
+   contradiction with the cross-reference-field passage is surfaced in the Xero-sim UI as a
+   discovery item, not silently resolved.
+7. NO RETURNED STATE; OFFICE CHECK IS NOT A SYSTEM GATE. Both are explicit RFP statements.
+8. LABELLED ASSUMPTIONS / DISCOVERY ITEMS (not defects): round-up partial-interval time rounding;
+   demo-plausible modifier unit values (not an NZSA schedule); rvgBaseCode standing in for
+   "procedure type" in price-list keys; the free-target/absorb/regenerate List-reassignment
+   mechanics; billing-monitor placement in the Admin app; advisory (not hard) availability/holiday
+   conflict reconciliation; the ACC-route check as a review advisory, not an engine guard (the
+   RFP: ACC is "invisible to the billing engine").
+9. DEMO SCALE. The 14-anaesthetist seed is a deliberate design-fidelity decision; production
+   scale is proven by a Vitest canvas-generator test at 85 anaesthetists (~20k Lists) and the
+   Xero-side volume story is narrated via seeded aggregate counters, not bulk records.
 ```
