@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Tells the browser this page explicitly supports both schemes itself (via the
+     @media queries below), so it should not run its own auto-dark content-adjustment
+     heuristic over it — that heuristic is what was graying out our deliberately-light
+     diagram cards even though their text is set to pure black. -->
+<meta name="color-scheme" content="light dark">
+<title>Anaesthesia Associates — Data Model &amp; End-to-End Flow</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5a5a5a; --line: #e2e2e2;
+    --accent: #1f6feb; --card: #f7f8fa; --warn-bg: #fff8e1; --warn-line: #e0b400;
+    --code-bg: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1116; --fg: #e6e6e6; --muted: #9aa4b2; --line: #2a2f36;
+      --accent: #58a6ff; --card: #161b22; --warn-bg: #241f0e; --warn-line: #8a6d00;
+      --code-bg: #161b22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.7rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.3rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; color: var(--muted); }
+  p, li { color: var(--fg); }
+  .sub { color: var(--muted); font-size: .95rem; }
+  a { color: var(--accent); }
+  code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; font-size: .88em; }
+  .toc { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.25rem; }
+  .toc ul { margin: .25rem 0 0; padding-left: 1.1rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93rem; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--card); }
+  .diagram {
+    /* Tell the browser this region is intentionally light-themed, so browsers/OSes
+       that auto-adjust content colour for system dark mode (a real, common behaviour —
+       this is what was silently graying out our pure-black diagram text) leave it alone. */
+    color-scheme: light only;
+    background: #ffffff; border: 1px solid #d0d4da; border-radius: 10px;
+    padding: 1rem; margin: 1rem 0;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    /* Break out of the prose column so wide diagrams get real screen space
+       before they ever need to scroll — see scale-bug note by mermaid.initialize. */
+    width: 100vw; max-width: 100vw;
+    margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark) {
+    .diagram { box-shadow: 0 2px 14px rgba(0,0,0,.5); }
+  }
+  .diagram-scroll-hint {
+    font-size: .8rem; color: var(--muted); text-align: center; margin: -.5rem 0 1rem;
+  }
+  /* Block (not flex) — a flex child shrinks to fit its container by default,
+     which was silently re-shrinking the SVG even after useMaxWidth:false. */
+  .mermaid { padding: 0 1.5rem; }
+  .mermaid svg { display: block; }
+  /* Mermaid v11 renders EVERY diagram label as HTML (<p>/<span>/<div>) inside an
+     SVG <foreignObject>, not as SVG <text>. Those wrapper elements are unclassed,
+     so they inherit `color` from <body> — which in dark mode is the light-grey
+     --fg (#e6e6e6). That is what turned every ER entity/attribute label pale grey
+     on the white diagram card (the previous "anti-aliasing" theory was wrong; the
+     colour really was light grey). The card is always light "paper", so pin dark
+     text on everything inside it, targeting the real HTML labels — not just the
+     near-empty SVG <text> nodes the old rules matched. No text-shadow: solid dark
+     text on white needs no fake stroke, and the shadow only muddied it. */
+  .diagram { color: #111827; }
+  .mermaid, .mermaid p, .mermaid span, .mermaid div,
+  .mermaid .nodeLabel, .mermaid .edgeLabel, .mermaid .label,
+  .mermaid text, .mermaid tspan, .mermaid .statediagram-state text {
+    color: #111827 !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+  }
+  .mermaid text, .mermaid tspan { fill: #111827 !important; }
+  /* keep edge-label chips opaque so relationship lines don't strike through text */
+  .mermaid .edgeLabel, .mermaid .edgeLabel p, .mermaid .edgeLabel span {
+    background: #ffffff !important;
+  }
+  .mermaid .edgePath .path, .mermaid .flowchart-link, .mermaid .transition,
+  .mermaid .relationshipLine {
+    stroke: #333333 !important;
+    stroke-width: 1.6px !important;
+  }
+  .mermaid marker path { fill: #333333 !important; stroke: #333333 !important; }
+  .mermaid .node rect, .mermaid .node polygon, .mermaid .node circle,
+  .mermaid .er.entityBox {
+    stroke-width: 1.3px !important;
+  }
+  .warn {
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px;
+    padding: .75rem 1rem; margin: 1rem 0;
+  }
+  .note { border-left: 3px solid var(--accent); padding: .25rem 0 .25rem 1rem; margin: 1rem 0; color: var(--muted); }
+  .badge { display:inline-block; font-size:.75rem; padding:.15em .5em; border:1px solid var(--line); border-radius: 999px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Anaesthesia Associates — Data Model &amp; End-to-End Flow</h1>
+  <p class="sub">A reading of the Candidate Architecture from the <em>Booking and Billing Systems Upgrade, RFP (Final), July 2026</em>. Candidate design — expected to be challenged and refined. <span class="badge">renders via mermaid.js CDN — needs internet on first open</span></p>
+</header>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ul>
+    <li><a href="#systems">Systems / actors</a></li>
+    <li><a href="#erd1">1 · Data model — Scheduling &amp; Master Data</a></li>
+    <li><a href="#erd2">2 · Data model — Billing Engine &amp; Xero</a></li>
+    <li><a href="#identity">2a · Patient identity &amp; Xero contact lifecycle</a></li>
+    <li><a href="#lifecycle">3 · List lifecycle (billing trigger)</a></li>
+    <li><a href="#flow">4 · End-to-end flow — Booking → Payment</a></li>
+    <li><a href="#open">5 · Design tensions / open questions</a></li>
+  </ul>
+</div>
+
+<h2 id="systems">Systems / actors at a glance</h2>
+<table>
+  <tr><th>System</th><th>Role</th></tr>
+  <tr><td><strong>Scheduling engine</strong></td><td>Owns the Schedule → Day → Anaesthetist → List → Card → Procedure tree ("the canvas").</td></tr>
+  <tr><td><strong>Anaesthetist mobile / web app</strong></td><td>Calendar + Card views, timesheet (BTM) capture, availability/locum, outstanding balances.</td></tr>
+  <tr><td><strong>Admin web app (office)</strong></td><td>Manual change handling, List sanity-check, authorisation, billing-flow monitoring (surface TBC — Admin app or a dedicated Billing Engine screen).</td></tr>
+  <tr><td><strong>Integration engine</strong></td><td>Ingests hospital bookings (HL7 v2 → FHIR R4; <em>target</em> FHIR-native, near real-time) + manual PDF/photo pathway.</td></tr>
+  <tr><td><strong>Billing engine</strong></td><td>The hub. Consumes AUTHORISED Lists, resolves billing, calculates fees, generates invoices.</td></tr>
+  <tr><td><strong>Xero (separate instance)</strong></td><td>AR + banking only. ACCREC (collect) / ACCPAY (disburse) pairs. Not general ledger.</td></tr>
+</table>
+
+<h2 id="erd1">1 · Data model — Scheduling &amp; Master Data</h2>
+<p class="sub"><code>Schedule → Day → Anaesthetist → List</code> is a fixed canvas (two Lists per anaesthetist per Day, rolling 4-month horizon). Status, Hospital, Surgeon and Cards are "painted onto" it. Master data is decoupled and referenced by ID.</p>
+<div class="diagram"><pre class="mermaid">
+erDiagram
+    SCHEDULE ||--o{ DAY : contains
+    DAY ||--o{ LIST : "2 per anaesthetist"
+    ANAESTHETIST ||--o{ LIST : "owns, reassignable"
+    LIST ||--o{ CARD : "time-ordered"
+    CARD ||--|{ PROCEDURE : "1..n"
+    PROCEDURE ||--|{ BILLING_LINE : "1..n"
+
+    LIST }o--|| LIST_STATUS : status
+    LIST }o--|| HOSPITAL : "located at"
+    LIST }o--o| SURGEON : "paired with"
+    CARD }o--|| PATIENT : "for, by NHI"
+    PROCEDURE }o--o| CONTRACT : "rate governed by (nullable)"
+    PROCEDURE }o--o| INSURER : "billed to, nullable"
+    PROCEDURE }o--o| PATIENT : "billable-party override"
+
+    CONTRACT }o--o| HOSPITAL : "held by"
+    CONTRACT }o--o| INSURER : "held by"
+    CONTRACT }o--o| SURGEON : "held by (bariatric, TMJ, ACC)"
+    CONTRACT ||--o{ CONTRACT_PRICE : "agreed price list"
+    HOSPITAL ||--o{ HOSPITAL_HOLIDAY : "closure calendar"
+    ANAESTHETIST ||--o{ PERMANENT_LIST : "standing arrangements"
+    ANAESTHETIST ||--o{ ANAESTHETIST_AVAILABILITY : "mobile-maintained"
+    PERMANENT_LIST ||..o{ LIST : "projects into"
+    ANAESTHETIST_AVAILABILITY }o..o{ LIST : "reconciled against"
+    HOSPITAL_HOLIDAY }o..o{ LIST : "reconciled against"
+    PROCEDURE }o..o| RVG_CODE : "base code"
+    PROCEDURE }o..o{ MODIFIER_CODE : modifiers
+
+    SCHEDULE {
+        int id PK
+    }
+    DAY {
+        int id PK
+        int scheduleId FK
+        date calendarDate
+    }
+    LIST {
+        int id PK
+        int dayId FK
+        int anaesthetistId FK
+        enum session "AM or PM"
+        enum state "DRAFT, SUBMITTED, AUTHORISED"
+        int statusId FK
+        int hospitalId FK
+        int surgeonId FK "nullable"
+        time startTime "default, overridable"
+        time endTime "default, overridable"
+    }
+    CARD {
+        int id PK
+        int listId FK
+        string patientNHI FK
+        time cardTime
+        enum cardType "primary, postOpAddendum, copy"
+        string billablePartyId FK "nullable, patient/guardian NHI"
+        string lastModifiedBy
+        datetime lastModifiedAt
+        string auditLog "append-only history"
+    }
+    PROCEDURE {
+        int id PK
+        int cardId FK
+        enum billingRoute "Hospital, BillableParty, Insurer"
+        int governingContractId FK "nullable, null on standard Billable Party"
+        int insurerId FK "nullable"
+        string billablePartyId FK "nullable, e.g. guardian NHI"
+        enum overrideType "none, fixedFee, dollarAdj, percentAdj"
+        decimal overrideValue "nullable"
+        string overrideReason "nullable"
+        bool isAdditional "split: 2nd+ procedure, time-only"
+        string rvgBaseCode "nullable"
+        datetime anaestheticStart
+        datetime handoverTime
+        string lastModifiedBy
+        datetime lastModifiedAt
+        string auditLog "append-only history"
+    }
+    BILLING_LINE {
+        int id PK
+        int procedureId FK
+        enum chargeBasis "RVG, fixed, rateXtime"
+        enum funder "nullable, overrides route for split funding"
+        int contractId FK "nullable, contract applied to this line"
+        decimal units "nullable"
+        decimal amount "computed snapshot"
+        string description "ancillary, ACC pre-op, hourly, etc"
+    }
+    ANAESTHETIST {
+        int id PK "registration no"
+        string name
+        string contact
+        decimal unitValue "own dollar per unit"
+    }
+    HOSPITAL {
+        int id PK
+        string name
+    }
+    SURGEON {
+        int id PK
+        string name
+    }
+    PATIENT {
+        string nhi PK
+        string hiddenInternalId UK "only id sent to Xero"
+        string name
+        date dob
+        string demographics
+    }
+    INSURER {
+        int id PK
+        string name "e.g. NIB"
+        bool acceptsDirectClaims
+    }
+    CONTRACT {
+        int id PK
+        string name "Default for type 1"
+        enum type "1 ref, 2 agreed, 3 fixed"
+        enum holderType "Hospital, Insurer, Surgeon, Group"
+        int hospitalId FK "nullable"
+        int insurerId FK "nullable"
+        int surgeonId FK "nullable, surgeon/group-held"
+        decimal rateOrDiscount "nullable"
+        decimal fixedPrice "nullable"
+        datetime effectiveFrom "reproducible historical billing"
+        datetime effectiveTo "nullable"
+    }
+    CONTRACT_PRICE {
+        int id PK
+        int contractId FK
+        string rvgBaseCode "nullable, procedure-type key"
+        int surgeonId FK "nullable"
+        int procedureOrdinal "nullable, 2nd-procedure rule"
+        enum basis "fixed, rateXtime, discount"
+        decimal value
+    }
+    LIST_STATUS {
+        int id PK
+        string description
+        string colour
+    }
+    PERMANENT_LIST {
+        int id PK
+        int hospitalId FK
+        int anaesthetistId FK
+        int surgeonId FK "nullable, see open question"
+        enum dayOfWeek
+        enum session "AM or PM"
+    }
+    ANAESTHETIST_AVAILABILITY {
+        int id PK
+        int anaesthetistId FK
+        date period
+        string status
+    }
+    HOSPITAL_HOLIDAY {
+        int id PK
+        int hospitalId FK
+        date closureDate
+    }
+    RVG_CODE {
+        string code PK
+        string description
+        string anatomicalSite
+        string baseUnits "single value or range"
+        string absorbsModifiers "e.g. prone positioning"
+    }
+    MODIFIER_CODE {
+        string code PK
+        string modifierGroup "PA, A, AS, ASE, OB, P, AI"
+        decimal units
+    }
+</pre></div>
+<ul>
+  <li><strong>The List is the unit of availability and of billing approval</strong> — availability varies independently between AM and PM.</li>
+  <li><strong>Card <em>and</em> Procedure carry full audit history</strong> — <code>lastModifiedBy/At</code> plus an append-only log on both entities (RFP Design Principle 10: billing route, governing Contract and overrides must all be historically reproducible). Contracts are <strong>effective-dated</strong> and billing lines store a computed <em>snapshot</em> amount, so an invoice re-renders against the rules in force when it was raised even after a Contract changes.</li>
+  <li><strong>A List can be reassigned</strong> to another anaesthetist at short notice without disturbing its Cards, status or audit trail.</li>
+  <li><strong>governingContract resolves for the Hospital and Insurer routes</strong> — every Hospital and direct-billing Insurer holds a default Type 1 Contract, so there is no "no contract found" branch on those routes. The <strong>Billable Party route has no Contract by default</strong> (standard rate + optional override); a Contract is attached only in the special case where one is set up to permit an individually-arranged structure (e.g. an hourly rate). Hence <code>governingContractId</code> is nullable.</li>
+  <li><strong>Overrides and agreed pricing are typed, not a bare number</strong> — <code>overrideType</code> distinguishes fixed fee / $ adjustment / % adjustment (RFP: "both agreed fixed fees and $ or % adjustments"). <code>CONTRACT_PRICE</code> holds agreed price lists keyed by procedure-type (RVG base code), Surgeon and/or procedure ordinal (2nd-procedure rules). Contracts may be held by a Hospital, Insurer <em>or</em> Surgeon/group (bariatric, TMJ, ACC).</li>
+  <li><code>PERMANENT_LIST</code> is the template; canvas <code>LIST</code> rows are generated instances. Availability/holiday calendars are reconciled against the canvas, not merged in.</li>
+</ul>
+
+<h2 id="erd2">2 · Data model — Billing Engine &amp; Xero</h2>
+<p class="sub">The Billing Engine references Card/Procedure by ID. Billing destination is resolved <strong>per Procedure</strong>, so one Card can yield multiple invoices — each creating a matched Xero ACCREC + draft ACCPAY pair, linked by GUID.</p>
+<div class="diagram"><pre class="mermaid">
+erDiagram
+    CARD ||--o{ INVOICE : "1..n by counterparty"
+    INVOICE ||--|{ INVOICE_LINE : contains
+    PROCEDURE ||--o{ INVOICE_LINE : "billed on"
+    INVOICE ||--|| BILLING_CASE : "tracked by"
+    BILLING_CASE ||--|| XERO_ACCREC : "links via GUID"
+    BILLING_CASE ||--|| XERO_ACCPAY : "links via GUID"
+    XERO_ACCREC }o--|| XERO_CONTACT : "paying party"
+    XERO_ACCPAY }o--|| ANAESTHETIST : "payable to"
+    PATIENT ||--o| XERO_CONTACT : "resolves via hidden ID"
+    XERO_ACCREC ||--o{ PAYMENT_IN : "collected by"
+    XERO_ACCPAY ||--o{ DISBURSEMENT : "settled by"
+
+    INVOICE {
+        int id PK
+        string invoiceNumber UK "remittance match key"
+        string caseReference "internal display only"
+        int cardId FK
+        enum counterparty "Hospital, Insurer, Patient"
+        enum timing "postProcedure, prePayment, balance"
+        decimal total
+        datetime emailedAt "sent from Billing Engine"
+    }
+    INVOICE_LINE {
+        int id PK
+        int invoiceId FK
+        int procedureId FK
+        decimal amount
+    }
+    BILLING_CASE {
+        int id PK
+        int cardId FK
+        string accrecGuid "Xero GUID"
+        string accpayGuid "Xero GUID"
+        string invoiceNumber
+    }
+    XERO_ACCREC {
+        string guid PK
+        string contactId FK
+        string invoiceNumber UK "duplicate-prevention on"
+        string reference "internal CaseReference"
+        enum status "AUTHORISED, PAID, etc"
+        decimal amount
+    }
+    XERO_ACCPAY {
+        string guid PK
+        int anaesthetistId FK
+        enum status "DRAFT then AUTHORISED"
+        decimal amount "undiscounted payable"
+    }
+    XERO_CONTACT {
+        string contactId PK "Xero key, primary billing id"
+        string contactNumber UK "hidden internal ID"
+        bool archived
+    }
+    PAYMENT_IN {
+        int id PK
+        string accrecGuid FK
+        decimal amount "supports partials"
+        date receivedDate "into AA account"
+    }
+    DISBURSEMENT {
+        int id PK
+        string accpayGuid FK
+        int anaesthetistId FK
+        decimal amount
+        date paidDate
+        string payablesRunId
+    }
+</pre></div>
+<ul>
+  <li><strong>InvoiceNumber is the reconciliation key</strong> (quoted on remittances); Reference/CaseReference is display-only. AA prefers ACCREC/ACCPAY numbers to be similar for human matching.</li>
+  <li><strong>Two-state money model:</strong> invoice paid (into AA) and disbursed to anaesthetist are separate states — AA operates like a trust account. Direct-to-anaesthetist hospital payments are retired.</li>
+  <li><strong>Payment detection:</strong> Xero webhook (primary) + daily poll (safety net), idempotent by InvoiceID. Paid ACCREC flips ACCPAY DRAFT → AUTHORISED. Partials pass through pro-rata.</li>
+  <li><strong>Bulk remittance &amp; bank rec</strong> stay in Xero — out of scope beyond reliable InvoiceNumber.</li>
+</ul>
+
+<h3 id="identity">2a · Patient identity &amp; Xero contact lifecycle</h3>
+<p class="sub">Three identifiers, each scoped to one system, keep Xero performant (~10k active-contact soft limit vs ~28k invoices/yr, ~99% one-time) while the NHI never leaves the practice system.</p>
+<div class="diagram"><pre class="mermaid">
+flowchart TD
+    INTAKE["Patient intake"] --> VAL["PMS validates against NHI<br/>dedupe prior episodes + credit check"]
+    VAL --> CACHE{"PMS holds cached<br/>Xero ContactID for hidden ID?"}
+    CACHE -->|yes| USE["Use cached ContactID<br/>no Xero query"]
+    CACHE -->|no| QUERY["GET /Contacts where<br/>ContactNumber == hidden_id"]
+    QUERY --> EXISTS{"Contact exists in Xero?"}
+    EXISTS -->|yes| CACHEIT["Cache ContactID"]
+    EXISTS -->|no| CREATE["Create Xero contact<br/>ContactNumber = hidden_id<br/>NHI never sent"]
+    CREATE --> CACHEIT
+    USE --> BAL["GET /Invoices AUTHORISED<br/>surface unpaid balances at check-in"]
+    CACHEIT --> BAL
+    BAL --> INV["Raise invoice against ContactID"]
+    INV --> ARCH["Scheduled job (nightly/weekly): archive<br/>once fully paid + inactivity window (e.g. 90d)"]
+
+    classDef xero fill:#e6f4ea,stroke:#34a853,color:#111;
+    class QUERY,CREATE,BAL,INV,ARCH xero;
+</pre></div>
+<div class="warn">⚠ <strong>RFP inconsistency to resolve:</strong> the "separating clinical and billing identifiers" section says NHI is kept as a cross-reference custom field on the Xero contact (searchable), whereas <strong>Appendix 2</strong> says the NHI never resides in Xero at all. The diagram follows Appendix 2 (stricter data-minimisation). Needs confirmation with AA.</div>
+
+<h2 id="lifecycle">3 · List lifecycle (the billing trigger)</h2>
+<p class="sub">Approval state lives on the List, not the Card. Reaching AUTHORISED locks the Cards and hands the whole List to the Billing Engine as one unit.</p>
+<div class="diagram"><pre class="mermaid">
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT: DRAFT - fully editable by anaesthetist, also updatable by office and integrations
+    SUBMITTED: SUBMITTED - editable by office only (OfficeAdmin), anaesthetist loses edit access
+    AUTHORISED: AUTHORISED - Cards locked, immutable
+
+    DRAFT --> DRAFT: anaesthetist edits Cards
+    DRAFT --> SUBMITTED: taps Completed, all Cards valid
+    SUBMITTED --> SUBMITTED: office corrections (issues resolved by phone)
+    SUBMITTED --> AUTHORISED: office signs off after sanity check
+    AUTHORISED --> [*]: handed to Billing Engine as a unit
+</pre></div>
+<ul>
+  <li><strong>No "Returned" state</strong> — Cards are never sent back to the anaesthetist; office resolves issues by phone.</li>
+  <li>The List <strong>drops off the mobile view at invoice generation</strong> (proposed trigger, to confirm — not merely at AUTHORISED). The List itself does not reappear; its resulting <strong>invoice line items</strong> (ACCPAY) surface next day in the flat outstanding-balance view.</li>
+</ul>
+
+<h2 id="flow">4 · End-to-end flow — Booking → Payment</h2>
+<div class="diagram"><pre class="mermaid">
+flowchart TD
+    PL["Permanent Lists<br/>standing arrangements"] --> RESERVE["List reserved for<br/>Surgeon at Hospital"]
+    ADHOC["Ad-hoc booking<br/>phone from surgeon rooms"] --> RESERVE
+
+    RESERVE --> CARDS["Cards created / updated<br/>mutable until procedure day"]
+    HOSPINT["Hospital PAS<br/>HL7 v2 SIU S12/13/14/15<br/>or FHIR R4"] --> INTENG["Integration engine<br/>HL7 to FHIR (target: FHIR-native)<br/>near real-time"]
+    INTENG --> CARDS
+    PDFDOC["Surgeon emails PDF list"] --> PDFREAD["PDF reader<br/>read / edit / ingest"]
+    PDFREAD --> CARDS
+    MOBADD["Anaesthetist ad-hoc Card<br/>photo capture, processed"] --> CARDS
+
+    CARDS --> PREPAY{"Self-funded<br/>pre-payment required?"}
+    PREPAY -->|yes| PREINV["Pre-procedure invoice<br/>collect full/part BEFORE surgery"]
+    PREPAY -->|no| BTM["Day of procedure — mobile capture<br/>base code, start/handover, modifiers, ASA"]
+    PREINV --> BTM
+
+    BTM --> SUBMIT["List flagged SUBMITTED<br/>app validates minimum billing data"]
+    SUBMIT --> OFFICE["Office sanity-check<br/>Contract, Insurer, references"]
+    OFFICE -->|issue found| PHONE["Resolved by phone<br/>no return-to-anaesthetist"]
+    PHONE --> OFFICE
+    OFFICE --> AUTH["List AUTHORISED<br/>Cards LOCK, immutable"]
+
+    AUTH --> ROUTE{"Resolve billing route<br/>per Procedure"}
+    ROUTE -->|Hospital| RATEC["Look up governing Contract<br/>Type 1 / 2 / 3"]
+    ROUTE -->|Insurer| RATEC
+    ROUTE -->|Billable Party| RATEBP["Standard rate + optional override<br/>no Contract, unless one permits<br/>an individual arrangement"]
+
+    RATEC --> BASIS{"Charge basis?"}
+    RATEBP --> BASIS
+    BASIS -->|"RVG / BTM"| CALCB["Base + Time T1/T2 + Modifiers<br/>x anaesthetist unit value"]
+    BASIS -->|Fixed fee| CALCF["Agreed fixed price<br/>Type 3 / price list"]
+    BASIS -->|"Rate x time"| CALCR["Agreed hourly rate x time<br/>Contract-permitted"]
+
+    CALCB --> SPLIT{"Split billing?"}
+    CALCF --> SPLIT
+    CALCR --> SPLIT
+    SPLIT -->|"multiple procedures"| SPLITP["2nd+ procedure:<br/>time units ONLY"]
+    SPLIT -->|"one procedure, two funders"| SPLITF["Allocate per funder<br/>line-level counterparty"]
+    SPLIT -->|no| GROUP["Group Procedures / lines by<br/>counterparty, per Card"]
+    SPLITP --> GROUP
+    SPLITF --> GROUP
+
+    GROUP --> EMAIL["Generate + EMAIL invoice(s)<br/>from Billing Engine"]
+    EMAIL --> XPAIR["Xero: ACCREC collect<br/>+ ACCPAY draft to anaesthetist<br/>linked by GUID"]
+    XPAIR --> DROP["List drops off mobile;<br/>invoice line items appear next day<br/>in outstanding-balance view"]
+
+    XPAIR --> PAYIN["Payment into AA account"]
+    PAYIN --> DETECT["Xero webhook INVOICE event<br/>+ daily reconciliation poll"]
+    DETECT --> FLIP["ACCREC paid: ACCPAY to AUTHORISED<br/>partials passed through pro-rata"]
+    FLIP --> DISB["Payables run —<br/>AA disburses to anaesthetist"]
+    DISB --> TRUST["Two tracked states:<br/>invoice paid + disbursed<br/>AA acts as trust account"]
+
+    AUTH -.-> POSTOP["Post-op events days later<br/>PACU/HDU/ward, pain consult"]
+    POSTOP -.-> POSTC["New Card / addendum (original stays locked)<br/>own authorise + bill cycle"]
+
+    classDef ext fill:#e8f0fe,stroke:#4285f4,color:#111;
+    classDef money fill:#e6f4ea,stroke:#34a853,color:#111;
+    classDef lock fill:#fce8e6,stroke:#ea4335,color:#111;
+    class HOSPINT,INTENG,PDFDOC,PDFREAD,MOBADD,ADHOC ext;
+    class PAYIN,DETECT,FLIP,DISB,TRUST,PREINV money;
+    class AUTH,SPLITP lock;
+</pre></div>
+
+<h3>Narrative walk-through</h3>
+<ol>
+  <li><strong>Origination</strong> — a List is reserved for a surgeon at a hospital, from a Permanent List or ad-hoc by phone. (The ~80% figure in the RFP is the share of <em>Surgeon assignments</em> defined by the Permanent List vs. assigned manually by office staff — not a List-origination split.)</li>
+  <li><strong>Card population</strong> — Cards fill over weeks via hospital integration (HL7 v2 → FHIR; target FHIR-native, near real-time), emailed PDF lists (read/edit/ingest — OCR only implied for the photo path), or ad-hoc mobile entry (incl. photo, processed). Cards stay mutable to the day.</li>
+  <li><strong>Pre-payment (if required)</strong> — for a self-funded patient flagged "full/split pre-payment required", a pre-procedure invoice is raised and payment collected <em>before</em> surgery; any balance follows the normal post-procedure path. (Note the timing tension with the AUTHORISED-triggered billing below — see §5.)</li>
+  <li><strong>Data capture</strong> — on the day, BTM data per Procedure (base RVG code, start/handover times, modifiers; ASA seeds the modifier field).</li>
+  <li><strong>Submit → Authorise</strong> — anaesthetist marks List SUBMITTED (app enforces minimum data); office sanity-checks and marks AUTHORISED, locking Cards.</li>
+  <li><strong>Billing Engine</strong> — resolves counterparty per Procedure; for Hospital/Insurer looks up the governing Contract (Type 1/2/3), for Billable Party applies the standard rate + optional override (no Contract unless one permits an individual arrangement). Computes the fee by charge basis — RVG/BTM (T1/T2 breakpoint at 2 hrs, base capped at one), agreed fixed fee, or rate×time. Enforces both split-billing forms — multiple procedures (2nd+ = time only) and one procedure across two funders (per-funder billing lines → two invoices) — then groups by counterparty.</li>
+  <li><strong>Invoicing + Xero</strong> — invoices generated and emailed from the Billing Engine (supports the GST agency relationship); matched ACCREC + draft ACCPAY created in Xero, linked by GUID. The List drops off mobile; its invoice line items surface next day in outstanding balances.</li>
+  <li><strong>Payment + disbursement</strong> — payment lands in AA; webhook + daily poll flips ACCPAY to AUTHORISED; payables run disburses to the anaesthetist. "Paid" and "disbursed" tracked separately.</li>
+  <li><strong>Post-operative charges</strong> — pain consults, HDU/ward reviews, nerve catheters etc. can arise days later. Because the original Card is immutable once locked, these are captured as a new Card/addendum (<code>cardType = postOpAddendum</code>) that runs its own authorise → bill cycle. (Mechanism to confirm — see §5.)</li>
+</ol>
+
+<h2 id="open">5 · Design tensions / open questions to resolve in discovery</h2>
+<ul>
+  <li><strong>NHI in Xero — RFP contradiction</strong> (see 2a): Appendix 1 (searchable cross-reference field on the Xero contact) vs. Appendix 2 (never in Xero). Model follows Appendix 2; needs a ruling.</li>
+  <li><strong>Billing trigger vs pre-payment — RFP contradiction</strong>: billing is triggered at AUTHORISED (after the procedure), yet self-funded pre-payment must be collected <em>before</em> surgery. Confirm how/when the pre-procedure invoice is raised relative to the AUTHORISED handoff.</li>
+  <li><strong>Immutable Cards vs post-op charges — RFP contradiction</strong>: Cards lock at AUTHORISED and hand off as a unit, but post-op charges arise days later. Confirm the addendum / new-Card mechanism and how it re-bills.</li>
+  <li><strong>One route per Procedure vs two-funder split — RFP contradiction</strong>: "each Procedure resolves to exactly one route" vs. a single procedure split across two funders (two invoices). Modelled here via a per-line <code>funder</code>; confirm intent.</li>
+  <li><strong>Billable Party Contract — RFP contradiction</strong>: "no Contract applies" to the Billable Party route vs. Method 3 requiring the Billable Party to hold a Contract permitting an hourly arrangement. Modelled as a nullable Contract; confirm.</li>
+  <li><strong>Permanent List surgeon</strong>: the narrative implies the Permanent List defines the surgeon (~80%), but the RFP field list omits it. Added here as nullable <code>surgeonId</code>; confirm.</li>
+  <li><strong>Billable-party (guardian) identity</strong>: <code>billablePartyId</code> references Patient by NHI, but a guardian paying for a minor may not be a patient — confirm how non-patient payers are identified/keyed.</li>
+  <li><strong>Concurrency</strong> — a Card/Procedure edited simultaneously by integration + mobile app.</li>
+  <li><strong>List reassignment mechanism</strong> — preserving Cards, status and audit history.</li>
+  <li><strong>Availability vs holiday reconciliation</strong> — hard constraint, soft warning, or advisory?</li>
+  <li><strong>Card- vs List-level billing failure</strong> — does one failed Card block the whole List?</li>
+  <li><strong>Where office billing-flow monitoring lives</strong> — Admin Web App vs dedicated Billing Engine admin surface.</li>
+  <li><strong>Exact "List disappears from mobile" trigger</strong> — proposed as invoice generation, to be confirmed and locked down.</li>
+  <li><strong>Hospital route non-payment</strong> — fallback to the Billable Party, or is the Hospital route final?</li>
+  <li><strong>Insurer route scaling</strong> — whether direct-insurer billing needs its own rate structure.</li>
+  <li><strong>Second-procedure &amp; group pricing rules</strong> — <code>CONTRACT_PRICE</code> supports keys by procedure-type/surgeon/ordinal, but group-held contracts (e.g. COS) may need a first-class Group entity; capture detailed rules.</li>
+  <li><strong>NHI dual-format</strong> (Appendix 1) — support both old (mod-24) and new (mod-23, alphanumeric) by 1 July 2027.</li>
+</ul>
+
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  // Diagrams are always rendered on a fixed light "paper" card (see .diagram CSS),
+  // independent of the page's own light/dark mode. This is deliberate: the flowchart
+  // uses custom classDef fills (pastel pink/green/blue highlight boxes) with dark text,
+  // and mermaid's built-in dark theme forces light text on all nodes, which made that
+  // dark text unreadable against the light pastel fills. Pinning the theme avoids that
+  // clash entirely rather than fighting mermaid's per-theme text-color specificity.
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      fontSize: '17px',
+      background: '#ffffff',
+      primaryColor: '#f7f8fa',
+      primaryTextColor: '#111111',
+      primaryBorderColor: '#6b7280',
+      secondaryColor: '#eef1f4',
+      secondaryTextColor: '#111111',
+      tertiaryColor: '#ffffff',
+      tertiaryTextColor: '#111111',
+      lineColor: '#333333',
+      textColor: '#111111',
+      nodeTextColor: '#111111',
+      mainBkg: '#f7f8fa',
+      nodeBorder: '#6b7280',
+      clusterBkg: '#f0f2f5',
+      edgeLabelBackground: '#ffffff',
+      attributeBackgroundColorOdd: '#f7f8fa',
+      attributeBackgroundColorEven: '#ffffff'
+    },
+    // useMaxWidth:true was shrinking large diagrams to fit the ~1000px prose column —
+    // e.g. the scheduling ER diagram was rendering at 16% scale (~2.6px effective text,
+    // which reads as faint grey fuzz even though the underlying colour is near-black).
+    // false renders every diagram at native size (crisp, readable text); the .diagram
+    // container scrolls horizontally for anything still wider than the viewport.
+    er: { useMaxWidth: false },
+    flowchart: { useMaxWidth: false },
+    state: { useMaxWidth: false }
+  });
+
+  await mermaid.run({ querySelector: '.mermaid' });
+
+  // Only show the scroll hint where the diagram actually overflows its container.
+  document.querySelectorAll('.diagram').forEach(d => {
+    if (d.scrollWidth > d.clientWidth + 2) {
+      const hint = document.createElement('div');
+      hint.className = 'diagram-scroll-hint';
+      hint.textContent = '↔ scroll to see the full diagram';
+      d.after(hint);
+    }
+  });
+</script>
+</body>
+</html>

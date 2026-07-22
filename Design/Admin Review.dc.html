@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F8F7}
+a{color:#0D6E63}a:hover{color:#084A43}
+@keyframes bannerIn{0%{opacity:0;transform:translateY(-8px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes tickDraw{to{stroke-dashoffset:0}}
+</style>
+</helmet>
+<div data-screen-label="Admin — List authorisation review" style="min-height:100vh;min-width:1280px;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320;display:flex">
+
+  <!-- Side nav -->
+  <div style="width:216px;flex:none;background:#172320;display:flex;flex-direction:column;padding:20px 12px;gap:24px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+      <div style="display:flex;flex-direction:column">
+        <span style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:16px;color:#FFFFFF">Anaesthesia Associates</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:0.14em;color:#D89AA9">ADMIN</span>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <a href="Admin Day.dc.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);text-decoration:none" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Day view</a>
+      <span style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,0.08);box-shadow:inset 3px 0 0 #A91E3E;font-size:13.5px;font-weight:600;color:#FFFFFF">Review queue<span style="background:#A91E3E;color:#FFFFFF;border-radius:999px;font-size:11px;font-weight:700;padding:2px 8px">{{ queueCount }}</span></span>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Anaesthetists</span>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Accounts</span>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Reports</span>
+    </nav>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px">
+      <div style="width:30px;height:30px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#A91E3E">KW</div>
+      <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:#FFFFFF">Kirsty W.</span><span style="font-size:11px;color:rgba(255,255,255,0.5)">Office</span></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div style="flex:1;min-width:0;padding:24px 28px 40px;display:flex;flex-direction:column;gap:16px">
+    <div style="font-size:13px;color:#58635F"><a href="#" style="text-decoration:none;font-weight:600">Review queue</a> <span style="color:#C9D1CE">/</span> Dr Melanie Souter — Southern Cross PM</div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h1 style="margin:0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.01em">Southern Cross — PM list</h1>
+        <div style="font-size:13px;color:#58635F;margin-top:4px">Dr Melanie Souter · Ms K. Patel · General surgery · Tue 21 Jul, 13:00–17:30</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="display:inline-flex;align-items:center;gap:6px;background:#E8EEFC;border-radius:999px;padding:6px 12px"><span style="width:7px;height:7px;border-radius:99px;background:#2E66E5"></span><span style="font-size:12px;font-weight:600;color:#1F44A3">Private</span></span>
+        <span style="padding:6px 12px;border-radius:999px;background:#F9F0DC;font-size:12px;font-weight:600;color:#7C4D08">Submitted today, 17:42</span>
+      </div>
+    </div>
+
+    <!-- authorised banner -->
+    <sc-if value="{{ authorised }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:12px;background:#E3F4EB;border:1px solid #BFE5CE;border-radius:14px;padding:14px 18px;animation:bannerIn 260ms cubic-bezier(0.2,0.8,0.2,1)">
+        <span style="width:34px;height:34px;border-radius:99px;background:#1E8E5A;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 14 14"><path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="16" stroke-dashoffset="16" style="animation:tickDraw 360ms cubic-bezier(0.65,0,0.35,1) 100ms forwards"></path></svg></span>
+        <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:15px;font-weight:700;color:#157A49">List authorised — locked for billing</span><span style="font-size:12.5px;color:#157A49;opacity:0.85">Tue 21 Jul, 09:14 · Kirsty W. · Invoices will be raised in tonight's run</span></span>
+        <a href="#" style="font-size:13px;font-weight:600;text-decoration:none;flex:none">Next in queue →</a>
+      </div>
+    </sc-if>
+
+    <!-- summary strip -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:12px;padding:14px 16px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">CARDS</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:4px">4</div></div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:12px;padding:14px 16px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">TOTAL UNITS</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:4px">41</div></div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:12px;padding:14px 16px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">TOTAL FEE</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:4px">$1,086.50</div></div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:12px;padding:14px 16px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">FLAGS</div><div style="display:flex;align-items:baseline;gap:8px;margin-top:4px"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:22px;font-weight:700;color:#7C4D08">2</span><span style="font-size:12px;color:#58635F">to check before authorising</span></div></div>
+    </div>
+
+    <!-- review table -->
+    <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05);transition:opacity 300ms;opacity:{{ tableOpacity }}">
+      <div style="display:grid;grid-template-columns:56px 1.6fr 0.8fr 1fr 0.9fr 1.1fr 0.9fr 0.6fr 0.8fr 1.6fr;gap:0 12px;padding:10px 20px;border-bottom:1px solid #E2E7E5;background:#F6F8F7">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">TIME</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">PATIENT</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">ROUTE</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">CONTRACT</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">CODE</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">TIMES</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">B · T · M</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:right">UNITS</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:right">FEE</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">FLAGS</span>
+      </div>
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:56px 1.6fr 0.8fr 1fr 0.9fr 1.1fr 0.9fr 0.6fr 0.8fr 1.6fr;gap:0 12px;align-items:center;padding:12px 20px;border-bottom:1px solid #EDF1EF" style-hover="background:#FBFCFB">
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#58635F">{{ c.time }}</span>
+          <span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ c.name }}</span><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">{{ c.nhi }} · {{ c.op }}</span></span>
+          <span style="font-size:12.5px;color:#172320">{{ c.route }}</span>
+          <span style="font-size:12.5px;color:#172320">{{ c.contract }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12.5px;font-weight:600;color:#0D6E63">{{ c.code }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12.5px;font-variant-numeric:tabular-nums">{{ c.times }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12.5px;font-variant-numeric:tabular-nums;color:#58635F">{{ c.btm }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ c.units }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">{{ c.fee }}</span>
+          <span style="display:flex;align-items:center;gap:6px;min-height:24px">
+            <span style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:{{ c.flagBg }};color:{{ c.flagC }};display:{{ c.flagDisp }}">{{ c.flag }}</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" style="display:{{ lockDisp }};flex:none"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="none" stroke="#8A9490" stroke-width="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="#8A9490" stroke-width="2"></path></svg>
+          </span>
+        </div>
+      </sc-for>
+      <div style="display:grid;grid-template-columns:56px 1.6fr 0.8fr 1fr 0.9fr 1.1fr 0.9fr 0.6fr 0.8fr 1.6fr;gap:0 12px;align-items:center;padding:12px 20px;background:#F6F8F7">
+        <span></span><span style="font-size:13px;font-weight:700">Totals</span><span></span><span></span><span></span><span></span><span></span>
+        <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:700;text-align:right">41</span>
+        <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:700;text-align:right">$1,086.50</span>
+        <span style="font-size:11.5px;color:#8A9490">@ $26.50/unit</span>
+      </div>
+    </div>
+
+    <!-- action bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px 20px;box-shadow:0 2px 4px rgba(23,35,32,0.06),0 8px 20px rgba(23,35,32,0.09)">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:14px;font-weight:600">4 cards · 41 units · $1,086.50</span>
+        <span style="font-size:12px;color:#58635F;display:{{ noteDisp }}">Phone note logged 09:12 — confirmed age modifier with Dr Souter.</span>
+        <span style="font-size:12px;color:#58635F;display:{{ preNoteDisp }}">2 flags open — check or note them before authorising.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <sc-if value="{{ notAuthorised }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ logNote }}" style="height:44px;padding:0 18px;border-radius:12px;border:1px solid #0D6E63;background:#FFFFFF;color:#0D6E63;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#E1F0ED">Log phone note</button>
+          <button onClick="{{ authorise }}" style="height:44px;padding:0 24px;border-radius:12px;border:none;background:#0D6E63;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(23,35,32,0.06),0 8px 20px rgba(23,35,32,0.09)" style-hover="background:#0A5A51" style-active="transform:scale(0.985)">Authorise for billing</button>
+        </sc-if>
+        <sc-if value="{{ authorised }}" hint-placeholder-val="{{ false }}">
+          <span style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:12px;background:#E3F4EB;color:#157A49;font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="none" stroke="#157A49" stroke-width="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="#157A49" stroke-width="2"></path></svg>Authorised · locked</span>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:#8A9490">Sample page 6 of 6 — Admin · List authorisation · <a href="Design Language.dc.html">Design Language</a> · <a href="Web Dashboard.dc.html">Dashboard</a> · <a href="Web Availability.dc.html">Availability</a> · <a href="Admin Day.dc.html">Admin day</a></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { authorised: false, noteLogged: false };
+  renderVals() {
+    const s = this.state;
+    const card = (time, name, nhi, op, route, contract, code, times, btm, units, fee, flag, warn) => ({
+      time, name, nhi, op, route, contract, code, times, btm, units, fee,
+      flag: flag || '', flagDisp: flag ? 'inline-block' : 'none',
+      flagBg: warn ? '#F9F0DC' : '#EDF1EF', flagC: warn ? '#7C4D08' : '#58635F',
+    });
+    return {
+      queueCount: s.authorised ? '2' : '3',
+      cards: [
+        card('13:02', 'Wiremu Tane', 'ZBC1123', 'Lap cholecystectomy', 'GA', 'Southern Cross', '20941', '13:02–14:18', '6 · 6 · 0', '12', '$318.00', '', false),
+        card('14:20', 'Susan Marsh', 'ZAD2210', 'Knee arthroscopy R', 'GA', 'nib', '49558', '14:20–15:05', '4 · 3 · 0', '7', '$185.50', '', false),
+        card('15:12', 'David Chen', 'ZAE0311', 'Inguinal hernia repair', 'Spinal', 'Self-pay', '49115', '15:12–15:58', '5 · 4 · 0', '9', '$238.50', 'T adjusted +1 manually', false),
+        card('16:05', 'Margaret Ellison', 'ZAA0067', 'Total hip replacement L', 'Spinal + sed.', 'Southern Cross', '47516', '16:05–17:20', '7 · 5 · 1', '13', '$344.50', 'Duration above median for 47516', true),
+      ],
+      authorised: s.authorised, notAuthorised: !s.authorised,
+      tableOpacity: s.authorised ? '0.72' : '1',
+      lockDisp: s.authorised ? 'inline-block' : 'none',
+      noteDisp: s.noteLogged ? 'block' : 'none',
+      preNoteDisp: !s.noteLogged && !s.authorised ? 'block' : 'none',
+      logNote: () => this.setState({ noteLogged: true }),
+      authorise: () => this.setState({ authorised: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

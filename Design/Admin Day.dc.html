@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F6F8F7}a{color:#0D6E63}a:hover{color:#084A43}</style>
+</helmet>
+<div data-screen-label="Admin — One-day dashboard" style="min-height:100vh;min-width:1320px;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320;display:flex">
+
+  <!-- Side nav -->
+  <div style="width:216px;flex:none;background:#172320;display:flex;flex-direction:column;padding:20px 12px;gap:24px;min-height:100vh;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+      <div style="display:flex;flex-direction:column">
+        <span style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:16px;color:#FFFFFF">Anaesthesia Associates</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:0.14em;color:#D89AA9">ADMIN</span>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,0.08);box-shadow:inset 3px 0 0 #A91E3E;font-size:13.5px;font-weight:600;color:#FFFFFF">Day view</span>
+      <a href="Admin Review.dc.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);text-decoration:none" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Review queue<span style="background:#A91E3E;color:#FFFFFF;border-radius:999px;font-size:11px;font-weight:700;padding:2px 8px">3</span></a>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Anaesthetists</span>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Accounts</span>
+      <span style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer" style-hover="background:rgba(255,255,255,0.06);color:#FFFFFF">Reports</span>
+    </nav>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px">
+      <div style="width:30px;height:30px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#A91E3E">KW</div>
+      <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:#FFFFFF">Kirsty W.</span><span style="font-size:11px;color:rgba(255,255,255,0.5)">Office</span></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div style="flex:1;min-width:0;padding:24px 28px 40px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.01em">Tuesday 21 July 2026</h1>
+        <div style="font-size:13px;color:#58635F;margin-top:2px">14 anaesthetists · 22 sessions · 5 free · 2 lists submitted today</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button style="width:36px;height:36px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:15px" style-hover="background:#EDF1EF">‹</button>
+        <button style="height:36px;padding:0 14px;border-radius:10px;border:1px solid #0D6E63;background:#FFFFFF;color:#0D6E63;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#E1F0ED">Today</button>
+        <button style="width:36px;height:36px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:15px" style-hover="background:#EDF1EF">›</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <!-- Day grid -->
+      <div style="flex:1;min-width:0;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+        <div style="display:flex;padding:8px 0;border-bottom:1px solid #E2E7E5;background:#F6F8F7">
+          <span style="width:148px;flex:none;padding-left:16px;font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;box-sizing:border-box">ANAESTHETIST</span>
+          <span style="flex:1;display:flex">
+            <span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">07:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">08:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">09:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">10:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">11:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">12:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">13:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">14:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">15:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">16:00</span><span style="flex:1;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">17:00</span>
+          </span>
+        </div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+          <div style="display:flex;align-items:stretch;border-bottom:1px solid #F1F4F2" style-hover="background:#FBFCFB">
+            <span style="width:148px;flex:none;display:flex;align-items:center;padding-left:16px;font-size:12.5px;font-weight:600;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+            <span style="flex:1;position:relative;height:44px;display:block;background-image:repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)">
+              <sc-for list="{{ r.blocks }}" as="b" hint-placeholder-count="2">
+                <span style="position:absolute;top:4px;bottom:4px;box-sizing:border-box;border-radius:6px;padding:3px 6px 3px 8px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;left:{{ b.left }};width:{{ b.width }};background:{{ b.bg }};border:{{ b.border }};box-shadow:{{ b.barSh }}">
+                  <span style="font-size:10.5px;line-height:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.tc }}">{{ b.l1 }}</span>
+                  <span style="font-size:9.5px;line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.tc }};opacity:0.75">{{ b.l2 }}</span>
+                  <span style="position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:99px;background:#C26A0E;color:#FFFFFF;font-size:9px;font-weight:700;align-items:center;justify-content:center;display:{{ b.flagDisp }}">!</span>
+                  <span style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:99px;background:#172320;opacity:0.55;display:{{ b.noteDisp }}"></span>
+                </span>
+              </sc-for>
+            </span>
+          </div>
+        </sc-for>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 16px;background:#F6F8F7">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:#2E66E5"></span>Private</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:#6E56CF"></span>Public</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:#C26A0E"></span>Pre-op</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:#D25C74"></span>Holiday</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:repeating-linear-gradient(135deg,#64716C 0 3px,#59655F 3px 6px)"></span>Unavailable</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:9px;height:9px;border-radius:3px;background:#1FA463"></span>Free</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:13px;height:13px;border-radius:99px;background:#C26A0E;color:#FFFFFF;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">!</span>Needs attention</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#58635F"><span style="width:7px;height:7px;border-radius:99px;background:#172320;opacity:0.55"></span>Has note</span>
+        </div>
+      </div>
+
+      <!-- Right rail -->
+      <div style="width:256px;flex:none;display:flex;flex-direction:column;gap:14px">
+        <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px"><span style="font-size:14px;font-weight:600">July 2026</span><span style="font-size:11px;color:#8A9490">week 30</span></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">
+            <span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">M</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">T</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">W</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">T</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">F</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">S</span><span style="font-size:9.5px;font-weight:600;color:#8A9490;padding:3px 0">S</span>
+            <sc-for list="{{ cal }}" as="d" hint-placeholder-count="35">
+              <span style="font-size:11px;line-height:24px;height:24px;border-radius:6px;font-weight:{{ d.fw }};color:{{ d.c }};background:{{ d.bg }}">{{ d.d }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:600">Internal notes</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:2px;border-left:3px solid #E2E7E5;padding-left:10px"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">08:12 · KW</span><span style="font-size:12.5px;line-height:18px;color:#172320">Dr Delaney on call for ICU tonight — keep his PM free.</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;border-left:3px solid #E2E7E5;padding-left:10px"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">09:40 · RT</span><span style="font-size:12.5px;line-height:18px;color:#172320">St George's theatre 3 closed this PM — Ms Lim's list moved to theatre 5.</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;border-left:3px solid #C26A0E;padding-left:10px"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;color:#8A9490">11:05 · KW</span><span style="font-size:12.5px;line-height:18px;color:#172320">Fitzgerald PM — surgeon unconfirmed, chasing St George's booking office.</span></div>
+          </div>
+          <button style="height:36px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="background:#EDF1EF">+ Add note</button>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:14px;font-weight:600">Awaiting review</div>
+          <a href="Admin Review.dc.html" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#F6F8F7;border-radius:10px;text-decoration:none" style-hover="background:#EDF1EF"><span style="display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:#172320">Souter — Southern Cross PM</span><span style="font-size:11px;color:#58635F">4 cards · submitted 17:42</span></span><span style="font-size:13px;font-weight:600;color:#0D6E63">Review →</span></a>
+          <a href="Admin Review.dc.html" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#F6F8F7;border-radius:10px;text-decoration:none" style-hover="background:#EDF1EF"><span style="display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:#172320">Morrison — St George's AM</span><span style="font-size:11px;color:#58635F">6 cards · submitted 13:10</span></span><span style="font-size:13px;font-weight:600;color:#0D6E63">Review →</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:#8A9490">Sample page 5 of 6 — Admin · Day view · <a href="Design Language.dc.html">Design Language</a> · <a href="Web Dashboard.dc.html">Dashboard</a> · <a href="Web Availability.dc.html">Availability</a> · <a href="Admin Review.dc.html">Admin review</a></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const C = {
+      private: { bg: '#E8EEFC', bar: '#2E66E5', tc: '#1F44A3' },
+      public: { bg: '#EEEBFA', bar: '#6E56CF', tc: '#4C3D96' },
+      preop: { bg: '#FBEFDF', bar: '#C26A0E', tc: '#8A4B09' },
+      holiday: { bg: '#FAE9ED', bar: '#D25C74', tc: '#A03A52' },
+      unavail: { bg: 'repeating-linear-gradient(135deg,#ECEFEE 0 5px,#E2E7E5 5px 10px)', bar: '#64716C', tc: '#4A5551' },
+      free: { bg: '#E3F6EC', bar: '#1FA463', tc: '#157A49' },
+    };
+    const blk = (start, end, st, l1, l2, opts = {}) => {
+      const c = C[st];
+      return {
+        left: ((start - 7) / 11 * 100).toFixed(2) + '%',
+        width: ((end - start) / 11 * 100).toFixed(2) + '%',
+        bg: c.bg, tc: c.tc,
+        border: st === 'free' ? '1.5px dashed #1FA463' : (opts.flag ? '1.5px solid #C26A0E' : '1px solid rgba(0,0,0,0)'),
+        barSh: 'inset 3px 0 0 ' + c.bar,
+        l1, l2: l2 || '',
+        flagDisp: opts.flag ? 'flex' : 'none',
+        noteDisp: opts.note ? 'block' : 'none',
+      };
+    };
+    const rows = [
+      { name: 'Souter, Melanie', blocks: [blk(7.5, 12.5, 'private', "St George's", 'Mr Hale · Ortho'), blk(13, 17.5, 'private', 'Southern Cross', 'Ms Patel · Gen surg', { note: true })] },
+      { name: 'Rutherford, James', blocks: [blk(8, 13, 'private', 'Forte Health', 'Mr Okafor · Gen surg'), blk(13.5, 17, 'private', 'Forte Health', 'Mr Okafor · Gen surg')] },
+      { name: 'Sharma, Priya', blocks: [blk(7.5, 12, 'public', 'Chch Public', 'Acute theatre'), blk(13, 17.5, 'free', 'Free', 'open for cover')] },
+      { name: 'Ngata, Tom', blocks: [blk(8, 17, 'unavail', 'Not available', 'ICU on call')] },
+      { name: 'Beaumont, Sarah', blocks: [blk(7, 18, 'holiday', 'Annual leave', 'back Mon 27')] },
+      { name: 'Chen, Alistair', blocks: [blk(8, 12.5, 'private', 'Chch Eye Surgery', 'Mr Whitford'), blk(13, 16.5, 'private', 'Chch Eye Surgery', 'Ms Reid')] },
+      { name: 'Ropata, Hannah', blocks: [blk(7.5, 12.5, 'public', 'Chch Public', 'Elective ortho'), blk(13, 17.5, 'public', 'Chch Public', 'Elective ortho')] },
+      { name: 'Delaney, Mark', blocks: [blk(9, 12, 'preop', 'Pre-op clinic', 'AA rooms'), blk(13, 17.5, 'free', 'Free', 'keep free — on call', { note: true })] },
+      { name: 'Fitzgerald, Emma', blocks: [blk(7.5, 12.5, 'private', 'Southern Cross', 'Mr Doyle · Gen surg'), blk(13, 17.5, 'private', "St George's", 'surgeon TBC', { flag: true })] },
+      { name: 'Hughes, Rawiri', blocks: [blk(7.5, 12.5, 'free', 'Free', ''), blk(13, 17.5, 'free', 'Free', '')] },
+      { name: 'Morrison, Kate', blocks: [blk(8, 13, 'private', "St George's", 'Mr Tan · Urology'), blk(14, 18, 'private', 'Forte Health', 'Mr Nand · ENT')] },
+      { name: 'Whitaker, Ben', blocks: [blk(7.5, 12.5, 'public', 'Chch Public', 'Acute theatre'), blk(13, 17, 'preop', 'Pre-op clinic', 'AA rooms')] },
+      { name: 'Ngatai, Aroha', blocks: [blk(7, 18, 'holiday', 'Annual leave', 'back Wed 29')] },
+      { name: 'Strand, Oliver', blocks: [blk(8, 12, 'private', 'Chch Eye Surgery', 'Ms Reid'), blk(13, 17.5, 'free', 'Free', 'open for cover')] },
+    ];
+    const cal = [];
+    for (let i = 0; i < 2; i++) cal.push({ d: '', bg: 'rgba(0,0,0,0)', c: '#8A9490', fw: '400' });
+    for (let d = 1; d <= 31; d++) {
+      const dow = (d + 2) % 7; // 1 Jul 2026 = Wed
+      const sel = d === 21, wknd = dow === 0 || dow === 6;
+      cal.push({
+        d: String(d), fw: sel ? '700' : '400',
+        bg: sel ? '#A91E3E' : 'rgba(0,0,0,0)',
+        c: sel ? '#FFFFFF' : (wknd ? '#C9D1CE' : '#172320'),
+      });
+    }
+    return { rows, cal };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+# AA Booking & Billing Prototype — Requirements
+
+**Purpose:** a fully interactive, true-to-life front-end demonstration of the Anaesthesia Associates
+Booking & Billing system described in the July 2026 RFP (Peritia Ltd / Greg Smith), backed by a
+fake/slim in-browser backend. It exists to demo every major feature and requirement in the RFP's
+Candidate Architecture during the vendor presentation workshops — it is **not** production software.
+
+**Source documents (read alongside this):**
+- `Anaesthesia Associates Request for Proposal[Final].pdf` / `RFP.md` — the RFP itself
+- `Data-Model-and-Flow.html` / `Data-Model-and-Flow.md` — our reading of the candidate data model, lifecycle and end-to-end flow
+
+---
+
+## 1. Prototype-specific requirements (the demo harness)
+
+These override anything implied by the RFP — they define what *kind* of artefact this is.
+
+- **P1. React.** Single-page app: Vite + React 18 + TypeScript (strict). No server: `npm run dev` and a static build are the only run modes.
+- **P2. Three apps, one shell.** The prototype presents the RFP's three user-facing apps — **Anaesthetist Mobile App**, **Anaesthetist Web App**, **Admin Web App** — inside one React app.
+- **P3. App switcher.** A persistent control in the top corner of the screen (dropdown) switches between the three apps at any time. No login screens; switching apps implicitly switches persona (a named demo anaesthetist for the two anaesthetist apps, an office-admin persona for the admin app). The switcher may also offer the demo-only surfaces (Billing Monitor, Xero simulator, Integrations) as secondary entries.
+- **P4. Mobile app in a frame.** When the Mobile App is selected, it renders inside a fixed-size phone frame (device bezel, status bar) floating centred on a neutral grey backdrop — at desktop browser resolution, with no browser resizing or devtools emulation required. The web/admin apps render full-width as normal desktop apps.
+- **P5. Fake backend.** All data lives in an in-memory store (single source of truth) seeded deterministically at startup, persisted to `localStorage` so a demo survives a refresh. A visible **Reset demo data** control restores the pristine seed. No network calls.
+- **P6. Deterministic demo clock.** "Today" is a pinned, configurable demo date (not the real system date) so the rolling 4-month schedule, "procedure day", and "invoice appears next day" behaviours are reproducible in every demo. A demo control can advance the clock (e.g. *next day*) to trigger time-based behaviour.
+- **P7. Demo control panel.** A small, clearly demo-only panel (kept visually separate from the three apps) to: reset data, advance the clock, fire simulated external events (hospital HL7 message, Xero payment webhook, integration failure), and jump to seeded scenario states.
+- **P8. True-to-life, not pixel-cloned.** Screens should be recognisably the *modernised* versions of the legacy screens in RFP Appendices 3–5 (same information architecture, better UX) — ease of use is the RFP's headline requirement, so the prototype must look clean, modern and simple, not like the legacy screenshots.
+- **P9. Real domain language.** Use RFP vocabulary everywhere: Schedule, Day, List, Card, Procedure, BTM, RVG, Contract (Types 1/2/3), ACCREC/ACCPAY, SUBMITTED/AUTHORISED, Billable Party, etc.
+- **P10. Believable seed data.** ~12–16 demo anaesthetists (structure must support 85), 5 hospitals (St George's, Southern Cross, Forte Health, Christchurch Eye Surgery, Christchurch Public), ~10 surgeons, one direct-claim insurer (NIB), a curated RVG code subset (~30 codes across anatomical sites, incl. range codes and position-absorbing codes), the modifier groups the RFP names (PA, A, AS, ASE, OB, P1, AI1, post-op) with demo-plausible unit values drawn from the RFP's stated ranges — labelled as such, not an authoritative NZSA schedule (a discovery item for AA to confirm) — contracts of all three types, permanent lists, hospital holidays, and a 4-month rolling canvas of Lists (2/day/anaesthetist) with Cards in various lifecycle states. All names/NHIs fictional.
+
+## 2. Domain model (the fake backend must implement)
+
+- **D1. Fixed canvas.** `Schedule → Day → Anaesthetist → List`: every active anaesthetist has exactly two Lists (AM, PM) for every day of a rolling 4-month horizon, regardless of activity. Status, Hospital, Surgeon and Cards are painted onto the canvas.
+- **D2. List.** Half-day session; fields: session AM/PM, lifecycle state (DRAFT/SUBMITTED/AUTHORISED), status (from List Status master: private, public, pre-op assessment, holiday, unavailable, free — with colours), hospital, surgeon (nullable), default overridable start/end times. **All-day bookings need no special entity** — per the RFP ("all day bookings simply use both lists"), a full-day booking is just the AM and PM Lists for that anaesthetist/day both carrying the same hospital/surgeon/status (times overridable if the AM session needs to run into the PM slot); Cards fall into whichever half their time lands in.
+- **D3. Card.** Appointment slot in a List, keyed to a Patient by NHI; time-ordered within the List; mutable from multiple sources (integration, office, anaesthetist) until locked; movable to a **different List** (office action, audited as a reassignment — distinct from D7's whole-List reassignment); `lastModifiedBy/At` plus **append-only audit log** of every change (who/what/when/source).
+- **D4. Procedure.** 1..n per Card; carries billing route (Hospital / Billable Party / Insurer), governing contract (nullable), insurer (nullable), billable-party override (e.g. guardian), price override (typed: fixed fee, $ adj, % adj — with reason), RVG base code, anaesthetic start/handover times, `isAdditional` flag for split billing, its own audit log, and 1..n BillingLines (chargeBasis: RVG / fixed / rate×time). **When `billingRoute = BillableParty`, a `patientPaymentCategory` field classifies which of the RFP's three patient categories applies** — `selfFundedPostProcedure` (invoiced and pays after), `selfFundedPrepayment` (full or split — see B7), or `insuredReimbursement` (privately insured, patient pays and claims back from their own insurer — distinct from the `Insurer` route, which is AA billing NIB directly). The category drives invoice wording and the pre-payment gate; it does not change the rating.
+- **D5. Master data by reference:** Hospital, Surgeon, Anaesthetist (incl. **own $/unit value** and HPI identifier), Patient (NHI + hidden internal ID), Insurer, Contract (+ contract price list), List Status, Permanent Lists, Anaesthetist Availability, Hospital Holiday calendar, RVG codes (some as ranges; flags for absorbed modifiers), Modifier codes. **Anaesthetist Availability and Hospital Holidays are independent master calendars *reconciled against* the canvas** (free sessions restatus, booked sessions get conflict flags) — never merged into List records.
+- **D6. List lifecycle.** `DRAFT → SUBMITTED → AUTHORISED`, state carried by the List (not Cards). SUBMITTED removes anaesthetist edit access (office-only edits); AUTHORISED locks all Cards immutable and hands the List to the billing engine as a unit. **No "Returned" state** — office fixes issues by phone. Submission is blocked until **every Card is marked Completed** (and marking a Card Completed is itself blocked until it passes minimum-billing-data validation) — validation alone is not sufficient for submission.
+- **D7. List reassignment.** A List (with its Cards, status and audit history intact) can be reassigned to another anaesthetist at short notice; the reassignment itself is audited. **The fixed canvas survives:** the target's session must be Free (its empty List is absorbed by the incoming one) and the vacated slot regenerates as a fresh List — every anaesthetist keeps exactly two Lists per day at all times.
+- **D8. NHI.** Validate and display both formats: current AAANNNC (mod-24 check digit) and new AAANNAX (mod-23, alphanumeric, due 1 Jul 2027). Seed data includes both. **Ethnicity** is recorded per NZHIS Level 4 coding, validated against a curated demo subset of the real code set (see I5) — labelled as a demo subset, not the authoritative HISO table.
+- **D9. Identity separation.** NHI never appears on any Xero-side screen; the Xero simulator sees only the hidden internal ID (ContactNumber) and Xero ContactID.
+
+## 3. Anaesthetist Mobile App (primary interface)
+
+- **M1. Forward Lists view** — chronological list of upcoming Lists (the 2/day structure visible), filterable (week/month/to-do/done), colour-coded by status.
+- **M2. List → Cards view** — time-ordered Cards for one List, add-Card button, list-level **"Completed" (submit)** action.
+- **M3. Card view** — patient details (name, NHI, DOB, contact), operation, surgeon/hospital context, insurance note, attachments; scrolls into the Outcome/BTM section.
+- **M4. BTM timesheet capture** per Procedure — ASA selector (seeds the M field, overridable), RVG base-code dropdown (curated, searchable, range codes prompt for a value within range), Start Now / Finish Now timestamp buttons with editable times, B/T/M unit steppers, computed total units and fee ($ at the anaesthetist's own unit value), adjustment/charge fields, internal + op notes, Completed toggle.
+- **M5. Validation before submit** — a Card can't be marked complete (and a List can't be SUBMITTED) without minimum billing data (base code or non-RVG billing line, times, route); clear inline errors.
+- **M6. Card copy** — copy skeleton card details (less procedure specifics) as a new Card.
+- **M7. Ad-hoc Card creation** — manual entry, plus **photo capture**: attach a photo of a paper list/card, which the demo "OCR" processes into a pre-filled draft Card for review (simulated, canned extraction).
+- **M8. Availability of other anaesthetists** — view for arranging swaps/locums.
+- **M9. Own availability maintenance** — set personal availability on the Anaesthetist Availability master (reflected immediately in the schedule canvas via reconciliation; booked sessions are conflict-flagged, not overwritten — see D5).
+- **M10. Post-submission behaviour** — SUBMITTED Lists visible read-only ("completed, unbilled" indicator); Lists disappear from the view at invoice generation; their ACCPAY line items appear next day in the outstanding-balances view.
+- **M11. Outstanding balances** — flat list of the anaesthetist's ACCPAY invoice line items (no rollup), plus a GST-period activity summary (date-ranged totals with GST component, period selectable monthly/bi-monthly/six-monthly).
+
+## 4. Anaesthetist Web App
+
+- **W1. Dashboard** — calendar week strip of upcoming Lists (colour-coded), receivables aging summary (current/1/2/3 months), productivity summary (30/60 days, 6 months vs prior years), leave bookings, holiday notes, and unassigned-anaesthetist (locum availability) panel for the next 5 days.
+- **W2. Lists view** — date-ranged table of Lists (2/day structure), colour-coded, drill-down to the same List/Card detail as mobile (near-identical functionality; RFP says mobile-app statements apply equally to the web app).
+- **W3. Availability view** — all-anaesthetists day grid (AM/PM per anaesthetist, colour-coded) used to find locum cover at short notice.
+- **W4. Overdue view** — classic accounts-outstanding table (patient, contract, surgeon, first account date, aging buckets, ACC flag), ordered by date, flat list.
+
+## 5. Admin Web App (office)
+
+- **A1. One-day schedule dashboard** — anaesthetist × time-of-day grid for a selected day (AM/PM blocks coloured by List status, hospital/surgeon/annotation text), legend, mini-calendar and day/week navigation, internal notes; drill-down to List and Card detail.
+- **A2. Manual change handling** — edit any DRAFT/SUBMITTED List/Card (office role can edit SUBMITTED; anaesthetist cannot), assign surgeons to Lists, create bookings from phone advice, and **move a single Card to a different List** (routine rebooking, distinct from A3) — audited at Card level.
+- **A3. List reassignment** — move a whole List (Cards + audit intact) to another anaesthetist for illness cover, preserving the fixed 2-lists-per-day canvas; availability view supports finding the cover.
+- **A4. Authorisation queue** — SUBMITTED Lists awaiting review; sanity-check screen showing all Cards with contract/insurer/reference completeness flags; per the RFP the check is an office practice, not a system gate; **AUTHORISE** action locks the List and hands it to billing. Issues are resolved by phone (notes field) — never returned to the anaesthetist.
+- **A5. Billing-flow monitoring** — pipeline view of List → Billing Engine → Xero per authorised List (statuses, per-Card errors, retry action). Includes at least one seeded/triggerable failure to demo error handling.
+- **A6. Master data screens** — read/edit views for Hospitals, Surgeons, Anaesthetists (incl. unit value), Insurers, Contracts (+ price lists), List Statuses, Permanent Lists, Hospital Holidays, RVG & modifier tables.
+- **A7. Audit trail viewer** — full append-only history at Card/Procedure level (who/what/when/source), including reassignments and automated (integration/billing) actions.
+- **A8. Role-based access** — demonstrated via the persona switch: what the anaesthetist persona cannot do (edit SUBMITTED cards, authorise) vs what the office persona can.
+
+## 6. Billing Engine (demoable logic + surfaces)
+
+- **B1. Trigger** — runs on List AUTHORISED, consuming the whole List as a unit.
+- **B2. Route resolution per Procedure** — Hospital/Contract-Holder, Billable Party, or Insurer. On the Contract-Holder route the governing contract resolves **by holder, which is usually a hospital but may be a surgeon or group** (bariatric, TMJ, orthopaedic groups such as COS). Every hospital/direct-insurer holds at least a default Type 1 contract (no "no contract" branch) — **protected as a store invariant**: the mandatory default contract cannot be deleted or effective-dated away. Billable Party route has no contract unless one permits an individual arrangement.
+- **B3. Fee calculation (BTM)** — `Fee = (Base + Time + Modifier units) × anaesthetist's own $/unit`. Time is tiered: 1 unit/15 min for the first 2 hours, 1 unit/10 min thereafter. Base capped at one code per anaesthetic. Positioning modifier (P1) must be refused when the base code already absorbs it. ASA seeds modifiers. Implemented as **pure, unit-tested functions**.
+- **B4. Three charge bases** — RVG/BTM, agreed fixed fee (Type 3 / contract price list, incl. 2nd-procedure rules), rate×time (contract-permitted individual arrangements). Contract Type 2 applies agreed rate / % discount.
+- **B5. Split billing** — (a) multiple procedures: 2nd+ procedure claims **time units only** — base/modifier fields structurally disabled on `isAdditional` procedures; (b) one procedure across two funders: per-funder billing lines → separate invoices.
+- **B6. Invoice generation** — group procedures/lines by resolved counterparty per Card (one Card → potentially many invoices); two invoice layouts (contract-holder vs patient); invoices delivered from the billing engine per the RFP — "emailed" (demo: preview + mark-sent) and **printable** (browser print of the on-screen document); direct-insurer (nib) invoices show a "present via upload portal" workflow status. Unique invoice numbers; internal case reference carried separately.
+- **B7. Pre-payment** — a Card flagged "pre-payment required" (**typed: full or split**, per the RFP) raises a pre-procedure invoice before the day (full estimated fee, or the deposit portion). Per the RFP, payment "must be collected before the procedure proceeds": marking the card's Outcome complete is **blocked** while the pre-invoice is unpaid — not merely warned. An office-only, audited **override** action (with a required reason) lifts the block when the office needs to proceed on their own judgement; the override is visibly flagged (not silent) wherever the card appears. The balance follows the normal path.
+- **B8. Post-op additions** — demo a post-op event (e.g. pain consult days later) captured as a new Card/addendum against the locked original, running its own submit→authorise→bill cycle.
+- **B9. ACC** — shown as ordinary contract-holder billing (no special path); optional flat-fee pre-op codes noted.
+- **B10. Overrides** — friends-and-family style discretionary override (fixed/$/%) with mandatory reason, visible in audit.
+
+## 7. Xero + payments simulation
+
+- **X1. Simulated Xero surface** (demo-only screen, clearly marked) showing the separate AR/banking instance: contacts (ContactNumber = hidden ID, archived flag) and invoices.
+- **X2. ACCREC + ACCPAY pair** created per counterparty invoice, linked by GUID via the billing case record; ACCPAY starts DRAFT; similar invoice numbers between the pair.
+- **X3. Contact lifecycle** — two resolution paths: **organisational payers** (hospitals/contract holders, insurer) resolve to persistent organisation contacts, never archived; **patients** via the hidden-ID workflow (cached ContactID → query by ContactNumber → create), with NHI-driven dedupe (one contact per real patient for life), an **outstanding-balance check** surfacing unpaid prior episodes before a new one bills, and archived-contact handling (invoice against it; unarchive-step-TBC noted). Archive job (triggerable) archives fully-paid patient contacts after an inactivity window; ~10k active-contact soft-limit rationale shown.
+- **X4. Payment detection** — demo button fires a Xero **webhook** (full or partial payment); a daily reconciliation poll (fires on clock advance) is the idempotent safety net; paid ACCREC flips ACCPAY → AUTHORISED (pro-rata on partials).
+- **X5. Two-state money model** — "paid into AA" and "disbursed to anaesthetist" tracked separately; a **payables run** action disburses AUTHORISED ACCPAYs (trust-account behaviour); anaesthetist outstanding-balance views update accordingly (next-day rule).
+
+## 8. Integrations simulation
+
+- **I1. HL7 v2 inbound** — simulator replays realistic SIU S12/S13/S14/S15 messages (styled on the RFP sample); each shows raw HL7 → translated FHIR R4 resource → resulting Card create/update on the schedule, near-real-time. **Configurable field mapping per hospital partner** is demonstrated via a per-feed mapping config view (the canned feeds genuinely differ, and the failure-fix flow edits the mapping).
+- **I2. FHIR-native path** — at least one hospital feed delivers FHIR Appointment/Patient bundles directly, demonstrating the target state; NZ profile/NHI/NZHIS-ethnicity fields visible, and the Practitioner carries the anaesthetist's **HPI identifier**.
+- **I3. PDF ingestion** — surgeon-emailed PDF list pathway: pick a canned PDF → extraction review screen (read/edit) → ingest to Cards.
+- **I4. Reliability & monitoring** — integration monitor listing messages with status (processed / duplicate / failed / retried / manual), a triggerable failure, manual-intervention workflow (fix & reprocess), alerting indicator, and the RFP's delivery-guarantee story demoed: **idempotent dedupe by message control ID** (replaying a processed message is a visible no-op) and a dead-letter state that loses nothing.
+- **I5. NHI dual-format, simulated lookup & ethnicity coding** — validator demo: both check-digit algorithms live (mod-24 old, mod-23 new); both formats present throughout seed data. A **simulated NHI lookup** (canned, keyed by the seeded NHIs — "querying the NHI FHIR API via the Digital Services Hub" framing, clearly a demo call, no real network request) returns demographics incl. an **NZHIS Level 4 ethnicity code**, used on the ad-hoc/manual card-creation path (per M7) and validated against a curated demo code subset with a companion `validateEthnicityCode` function alongside the NHI validator.
+
+## 9. Non-functional (as they apply to a prototype)
+
+- **N1. Ease of use is the headline** — large targets, obvious affordances, minimal typing; some real users "aren't comfortable with modern IT".
+- **N2. Colour-coded status language** consistent across all three apps (draw from the legacy legend: private, public, pre-op assessment, holiday, unavailable, free) — restyled to a modern palette but consistent 1:1 with the legend.
+- **N3. Audit everything** — every mutation (manual or simulated-automated) writes an audit entry.
+- **N4. Performance** — instant interactions at seed-data scale; the canvas generator must handle 85 × 120 × 2 Lists without jank if scaled up.
+- **N5. Quality bar** — TypeScript strict, Vitest unit tests for billing maths + NHI validation + lifecycle guards; the rest is verified by per-phase manual test checklists.
+
+## 10. Explicitly out of scope for the prototype
+
+- Real authentication/accounts (persona switcher instead), real Xero/API connections, real HL7/FHIR endpoints or SFTP, real OCR/PDF parsing (canned extractions), email sending, PDF-generation libraries (the on-screen invoice document is browser-printable — that is the extent of "print"), a real connection to the Health NZ Digital Services Hub / Keycloak (a **simulated, canned NHI lookup is in scope** — see I5 — the exclusion is the real API/OAuth integration, not the workflow), multi-user concurrency, data migration, accessibility certification, mobile-native builds (the phone frame stands in), and any real patient data.
+
+## 11. Known RFP tensions (demo as "discovery questions", don't solve)
+
+Carried from `Data-Model-and-Flow.html` §5 — the prototype should pick the stated reading and note it in UI copy where visible: NHI-in-Xero contradiction (follow Appendix 2: never in Xero), pre-payment vs AUTHORISED-trigger timing, post-op charges vs locked Cards (new Card/addendum), one-route-per-procedure vs two-funder split (per-line funder), billable-party contract nullability, permanent-list surgeon field, guardian (non-patient) billable-party identity, list-disappearance trigger (invoice generation).

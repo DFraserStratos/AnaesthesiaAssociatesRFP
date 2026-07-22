@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E4E8E6}
+a{color:#0D6E63}a:hover{color:#084A43}
+@keyframes tickPop{0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;gap:36px;padding:40px 24px;font-family:'Schibsted Grotesk',system-ui,sans-serif;flex-wrap:wrap">
+
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="390px" height="844px" hint-size="390px,844px">
+<div data-screen-label="Mobile — Availability" style="height:100%;position:relative;overflow:hidden;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320;background:#F6F8F7;display:flex;flex-direction:column">
+
+  <!-- header -->
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">FIND COVER</div>
+        <div style="font-size:26px;line-height:32px;font-weight:700;letter-spacing:-0.015em;margin-top:2px">Availability</div>
+      </div>
+      <div style="width:44px;height:44px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#A91E3E">MS</div>
+    </div>
+  </div>
+
+  <!-- date picker strip -->
+  <div style="padding:14px 20px 4px">
+    <div style="display:flex;gap:7px">
+      <sc-for list="{{ days }}" as="d" hint-placeholder-count="6">
+        <button onClick="{{ d.pick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;border-radius:12px;border:none;font-family:inherit;cursor:pointer;transition:background 150ms;background:{{ d.bg }}">
+          <span style="font-size:10px;font-weight:600;letter-spacing:0.04em;color:{{ d.sub }}">{{ d.dow }}</span>
+          <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:17px;font-weight:700;color:{{ d.num }}">{{ d.date }}</span>
+          <span style="width:5px;height:5px;border-radius:99px;background:{{ d.dot }}"></span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- segmented control -->
+  <div style="padding:12px 20px 6px">
+    <div style="display:flex;background:#EDF1EF;border-radius:12px;padding:4px;gap:4px">
+      <button onClick="{{ pickEveryone }}" style="flex:1;height:40px;border-radius:9px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background 150ms,color 150ms;background:{{ everyoneBg }};color:{{ everyoneC }};box-shadow:{{ everyoneSh }}">Everyone</button>
+      <button onClick="{{ pickFree }}" style="flex:1;height:40px;border-radius:9px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background 150ms,color 150ms;background:{{ freeBg }};color:{{ freeC }};box-shadow:{{ freeSh }}">Free only</button>
+    </div>
+  </div>
+
+  <!-- summary line -->
+  <div style="padding:6px 20px 2px;display:flex;align-items:center;gap:8px">
+    <span style="width:8px;height:8px;border-radius:99px;background:#1FA463"></span>
+    <span style="font-size:13px;color:#58635F"><span style="font-weight:700;color:#157A49">{{ freeSessions }} free sessions</span> on {{ selLong }}</span>
+  </div>
+
+  <!-- list -->
+  <div style="flex:1;overflow:auto;padding:8px 20px 116px;display:flex;flex-direction:column;gap:8px">
+    <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(23,35,32,0.05)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:34px;height:34px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#A91E3E;flex:none">{{ p.init }}</span>
+          <span style="flex:1;min-width:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
+          <span style="font-size:11px;font-weight:600;color:{{ p.tagC }};background:{{ p.tagBg }};border-radius:999px;padding:3px 9px;display:{{ p.tagDisp }}">{{ p.tag }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onClick="{{ p.am.tap }}" style="display:flex;align-items:center;gap:8px;min-height:52px;border-radius:10px;padding:8px 10px;text-align:left;font-family:inherit;cursor:{{ p.am.cursor }};background:{{ p.am.bg }};border:{{ p.am.border }}">
+            <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;font-weight:600;color:{{ p.am.tc }};opacity:0.7;flex:none">AM</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:{{ p.am.tc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.am.l1 }}</span><span style="font-size:10.5px;color:{{ p.am.tc }};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.am.l2 }}</span></span>
+          </button>
+          <button onClick="{{ p.pm.tap }}" style="display:flex;align-items:center;gap:8px;min-height:52px;border-radius:10px;padding:8px 10px;text-align:left;font-family:inherit;cursor:{{ p.pm.cursor }};background:{{ p.pm.bg }};border:{{ p.pm.border }}">
+            <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;font-weight:600;color:{{ p.pm.tc }};opacity:0.7;flex:none">PM</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:12.5px;font-weight:600;color:{{ p.pm.tc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.pm.l1 }}</span><span style="font-size:10.5px;color:{{ p.pm.tc }};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.pm.l2 }}</span></span>
+          </button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 8px 26px;background:rgba(255,255,255,0.94);backdrop-filter:blur(14px);border-top:1px solid #E2E7E5">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8A9490;padding:4px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8.5 6h12M8.5 12h12M8.5 18h12"></path><circle cx="3.8" cy="6" r="1.4" fill="currentColor" stroke="none"></circle><circle cx="3.8" cy="12" r="1.4" fill="currentColor" stroke="none"></circle><circle cx="3.8" cy="18" r="1.4" fill="currentColor" stroke="none"></circle></svg><span style="font-size:11px;font-weight:600">Lists</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#0D6E63;padding:4px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"></rect><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"></rect><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"></rect><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"></rect></svg><span style="font-size:11px;font-weight:600">Availability</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8A9490;padding:4px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v9M14.6 9.3c-.5-.8-1.5-1.3-2.6-1.3-1.5 0-2.7.8-2.7 1.9s.9 1.6 2.7 2c1.8.4 2.7.9 2.7 2s-1.2 1.9-2.7 1.9c-1.1 0-2.1-.5-2.6-1.3"></path></svg><span style="font-size:11px;font-weight:600">Balances</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8A9490;padding:4px 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.8" fill="currentColor"></circle><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><circle cx="19" cy="12" r="1.8" fill="currentColor"></circle></svg><span style="font-size:11px;font-weight:600">More</span></div>
+  </div>
+
+  <!-- request-cover bottom sheet -->
+  <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:50;transition:background 240ms;background:{{ scrimBg }};pointer-events:{{ sheetPE }}"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:51;background:#FFFFFF;border-radius:24px 24px 0 0;box-shadow:0 -8px 16px rgba(23,35,32,0.10),0 -24px 56px rgba(23,35,32,0.18);transition:transform 320ms cubic-bezier(0.32,0.72,0,1);transform:{{ sheetY }};padding:8px 20px 36px;display:flex;flex-direction:column;gap:14px">
+    <div style="width:36px;height:4px;border-radius:99px;background:#C9D1CE;margin:4px auto 4px"></div>
+    <sc-if value="{{ notRequested }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="width:44px;height:44px;border-radius:99px;background:#E3F6EC;display:flex;align-items:center;justify-content:center;flex:none"><span style="width:12px;height:12px;border-radius:4px;background:#1FA463"></span></span>
+          <div style="display:flex;flex-direction:column"><span style="font-size:18px;font-weight:700">{{ sheetName }}</span><span style="font-size:13px;color:#58635F">{{ sheetSlot }} · Free session</span></div>
+        </div>
+        <div style="background:#F6F8F7;border-radius:12px;padding:14px;font-size:13px;line-height:19px;color:#58635F">Ask {{ sheetFirst }} to cover the <span style="font-weight:600;color:#172320">Southern Cross PM</span> list. They'll get a notification and can accept in one tap.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">ADD A MESSAGE</div>
+          <textarea placeholder="Optional note…" style="width:100%;box-sizing:border-box;min-height:64px;border-radius:12px;border:1px solid #E2E7E5;padding:12px;font-family:inherit;font-size:15px;color:#172320;resize:none;background:#F6F8F7"></textarea>
+        </div>
+        <button onClick="{{ sendRequest }}" style="height:54px;border-radius:14px;border:none;background:#0D6E63;color:#FFFFFF;font-family:inherit;font-size:17px;font-weight:700;cursor:pointer" style-hover="background:#0A5A51" style-active="transform:scale(0.985)">Send cover request</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ requested }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0 8px">
+        <span style="width:72px;height:72px;border-radius:99px;background:#E3F4EB;display:flex;align-items:center;justify-content:center;animation:tickPop 420ms cubic-bezier(0.65,0,0.35,1)"><svg width="36" height="36" viewBox="0 0 38 38"><path d="M8 20 L16 28 L30 11" fill="none" stroke="#1E8E5A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        <div style="font-size:18px;font-weight:700;color:#157A49">Request sent</div>
+        <div style="font-size:13px;color:#58635F;text-align:center">{{ sheetFirst }} has been asked to cover Southern Cross PM. You'll be notified when they respond.</div>
+        <button onClick="{{ closeSheet }}" style="height:50px;width:100%;border-radius:14px;border:1px solid #E2E7E5;background:#FFFFFF;color:#172320;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px" style-hover="background:#EDF1EF">Done</button>
+      </div>
+    </sc-if>
+  </div>
+
+</div>
+</x-import>
+
+<!-- Demo script -->
+<div style="width:250px;background:#FFFFFF;border:1px solid #D5DBD8;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#A91E3E">MOBILE · AVAILABILITY TAB</div>
+  <div style="font-size:16px;font-weight:700;color:#172320">Find cover in the corridor</div>
+  <ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:19px;color:#58635F">
+    <li>Scan the day — <strong style="color:#157A49">green = free</strong> reads instantly</li>
+    <li>Tap <strong style="color:#172320">Free only</strong> to strip out the booked sessions</li>
+    <li>Tap any free session → the <strong style="color:#172320">request-cover sheet</strong> slides up</li>
+    <li><strong style="color:#172320">Send</strong> for the completion tick</li>
+  </ol>
+  <div style="font-size:12px;line-height:17px;color:#8A9490;border-top:1px solid #EDF1EF;padding-top:12px">Same status language &amp; motion as <a href="Mobile App.dc.html" style="font-weight:600">Lists &amp; BTM</a>. All data fictional.</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sel: 3, mode: 'everyone', sheet: null, requested: false };
+  renderVals() {
+    const s = this.state;
+    const dayDefs = [
+      { dow: 'MON', date: '20', free: 2 }, { dow: 'TUE', date: '21', free: 3 },
+      { dow: 'WED', date: '22', free: 4 }, { dow: 'THU', date: '23', free: 5 },
+      { dow: 'FRI', date: '24', free: 3 }, { dow: 'SAT', date: '25', free: 1 },
+    ];
+    const longNames = ['Mon 20 Jul', 'Tue 21 Jul', 'Wed 22 Jul', 'Thu 23 Jul', 'Fri 24 Jul', 'Sat 25 Jul'];
+    const days = dayDefs.map((d, i) => ({
+      dow: d.dow, date: d.date, pick: () => this.setState({ sel: i }),
+      bg: i === s.sel ? '#0D6E63' : '#FFFFFF',
+      sub: i === s.sel ? 'rgba(255,255,255,0.7)' : '#8A9490',
+      num: i === s.sel ? '#FFFFFF' : '#172320',
+      dot: d.free > 0 ? (i === s.sel ? '#8FE3B4' : '#1FA463') : 'rgba(0,0,0,0)',
+    }));
+
+    const C = {
+      private: { bg: '#E8EEFC', bar: '#2E66E5', tc: '#1F44A3' },
+      public: { bg: '#EEEBFA', bar: '#6E56CF', tc: '#4C3D96' },
+      preop: { bg: '#FBEFDF', bar: '#C26A0E', tc: '#8A4B09' },
+      holiday: { bg: '#FAE9ED', bar: '#D25C74', tc: '#A03A52' },
+      unavail: { bg: 'repeating-linear-gradient(135deg,#ECEFEE 0 5px,#E2E7E5 5px 10px)', bar: '#64716C', tc: '#4A5551' },
+    };
+    const cell = (st, l1, l2, ctx) => {
+      if (st === 'free') return {
+        isFree: true, bg: '#E3F6EC', border: '1.5px dashed #1FA463', tc: '#157A49',
+        l1: 'Free', l2: 'Tap to ask', cursor: 'pointer',
+        tap: () => this.setState({ sheet: ctx, requested: false }),
+      };
+      const c = C[st];
+      return { isFree: false, bg: c.bg, border: '1px solid rgba(0,0,0,0)', tc: c.tc, l1, l2: l2 || '', cursor: 'default', tap: () => {} };
+    };
+    const P = (name, init, am, pm) => ({ name, init, am, pm });
+    const raw = [
+      P('Dr Priya Sharma', 'PS', ['public', 'Chch Public', 'Acute'], ['free']),
+      P('Dr Tom Ngata', 'TN', ['free'], ['private', 'Sth Cross', 'Mr Doyle']),
+      P('Dr Alistair Chen', 'AC', ['private', 'Eye Surgery', 'Mr Whitford'], ['free']),
+      P('Dr Rawiri Hughes', 'RH', ['free'], ['free']),
+      P('Dr Ben Whitaker', 'BW', ['public', 'Chch Public', 'Acute'], ['free']),
+      P('Dr Oliver Strand', 'OS', ['private', 'Eye Surgery', 'Ms Reid'], ['free']),
+      P('Dr James Rutherford', 'JR', ['private', 'Forte Health', 'Mr Okafor'], ['private', 'Forte Health', 'Mr Okafor']),
+      P('Dr Kate Morrison', 'KM', ["private", "St George's", 'Mr Tan'], ['preop', 'Pre-op clinic', 'AA rooms']),
+      P('Dr Sarah Beaumont', 'SB', ['holiday', 'Leave', 'back Mon'], ['holiday', 'Leave', 'back Mon']),
+    ];
+    let freeSessions = 0;
+    let people = raw.map((p) => {
+      const am = cell(p.am[0], p.am[1], p.am[2], { name: p.name, init: p.init, slot: 'AM' });
+      const pm = cell(p.pm[0], p.pm[1], p.pm[2], { name: p.name, init: p.init, slot: 'PM' });
+      if (am.isFree) freeSessions++; if (pm.isFree) freeSessions++;
+      const anyFree = am.isFree || pm.isFree;
+      return {
+        name: p.name, init: p.init, am, pm, anyFree,
+        tag: anyFree ? 'Free' : '', tagDisp: anyFree ? 'inline-block' : 'none',
+        tagBg: '#E3F6EC', tagC: '#157A49',
+      };
+    });
+    if (s.mode === 'free') people = people.filter(p => p.anyFree);
+
+    const seg = (on) => ({ bg: on ? '#FFFFFF' : 'rgba(255,255,255,0)', c: on ? '#0D6E63' : '#58635F', sh: on ? '0 1px 3px rgba(23,35,32,0.15)' : 'none' });
+    const e = seg(s.mode === 'everyone'), f = seg(s.mode === 'free');
+    const sh = s.sheet;
+    return {
+      days, selLong: longNames[s.sel], freeSessions: String(freeSessions),
+      pickEveryone: () => this.setState({ mode: 'everyone' }), pickFree: () => this.setState({ mode: 'free' }),
+      everyoneBg: e.bg, everyoneC: e.c, everyoneSh: e.sh, freeBg: f.bg, freeC: f.c, freeSh: f.sh,
+      people,
+      sheetY: sh ? 'translateY(0)' : 'translateY(103%)',
+      scrimBg: sh ? 'rgba(23,35,32,0.32)' : 'rgba(23,35,32,0)',
+      sheetPE: sh ? 'auto' : 'none',
+      closeSheet: () => this.setState({ sheet: null }),
+      sheetName: sh ? sh.name : '', sheetFirst: sh ? sh.name.replace('Dr ', 'Dr ').split(' ').slice(0, 2).join(' ') : '',
+      sheetSlot: sh ? (s.sel === 3 ? 'Thu 23 Jul' : 'Selected day') + ' · ' + sh.slot : '',
+      notRequested: !s.requested, requested: s.requested,
+      sendRequest: () => this.setState({ requested: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

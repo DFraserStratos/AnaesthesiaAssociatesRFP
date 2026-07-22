@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AA Prototype · Build Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700;9..144,900&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#f7f3ec; --paper-2:#efe9de; --card:#fffdf8; --ink:#211d16; --ink-2:#574e40; --ink-3:#8a7f6c;
+  --rust:#b3400f; --rust-deep:#8a3009; --rust-soft:#f4e0d4;
+  --green:#2c6e49; --green-soft:#e3efe6; --amber:#9a6a08; --amber-soft:#f6ecd4;
+  --plum:#7a4a63; --plum-soft:#f0e2ea;
+  --line:#ddd3c2; --mono:'JetBrains Mono',monospace;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.62 'Archivo',sans-serif;
+  background-image:radial-gradient(circle at 12% -4%, rgba(179,64,15,.06), transparent 38%),
+  radial-gradient(circle at 110% 8%, rgba(44,110,73,.05), transparent 32%); }
+.wrap { max-width:1080px; margin:0 auto; padding:0 28px 120px; }
+a { color:var(--rust); }
+.hero { padding:64px 0 32px; border-bottom:3px solid var(--ink); }
+.kicker { font:600 12px/1 var(--mono); letter-spacing:.22em; text-transform:uppercase; color:var(--rust); margin:0 0 16px; }
+h1 { font:900 clamp(40px,6vw,72px)/0.98 'Fraunces',serif; letter-spacing:-.015em; margin:0 0 10px; }
+h1 em { font-style:italic; font-weight:300; color:var(--rust); }
+.hero-sub { max-width:760px; font-size:18px; color:var(--ink-2); margin:16px 0 0; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
+.stat { padding:16px 20px 12px; border-right:1.5px solid var(--ink); }
+.stat:last-child { border-right:none; }
+.stat b { display:block; font:700 30px/1 'Fraunces',serif; }
+.stat span { font:600 11px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); }
+h2 { font:700 32px/1.1 'Fraunces',serif; margin:58px 0 6px; }
+.rule { height:3px; background:var(--ink); width:64px; margin:10px 0 20px; }
+.prose p { max-width:770px; }
+ol.howto { max-width:770px; padding-left:22px; }
+ol.howto li { margin:10px 0; }
+ol.howto b { font-family:'Fraunces',serif; }
+.callout { background:var(--card); border:1.5px solid var(--ink); border-left:6px solid var(--rust); padding:16px 20px; max-width:790px; margin:22px 0; }
+.callout.green { border-left-color:var(--green); }
+.flow { font:600 13px var(--mono); background:var(--card); border:1px solid var(--line); padding:18px 22px; margin:20px 0; line-height:2.1; max-width:840px; }
+.flow .fnode { background:var(--paper-2); padding:3px 8px; border-radius:3px; white-space:nowrap; }
+.flow .fpar { color:var(--green); }
+.scorecard { width:100%; border-collapse:collapse; margin:18px 0 8px; max-width:960px; background:var(--card); border:1.5px solid var(--ink); }
+.scorecard th, .scorecard td { text-align:left; padding:11px 16px; border-bottom:1px solid var(--line); font-size:14.5px; vertical-align:top; }
+.scorecard th { font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); background:var(--paper-2); }
+.scorecard tr:last-child td { border-bottom:none; }
+.scorecard .read { color:var(--ink-2); font-size:13.5px; }
+.tag { font:600 10.5px var(--mono); letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:3px; white-space:nowrap; }
+.tag.a { background:var(--rust-soft); color:var(--rust-deep); }
+.tag.b { background:var(--green-soft); color:var(--green); }
+.tag.c { background:var(--plum-soft); color:var(--plum); }
+.tag.hi { background:var(--rust); color:#fff; }
+.defects { list-style:none; margin:18px 0 0; padding:0; max-width:850px; }
+.defects li { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--rust); padding:13px 18px; margin-bottom:10px; font-size:14.5px; color:var(--ink-2); }
+.defects li b { color:var(--ink); font-family:'Fraunces',serif; }
+.defects li.keep { border-left-color:var(--ink-3); }
+.defects code, .prose code, .scorecard code { font:600 12px var(--mono); background:var(--paper-2); padding:1px 5px; border-radius:3px; color:var(--rust-deep); }
+.phase { background:var(--card); border:1.5px solid var(--ink); margin:0 0 26px; padding:24px 26px 22px; }
+.phase.setup { border-left:6px solid var(--ink); }
+.phase.trackA { border-left:6px solid var(--rust); }
+.phase.trackB { border-left:6px solid var(--green); }
+.phase.trackC { border-left:6px solid var(--plum); }
+.phase-head { display:flex; gap:18px; align-items:flex-start; }
+.pnum { font:300 46px/1 'Fraunces',serif; font-style:italic; color:var(--rust); flex:none; min-width:64px; }
+.phase-title h3 { font:700 23px/1.15 'Fraunces',serif; margin:2px 0 8px; }
+.badges { display:flex; flex-wrap:wrap; gap:6px; }
+.badge { font:600 10.5px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; padding:4px 8px; border-radius:3px; text-decoration:none; }
+.badge.dep { background:var(--paper-2); color:var(--ink-2); }
+.badge.est { background:var(--rust-soft); color:var(--rust-deep); }
+.badge.trk { background:var(--ink); color:var(--paper); }
+.badge.doc { border:1px solid var(--line); color:var(--rust); }
+.badge.doc:hover { background:var(--rust); color:#fff; border-color:var(--rust); }
+.badge.hi { background:var(--rust); color:#fff; }
+.goal { margin:14px 0 12px; color:var(--ink-2); font-size:15px; }
+details { border-top:1px dashed var(--line); padding-top:10px; margin-bottom:14px; }
+summary { font:600 12px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--rust); cursor:pointer; }
+.psum { font-size:13.5px; color:var(--ink-2); max-width:880px; }
+.checks { font-size:13px; color:var(--ink-2); padding-left:20px; }
+.checks li { margin:6px 0; }
+.prompt-wrap { border:1px solid var(--line); }
+.prompt-bar { display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:var(--paper); padding:8px 14px; font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; }
+.copy { font:600 11px var(--mono); background:var(--rust); color:#fff; border:none; padding:6px 14px; border-radius:3px; cursor:pointer; }
+.copy:hover { background:var(--rust-deep); }
+.copy.done { background:var(--green); }
+pre { margin:0; padding:16px 18px; font:400 12px/1.7 var(--mono); white-space:pre-wrap; background:#fbf9f4; color:var(--ink-2); max-height:360px; overflow:auto; }
+footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; font:400 12.5px var(--mono); color:var(--ink-3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+@media print { pre { max-height:none; } body { background:#fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">Anaesthesia Associates RFP · Prototype · The plan</p>
+  <h1>The AA prototype: <em>three apps, one demo</em></h1>
+  <p class="hero-sub">A fully interactive, true-to-life React front end over a fake in-browser backend, demonstrating every major feature of the Anaesthesia Associates Booking &amp; Billing RFP: the scheduling canvas, BTM timesheet capture, the DRAFT→SUBMITTED→AUTHORISED approval flow, the billing engine with its three billing methods and split-billing rules, the ACCREC/ACCPAY Xero pairing, payments and disbursement, and the HL7→FHIR integration story. One app switcher in the corner flips between the Anaesthetist Mobile App (floating in a phone frame on a grey backdrop), the Anaesthetist Web App, and the Admin Web App — plus the demo-only simulators that make the invisible parts visible. Thirteen phases, each one session, each one coherent deliverable.</p>
+  <div class="stats">
+    <div class="stat"><b>13</b><span>phases (00–12)</span></div>
+    <div class="stat"><b>3</b><span>apps in one shell</span></div>
+    <div class="stat"><b>6</b><span>RFP components covered</span></div>
+    <div class="stat"><b>0</b><span>real backends / APIs</span></div>
+    <div class="stat"><b>5</b><span>scripted demo scenarios</span></div>
+  </div>
+</header>
+
+<section class="prose">
+  <h2>What we're building — and from what</h2>
+  <div class="rule"></div>
+  <p>The RFP (Peritia Ltd, July 2026) provides a <em>Candidate Architecture</em> rather than a spec: a scheduling canvas (<code>Schedule → Day → Anaesthetist → List</code>, two Lists per anaesthetist per day on a rolling 4-month horizon), Cards and Procedures painted onto it, a billing engine at the centre of the universe with Xero as an AR/banking bolt-on, and mobile/web/admin apps over the top. The prototype makes all of that clickable. Three documents drive every phase:</p>
+  <table class="scorecard">
+    <thead><tr><th>Document</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>docs/prototype-build/REQUIREMENTS.md</code></td><td class="read">The full requirements catalogue (P/D/M/W/A/B/X/I/N numbered) distilled from the RFP + our data-model reading. Every phase doc cites the IDs it covers.</td></tr>
+      <tr><td><code>docs/prototype-build/PROGRESS.md</code></td><td class="read">The living record: binding conventions (1–16), phase status, decisions log. <b>Every session reads it first and updates it last</b> — it is how each fresh chat inherits context.</td></tr>
+      <tr><td><code>docs/prototype-build/phases/*.md</code></td><td class="read">One detailed plan per phase: work items, scope fences, and the manual test checklist you run before calling it done.</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:14px;color:var(--ink-3)">Source materials for taste and truth: <code>RFP.md</code> (full RFP text), <code>Data-Model-and-Flow.html</code> (entity model, lifecycle, end-to-end flow, open questions), the RFP PDF's Appendix 3–5 screenshots (pages 44–49) showing the legacy screens, and — <b>authoritative for all visuals</b> — the <code>Design/</code> folder at the repo root: <code>Design Language.dc.html</code> (tokens: palette, six status colours, type, spacing, motion) plus six interactive sample pages and a reusable iOS device frame (<code>ios-frame.jsx</code>). PROGRESS conventions 16–17 bind every phase to them; where a mockup simplified a business rule, the RFP rule wins (see the Decisions log).</p>
+</section>
+
+<section>
+  <h2>What this prototype will NOT do</h2>
+  <div class="rule"></div>
+  <p class="prose">Settled up front so no phase re-opens them. The demo's honesty depends on these staying fenced.</p>
+  <ul class="defects">
+    <li class="keep"><b>No real backend.</b> One in-memory store, seeded deterministically, persisted to localStorage, with a reset button. No servers, no fetch, no databases.</li>
+    <li class="keep"><b>No real integrations.</b> Xero, HL7/FHIR, NHI lookup, PDF parsing and OCR are all simulated with canned data and visible "demo simulation" badges. The simulators exist to demo the <em>workflows</em>, not the plumbing.</li>
+    <li class="keep"><b>No authentication.</b> The app switcher swaps persona (demo anaesthetist ↔ office admin). Role-based access is demonstrated through what each persona can and cannot do.</li>
+    <li class="keep"><b>No pixel-cloning of the legacy screens.</b> Ease of use is the RFP's headline requirement — screens keep the legacy information architecture (Appendices 3–5) but look modern and simple.</li>
+    <li class="keep"><b>No solving the RFP's open questions.</b> Where the RFP contradicts itself (NHI in Xero, pre-payment timing, post-op vs locked Cards…), the prototype implements the reading recorded in REQUIREMENTS §11 and labels it in UI copy as a discovery question.</li>
+    <li class="keep"><b>No mobile build.</b> The phone frame floating on a grey backdrop IS the mobile emulation — never browser resizing or devtools device mode.</li>
+    <li class="keep"><b>No mega-phases.</b> Every phase is one session with one deliverable. If a phase doc turns out to hide two deliverables, split it in PROGRESS before starting — don't push through.</li>
+  </ul>
+</section>
+
+<section class="prose">
+  <h2>How this works</h2>
+  <div class="rule"></div>
+  <ol class="howto">
+    <li><b>Run Phase 00 first</b> — it scaffolds the app, the switcher, the phone frame and the design tokens, and puts PROGRESS.md on rails.</li>
+    <li><b>Pick the next phase</b> from the PROGRESS.md status table, respecting the gates: 00→01→02 strictly first; 03→04→05→06→07 in order; 08→09→10 in order; 11 any time after 07; 12 last.</li>
+    <li><b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt below. The agent reads PROGRESS.md, REQUIREMENTS.md and its phase doc before touching anything.</li>
+    <li><b>The agent enters plan mode</b>, verifies the current state of <code>aa-prototype/</code> against what PROGRESS.md claims, turns the phase doc into work-sized steps, and waits for approval before changing code.</li>
+    <li><b>Every phase ends the same way:</b> <code>npm run build</code> and <code>npx vitest run</code> green, the phase's manual test checklist run and reported item-by-item, and PROGRESS.md updated (status row, phase entry, decisions) so the next session inherits the truth.</li>
+  </ol>
+  <div class="callout green">
+    <p><strong>The checklists are the contract.</strong> Each phase doc ends with a short manual test checklist — the handful of things you personally verify in the browser before accepting the phase. The kick-off prompts require the agent to run and report that checklist, but you should click through it yourself too: it doubles as a mini demo rehearsal.</p>
+  </div>
+  <div class="flow">
+    <span class="fpar">foundations:</span> <span class="fnode">00 scaffold + shell</span> &rarr; <span class="fnode">01 domain + calculator</span> &rarr; <span class="fnode">02 seed + store</span><br>
+    <span class="fpar">apps:</span> <span class="fnode">03 mobile: schedule + cards</span> &rarr; <span class="fnode">04 mobile: BTM + submit</span> &rarr; <span class="fnode">05 anaesthetist web</span> &rarr; <span class="fnode">06 admin: day dashboard</span> &rarr; <span class="fnode">07 admin: authorisation + masters</span><br>
+    <span class="fpar">money &amp; edges:</span> <span class="fnode">08 billing: run + invoices</span> &rarr; <span class="fnode">09 billing: exceptions + monitor</span> &rarr; <span class="fnode">10 Xero + payments</span> · <span class="fnode">11 integrations (after 07)</span><br>
+    <span class="fpar">wrap:</span> <span class="fnode">12 demo polish + script</span>
+  </div>
+</section>
+
+<section>
+  <h2>The phases at a glance</h2>
+  <div class="rule"></div>
+  <table class="scorecard">
+    <thead><tr><th>#</th><th>Phase</th><th>Group</th><th>Effort</th><th>Risk</th><th>Proven by</th></tr></thead>
+    <tbody>
+      <tr><td>00</td><td>Scaffold &amp; three-app shell (switcher, phone frame, tokens)</td><td><span class="tag a">Foundation</span></td><td>S</td><td>low</td><td>Checklist + build + smoke test</td></tr>
+      <tr><td>01</td><td>Domain model &amp; billing calculator (types, clock, NHI, pure BTM maths)</td><td><span class="tag a">Foundation</span></td><td>M</td><td><span class="tag hi">high · load-bearing</span></td><td>Vitest suite + paper spot-check</td></tr>
+      <tr><td>02</td><td>Seed data &amp; store (canvas, guards, audit, persistence, inspector)</td><td><span class="tag a">Foundation</span></td><td>M</td><td><span class="tag hi">high · load-bearing</span></td><td>Guard tests + data inspector</td></tr>
+      <tr><td>03</td><td>Mobile: schedule, cards &amp; availability (nav, copy, ad-hoc, photo mock)</td><td><span class="tag b">Apps</span></td><td>M</td><td>med</td><td>Checklist vs Appendix 3</td></tr>
+      <tr><td>04</td><td>Mobile: BTM capture &amp; submission (ASA/RVG/modifiers, validation, submit)</td><td><span class="tag b">Apps</span></td><td>M</td><td><span class="tag hi">med-high</span></td><td>Fee spot-checks + guard behaviour</td></tr>
+      <tr><td>05</td><td>Anaesthetist web app (dashboard, lists, availability, overdue)</td><td><span class="tag b">Apps</span></td><td>M</td><td>low-med</td><td>Checklist + mobile unchanged</td></tr>
+      <tr><td>06</td><td>Admin: day dashboard, changes &amp; reassignment</td><td><span class="tag b">Apps</span></td><td>M</td><td>med</td><td>Checklist vs Appendix 4</td></tr>
+      <tr><td>07</td><td>Admin: authorisation, master data &amp; audit</td><td><span class="tag b">Apps</span></td><td>M</td><td>med</td><td>Lock behaviour + audit stories</td></tr>
+      <tr><td>08</td><td>Billing: run &amp; invoices (routes, contracts, split, grouping, documents)</td><td><span class="tag c">Money</span></td><td>M</td><td><span class="tag hi">med-high</span></td><td>Billing-run tests + invoice maths</td></tr>
+      <tr><td>09</td><td>Billing: exceptions &amp; monitor (pre-payment, post-op, failure + retry)</td><td><span class="tag c">Money</span></td><td>M</td><td>med</td><td>Exception tests + monitor story</td></tr>
+      <tr><td>10</td><td>Xero &amp; payments simulation (ACCREC/ACCPAY, webhook, payables run)</td><td><span class="tag c">Money</span></td><td>M</td><td>med</td><td>Idempotency + no-NHI-in-Xero tests</td></tr>
+      <tr><td>11</td><td>Integrations simulation (HL7→FHIR, PDF ingest, monitor, NHI formats)</td><td><span class="tag c">Edges</span></td><td>M</td><td>low-med</td><td>Checklist + validator tests</td></tr>
+      <tr><td>12</td><td>Demo polish &amp; guided script (scenarios, control panel, QA sweep)</td><td><span class="tag a">Wrap</span></td><td>M</td><td>low</td><td>S1–S5 run clean from reset</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>The phases</h2>
+  <div class="rule"></div>
+
+<article class="phase setup" id="phase-00">
+  <div class="phase-head">
+    <span class="pnum">00</span>
+    <div class="phase-title">
+      <h3>Scaffold &amp; three-app shell</h3>
+      <div class="badges">
+        <span class="badge dep">Start here</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-00-scaffold-and-shell.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">A running Vite + React + TypeScript app with the demo harness: the app-switcher dropdown in the top corner (Mobile / Web / Admin / demo surfaces), the fixed-size phone frame floating centred on a grey backdrop for the mobile app, design tokens including the six List-status colours, empty-but-navigable shells for all three apps, and the demo control panel stub. No domain logic yet.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Switcher swaps between all three apps + demo surfaces; persona label follows; selection survives refresh.</li>
+      <li>Mobile mode floats in the phone frame on grey at desktop resolution; content scrolls inside the frame.</li>
+      <li>Status legend shows six distinct, readable colours; build + test + console all clean.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-00">Copy</button>
+    </div>
+    <pre id="prompt-00">Please run Phase 00 (Scaffold &amp; three-app shell) of the Anaesthesia Associates prototype build — a demo-only React prototype of the booking &amp; billing system described in this repo's RFP.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — the binding conventions (1–16), phase status and decisions log.
+2. docs/prototype-build/REQUIREMENTS.md — especially §1 (prototype harness) and §9 (non-functional).
+3. docs/prototype-build/phases/phase-00-scaffold-and-shell.md — your detailed plan.
+
+Then enter plan mode: confirm nothing exists yet at aa-prototype/, turn the phase doc into work-sized steps, and wait for my approval before changing anything.
+
+While working:
+- Scaffold aa-prototype/ exactly per the plan (Vite + React 18 + TS strict, React Router, Zustand, Tailwind, lucide-react, date-fns, Vitest) and the folder shape in PROGRESS convention 3.
+- Transcribe ALL design tokens verbatim from Design/Design Language.dc.html at the repo root (open it in a browser too) — neutrals, crimson (identity only), teal accent, semantic colours, the six status colour triples with hatched-Unavailable/dashed-Free treatments, type scale (Schibsted Grotesk + Spline Sans Mono via Google Fonts), spacing/radius/elevation, and the four named motion patterns with their exact durations/easings.
+- The app switcher lives in the top corner of a persistent shell and swaps app + persona; the mobile app renders inside the phone frame adapted from Design/ios-frame.jsx (IOSDevice), floating centred on the design's #E4E8E6 grey backdrop — never rely on browser viewport size.
+- Nav chrome per the design pages: mobile bottom tabs, web white top-nav with serif crimson wordmark, admin dark-ink side nav with crimson active marker and badge pattern.
+- Keep npm run build and npx vitest run green; leave the app runnable with npm run dev.
+
+When done: run the phase's manual test checklist and report each item, update PROGRESS.md (status row + Phase 00 entry + any decisions), and give me short, clear notes on what to check by hand.
+
+Phase goal: the three-app demo shell with switcher and phone frame, on rails for every phase after it.</pre>
+  </div>
+</article>
+
+<article class="phase trackA" id="phase-01">
+  <div class="phase-head">
+    <span class="pnum">01</span>
+    <div class="phase-title">
+      <h3>Domain model &amp; billing calculator</h3>
+      <div class="badges">
+        <span class="badge trk">Gates everything</span>
+        <span class="badge dep">After Phase 00</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-01-domain-and-calculator.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The pure, React-free foundation: the complete typed domain model (canvas, Lists, Cards, Procedures, contracts incl. holder scope and explicit price-list matching keys, RVG/modifier tables, plus the Xero/integration shapes typed now so the store never churns), the demo clock, NHI validation for both formats (mod-24 and mod-23), and the fully unit-tested BTM billing calculator — tiered time (with the partial-interval rounding rule explicitly labelled an unconfirmed assumption, not an RFP fact), modifier absorption, contract types 1/2/3, typed overrides, split-billing, and the minimum-billing-data validator. Nothing visual changes; the deliverable is a green Vitest suite proving the RFP's hardest rules before any screen depends on them.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Vitest green with the named cases actually present: exactly-2h and 2h01 time boundaries, P1 absorption, range codes, each contract type, each override type, split billing, NHI both formats.</li>
+      <li>A paper spot-check of one fee (e.g. 2h30m, base 10, AS3, $30/unit) matches the calculator.</li>
+      <li>src/domain/ has no React imports; the time-rounding rule is a named, labelled assumption (not silently hardcoded as fact) and is in the Decisions log as a discovery item.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-01">Copy</button>
+    </div>
+    <pre id="prompt-01">Please run Phase 01 (Domain model &amp; billing calculator) of the Anaesthesia Associates prototype build. Pure logic only — nothing visual changes this phase.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions (1–16), decisions log, and what Phase 00 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — especially §2 (domain model) and §6.B3 (calculator).
+3. docs/prototype-build/phases/phase-01-domain-and-calculator.md — your detailed plan.
+4. Data-Model-and-Flow.md (repo root) — the entity model this must implement; RFP.md's "The Big Picture" BTM section and Appendix 1 (NHI formats) for the source rules.
+
+Then enter plan mode: verify the Phase 00 scaffold state, turn the phase doc into work-sized steps (types → clock → NHI → calculator + tests), and wait for my approval.
+
+While working:
+- Everything lands in src/domain/ with no React/DOM imports; TypeScript strict, no any.
+- Type ALL entities now, including billing/Xero/integration shapes later phases fill — the store shape must never churn.
+- The calculator implements the RFP rules exactly: tiered time (1u/15min first 2h, 1u/10min after — the RFP is SILENT on partial-interval rounding, so implement round-up-per-started-interval as a named, clearly-labelled ASSUMPTION, not a fact — surface it in a comment and a UI note), base capped at one, P1 refused when the base code absorbs positioning, ASA seeding values, contract types 1/2/3 with an explicit holder scope (organisation today, individual-anaesthetist reserved) and explicit ContractPrice matching keys (contractId + rvgBaseCode + surgeonId + procedureOrdinal), typed overrides (fixed/$/%), isAdditional procedures time-only, and validateCardForBilling returning structured field-level failures.
+- NHI validation and generation for BOTH formats (AAANNNC mod-24, AAANNAX mod-23) with known-good/bad tests.
+- Write every Vitest case the plan names — the named boundary cases must exist, not just pass.
+
+When done: run the manual test checklist and report each item (including the paper spot-check), update PROGRESS.md (status row + entry + rounding/ambiguity decisions), and give me short, clear notes.
+
+Phase goal: the RFP's hardest business rules proven correct in pure, tested functions before any screen exists.</pre>
+  </div>
+</article>
+
+<article class="phase trackA" id="phase-02">
+  <div class="phase-head">
+    <span class="pnum">02</span>
+    <div class="phase-title">
+      <h3>Seed data &amp; store</h3>
+      <div class="badges">
+        <span class="badge trk">Gates everything</span>
+        <span class="badge dep">After Phase 01</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-02-seed-and-store.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The fake backend comes alive: a deterministic seeded dataset (the full canvas — 2 Lists per anaesthetist per day over the rolling horizon — masters, contracts of all three types, RVG/modifier tables, and the ready-made demo states later phases rely on), the Zustand store with lifecycle guards (DRAFT→SUBMITTED→AUTHORISED, no Returned state, role checks) and the append-only audit writer, localStorage persistence with reset, the working demo clock, and a data inspector that makes it all demoable.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Guard tests green: submit-with-invalid-card rejected, anaesthetist-edit-of-SUBMITTED rejected, office allowed, AUTHORISED locked, reassignment preserves cards + audit, reset determinism.</li>
+      <li>Inspector shows the 2-per-day canvas, every status colour, and the seeded SUBMITTED / split-billing / pre-payment states.</li>
+      <li>Reset gives identical data every time; state survives refresh; clock advance works.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-02">Copy</button>
+    </div>
+    <pre id="prompt-02">Please run Phase 02 (Seed data &amp; store) of the Anaesthesia Associates prototype build — the phase that brings the fake backend alive.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions (especially 4–7), decisions log, and what Phases 00–01 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §1.P5/P6/P10 and §2 (D1–D7).
+3. docs/prototype-build/phases/phase-02-seed-and-store.md — your detailed plan, including the exact seed inventory.
+
+Then enter plan mode: verify Phase 01's types and calculator, turn the phase doc into work-sized steps (seed → store slices → guards → audit → persistence → control-panel wiring → inspector → tests), and wait for my approval.
+
+While working:
+- The seed is deterministic (seeded RNG + pinned DEMO_TODAY 2026-07-21, the design mockups' content date): same seed → identical data. Build the full inventory the plan lists — including the Design/ mockups' cast (Dr Melanie Souter as the demo persona, Kirsty W. in the office, the 14 anaesthetists — each with a registration-number ID, name, contact details, unit value, GST period and HPI id per the RFP's Anaesthetist master) and the design-day fidelity states, plus the ready-made states later phases depend on (SUBMITTED lists, split-billing card, pre-payment patient with a full|split flag, self-funded-post-procedure and insured patients for the three payment categories, guardian case, both NHI formats, repeat patients).
+- Permanent Lists cover ~80% of SURGEON-ASSIGNED lists (the RFP's figure — a share of assignments, not of all sessions); modifier unit values are demo-plausible figures drawn from the RFP's stated ranges, explicitly labelled as such in a seed comment (not an authoritative NZSA schedule — flag as a discovery item).
+- Lifecycle guards live in the store and are the only path: completeCard gated by validateCardForBilling, submitList blocked unless EVERY card is marked Completed (validation alone is not enough), authoriseList locks Cards and emits listAuthorised, reassignList enforces the fixed-canvas slot mechanics (free target absorbed, vacated slot regenerates — 2 lists per anaesthetist per day always), reassignCard moves a single Card between Lists (audited at Card level, distinct from reassignList — this is the RFP's routine "move one booking" case), setAvailability writes the availability MASTER and reconciles (free sessions restatus, booked sessions conflict-flag), role checks per persona, and NO Returned transition exists.
+- Every domain mutation goes through the audit wrapper — no direct set on domain slices outside it.
+- Wire reset + advance-day into the demo control panel; build the /demo/data inspector (demo-badged).
+- Write the guard tests the plan lists. Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (status row + entry + seed decisions), and give me short, clear notes.
+
+Phase goal: a deterministic, guarded, audited fake backend — fully alive and inspectable behind the placeholder screens.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-03">
+  <div class="phase-head">
+    <span class="pnum">03</span>
+    <div class="phase-title">
+      <h3>Mobile: schedule, cards &amp; availability</h3>
+      <div class="badges">
+        <span class="badge dep">After Phase 02</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-03-mobile-schedule-and-cards.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The anaesthetist's mobile world minus the billing capture: Forward Lists → Cards → Card navigation in the phone frame (Appendix 3's depth, modernised), card viewing/editing with attachments, card copy, ad-hoc creation with the photo-OCR mock, other-anaesthetists availability for swaps, and own-availability maintenance on the Availability master (reconciled into the canvas — free sessions restatus, booked sessions conflict-flag). The BTM block renders as a labelled Phase 04 placeholder.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Lists → Cards → Card navigation matches Appendix 3's depth; the 2-lists-per-day rhythm is visible; filters (Week/Month/To-Do/Done) work.</li>
+      <li>Card copy gives a skeleton; the photo path produces a reviewable pre-filled card with the demo badge.</li>
+      <li>Own-availability changes recolour the canvas; SUBMITTED lists are read-only; edits write audit entries.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-03">Copy</button>
+    </div>
+    <pre id="prompt-03">Please run Phase 03 (Mobile: schedule, cards &amp; availability) of the Anaesthesia Associates prototype build — the first real screens, inside the phone frame.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–02 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §3 (M1–M3, M6–M9).
+3. docs/prototype-build/phases/phase-03-mobile-schedule-and-cards.md — your detailed plan.
+4. Design/Mobile App.dc.html (screens 1–2) and Design/Mobile Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); open them in a browser and tap through before building.
+5. RFP Appendix 3 (PDF page 44) — the legacy screens, for functional reference.
+
+Then enter plan mode: verify the store selectors and seed states, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- Everything reads/writes through the Phase 02 store hooks and guards — no domain logic in components; guard messages surface in the UI.
+- Keep the legacy three-level navigation and the 2-lists-per-day rhythm, but modern and simple: ease of use is the RFP's headline requirement.
+- Scope fence: the Outcome/BTM section is a labelled Phase 04 placeholder, and the Cards screen reserves a disabled footer slot for Phase 04's Completed button. Do NOT start BTM capture.
+- Build the card-creation flows: copy (skeleton, less procedure specifics), ad-hoc manual entry with a "Look up NHI" action calling Phase 01's simulated lookupNhi (demo-badged, pre-fills name/DOB/ethnicity for review — still editable), and the photo-OCR mock (bundled sample photos → simulated processing → pre-filled draft for review, demo-badged).
+- Both availability screens: other-anaesthetists day view (incl. the request-cover sheet flow) and My availability — which writes to the AnaesthetistAvailability master via setAvailability, never to Lists directly; the canvas reflects it by reconciliation (booked sessions get a conflict flag, not a silent change).
+- Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (status row + entry + the UI patterns later phases must copy), and give me short, clear notes.
+
+Phase goal: an anaesthetist can navigate their schedule, manage cards and availability in the phone frame — everything except the billing capture.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-04">
+  <div class="phase-head">
+    <span class="pnum">04</span>
+    <div class="phase-title">
+      <h3>Mobile: BTM capture &amp; submission</h3>
+      <div class="badges">
+        <span class="badge hi">Highest-stakes UI</span>
+        <span class="badge dep">After Phase 03</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-04-mobile-btm-capture.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The clinical-billing heart of the demo, built with undivided focus: the per-Procedure Outcome/BTM block (ASA seeding M, curated RVG dropdown with range codes and positioning-absorption, Start/Finish Now, B/T/M steppers, live fee at the anaesthetist's own unit value), structured validation, structurally time-only additional procedures, and the validation-gated list "Completed" submission flow that flips the list read-only.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>A 2h+ case's T units match the tiered rule; fee = units × that anaesthetist's own unit value (compare two anaesthetists to prove per-person rates).</li>
+      <li>P1 disabled with an explanation on absorbing base codes; additional procedures allow time capture only.</li>
+      <li>List "Completed" blocked with named offenders while any card is invalid, then succeeds → read-only with the completed-unbilled badge; all captures audited.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-04">Copy</button>
+    </div>
+    <pre id="prompt-04">Please run Phase 04 (Mobile: BTM capture &amp; submission) of the Anaesthesia Associates prototype build — the highest-stakes UI in the demo. The fee maths on this screen will be checked by hand in front of the client.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–03 actually built (especially 03's reserved seams: the BTM placeholder and the Completed footer slot).
+2. docs/prototype-build/REQUIREMENTS.md — §3.M4/M5/M10 and §6.B5 (capture side).
+3. docs/prototype-build/phases/phase-04-mobile-btm-capture.md — your detailed plan, including the do-NOT-inherit list (the mockup simplifies the billing maths; the RFP rules win).
+4. Design/Mobile App.dc.html screen 3 — the AUTHORITATIVE visual reference (convention 17); tap through the capture → complete → submit choreography in a browser first.
+5. RFP Appendix 3 (PDF page 44, fourth screenshot — the Outcome panel) and the RFP's "The Big Picture" BTM section — the rules.
+
+Then enter plan mode: verify Phase 03's seams and Phase 01's calculator/validator signatures, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- All maths comes from the Phase 01 pure functions — the UI only formats results. B and T auto-compute from code/times but stay overridable (RFP: every seeded value is overridable).
+- ASA seeds the M stepper; range RVG codes prompt within range; positioning-absorbing codes disable P1 with an explanation; Start/Finish Now stamp demo-clock time with editable fields.
+- Additional procedures are STRUCTURALLY time-only (base/modifier steppers disabled with a one-line why).
+- The Completed toggle and the list-level Completed button surface validateCardForBilling's structured failures verbatim, inline against their fields. Submission is completion-gated, not just validation-gated: the list-level button stays disabled until every card is MARKED Complete; submitList enforces the same rule in the store; the list then flips read-only for the anaesthetist persona.
+- Every capture mutation must appear in the card's audit trail.
+- Keep build + tests green.
+
+When done: run the manual test checklist and report each item (including the two-anaesthetist rate comparison), update PROGRESS.md (status row + entry + capture-UX decisions the web app must mirror), and give me short, clear notes.
+
+Phase goal: procedure-day data capture an audience can verify against the RVG rules by hand — and a validated, guarded submit.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-05">
+  <div class="phase-head">
+    <span class="pnum">05</span>
+    <div class="phase-title">
+      <h3>Anaesthetist web app</h3>
+      <div class="badges">
+        <span class="badge dep">After Phase 04</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-05-anaesthetist-web-app.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The desktop twin (Appendix 5, modernised): shared-component extraction from mobile first (refactor, not fork — mobile stays pixel-stable), then the dashboard with week calendar strip, receivables aging, productivity, leave and the unassigned-anaesthetists locum panel; the date-ranged Lists table; the all-anaesthetists Availability grid; the flat Overdue table; and the GST summary shell awaiting Phase 10's live data.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>The week strip matches the same persona's mobile Forward Lists for the same dates.</li>
+      <li>A free AM slot for tomorrow is findable in the Availability grid in under 10 seconds.</li>
+      <li>Mobile is visually unchanged after the extraction; web List/Card editing behaves exactly like mobile (guards, validation).</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-05">Copy</button>
+    </div>
+    <pre id="prompt-05">Please run Phase 05 (Anaesthetist web app) of the Anaesthesia Associates prototype build.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–04 actually built (especially 04's capture-UX decisions).
+2. docs/prototype-build/REQUIREMENTS.md — §4 (W1–W4) and §3.M11.
+3. docs/prototype-build/phases/phase-05-anaesthetist-web-app.md — your detailed plan.
+4. Design/Web Dashboard.dc.html and Design/Web Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); note the nav is Dashboard · Lists · Availability · Accounts.
+5. RFP Appendix 5 (PDF pages 46–49) — the legacy screens, for functional reference.
+
+Then enter plan mode: identify exactly which Phase 03–04 components to extract to src/shared/ (refactor, don't fork), turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- Extraction first: mobile must remain visually unchanged afterwards — compare against before-screenshots.
+- The RFP says mobile-app functionality applies equally to the web app: List/Card detail and BTM editing reuse the shared components in a desktop layout, with the same lifecycle guards (no authorise controls anywhere in this app).
+- Dashboard panels read from the store; where billing data doesn't exist yet (receivables, overdue, GST) use honest empty states or seeded numbers that live in seed — never hardcoded in components.
+- The Availability grid is the locum-finder: all anaesthetists × AM/PM, colour-coded, free sessions prominent. The Overdue table is a flat list, no rollup (RFP explicit).
+- Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (status row + entry + a note listing exactly what moved to src/shared/), and give me short, clear notes.
+
+Phase goal: the anaesthetist's desktop home — dashboard, lists, locum-finding availability and overdue accounts — sharing one component library with mobile.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-06">
+  <div class="phase-head">
+    <span class="pnum">06</span>
+    <div class="phase-title">
+      <h3>Admin: day dashboard, changes &amp; reassignment</h3>
+      <div class="badges">
+        <span class="badge dep">After Phase 05</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-06-admin-day-dashboard.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The office's operational cockpit (Appendix 4, modernised): the one-day grid — anaesthetist rows × hours, status-coloured List blocks with hospital/surgeon/annotation labels, legend, mini-calendar, day navigation, per-day internal notes — plus advisory conflict flags (hospital holidays, availability clashes), manual change handling as the office persona, phone-advice bookings onto free Lists, and the short-notice List reassignment flow that preserves Cards and audit history.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>DEMO_TODAY's grid shows every anaesthetist row with correct colours/labels; a seeded annotation and both conflict-flag types visible; notes persist per day.</li>
+      <li>Office edits a SUBMITTED card (allowed); the anaesthetist persona is blocked from the same edit.</li>
+      <li>Reassignment keeps cards + audit intact, updates the grid, and records from→to in the audit trail.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-06">Copy</button>
+    </div>
+    <pre id="prompt-06">Please run Phase 06 (Admin: day dashboard, changes &amp; reassignment) of the Anaesthesia Associates prototype build — the office staff's operational surface.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–05 actually built (especially src/shared/ contents).
+2. docs/prototype-build/REQUIREMENTS.md — §5.A1–A3 and §2.D7.
+3. docs/prototype-build/phases/phase-06-admin-day-dashboard.md — your detailed plan.
+4. Design/Admin Day.dc.html — the AUTHORITATIVE visual reference (convention 17): dark side nav, proportional time-block grid, flag/note adornments, right rail.
+5. RFP Appendix 4 (PDF page 45) — the legacy one-day dashboard, for functional reference (keep the density and drill-down).
+
+Then enter plan mode: verify the store guards and shared components, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- The one-day grid is the centrepiece: anaesthetist rows × 07:00–18:00+ columns, AM/PM blocks coloured from the shared status tokens, annotations, legend, mini-calendar, ±day/week/4-week navigation, per-day internal notes persisted in the store.
+- Conflict flags are advisory (warning icon + tooltip) for hospital-holiday and availability clashes — record that reading in the Decisions log and note it in UI copy.
+- Manual changes run through the shared detail components as the office persona (guards already permit office edits of SUBMITTED); include the phone-advice booking path onto a free List; everything audited with source=office.
+- TWO DISTINCT reassignment operations — don't conflate them: (a) Card reassignment — "Move to another list" on a single Card calls reassignCard, moving just that Card (its List's other Cards/status untouched, audited on the Card itself) — this is the RFP's routine case; (b) List reassignment (illness cover) — List panel → pick a target whose session is FREE (the guard rejects others) → confirm dialog states the slot mechanics (target's free List absorbed; vacated slot regenerates with a pickable status, default Unavailable) → Cards/status/audit intact, itself audited, and both day-grid rows still show exactly two sessions.
+- Scope fence: Authorisation, Master Data, Audit and Billing Monitor nav items are honest placeholders naming Phases 07/07/07/09. Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+
+Phase goal: the office can run the day — see everything, change anything they're allowed to, and cover illness in three clicks.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-07">
+  <div class="phase-head">
+    <span class="pnum">07</span>
+    <div class="phase-title">
+      <h3>Admin: authorisation, masters &amp; audit</h3>
+      <div class="badges">
+        <span class="badge trk">Gates 08 + 11</span>
+        <span class="badge dep">After Phase 06</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-07-admin-authorisation-and-masters.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The control side of the office app: the SUBMITTED→AUTHORISED queue with the sanity-check review (all cards, billing-relevant columns, oddity flags), the Authorise action that locks Cards and emits the event Phase 08 consumes, the log-phone-note action (no Returned state exists, ever), the master-data screens (contracts, unit values, permanent lists, holidays, RVG/modifier tables…), the global + per-entity audit viewer, and the RBAC demonstration.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Authorising a queued list locks its cards for every persona and lands it in the billing-queue placeholder.</li>
+      <li>Changing a unit value changes a fresh BTM fee; a new hospital holiday raises Phase 06's flag; adding an anaesthetist extends the canvas.</li>
+      <li>The audit viewer reconstructs a card's full mixed-source story (edited, reassigned, authorised).</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-07">Copy</button>
+    </div>
+    <pre id="prompt-07">Please run Phase 07 (Admin: authorisation, masters &amp; audit) of the Anaesthesia Associates prototype build — the phase that completes the booking-to-authorised workflow.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–06 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §5.A4/A6–A8 and §2.D6.
+3. docs/prototype-build/phases/phase-07-admin-authorisation-and-masters.md — your detailed plan, including the ROUTE-column correction (the mockup showed anaesthetic technique; build the RFP billing route).
+4. Design/Admin Review.dc.html — the AUTHORITATIVE visual reference (convention 17); click Authorise in a browser to see the required choreography (tick banner, table dims + locks, badge decrement).
+
+Then enter plan mode: verify the store's authoriseList guard and event, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- Authorisation per the RFP: queue of SUBMITTED lists → sanity-check review of all Cards (billing-relevant columns + oddity flags) → AUTHORISE locks Cards immutable and emits listAuthorised (until Phase 08 exists, land it in a visible billing-queue placeholder). Issues are resolved by phone (log-a-note action) — there is NO return-to-anaesthetist path anywhere in the system.
+- Master data screens run through the audited store: full edit where the demo needs it (contracts incl. price lists and effective dates, anaesthetist unit values and GST periods, permanent lists, holidays, anaesthetist add extending the canvas forward). INVARIANT: a hospital/direct-insurer's mandatory default Type 1 contract can never be deleted or effective-dated away — enforce in the store, block in the forms, prove with a test.
+- Audit viewer: global filterable feed (entity, source, date) + a History affordance on the shared detail components showing before→after.
+- RBAC demo: role labels on the authorisation screen, acting role on every audit entry, and the short roles info panel.
+- Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+
+Phase goal: SUBMITTED work flows through a sanity check to an immutable AUTHORISED state, master data is manageable, and every action is reconstructable in the audit viewer.</pre>
+  </div>
+</article>
+
+<article class="phase trackC" id="phase-08">
+  <div class="phase-head">
+    <span class="pnum">08</span>
+    <div class="phase-title">
+      <h3>Billing: run &amp; invoices</h3>
+      <div class="badges">
+        <span class="badge hi">Gates 09–10</span>
+        <span class="badge dep">After Phase 07</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-08-billing-run-and-invoices.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The billing engine's core: consuming an AUTHORISED List as a unit — per-procedure route resolution (default Type 1 contracts guarantee no "no contract" branch), rating via the Phase 01 calculator across all three charge bases, split-billing enforcement (time-only additional procedures; per-funder lines → separate invoices), grouping by counterparty per Card (one Card → potentially many invoices), snapshot amounts, unique invoice numbers, the two invoice layouts with agency wording, and the billedAt trigger that drops billed Lists off the anaesthetist views.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>The split-billing card yields two invoices; the additional procedure's lines are time-only; a same-counterparty multi-procedure card yields ONE grouped invoice.</li>
+      <li>Invoice maths spot-checks against the mobile BTM capture; layouts differ by recipient type; numbers unique.</li>
+      <li>Billed lists vanish from mobile/web while SUBMITTED ones remain; mutating a contract after billing leaves the stored invoice unchanged.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-08">Copy</button>
+    </div>
+    <pre id="prompt-08">Please run Phase 08 (Billing: run &amp; invoices) of the Anaesthesia Associates prototype build — the centre of the universe in the RFP's design.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–07 actually built (especially the listAuthorised event and Phase 01's calculator).
+2. docs/prototype-build/REQUIREMENTS.md — §6.B1–B6/B9/B10.
+3. docs/prototype-build/phases/phase-08-billing-run-and-invoices.md — your detailed plan.
+4. Data-Model-and-Flow.md §2 and §4 — the invoice/billing-case model and the end-to-end flow this implements.
+
+Then enter plan mode: verify the calculator and event seams, turn the plan into work-sized steps (run orchestration → invoice documents → view effects → tests), and wait for my approval.
+
+While working:
+- The run consumes an AUTHORISED List as a unit: resolve route per procedure (the Contract-Holder route resolves BY HOLDER — usually a hospital, but surgeon- or group-held contracts (bariatric/TMJ/COS) must work; Contract-Holder/Insurer always resolve a contract — default Type 1 guaranteed; Billable Party none unless an individual arrangement exists), rate via the Phase 01 pure functions (RVG/fixed/rate×time, Type 2 discount, Type 3 fixed + price-list 2nd-procedure rules, typed overrides — exercise the seeded surgeon-held bariatric contract), enforce split billing, group by counterparty per Card, snapshot amounts.
+- Invoice generation sets billedAt on the List — that (not AUTHORISED, not payment) removes it from the anaesthetist views, per the RFP's proposed trigger. Record the reading.
+- Two layouts (contract-holder vs patient) with agency wording; on the patient layout reflect patientPaymentCategory in the wording (post-procedure / pre-payment-due / "claim from your own insurer" for insuredReimbursement — NOT the same as an Insurer-route invoice); unique invoiceNumber sequence; caseReference displayed as internal-only; delivery per the RFP: "email" = mark emailed-at with a demo badge, "print" = browser print via a print stylesheet (no PDF library), and nib-direct invoices show a "present via upload portal" status stub; Xero renders as a pending-Phase-10 stub.
+- Scope fence: NO pre-payment, post-op or monitor work — that's Phase 09.
+- Write the Vitest cases the plan lists (multi-counterparty, split pair, two-funder split, type 2/3, override snapshot, contract-mutation immunity, grouping). Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+
+Phase goal: authorise → correct, previewable invoices with the RFP's billing rules demonstrably enforced.</pre>
+  </div>
+</article>
+
+<article class="phase trackC" id="phase-09">
+  <div class="phase-head">
+    <span class="pnum">09</span>
+    <div class="phase-title">
+      <h3>Billing: exceptions &amp; monitor</h3>
+      <div class="badges">
+        <span class="badge dep">After Phase 08</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-09-billing-exceptions-and-monitor.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The edge cases the RFP flags as open questions, handled confidently and labelled: the pre-payment flow (pre-procedure invoice, then balance), the post-op addendum (new Card against a locked original, running its own full cycle), and the office billing monitor — the List → Billing → Xero pipeline view with a demoable per-card failure, card-level isolation, and resolve-&amp;-retry.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Pre-payment invoice + balance invoice sum to the full fee.</li>
+      <li>The addendum bills independently while the original card and its invoice stay untouched.</li>
+      <li>The failure blocks only its own card; retry recovers it without duplicating the list's other invoices.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-09">Copy</button>
+    </div>
+    <pre id="prompt-09">Please run Phase 09 (Billing: exceptions &amp; monitor) of the Anaesthesia Associates prototype build — the RFP's open-question moments, demoed confidently.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phase 08 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §6.B7/B8, §5.A5, and §11 (the open-question readings these flows must label).
+3. docs/prototype-build/phases/phase-09-billing-exceptions-and-monitor.md — your detailed plan.
+
+Then enter plan mode: verify Phase 08's run and document pipeline, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- Pre-payment is typed full|split per the RFP: "Raise pre-procedure invoice" bills the full estimated fee or the deposit portion. Per the RFP ("payment must be collected before the procedure proceeds"), completing the Outcome on a selfFundedPrepayment card is a REAL GATE: blocked while its pre-invoice is unpaid, extending the completeCard guard from Phase 02. An office-only, audited overridePrepaymentGate(cardId, reason) action lifts it when the office needs to proceed on their own call — visibly flagged as an override everywhere the card appears, never silent. The post-procedure run bills exactly the balance. Label the timing-vs-AUTHORISED tension as an RFP open question in UI copy.
+- Post-op addendum: "Add post-op event" on a billed/locked card creates a postOpAddendum Card linked to the original episode, running the normal capture → submit → authorise → bill cycle; the original stays locked throughout.
+- Billing monitor (admin nav, replacing the placeholder): per-list pipeline stages with card-level rows; one triggerable failure (contract effective-dated out) with a readable error and resolve-&amp;-retry; a failed card blocks ONLY its own invoice — record that reading.
+- The monitor is proposed product UI; only its simulation triggers carry the demo badge (convention 13). Add the failure trigger + post-op stager to the demo control panel.
+- Write the tests the plan lists (pre-payment sum, addendum independence, failure isolation, idempotent retry). Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (the three open-question readings go in the Decisions log), and give me short, clear notes.
+
+Phase goal: the billing engine handles the awkward cases — before payment, after locking, and when a card fails — visibly and recoverably.</pre>
+  </div>
+</article>
+
+<article class="phase trackC" id="phase-10">
+  <div class="phase-head">
+    <span class="pnum">10</span>
+    <div class="phase-title">
+      <h3>Xero &amp; payments simulation</h3>
+      <div class="badges">
+        <span class="badge dep">After Phase 09</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-10-xero-and-payments.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The money story completes: a demo-badged Xero simulator receives the ACCREC + draft ACCPAY pair per invoice (GUID-linked, similar numbers), contacts resolve via the hidden-ID workflow with the archiving job (NHI never appears — test-enforced), payments arrive by webhook or the daily reconciliation poll (idempotent, partials pro-rata), payables runs disburse AUTHORISED ACCPAYs, and the anaesthetist balance/GST views go live with the next-day visibility rule.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Payment webhook flips the paired ACCPAY to AUTHORISED; partials pro-rata; webhook + poll double-delivery has no double effect.</li>
+      <li>Paid-into-AA and disbursed-to-anaesthetist show as two independent dated states (trust-account model).</li>
+      <li>Balances appear on mobile/web only after advancing to the next day; the no-NHI-in-Xero test passes.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-10">Copy</button>
+    </div>
+    <pre id="prompt-10">Please run Phase 10 (Xero &amp; payments simulation) of the Anaesthesia Associates prototype build.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions (especially 8: NHI never crosses to Xero), decisions log, what Phases 08–09 actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §7 (X1–X5) and §2.D9.
+3. docs/prototype-build/phases/phase-10-xero-and-payments.md — your detailed plan.
+4. Data-Model-and-Flow.md §2/§2a and RFP Appendix 2 — the ACCREC/ACCPAY pairing and the identity-layer/contact-lifecycle workflow this simulates.
+
+Then enter plan mode: verify Phase 08's billing-case seam and Phase 09's monitor, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- On invoice generation, contact resolution splits by counterparty type: organisational payers (hospitals/contract holders, nib) resolve to persistent organisation contacts (no hidden ID, never archived); patients run the Appendix 2 workflow (cached ContactID → lookup by ContactNumber = hidden internal ID → create; archived contact → invoice against it with the unarchive-TBC note). Then create the ACCREC (payer) + DRAFT ACCPAY (anaesthetist) pair linked by GUIDs on the billing case, with visibly similar numbers. Also demo the intake checks: NHI dedupe (repeat patient reuses their contact) and an outstanding-balance banner before a new episode bills. The billing monitor's Xero stage goes live with one triggerable failure + retry.
+- NHI must not appear anywhere in the Xero slice or its screens — write the test proving it with seeded NHIs as probes.
+- Payment detection: demo webhook trigger (full/partial) + daily reconciliation poll on clock advance, both idempotent by InvoiceID; paid ACCREC flips ACCPAY DRAFT→AUTHORISED, pro-rata for partials; seed one webhook-missed payment the poll catches.
+- Payables run creates disbursements; every invoice shows paid-in / disbursed as two independent dated states (trust-account model). The archive job (clock-triggered + manual) archives fully-paid PATIENT contacts after a CONFIGURABLE inactivity window (seed 90 days as the RFP's own "e.g." figure — don't hardcode it as a rule; expose it as an editable setting) (organisational contacts never archive), with the ~10k soft-limit rationale visible.
+- Go-live the anaesthetist money views: flat ACCPAY balances with the next-day rule, receivables aging, overdue, and the GST-period summary — all reading the billing engine's own mirror, never the Xero-sim slice (view selectors import from billing, not xero; the RFP is explicit that the apps never query Xero).
+- Write the tests the plan lists. Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (including the Appendix-2-over-Appendix-1 NHI decision), and give me short, clear notes.
+
+Phase goal: the complete money story — invoice → Xero pair → payment → authorised payable → disbursement — with clinical identity provably kept out of Xero.</pre>
+  </div>
+</article>
+
+<article class="phase trackC" id="phase-11">
+  <div class="phase-head">
+    <span class="pnum">11</span>
+    <div class="phase-title">
+      <h3>Integrations simulation</h3>
+      <div class="badges">
+        <span class="badge dep">Any time after Phase 07</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-11-integrations.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">The integration story: canned HL7 v2.3.1 SIU messages (S12/S13/S14/S15, styled on the RFP sample) replay through a three-pane raw-HL7 → FHIR R4 → schedule-effect view; a FHIR-native feed shows the target state; surgeon PDF lists go through the read/edit/ingest pathway; the integration monitor demos failure, alerting, manual fix and reprocess; and the NHI dual-format validator (mod-24 / mod-23) proves the 2027 compliance requirement.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Replaying an S12 creates a Card on the right hospital/anaesthetist List — visibly live in the mobile app; audit shows source=integration.</li>
+      <li>The malformed message fails into the monitor, raises the alert, and fix-&amp;-reprocess recovers it.</li>
+      <li>PDF flow: correct the deliberately-wrong row in review, ingest, Cards created; the new-format NHI processes end-to-end.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-11">Copy</button>
+    </div>
+    <pre id="prompt-11">Please run Phase 11 (Integrations simulation) of the Anaesthesia Associates prototype build.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what earlier phases actually built.
+2. docs/prototype-build/REQUIREMENTS.md — §8 (I1–I5) and §2.D8.
+3. docs/prototype-build/phases/phase-11-integrations.md — your detailed plan.
+4. RFP.md — the Health Systems Integration section, including the sample SIU^S14 message your canned messages are styled on, and Appendix 1 for the NHI format change.
+
+Then enter plan mode: verify the card-update paths and admin surfaces, turn the plan into work-sized steps, and wait for my approval.
+
+While working:
+- Build the canned message library per the plan (S12/S13/S14/S15, one malformed, one new-format NHI, one with an out-of-range ethnicity code), each with a unique message control ID and its FHIR R4 translation (NZ-profile touches: NHI identifier, an NZHIS ethnicity extension actually run through Phase 01's validateEthnicityCode — not just displayed, and the anaesthetist's HPI identifier on the Practitioner) and its store effect — all writes audited with source=integration and reflected in near-real-time on the schedule (demoable with the mobile app open on that List). The two hospital feeds genuinely differ in field placement, driving the per-hospital mapping config view.
+- The simulator surface is demo-badged: three panes for HL7-path messages (raw → FHIR → schedule effect), two for the FHIR-native feed; a drip-feed "live" mode. UI copy references FHIR-first, the Digital Services Hub and Keycloak (referenced, not implemented).
+- PDF ingestion: canned surgeon PDFs → extraction review (read/edit — include a deliberately-wrong row) → ingest to Cards.
+- Integration monitor: message log with statuses (incl. duplicate), a failure alert in the admin header, and the reliability story made demoable — idempotent dedupe by message control ID (a duplicate-replay trigger shows a no-op), a dead-letter state that loses nothing, and the manual fix-&amp;-reprocess workflow driven by the malformed message (the fix edits the per-hospital feed mapping, proving configurability).
+- Validator widget for BOTH NHI (using the Phase 01 validators) and ethnicity code (validateEthnicityCode, demo subset — reject out-of-range clearly); note the 1 July 2027 dual-format mandate in copy.
+- Keep build + tests green.
+
+When done: run the manual test checklist and report each item, update PROGRESS.md (including the cancellation-behaviour decision), and give me short, clear notes.
+
+Phase goal: hospital messages, surgeon PDFs and the FHIR-first target state all demoable — including how the system behaves when integration goes wrong.</pre>
+  </div>
+</article>
+
+<article class="phase setup" id="phase-12">
+  <div class="phase-head">
+    <span class="pnum">12</span>
+    <div class="phase-title">
+      <h3>Demo polish &amp; guided script</h3>
+      <div class="badges">
+        <span class="badge dep">Last — after everything</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-12-demo-polish.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">Feature-complete becomes demo-confident: the control panel finished (reset, clock travel, grouped event triggers, scenario jumps), the five seeded scenarios (booking-to-theatre, office day, money end-to-end, exceptions, compliance tour) proven to run clean from a fresh reset, a cross-app QA sweep (empty states, NZ formats, guards, console), DEMO-SCRIPT.md for the presenter, and a README.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>From a hard reset, scenarios S1–S5 run start-to-finish exactly as DEMO-SCRIPT.md describes.</li>
+      <li>Every nav destination is real; reset is perfectly deterministic; build + suite green; console clean throughout.</li>
+      <li>Someone cold can run the whole demo from DEMO-SCRIPT.md alone.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-12">Copy</button>
+    </div>
+    <pre id="prompt-12">Please run Phase 12 (Demo polish &amp; guided script) of the Anaesthesia Associates prototype build — the closing phase. No new features: polish, scenarios, and the presenter script.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — the full build record: every phase entry, decision and deferral, plus the "Discovered for later" list.
+2. docs/prototype-build/REQUIREMENTS.md — §1.P6/P7 and the §11 open-question readings that DEMO-SCRIPT.md should surface as discovery talking points.
+3. docs/prototype-build/phases/phase-12-demo-polish.md — your detailed plan.
+
+Then enter plan mode: turn the plan into work-sized steps (control panel → scenarios S1–S5 verified from reset → QA sweep → DEMO-SCRIPT.md → README) and wait for my approval.
+
+While working:
+- Finish the demo control panel: reset with confirm, clock travel, grouped event triggers that state what they'll do, and scenario jump buttons.
+- Prove each scenario S1–S5 from a hard reset, fixing seed/flow issues as found; anything bigger than polish goes to PROGRESS "Discovered for later", not into code.
+- QA sweep per the plan: every destination real, consistent status colours and NZ date/currency formats, empty states, persona guards, phone-frame behaviour, clean console, green build + full Vitest, fresh-profile smoke test.
+- Write docs/prototype-build/DEMO-SCRIPT.md: per scenario, where to click, the one-line RFP tie-in to say, and the expected result — plus a recovering-from-accidents note.
+- Write aa-prototype/README.md (run instructions, stack, folder map, doc pointers).
+
+When done: run the manual test checklist and report each item, then close out PROGRESS.md — all statuses final, handoff notes swept tidy — and give me short, clear notes.
+
+Phase goal: a rehearsed, resettable, scriptable demo that one presenter can drive cold.</pre>
+  </div>
+</article>
+
+</section>
+
+</div>
+<footer class="wrap" style="padding-top:0">
+  <span>AA prototype build plan · authored 2026-07-21, restructured to 13 single-deliverable phases same day · from the July 2026 RFP + Data-Model-and-Flow reading</span>
+  <span>docs/prototype-build/index.html</span>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var text = document.getElementById(b.getAttribute('data-target')).textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      b.textContent = 'Copied'; b.classList.add('done');
+      setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('done'); }, 1800);
+    });
+  });
+});
+</script>
+</body>
+</html>

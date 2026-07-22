@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F6F8F7}a{color:#0D6E63}a:hover{color:#084A43}</style>
+</helmet>
+<div data-screen-label="Web — Availability grid" style="min-height:100vh;min-width:1240px;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320">
+
+  <!-- Top nav -->
+  <div style="background:#FFFFFF;border-bottom:1px solid #E2E7E5">
+    <div style="max-width:1320px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:32px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;flex-direction:column">
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:20px;color:#A91E3E">Anaesthesia Associates</span>
+          <span style="font-size:9px;font-weight:600;letter-spacing:0.14em;color:#8A9490">SPECIALIST ANAESTHETISTS</span>
+        </div>
+      </div>
+      <nav style="display:flex;gap:4px;height:100%;align-items:stretch;flex:1">
+        <a href="Web Dashboard.dc.html" style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;text-decoration:none" style-hover="color:#172320">Dashboard</a>
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;cursor:pointer" style-hover="color:#172320">Lists</span>
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:600;color:#172320;box-shadow:inset 0 -3px 0 #A91E3E">Availability</span>
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;cursor:pointer" style-hover="color:#172320">Accounts</span>
+      </nav>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:#58635F">Dr Melanie Souter</span>
+        <div style="width:36px;height:36px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#A91E3E">MS</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1320px;margin:0 auto;padding:28px 32px 48px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-0.015em">Availability</h1>
+        <div style="font-size:14px;color:#58635F;margin-top:4px">Find cover fast — free sessions are tappable.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button style="width:38px;height:38px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:16px" style-hover="background:#EDF1EF">‹</button>
+        <div style="height:38px;padding:0 18px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;display:flex;align-items:center;font-size:14px;font-weight:600">Thursday 23 July</div>
+        <button style="width:38px;height:38px;border-radius:10px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:16px" style-hover="background:#EDF1EF">›</button>
+        <button style="height:38px;padding:0 14px;border-radius:10px;border:1px solid #0D6E63;background:#FFFFFF;color:#0D6E63;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#E1F0ED">Today</button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ showAll }}" style="height:36px;padding:0 16px;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid {{ allBd }};background:{{ allBg }};color:{{ allC }}">All anaesthetists</button>
+        <button onClick="{{ showFree }}" style="height:36px;padding:0 16px;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid {{ freeBd }};background:{{ freeBg }};color:{{ freeC }}">Free only · {{ freeCount }}</button>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:#2E66E5"></span>Private</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:#6E56CF"></span>Public</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:#C26A0E"></span>Pre-op</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:#D25C74"></span>Holiday</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:repeating-linear-gradient(135deg,#64716C 0 3px,#59655F 3px 6px)"></span>Unavailable</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#58635F"><span style="width:10px;height:10px;border-radius:3px;background:#1FA463"></span>Free</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+      <div style="display:grid;grid-template-columns:220px 1fr 1fr;gap:0 12px;padding:10px 20px;border-bottom:1px solid #E2E7E5;background:#F6F8F7">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">ANAESTHETIST</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">AM · 07:30 – 12:30</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">PM · 13:00 – 17:30</span>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:220px 1fr 1fr;gap:0 12px;align-items:center;padding:7px 20px;border-bottom:1px solid #EDF1EF" style-hover="background:#FBFCFB">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#A91E3E;flex:none">{{ r.init }}</span><span style="font-size:14px;font-weight:600">{{ r.name }}</span></span>
+          <button onClick="{{ r.am.tap }}" style="display:flex;align-items:center;gap:8px;height:52px;border-radius:9px;padding:0 10px;text-align:left;font-family:inherit;cursor:{{ r.am.cursor }};transition:box-shadow 150ms,background 200ms;background:{{ r.am.bg }};border:{{ r.am.border }}" style-hover="box-shadow:{{ r.am.hoverSh }}">
+            <span style="width:{{ r.am.barW }};height:34px;border-radius:99px;background:{{ r.am.barBg }};flex:none"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:12px;font-weight:600;color:{{ r.am.tc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.am.l1 }}</span><span style="font-size:11px;color:{{ r.am.tc }};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.am.l2 }}</span></span>
+            <span style="font-size:12px;font-weight:600;color:{{ r.am.tc }};flex:none">{{ r.am.badge }}</span>
+          </button>
+          <button onClick="{{ r.pm.tap }}" style="display:flex;align-items:center;gap:8px;height:52px;border-radius:9px;padding:0 10px;text-align:left;font-family:inherit;cursor:{{ r.pm.cursor }};transition:box-shadow 150ms,background 200ms;background:{{ r.pm.bg }};border:{{ r.pm.border }}" style-hover="box-shadow:{{ r.pm.hoverSh }}">
+            <span style="width:{{ r.pm.barW }};height:34px;border-radius:99px;background:{{ r.pm.barBg }};flex:none"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:12px;font-weight:600;color:{{ r.pm.tc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.pm.l1 }}</span><span style="font-size:11px;color:{{ r.pm.tc }};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.pm.l2 }}</span></span>
+            <span style="font-size:12px;font-weight:600;color:{{ r.pm.tc }};flex:none">{{ r.pm.badge }}</span>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:#8A9490;padding-top:8px">Sample page 4 of 6 — Anaesthetist web · Availability · <a href="Design Language.dc.html">Design Language</a> · <a href="Web Dashboard.dc.html">Dashboard</a> · <a href="Admin Day.dc.html">Admin day</a> · <a href="Admin Review.dc.html">Admin review</a></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { filter: 'all', requested: {} };
+  renderVals() {
+    const s = this.state;
+    const styles = {
+      private: { bg: '#E8EEFC', bar: '#2E66E5', tc: '#1F44A3' },
+      public: { bg: '#EEEBFA', bar: '#6E56CF', tc: '#4C3D96' },
+      preop: { bg: '#FBEFDF', bar: '#C26A0E', tc: '#8A4B09' },
+      holiday: { bg: '#FAE9ED', bar: '#D25C74', tc: '#A03A52' },
+      unavail: { bg: 'repeating-linear-gradient(135deg,#ECEFEE 0 5px,#E2E7E5 5px 10px)', bar: '#64716C', tc: '#4A5551' },
+    };
+    const cell = (st, l1, l2, key) => {
+      if (st === 'free') {
+        const req = !!s.requested[key];
+        return {
+          isFree: true, tap: () => this.setState({ requested: { ...s.requested, [key]: !req } }),
+          bg: req ? '#1FA463' : '#E3F6EC', border: req ? '1.5px solid #1FA463' : '1.5px dashed #1FA463',
+          barW: '0px', barBg: 'transparent', tc: req ? '#FFFFFF' : '#157A49',
+          l1: req ? 'Cover requested' : 'Free', l2: l2 || 'Open for booking',
+          badge: req ? '✓' : 'Book', cursor: 'pointer',
+          hoverSh: '0 2px 4px rgba(23,35,32,0.06),0 8px 20px rgba(23,35,32,0.12)',
+        };
+      }
+      const c = styles[st];
+      return {
+        isFree: false, tap: () => {}, bg: c.bg, border: '1.5px solid rgba(0,0,0,0)',
+        barW: '4px', barBg: c.bar, tc: c.tc, l1, l2: l2 || '', badge: '', cursor: 'default', hoverSh: 'none',
+      };
+    };
+    const R = (name, init, am, pm) => ({ name, init, amRaw: am, pmRaw: pm });
+    const data = [
+      R('Dr Melanie Souter', 'MS', ['public', 'Chch Public', 'Acute theatre'], ['preop', 'Pre-op clinic', 'AA rooms']),
+      R('Dr James Rutherford', 'JR', ['private', "St George's", 'Mr Hale · Ortho'], ['private', "St George's", 'Mr Hale · Ortho']),
+      R('Dr Priya Sharma', 'PS', ['private', 'Forte Health', 'Ms Lim · Plastics'], ['free', '', '']),
+      R('Dr Tom Ngata', 'TN', ['free', '', ''], ['private', 'Southern Cross', 'Mr Doyle · Gen surg']),
+      R('Dr Sarah Beaumont', 'SB', ['holiday', 'Annual leave', 'back Mon 27'], ['holiday', 'Annual leave', 'back Mon 27']),
+      R('Dr Alistair Chen', 'AC', ['private', 'Chch Eye Surgery', 'Mr Whitford'], ['free', '', '']),
+      R('Dr Hannah Ropata', 'HR', ['public', 'Chch Public', 'Elective ortho'], ['public', 'Chch Public', 'Elective ortho']),
+      R('Dr Mark Delaney', 'MD', ['unavail', 'Not available', 'on call tonight'], ['unavail', 'Not available', 'on call tonight']),
+      R('Dr Emma Fitzgerald', 'EF', ['private', 'Southern Cross', 'Ms Patel · Gen surg'], ['preop', 'Pre-op clinic', 'AA rooms']),
+      R('Dr Rawiri Hughes', 'RH', ['free', '', ''], ['free', '', '']),
+      R('Dr Kate Morrison', 'KM', ['private', "St George's", 'Mr Tan · Uro'], ['private', 'Forte Health', 'Mr Okafor · Gen surg']),
+      R('Dr Ben Whitaker', 'BW', ['public', 'Chch Public', 'Acute theatre'], ['free', '', '']),
+      R('Dr Aroha Ngatai', 'AN', ['holiday', 'Annual leave', 'back Wed 29'], ['holiday', 'Annual leave', 'back Wed 29']),
+      R('Dr Oliver Strand', 'OS', ['private', 'Chch Eye Surgery', 'Ms Reid'], ['free', '', '']),
+    ];
+    let freeCount = 0;
+    const rows = data.map((d, i) => {
+      const am = cell(d.amRaw[0], d.amRaw[1], d.amRaw[2], i + 'am');
+      const pm = cell(d.pmRaw[0], d.pmRaw[1], d.pmRaw[2], i + 'pm');
+      if (am.isFree) freeCount++;
+      if (pm.isFree) freeCount++;
+      return { name: d.name, init: d.init, am, pm, hasFree: am.isFree || pm.isFree };
+    });
+    const filtered = s.filter === 'free' ? rows.filter(r => r.hasFree) : rows;
+    const chip = (on) => ({
+      bd: on ? '#0D6E63' : '#E2E7E5', bg: on ? '#0D6E63' : '#FFFFFF', c: on ? '#FFFFFF' : '#58635F',
+    });
+    const a = chip(s.filter === 'all'), f = chip(s.filter === 'free');
+    return {
+      rows: filtered, freeCount: String(freeCount),
+      showAll: () => this.setState({ filter: 'all' }), showFree: () => this.setState({ filter: 'free' }),
+      allBd: a.bd, allBg: a.bg, allC: a.c, freeBd: f.bd, freeBg: f.bg, freeC: f.c,
+    };
+  }
+}
+</script>
+</body>
+</html>

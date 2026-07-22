@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F6F8F7}a{color:#0D6E63}a:hover{color:#084A43}</style>
+</helmet>
+<div data-screen-label="Web — Anaesthetist dashboard" style="min-height:100vh;min-width:1240px;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320">
+
+  <!-- Top nav -->
+  <div style="background:#FFFFFF;border-bottom:1px solid #E2E7E5">
+    <div style="max-width:1320px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:32px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;flex-direction:column">
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:20px;color:#A91E3E">Anaesthesia Associates</span>
+          <span style="font-size:9px;font-weight:600;letter-spacing:0.14em;color:#8A9490">SPECIALIST ANAESTHETISTS</span>
+        </div>
+      </div>
+      <nav style="display:flex;gap:4px;height:100%;align-items:stretch;flex:1">
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:600;color:#172320;box-shadow:inset 0 -3px 0 #A91E3E">Dashboard</span>
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;cursor:pointer" style-hover="color:#172320">Lists</span>
+        <a href="Web Availability.dc.html" style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;text-decoration:none" style-hover="color:#172320">Availability</a>
+        <span style="display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:500;color:#58635F;cursor:pointer" style-hover="color:#172320">Accounts</span>
+      </nav>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:#58635F">Dr Melanie Souter</span>
+        <div style="width:36px;height:36px;border-radius:99px;background:#F7E7EC;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#A91E3E">MS</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1320px;margin:0 auto;padding:28px 32px 48px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-0.015em">Kia ora, Dr Souter</h1>
+        <div style="font-size:14px;color:#58635F;margin-top:4px">Tuesday 21 July · 2 lists today · 9 cards · 1 list awaiting submission</div>
+      </div>
+      <button style="height:42px;padding:0 20px;border-radius:12px;border:none;background:#0D6E63;color:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#0A5A51">Offer cover</button>
+    </div>
+
+    <!-- Week strip -->
+    <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:17px;font-weight:600">This week</div>
+        <div style="display:flex;gap:6px">
+          <button style="width:32px;height:32px;border-radius:9px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:14px" style-hover="background:#EDF1EF">‹</button>
+          <button style="width:32px;height:32px;border-radius:9px;border:1px solid #E2E7E5;background:#FFFFFF;color:#58635F;cursor:pointer;font-size:14px" style-hover="background:#EDF1EF">›</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">MON 20</div>
+          <div style="height:52px;border-radius:8px;background:#E8EEFC;border-left:3px solid #2E66E5;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#1F44A3">Forte Health</div><div style="font-size:10px;color:#1F44A3;opacity:0.75">Mr Okafor · AM</div></div>
+          <div style="height:52px;border-radius:8px;background:#E8EEFC;border-left:3px solid #2E66E5;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#1F44A3">St George's</div><div style="font-size:10px;color:#1F44A3;opacity:0.75">Ms Lim · PM</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;border:2px solid #A91E3E;border-radius:12px;padding:3px 5px 5px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#A91E3E;text-align:center">TUE 21</div>
+          <div style="height:52px;border-radius:8px;background:#E8EEFC;border-left:3px solid #2E66E5;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#1F44A3">St George's ✓</div><div style="font-size:10px;color:#1F44A3;opacity:0.75">Mr Hale · AM</div></div>
+          <div style="height:52px;border-radius:8px;background:#E8EEFC;border-left:3px solid #2E66E5;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#1F44A3">Southern Cross</div><div style="font-size:10px;color:#1F44A3;opacity:0.75">Ms Patel · PM</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">WED 22</div>
+          <div style="height:52px;border-radius:8px;background:#E8EEFC;border-left:3px solid #2E66E5;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#1F44A3">Chch Eye Surgery</div><div style="font-size:10px;color:#1F44A3;opacity:0.75">Mr Whitford · AM</div></div>
+          <div style="height:52px;border-radius:8px;background:#E3F6EC;border:1.5px dashed #1FA463;padding:6px 8px;box-sizing:border-box"><div style="font-size:11px;font-weight:600;color:#157A49">Free · PM</div><div style="font-size:10px;color:#157A49;opacity:0.75">Open for cover</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">THU 23</div>
+          <div style="height:52px;border-radius:8px;background:#EEEBFA;border-left:3px solid #6E56CF;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#4C3D96">Chch Public</div><div style="font-size:10px;color:#4C3D96;opacity:0.75">Acute · AM</div></div>
+          <div style="height:52px;border-radius:8px;background:#FBEFDF;border-left:3px solid #C26A0E;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#8A4B09">Pre-op clinic</div><div style="font-size:10px;color:#8A4B09;opacity:0.75">AA rooms · PM</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">FRI 24</div>
+          <div style="height:110px;border-radius:8px;background:#FAE9ED;border-left:3px solid #D25C74;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#A03A52">Annual leave</div><div style="font-size:10px;color:#A03A52;opacity:0.75">All day</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">SAT 25</div>
+          <div style="height:110px;border-radius:8px;background:#FAE9ED;border-left:3px solid #D25C74;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#A03A52">Annual leave</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:5px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490;text-align:center">SUN 26</div>
+          <div style="height:110px;border-radius:8px;background:#FAE9ED;border-left:3px solid #D25C74;padding:7px 9px"><div style="font-size:11px;font-weight:600;color:#A03A52">Annual leave</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:16px">
+      <!-- Receivables -->
+      <div style="grid-column:span 7;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <div style="font-size:17px;font-weight:600">Receivables aging</div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:14px;font-weight:600">$19,485 outstanding</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;font-size:12px;font-weight:600;color:#58635F">Current</span><span style="flex:1;height:14px;border-radius:99px;background:#EDF1EF;overflow:hidden;display:block"><span style="display:block;height:100%;border-radius:99px;background:#0D6E63;width:64%"></span></span><span style="width:64px;text-align:right;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px">$12,480</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;font-size:12px;font-weight:600;color:#58635F">31–60 d</span><span style="flex:1;height:14px;border-radius:99px;background:#EDF1EF;overflow:hidden;display:block"><span style="display:block;height:100%;border-radius:99px;background:#0D6E63;opacity:0.55;width:22%"></span></span><span style="width:64px;text-align:right;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px">$4,215</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;font-size:12px;font-weight:600;color:#58635F">61–90 d</span><span style="flex:1;height:14px;border-radius:99px;background:#EDF1EF;overflow:hidden;display:block"><span style="display:block;height:100%;border-radius:99px;background:#C26A0E;width:10%"></span></span><span style="width:64px;text-align:right;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px">$1,930</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:64px;font-size:12px;font-weight:600;color:#58635F">90 d +</span><span style="flex:1;height:14px;border-radius:99px;background:#EDF1EF;overflow:hidden;display:block"><span style="display:block;height:100%;border-radius:99px;background:#C2403C;width:6%"></span></span><span style="width:64px;text-align:right;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px">$860</span></div>
+        </div>
+        <div style="font-size:13px;color:#58635F;border-top:1px solid #EDF1EF;padding-top:12px">3 accounts over 60 days — <a href="#" style="font-weight:600">view overdue accounts</a></div>
+      </div>
+
+      <!-- Productivity -->
+      <div style="grid-column:span 5;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <div style="font-size:17px;font-weight:600">Productivity</div>
+          <div style="font-size:12px;color:#8A9490">July so far</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:#F6F8F7;border-radius:10px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">UNITS</div><div style="display:flex;align-items:baseline;gap:8px;margin-top:4px"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:24px;font-weight:700">274</span><span style="font-size:11px;font-weight:600;color:#157A49;background:#E3F6EC;border-radius:99px;padding:2px 7px">+8%</span></div></div>
+          <div style="background:#F6F8F7;border-radius:10px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">LISTS</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:24px;font-weight:700;margin-top:4px">21</div></div>
+          <div style="background:#F6F8F7;border-radius:10px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">AVG UNITS / LIST</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:24px;font-weight:700;margin-top:4px">13.0</div></div>
+          <div style="background:#F6F8F7;border-radius:10px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">FEES INVOICED</div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:24px;font-weight:700;margin-top:4px">$7,261</div></div>
+        </div>
+      </div>
+
+      <!-- Leave -->
+      <div style="grid-column:span 5;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+        <div style="font-size:17px;font-weight:600">Leave</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#F6F8F7;border-radius:10px">
+            <span style="width:4px;height:34px;border-radius:99px;background:#D25C74;flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Fri 24 – Sun 26 Jul</span><span style="font-size:12px;color:#58635F">Annual leave</span></span>
+            <span style="padding:4px 10px;border-radius:999px;background:#E3F4EB;font-size:11px;font-weight:600;color:#157A49">Approved</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#F6F8F7;border-radius:10px">
+            <span style="width:4px;height:34px;border-radius:99px;background:#D25C74;flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">14 – 16 Sep</span><span style="font-size:12px;color:#58635F">NZSA conference</span></span>
+            <span style="padding:4px 10px;border-radius:999px;background:#F9F0DC;font-size:11px;font-weight:600;color:#7C4D08">Pending</span>
+          </div>
+        </div>
+        <button style="height:40px;border-radius:10px;border:1px solid #0D6E63;background:#FFFFFF;color:#0D6E63;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-top:auto" style-hover="background:#E1F0ED">Request leave</button>
+      </div>
+
+      <!-- Locums -->
+      <div style="grid-column:span 7;background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <div style="font-size:17px;font-weight:600">Who's free — next 5 days</div>
+          <a href="Web Availability.dc.html" style="font-size:13px;font-weight:600;text-decoration:none">Full availability grid →</a>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 4px;border-bottom:1px solid #EDF1EF" style-hover="background:#F6F8F7">
+            <span style="width:84px;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#58635F">WED 22 PM</span>
+            <span style="flex:1;display:flex;gap:6px;flex-wrap:wrap"><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr Strand</span><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr Ngatai</span></span>
+            <a href="#" style="font-size:13px;font-weight:600;text-decoration:none">Ask to cover</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 4px;border-bottom:1px solid #EDF1EF" style-hover="background:#F6F8F7">
+            <span style="width:84px;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#58635F">THU 23 AM</span>
+            <span style="flex:1;display:flex;gap:6px;flex-wrap:wrap"><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr Morrison</span></span>
+            <a href="#" style="font-size:13px;font-weight:600;text-decoration:none">Ask to cover</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 4px" style-hover="background:#F6F8F7">
+            <span style="width:84px;font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#58635F">FRI 25 PM</span>
+            <span style="flex:1;display:flex;gap:6px;flex-wrap:wrap"><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr Whitaker</span><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr Sharma</span><span style="padding:5px 11px;border-radius:999px;background:#E3F6EC;font-size:12px;font-weight:600;color:#157A49">Dr A. Chen</span></span>
+            <a href="#" style="font-size:13px;font-weight:600;text-decoration:none">Ask to cover</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:#8A9490;padding-top:8px">Sample page 3 of 6 — Anaesthetist web · Dashboard · <a href="Design Language.dc.html">Design Language</a> · <a href="Web Availability.dc.html">Availability grid</a> · <a href="Admin Day.dc.html">Admin day</a> · <a href="Admin Review.dc.html">Admin review</a></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

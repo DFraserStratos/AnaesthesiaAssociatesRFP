@@ -1,0 +1,85 @@
+# AA Prototype — PROGRESS
+
+The running record of the build. **Every phase session reads this file first and updates it last.**
+It holds the binding conventions, the status of every phase, the decisions log, and a per-phase
+entry describing what was *actually* built (which may differ from the plan — record the truth).
+
+## Status
+
+| # | Phase | Status | Session date | Notes |
+|---|-------|--------|--------------|-------|
+| 00 | Scaffold & app shell | NOT STARTED | — | — |
+| 01 | Domain model & billing calculator | NOT STARTED | — | — |
+| 02 | Seed data & store | NOT STARTED | — | — |
+| 03 | Mobile: schedule & cards | NOT STARTED | — | — |
+| 04 | Mobile: BTM capture & submission | NOT STARTED | — | — |
+| 05 | Anaesthetist web app | NOT STARTED | — | — |
+| 06 | Admin: day dashboard & changes | NOT STARTED | — | — |
+| 07 | Admin: authorisation & masters | NOT STARTED | — | — |
+| 08 | Billing: run & invoices | NOT STARTED | — | — |
+| 09 | Billing: exceptions & monitor | NOT STARTED | — | — |
+| 10 | Xero & payments simulation | NOT STARTED | — | — |
+| 11 | Integrations simulation | NOT STARTED | — | — |
+| 12 | Demo polish & guided script | NOT STARTED | — | — |
+
+Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
+of a session, leave it IN PROGRESS and state exactly what remains.
+
+## Binding conventions (all phases)
+
+1. **App location.** The app lives in `aa-prototype/` at the repo root. Docs live in `docs/prototype-build/`. Never create a second app folder.
+2. **Stack is fixed.** Vite + React 18 + TypeScript (strict, no `any`), React Router, Zustand for the store, Tailwind CSS + a design-token layer (`src/theme/`), lucide-react icons, date-fns, Vitest for unit tests. No additional UI framework without a decisions-log entry.
+3. **Folder shape.** `src/domain/` (types, seed, billing maths, validators — pure, no React), `src/store/` (Zustand slices, lifecycle guards, audit writer), `src/apps/mobile/`, `src/apps/web/`, `src/apps/admin/`, `src/apps/demo/` (demo-only surfaces: control panel, Xero sim, integrations, billing monitor), `src/shared/` (cross-app components), `src/shell/` (app switcher, phone frame, layout).
+4. **Fake backend only.** Components never own domain state; they read/write through typed store hooks. No `fetch`, no real endpoints. Simulated external systems (Xero, HL7, PDF/OCR) are store actions triggered from the demo control panel or demo screens.
+5. **Deterministic seed.** All seed data generated from a seeded RNG + pinned demo date (`DEMO_TODAY`, 2026-07-21 — the design mockups' content date, see Decisions log). Same seed → identical data. Reset restores the pristine seed. Never call `Date.now()`/`new Date()` for domain logic — use the demo clock.
+6. **Lifecycle rules live in the store.** DRAFT → SUBMITTED → AUTHORISED transitions are guarded functions; SUBMITTED strips anaesthetist edit rights; AUTHORISED locks Cards immutable; there is **no Returned state**. UI can never bypass a guard.
+7. **Audit is append-only.** Every Card/Procedure mutation (and List reassignment/state change) writes an audit entry `{who, role, source, action, before→after, at}`. No mutation without one.
+8. **NHI never crosses to Xero.** Xero-sim screens and data show only the hidden internal ID (ContactNumber) and ContactID. This is checked in Phase 10's tests.
+9. **Billing maths is pure and tested.** All fee/unit/route/split logic lives in `src/domain/billing/` as pure functions with Vitest tests. UI only formats results.
+10. **RFP vocabulary, RFP colours.** Domain terms exactly as the RFP uses them. List-status colour legend is defined once in `src/theme/statusColours.ts` (modernised palette, 1:1 with the legacy legend: private, public, pre-op assessment, holiday, unavailable, free) and used by all three apps.
+11. **Ease of use wins arguments.** When choosing between fidelity to the legacy screenshot and a simpler modern pattern, choose simpler — but keep the information architecture recognisable.
+12. **Phone frame is the only mobile emulation.** The mobile app renders in the fixed phone frame component on a grey backdrop; never rely on browser viewport size. Web/admin apps are desktop layouts.
+13. **Demo-only surfaces are visibly demo-only.** Xero sim, integration simulator, billing monitor internals and the control panel carry a "demo simulation" badge so demo audiences don't mistake them for proposed product UI. (The billing monitor itself IS proposed product UI — badge only its simulation triggers.)
+14. **Every phase ends the same way:** run `npm run build` + `npx vitest run` green, run the phase's manual test checklist, update this file (status row + phase entry + any decisions), and leave the app runnable with `npm run dev`.
+15. **Don't gold-plate ahead.** Build only what the current phase's doc lists; later phases depend on the seams described in their docs, not on speculative extras.
+16. **Mobile is mobile-first, not a web app in a phone shell.** Inside the phone frame: bottom sheets and slide-in cards, never centred desktop modals; bottom tab bar (Lists · Availability · Balances · More); thumb-reachable and sticky contextual actions; steppers/chips/segmented controls over dropdowns and free text. Micro-delight lives in action feedback (complete-tick, fee value ticking up, submit settling) and never delays a task. The two web apps are proper desktop layouts (hover states, keyboard-friendly tables).
+17. **The `Design/` mockups (repo root) are the authoritative visual reference.** `Design Language.dc.html` is the token source of truth — palette, neutrals, the six status colours (with tint/on-tint values and the hatched Unavailable / dashed Free treatments), type (Schibsted Grotesk UI + Spline Sans Mono data with tabular-nums), 4pt spacing, radii (ctl 10 / card 14 / panel 20 / sheet 24-top / pill 999), elevations e-0…e-3, scrim rgba(23,35,32,0.32), and the four named motion patterns (sheet-in 320/260ms, card-advance 260/240ms with −24% parallax, complete-tick, value-tick; reduced-motion → 80ms fades). The six sample pages are the layout reference for their screens; each phase doc names its pages. Two hard rules: (a) AA crimson #A91E3E is identity only — masthead, active nav, avatars — never buttons, never status; deep teal #0D6E63 is the only action colour. (b) **Where a mockup simplified a business rule for demo purposes, the RFP rule wins** — see the Decisions log entries below. Extend the design's patterns to screens it doesn't cover; don't invent a second visual language.
+
+## Decisions log
+
+Record every deviation from a phase doc, every resolved ambiguity, and every killed idea, with a
+one-line why. Later sessions must not re-litigate entries here.
+
+- **2026-07-21 · Design run adopted as visual starting point** (user decision). Outputs in `Design/`; convention 17 added. Entries below capture its rulings.
+- **2026-07-21 · DEMO_TODAY = 2026-07-21** (was 2026-06-23). The mockups' content lives on Tue 21 Jul 2026; the seed follows the design so screens match the reference 1:1.
+- **2026-07-21 · Demo personas from the design**: anaesthetist persona = **Dr Melanie Souter** ("MS", crimson-tint avatar), office persona = **Kirsty W.** Seed must include them and the mockups' supporting cast (Rutherford, Sharma, Ngata, Beaumont, A. Chen, Ropata, Delaney, Fitzgerald, Hughes, Morrison, Whitaker, Ngatai, Strand — 14 total).
+- **2026-07-21 · Status colour mapping** (from Design Language): Private #2E66E5, Public #6E56CF, Pre-op #C26A0E, Holiday #D25C74, Unavailable #64716C (hatched fill), Free #1FA463 (dashed border, "inviting"). Never colour-only — every block carries its label.
+- **2026-07-21 · Mockup simplifications the build must NOT inherit** (RFP rules win, design layout stays): (a) time units shown as flat "15 min each" — the build uses the tiered T1/T2 rule (1u/15min first 2h, 1u/10min after); (b) modifier chips shown as a 3-chip demo set (Age>70 +1 / After hours +2 / Emergency +3) — the build uses all the RFP-named modifier groups (PA, A, AS, ASE, OB, P1, AI1, post-op) rendered in the same chip pattern, with unit values taken from the RFP's example ranges and explicitly labelled as demo-plausible, not an authoritative NZSA schedule (discovery item — see 2026-07-22 entry); (c) "ASA ≥ 3 adds +1" — the build maps AS1–AS4 to their real unit values via ASA seeding M; (d) Admin Review's "Route" column showed anaesthetic technique (GA/Spinal) — the build's Route column shows the RFP billing route (Hospital / Billable Party / Insurer); technique can be a secondary detail.
+- **2026-07-21 · Navigation structures from the design**: web app top-nav = Dashboard · Lists · Availability · **Accounts** (Accounts houses Overdue + GST summary); admin = dark-ink side nav (Day view · Review queue with count badge · …) — the design shows a subset (Anaesthetists/Accounts/Reports); the build extends the same pattern with Billing monitor, Master data and Audit items.
+- **2026-07-21 · New interactions the design added, adopted into scope**: mobile request-cover flow (tap a free session → bottom sheet → send cover request → tick confirmation; simulated notification), Everyone/Free-only segmented filters on availability (mobile + web), web "Ask to cover" links, admin review authorised-state choreography (green tick banner, table dims, per-row lock icons, queue badge decrements, "Next in queue →").
+- **2026-07-21 · Phone frame**: adapt `Design/ios-frame.jsx` (IOSDevice — bezel, status bar, home indicator, no deps) into `src/shell/PhoneFrame.tsx` rather than building one from scratch; grey backdrop behind it: #E4E8E6.
+- **2026-07-21 · Fonts**: Schibsted Grotesk + Spline Sans Mono via Google Fonts (matches mockups; internet assumed for the demo).
+- **2026-07-22 · External plan review (Codex) — adopted rulings.** 12 findings accepted and folded into REQUIREMENTS + phase docs: (1) list submission requires every Card *marked Completed*, not merely valid — completion is validation-gated, submission is completion-gated; (2) anaesthetist availability writes to the AnaesthetistAvailability *master* and is reconciled into the canvas (free sessions restatus; booked sessions conflict-flag), never written to Lists directly; (3) reassignment slot mechanics: target session must be Free, its empty List is absorbed, the vacated slot regenerates (default Unavailable) — canvas invariant (2 Lists/anaesthetist/day) is guard-tested; (4) the mandatory default Type 1 contract per hospital/direct-insurer is a protected store invariant (cannot delete/end-date); (5) Contract-Holder route resolves by holder — hospital, surgeon or group (bariatric/TMJ/COS) — and the surgeon-held seed contract must be exercised by a billing run; (6) Xero contacts split into persistent organisational contacts (never archived, no hidden ID) vs patient contacts (hidden-ID workflow); (7) intake checks demoed: NHI dedupe across episodes, outstanding-balance surfacing before a new episode bills, archived-contact invoice/unarchive-TBC handling; (8) pre-payment typed full|split with an advisory unpaid-before-procedure warning (no hard block); (9) apps read the billing engine's mirror only — never the Xero-sim slice (greppable: view selectors import from `billing`, not `xero`); (10) per-hospital HL7 field-mapping config view, load-bearing in the failure-fix flow; (11) HPI identifiers on anaesthetists + FHIR Practitioner resources; (12) integration idempotency/dedupe by message control ID + dead-letter framing, demoed by duplicate replay.
+- **2026-07-22 · Review findings NOT treated as defects:** the "60% vs 80%" permanent-list figure was a denominator confusion — the RFP's ~80% is the share of *surgeon assignments* from Permanent Lists, not of all sessions; seed inventory now states it in the RFP's terms. Invoice "printing" is satisfied by browser print of the on-screen document (no PDF library — scope fence stands); nib presentation gets an upload-portal status stub. The NHI-in-Xero choice stays implemented per Appendix 2 but is explicitly surfaced in the Xero-sim UI as an RFP contradiction requiring an AA ruling in discovery — it is a flagged reading, not a settled requirement.
+- **2026-07-22 · Second external plan review (Codex) — adopted rulings, all 11 real.** **Supersedes item (8) of the prior entry**: pre-payment is now a REAL gate (completeCard blocks on an unpaid selfFundedPrepayment card), not an advisory warning — lifted only by an audited `overridePrepaymentGate(cardId, reason)`, visibly flagged wherever the card appears. New rulings: (1) index.html's stale "writes straight onto the canvas" line for availability corrected to match convention 2/D5 (reconciliation, not direct write) — a documentation-sync miss, not a new design decision; (2) Anaesthetist master gains registration-number-as-ID and contact details (was implicit, now explicit) alongside unitValue/GST period/HPI; (3) `reassignCard(cardId, toListId)` added as a distinct, lighter-weight guard from `reassignList` — moves one Card between Lists without touching either List's other Cards/status, audited at Card level (the RFP's routine case; List reassignment is the illness-cover case); (4) Contract/ContractPrice matching made explicit: `scope` (organisation | individualAnaesthetist reserved) and explicit matching keys (contractId + rvgBaseCode + surgeonId + procedureOrdinal); (5) `patientPaymentCategory` (`selfFundedPostProcedure` | `selfFundedPrepayment` | `insuredReimbursement`) added to Procedure when billingRoute=BillableParty, driving invoice wording — distinct from the Insurer route (AA billing a direct-claim insurer); (6) pre-payment gate strengthened per above; (7) a simulated `lookupNhi` (Phase 01, canned/keyed by seeded NHIs) added to the ad-hoc/manual card-creation flow, plus `validateEthnicityCode` against an explicitly-labelled NZHIS Level 4 demo subset, exercised (not just displayed) in Phase 11's FHIR bundles; (8) the time-rounding rule (round-up-per-started-interval) is now labelled a named, UI-surfaced ASSUMPTION and discovery item, not asserted as RFP fact — the RFP is silent on partial-interval rounding; (9) modifier unit values are labelled demo-plausible figures within the RFP's stated ranges, NOT an authoritative NZSA schedule — flagged as a discovery item for AA/NZSA to supply real values; (10) an explicit all-day-booking seed example added (both AM/PM Lists sharing hospital/surgeon — no special entity, per the RFP's "all day bookings simply use both lists"); (11) the contact-archiving inactivity window is a configurable setting (seeded at the RFP's illustrative 90 days, not hardcoded as a rule).
+
+## Discovered for later
+
+Small issues/ideas noticed mid-phase that belong to a later phase — park them here instead of
+scope-creeping.
+
+- (none yet)
+
+---
+
+## Phase entries
+
+Append one entry per completed session, newest last, using this template:
+
+```
+### Phase NN — <name> (YYYY-MM-DD)
+**Built:** what actually shipped, file-level where useful.
+**Deviations from plan:** none / list with reasons (mirror into Decisions log if binding).
+**Manual test checklist:** each item ✓/✗ with notes.
+**Known gaps / handoff notes:** what the next session must know.
+```

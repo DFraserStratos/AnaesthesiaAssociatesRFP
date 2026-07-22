@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F8F7}
+a{color:#0D6E63}a:hover{color:#084A43}
+@keyframes dlSheet{0%,10%{transform:translateY(103%)}22%,68%{transform:translateY(0)}82%,100%{transform:translateY(103%)}}
+@keyframes dlScrim{0%,10%{opacity:0}22%,68%{opacity:1}82%,100%{opacity:0}}
+@keyframes dlCardIn{0%,12%{transform:translateX(103%)}26%,66%{transform:translateX(0)}80%,100%{transform:translateX(103%)}}
+@keyframes dlUnder{0%,12%{transform:translateX(0)}26%,66%{transform:translateX(-24%)}80%,100%{transform:translateX(0)}}
+@keyframes dlDim{0%,12%{opacity:0}26%,66%{opacity:1}80%,100%{opacity:0}}
+@keyframes dlTickDraw{0%,15%{stroke-dashoffset:34;opacity:1}32%,78%{stroke-dashoffset:0;opacity:1}90%,100%{stroke-dashoffset:34;opacity:0}}
+@keyframes dlTickPulse{0%,15%{transform:scale(1)}25%{transform:scale(1.07)}36%,100%{transform:scale(1)}}
+@keyframes dlTickFill{0%,14%{background:#EDF1EF}28%,80%{background:#E3F4EB}94%,100%{background:#EDF1EF}}
+</style>
+</helmet>
+<div data-screen-label="Design Language" style="min-height:100vh;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320;padding:56px 24px 80px">
+<div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:40px">
+
+  <!-- Header -->
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:0.08em;color:#A91E3E">ANAESTHESIA ASSOCIATES · DESIGN LANGUAGE V1.1 · JUL 2026</div>
+    <h1 style="margin:0;font-size:40px;line-height:46px;font-weight:700;letter-spacing:-0.02em">Calm clinical confidence</h1>
+    <p style="margin:0;max-width:720px;font-size:15px;line-height:23px;color:#58635F;text-wrap:pretty">AA's crimson carries the identity, a deep-teal accent does the work, quiet neutrals and six status colours do the semantic lifting. Chrome stays calm; delight lives in the actions — completing a card, watching the fee tick, submitting a list. Reference for all three apps: mobile, anaesthetist web, admin.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Neutrals + one accent</span>
+      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Labels over icons</span>
+      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Six colours carry meaning</span>
+      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Motion 150–320 ms, never blocking</span>
+    </div>
+  </header>
+
+  <!-- 01 Colour -->
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">01</span>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Colour</h2>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">NEUTRALS</div>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+          <sc-for list="{{ neutrals }}" as="n" hint-placeholder-count="8">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="height:64px;border-radius:10px;border:1px solid #E2E7E5;background:{{ n.h }}"></div>
+              <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">neutral/{{ n.t }}<br>{{ n.h }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">BRAND — AA CRIMSON · identity only: masthead, wordmark, active nav, avatars — never buttons, never status</div>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#A91E3E"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">brand<br>#A91E3E</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#8C1533"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">brand/deep<br>#8C1533</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;border:1px solid #E2E7E5;background:#F7E7EC"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">brand/tint<br>#F7E7EC</div></div>
+          <div style="grid-column:span 5;align-self:center;font-size:12px;line-height:17px;color:#8A9490">Kept away from actions and semantics so it never reads as an error or as the Holiday status. Wordmark set in a serif (Georgia stack) as a nod to the AA logotype.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">ACCENT — DEEP TEAL · primary actions &amp; selection only, never status</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#0D6E63"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">accent<br>#0D6E63</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#0A5A51"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">accent/hover<br>#0A5A51</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#084A43"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">accent/pressed<br>#084A43</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;border:1px solid #E2E7E5;background:#E1F0ED"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">accent/tint<br>#E1F0ED</div></div>
+          </div>
+          <div style="font-size:12px;color:#8A9490">Focus ring: <span style="font-family:'Spline Sans Mono',ui-monospace,monospace">0 0 0 3px rgba(13,110,99,0.30)</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">SEMANTIC</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#1E8E5A;display:flex;align-items:flex-end;padding:8px"><span style="background:#E3F4EB;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:#157A49">tint #E3F4EB</span></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">success<br>#1E8E5A</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#A16207;display:flex;align-items:flex-end;padding:8px"><span style="background:#F9F0DC;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:#7C4D08">tint #F9F0DC</span></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">warning<br>#A16207</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="height:64px;border-radius:10px;background:#C2403C;display:flex;align-items:flex-end;padding:8px"><span style="background:#FAE9E7;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:#9C332F">tint #FAE9E7</span></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">error<br>#C2403C</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 Status language -->
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">02</span>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">The six status colours</h2>
+      <span style="font-size:13px;color:#8A9490">Identical across all three apps. Colour is never the only signal — every block carries its label.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:#2E66E5;display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Private</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/private · solid #2E66E5<br>tint #E8EEFC · on-tint #1F44A3</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Booked private list — the everyday working session.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#E8EEFC;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#2E66E5"></span><span style="font-size:12px;font-weight:600;color:#1F44A3">Private</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:#E8EEFC;border-left:3px solid #2E66E5;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#1F44A3">St George's</span><span style="display:block;font-size:10px;color:#1F44A3;opacity:0.75">Mr Hale · Ortho</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:#6E56CF;display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Public</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/public · solid #6E56CF<br>tint #EEEBFA · on-tint #4C3D96</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Public hospital session (Te Whatu Ora contract).</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#EEEBFA;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#6E56CF"></span><span style="font-size:12px;font-weight:600;color:#4C3D96">Public</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:#EEEBFA;border-left:3px solid #6E56CF;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#4C3D96">Chch Public</span><span style="display:block;font-size:10px;color:#4C3D96;opacity:0.75">Acute list</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:#C26A0E;display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Pre-op Assessment</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/preop · solid #C26A0E<br>tint #FBEFDF · on-tint #8A4B09</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Clinic block for pre-operative assessments.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#FBEFDF;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#C26A0E"></span><span style="font-size:12px;font-weight:600;color:#8A4B09">Pre-op</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:#FBEFDF;border-left:3px solid #C26A0E;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#8A4B09">Pre-op clinic</span><span style="display:block;font-size:10px;color:#8A4B09;opacity:0.75">6 appts</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:#D25C74;display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Holiday</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/holiday · solid #D25C74<br>tint #FAE9ED · on-tint #A03A52</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Annual leave — clearly not bookable, but not an error.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#FAE9ED;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#D25C74"></span><span style="font-size:12px;font-weight:600;color:#A03A52">Holiday</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:#FAE9ED;border-left:3px solid #D25C74;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#A03A52">Annual leave</span><span style="display:block;font-size:10px;color:#A03A52;opacity:0.75">Back Mon 27</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:repeating-linear-gradient(135deg,#64716C 0 7px,#596560 7px 14px);display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Unavailable</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/unavailable · solid #64716C<br>tint #ECEFEE · on-tint #4A5551 · hatched</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Blocked out — not bookable. Hatch keeps it distinct from neutrals.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#ECEFEE;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#64716C"></span><span style="font-size:12px;font-weight:600;color:#4A5551">Unavailable</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:repeating-linear-gradient(135deg,#ECEFEE 0 5px,#E2E7E5 5px 10px);border-left:3px solid #64716C;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#4A5551">Not available</span><span style="display:block;font-size:10px;color:#4A5551;opacity:0.75">All day</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;overflow:hidden">
+        <div style="height:52px;background:#1FA463;display:flex;align-items:center;padding:0 16px"><span style="color:#FFFFFF;font-weight:700;font-size:15px">Free</span></div>
+        <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;line-height:17px;color:#58635F">status/free · solid #1FA463<br>tint #E3F6EC · on-tint #157A49</div>
+          <div style="font-size:12px;line-height:17px;color:#58635F">Open session — should read as inviting and actionable.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#E3F6EC;border-radius:999px;padding:4px 10px"><span style="width:7px;height:7px;border-radius:99px;background:#1FA463"></span><span style="font-size:12px;font-weight:600;color:#157A49">Free</span></span>
+            <span style="flex:1;min-width:110px;display:block;background:#E3F6EC;border:1.5px dashed #1FA463;border-radius:6px;padding:6px 9px"><span style="display:block;font-size:11px;font-weight:600;color:#157A49">Free — book</span><span style="display:block;font-size:10px;color:#157A49;opacity:0.75">Tap to assign</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 Type -->
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">03</span>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Type</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:12px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px">
+          <div style="font-size:34px;font-weight:700;letter-spacing:-0.02em;line-height:40px">Schibsted Grotesk</div>
+          <div style="margin-top:8px;font-size:13px;color:#58635F;line-height:19px">All UI text. Weights 400 / 500 / 600 / 700. Confident but warm — never condensed, never all-caps at size.</div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px">
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:22px;font-weight:600">ZAA0067 · $556.50</div>
+          <div style="margin-top:8px;font-size:13px;color:#58635F;line-height:19px">Spline Sans Mono for data: NHI numbers, codes, times, units, fees. Always <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px">tabular-nums</span> so values tick without jitter.</div>
+        </div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:8px 20px">
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">display · 32/38 · 700 · -0.02em</span><span style="font-size:32px;line-height:38px;font-weight:700;letter-spacing:-0.02em">Kia ora, Dr Souter</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">title · 22/28 · 700 · -0.01em</span><span style="font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.01em">St George's — AM list</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">heading · 17/24 · 600</span><span style="font-size:17px;line-height:24px;font-weight:600">Receivables aging</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">body · 15/22 · 400 (16/24 mobile)</span><span style="font-size:15px;line-height:22px">Left total hip replacement under spinal anaesthesia with sedation.</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">label · 13/16 · 600</span><span style="font-size:13px;line-height:16px;font-weight:600">Start now</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">caption · 12/16 · 500 · slate</span><span style="font-size:12px;line-height:16px;font-weight:500;color:#58635F">Submitted 21 Jul, 4:32 pm</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0;border-bottom:1px solid #EDF1EF"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">micro · 11/14 · 600 · +0.06em · caps</span><span style="font-size:11px;line-height:14px;font-weight:600;letter-spacing:0.06em;color:#58635F">TIME UNITS</span></div>
+        <div style="display:grid;grid-template-columns:190px 1fr;gap:0 20px;align-items:center;padding:14px 0"><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#8A9490">data · mono · 14/20 · 500 · tabular</span><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:14px;line-height:20px;font-weight:500">ZAA0067 · 47516 · 13:05–16:20 · $556.50</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 Space, radius, elevation -->
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">04</span>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Space · Radius · Elevation</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px;align-items:stretch">
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">SPACING — 4 PT SCALE</div>
+        <sc-for list="{{ spacers }}" as="s" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F;width:70px">{{ s.t }} · {{ s.px }}</span>
+            <span style="height:12px;border-radius:3px;background:#0D6E63;opacity:0.85;width:{{ s.w }}"></span>
+          </div>
+        </sc-for>
+        <div style="font-size:12px;line-height:17px;color:#8A9490;margin-top:4px">Touch targets ≥ 48 px on mobile. Desktop table rows 40 px; admin day-grid rows 32 px.</div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">RADIUS</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:64px;height:64px;background:#EDF1EF;border:1px solid #C9D1CE;border-radius:10px"></div><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">r-ctl 10</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:64px;height:64px;background:#EDF1EF;border:1px solid #C9D1CE;border-radius:14px"></div><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">r-card 14</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:64px;height:64px;background:#EDF1EF;border:1px solid #C9D1CE;border-radius:20px"></div><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">r-panel 20</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:64px;height:64px;background:#EDF1EF;border:1px solid #C9D1CE;border-radius:24px 24px 0 0"></div><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">r-sheet 24</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:64px;height:36px;margin-top:14px;background:#EDF1EF;border:1px solid #C9D1CE;border-radius:999px"></div><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px;color:#58635F">r-pill 999</span></div>
+        </div>
+        <div style="font-size:12px;line-height:17px;color:#8A9490">Chips and status pills always r-pill. Sheets round the top corners only.</div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">ELEVATION</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:12px;background:#FFFFFF;border:1px solid #E2E7E5"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;line-height:15px;color:#58635F">e-0 flat<br>1px line only</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:12px;background:#FFFFFF;box-shadow:0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;line-height:15px;color:#58635F">e-1 card<br>0 1 2 / 0 2 6 · 5%</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:12px;background:#FFFFFF;box-shadow:0 2px 4px rgba(23,35,32,0.06),0 8px 20px rgba(23,35,32,0.09)"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;line-height:15px;color:#58635F">e-2 raised<br>0 2 4 6% / 0 8 20 9%</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:12px;background:#FFFFFF;box-shadow:0 8px 16px rgba(23,35,32,0.10),0 24px 56px rgba(23,35,32,0.18)"></div><div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:10px;line-height:15px;color:#58635F">e-3 sheet<br>0 8 16 10% / 0 24 56 18%</div></div>
+        </div>
+        <div style="font-size:12px;line-height:17px;color:#8A9490">Scrim under sheets: rgba(23,35,32,0.32). Hover on web rows: neutral/sunken fill, no shadow.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 Motion -->
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">05</span>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Motion — four named patterns</h2>
+      <span style="font-size:13px;color:#8A9490">Delight in the actions, not the chrome. Reduced-motion: everything collapses to 80 ms fades.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;position:relative;overflow:hidden">
+          <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);width:110px;height:200px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E7E5;overflow:hidden">
+            <div style="padding:12px 10px;display:flex;flex-direction:column;gap:7px"><div style="height:8px;width:60%;border-radius:4px;background:#E2E7E5"></div><div style="height:8px;width:85%;border-radius:4px;background:#EDF1EF"></div><div style="height:8px;width:75%;border-radius:4px;background:#EDF1EF"></div></div>
+            <div style="position:absolute;inset:0;background:rgba(23,35,32,0.32);animation:dlScrim 3.6s cubic-bezier(0.32,0.72,0,1) infinite;animation-play-state:{{ playState }}"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:58%;background:#FFFFFF;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(23,35,32,0.18);animation:dlSheet 3.6s cubic-bezier(0.32,0.72,0,1) infinite;animation-play-state:{{ playState }}">
+              <div style="width:32px;height:4px;border-radius:99px;background:#C9D1CE;margin:8px auto 0"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/sheet-in</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">In 320 ms · out 260 ms<br><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px">cubic-bezier(0.32, 0.72, 0, 1)</span><br>Bottom sheets, pickers. Scrim fades 240 ms.</div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;position:relative;overflow:hidden">
+          <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);width:110px;height:200px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E7E5;overflow:hidden">
+            <div style="position:absolute;inset:0;animation:dlUnder 3.6s cubic-bezier(0.2,0.8,0.2,1) infinite;animation-play-state:{{ playState }}">
+              <div style="padding:12px 10px;display:flex;flex-direction:column;gap:7px"><div style="height:8px;width:60%;border-radius:4px;background:#E2E7E5"></div><div style="height:20px;border-radius:6px;background:#E8EEFC"></div><div style="height:20px;border-radius:6px;background:#EDF1EF"></div><div style="height:20px;border-radius:6px;background:#EDF1EF"></div></div>
+            </div>
+            <div style="position:absolute;inset:0;background:rgba(23,35,32,0.08);animation:dlDim 3.6s linear infinite;animation-play-state:{{ playState }}"></div>
+            <div style="position:absolute;inset:0;background:#FFFFFF;box-shadow:-12px 0 24px rgba(23,35,32,0.14);animation:dlCardIn 3.6s cubic-bezier(0.2,0.8,0.2,1) infinite;animation-play-state:{{ playState }}">
+              <div style="padding:12px 10px;display:flex;flex-direction:column;gap:7px"><div style="height:8px;width:45%;border-radius:4px;background:#0D6E63;opacity:0.5"></div><div style="height:8px;width:80%;border-radius:4px;background:#E2E7E5"></div><div style="height:28px;border-radius:6px;background:#E1F0ED"></div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/card-advance</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">260 ms · return 240 ms<br><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px">cubic-bezier(0.2, 0.8, 0.2, 1)</span><br>Card slides in from right; view behind parallaxes −24% and dims 8%.</div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          <div style="width:76px;height:76px;border-radius:99px;display:flex;align-items:center;justify-content:center;animation:dlTickPulse 3s cubic-bezier(0.65,0,0.35,1) infinite,dlTickFill 3s linear infinite;animation-play-state:{{ playState }}">
+            <svg width="38" height="38" viewBox="0 0 38 38"><path d="M8 20 L16 28 L30 11" fill="none" stroke="#1E8E5A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="34" style="animation:dlTickDraw 3s cubic-bezier(0.65,0,0.35,1) infinite;animation-play-state:{{ playState }}"></path></svg>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/complete-tick</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">Draw 360 ms after 60 ms delay<br><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px">cubic-bezier(0.65, 0, 0.35, 1)</span><br>Container pulses 1→1.04→1 over 420 ms; success tint floods. Haptic at 200 ms.</div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#8A9490">TOTAL UNITS</div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums">{{ unitsText }}</div>
+          <div style="border-radius:8px;padding:4px 12px;transition:background 240ms ease-out;background:{{ feeBg }}">
+            <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:21px;font-weight:600;font-variant-numeric:tabular-nums">{{ feeText }}</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/value-tick</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">Roll 160 ms per step, ease-out<br>Accent-tint flash decays 240 ms<br>Fees, unit counts. Tabular numerals mandatory.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E2E7E5;padding-top:20px">
+    <span style="font-size:13px;color:#8A9490">All values transcribable 1:1 into design tokens. Data shown is fictional.</span>
+    <a href="Mobile App.dc.html" style="font-size:14px;font-weight:600;text-decoration:none">Mobile sample pages →</a>
+  </footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demos&quot;}}">
+class Component extends DCLogic {
+  state = { units: 20, fee: 530, flash: false };
+  componentDidMount() {
+    this._t = setInterval(() => this.tickDemo(), 2100);
+  }
+  componentWillUnmount() { clearInterval(this._t); if (this._raf) cancelAnimationFrame(this._raf); }
+  tickDemo() {
+    if ((this.props.motion ?? true) === false) return;
+    const next = this.state.units >= 24 ? 20 : this.state.units + 1;
+    const from = this.state.fee, to = next * 26.5;
+    this.setState({ units: next, flash: true });
+    const t0 = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / 320), e = 1 - Math.pow(1 - p, 3);
+      this.setState({ fee: from + (to - from) * e });
+      if (p < 1) this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+    setTimeout(() => this.setState({ flash: false }), 340);
+  }
+  renderVals() {
+    const motion = this.props.motion ?? true;
+    return {
+      neutrals: [
+        { t: 'ink', h: '#172320' }, { t: 'slate', h: '#58635F' }, { t: 'mist', h: '#8A9490' },
+        { t: 'line-strong', h: '#C9D1CE' }, { t: 'line', h: '#E2E7E5' }, { t: 'sunken', h: '#EDF1EF' },
+        { t: 'bg', h: '#F6F8F7' }, { t: 'surface', h: '#FFFFFF' },
+      ],
+      spacers: [
+        { t: 's-1', px: 4, w: '4px' }, { t: 's-2', px: 8, w: '8px' }, { t: 's-3', px: 12, w: '12px' },
+        { t: 's-4', px: 16, w: '16px' }, { t: 's-6', px: 24, w: '24px' }, { t: 's-8', px: 32, w: '32px' },
+        { t: 's-10', px: 40, w: '40px' }, { t: 's-14', px: 56, w: '56px' },
+      ],
+      unitsText: String(this.state.units),
+      feeText: '$' + this.state.fee.toFixed(2),
+      feeBg: this.state.flash ? '#E1F0ED' : 'rgba(225,240,237,0)',
+      playState: motion ? 'running' : 'paused',
+    };
+  }
+}
+</script>
+</body>
+</html>
