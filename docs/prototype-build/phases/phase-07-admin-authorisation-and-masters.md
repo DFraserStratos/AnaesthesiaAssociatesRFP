@@ -13,7 +13,7 @@ trigger.
 
 ## Reference
 
-**Authoritative visuals (convention 17):** `Design/Admin Review.dc.html`. Match its anatomy:
+**Authoritative visuals (convention 17):** `docs/design/Admin Review.dc.html`. Match its anatomy:
 breadcrumb (Review queue / Dr … — list); header with title, context line, status pill + amber
 "Submitted today, HH:MM" pill; the four-tile summary strip (CARDS · TOTAL UNITS · TOTAL FEE ·
 FLAGS with "to check before authorising"); the review table (TIME · PATIENT with mono NHI+op ·

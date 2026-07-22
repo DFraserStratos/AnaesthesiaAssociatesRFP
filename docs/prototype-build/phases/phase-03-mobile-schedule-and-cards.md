@@ -13,8 +13,8 @@ mock), and both availability screens. Modelled on RFP Appendix 3's navigation, m
 
 ## Reference
 
-**Authoritative visuals (convention 17):** `Design/Mobile App.dc.html` screens 1–2 (Forward Lists
-home; List detail card stack) and `Design/Mobile Availability.dc.html`. Open them in a browser and
+**Authoritative visuals (convention 17):** `docs/design/Mobile App.dc.html` screens 1–2 (Forward Lists
+home; List detail card stack) and `docs/design/Mobile Availability.dc.html`. Open them in a browser and
 tap through — the transitions are the spec: card-advance slide-in with −24% parallax + 8% dim on
 the view behind, sheet-in bottom sheets with scrim, tick-pop completion states. Match their layout
 anatomy: list rows (status rail · AM/PM+time column · hospital/surgeon line · right-side state),

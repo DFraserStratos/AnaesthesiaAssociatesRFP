@@ -13,8 +13,8 @@ List/Card editing (including BTM capture) reuses Phases 03–04's flows re-laid-
 
 ## Reference
 
-**Authoritative visuals (convention 17):** `Design/Web Dashboard.dc.html` and
-`Design/Web Availability.dc.html`. Match their anatomy: white top-nav with the serif crimson
+**Authoritative visuals (convention 17):** `docs/design/Web Dashboard.dc.html` and
+`docs/design/Web Availability.dc.html`. Match their anatomy: white top-nav with the serif crimson
 wordmark + "SPECIALIST ANAESTHETISTS" micro-caps, crimson underline on the active item, persona
 name + crimson-tint avatar right; nav = **Dashboard · Lists · Availability · Accounts** (Accounts
 houses Overdue + the GST summary — Decisions log). Dashboard: "Kia ora, Dr Souter" header with the

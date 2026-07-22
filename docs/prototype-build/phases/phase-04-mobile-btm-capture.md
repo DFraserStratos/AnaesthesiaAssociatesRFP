@@ -12,7 +12,7 @@ highest-stakes UI in the demo — the fee maths the audience will check by hand 
 
 ## Reference
 
-**Authoritative visuals (convention 17):** `Design/Mobile App.dc.html` screen 3 — the Card
+**Authoritative visuals (convention 17):** `docs/design/Mobile App.dc.html` screen 3 — the Card
 detail/BTM capture — plus its list-screen submit-bar states. Tap through it first; its choreography
 is the spec: ASA segmented control card → procedure card opening the **bottom-sheet code picker**
 (search field, mono code + name + base units rows, selected-row teal tint) → Times card (big mono

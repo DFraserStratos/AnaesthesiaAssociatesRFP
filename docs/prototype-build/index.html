@@ -114,11 +114,11 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
     <thead><tr><th>Document</th><th>Role</th></tr></thead>
     <tbody>
       <tr><td><code>docs/prototype-build/REQUIREMENTS.md</code></td><td class="read">The full requirements catalogue (P/D/M/W/A/B/X/I/N numbered) distilled from the RFP + our data-model reading. Every phase doc cites the IDs it covers.</td></tr>
-      <tr><td><code>docs/prototype-build/PROGRESS.md</code></td><td class="read">The living record: binding conventions (1–16), phase status, decisions log. <b>Every session reads it first and updates it last</b> — it is how each fresh chat inherits context.</td></tr>
+      <tr><td><code>docs/prototype-build/PROGRESS.md</code></td><td class="read">The living record: binding conventions (1–17), phase status, decisions log. <b>Every session reads it first and updates it last</b> — it is how each fresh chat inherits context.</td></tr>
       <tr><td><code>docs/prototype-build/phases/*.md</code></td><td class="read">One detailed plan per phase: work items, scope fences, and the manual test checklist you run before calling it done.</td></tr>
     </tbody>
   </table>
-  <p style="font-size:14px;color:var(--ink-3)">Source materials for taste and truth: <code>RFP.md</code> (full RFP text), <code>Data-Model-and-Flow.html</code> (entity model, lifecycle, end-to-end flow, open questions), the RFP PDF's Appendix 3–5 screenshots (pages 44–49) showing the legacy screens, and — <b>authoritative for all visuals</b> — the <code>Design/</code> folder at the repo root: <code>Design Language.dc.html</code> (tokens: palette, six status colours, type, spacing, motion) plus six interactive sample pages and a reusable iOS device frame (<code>ios-frame.jsx</code>). PROGRESS conventions 16–17 bind every phase to them; where a mockup simplified a business rule, the RFP rule wins (see the Decisions log).</p>
+  <p style="font-size:14px;color:var(--ink-3)">Source materials for taste and truth: <code>docs/rfp-reference/RFP.md</code> (full RFP text), <code>docs/rfp-reference/Data-Model-and-Flow.html</code> (entity model, lifecycle, end-to-end flow, open questions), the RFP PDF's Appendix 3–5 screenshots (pages 44–49) showing the legacy screens, and — <b>authoritative for all visuals</b> — the <code>docs/design/</code> folder: <code>Design Language.dc.html</code> (tokens: palette, six status colours, type, spacing, motion) plus six interactive sample pages and a reusable iOS device frame (<code>ios-frame.jsx</code>). PROGRESS conventions 16–17 bind every phase to them; where a mockup simplified a business rule, the RFP rule wins (see the Decisions log).</p>
 </section>
 
 <section>
@@ -213,7 +213,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
     <pre id="prompt-00">Please run Phase 00 (Scaffold &amp; three-app shell) of the Anaesthesia Associates prototype build — a demo-only React prototype of the booking &amp; billing system described in this repo's RFP.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/PROGRESS.md — the binding conventions (1–16), phase status and decisions log.
+1. docs/prototype-build/PROGRESS.md — the binding conventions (1–17), phase status and decisions log.
 2. docs/prototype-build/REQUIREMENTS.md — especially §1 (prototype harness) and §9 (non-functional).
 3. docs/prototype-build/phases/phase-00-scaffold-and-shell.md — your detailed plan.
 
@@ -221,8 +221,8 @@ Then enter plan mode: confirm nothing exists yet at aa-prototype/, turn the phas
 
 While working:
 - Scaffold aa-prototype/ exactly per the plan (Vite + React 18 + TS strict, React Router, Zustand, Tailwind, lucide-react, date-fns, Vitest) and the folder shape in PROGRESS convention 3.
-- Transcribe ALL design tokens verbatim from Design/Design Language.dc.html at the repo root (open it in a browser too) — neutrals, crimson (identity only), teal accent, semantic colours, the six status colour triples with hatched-Unavailable/dashed-Free treatments, type scale (Schibsted Grotesk + Spline Sans Mono via Google Fonts), spacing/radius/elevation, and the four named motion patterns with their exact durations/easings.
-- The app switcher lives in the top corner of a persistent shell and swaps app + persona; the mobile app renders inside the phone frame adapted from Design/ios-frame.jsx (IOSDevice), floating centred on the design's #E4E8E6 grey backdrop — never rely on browser viewport size.
+- Transcribe ALL design tokens verbatim from docs/design/Design Language.dc.html (open it in a browser too) — neutrals, crimson (identity only), teal accent, semantic colours, the six status colour triples with hatched-Unavailable/dashed-Free treatments, type scale (Schibsted Grotesk + Spline Sans Mono via Google Fonts), spacing/radius/elevation, and the four named motion patterns with their exact durations/easings.
+- The app switcher lives in the top corner of a persistent shell and swaps app + persona; the mobile app renders inside the phone frame adapted from docs/design/ios-frame.jsx (IOSDevice), floating centred on the design's #E4E8E6 grey backdrop — never rely on browser viewport size.
 - Nav chrome per the design pages: mobile bottom tabs, web white top-nav with serif crimson wordmark, admin dark-ink side nav with crimson active marker and badge pattern.
 - Keep npm run build and npx vitest run green; leave the app runnable with npm run dev.
 
@@ -262,10 +262,10 @@ Phase goal: the three-app demo shell with switcher and phone frame, on rails for
     <pre id="prompt-01">Please run Phase 01 (Domain model &amp; billing calculator) of the Anaesthesia Associates prototype build. Pure logic only — nothing visual changes this phase.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/PROGRESS.md — binding conventions (1–16), decisions log, and what Phase 00 actually built.
+1. docs/prototype-build/PROGRESS.md — binding conventions (1–17), decisions log, and what Phase 00 actually built.
 2. docs/prototype-build/REQUIREMENTS.md — especially §2 (domain model) and §6.B3 (calculator).
 3. docs/prototype-build/phases/phase-01-domain-and-calculator.md — your detailed plan.
-4. Data-Model-and-Flow.md (repo root) — the entity model this must implement; RFP.md's "The Big Picture" BTM section and Appendix 1 (NHI formats) for the source rules.
+4. docs/rfp-reference/Data-Model-and-Flow.md — the entity model this must implement; docs/rfp-reference/RFP.md's "The Big Picture" BTM section and Appendix 1 (NHI formats) for the source rules.
 
 Then enter plan mode: verify the Phase 00 scaffold state, turn the phase doc into work-sized steps (types → clock → NHI → calculator + tests), and wait for my approval.
 
@@ -319,7 +319,7 @@ Before doing anything else, read these in order:
 Then enter plan mode: verify Phase 01's types and calculator, turn the phase doc into work-sized steps (seed → store slices → guards → audit → persistence → control-panel wiring → inspector → tests), and wait for my approval.
 
 While working:
-- The seed is deterministic (seeded RNG + pinned DEMO_TODAY 2026-07-21, the design mockups' content date): same seed → identical data. Build the full inventory the plan lists — including the Design/ mockups' cast (Dr Melanie Souter as the demo persona, Kirsty W. in the office, the 14 anaesthetists — each with a registration-number ID, name, contact details, unit value, GST period and HPI id per the RFP's Anaesthetist master) and the design-day fidelity states, plus the ready-made states later phases depend on (SUBMITTED lists, split-billing card, a one-procedure-two-funders card with per-line funder overrides (conservation-checked; Phase 06 edits the allocation, Phase 08 bills two invoices), one cancelled card (audited soft-cancel, visible but outside validation/billing), pre-payment patient whose Procedure carries the typed prepayment detail (full|split + deposit — the Card flag is derived), self-funded-post-procedure and insured patients for the three payment categories, guardian case — the guardian as a typed BillableParty record with its own hidden ID, not a Patient row — one provisional no-NHI patient ("NHI pending", the RFP's NHI-where-available case), both NHI formats, repeat patients, an accRelated procedure billed via a hospital's ACC contract, billingReference values on most contract-routed procedures with 1–2 deliberately missing for Phase 07's reference-completeness flag), and the contract set includes the COS contract-holder-organisation's externally-held ACC contract, one contract with permitsIndividualArrangement (exercised by a seeded rate×time hourly-rate card), alongside the hospital defaults and the surgeon-held bariatric Type 3.
+- The seed is deterministic (seeded RNG + pinned DEMO_TODAY 2026-07-21, the design mockups' content date): same seed → identical data. Build the full inventory the plan lists — including the docs/design/ mockups' cast (Dr Melanie Souter as the demo persona, Kirsty W. in the office, the 14 anaesthetists — each with a registration-number ID, name, contact details, unit value, GST period and HPI id per the RFP's Anaesthetist master) and the design-day fidelity states, plus the ready-made states later phases depend on (SUBMITTED lists, split-billing card, a one-procedure-two-funders card with per-line funder overrides (conservation-checked; Phase 06 edits the allocation, Phase 08 bills two invoices), one cancelled card (audited soft-cancel, visible but outside validation/billing), pre-payment patient whose Procedure carries the typed prepayment detail (full|split + deposit — the Card flag is derived), self-funded-post-procedure and insured patients for the three payment categories, guardian case — the guardian as a typed BillableParty record with its own hidden ID, not a Patient row — one provisional no-NHI patient ("NHI pending", the RFP's NHI-where-available case), both NHI formats, repeat patients, an accRelated procedure billed via a hospital's ACC contract, billingReference values on most contract-routed procedures with 1–2 deliberately missing for Phase 07's reference-completeness flag), and the contract set includes the COS contract-holder-organisation's externally-held ACC contract, one contract with permitsIndividualArrangement (exercised by a seeded rate×time hourly-rate card), alongside the hospital defaults and the surgeon-held bariatric Type 3.
 - Permanent Lists cover ~80% of SURGEON-ASSIGNED lists and each carries its usual surgeon (surgeonId — how that derivation works; the picked reading of the RFP's permanent-list-surgeon gap) (the RFP's figure — a share of assignments, not of all sessions); modifier unit values are demo-plausible figures drawn from the RFP's stated ranges, explicitly labelled as such in a seed comment (not an authoritative NZSA schedule — flag as a discovery item).
 - Lifecycle guards live in the store and are the only path: completeCard gated by validateCardForBilling, submitList acts only on a DRAFT list and is blocked unless EVERY non-cancelled card is marked Completed (validation alone is not enough), authoriseList acts only on a SUBMITTED list (transitions strictly ordered), locks Cards and emits listAuthorised, cancelCard is the audited soft-cancel (reason required; card retained + visible, excluded from validation/billing; anaesthetist on DRAFT, office on DRAFT/SUBMITTED, blocked on AUTHORISED — S15 reuses it later), reassignList enforces the fixed-canvas slot mechanics (free target absorbed, vacated slot regenerates — 2 lists per anaesthetist per day always), reassignCard moves a single Card between Lists (audited at Card level, distinct from reassignList — this is the RFP's routine "move one booking" case), setAvailability writes the availability MASTER and reconciles (only truly-Free sessions restatus; anything with booking context — non-Free status, assigned surgeon/hospital, or Cards — gets a conflict flag: an empty-but-reserved List is NOT free, per RFP principle 3), role AND source checks per persona (integration-sourced writes allowed only while the target List is DRAFT — the RFP's state table; refusals return an exception outcome Phase 11's monitor surfaces), and NO Returned transition exists.
 - Every domain mutation goes through the audit wrapper — no direct set on domain slices outside it — and the wrapper stamps lastModifiedBy/At in lockstep with the log entry. All card-creation paths share one upsertPatient (match by NHI, either format → reuse; else provisional) — the RFP's intake dedupe. Creating a Hospital (or flipping an Insurer to acceptsDirectClaims) atomically creates its protected default Type 1 contract.
@@ -364,7 +364,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–02 actually built.
 2. docs/prototype-build/REQUIREMENTS.md — §3 (M1–M3, M6–M9).
 3. docs/prototype-build/phases/phase-03-mobile-schedule-and-cards.md — your detailed plan.
-4. Design/Mobile App.dc.html (screens 1–2) and Design/Mobile Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); open them in a browser and tap through before building.
+4. docs/design/Mobile App.dc.html (screens 1–2) and docs/design/Mobile Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); open them in a browser and tap through before building.
 5. RFP Appendix 3 (PDF page 44) — the legacy screens, for functional reference.
 
 Then enter plan mode: verify the store selectors and seed states, turn the plan into work-sized steps, and wait for my approval.
@@ -416,7 +416,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–03 actually built (especially 03's reserved seams: the BTM placeholder and the Completed footer slot).
 2. docs/prototype-build/REQUIREMENTS.md — §3.M4/M5/M10 and §6.B5 (capture side).
 3. docs/prototype-build/phases/phase-04-mobile-btm-capture.md — your detailed plan, including the do-NOT-inherit list (the mockup simplifies the billing maths; the RFP rules win).
-4. Design/Mobile App.dc.html screen 3 — the AUTHORITATIVE visual reference (convention 17); tap through the capture → complete → submit choreography in a browser first.
+4. docs/design/Mobile App.dc.html screen 3 — the AUTHORITATIVE visual reference (convention 17); tap through the capture → complete → submit choreography in a browser first.
 5. RFP Appendix 3 (PDF page 44, fourth screenshot — the Outcome panel) and the RFP's "The Big Picture" BTM section — the rules.
 
 Then enter plan mode: verify Phase 03's seams and Phase 01's calculator/validator signatures, turn the plan into work-sized steps, and wait for my approval.
@@ -468,7 +468,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–04 actually built (especially 04's capture-UX decisions).
 2. docs/prototype-build/REQUIREMENTS.md — §4 (W1–W4) and §3.M11.
 3. docs/prototype-build/phases/phase-05-anaesthetist-web-app.md — your detailed plan.
-4. Design/Web Dashboard.dc.html and Design/Web Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); note the nav is Dashboard · Lists · Availability · Accounts.
+4. docs/design/Web Dashboard.dc.html and docs/design/Web Availability.dc.html — the AUTHORITATIVE visual reference (convention 17); note the nav is Dashboard · Lists · Availability · Accounts.
 5. RFP Appendix 5 (PDF pages 46–49) — the legacy screens, for functional reference.
 
 Then enter plan mode: identify exactly which Phase 03–04 components to extract to src/shared/ (refactor, don't fork), turn the plan into work-sized steps, and wait for my approval.
@@ -518,7 +518,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–05 actually built (especially src/shared/ contents).
 2. docs/prototype-build/REQUIREMENTS.md — §5.A1–A3 and §2.D7.
 3. docs/prototype-build/phases/phase-06-admin-day-dashboard.md — your detailed plan.
-4. Design/Admin Day.dc.html — the AUTHORITATIVE visual reference (convention 17): dark side nav, proportional time-block grid, flag/note adornments, right rail.
+4. docs/design/Admin Day.dc.html — the AUTHORITATIVE visual reference (convention 17): dark side nav, proportional time-block grid, flag/note adornments, right rail.
 5. RFP Appendix 4 (PDF page 45) — the legacy one-day dashboard, for functional reference (keep the density and drill-down).
 
 Then enter plan mode: verify the store guards and shared components, turn the plan into work-sized steps, and wait for my approval.
@@ -570,7 +570,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–06 actually built.
 2. docs/prototype-build/REQUIREMENTS.md — §5.A4/A6–A8 and §2.D6.
 3. docs/prototype-build/phases/phase-07-admin-authorisation-and-masters.md — your detailed plan, including the ROUTE-column correction (the mockup showed anaesthetic technique; build the RFP billing route).
-4. Design/Admin Review.dc.html — the AUTHORITATIVE visual reference (convention 17); click Authorise in a browser to see the required choreography (tick banner, table dims + locks, badge decrement).
+4. docs/design/Admin Review.dc.html — the AUTHORITATIVE visual reference (convention 17); click Authorise in a browser to see the required choreography (tick banner, table dims + locks, badge decrement).
 
 Then enter plan mode: verify the store's authoriseList guard and event, turn the plan into work-sized steps, and wait for my approval.
 
@@ -621,7 +621,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what Phases 00–07 actually built (especially the listAuthorised event and Phase 01's calculator).
 2. docs/prototype-build/REQUIREMENTS.md — §6.B1–B6/B9/B10.
 3. docs/prototype-build/phases/phase-08-billing-run-and-invoices.md — your detailed plan.
-4. Data-Model-and-Flow.md §2 and §4 — the invoice/billing-case model and the end-to-end flow this implements.
+4. docs/rfp-reference/Data-Model-and-Flow.md §2 and §4 — the invoice/billing-case model and the end-to-end flow this implements.
 
 Then enter plan mode: verify the calculator and event seams, turn the plan into work-sized steps (run orchestration → invoice documents → view effects → tests), and wait for my approval.
 
@@ -720,7 +720,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions (especially 8: NHI never crosses to Xero), decisions log, what Phases 08–09 actually built.
 2. docs/prototype-build/REQUIREMENTS.md — §7 (X1–X5) and §2.D9.
 3. docs/prototype-build/phases/phase-10-xero-and-payments.md — your detailed plan.
-4. Data-Model-and-Flow.md §2/§2a and RFP Appendix 2 — the ACCREC/ACCPAY pairing and the identity-layer/contact-lifecycle workflow this simulates.
+4. docs/rfp-reference/Data-Model-and-Flow.md §2/§2a and RFP Appendix 2 — the ACCREC/ACCPAY pairing and the identity-layer/contact-lifecycle workflow this simulates.
 
 Then enter plan mode: verify Phase 08's billing-case seam and Phase 09's monitor, turn the plan into work-sized steps, and wait for my approval.
 
@@ -771,7 +771,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions, decisions log, what earlier phases actually built.
 2. docs/prototype-build/REQUIREMENTS.md — §8 (I1–I5) and §2.D8.
 3. docs/prototype-build/phases/phase-11-integrations.md — your detailed plan.
-4. RFP.md — the Health Systems Integration section, including the sample SIU^S14 message your canned messages are styled on, and Appendix 1 for the NHI format change.
+4. docs/rfp-reference/RFP.md — the Health Systems Integration section, including the sample SIU^S14 message your canned messages are styled on, and Appendix 1 for the NHI format change.
 
 Then enter plan mode: verify the card-update paths and admin surfaces, turn the plan into work-sized steps, and wait for my approval.
 

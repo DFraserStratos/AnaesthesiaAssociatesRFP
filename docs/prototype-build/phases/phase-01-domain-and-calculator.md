@@ -15,7 +15,7 @@ the RFP's hardest business rules before any screen depends on them.
 
 ### 1. Domain types (`src/domain/types.ts`)
 
-Model exactly the entities in `Data-Model-and-Flow.html` §1–§2 (read it before writing types):
+Model exactly the entities in `docs/rfp-reference/Data-Model-and-Flow.html` §1–§2 (read it before writing types):
 Schedule/Day (implicit — derive days from the horizon), List, Card (incl. an optional
 **integration correlation ref** — `{sourceFeedId, externalAppointmentId}`, from the HL7 **SCH-2
 filler appointment ID** (the RFP sample's `1661243` — note it sits in SCH-2; the sample's SCH-1 is

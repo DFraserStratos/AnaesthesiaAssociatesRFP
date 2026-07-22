@@ -12,7 +12,7 @@ authorisation and master data follow in Phase 07.
 
 ## Reference
 
-**Authoritative visuals (convention 17):** `Design/Admin Day.dc.html`. Match its anatomy: the dark
+**Authoritative visuals (convention 17):** `docs/design/Admin Day.dc.html`. Match its anatomy: the dark
 ink side nav (crimson active marker, Review-queue count badge, office persona footer); header with
 the date title + summary line ("14 anaesthetists · 22 sessions · 5 free · 2 lists submitted") and
 ‹ Today › controls; the day grid — 148px surname column, hour ruler 07:00–17:00+ with faint
