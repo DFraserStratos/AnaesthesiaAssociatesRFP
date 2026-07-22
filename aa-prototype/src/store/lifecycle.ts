@@ -12,7 +12,7 @@
  *   - integration-sourced writes only while the List is DRAFT.
  */
 
-import type { Card, List, ListStatusKey, Procedure, Session } from '../domain/types'
+import type { Card, CoverRequest, List, ListStatusKey, Procedure, Session } from '../domain/types'
 import { validateCardForBilling } from '../domain/billing/validateCardForBilling'
 import {
   allocateId,
@@ -32,7 +32,7 @@ import { emitAppEvent } from './events'
 // Shared checks
 // ---------------------------------------------------------------------------
 
-function getCard(state: AppState, cardId: string): { card: Card; list: List } | undefined {
+export function getCard(state: AppState, cardId: string): { card: Card; list: List } | undefined {
   const card = state.schedule.cards[cardId]
   if (card === undefined) return undefined
   const list = state.schedule.lists[card.listId]
@@ -42,9 +42,10 @@ function getCard(state: AppState, cardId: string): { card: Card; list: List } | 
 
 /**
  * The edit-rights matrix for Card/Procedure writes. Returns a refusal outcome
- * or null when the write may proceed.
+ * or null when the write may proceed. Exported so the Phase 03 card-creation
+ * and patient-edit guards apply the identical role/source/state gate.
  */
-function editRefusal(actor: Actor, list: List): Outcome<never> | null {
+export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
   if (list.state === 'AUTHORISED') {
     return refuse('listAuthorised', 'This List is authorised and its Cards are locked. No edits are possible.')
   }
@@ -304,7 +305,7 @@ export function cancelCard(api: AppStoreApi, actor: Actor, cardId: string, reaso
 // editCard / editProcedure (the guarded patch entry points)
 // ---------------------------------------------------------------------------
 
-export type CardPatch = Partial<Pick<Card, 'scheduledTime' | 'notes'>>
+export type CardPatch = Partial<Pick<Card, 'scheduledTime' | 'notes' | 'attachments'>>
 
 export function editCard(api: AppStoreApi, actor: Actor, cardId: string, patch: CardPatch): Outcome {
   const state = api.getState()
@@ -657,4 +658,69 @@ export function setAvailability(
   })
 
   return ok({ reconciled })
+}
+
+// ---------------------------------------------------------------------------
+// requestCover
+// ---------------------------------------------------------------------------
+
+/**
+ * Record a cover offer/request marker on a Free List (Phase 03 mobile flow;
+ * Decisions log 2026-07-21). `offer` = the owner offers their own free session;
+ * `request` = a colleague is asked to cover someone else's free session.
+ * Simulated only: the marker + audit entry are the demonstration, there is no
+ * real notification. Anaesthetist actor; the free-session and ownership checks
+ * mirror `editRefusal`'s shape.
+ */
+export function requestCover(
+  api: AppStoreApi,
+  actor: Actor,
+  listId: string,
+  kind: 'offer' | 'request',
+  message?: string,
+  targetAnaesthetistId?: string,
+): Outcome {
+  const state = api.getState()
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return refuse('notFound', 'List not found.')
+  if (actor.role !== 'anaesthetist') {
+    return refuse('anaesthetistOnly', 'Cover offers and requests come from an anaesthetist.')
+  }
+  if (list.statusKey !== 'free') {
+    return refuse('notFree', 'Cover can only be offered or requested on a free session.')
+  }
+  if (kind === 'offer') {
+    if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== list.anaesthetistId) {
+      return refuse('notOwnList', 'You can only offer cover on your own free session.')
+    }
+  } else if (actor.anaesthetistId !== undefined && actor.anaesthetistId === list.anaesthetistId) {
+    return refuse('ownList', 'This is your own session, use Offer cover instead.')
+  }
+  if (list.coverRequest !== undefined) {
+    return refuse('alreadyRequested', 'A cover request is already pending on this session.')
+  }
+
+  const coverRequest: CoverRequest = {
+    by: actor.who,
+    kind,
+    atISO: clockISO(state.clock),
+    status: 'pending',
+  }
+  if (message !== undefined && message.trim() !== '') coverRequest.message = message.trim()
+  if (targetAnaesthetistId !== undefined) coverRequest.targetAnaesthetistId = targetAnaesthetistId
+
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'list',
+      entityId: listId,
+      action: 'list.coverRequest',
+      after: { kind, ...(targetAnaesthetistId !== undefined ? { targetAnaesthetistId } : {}) },
+    },
+    (s) => ({
+      schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...list, coverRequest } } },
+    }),
+  )
+  return ok(undefined)
 }

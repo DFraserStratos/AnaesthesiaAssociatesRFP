@@ -11,6 +11,7 @@ import { validateNhi } from '../domain/nhi'
 import { validateEthnicityCode } from '../domain/nzhis'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
+import { editRefusal, getCard } from './lifecycle'
 
 export interface PatientIntakeDetails {
   nhi?: string
@@ -124,4 +125,56 @@ export function upsertPatient(
 
   if (created === undefined) return refuse('createFailed', 'The patient record could not be created.')
   return ok({ patient: created, outcome: provisional ? 'createdProvisional' : 'created' })
+}
+
+// ---------------------------------------------------------------------------
+// editPatient
+// ---------------------------------------------------------------------------
+
+/** Editable patient demographics (Phase 03 Card-screen patient block). */
+export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'address'>>
+
+/**
+ * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
+ * Mirrors `editCard`: when a `viaCardId` is supplied (the Card screen always
+ * does), the same `editRefusal` gate applies against that Card's List, so a
+ * SUBMITTED List is read-only to the anaesthetist and an AUTHORISED List is
+ * locked. Called without a card context (later office master edits) it skips
+ * the list gate.
+ */
+export function editPatient(
+  api: AppStoreApi,
+  actor: Actor,
+  patientId: string,
+  patch: PatientEditPatch,
+  viaCardId?: string,
+): Outcome {
+  const state = api.getState()
+  const patient = state.masters.patients[patientId]
+  if (patient === undefined) return refuse('notFound', 'Patient not found.')
+  if (viaCardId !== undefined) {
+    const found = getCard(state, viaCardId)
+    if (found === undefined) return refuse('notFound', 'Card not found.')
+    const rights = editRefusal(actor, found.list)
+    if (rights !== null) return rights
+  }
+
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'patient',
+      entityId: patientId,
+      action: 'patient.update',
+      before: Object.fromEntries(Object.keys(patch).map((k) => [k, patient[k as keyof Patient]])),
+      after: patch,
+    },
+    (s) => ({
+      masters: {
+        ...s.masters,
+        patients: { ...s.masters.patients, [patientId]: { ...patient, ...patch } },
+      },
+    }),
+  )
+  return ok(undefined)
 }

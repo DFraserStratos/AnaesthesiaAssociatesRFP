@@ -267,6 +267,22 @@ export interface ListConflict {
   message: string
 }
 
+/**
+ * A cover marker recorded on a Free List (Phase 03 mobile request-cover flow;
+ * Decisions log 2026-07-21 "New interactions"). `offer` = the owner offers
+ * their own free session for cover; `request` = a colleague is asked to cover a
+ * free session. Simulated only — no real notification; the audit entry and this
+ * marker are the demonstration.
+ */
+export interface CoverRequest {
+  by: string
+  kind: 'offer' | 'request'
+  targetAnaesthetistId?: AnaesthetistId
+  message?: string
+  atISO: IsoDateTime
+  status: 'pending'
+}
+
 export interface List {
   id: ListId
   dateISO: IsoDate
@@ -280,6 +296,8 @@ export interface List {
   startTime?: WallTime
   endTime?: WallTime
   conflicts: ListConflict[]
+  /** A pending cover offer/request on a Free List (Phase 03). */
+  coverRequest?: CoverRequest
   notes?: string
 }
 
@@ -318,6 +336,12 @@ export interface CardAttachment {
   id: string
   name: string
   kind: 'photo' | 'pdf' | 'other'
+  /**
+   * A data URL for a picked or bundled image, so an attachment renders inline
+   * (Phase 03). Demo tradeoff: data URLs persist into localStorage — acceptable
+   * for the small bundled/sample photos this prototype attaches.
+   */
+  dataUrl?: string
 }
 
 export interface Card {

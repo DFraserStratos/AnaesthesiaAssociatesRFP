@@ -18,11 +18,13 @@ export interface Persona {
   /** Avatar initials (crimson-tint avatar — identity use of the brand). */
   initials: string
   role: string
+  /** Anaesthetist registration number (their master ID) — set for clinician personas. */
+  anaesthetistId?: string
 }
 
 /** Demo personas from the design (Decisions log 2026-07-21). */
 export const PERSONAS = {
-  souter: { name: 'Dr Melanie Souter', initials: 'MS', role: 'Anaesthetist' },
+  souter: { name: 'Dr Melanie Souter', initials: 'MS', role: 'Anaesthetist', anaesthetistId: '34821' },
   kirsty: { name: 'Kirsty W.', initials: 'KW', role: 'Office' },
 } as const satisfies Record<string, Persona>
 

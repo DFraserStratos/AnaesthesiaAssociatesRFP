@@ -1,0 +1,50 @@
+import { brand, neutral } from '../../../theme/tokens'
+
+interface MobileHeaderProps {
+  eyebrow: string
+  title: string
+  /** Avatar initials — the crimson-tint identity avatar (brand = identity only). */
+  initials: string
+}
+
+/** The tab-screen header: micro-cap eyebrow, large title, MS identity avatar. */
+export function MobileHeader({ eyebrow, title, initials }: MobileHeaderProps) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            color: neutral.mist,
+            textTransform: 'uppercase',
+          }}
+        >
+          {eyebrow}
+        </div>
+        <div style={{ fontSize: 26, lineHeight: '32px', fontWeight: 700, letterSpacing: '-0.015em', marginTop: 2 }}>
+          {title}
+        </div>
+      </div>
+      <span
+        aria-hidden
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 999,
+          background: brand.tint,
+          color: brand.base,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 15,
+          fontWeight: 700,
+          flex: 'none',
+        }}
+      >
+        {initials}
+      </span>
+    </div>
+  )
+}

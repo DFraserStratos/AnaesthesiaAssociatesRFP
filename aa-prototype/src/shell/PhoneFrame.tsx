@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useClockTimeLabel } from '../store'
-import { neutral, phoneBackdrop } from '../theme/tokens'
+import { accent, neutral, phoneBackdrop } from '../theme/tokens'
 
 /**
  * iOS device frame — adapted from `docs/design/ios-frame.jsx` (`IOSDevice`)
@@ -77,6 +78,98 @@ function StatusBar({ time }: { time: string }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Presenter zoom (prototype chrome, not product UI)
+// ---------------------------------------------------------------------------
+
+const SCALE_MIN = 0.5
+const SCALE_MAX = 1.3
+const SCALE_STEP = 0.1
+const BACKDROP_PADDING = 24
+const SCALE_STORAGE_KEY = 'aa-phone-scale'
+
+const clampScale = (s: number): number => Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(s * 100) / 100))
+
+function readStoredScale(): number | null {
+  try {
+    const raw = window.localStorage.getItem(SCALE_STORAGE_KEY)
+    if (raw === null) return null
+    const n = Number(raw)
+    return Number.isFinite(n) ? clampScale(n) : null
+  } catch {
+    return null
+  }
+}
+
+/** A small zoom toolbar pinned outside the phone (demo convenience on small screens). */
+function ZoomControl({
+  scale,
+  onChange,
+  onFit,
+}: {
+  scale: number
+  onChange: (next: number) => void
+  onFit: () => void
+}) {
+  const btn: React.CSSProperties = {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    border: `1px solid ${neutral.line}`,
+    background: neutral.surface,
+    color: neutral.slate,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0,
+  }
+  return (
+    <div
+      role="group"
+      aria-label="Resize the phone preview"
+      style={{
+        position: 'fixed',
+        right: 20,
+        bottom: 20,
+        zIndex: 200,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: 6,
+        borderRadius: 999,
+        background: 'rgba(255,255,255,0.94)',
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${neutral.line}`,
+        boxShadow: '0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09)',
+      }}
+    >
+      <button type="button" aria-label="Zoom out" style={btn} onClick={() => onChange(scale - SCALE_STEP)}>
+        <Minus size={16} strokeWidth={2.2} aria-hidden />
+      </button>
+      <span
+        className="mono"
+        style={{ minWidth: 44, textAlign: 'center', fontSize: 13, fontWeight: 600, color: neutral.ink }}
+      >
+        {Math.round(scale * 100)}%
+      </span>
+      <button type="button" aria-label="Zoom in" style={btn} onClick={() => onChange(scale + SCALE_STEP)}>
+        <Plus size={16} strokeWidth={2.2} aria-hidden />
+      </button>
+      <button
+        type="button"
+        aria-label="Fit to screen"
+        title="Fit to screen"
+        style={{ ...btn, width: 'auto', padding: '0 10px', gap: 6, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}
+        onClick={onFit}
+      >
+        <Maximize2 size={15} strokeWidth={2.2} aria-hidden />
+        Fit
+      </button>
+    </div>
+  )
+}
+
 interface PhoneFrameProps {
   children: ReactNode
   /** Status-bar time override (defaults to the live demo clock). */
@@ -85,8 +178,48 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({ children, time }: PhoneFrameProps) {
   const clockTime = useClockTimeLabel()
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const [scale, setScaleState] = useState<number>(() => readStoredScale() ?? 1)
+  // Until the user has an explicit preference we auto-fit to the viewport.
+  const [autoFit, setAutoFit] = useState<boolean>(() => readStoredScale() === null)
+
+  const setScale = useCallback((next: number) => {
+    const clamped = clampScale(next)
+    setAutoFit(false)
+    setScaleState(clamped)
+    try {
+      window.localStorage.setItem(SCALE_STORAGE_KEY, String(clamped))
+    } catch {
+      /* ignore storage failures (private mode etc.) */
+    }
+  }, [])
+
+  const computeFit = useCallback((): number => {
+    const el = backdropRef.current
+    if (el === null) return 1
+    // The backdrop's own height grows with its content, so measure the visible
+    // space instead: viewport height below the backdrop's top (the harness bar).
+    const rect = el.getBoundingClientRect()
+    const availH = window.innerHeight - rect.top - BACKDROP_PADDING * 2
+    const availW = el.clientWidth - BACKDROP_PADDING * 2
+    if (availH <= 0 || availW <= 0) return 1
+    return clampScale(Math.min(availH / DEVICE_HEIGHT, availW / DEVICE_WIDTH))
+  }, [])
+
+  const fitNow = useCallback(() => setScale(computeFit()), [computeFit, setScale])
+
+  // While in auto-fit mode, keep the phone fitted to the backdrop as it resizes.
+  useLayoutEffect(() => {
+    if (!autoFit) return
+    const apply = () => setScaleState(computeFit())
+    apply()
+    window.addEventListener('resize', apply)
+    return () => window.removeEventListener('resize', apply)
+  }, [autoFit, computeFit])
+
   return (
     <div
+      ref={backdropRef}
       style={{
         minHeight: '100%',
         width: '100%',
@@ -94,25 +227,28 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24,
+        padding: BACKDROP_PADDING,
         boxSizing: 'border-box',
         overflow: 'auto',
       }}
     >
-      <div
-        style={{
-          flex: 'none',
-          width: DEVICE_WIDTH,
-          height: DEVICE_HEIGHT,
-          borderRadius: 48,
-          overflow: 'hidden',
-          position: 'relative',
-          background: neutral.bg,
-          boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
-          WebkitFontSmoothing: 'antialiased',
-        }}
-      >
-        {/* dynamic island */}
+      {/* Wrapper reserves the SCALED footprint so flex-centring and scrollbars stay correct. */}
+      <div style={{ flex: 'none', width: DEVICE_WIDTH * scale, height: DEVICE_HEIGHT * scale }}>
+        <div
+          style={{
+            width: DEVICE_WIDTH,
+            height: DEVICE_HEIGHT,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            borderRadius: 48,
+            overflow: 'hidden',
+            position: 'relative',
+            background: neutral.bg,
+            boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+            WebkitFontSmoothing: 'antialiased',
+          }}
+        >
+          {/* dynamic island */}
         <div
           style={{
             position: 'absolute',
@@ -150,7 +286,10 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
         >
           <div style={{ width: 139, height: 5, borderRadius: 100, background: 'rgba(0,0,0,0.25)' }} />
         </div>
+        </div>
       </div>
+
+      <ZoomControl scale={scale} onChange={setScale} onFit={fitNow} />
     </div>
   )
 }

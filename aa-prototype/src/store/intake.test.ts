@@ -4,12 +4,25 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
-import { upsertPatient } from './intake'
+import { editPatient, upsertPatient } from './intake'
 import { createHospital, setInsurerDirectClaims } from './mastersActions'
+import { cardsForList } from './selectors'
 import type { Actor } from './mutate'
-import { INS, PAT } from '../domain/seed'
+import { ANAE, INS, PAT, SEED_MARKERS } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+const SOUTER: Actor = {
+  who: 'Dr Melanie Souter',
+  role: 'anaesthetist',
+  source: 'anaesthetist',
+  anaesthetistId: ANAE.souter,
+}
+const MORRISON: Actor = {
+  who: 'Dr Kate Morrison',
+  role: 'anaesthetist',
+  source: 'anaesthetist',
+  anaesthetistId: ANAE.morrison,
+}
 
 describe('upsertPatient', () => {
   it('reuses the existing patient for a known current-format NHI and enriches missing fields', () => {
@@ -120,6 +133,29 @@ describe('upsertPatient', () => {
     expect(second.value.outcome).toBe('reused')
     expect(second.value.patient.ethnicityCode).toBe('21111')
     expect(second.value.patient.ethnicityPending).toBeUndefined()
+  })
+})
+
+describe('editPatient', () => {
+  const ELLISON_CARD = SEED_MARKERS.pendingCaptureCard!.entityId
+  const MORRISON_LIST = SEED_MARKERS.submittedListMorrison!.entityId
+
+  it('edits demographics and writes a patient.update audit entry', () => {
+    const api = createAppStore()
+    const outcome = editPatient(api, SOUTER, PAT.ellison, { phone: '021 555 9999' }, ELLISON_CARD)
+    expect(outcome.ok).toBe(true)
+    const state = api.getState()
+    expect(state.masters.patients[PAT.ellison]?.phone).toBe('021 555 9999')
+    expect(state.audit.at(-1)?.action).toBe('patient.update')
+  })
+
+  it('refuses via a card on a locked (SUBMITTED) list for the anaesthetist', () => {
+    const api = createAppStore()
+    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]
+    expect(morrisonCard).toBeDefined()
+    const outcome = editPatient(api, MORRISON, morrisonCard!.patientId, { phone: '021 000 0000' }, morrisonCard!.id)
+    expect(outcome.ok).toBe(false)
+    if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
   })
 })
 

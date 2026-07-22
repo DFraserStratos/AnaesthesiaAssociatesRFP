@@ -13,6 +13,7 @@ import {
   editProcedure,
   reassignCard,
   reassignList,
+  requestCover,
   setAvailability,
   submitList,
 } from './lifecycle'
@@ -464,5 +465,71 @@ describe('setAvailability', () => {
     const integration = setAvailability(api, INTEGRATION, ANAE.hughes, TUE21, 'AM', 'holiday')
     expect(integration.ok).toBe(false)
     if (!integration.ok) expect(integration.code).toBe('integrationForbidden')
+  })
+})
+
+describe('requestCover', () => {
+  const TUE21 = '2026-07-21'
+  const WED22 = '2026-07-22'
+
+  function freeListId(api: BoundAppStore, anaesthetistId: string, dateISO: string, session: 'AM' | 'PM'): string {
+    const list = listForSlot(api.getState(), anaesthetistId, dateISO, session)
+    if (list === undefined) throw new Error('no such slot')
+    return list.id
+  }
+
+  it('records a pending offer on the owner\'s own free session + an audit entry', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.souter, WED22, 'PM') // Souter's own free session
+    const outcome = requestCover(api, SOUTER, listId, 'offer', 'Happy to hand this over')
+    expect(outcome.ok).toBe(true)
+    const list = api.getState().schedule.lists[listId]
+    expect(list?.coverRequest?.kind).toBe('offer')
+    expect(list?.coverRequest?.status).toBe('pending')
+    expect(list?.coverRequest?.message).toBe('Happy to hand this over')
+    expect(api.getState().audit.at(-1)?.action).toBe('list.coverRequest')
+  })
+
+  it('records a request against a colleague\'s free session', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM') // Sharma's free PM
+    const outcome = requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma)
+    expect(outcome.ok).toBe(true)
+    const list = api.getState().schedule.lists[listId]
+    expect(list?.coverRequest?.kind).toBe('request')
+    expect(list?.coverRequest?.targetAnaesthetistId).toBe(ANAE.sharma)
+  })
+
+  it('refuses on a non-free session', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.souter, TUE21, 'AM') // private, all done
+    const outcome = requestCover(api, SOUTER, listId, 'offer')
+    expect(outcome.ok).toBe(false)
+    if (!outcome.ok) expect(outcome.code).toBe('notFree')
+  })
+
+  it('refuses an offer on a session the actor does not own', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM')
+    const outcome = requestCover(api, SOUTER, listId, 'offer')
+    expect(outcome.ok).toBe(false)
+    if (!outcome.ok) expect(outcome.code).toBe('notOwnList')
+  })
+
+  it('refuses a second pending request on the same session', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM')
+    expect(requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma).ok).toBe(true)
+    const again = requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma)
+    expect(again.ok).toBe(false)
+    if (!again.ok) expect(again.code).toBe('alreadyRequested')
+  })
+
+  it('is anaesthetist-only', () => {
+    const api = store()
+    const listId = freeListId(api, ANAE.souter, WED22, 'PM')
+    const outcome = requestCover(api, OFFICE, listId, 'offer')
+    expect(outcome.ok).toBe(false)
+    if (!outcome.ok) expect(outcome.code).toBe('anaesthetistOnly')
   })
 })

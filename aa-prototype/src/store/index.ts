@@ -37,11 +37,21 @@ export {
   reassignList,
   reassignCard,
   setAvailability,
+  requestCover,
+  editRefusal,
+  getCard,
   type CompletionBlocker,
   type CardPatch,
   type ProcedurePatch,
 } from './lifecycle'
-export { upsertPatient, type PatientIntakeDetails, type IntakeResult } from './intake'
+export {
+  upsertPatient,
+  editPatient,
+  type PatientIntakeDetails,
+  type IntakeResult,
+  type PatientEditPatch,
+} from './intake'
+export { createCard, copyCard, type CreateCardInput } from './cardActions'
 export { createHospital, setInsurerDirectClaims } from './mastersActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
