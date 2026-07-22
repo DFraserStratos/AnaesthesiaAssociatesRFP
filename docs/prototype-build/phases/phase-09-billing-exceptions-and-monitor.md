@@ -72,6 +72,16 @@ Xero records, payments, disbursement (Phase 10).
 - [ ] Open-question readings are visible in UI copy where they apply (pre-payment timing, failure isolation, addendum mechanism, monitor-in-Admin-app placement).
 - [ ] `npm run build` + `npx vitest run` green.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence** — scale the fan-out up for this exception-heavy phase), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- Pre-payment is a REAL gate: `completeCard` blocks an unpaid `selfFundedPrepayment` card (reading the pre-invoice's paid state); only the audited `overridePrepaymentGate(reason)` lifts it, shown as a flagged override everywhere the card appears; the "pre-payment outstanding" flag runs from raise until paid/overridden; the balance covers exactly the patient-funded portion's remainder (a mixed card's contract-holder portion is untouched).
+- Post-op addendum is a new linked Card running its own capture→submit→authorise→bill cycle; the original stays immutable.
+- Failure isolation: a failed Card blocks only its own invoice; resolve-&-retry is idempotent (no duplicate invoices); the seeded failure uses a non-hospital-held contract (no default to fall back to) so it is a true rating failure.
+- The four open-question readings appear in UI copy (pre-payment timing, failure isolation, addendum mechanism, monitor-in-Admin-app placement); the settled pre-payment and `billedAt` rulings are NOT re-litigated.
+
 ## PROGRESS.md updates
 
 Status row + entry; record the four open-question readings (pre-payment timing, card-level failure isolation, addendum mechanism, monitor-in-Admin-app placement) in the Decisions log.

@@ -103,6 +103,16 @@ out of scope); integrations (11).
 - [ ] Archive job archives eligible contacts only; count and rationale visible; changing the inactivity-window setting changes what's eligible on the next run (proving it's not hardcoded).
 - [ ] `npm run build` + `npx vitest run` green (incl. the no-NHI-in-Xero test).
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence** — scale the fan-out up for this load-bearing money phase), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- NHI never appears on the Xero surface or in its serialised state (assert it); the apps read the billing engine's own mirror, never the `xero` slice (greppable: view selectors import from `billing`, not `xero`).
+- The ACCREC/ACCPAY handoff is pair-atomic (both-or-neither) and its retry idempotent — a BillingCase already holding GUIDs is never re-created, so no orphan or duplicate pair.
+- Webhook and poll are idempotent (a replayed event is a no-op; two distinct partials both apply); successive partials with a payables run between them never double-pay (a run pays only `authorised − alreadyDisbursed`).
+- Money is two independent states (paid-in vs disbursed) with dates; archiving touches individual contacts only (patients + billable parties), never organisational, on a configurable window (not hardcoded); balances appear only next-day; the GST report is a per-receipt transaction list with a totals footer; automated money events are audited source=system.
+
 ## PROGRESS.md updates
 
 Status row + entry; log the NHI reading (Appendix 2's never-in-Xero over Appendix 1's cross-reference field) as a Decision with the RFP-contradiction note.

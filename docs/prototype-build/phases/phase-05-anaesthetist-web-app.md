@@ -79,6 +79,17 @@ Admin functions, live billing numbers (Phases 08–10), contract management.
 - [ ] Mobile app is visually unchanged after the shared-component extraction.
 - [ ] `npm run build` + `npx vitest run` green.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence**), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- The `src/shared/` extraction is a refactor, not a fork: mobile must be visually and behaviourally unchanged afterwards, and no guard/validation logic is duplicated between the mobile and web copies.
+- The desktop re-layout honours convention 16 (dialogs / side panels, not bottom sheets) while reusing the same guarded actions and BTM capture as mobile.
+- Lists and the dashboard week strip show each List's ACTUAL start/end times including office overrides (D2) — never hardcoded session defaults — and agree with the same persona's mobile Forward Lists for the same dates.
+- Receivables / Overdue / GST render honest empty (or seeded-history) states until Phase 10; no numbers are hardcoded in components.
+- No authorise controls exist anywhere in this app; SUBMITTED is read-only to the persona; every read is view-scoped to the persona's own data (A8).
+
 ## PROGRESS.md updates
 
 Status row + entry; note exactly which components moved to `src/shared/` so Phases 06–07 reuse instead of re-extracting.

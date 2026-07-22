@@ -51,6 +51,17 @@ New features. Anything discovered that's bigger than a polish fix gets logged to
 - [ ] Full suite + build green; console clean across the entire click-through.
 - [ ] A colleague (or you, cold) can run the demo from DEMO-SCRIPT.md alone without asking questions.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before closing out the PROGRESS file — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**. For this final phase it is a **whole-prototype QA sweep** across all three apps and the demo surfaces, not just this phase's diff: fan out a few independent Opus review subagents (quality · bugs/correctness · plan adherence), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- S1–S5 each run clean from a hard reset exactly as `DEMO-SCRIPT.md` describes; reset returns to identical pristine state (invoice numbers restart).
+- Every switcher/nav destination is real or honestly labelled (no dead ends, no lorem); status colours/chips, NZ number/currency/date formats and empty states are consistent app-wide; the console is clean across the whole click-through.
+- No en/em dashes appear in any app-facing copy (CLAUDE.md); demo-only surfaces stay badged (convention 13).
+- Cross-app consistency and persona/view-scoping hold end-to-end (the review reads the whole prototype, not one phase's code).
+- Anything bigger than a polish fix is logged to "Discovered for later", not built (the scope fence).
+
 ## PROGRESS.md updates
 
 Status row + entry; close out the file: mark all phases final, sweep "Discovered for later" into a tidy handoff list, and note anything a future real-build team should read first.

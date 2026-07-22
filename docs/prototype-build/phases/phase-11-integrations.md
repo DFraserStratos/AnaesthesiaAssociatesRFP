@@ -115,6 +115,17 @@ Real endpoints, SFTP, general-purpose parsing (canned messages only), Keycloak/O
 - [ ] New-format NHI (mod-23) message validates and processes; the validator widget gives correct verdicts for NHI (valid old, valid new, bad check digit each way) and the three-way ethnicity verdicts (valid demo code; outside-demo-subset honestly labelled; malformed rejected). The out-of-range-ethnicity message creates its Card with the ethnicity field "pending correction" (bad code never stored) plus a monitor data-quality item, and the manual fix supplies a valid code.
 - [ ] `npm run build` + `npx vitest run` green.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence** — scale the fan-out up for this reliability-heavy phase), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- The correlation keys do their two distinct jobs: MSH-10 dedupes messages, the SCH-2 `{sourceFeedId, externalAppointmentId}` correlates appointments — S13/S14/S15 locate their Card by the appointment ref, never by patient guesswork.
+- Integration writes obey the lifecycle source guard: applied only while the target List is DRAFT; a locked-target message parks as a manual-intervention item (nothing lost).
+- Translation is genuinely mapping-driven (editing a per-hospital mapping changes what reprocessing produces) — not per-message canned output, and not a general-purpose HL7 parser (the §10 fence holds).
+- Auto-retry produces the "retried" status by a real mechanism (transient recovers; malformed exhausts its budget → dead-letter); a replayed message dedupes to a no-op.
+- A bad ethnicity code is quarantined / never stored (labelled "pending correction", never "invalid"); both NHI formats run through the Phase 01 validators; the Practitioner carries the HPI id; patients go through the shared `upsertPatient` (repeat reuse). S15's soft-cancel is already decided — don't re-decide it.
+
 ## PROGRESS.md updates
 
 Status row + entry; any message-shape notes. (Cancellation behaviour is already decided — S15 uses the store's audited soft-cancel, Decisions log 2026-07-22 seventh review — don't re-decide it.)

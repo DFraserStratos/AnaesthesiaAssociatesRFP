@@ -99,6 +99,17 @@ Authorisation queue, master data screens, audit viewer (Phase 07). Billing monit
 - [ ] Reassign today's List to a free anaesthetist: cards and audit history intact, grid updates, audit records the move — and the canvas invariant visibly holds (both rows still have two sessions: the target's Free slot absorbed, the vacated slot regenerated with the chosen status). A non-free target is not offered/rejected.
 - [ ] `npm run build` + `npx vitest run` green.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence**), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- `reassignList` preserves the canvas invariant (2 Lists per anaesthetist per day; free target absorbed, vacated slot regenerated) and `reassignCard` moves one Card without disturbing either List's other Cards/status — each audited at the right level and blocked on AUTHORISED.
+- Office-vs-anaesthetist edit rights go through the store guards (office may edit SUBMITTED; the anaesthetist is blocked) — never UI-only gating.
+- Billing-setup edits (route / insurer / billable-party / payment category / governing contract / `billingReference` / typed price override / per-line funder) write typed data, demand the mandatory reason on overrides, and enforce two-funder conservation inline.
+- Conflict flags (hospital-holiday, availability) stay advisory, not hard blocks; a List time override resizes the grid block and is audited.
+- The day grid reproduces the mockup day and renders the seeded all-day booking as two adjacent blocks (no special entity); production scale (~85) is narrated, not simulated.
+
 ## PROGRESS.md updates
 
 Status row + entry; log the advisory-conflict reading and any day-grid rendering decisions.

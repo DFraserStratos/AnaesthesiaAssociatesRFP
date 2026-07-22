@@ -67,6 +67,16 @@ Pre-payment, post-op addendum, billing monitor, failure/retry (Phase 09). Xero r
 - [ ] Change the governing contract's rate after billing → the stored invoice is unchanged (effective-dating/snapshot story).
 - [ ] `npm run build` + `npx vitest run` green (new billing-run tests included).
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence** — scale the fan-out up for this load-bearing money phase), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- Route resolution is by contract HOLDER (hospital / surgeon / group / organisation), and the default fallback is scoped exactly to Hospitals + direct-billing Insurers (fall back to their protected Type 1); surgeon/group/organisation holders have NO mandated default → a genuine exception, never a silent fallback.
+- Split billing holds: `isAdditional` procedures contribute time units only (the run must not bypass the calculator); per-funder lines split into separate counterparty groups (two funders → two invoices); same-counterparty procedures share one invoice (the §11 labelled reading).
+- `billedAt` = completion of the billing run (not AUTHORISED, not payment) and drives the anaesthetist-view disappearance; snapshot immunity holds (mutating a contract after billing leaves the stored invoice unchanged).
+- The run is audited source=system/billing; invoice numbers are unique; no NHI reaches invoice or Xero-bound data; fee maths matches the mobile BTM capture (units × that anaesthetist's own rate).
+
 ## PROGRESS.md updates
 
 Status row + entry; log the billedAt-trigger reading and the two-funder modelling (per-line funder) in the Decisions log.

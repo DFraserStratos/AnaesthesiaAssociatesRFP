@@ -144,7 +144,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
     <li><b>Pick the next phase</b> from the PROGRESS.md status table, respecting the gates: 00→01→02 strictly first; 03→04→05→06→07 in order; 08→09→10 in order; 11 any time after 07; 12 last.</li>
     <li><b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt below. The agent reads PROGRESS.md, REQUIREMENTS.md and its phase doc before touching anything.</li>
     <li><b>The agent enters plan mode</b>, verifies the current state of <code>aa-prototype/</code> against what PROGRESS.md claims, turns the phase doc into work-sized steps, and waits for approval before changing code.</li>
-    <li><b>Every phase ends the same way:</b> <code>npm run build</code> and <code>npx vitest run</code> green, the phase's manual test checklist run and reported item-by-item, and PROGRESS.md updated (status row, phase entry, decisions) so the next session inherits the truth.</li>
+    <li><b>Every phase ends the same way:</b> <code>npm run build</code> and <code>npx vitest run</code> green, the phase's manual test checklist run and reported item-by-item, then (from Phase 05 on) an <b>adversarial review-and-fix pass</b> — a few Opus review subagents fanned out for quality, bugs and plan-adherence, their findings independently verified and fixed by the session (PROGRESS convention 18) — and PROGRESS.md updated (status row, phase entry, decisions) so the next session inherits the truth.</li>
   </ol>
   <div class="callout green">
     <p><strong>The checklists are the contract.</strong> Each phase doc ends with a short manual test checklist — the handful of things you personally verify in the browser before accepting the phase. The kick-off prompts require the agent to run and report that checklist, but you should click through it yourself too: it doubles as a mini demo rehearsal.</p>
@@ -480,7 +480,7 @@ While working:
 - The Availability grid is the locum-finder: all anaesthetists × AM/PM, colour-coded, free sessions prominent. The Overdue table is a flat list, no rollup (RFP explicit). The Lists table's From/To (and the week strip's block labels) read each List's ACTUAL start/end times incl. office overrides — never hardcoded session defaults. The GST page is a transaction list (one row per amount received + its GST component, period totals as a footer), not a totals-only summary — the RFP asks for "a date-ranged list showing amounts received and the GST component".
 - Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md (status row + entry + a note listing exactly what moved to src/shared/), and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass + a note listing exactly what moved to src/shared/), and give me short, clear notes.
 
 Phase goal: the anaesthetist's desktop home — dashboard, lists, locum-finding availability and overdue accounts — sharing one component library with mobile.</pre>
   </div>
@@ -531,7 +531,7 @@ While working:
 - TWO DISTINCT reassignment operations — don't conflate them: (a) Card reassignment — "Move to another list" on a single Card calls reassignCard, moving just that Card (its List's other Cards/status untouched, audited on the Card itself) — this is the RFP's routine case; the target picker labels each candidate's surgeon/hospital and flags a pairing mismatch ADVISORILY before confirm (no hard guard — the RFP's pairing rule governs booking availability; reassignment is office judgement); (b) List reassignment (illness cover) — List panel → pick a target whose session is FREE (the guard rejects others) → confirm dialog states the slot mechanics (target's free List absorbed; vacated slot regenerates with a pickable status, default Unavailable) → Cards/status/audit intact, itself audited, and both day-grid rows still show exactly two sessions. Label the mechanism as the prototype's PROPOSED reading in the dialog's help copy — the RFP explicitly leaves the precise reassignment mechanism open (REQUIREMENTS §11).
 - Scope fence: Authorisation, Master Data, Audit and Billing Monitor nav items are honest placeholders naming Phases 07/07/07/09. Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass), and give me short, clear notes.
 
 Phase goal: the office can run the day — see everything, change anything they're allowed to, and cover illness in three clicks.</pre>
   </div>
@@ -582,7 +582,7 @@ While working:
 - The mockup-fidelity checklist item is anatomy-only: the review screen's UNITS/FEE totals come from the real Phase 01 calculator and will differ from Admin Review.dc.html's simplified maths (Decisions log: don't inherit the mockup's maths) — verify by hand-checking the tiered rule, not by matching the mockup's numbers.
 - Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass), and give me short, clear notes.
 
 Phase goal: SUBMITTED work flows through a sanity check to an immutable AUTHORISED state, master data is manageable, and every action is reconstructable in the audit viewer.</pre>
   </div>
@@ -634,7 +634,7 @@ While working:
 - Scope fence: NO pre-payment, post-op or monitor work — that's Phase 09.
 - Write the Vitest cases the plan lists (multi-counterparty, split pair, two-funder split, type 2/3, override snapshot, contract-mutation immunity, default-Type-1 fallback for an expired hospital Type 2, grouping). Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md, and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass), and give me short, clear notes.
 
 Phase goal: authorise → correct, previewable invoices with the RFP's billing rules demonstrably enforced.</pre>
   </div>
@@ -682,7 +682,7 @@ While working:
 - The monitor is proposed product UI; only its simulation triggers carry the demo badge (convention 13). Add the failure trigger + post-op stager to the demo control panel.
 - Write the tests the plan lists (pre-payment sum, addendum independence, failure isolation, idempotent retry). Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md (the four open-question readings — pre-payment timing, failure isolation, addendum mechanism, monitor placement — go in the Decisions log), and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass; the four open-question readings — pre-payment timing, failure isolation, addendum mechanism, monitor placement — go in the Decisions log), and give me short, clear notes.
 
 Phase goal: the billing engine handles the awkward cases — before payment, after locking, and when a card fails — visibly and recoverably.</pre>
   </div>
@@ -733,7 +733,7 @@ While working:
 - All automated money events are audited (RFP: "audit trails of manual and automated actions are required"): Xero handoff outcomes, webhook/poll updates, ACCPAY flips, payables-run disbursements and archive-job actions write source=system audit entries — the audit viewer must reconstruct one invoice's automated trail end-to-end (checklist item).
 - Write the tests the plan lists. Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md (including the Appendix-2-over-Appendix-1 NHI decision), and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass; including the Appendix-2-over-Appendix-1 NHI decision), and give me short, clear notes.
 
 Phase goal: the complete money story — invoice → Xero pair → payment → authorised payable → disbursement — with clinical identity provably kept out of Xero.</pre>
   </div>
@@ -783,7 +783,7 @@ While working:
 - Validator widget for BOTH NHI (using the Phase 01 validators) and ethnicity code (validateEthnicityCode's three-way verdict: valid / outside-demo-subset honestly labelled "may be a valid NZHIS L4 code" / malformed); note the 1 July 2027 dual-format mandate in copy.
 - Keep build + tests green.
 
-When done: run the manual test checklist and report each item, update PROGRESS.md (cancellation behaviour is already decided — S15 uses the store's audited soft-cancel — don't re-decide it), and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18: fan out a few Opus review subagents for quality, bugs and plan adherence, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md (status row + entry + the review pass; cancellation behaviour is already decided — S15 uses the store's audited soft-cancel — don't re-decide it), and give me short, clear notes.
 
 Phase goal: hospital messages, surgeon PDFs and the FHIR-first target state all demoable — including how the system behaves when integration goes wrong.</pre>
   </div>
@@ -831,7 +831,7 @@ While working:
 - Write docs/prototype-build/DEMO-SCRIPT.md: per scenario, where to click, the one-line RFP tie-in to say, and the expected result — plus a recovering-from-accidents note.
 - Write aa-prototype/README.md (run instructions, stack, folder map, doc pointers).
 
-When done: run the manual test checklist and report each item, then close out PROGRESS.md — all statuses final, handoff notes swept tidy — and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18 — for this final phase a whole-prototype QA sweep across all three apps and the demo surfaces, not just this phase's diff: fan out a few Opus review subagents, independently verify each finding, fix the confirmed ones, re-green build + tests), then close out PROGRESS.md — all statuses final, the review pass and handoff notes swept tidy — and give me short, clear notes.
 
 Phase goal: a rehearsed, resettable, scriptable demo that one presenter can drive cold.</pre>
   </div>

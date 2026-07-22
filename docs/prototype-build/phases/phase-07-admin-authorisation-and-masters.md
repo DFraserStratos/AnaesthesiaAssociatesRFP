@@ -87,6 +87,17 @@ Billing execution and the billing monitor (Phases 08–09), Xero (10), integrati
 - [ ] Audit viewer reconstructs the full story of a card that's been edited, reassigned and authorised (mixed sources and roles visible).
 - [ ] `npm run build` + `npx vitest run` green.
 
+## Adversarial review (after build)
+
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before writing the PROGRESS entry — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**: fan out a few independent Opus review subagents (one each for **quality**, **bugs/correctness** and **plan adherence**), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+
+**Steer this phase's reviewers at:**
+- `authoriseList` fires only SUBMITTED→AUTHORISED, locks Cards immutable for every persona, and emits `listAuthorised`; there is NO Returned action anywhere.
+- The default-Type-1 invariant holds both halves: it cannot be deleted or effective-dated out, and creating a Hospital or flipping an Insurer to `acceptsDirectClaims` atomically creates it — both guard-tested.
+- The FLAGS column surfaces not-completed Cards, a missing `billingReference`, and the ACC-route advisory; the review figures come from the REAL Phase 01 calculator, not the mockup's simplified maths.
+- The audit viewer reconstructs a card's mixed-source/role history; the RBAC panel covers view-scoping as well as edit rights.
+- Adding an anaesthetist extends the canvas forward (D1).
+
 ## PROGRESS.md updates
 
 Status row + entry; log any sanity-check-layout decisions Phase 08's billing run should respect (e.g. what "flagged" meant).
