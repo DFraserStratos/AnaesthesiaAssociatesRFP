@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DEMO_CLOCK_TIME } from '../domain/demoClock'
+import { DEMO_CLOCK_TIME } from '../domain/clock'
 import { neutral, phoneBackdrop } from '../theme/tokens'
 
 /**

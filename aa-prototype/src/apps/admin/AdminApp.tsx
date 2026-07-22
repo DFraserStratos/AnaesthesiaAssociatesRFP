@@ -1,6 +1,6 @@
 import { Wordmark } from '../../shared'
 import { Placeholder } from '../Placeholder'
-import { DEMO_TODAY_LABEL } from '../../domain/demoClock'
+import { DEMO_TODAY_LABEL } from '../../domain/clock'
 import { neutral, brand } from '../../theme/tokens'
 
 interface NavItem {

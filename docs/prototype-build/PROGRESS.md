@@ -9,7 +9,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | # | Phase | Status | Session date | Notes |
 |---|-------|--------|--------------|-------|
 | 00 | Scaffold & app shell | DONE | 2026-07-22 | Vite+React18+TS+Tailwind v4; tokens, shell, phone frame, 3 apps + 3 demo stubs |
-| 01 | Domain model & billing calculator | NOT STARTED | — | — |
+| 01 | Domain model & billing calculator | DONE | 2026-07-22 | Full typed model, pure advanceable clock, NHI both formats, NZHIS subset + lookup, BTM calculator + validator; 116 tests green |
 | 02 | Seed data & store | NOT STARTED | — | — |
 | 03 | Mobile: schedule & cards | NOT STARTED | — | — |
 | 04 | Mobile: BTM capture & submission | NOT STARTED | — | — |
@@ -75,12 +75,21 @@ one-line why. Later sessions must not re-litigate entries here.
 
 - **2026-07-22 · `Wordmark` re-fit to the real logo (user feedback).** The admin side-nav wordmark's crimson divider was silently rendering at **0 width** — the empty divider span was the only flex item with a 0 min-content width, so the row's slight overflow crushed it (fix: `flex: 'none'`); that also explains the oversized word gap. Geometry now matches the logo: baseline-aligned words with tight ~0.28em gaps around the divider, the 1.5px rule dropping just below the baseline (echoing the logo's rule descending toward its tagline row), and **LTD baseline-aligned in small serif caps tucked 2px off "Associates"** (was a sans superscript at the cap line). On dark the divider lightens to `#C25B72` — 1.5px of `brand.base` crimson is near-invisible on the ink nav.
 
+- **2026-07-22 · Time-unit partial-interval rounding = round UP per started interval — a named ASSUMPTION, not a settled rule.** The RFP defines the T1/T2 tiers (1u/15min first 2h, 1u/10min after) but is SILENT on partial intervals. Implemented as `PARTIAL_INTERVAL_ROUNDING = 'up'` in `domain/billing/timeUnits.ts` with an assumption comment; surfaced as a one-line note on the Demo Control Panel (a demo-only surface, so "nothing visual changes" in the three apps holds); Phase 04 must repeat it as a T-stepper tooltip (parked in Discovered for later). Open discovery item for AA.
+- **2026-07-22 · NHI check digits use the official Health NZ algorithms** (user-approved at planning). Current AAANNNC = weighted sum mod **11** — the RFP's "Modulus 24" label appears to conflate the 24-letter alphabet with the modulus; its own example ZAA0067 validates only under mod 11 (weighted sum 191). New AAANNAX = mod **23** as labelled (example ACA31FM validates, sum 57 → check M). Flagged RFP reading / discovery item; REQUIREMENTS D8 repeats the RFP's label and carries this note. Both examples are pinned as unit tests.
+- **2026-07-22 · ASA seeding values (demo-plausible, labelled):** AS1=0, AS2=1, AS3=3, AS4=4 — inside the RFP's 0 to 4 range; AS3=3 is pinned by the phase checklist's paper spot-check ((10+11+3)×30 = $720, itself a unit test). Falls under the existing "demo-plausible modifier values" discovery item (2nd review #9).
+- **2026-07-22 · Type 3 second-procedure fallback (demo reading):** when a Type 3 contract has no ContractPrice matching the procedure's ordinal (most-specific-match-wins over contractId + optional rvgBaseCode/surgeonId/procedureOrdinal), the fee falls back to the BTM path — time-only if `isAdditional`. The RFP says only "various rules apply"; labelled a demo reading in `domain/billing/contracts.ts`/`fee.ts`.
+- **2026-07-22 · `demoClock.ts` renamed `clock.ts`** (the phase doc's name), keeping Phase 00's `DEMO_TODAY`/`DEMO_TODAY_LABEL`/`DEMO_CLOCK_TIME` exports; 3 importers updated. Clock functions are PURE over an explicit `DemoClockState` (`todayISO` + `minutesSinceMidnight`, seeded 08:00) so Phase 02's store can own the state: `today`/`now`/`advanceMinutes` (rolls midnight)/`advanceDays`, plus seeder seams `horizonFor` (today −14d to +4 months) and `enumerateDatesISO`.
+- **2026-07-22 · Modifier code table lives in `src/domain/billing/modifierCodes.ts`** (the calculator and its tests need the values now); Phase 02's seeder treats it as the ModifierCode master. Values explicitly labelled demo-plausible per the logged decision; all RFP-named groups present (PA1-5, A1-2, AS1-4, ASE, OB1-4, P1, AI1, PO1-2).
+
 ## Discovered for later
 
 Small issues/ideas noticed mid-phase that belong to a later phase — park them here instead of
 scope-creeping.
 
-- (none yet)
+- **Phase 04:** the T stepper must repeat the partial-interval rounding assumption as a tooltip
+  ("rounds up per started interval; RFP silent; to confirm with AA") — the Demo Control Panel
+  carries the note from Phase 01, the capture UI must too (Decisions log 2026-07-22, Phase 01).
 
 ---
 
@@ -126,3 +135,30 @@ Append one entry per completed session, newest last, using this template:
 - Demo-surface persona is Kirsty (Office); revisit if a demo surface warrants a different persona.
 - Template's `public/icons.svg` is unused (harmless); `favicon.svg` retained. Tailwind utilities exist but Phase-00 components mostly use inline styles reading the TS tokens — later phases may lean on utilities.
 - Working tree left staged/unstaged for the user to commit (agents do not commit — CLAUDE.md).
+
+### Phase 01 — Domain model & billing calculator (2026-07-22)
+
+**Built:**
+- **`src/domain/types.ts`** — the complete typed model: Patient (`hiddenInternalId` invariant key, `nhi` optional, ethnicity + quarantine), BillableParty (own typed identity), Anaesthetist (registration number as ID, unitValue, GST period, HPI), Hospital/Surgeon/Insurer (`acceptsDirectClaims`)/ContractHolderOrganisation, Contract (types 1/2/3, 5 holder types incl. billableParty, organisation-vs-individual scope, `permitsIndividualArrangement`, protected `isDefault`, effective dates, Type 2 detail union) + ContractPrice (explicit matching keys), List (six-status key, conflicts, overridable times), Card (correlation ref `{sourceFeedId, externalAppointmentId}` per SCH-2, audited soft-cancel record, prepayment override, `copiedFromCardId`), Procedure (route/category/prepayment detail/accRelated/billingReference/`isAdditional` + captured BTM inputs as data with seeded/overridden provenance + typed price overrides), BillingLine (chargeBasis rvg/fixed/rateTime, funder override), RvgCode (single/range base units, absorbs list), ModifierCode, PermanentList (`surgeonId` nullable), AnaesthetistAvailability, HospitalHoliday, ListStatus, AuditEntry, and the Phase 08–11 shapes typed now: Invoice/InvoiceLine/BillingCase, XeroContact/XeroAccRec/XeroAccPay (cumulative partials), PaymentIn (idempotency key)/Disbursement, IntegrationFeed (field mapping)/IntegrationMessage (MSH-10, retrying/deadLetter/manualIntervention), DemoSettings. Header pins the purity convention.
+- **`src/domain/clock.ts`** (renamed from `demoClock.ts`; 3 importers + `domain/index.ts` updated) — pure state-passing clock per the Decisions entry; `INITIAL_CLOCK` at 08:00.
+- **`src/domain/rng.ts`** — `mulberry32` seeded RNG (`Rng` type); Phase 02's seeder reuses it.
+- **`src/domain/nhi.ts`** — shared 24-letter alphabet, weights 7..2; current format mod 11 (10 ⇒ 0, remainder 0 ⇒ never assigned), new format mod 23 (check letter); `validateNhi` (normalises, detects format by character classes, plain-language reasons) + `generateNhi(format, rng)` (regenerates on remainder 0).
+- **`src/domain/nzhis.ts`** — `ETHNICITY_DEMO_SUBSET` (12 Level 4 codes across the six Level 1 groups, labelled demo subset), `validateEthnicityCode` three-way verdict (valid / outsideDemoSubset with honest copy / malformed), `lookupNhi` simulated Digital Services Hub lookup (5 canned fictional patients keyed by generator-produced NHIs, both formats — Phase 02 seed must include them: CQY9304 Sarah Mitchell, WQS3635 Hemi Walker, JKL1188 Losa Tuilagi, MYY54SL Priya Nair, RUE29KR Grace Park).
+- **`src/domain/billing/`** — `money.ts` (`roundToCents`/`toCents`), `timeUnits.ts` (tiered T rule + the labelled rounding ASSUMPTION), `modifierCodes.ts` (demo-plausible master + `ASA_SEED_UNITS`), `modifierUnits.ts` (sums + refusals with reasons, absorption), `contracts.ts` (`selectContract` with individual-beats-organisational and specific-beats-default ranking + effective-date filter; `matchContractPrice` most-specific-wins), `fee.ts` (`resolveBtm` with provenance, ASA class seeding its AS code without double-count; `splitBillingUnits` time-only for additional procedures; `feeFor` → structured `FeeResult` covering Types 1/2/3, Type 3 ordinal + BTM fallback, non-RVG fixed/rate×time lines, typed overrides), `validateCardForBilling.ts` (structured field-level failures, all rules from the plan incl. cancelled-Card exclusion, direct-claims insurer check, patient-as-default-payer, prepayment typing, Method 3 gate, override reason, two-funder conservation to the cent).
+- **Tests: 116 green** across 11 files — every named case from the phase plan present (tier boundaries incl. 120 ⇒ 8 / 121 ⇒ 9 / 300 ⇒ 26; P1 absorbed vs allowed; AS1–AS4; range codes; every contract type + precedence + fallback; every override type; split billing; rate×time gate both ways; conservation pass/fail; all validation shapes; NHI examples ZAA0067/ACA31FM + wrong-check + malformed + generator round-trips; ethnicity three-way; lookup hit/miss; clock rollover/horizon 138 days; paper spot-check $720). `domainPurity.test.ts` mechanically enforces no React/DOM imports in `src/domain/`; `statusKeyParity.test.ts` asserts domain `ListStatusKey` ≡ theme `StatusKey` at compile time and runtime.
+- **Demo Control Panel** gains the one-line rounding-assumption note (demo-only surface — the three apps are visually unchanged).
+
+**Deviations from plan:** one, mechanical — the purity test reads domain sources via Vite's `import.meta.glob(?raw)` instead of Node `fs`: the template tsconfig's `types` array excludes `@types/node`, so `node:fs` fails `tsc -b`; the glob approach needs no config change and scans the same tree. Everything else landed per plan.
+
+**Manual test checklist:**
+1. ✓ `npx vitest run` green (116 tests, 11 files) and the suite list reviewed against every named case (verbose run inspected).
+2. ✓ `npm run build` green (`tsc -b` + vite); purity test proves no React/DOM imports in `src/domain/` (and no `.tsx` files there).
+3. ✓ Paper spot-check by hand: 2h30m ⇒ T = 8 + ceil(30/10) = 11; (10 + 11 + 3) × 30 = **$720** — matches the pinned test (`fee.test.ts` "PAPER SPOT-CHECK").
+4. ✓ PROGRESS.md updated: status row, six Decisions entries, Discovered-for-later Phase 04 tooltip item, this entry.
+
+**Known gaps / handoff notes:**
+- Phase 02 owns: the Zustand store (which holds `DemoClockState` and calls the pure clock functions), the seeded canvas (use `horizonFor`/`enumerateDatesISO` + `mulberry32`), seeding the 5 canned `lookupNhi` patients, and treating `billing/modifierCodes.ts` as the ModifierCode master.
+- `validateCardForBilling` expects procedures in Card order (ordinal = index + 1) and ALL stored billing lines in its context; conservation semantics: once any line carries a `funderOverride`, the procedure's stored lines are the explicit allocation of the WHOLE fee.
+- `feeFor` takes only non-RVG lines as inputs (`nonRvgLines`) — rvg-basis stored lines are Phase 08 outputs/office allocations, never fee inputs.
+- The status-bar clock display (`DEMO_CLOCK_TIME`) is still a pinned string; Phase 02 wires it to the clock state.
+- Working tree left for the user to review and commit (agents do not commit — CLAUDE.md).

@@ -1,8 +1,13 @@
 /**
- * Domain layer — types, seed data, billing maths, validators (pure, no React).
+ * Domain layer — types, demo clock, RNG, NHI/NZHIS helpers, billing maths
+ * (pure, no React — enforced by `domainPurity.test.ts`).
  *
- * Filled in Phase 01 (domain model & billing calculator) and Phase 02 (seed).
- * The only thing living here in Phase 00 is the demo clock.
+ * Phase 01 filled the model + calculator; Phase 02 adds the seed + store.
  */
 
-export { DEMO_TODAY, DEMO_TODAY_LABEL, DEMO_CLOCK_TIME } from './demoClock'
+export * from './types'
+export * from './clock'
+export * from './rng'
+export * from './nhi'
+export * from './nzhis'
+export * from './billing'

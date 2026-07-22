@@ -1,7 +1,7 @@
-import { RotateCcw, Clock, Zap, MapPin, CalendarDays } from 'lucide-react'
+import { RotateCcw, Clock, Zap, MapPin, CalendarDays, Info } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { DemoSurface } from './DemoSurface'
-import { DEMO_TODAY, DEMO_TODAY_LABEL } from '../../domain/demoClock'
+import { DEMO_TODAY, DEMO_TODAY_LABEL } from '../../domain/clock'
 import { neutral, radius, elevation } from '../../theme/tokens'
 
 interface ComingControl {
@@ -69,6 +69,30 @@ export function DemoControlPanel() {
             </span>
           </span>
         </div>
+      </div>
+
+      {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '10px 14px',
+          background: neutral.sunken,
+          border: `1px solid ${neutral.line}`,
+          borderRadius: radius.ctl,
+          fontSize: 12.5,
+          lineHeight: 1.5,
+          color: neutral.slate,
+        }}
+      >
+        <Info size={15} strokeWidth={2} style={{ flex: 'none', marginTop: 2 }} aria-hidden />
+        <span>
+          <strong style={{ fontWeight: 600 }}>Billing assumption:</strong> partial time intervals
+          round up per started interval (1 unit per started 15 min for the first 2 hours, then per
+          started 10 min). The RFP defines the tiers but not the rounding; to confirm with AA in
+          discovery.
+        </span>
       </div>
 
       {/* Coming controls (disabled) */}
