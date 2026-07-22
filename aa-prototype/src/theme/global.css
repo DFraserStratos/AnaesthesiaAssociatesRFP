@@ -1,0 +1,201 @@
+/*
+ * Global stylesheet — Tailwind v4 (CSS-first, no config file).
+ *
+ * The `@theme` block mirrors `tokens.ts` / `statusColours.ts` 1:1 so Tailwind
+ * generates matching utilities (bg-ink, text-slate, rounded-card, shadow-e1,
+ * bg-status-private, …). The TS modules stay the runtime source components
+ * read; this file feeds the utility layer. Keep the hexes identical in both.
+ */
+
+/* Fonts first (all @import rules must precede other statements). */
+@import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  /* ── Fonts ─────────────────────────────────────────────── */
+  --font-ui: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, monospace;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* ── Neutrals (8) ──────────────────────────────────────── */
+  --color-ink: #172320;
+  --color-slate: #58635f;
+  --color-mist: #8a9490;
+  --color-line-strong: #c9d1ce;
+  --color-line: #e2e7e5;
+  --color-sunken: #edf1ef;
+  --color-bg: #f6f8f7;
+  --color-surface: #ffffff;
+
+  /* ── Brand — AA crimson (identity only) ────────────────── */
+  --color-brand: #a91e3e;
+  --color-brand-deep: #8c1533;
+  --color-brand-tint: #f7e7ec;
+
+  /* ── Accent — deep teal (the only action colour) ───────── */
+  --color-accent: #0d6e63;
+  --color-accent-hover: #0a5a51;
+  --color-accent-pressed: #084a43;
+  --color-accent-tint: #e1f0ed;
+
+  /* ── Semantic ──────────────────────────────────────────── */
+  --color-success: #1e8e5a;
+  --color-success-tint: #e3f4eb;
+  --color-success-on-tint: #157a49;
+  --color-warning: #a16207;
+  --color-warning-tint: #f9f0dc;
+  --color-warning-on-tint: #7c4d08;
+  --color-error: #c2403c;
+  --color-error-tint: #fae9e7;
+  --color-error-on-tint: #9c332f;
+
+  /* ── Status colours (six) — solid / tint / on-tint ─────── */
+  --color-status-private: #2e66e5;
+  --color-status-private-tint: #e8eefc;
+  --color-status-private-on-tint: #1f44a3;
+  --color-status-public: #6e56cf;
+  --color-status-public-tint: #eeebfa;
+  --color-status-public-on-tint: #4c3d96;
+  --color-status-preop: #c26a0e;
+  --color-status-preop-tint: #fbefdf;
+  --color-status-preop-on-tint: #8a4b09;
+  --color-status-holiday: #d25c74;
+  --color-status-holiday-tint: #fae9ed;
+  --color-status-holiday-on-tint: #a03a52;
+  --color-status-unavailable: #64716c;
+  --color-status-unavailable-tint: #ecefee;
+  --color-status-unavailable-on-tint: #4a5551;
+  --color-status-free: #1fa463;
+  --color-status-free-tint: #e3f6ec;
+  --color-status-free-on-tint: #157a49;
+
+  /* Grey backdrop the phone frame floats on. */
+  --color-phone-backdrop: #e4e8e6;
+
+  /* ── Radii ─────────────────────────────────────────────── */
+  --radius-ctl: 10px;
+  --radius-card: 14px;
+  --radius-panel: 20px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+
+  /* ── Elevation ─────────────────────────────────────────── */
+  --shadow-e0: 0 0 #0000;
+  --shadow-e1: 0 1px 2px rgba(23, 35, 32, 0.05), 0 2px 6px rgba(23, 35, 32, 0.05);
+  --shadow-e2: 0 2px 4px rgba(23, 35, 32, 0.06), 0 8px 20px rgba(23, 35, 32, 0.09);
+  --shadow-e3: 0 8px 16px rgba(23, 35, 32, 0.1), 0 24px 56px rgba(23, 35, 32, 0.18);
+
+  /* ── Type scale (size / line-height / weight / tracking) ─ */
+  --text-display: 32px;
+  --text-display--line-height: 38px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.01em;
+  --text-heading: 17px;
+  --text-heading--line-height: 24px;
+  --text-heading--font-weight: 600;
+  --text-body: 15px;
+  --text-body--line-height: 22px;
+  --text-label: 13px;
+  --text-label--line-height: 16px;
+  --text-label--font-weight: 600;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+  --text-micro: 11px;
+  --text-micro--line-height: 14px;
+  --text-micro--font-weight: 600;
+  --text-micro--letter-spacing: 0.06em;
+  --text-data: 14px;
+  --text-data--line-height: 20px;
+  --text-data--font-weight: 500;
+}
+
+/* ── Base ────────────────────────────────────────────────── */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Data / numeric text: monospace with tabular figures so values tick without
+   jitter (Design Language §03). */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ── Motion keyframes (named to match motion.ts) ─────────── */
+@keyframes aa-sheet-in {
+  from {
+    transform: translateY(103%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes aa-card-in {
+  from {
+    transform: translateX(103%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes aa-tick-draw {
+  from {
+    stroke-dashoffset: 34;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes aa-tick-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes aa-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced-motion: everything collapses to an 80 ms fade (Design Language §05). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 80ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 80ms !important;
+    scroll-behavior: auto !important;
+  }
+}

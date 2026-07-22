@@ -54,6 +54,16 @@ doesn't already cover.
   Mobile is genuinely mobile-first (bottom sheets and slide-in cards, not desktop modals); the two
   web apps are proper desktop layouts.
 
+## Copy & typography
+
+- **No en dashes or em dashes in app-facing copy.** Never use `–` (en dash) or `—` (em dash) in any
+  user-visible text in `aa-prototype/` — rendered strings, labels, placeholders, alt text, tooltips.
+  Use a middot `·`, a comma, or the word "to" for ranges (e.g. "Phases 03 to 04"); a plain hyphen
+  `-` is fine where a joiner is genuinely needed. (The planning docs under `docs/` are exempt — this
+  rule is about the prototype UI.)
+- The AA logo (`docs/assets/Anasthesia-logo-1.png`, copied to `aa-prototype/src/assets/aa-logo.png`)
+  is the wordmark everywhere a masthead appears — use the `Logo` component, not re-typeset text.
+
 ## Git — do not commit or push
 
 **The user handles all commits and pushes themselves.** Coding agents must **not** run
