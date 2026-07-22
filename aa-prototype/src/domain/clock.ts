@@ -33,12 +33,6 @@ export const DEMO_TODAY = '2026-07-21'
 /** Human-readable form of {@link DEMO_TODAY} (matches the mockups' headers). */
 export const DEMO_TODAY_LABEL = 'Tuesday 21 July 2026'
 
-/**
- * Pinned demo "now" for the phone-frame status bar. A fixed display string
- * until Phase 02 wires the status bar to the advanceable clock state.
- */
-export const DEMO_CLOCK_TIME = '9:41'
-
 const MINUTES_PER_DAY = 24 * 60
 
 /** The clock's seed state: {@link DEMO_TODAY} at 08:00 (a fixed morning time). */

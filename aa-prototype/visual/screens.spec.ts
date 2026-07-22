@@ -12,6 +12,7 @@ const ROUTES = [
   { name: 'demo-control', path: '/demo/control' },
   { name: 'demo-xero', path: '/demo/xero' },
   { name: 'demo-integrations', path: '/demo/integrations' },
+  { name: 'demo-data', path: '/demo/data' },
 ] as const
 
 for (const route of ROUTES) {

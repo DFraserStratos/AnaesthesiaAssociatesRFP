@@ -11,6 +11,7 @@ export type AppId =
   | 'demo-xero'
   | 'demo-integrations'
   | 'demo-control'
+  | 'demo-data'
 
 export interface Persona {
   name: string
@@ -79,6 +80,13 @@ export const APP_CONFIG: Record<AppId, AppConfig> = {
     persona: PERSONAS.kirsty,
     group: 'demo',
   },
+  'demo-data': {
+    id: 'demo-data',
+    label: 'Demo: Data Inspector',
+    path: '/demo/data',
+    persona: PERSONAS.kirsty,
+    group: 'demo',
+  },
 }
 
 /** Switcher / iteration order (apps first, then demo surfaces). */
@@ -89,6 +97,7 @@ export const APP_ORDER: readonly AppId[] = [
   'demo-xero',
   'demo-integrations',
   'demo-control',
+  'demo-data',
 ] as const
 
 /** Which app a route belongs to, or null if the path matches none. */

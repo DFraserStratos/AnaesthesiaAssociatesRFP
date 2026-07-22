@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useShellStore } from '../store/shellStore'
+import { useAppStore } from '../store'
 import { APP_CONFIG, appIdForPath, type AppId } from './appConfig'
 import { AppSwitcher } from './AppSwitcher'
 import { neutral, brand } from '../theme/tokens'
@@ -16,8 +16,8 @@ import { neutral, brand } from '../theme/tokens'
 export function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
-  const currentApp = useShellStore((s) => s.currentApp)
-  const setCurrentApp = useShellStore((s) => s.setCurrentApp)
+  const currentApp = useAppStore((s) => s.shell.currentApp)
+  const setCurrentApp = useAppStore((s) => s.setCurrentApp)
 
   const routeApp = appIdForPath(location.pathname)
   const activeApp: AppId = routeApp ?? currentApp

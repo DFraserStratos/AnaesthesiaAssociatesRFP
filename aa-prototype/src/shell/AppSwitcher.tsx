@@ -6,6 +6,7 @@ import {
   Receipt,
   Cable,
   SlidersHorizontal,
+  Database,
   ChevronDown,
   Check,
 } from 'lucide-react'
@@ -20,6 +21,7 @@ const ICONS: Record<AppId, LucideIcon> = {
   'demo-xero': Receipt,
   'demo-integrations': Cable,
   'demo-control': SlidersHorizontal,
+  'demo-data': Database,
 }
 
 interface AppSwitcherProps {

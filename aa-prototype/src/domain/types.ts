@@ -505,16 +505,20 @@ export interface ModifierCode {
  * `surgeonId` is nullable: the RFP says surgeon assignment is "usually
  * (approximately 80%) defined in the anaesthetist's Permanent List", though its
  * principle-6 field list omits surgeon (reading recorded in REQUIREMENTS §11).
+ * `hospitalId` is nullable too (Phase 02): a recurring pre-op assessment
+ * session runs at AA's own rooms, not a hospital.
  */
 export interface PermanentList {
   id: string
-  hospitalId: HospitalId
+  hospitalId: HospitalId | null
   anaesthetistId: AnaesthetistId
   /** 0 = Sunday … 6 = Saturday (matches `Date.getDay()`). */
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
   session: Session
   surgeonId: SurgeonId | null
   statusKey: ListStatusKey
+  /** Display label the generated List carries as its note (e.g. "Acute theatre"). */
+  notes?: string
 }
 
 /**

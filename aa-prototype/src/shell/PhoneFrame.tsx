@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DEMO_CLOCK_TIME } from '../domain/clock'
+import { useClockTimeLabel } from '../store'
 import { neutral, phoneBackdrop } from '../theme/tokens'
 
 /**
@@ -79,11 +79,12 @@ function StatusBar({ time }: { time: string }) {
 
 interface PhoneFrameProps {
   children: ReactNode
-  /** Status-bar time (defaults to the pinned demo clock). */
+  /** Status-bar time override (defaults to the live demo clock). */
   time?: string
 }
 
-export function PhoneFrame({ children, time = DEMO_CLOCK_TIME }: PhoneFrameProps) {
+export function PhoneFrame({ children, time }: PhoneFrameProps) {
+  const clockTime = useClockTimeLabel()
   return (
     <div
       style={{
@@ -126,7 +127,7 @@ export function PhoneFrame({ children, time = DEMO_CLOCK_TIME }: PhoneFrameProps
           }}
         />
 
-        <StatusBar time={time} />
+        <StatusBar time={time ?? clockTime} />
 
         {/* scrollable content region — the mobile app renders here */}
         <div style={{ height: '100%', overflow: 'auto', position: 'relative' }}>{children}</div>
