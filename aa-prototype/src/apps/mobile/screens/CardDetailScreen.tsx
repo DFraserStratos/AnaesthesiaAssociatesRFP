@@ -1,10 +1,25 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Copy, ImagePlus, Minus, Plus, XCircle } from 'lucide-react'
 import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
-import { copyCard, editCard, useAppStore, useToday, type Actor } from '../../../store'
+import {
+  validateCardForBilling,
+  type BillingValidationFailure,
+  type CardBillingContext,
+} from '../../../domain/billing'
+import {
+  addProcedure,
+  completeCard,
+  copyCard,
+  editCard,
+  uncompleteCard,
+  useAppStore,
+  useToday,
+  type Actor,
+} from '../../../store'
 import { StatusChip } from '../../../shared'
 import { MobileButton } from '../components'
+import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee } from '../capture'
 import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../../assets/samplePaperCards'
 import { CancelCardSheet } from '../flows/CancelCardSheet'
@@ -18,11 +33,7 @@ interface CardDetailScreenProps {
   onCopied: () => void
 }
 
-const ROUTE_LABEL: Record<string, string> = {
-  hospital: 'Hospital / contract holder',
-  billableParty: 'Billable party',
-  insurer: 'Insurer (direct claim)',
-}
+type SheetState = 'none' | 'cancel' | 'patient' | { kind: 'procedure'; procedureId: string }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -56,40 +67,75 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
   const card = useAppStore((s) => s.schedule.cards[cardId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
-  const patients = useAppStore((s) => s.masters.patients)
-  const hospitals = useAppStore((s) => s.masters.hospitals)
-  const contracts = useAppStore((s) => s.masters.contracts)
-  const insurers = useAppStore((s) => s.masters.insurers)
-  const billableParties = useAppStore((s) => s.masters.billableParties)
+  const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  const masters = useAppStore((s) => s.masters)
   const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
-  const primary: Procedure | undefined = useMemo(() => {
-    if (card === undefined) return undefined
+  const procedures: Procedure[] = useMemo(() => {
+    if (card === undefined) return []
     return Object.values(proceduresRecord)
       .filter((p) => p.cardId === cardId)
-      .sort((a, b) => a.id.localeCompare(b.id))[0]
+      .sort((a, b) => a.id.localeCompare(b.id))
   }, [card, cardId, proceduresRecord])
+  const primary = procedures[0]
 
   const [notes, setNotes] = useState(card?.notes ?? '')
   const [error, setError] = useState<string | null>(null)
-  const [sheet, setSheet] = useState<'none' | 'cancel' | 'patient' | 'procedure'>('none')
+  const [sheet, setSheet] = useState<SheetState>('none')
+  /** Validation renders only after a refused Mark-complete (the latch) —
+   *  never a wall of red on first open; thereafter it live-clears. */
+  const [showValidation, setShowValidation] = useState(false)
+  const [completeError, setCompleteError] = useState<string | null>(null)
+  const [overlay, setOverlay] = useState(false)
+  const overlayTimer = useRef<number | null>(null)
 
   useEffect(() => {
     setNotes(card?.notes ?? '')
   }, [card?.notes])
 
+  useEffect(
+    () => () => {
+      if (overlayTimer.current !== null) clearTimeout(overlayTimer.current)
+    },
+    [],
+  )
+
+  const cancelled = card?.cancellation !== undefined
+
+  // Live validation (ctx assembled as billingContextForCard does). Failures
+  // render per-procedure anchors only after the showValidation latch.
+  const failures: BillingValidationFailure[] = useMemo(() => {
+    if (card === undefined || list === undefined || cancelled) return []
+    const anaesthetist = masters.anaesthetists[list.anaesthetistId]
+    if (anaesthetist === undefined) return []
+    const ctx: CardBillingContext = {
+      anaesthetist,
+      rvgCodes: masters.rvgCodes,
+      contracts: masters.contracts,
+      contractPrices: Object.values(masters.contractPrices),
+      insurers: masters.insurers,
+      billableParties: masters.billableParties,
+      billingLines: Object.values(billingLinesRecord),
+    }
+    if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
+    return validateCardForBilling(card, procedures, ctx)
+  }, [card, list, cancelled, masters, billingLinesRecord, procedures])
+
+  const cardTotals = useMemo(() => {
+    if (list === undefined || procedures.length === 0) return { units: 0, total: 0 }
+    return cardFee(procedures, list, masters, billingLinesRecord)
+  }, [list, procedures, masters, billingLinesRecord])
+
   if (card === undefined || list === undefined) return null
-  const patient = patients[card.patientId]
-  const cancelled = card.cancellation !== undefined
+  const patient = masters.patients[card.patientId]
   const canEdit = list.state === 'DRAFT' && !cancelled
+  const canCapture = canEdit && !card.completed
   const badge = nhiBadge(patient?.nhi)
 
-  const hospitalName = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-  const route = primary?.billingRoute
-  const contractName = primary?.governingContractId !== undefined ? contracts[primary.governingContractId]?.name : undefined
-  const insurerName = primary?.insurerId !== undefined ? insurers[primary.insurerId]?.name : undefined
-  const bpName = primary?.billablePartyId !== undefined ? billableParties[primary.billablePartyId]?.name : undefined
+  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+  const showBar = !cancelled && (card.completed || canCapture)
+  const cardLevelFailures = showValidation ? failures.filter((f) => f.procedureId === undefined) : []
 
   function run(outcome: { ok: boolean; message?: string }) {
     if (!outcome.ok) setError(outcome.message ?? 'That action was refused.')
@@ -123,8 +169,41 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
     onCopied()
   }
 
+  function doAddProcedure() {
+    run(addProcedure(useAppStore, actor, cardId))
+  }
+
+  function markComplete() {
+    const outcome = completeCard(useAppStore, actor, cardId)
+    if (!outcome.ok) {
+      // The refusal message renders verbatim; the latch turns inline
+      // validation on (it live-clears as fields are fixed).
+      setShowValidation(true)
+      setCompleteError(outcome.message)
+      return
+    }
+    setCompleteError(null)
+    setShowValidation(false)
+    setOverlay(true)
+    overlayTimer.current = window.setTimeout(() => {
+      // Dismiss the overlay BEFORE navigating back — the screen stays mounted
+      // in the SlideStack, so a lingering overlay would sit over the stack.
+      setOverlay(false)
+      onBack()
+    }, 1050)
+  }
+
+  function amend() {
+    const outcome = uncompleteCard(useAppStore, actor, cardId)
+    if (!outcome.ok) setError(outcome.message)
+    else {
+      setError(null)
+      setCompleteError(null)
+    }
+  }
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Header */}
       <div style={{ padding: '60px 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface, flex: 'none' }}>
         <button
@@ -146,7 +225,7 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '14px 20px 40px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: `14px 20px ${showBar ? 130 : 40}px`, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {cancelled && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
             <strong>Card cancelled.</strong> {card.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
@@ -154,12 +233,20 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         )}
         {card.copiedFromCardId !== undefined && (
           <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-            Additional procedure, copied from an earlier card on this list. It bills for time units only (Phase 04).
+            Additional procedure, copied from an earlier card on this list. It bills for time units only.
           </div>
         )}
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
             {error}
+          </div>
+        )}
+        {completeError !== null && showValidation && (
+          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <strong>{completeError}</strong>
+            {cardLevelFailures.map((f, i) => (
+              <span key={i}>{f.message}</span>
+            ))}
           </div>
         )}
 
@@ -181,23 +268,6 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
           <Row label="Contact">
             <span>{patient?.phone ?? 'Not recorded'}</span>
           </Row>
-        </Section>
-
-        {/* Operation */}
-        <Section label="Operation" action={canEdit ? <EditLink onClick={() => setSheet('procedure')} /> : undefined}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>{primary?.description || 'To capture'}</div>
-          {primary?.rvgBaseCode !== undefined && (
-            <div className="mono" style={{ fontSize: 12, color: accent.pressed }}>Code {primary.rvgBaseCode}</div>
-          )}
-          <Row label="Billing route">
-            <span>{route !== undefined ? ROUTE_LABEL[route] : 'Not set'}</span>
-          </Row>
-          {insurerName !== undefined && <Row label="Insurer"><span>{insurerName}</span></Row>}
-          {bpName !== undefined && <Row label="Billable party"><span>{bpName}</span></Row>}
-          {contractName !== undefined && <Row label="Contract"><span>{contractName}</span></Row>}
-          {primary?.billingReference !== undefined && (
-            <Row label="Reference"><span className="mono" style={{ fontSize: 13 }}>{primary.billingReference}</span></Row>
-          )}
         </Section>
 
         {/* Scheduled time */}
@@ -248,13 +318,30 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
           )}
         </Section>
 
-        {/* Outcome / BTM — Phase 04 placeholder */}
-        <div style={{ background: neutral.sunken, border: `1px dashed ${neutral.lineStrong}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Outcome &amp; billing (BTM)</div>
-          <div style={{ fontSize: 14, color: neutral.slate }}>
-            Anaesthetic times, base / time / modifier units, the fee and completion arrive with BTM capture in Phase 04.
-          </div>
-        </div>
+        {/* Outcome / BTM capture — one block per procedure, in Card order
+            (the ordinal feeds Type 3 second-procedure pricing). */}
+        {!cancelled &&
+          procedures.map((procedure, index) => (
+            <BtmCaptureBlock
+              key={procedure.id}
+              procedure={procedure}
+              list={list}
+              actor={actor}
+              ordinal={index + 1}
+              procedureCount={procedures.length}
+              canCapture={canCapture}
+              failures={failures.filter((f) => f.procedureId === procedure.id)}
+              showValidation={showValidation}
+              onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
+              onError={setError}
+            />
+          ))}
+
+        {canCapture && (
+          <MobileButton variant="secondary" block onClick={doAddProcedure}>
+            <Plus size={16} aria-hidden /> Add another procedure
+          </MobileButton>
+        )}
 
         {/* Actions */}
         {canEdit && (
@@ -272,12 +359,28 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         )}
       </div>
 
+      {showBar && (
+        <CompleteBar
+          completed={card.completed}
+          canAmend={list.state === 'DRAFT'}
+          onComplete={markComplete}
+          onAmend={amend}
+        />
+      )}
+
+      {overlay && <CompletionOverlay units={cardTotals.units} fee={cardTotals.total} />}
+
       <CancelCardSheet open={sheet === 'cancel'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} cardId={cardId} actor={actor} onClose={() => setSheet('none')} />
       )}
-      {primary !== undefined && (
-        <EditProcedureSheet open={sheet === 'procedure'} procedure={primary} actor={actor} onClose={() => setSheet('none')} />
+      {typeof sheet === 'object' && proceduresRecord[sheet.procedureId] !== undefined && (
+        <EditProcedureSheet
+          open
+          procedure={proceduresRecord[sheet.procedureId]!}
+          actor={actor}
+          onClose={() => setSheet('none')}
+        />
       )}
     </div>
   )

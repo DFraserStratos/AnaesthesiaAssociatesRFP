@@ -60,6 +60,7 @@ export const PAT = {
   foster: 'PT0016',
   riley: 'PT0017',
   gray: 'PT0018',
+  sinclair: 'PT0019',
 } as const
 
 const PINNED: readonly Patient[] = [
@@ -85,6 +86,8 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.foster, nhi: 'ZAK8873', name: 'Diane Foster', dobISO: '1958-09-19', phone: '03 555 4459', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.riley, nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', phone: '021 555 4561', ethnicityCode: '52111' },
   { hiddenInternalId: PAT.gray, nhi: 'ZAM1098', name: 'Fiona Gray', dobISO: '1963-06-13', phone: '03 555 4678', ethnicityCode: '11111' },
+  // The Phase 04 rate x time CAPTURE card's patient (Souter, Mon 27 Jul).
+  { hiddenInternalId: PAT.sinclair, nhi: 'ZAN2219', name: 'Heather Sinclair', dobISO: '1968-02-21', phone: '021 555 4785', ethnicityCode: '11111' },
 ] as const
 
 // ---------------------------------------------------------------------------

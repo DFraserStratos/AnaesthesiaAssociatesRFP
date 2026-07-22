@@ -144,6 +144,7 @@ export function MobileApp() {
         listId !== null ? (
           <ListDetailScreen
             listId={listId}
+            actor={actor}
             onBack={() => setDepth(0)}
             onOpenCard={openCard}
             onAddCard={() => setAddOpen(true)}

@@ -188,6 +188,38 @@ body {
   }
 }
 
+/* Completion overlay's success circle (Phase 04). */
+@keyframes aa-circle-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Row tick / submitted-bar arrival pop (Phase 04). */
+@keyframes aa-tick-pop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Reduced-motion: everything collapses to an 80 ms fade (Design Language §05). */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -54,6 +54,10 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
 
   it('on completion and cancellation', () => {
     const api = createAppStore()
+    // Ellison seeds pre-capture — stamp her finish so completion validates.
+    const ellisonProc = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+    if (ellisonProc === undefined) throw new Error('no procedure')
+    expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
     expect(completeCard(api, SOUTER, ELLISON_CARD).ok).toBe(true)
     let state = api.getState()
     expect(state.schedule.cards[ELLISON_CARD]?.lastModifiedBy).toBe('Dr Melanie Souter')

@@ -31,6 +31,14 @@ export interface BillingValidationFailure {
   message: string
 }
 
+/**
+ * The Method 3 gate sentence, single-sourced (5th review #1): the validator,
+ * the store's addBillingLine guard and the mobile capture UI's disabled
+ * rate x time option all show these exact words.
+ */
+export const INDIVIDUAL_ARRANGEMENT_MESSAGE =
+  'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.'
+
 export interface CardBillingContext {
   anaesthetist: Anaesthetist
   /** RVG master, keyed by code. */
@@ -175,11 +183,7 @@ export function validateCardForBilling(
           ? ctx.contracts[procedure.governingContractId]
           : undefined
       if (contract === undefined || !contract.permitsIndividualArrangement) {
-        fail(
-          id,
-          'billingLines',
-          'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.',
-        )
+        fail(id, 'billingLines', INDIVIDUAL_ARRANGEMENT_MESSAGE)
       }
     }
 

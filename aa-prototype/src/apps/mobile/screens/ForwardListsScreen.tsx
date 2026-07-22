@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
 import type { Card, List } from '../../../domain/types'
-import { useAppStore, useToday } from '../../../store'
+import { isListBilled, useAppStore, useToday } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, sessionStart } from '../format'
 
@@ -55,7 +55,12 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
     const weekEnd = format(addDays(parseISO(todayISO), 7), 'yyyy-MM-dd')
     const monthEnd = format(addDays(parseISO(todayISO), 31), 'yyyy-MM-dd')
 
-    const mine = Object.values(listsRecord).filter((l) => l.anaesthetistId === anaesthetistId)
+    // Billed lists vanish from every forward view (M10): the billing run's
+    // billedAtISO stamp keys the disappearance, not AUTHORISED — Phase 08
+    // drives the stamp.
+    const mine = Object.values(listsRecord).filter(
+      (l) => l.anaesthetistId === anaesthetistId && !isListBilled(l),
+    )
 
     function activeCards(listId: string): Card[] {
       return (cardsByList.get(listId) ?? []).filter((c) => c.cancellation === undefined)
@@ -65,7 +70,9 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       if (filter === 'todo') {
         return l.state === 'DRAFT' && activeCards(l.id).some((c) => !c.completed)
       }
-      if (filter === 'done') return l.state === 'SUBMITTED'
+      // Done = submitted or authorised and still unbilled (an authorised list
+      // is still unbilled until Phase 08's run stamps it).
+      if (filter === 'done') return l.state === 'SUBMITTED' || l.state === 'AUTHORISED'
       if (l.dateISO < todayISO) return false
       return filter === 'week' ? l.dateISO <= weekEnd : l.dateISO <= monthEnd
     }
@@ -122,7 +129,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
 
       let right: ListRowRight
       let countInSubtitle = false
-      if (l.state === 'SUBMITTED' || (total > 0 && done === total)) {
+      if (l.state === 'SUBMITTED' || l.state === 'AUTHORISED' || (total > 0 && done === total)) {
         right = { kind: 'doneUnbilled' }
         countInSubtitle = true
       } else if (total > 0 && l.dateISO <= todayISO && done < total) {

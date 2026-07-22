@@ -232,3 +232,69 @@ export function copyCard(api: AppStoreApi, actor: Actor, sourceCardId: string): 
 
   return ok({ cardId })
 }
+
+// ---------------------------------------------------------------------------
+// addProcedure
+// ---------------------------------------------------------------------------
+
+/**
+ * Add an additional Procedure to an existing Card (Phase 04's "Add another
+ * procedure"). Additional from the first (RFP split-billing rule): it bills
+ * time units only — base and modifier units stay on the first procedure. The
+ * skeleton mirrors copyCard's: empty description, `isAdditional: true`, the
+ * funding context (route / insurer / billable party / category / contract)
+ * inherited from the Card's FIRST procedure. Audited `procedure.create`.
+ */
+export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Outcome<{ procedureId: string }> {
+  const state = api.getState()
+  const found = getCard(state, cardId)
+  if (found === undefined) return refuse('notFound', 'Card not found.')
+  const { card, list } = found
+
+  if (card.cancellation !== undefined) {
+    return refuse('cardCancelled', 'This Card is cancelled and cannot take another procedure.')
+  }
+  if (card.completed) {
+    return refuse('cardCompleted', 'This Card is already marked complete. Amend it before adding a procedure.')
+  }
+  const rights = editRefusal(actor, list)
+  if (rights !== null) return rights
+
+  const first = proceduresForCard(state, cardId)[0]
+
+  let procedureId = ''
+  const metas: MutationMeta[] = []
+  mutate(api, actor, metas, (s) => {
+    const procAlloc = allocateId(s.counters, 'procedure')
+    procedureId = procAlloc.id
+
+    const procedure: Procedure = {
+      id: procedureId,
+      cardId,
+      description: '',
+      accRelated: false,
+      isAdditional: true,
+      selectedModifierCodes: [],
+    }
+    // Inherit the funding context only (the same episode) — never the base /
+    // modifier / time specifics.
+    if (first?.billingRoute !== undefined) procedure.billingRoute = first.billingRoute
+    if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
+    if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
+    if (first?.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = first.patientPaymentCategory
+    if (first?.governingContractId !== undefined) procedure.governingContractId = first.governingContractId
+
+    metas.push({
+      entityType: 'procedure',
+      entityId: procedureId,
+      action: 'procedure.create',
+      after: { cardId, isAdditional: true },
+    })
+    return {
+      schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: procedure } },
+      counters: procAlloc.counters,
+    }
+  })
+
+  return ok({ procedureId })
+}

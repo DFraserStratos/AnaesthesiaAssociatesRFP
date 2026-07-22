@@ -298,6 +298,12 @@ export interface List {
   conflicts: ListConflict[]
   /** A pending cover offer/request on a Free List (Phase 03). */
   coverRequest?: CoverRequest
+  /**
+   * Stamped at completion of the List's billing run (Phase 08; 3rd review
+   * #12). Lists vanish from the anaesthetist's forward views at invoice
+   * generation, NOT at AUTHORISED — an authorised list is still unbilled.
+   */
+  billedAtISO?: IsoDateTime
   notes?: string
 }
 
@@ -463,6 +469,10 @@ export interface Procedure {
   handoverISO?: IsoDateTime
 
   priceOverride?: PriceOverride
+
+  /** The legacy Outcome panel's Int Notes / Op Notes (Phase 04 capture). */
+  intNotes?: string
+  opNotes?: string
 }
 
 /** How a billing line's amount arises (RFP methods; 'rateTime' = Method 3 hours x rate). */

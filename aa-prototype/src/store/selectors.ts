@@ -65,6 +65,16 @@ export function auditForEntity(state: AppState, entityId: string) {
   return state.audit.filter((a) => a.entityId === entityId)
 }
 
+/**
+ * True once the List's billing run has stamped it (Phase 08 drives the stamp).
+ * Lists vanish from the anaesthetist's forward views at INVOICE GENERATION,
+ * not at AUTHORISED (3rd review #12) — an authorised list is still unbilled
+ * and keeps showing under Done with the unbilled cluster (M10).
+ */
+export function isListBilled(list: List): boolean {
+  return list.billedAtISO !== undefined
+}
+
 /** Assemble the validator context for a Card from store state. */
 export function billingContextForCard(state: AppState, card: Card): CardBillingContext | undefined {
   const list = state.schedule.lists[card.listId]

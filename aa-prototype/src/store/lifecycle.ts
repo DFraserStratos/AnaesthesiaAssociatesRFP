@@ -77,7 +77,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
 
 /**
  * An ordered completion blocker. Phase 09's pre-payment gate slots in as a
- * second entry in the list `completionBlockers` builds — no restructuring.
+ * second entry in the list `completionBlockersFor` builds — no restructuring.
  */
 export interface CompletionBlocker {
   code: string
@@ -85,7 +85,12 @@ export interface CompletionBlocker {
   details?: unknown
 }
 
-function completionBlockers(state: AppState, card: Card): CompletionBlocker[] {
+/**
+ * Why a Card cannot be marked complete, without attempting the mutation.
+ * `completeCard` refuses on the first entry; the mobile submit sheet uses the
+ * full list to name each incomplete card's outstanding failures (Phase 04).
+ */
+export function completionBlockersFor(state: AppState, card: Card): CompletionBlocker[] {
   const blockers: CompletionBlocker[] = []
 
   const ctx = billingContextForCard(state, card)
@@ -125,7 +130,7 @@ export function completeCard(api: AppStoreApi, actor: Actor, cardId: string): Ou
   if (rights !== null) return rights
   if (card.completed) return refuse('alreadyCompleted', 'This Card is already completed.')
 
-  const blockers = completionBlockers(state, card)
+  const blockers = completionBlockersFor(state, card)
   const first = blockers[0]
   if (first !== undefined) return refuse(first.code, first.message, blockers)
 
@@ -148,6 +153,49 @@ export function completeCard(api: AppStoreApi, actor: Actor, cardId: string): Ou
         },
       },
     }),
+  )
+  return ok(undefined)
+}
+
+/**
+ * Re-open a completed Card (Phase 04's "Amend" link). The anaesthetist amends
+ * their own Card while the List is DRAFT; the office may re-open on DRAFT or
+ * SUBMITTED (the standard edit-rights matrix). Completion is a clinical
+ * sign-off, so integrations never take it back either — mirrors completeCard.
+ */
+export function uncompleteCard(api: AppStoreApi, actor: Actor, cardId: string): Outcome {
+  const state = api.getState()
+  const found = getCard(state, cardId)
+  if (found === undefined) return refuse('notFound', 'Card not found.')
+  const { card, list } = found
+
+  if (card.cancellation !== undefined) {
+    return refuse('cardCancelled', 'This Card is cancelled; there is no completion to amend.')
+  }
+  if (!card.completed) return refuse('notCompleted', 'This Card is not marked complete.')
+  if (actor.source === 'integration') {
+    return refuse('integrationForbidden', 'Integrations never re-open Cards; completion is a clinical sign-off.')
+  }
+  const rights = editRefusal(actor, list)
+  if (rights !== null) return rights
+
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'card',
+      entityId: cardId,
+      action: 'card.uncomplete',
+      before: { completed: true },
+      after: { completed: false },
+    },
+    (s) => {
+      const next: Card = { ...card, completed: false }
+      delete next.completedAtISO
+      return {
+        schedule: { ...s.schedule, cards: { ...s.schedule.cards, [cardId]: next } },
+      }
+    },
   )
   return ok(undefined)
 }

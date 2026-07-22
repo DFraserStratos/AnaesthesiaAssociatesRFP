@@ -60,6 +60,14 @@ function firstCardOf(api: BoundAppStore, listId: string): string {
   return card.id
 }
 
+/** Ellison seeds PRE-capture (no handover — Phase 04's live Finish-now demo);
+ *  stamp the finish so the card validates before it is completed. */
+function captureEllisonFinish(api: BoundAppStore): void {
+  const procedure = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+  if (procedure === undefined) throw new Error('Ellison has no procedure')
+  expect(editProcedure(api, SOUTER, procedure.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
+}
+
 describe('completeCard', () => {
   it('rejects a card with invalid billing data and surfaces the reasons', () => {
     const api = store()
@@ -73,8 +81,9 @@ describe('completeCard', () => {
     expect(api.getState().schedule.cards[GUARDIAN_CARD]?.completed).toBe(false)
   })
 
-  it('completes a valid pending card (Ellison) and audits it', () => {
+  it('completes a valid pending card (Ellison, once her finish is captured) and audits it', () => {
     const api = store()
+    captureEllisonFinish(api)
     const outcome = completeCard(api, SOUTER, ELLISON_CARD)
     expect(outcome).toEqual({ ok: true, value: undefined })
     const card = api.getState().schedule.cards[ELLISON_CARD]
@@ -112,6 +121,7 @@ describe('submitList', () => {
 
   it('submits once every card is completed', () => {
     const api = store()
+    captureEllisonFinish(api)
     expect(completeCard(api, SOUTER, ELLISON_CARD).ok).toBe(true)
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(true)

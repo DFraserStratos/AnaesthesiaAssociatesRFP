@@ -37,6 +37,7 @@ export interface CardScenarioIds {
   twoFunder: string
   cancelled: string
   rateTime: string
+  rateTimeCapture: string
   bariatric: string
   cosAcc: string
   accRelated: string
@@ -385,8 +386,10 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   addProcedure(ellisonCard, {
     description: 'Left total hip replacement',
     rvgBaseCode: '47516',
+    // No handover: the finish is stamped LIVE in the demo ("Tap Finish now →
+    // fee ticks up", the mockup's demo script). The post-capture $344.50/13u
+    // pins moved to btmCapture.test.ts (Decisions log 2026-07-23).
     startISO: iso(TUE21, '16:05'),
-    handoverISO: iso(TUE21, '17:20'),
     asaClass: 'AS1',
     // Age-extreme modifier (Margaret Ellison, over 70): A1 = 1 unit, keeping
     // the pinned $344.50 fee (RVG-over-mockup relabel, 2026-07-23 review fix).
@@ -820,6 +823,24 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     billingReference: 'FH-2026-2140',
   })
 
+  // Rate x time CAPTURE card (Phase 04): not yet captured, on Souter's own
+  // pinned Mon 27 list so the mobile app can reach it — the presenter adds the
+  // hours x rate billing line live under the Aria individual-arrangement
+  // contract. Fitzgerald's completed card above stays Phase 08's billing
+  // exemplar (Decisions log 2026-07-23).
+  const rateTimeCaptureCard = addCard({
+    listId: souterMon27,
+    patientId: PAT.sinclair,
+    scheduledTime: '10:45',
+  })
+  addProcedure(rateTimeCaptureCard, {
+    description: 'Laser skin resurfacing, individually arranged hourly rate (Aria Skin and Laser Clinic)',
+    billingRoute: 'billableParty',
+    billablePartyId: BP.ariaClinic,
+    patientPaymentCategory: 'selfFundedPostProcedure',
+    governingContractId: CONTRACT.ariaHourly,
+  })
+
   // -------------------------------------------------------------------------
   // Near-future mockup counts: Wed 22 CES x6, Thu 23 CPH x8 + pre-op x6
   // -------------------------------------------------------------------------
@@ -1003,6 +1024,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       twoFunder: twoFunderCard.id,
       cancelled: cancelledCard.id,
       rateTime: rateTimeCard.id,
+      rateTimeCapture: rateTimeCaptureCard.id,
       bariatric: bariatricCard.id,
       cosAcc: cosAccCard.id,
       accRelated: accRelatedCardId,

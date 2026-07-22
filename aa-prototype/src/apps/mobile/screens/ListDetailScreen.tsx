@@ -1,14 +1,17 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Plus } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
+import { motion } from '../../../theme/motion'
 import type { Card } from '../../../domain/types'
-import { useAppStore, useToday } from '../../../store'
+import { useAppStore, useToday, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { TickBadge } from '../components'
+import { SubmitListSheet } from '../flows/SubmitListSheet'
 import { sessionTimeRange } from '../format'
 
 interface ListDetailScreenProps {
   listId: string
+  actor: Actor
   onBack: () => void
   onOpenCard: (cardId: string) => void
   onAddCard: () => void
@@ -22,7 +25,7 @@ interface CardRow {
   operation: string
 }
 
-export function ListDetailScreen({ listId, onBack, onOpenCard, onAddCard }: ListDetailScreenProps) {
+export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard }: ListDetailScreenProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
   const cardsRecord = useAppStore((s) => s.schedule.cards)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -30,6 +33,24 @@ export function ListDetailScreen({ listId, onBack, onOpenCard, onAddCard }: List
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
+  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
+
+  // Tick choreography: rows completed AFTER this screen last showed the list
+  // animate their tick in (the mockup's tick-pop); rows already done render
+  // still. The set resets when the screen moves to a different list.
+  const initialCompleted = useRef<Set<string> | null>(null)
+  const seenListId = useRef(listId)
+  if (seenListId.current !== listId) {
+    seenListId.current = listId
+    initialCompleted.current = null
+  }
+  if (initialCompleted.current === null) {
+    initialCompleted.current = new Set(
+      Object.values(cardsRecord)
+        .filter((c) => c.listId === listId && c.completed)
+        .map((c) => c.id),
+    )
+  }
 
   const model = useMemo(() => {
     if (list === undefined) return undefined
@@ -171,7 +192,7 @@ export function ListDetailScreen({ listId, onBack, onOpenCard, onAddCard }: List
               {cancelled ? (
                 <span style={{ fontSize: 11, fontWeight: 600, color: semantic.error.onTint, flex: 'none' }}>Cancelled</span>
               ) : r.card.completed ? (
-                <TickBadge size={28} />
+                <TickBadge size={28} animate={!(initialCompleted.current?.has(r.card.id) ?? false)} />
               ) : (
                 <span
                   style={{
@@ -216,7 +237,9 @@ export function ListDetailScreen({ listId, onBack, onOpenCard, onAddCard }: List
         )}
       </div>
 
-      {/* Sticky footer — Phase 04 placeholder for list submission. */}
+      {/* Sticky submit footer — the mockup's disabled → enabled → submitted
+          walk. Completion-gated at the store; the greyed bar stays TAPPABLE
+          and opens the explanatory sheet naming the offenders. */}
       <div
         style={{
           position: 'absolute',
@@ -229,26 +252,96 @@ export function ListDetailScreen({ listId, onBack, onOpenCard, onAddCard }: List
           borderTop: `1px solid ${neutral.line}`,
         }}
       >
-        <div
-          style={{
-            height: 54,
-            borderRadius: radius.card,
-            background: neutral.line,
-            color: neutral.mist,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 15,
-            fontWeight: 600,
-            textAlign: 'center',
-            lineHeight: '18px',
-          }}
-        >
-          <span>Mark list completed{incomplete > 0 ? ` · ${incomplete} to finish` : ''}</span>
-          <span style={{ fontSize: 11, fontWeight: 500 }}>Arrives with BTM capture (Phase 04)</span>
-        </div>
+        {list.state !== 'DRAFT' ? (
+          <div
+            style={{
+              height: 54,
+              borderRadius: radius.card,
+              background: semantic.success.solid,
+              color: neutral.surface,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              fontSize: 17,
+              fontWeight: 700,
+              animation: `aa-tick-pop 340ms ${motion.completeTick.easing}`,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
+              <path
+                d="M2.5 7.5 L5.5 10.5 L11.5 3.5"
+                fill="none"
+                stroke={neutral.surface}
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Submitted to office
+          </div>
+        ) : incomplete > 0 ? (
+          <button
+            type="button"
+            onClick={() => setSheet('blockers')}
+            style={{
+              height: 54,
+              width: '100%',
+              borderRadius: radius.card,
+              border: 'none',
+              background: neutral.line,
+              color: neutral.mist,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'inherit',
+              fontSize: 15,
+              fontWeight: 600,
+              textAlign: 'center',
+              lineHeight: '18px',
+              cursor: 'pointer',
+            }}
+          >
+            <span>Mark list completed · {incomplete} to finish</span>
+            <span style={{ fontSize: 11, fontWeight: 500 }}>Tap to see what is left</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSheet('confirm')}
+            style={{
+              height: 54,
+              width: '100%',
+              borderRadius: radius.card,
+              border: 'none',
+              background: accent.base,
+              color: neutral.surface,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'inherit',
+              fontSize: 17,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: elevation.e2,
+            }}
+          >
+            Mark list completed
+          </button>
+        )}
       </div>
+
+      {sheet !== 'none' && (
+        <SubmitListSheet
+          open
+          listId={listId}
+          actor={actor}
+          mode={sheet}
+          onClose={() => setSheet('none')}
+          onSubmitted={() => setSheet('none')}
+        />
+      )}
     </div>
   )
 }

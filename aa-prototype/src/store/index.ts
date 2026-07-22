@@ -29,6 +29,8 @@ export {
 } from './mutate'
 export {
   completeCard,
+  uncompleteCard,
+  completionBlockersFor,
   submitList,
   authoriseList,
   cancelCard,
@@ -51,7 +53,8 @@ export {
   type IntakeResult,
   type PatientEditPatch,
 } from './intake'
-export { createCard, copyCard, type CreateCardInput } from './cardActions'
+export { createCard, copyCard, addProcedure, type CreateCardInput } from './cardActions'
+export { addBillingLine, removeBillingLine, type AddBillingLineInput } from './billingLineActions'
 export { createHospital, setInsurerDirectClaims } from './mastersActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'

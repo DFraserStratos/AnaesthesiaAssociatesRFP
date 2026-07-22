@@ -1,7 +1,8 @@
 /**
  * Seed tests — determinism, the canvas invariant, design-day fidelity (the
- * four PM card fees to the cent), the ~80% permanent-list share of surgeon
- * assignments, marker resolution and the staged scenario states.
+ * PM card fees to the cent, Ellison in her pre-capture state), the ~80%
+ * permanent-list share of surgeon assignments, marker resolution and the
+ * staged scenario states.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -213,7 +214,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     return { totals, unitSums }
   }
 
-  it('Tane: B6 T6 = 12 units, $318.00', () => {
+  it('Tane: B6 T6 = 12 units, $318.00; Ellison pre-capture 8 units, $212.00', () => {
     const marker = SEED_MARKERS['designDayPmList']
     expect(marker).toBeDefined()
     const cards = Object.values(seed.schedule.cards)
@@ -224,11 +225,14 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
     expect(tane && feeForCard(tane.id)).toEqual({ totals: [318], unitSums: [12] })
     expect(marsh && feeForCard(marsh.id)).toEqual({ totals: [185.5], unitSums: [7] })
     expect(chen && feeForCard(chen.id)).toEqual({ totals: [238.5], unitSums: [9] })
-    expect(ellison && feeForCard(ellison.id)).toEqual({ totals: [344.5], unitSums: [13] })
-    // The review screen's totals row: 41 units, $1,086.50.
+    // Ellison seeds PRE-capture (no handover — the live Finish-now demo card):
+    // B7 + T0 + M1 (A1 + AS1) = 8 units at the SXAP $26.50. The post-capture
+    // $344.50/13u and 41u/$1,086.50 mockup pins live in btmCapture.test.ts,
+    // after a simulated Finish-now at 17:20 (Decisions log 2026-07-23).
+    expect(ellison && feeForCard(ellison.id)).toEqual({ totals: [212], unitSums: [8] })
     const all = cards.map((c) => feeForCard(c.id))
-    expect(all.reduce((s, f) => s + (f.unitSums[0] ?? 0), 0)).toBe(41)
-    expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(1086.5, 2)
+    expect(all.reduce((s, f) => s + (f.unitSums[0] ?? 0), 0)).toBe(36)
+    expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(954, 2)
   })
 
   it('bariatric Type 3: $2,800 first procedure, $950 by the second-procedure ordinal rule', () => {

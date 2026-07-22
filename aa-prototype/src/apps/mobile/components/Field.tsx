@@ -75,12 +75,15 @@ interface SegmentedProps<T extends string> {
   value: T
   options: { value: T; label: string }[]
   onChange: (value: T) => void
+  /** Read-only rendering: selection stays visible, taps do nothing. */
+  disabled?: boolean
 }
 
 /** A segmented control (convention 16: prefer over a dropdown). Teal selection. */
-export function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, value, options, onChange, disabled }: SegmentedProps<T>) {
+  const isDisabled = disabled === true
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, opacity: isDisabled ? 0.55 : 1 }}>
       {label !== undefined && <FieldLabel>{label}</FieldLabel>}
       <div style={{ display: 'flex', background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4 }}>
         {options.map((o) => {
@@ -89,7 +92,8 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
             <button
               key={o.value}
               type="button"
-              onClick={() => onChange(o.value)}
+              disabled={isDisabled}
+              onClick={isDisabled ? undefined : () => onChange(o.value)}
               style={{
                 flex: 1,
                 minHeight: 40,
@@ -98,7 +102,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
                 fontFamily: 'inherit',
                 fontSize: 14,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isDisabled ? 'default' : 'pointer',
                 transition: 'background 150ms, color 150ms',
                 background: active ? accent.base : 'transparent',
                 color: active ? neutral.surface : neutral.slate,

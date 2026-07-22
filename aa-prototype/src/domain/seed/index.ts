@@ -394,6 +394,12 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       entityId: scenario.rateTime,
       detail: 'Hourly rate line under the billable-party-held individual arrangement contract.',
     },
+    rateTimeCaptureCard: {
+      label: 'Rate x time capture card (Souter, Mon 27)',
+      entityType: 'card',
+      entityId: scenario.rateTimeCapture,
+      detail: 'Not yet captured; the hours x rate line is added live in the mobile app under the Aria contract.',
+    },
     bariatricType3Card: {
       label: 'Type 3 fixed price card (bariatric)',
       entityType: 'card',
