@@ -14,7 +14,7 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
 ## Work items
 
 1. **Xero simulator surface** (`/demo/xero`, demo-badged): tabs —
-   - **Contacts**: ContactID, ContactNumber, name, type (organisation/patient), archived flag. **NHI must not appear anywhere on this surface** (convention 8). The callout must present this as the RFP contradiction it is: Appendix 1 wants the NHI as a searchable cross-reference field on the Xero contact, Appendix 2 says it never enters Xero — **the prototype implements Appendix 2 (stricter data minimisation), and this needs an AA ruling in discovery**, not a settled requirement.
+   - **Contacts**: ContactID, ContactNumber, name, type (organisation / patient / billable party), archived flag. **NHI must not appear anywhere on this surface** (convention 8). The callout must present this as the RFP contradiction it is: Appendix 1 wants the NHI as a searchable cross-reference field on the Xero contact, Appendix 2 says it never enters Xero — **the prototype implements Appendix 2 (stricter data minimisation), and this needs an AA ruling in discovery**, not a settled requirement.
    - **Invoices**: ACCREC list (contact, invoice number, reference, status AUTHORISED/PAID, amount) and ACCPAY list (anaesthetist, status DRAFT/AUTHORISED/PAID, amount) with the GUID pairing visible via the billing-case link. ACCREC/ACCPAY numbers visibly similar (AA preference). A callout notes Xero's **duplicate-invoice-number-prevention org setting** as a mandated-configuration discovery item (an RFP "open item carried forward").
 2. **Handoff from billing** (replaces Phase 08's stub): on invoice generation, contact resolution
    splits by counterparty type —
@@ -45,24 +45,30 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
    two independent flags with dates: paid-into-AA / disbursed-to-anaesthetist (trust-account
    behaviour).
 5. **Contact archiving job**: clock-advance-triggered (and manually runnable) job archiving
-   **patient contacts only** once fully paid + inactive for a **configurable window** (a named
+   **individual contacts only — patients and billable parties alike** (the RFP asks how "Patient
+   and Billable Party records" are deduplicated and archived at scale; guardians belong to the
+   same one-time-client tail) once fully paid + inactive for a **configurable window** (a named
    constant/setting, seeded at 90 days as the RFP's own illustrative figure — the RFP presents 90
    days as "e.g.", not a fixed rule, so don't hardcode it as gospel; expose it as an editable value
    in the master-data or control-panel surface so the demo can show a different AA-chosen window
    without a code change) (organisational contacts are exempt); archived count visible with the
-   ~10k soft-limit rationale in a callout; archived contacts retain history; repeat patients reuse
+   ~10k soft-limit rationale in a callout that also carries the RFP's volume story as **seeded
+   aggregate counters** (≈28k invoices/yr, ~99% one-time clients, an active-contact count seeded
+   near the soft limit) which the archive job visibly reduces — scale is narrated with counters,
+   not simulated records (N4/§10); archived contacts retain history; repeat patients reuse
    their contact.
 6. **Anaesthetist views go live** — all reading the **billing engine's own mirror, never the
    Xero-sim slice** (RFP: the app never queries Xero; the Billing Engine's database is the sole
    source, kept in sync by the webhook/poll writes). Structurally: view selectors import from
    `billing`, never from `xero` — greppable, and Xero-sim state changes reach the apps only via
    the sync handlers.
-   - Mobile + web **Outstanding balances**: flat list of the anaesthetist's ACCPAY line items (no rollup), appearing the **next day** after invoice generation (clock rule) — demo: generate → not visible → advance day → visible.
+   - Mobile + web **Outstanding balances**: flat list of the anaesthetist's **individual ACCPAY invoices — one row per invoice, no Card-level or other rollup** (the RFP's "line item(s)" phrasing refers to these rows; queries about a row go to office staff, not drill-downs), appearing the **next day** after invoice generation (clock rule) — demo: generate → not visible → advance day → visible.
    - Receivables aging + Overdue page compute from the mirror's invoice/payment states (the anaesthetist-perspective view of what remains uncollected).
    - **GST-period activity summary**: date-ranged received amounts + GST component per the anaesthetist's GST-period setting (already on the master from Phase 02's seed).
 7. **Tests**: NHI-never-in-Xero (assert the Xero slice's serialised state contains no seeded NHI
    strings); webhook idempotency; partial-payment pro-rata; archive-job criteria (incl.
-   organisational contacts never archived); repeat-patient dedupe (one contact across episodes);
+   organisational contacts never archived; a fully-paid, inactive billable-party contact IS
+   eligible); repeat-patient dedupe (one contact across episodes);
    next-day visibility rule.
 
 ## Out of scope

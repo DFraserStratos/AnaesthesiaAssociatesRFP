@@ -21,7 +21,11 @@ Schedule/Day (implicit — derive days from the horizon), List, Card, Procedure 
 set only when `billingRoute = BillableParty` — the RFP's three patient categories, each with a
 different expected payment workflow: post-procedure invoicing, pre-payment full/split, or
 insured-patient-claims-back — distinct from the `Insurer` route, which is AA billing a
-direct-claim insurer like nib itself), BillingLine,
+direct-claim insurer like nib itself), BillingLine (chargeBasis RVG | fixed | rate×time,
+units/amount, description, and an optional **funder override** — when set, the line bills to that
+counterparty instead of the Procedure's resolved route, which is how the RFP's
+one-procedure-two-funders split is represented; a per-procedure conservation rule — line amounts
+reconcile to the procedure fee — is validator-checked),
 Anaesthetist (per the RFP's master: **registration number as the ID**, name, **contact details**,
 plus `unitValue`, GST period, `hpiId`, active flag), Hospital, Surgeon, Patient (**`hiddenInternalId`
 as the invariant key; `nhi` optional** — the RFP's integration requirements link records to an NHI
@@ -32,12 +36,20 @@ contact/billing details, its own `hiddenInternalId` — deliberately not a Patie
 hold no NHI, and the RFP treats "Patient and Billable Party records" as parallel classes),
 Insurer, **ContractHolderOrganisation** (external groups that hold contracts, e.g. Canterbury
 Orthopaedic Surgeons — the RFP's ACC contracts "held externally instead"), Contract (types 1/2/3,
-holderType spanning hospital | insurer | surgeon | organisation, effective dates, and a
-`scope` field — `organisation` today, `individualAnaesthetist` reserved: the RFP asks the
-selection hierarchy to allow individual as well as organisational contracts) + ContractPrice
+holderType spanning hospital | insurer | surgeon | organisation | **billableParty** (the RFP:
+"a Billable Party, Hospital, or Insurer must hold a Contract that explicitly permits an
+individually-arranged structure" — the billableParty variant exists only for such
+individual-arrangement contracts), a **`permitsIndividualArrangement` flag** (the Method 3 gate:
+rate×time capture is offered only under a contract carrying it), effective dates, and a
+`scope` field with **selection precedence**: `organisation` (all seeds today) or
+`individualAnaesthetist` (+ `anaesthetistId`) — when both match, the individual-scoped contract
+wins (the RFP: the hierarchy "should allow for both individual contracts and organisational
+contracts"; "currently all contracts are at the organisational level")) + ContractPrice
 (**matching keys explicit**: contractId + optional rvgBaseCode + optional surgeonId + optional
 procedureOrdinal — the RFP's "keyed by some combination of contract holder, surgeon, and/or
-procedure type", with 2nd-procedure rules), ListStatus, PermanentList (hospital, anaesthetist,
+procedure type"; in the prototype's curated set the RVG base code stands in for "procedure type"
+— a labelled demo simplification, a real build may need non-RVG procedure identifiers — with
+2nd-procedure rules), ListStatus, PermanentList (hospital, anaesthetist,
 dayOfWeek, session, **`surgeonId` nullable** — the RFP says surgeon assignment is "usually
 (approximately 80%) defined in the anaesthetist's Permanent List", though its design-principle-6
 field list omits surgeon; reading recorded in REQUIREMENTS §11),
@@ -91,8 +103,9 @@ consume. Unit tests: known ethnicity codes validate, an unknown code fails with 
   billing line; start/handover times when RVG; billable party present when route=BillableParty).
   Returns structured failures (field + message) — the mobile UI will render these verbatim.
 - **Tests**: tiered-time boundaries (exactly 2h, 2h01m, a 5h case), P1 absorption vs non-absorbing
-  base, range base codes, each contract type, each override type, split billing, validation
-  failure shapes, NHI both formats.
+  base, range base codes, each contract type, each override type, split billing, **two-funder line
+  allocation conserves the procedure fee** (and a non-conserving allocation fails validation),
+  validation failure shapes, NHI both formats.
 
 ## Out of scope
 

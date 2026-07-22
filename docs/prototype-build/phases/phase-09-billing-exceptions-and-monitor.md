@@ -14,8 +14,11 @@ RFP flags as open questions — the demo should handle them confidently and labe
 
 1. **Pre-payment flow** (B7): the pre-payment flag is typed per the RFP — **full** or **split** —
    on the seeded Card. "Raise pre-procedure invoice" (office, pre-day) produces a
-   `prePayment`-timing invoice through the normal document pipeline: the full estimated fee, or
-   the agreed deposit portion for split. From raise until paid-or-overridden the card shows a
+   `prePayment`-timing invoice through the normal document pipeline covering the **patient-funded
+   (BillableParty-route) procedures only**: their full estimated fee, or the agreed deposit
+   portion for split. On a mixed card (one procedure hospital-billed, another patient-billed —
+   routes resolve per Procedure, D4) the contract-holder portion is untouched and bills normally
+   after authorisation. From raise until paid-or-overridden the card shows a
    prominent **"pre-payment outstanding" flag** (mobile card view, admin day view, authorisation
    review) — the *pre-procedure* surfacing of the rule; the completion gate below is the hard stop
    at the last checkpoint the prototype actually controls (software can't halt a theatre list). **Collected-before-procedure is a real gate, not an
@@ -30,8 +33,8 @@ RFP flags as open questions — the demo should handle them confidently and labe
    the reason, distinct from and visible alongside the card's normal audit trail, and shown as a
    flagged override (not a silent pass) everywhere the card appears (mobile, admin day view,
    authorisation review). No override, no complete. The post-procedure billing run then bills
-   exactly the balance (invoice timing = balance; full-pre-payment cases bill a zero-balance or no
-   balance invoice — decide and record). UI copy notes the timing-vs-AUTHORISED tension as an RFP
+   exactly the balance **of the patient-funded portion** (invoice timing = balance;
+   full-pre-payment cases bill a zero-balance or no balance invoice — decide and record). UI copy notes the timing-vs-AUTHORISED tension as an RFP
    open question and states this proposed reading.
 2. **Post-op addendum** (B8): "Add post-op event" action on a billed/locked Card (e.g. HDU review,
    pain consult, nerve catheter) → creates an addendum Card (`cardType = postOpAddendum`) in the
@@ -40,13 +43,16 @@ RFP flags as open questions — the demo should handle them confidently and labe
    this is the RFP's immutability answer, label it as such.
 3. **Billing monitor** (admin nav, replacing the placeholder; A5): pipeline table per authorised
    List — stages: List AUTHORISED → Billing run → Invoices generated → Emailed → Xero (stub until
-   Phase 10). Card-level rows with per-card status and errors.
+   Phase 10). Card-level rows with per-card status and errors. **Label the placement as a picked
+   reading** (REQUIREMENTS §11): the RFP leaves open whether this surface lives in the Admin Web
+   App or a separate Billing Engine admin screen — the prototype puts it in the Admin app; say so
+   in the monitor's UI copy as a discovery point.
    - **Failure demo:** seed or trigger one failure — a card on the **surgeon-held bariatric (or COS group-held ACC) contract** that was effective-dated out between sanity check and run: non-hospital holders have no mandated default to fall back to, so this is a genuine rating failure (a hospital/insurer counterparty would instead fall back to its protected default Type 1, per Phase 08). Shows an error state with a readable message, plus **"resolve & retry"** (fix the data → re-run that card).
    - **Failure isolation:** a failed Card blocks only its own invoice, not the whole List (RFP open question — implement this reading, record it).
    - Simulation triggers on this screen carry the demo badge; the monitor itself is proposed product UI (convention 13).
 4. **Demo control panel additions**: trigger for the billing failure; shortcut to stage the
    post-op scenario.
-5. **Tests**: pre-payment then balance (amounts sum to the full fee); addendum bills independently
+5. **Tests**: pre-payment then balance (amounts sum to the patient-funded portion's full fee; a mixed card's contract-holder procedures bill separately, untouched by the pre-invoice); addendum bills independently
    while the original invoice is untouched; failed card isolates (other cards' invoices generate);
    retry after fix succeeds and is idempotent (no duplicate invoices).
 
@@ -56,13 +62,13 @@ Xero records, payments, disbursement (Phase 10).
 
 ## Manual test checklist
 
-- [ ] Pre-payment card (split), unpaid: the "pre-payment outstanding" flag shows on the mobile card, admin day view and review screen; attempting to mark the Outcome complete is genuinely blocked (not just warned); the office's override action (with a reason) lifts it, and the override shows as a flagged state on the card everywhere it appears. The seeded *paid* pre-invoice state also clears the block without an override (live payment lands in Phase 10, whose checklist re-verifies this via the webhook). After capture + authorise, the balance invoice covers exactly the remainder (deposit + balance = full fee). A full-pre-payment case behaves per the recorded decision.
+- [ ] Pre-payment card (split), unpaid: the "pre-payment outstanding" flag shows on the mobile card, admin day view and review screen; attempting to mark the Outcome complete is genuinely blocked (not just warned); the office's override action (with a reason) lifts it, and the override shows as a flagged state on the card everywhere it appears. The seeded *paid* pre-invoice state also clears the block without an override (live payment lands in Phase 10, whose checklist re-verifies this via the webhook). After capture + authorise, the balance invoice covers exactly the remainder of the patient-funded portion (deposit + balance = that portion's full fee). A full-pre-payment case behaves per the recorded decision.
 - [ ] Post-op addendum on a locked card runs its own full cycle to an invoice; the original card remains immutable and its invoice unchanged.
 - [ ] The failure appears in the monitor with a readable error, blocks only its own card, and resolve-&-retry recovers it without duplicating the list's other invoices.
 - [ ] The monitor tells the whole story of a clean list end-to-end (AUTHORISED → run → invoices → emailed → Xero-pending).
-- [ ] Open-question readings are visible in UI copy where they apply (pre-payment timing, failure isolation, addendum mechanism).
+- [ ] Open-question readings are visible in UI copy where they apply (pre-payment timing, failure isolation, addendum mechanism, monitor-in-Admin-app placement).
 - [ ] `npm run build` + `npx vitest run` green.
 
 ## PROGRESS.md updates
 
-Status row + entry; record the three open-question readings (pre-payment timing, card-level failure isolation, addendum mechanism) in the Decisions log.
+Status row + entry; record the four open-question readings (pre-payment timing, card-level failure isolation, addendum mechanism, monitor-in-Admin-app placement) in the Decisions log.

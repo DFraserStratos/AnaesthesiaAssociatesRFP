@@ -37,7 +37,10 @@ Keep the density and drill-down; improve legibility (convention 11).
    - **Conflict flags**: a List scheduled on a hospital holiday, or where the anaesthetist's availability says unavailable → warning icon + tooltip. Reconciliation is surfaced as *advisory* (the RFP leaves hard-vs-soft open — note the reading in UI copy and the Decisions log).
 2. **Manual change handling**: office persona edits DRAFT and SUBMITTED Lists/Cards through the
    shared detail components (store guards already permit office edits of SUBMITTED); assign or
-   override a List's surgeon and hospital; **set or correct a Procedure's billing setup** — billing
+   override a List's surgeon and hospital, and **override its default start/end times** (the
+   RFP: List times "have a default value, but that may be overridden" — e.g. an AM list running
+   long; the day grid's proportional block resizes to the new span); **set or correct a
+   Procedure's billing setup** — billing
    route (the RFP: "set explicitly (by hospital advice, or by AA staff where the hospital does not
    specify)"), insurer, billable-party override (capture the guardian's name/relationship/contact
    as a BillableParty record), patient payment category, governing-contract pick where relevant —
@@ -49,7 +52,10 @@ Keep the density and drill-down; improve legibility (convention 11).
    a target picker (same anaesthetist's other session, another anaesthetist, or another day) and
    calls the store's `reassignCard` — the Card moves alone, both Lists' other Cards and status are
    untouched, the move shows in the Card's own audit trail (viewable via its History affordance).
-   Blocked against an AUTHORISED source or target.
+   Blocked against an AUTHORISED source or target. The picker labels each candidate List's
+   surgeon/hospital and **flags a pairing mismatch advisorily** before confirm (the RFP ties a
+   List to its anaesthetist/surgeon pairing for booking; reassignment stays an office-judgement
+   call — no hard guard, noted in the confirm copy).
 3. **List reassignment** (illness cover), using the store's slot mechanics (Phase 02 — the fixed
    canvas must survive): from the List panel → "Reassign" → pick-target flow surfacing the
    availability grid **filtered to anaesthetists whose session is Free** (the guard rejects
@@ -57,7 +63,10 @@ Keep the density and drill-down; improve legibility (convention 11).
    Dr A's PM becomes Unavailable") with the vacated-slot status pickable (default Unavailable) →
    the incoming List takes the target slot with Cards/status/audit intact, the vacated slot
    regenerates as a fresh List. Before/after visible on the day grid — both rows still show
-   exactly two sessions; the audit records from→to.
+   exactly two sessions; the audit records from→to. **Label the mechanism as a proposed reading**
+   (REQUIREMENTS §11): the RFP explicitly leaves "the precise mechanism for reassigning a List"
+   open — this free-target/absorb/regenerate design is the prototype's answer, stated as
+   replaceable in the confirm dialog's help copy, not presented as an RFP-settled rule.
 4. **Admin nav truthfulness**: Authorisation, Master Data, Audit and Billing Monitor nav items
    exist as honest placeholders naming their phases (07, 07, 07, 09).
 
@@ -73,7 +82,8 @@ Authorisation queue, master data screens, audit viewer (Phase 07). Billing monit
 - [ ] Drill into a List → edit a Card as office on a SUBMITTED list (allowed) — then switch persona to anaesthetist and confirm the same edit is blocked.
 - [ ] Correct a Procedure's billing setup as office (e.g. flip a seeded card to Billable Party with a guardian payer, or change its route) and see the change in the Card's audit trail.
 - [ ] Book a card onto a free List via the phone-advice path; it appears on the grid and in the anaesthetist's mobile view.
-- [ ] Move a single Card to a different List (different session or anaesthetist): it appears in the new List, the old List's other Cards are untouched, and the move is visible in the Card's own audit trail.
+- [ ] Move a single Card to a different List (different session or anaesthetist): it appears in the new List, the old List's other Cards are untouched, and the move is visible in the Card's own audit trail; a target with a different surgeon/hospital shows the advisory mismatch flag before confirm.
+- [ ] Override a List's start/end times as office: the day grid's block resizes to the new span and the change is audited.
 - [ ] Reassign today's List to a free anaesthetist: cards and audit history intact, grid updates, audit records the move — and the canvas invariant visibly holds (both rows still have two sessions: the target's Free slot absorbed, the vacated slot regenerated with the chosen status). A non-free target is not offered/rejected.
 - [ ] `npm run build` + `npx vitest run` green.
 

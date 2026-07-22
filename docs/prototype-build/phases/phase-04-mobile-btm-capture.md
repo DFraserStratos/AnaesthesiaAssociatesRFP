@@ -45,6 +45,13 @@ there.
    - **Start / Finish:** Start Now / Finish Now buttons stamping demo-clock time + editable time fields; elapsed-minutes display.
    - **B / T / M steppers:** B and T auto-computed from code/times but overridable; total units + computed fee at the anaesthetist's own unit value, live.
    - **Adjustment ($) and Charge ($)** fields, internal notes, op notes.
+   - **Non-RVG billing lines** (the RFP's parallel billing methods reach mobile here): an "add
+     billing line" control per Procedure — an **ancillary fixed-amount line** (description +
+     amount, e.g. an ACC pre-op flat-fee code), or a **rate×time (hourly)** line (hours × agreed
+     rate) offered **only when the governing contract carries `permitsIndividualArrangement`**
+     (RFP Method 3: it "flows into the mobile app through the same capture path as any other
+     BillingLine entry"; the option is disabled with an explanation otherwise). These lines feed
+     the same live fee readout.
    - **Completed toggle:** runs `validateCardForBilling`; failures render inline against their fields (use the structured failures from Phase 01 verbatim).
 2. **Additional procedures:** "add procedure" creates an `isAdditional` procedure whose base and
    modifier steppers are **structurally disabled** (split-billing rule) with a one-line explanation;
@@ -75,6 +82,7 @@ Any billing-engine execution (Phase 08). Pre-payment and post-op flows (Phase 09
 - [ ] P1 is disabled with an explanation when the base code absorbs positioning; enabled otherwise.
 - [ ] An additional procedure only allows time capture (B/M structurally disabled with the explanation) — and a copied Card's procedure renders the same way (time-only, with the copy explanation).
 - [ ] Completed toggle blocks with named field failures on an incomplete card, passes when fixed.
+- [ ] The seeded rate×time card captures hours × agreed rate as a billing line (offered because its contract permits the individual arrangement — verify the option is disabled, with the explanation, on a card whose contract doesn't); an ancillary fixed-amount line can be added to any card and joins the fee readout.
 - [ ] "Completed" on the List is blocked while any card is not yet marked Complete — including a card that would pass validation but hasn't been completed (sheet names the offenders) — then succeeds; the list becomes read-only for the anaesthetist persona.
 - [ ] All BTM mutations show in the card's audit trail.
 - [ ] Choreography matches the mockup: code picker arrives as a bottom sheet; the fee flashes green and rolls (value-tick) when units change; Mark complete plays the completion overlay; the list's submit bar walks disabled → enabled → submitted exactly like `Mobile App.dc.html`.
