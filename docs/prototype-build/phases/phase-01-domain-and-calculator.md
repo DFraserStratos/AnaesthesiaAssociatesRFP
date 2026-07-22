@@ -23,13 +23,24 @@ different expected payment workflow: post-procedure invoicing, pre-payment full/
 insured-patient-claims-back — distinct from the `Insurer` route, which is AA billing a
 direct-claim insurer like nib itself), BillingLine,
 Anaesthetist (per the RFP's master: **registration number as the ID**, name, **contact details**,
-plus `unitValue`, GST period, `hpiId`, active flag), Hospital, Surgeon, Patient (NHI +
-`hiddenInternalId`), Insurer, Contract (types 1/2/3, holderType, effective dates, and a
+plus `unitValue`, GST period, `hpiId`, active flag), Hospital, Surgeon, Patient (**`hiddenInternalId`
+as the invariant key; `nhi` optional** — the RFP's integration requirements link records to an NHI
+"where available", vs the schedule section's "unique identifier: NHI" (tension recorded in
+REQUIREMENTS §11); validate the NHI whenever present), **BillableParty** (non-patient payer
+override, most commonly a guardian paying for a minor: name, relationship to patient,
+contact/billing details, its own `hiddenInternalId` — deliberately not a Patient row: guardians
+hold no NHI, and the RFP treats "Patient and Billable Party records" as parallel classes),
+Insurer, **ContractHolderOrganisation** (external groups that hold contracts, e.g. Canterbury
+Orthopaedic Surgeons — the RFP's ACC contracts "held externally instead"), Contract (types 1/2/3,
+holderType spanning hospital | insurer | surgeon | organisation, effective dates, and a
 `scope` field — `organisation` today, `individualAnaesthetist` reserved: the RFP asks the
 selection hierarchy to allow individual as well as organisational contracts) + ContractPrice
 (**matching keys explicit**: contractId + optional rvgBaseCode + optional surgeonId + optional
 procedureOrdinal — the RFP's "keyed by some combination of contract holder, surgeon, and/or
-procedure type", with 2nd-procedure rules), ListStatus, PermanentList,
+procedure type", with 2nd-procedure rules), ListStatus, PermanentList (hospital, anaesthetist,
+dayOfWeek, session, **`surgeonId` nullable** — the RFP says surgeon assignment is "usually
+(approximately 80%) defined in the anaesthetist's Permanent List", though its design-principle-6
+field list omits surgeon; reading recorded in REQUIREMENTS §11),
 AnaesthetistAvailability, HospitalHoliday, RvgCode (`baseUnits` single or range, `absorbsModifiers`),
 ModifierCode, AuditEntry, Invoice/InvoiceLine/BillingCase, XeroContact/XeroAccRec/XeroAccPay,
 PaymentIn/Disbursement, IntegrationMessage. Billing/Xero/integration entities are typed now

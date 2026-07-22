@@ -37,8 +37,13 @@ Keep the density and drill-down; improve legibility (convention 11).
    - **Conflict flags**: a List scheduled on a hospital holiday, or where the anaesthetist's availability says unavailable → warning icon + tooltip. Reconciliation is surfaced as *advisory* (the RFP leaves hard-vs-soft open — note the reading in UI copy and the Decisions log).
 2. **Manual change handling**: office persona edits DRAFT and SUBMITTED Lists/Cards through the
    shared detail components (store guards already permit office edits of SUBMITTED); assign or
-   override a List's surgeon and hospital; create a booking on a free List ("phone call from
-   surgeon's rooms" path). Every change audited with source=office.
+   override a List's surgeon and hospital; **set or correct a Procedure's billing setup** — billing
+   route (the RFP: "set explicitly (by hospital advice, or by AA staff where the hospital does not
+   specify)"), insurer, billable-party override (capture the guardian's name/relationship/contact
+   as a BillableParty record), patient payment category, governing-contract pick where relevant —
+   via a billing section on the shared Card/Procedure detail (office-editable where the mobile app
+   shows it read-only); create a booking on a free List ("phone call from surgeon's rooms" path).
+   Every change audited with source=office.
 2a. **Card reassignment** (distinct from List reassignment, item 3 — the RFP's routine case: a
    hospital/surgeon moves one patient's booking): a "Move to another list" action on a Card opens
    a target picker (same anaesthetist's other session, another anaesthetist, or another day) and
@@ -66,6 +71,7 @@ Authorisation queue, master data screens, audit viewer (Phase 07). Billing monit
 - [ ] A hospital-holiday conflict and an availability conflict each show the advisory flag with a tooltip.
 - [ ] The seeded all-day booking (Rutherford/Forte Health) renders as two adjacent same-context blocks spanning the full day — no special "all-day" entity, just both Lists sharing hospital/surgeon per the RFP.
 - [ ] Drill into a List → edit a Card as office on a SUBMITTED list (allowed) — then switch persona to anaesthetist and confirm the same edit is blocked.
+- [ ] Correct a Procedure's billing setup as office (e.g. flip a seeded card to Billable Party with a guardian payer, or change its route) and see the change in the Card's audit trail.
 - [ ] Book a card onto a free List via the phone-advice path; it appears on the grid and in the anaesthetist's mobile view.
 - [ ] Move a single Card to a different List (different session or anaesthetist): it appears in the new List, the old List's other Cards are untouched, and the move is visible in the Card's own audit trail.
 - [ ] Reassign today's List to a free anaesthetist: cards and audit history intact, grid updates, audit records the move — and the canvas invariant visibly holds (both rows still have two sessions: the target's Free slot absorbed, the vacated slot regenerated with the chosen status). A non-free target is not offered/rejected.

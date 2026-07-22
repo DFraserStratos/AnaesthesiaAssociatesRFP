@@ -39,13 +39,21 @@ dropdowns.
    footer slot for Phase 04's "Completed" submit button (render a disabled placeholder stating it
    arrives with BTM capture).
 3. **Card screen** (single scroll, per Appendix 3): patient block (name, NHI — both formats render
-   with a format badge, DOB, contact, operation, internal comment, contract/insurance note),
+   with a format badge; the seeded provisional no-NHI patient shows an "NHI pending" badge instead,
+   DOB, contact, operation, internal comment, contract/insurance note),
    attachments row (add photo/file — stored as data URLs), editable via the store's audited
    mutations. The Outcome/BTM section renders as a clearly-labelled Phase 04 placeholder.
 4. **Card copy**: action on a card → new card in the same list with skeleton info (patient/context),
-   procedure-specific details cleared (per RFP "Card Copy").
+   procedure-specific details cleared (per RFP "Card Copy"). Per the RFP, copy exists "as a way of
+   adding an additional procedure": the new card records `copiedFromCardId` (same episode) and any
+   procedure created on it is flagged `isAdditional` from the first — Phase 04 renders those with
+   base/modifier capture structurally disabled (time units only), so copy can't double-charge base
+   units the original card already claimed.
 5. **Ad-hoc card + photo capture mock**: the ＋ Add flow offers *Enter manually* / *Photo of paper
-   list*. Manual path: typing an NHI offers a **"Look up NHI"** button — calls Phase 01's
+   list*. Manual path: the form includes an explicit **billing-route selection** (Hospital /
+   Billable Party / Insurer — the RFP: the route "is set explicitly… rather than derived"; on this
+   path the anaesthetist records the hospital's/surgeon's advice, and the office can correct it in
+   the admin app, Phase 06); typing an NHI offers a **"Look up NHI"** button — calls Phase 01's
    simulated `lookupNhi` (demo-badged: "simulating the NHI FHIR API via the Digital Services Hub")
    and, on a hit, pre-fills name/DOB/ethnicity for review (not silently accepted — still editable);
    on a miss, an honest "not found in this demo's records — enter manually" state. Photo path: pick
@@ -78,7 +86,7 @@ pieces — don't pre-abstract).
 - [ ] Filters work: To-Do shows only lists with incomplete cards; Done shows submitted ones.
 - [ ] Editing patient/context fields on a DRAFT card persists and writes an audit entry (verify in the data inspector).
 - [ ] A SUBMITTED list is read-only for the anaesthetist persona (no edit affordances; guard message if forced).
-- [ ] Card copy produces a skeleton card; ad-hoc manual entry works; the photo path produces a reviewable pre-filled card with the demo badge.
+- [ ] Card copy produces a skeleton card linked to its source (`copiedFromCardId`), flagged so its procedures will be additional-only (Phase 04 enforces the capture side); ad-hoc manual entry works, including the billing-route selection; the photo path produces a reviewable pre-filled card with the demo badge.
 - [ ] "Look up NHI" on a seeded NHI pre-fills name/DOB/ethnicity (still editable, demo-badged); an unseeded NHI gives the honest not-found state.
 - [ ] Setting own availability on a free session recolours the canvas (via the other-anaesthetists view or inspector); setting it on a session that has Cards raises a conflict flag and leaves the List untouched.
 - [ ] Request-cover: Free-only filter works; tapping a free session opens the sheet (320ms slide, scrim); sending shows the tick state and writes the pending request + audit entry.

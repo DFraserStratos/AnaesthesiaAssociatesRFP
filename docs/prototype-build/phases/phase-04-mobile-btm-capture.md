@@ -48,9 +48,13 @@ there.
    - **Completed toggle:** runs `validateCardForBilling`; failures render inline against their fields (use the structured failures from Phase 01 verbatim).
 2. **Additional procedures:** "add procedure" creates an `isAdditional` procedure whose base and
    modifier steppers are **structurally disabled** (split-billing rule) with a one-line explanation;
-   time capture only.
+   time capture only. The same restriction applies to **every procedure on a copied Card** —
+   Phase 03's copy flow marks them `isAdditional` (the RFP's card-copy-as-additional-procedure
+   mechanism), so the copied card's BTM block renders in the same time-only state.
 3. **Contract/insurance context line** on the block (which route/contract the office expects —
-   read-only informational, per the legacy screen's Contract field).
+   read-only informational, per the legacy screen's Contract field; the RFP assigns route-setting
+   to hospital advice or AA staff, so the office sets/corrects billing setup in the admin app —
+   Phase 06 — while the anaesthetist's ad-hoc creation path captures initial route per Phase 03).
 4. **List submission** (activates Phase 03's reserved footer): the **"Completed"** button on the
    Cards screen — disabled until **every Card is marked Complete** (the store's rule: completion
    is validation-gated, submission is completion-gated); the explanatory sheet names the
@@ -69,7 +73,7 @@ Any billing-engine execution (Phase 08). Pre-payment and post-op flows (Phase 09
 
 - [ ] Full BTM capture on a seeded today-card: ASA seeds M; picking a range code prompts within range; Start/Finish Now stamp demo-clock times; a 2h+ case's T units match the tiered rule; fee = units × that anaesthetist's own unit value (check against another anaesthetist to prove per-person rates).
 - [ ] P1 is disabled with an explanation when the base code absorbs positioning; enabled otherwise.
-- [ ] An additional procedure only allows time capture (B/M structurally disabled with the explanation).
+- [ ] An additional procedure only allows time capture (B/M structurally disabled with the explanation) — and a copied Card's procedure renders the same way (time-only, with the copy explanation).
 - [ ] Completed toggle blocks with named field failures on an incomplete card, passes when fixed.
 - [ ] "Completed" on the List is blocked while any card is not yet marked Complete — including a card that would pass validation but hasn't been completed (sheet names the offenders) — then succeeds; the list becomes read-only for the anaesthetist persona.
 - [ ] All BTM mutations show in the card's audit trail.

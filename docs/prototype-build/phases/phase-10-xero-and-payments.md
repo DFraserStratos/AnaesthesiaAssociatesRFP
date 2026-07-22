@@ -15,7 +15,7 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
 
 1. **Xero simulator surface** (`/demo/xero`, demo-badged): tabs —
    - **Contacts**: ContactID, ContactNumber, name, type (organisation/patient), archived flag. **NHI must not appear anywhere on this surface** (convention 8). The callout must present this as the RFP contradiction it is: Appendix 1 wants the NHI as a searchable cross-reference field on the Xero contact, Appendix 2 says it never enters Xero — **the prototype implements Appendix 2 (stricter data minimisation), and this needs an AA ruling in discovery**, not a settled requirement.
-   - **Invoices**: ACCREC list (contact, invoice number, reference, status AUTHORISED/PAID, amount) and ACCPAY list (anaesthetist, status DRAFT/AUTHORISED/PAID, amount) with the GUID pairing visible via the billing-case link. ACCREC/ACCPAY numbers visibly similar (AA preference).
+   - **Invoices**: ACCREC list (contact, invoice number, reference, status AUTHORISED/PAID, amount) and ACCPAY list (anaesthetist, status DRAFT/AUTHORISED/PAID, amount) with the GUID pairing visible via the billing-case link. ACCREC/ACCPAY numbers visibly similar (AA preference). A callout notes Xero's **duplicate-invoice-number-prevention org setting** as a mandated-configuration discovery item (an RFP "open item carried forward").
 2. **Handoff from billing** (replaces Phase 08's stub): on invoice generation, contact resolution
    splits by counterparty type —
    - **Organisational payers** (hospitals/contract holders, the direct insurer): persistent, named
@@ -23,7 +23,10 @@ runs, and the anaesthetist-facing balance/GST views go live. The trust-account t
      (they're the ~50% of invoices going to a few majors; the archiving strategy exists for the
      one-time-patient tail, not for them).
    - **Patient/Billable-Party payers**: the RFP Appendix 2 workflow — cached ContactID → lookup by
-     ContactNumber (= hidden internal ID) → create. **If the matched contact is archived**, invoice
+     ContactNumber (= hidden internal ID) → create. Each payer identity resolves by its **own**
+     hidden ID: a guardian/BillableParty record gets its own contact, distinct from the patient's
+     (NHI-driven dedupe applies to patients only — guardians hold no NHI, so they dedupe by hidden
+     ID alone; noted as a demo reading). **If the matched contact is archived**, invoice
      against it and surface the "unarchive step TBC in sandbox" note from Appendix 2 (demo: the
      archived contact visibly returns to use).
    Then create the ACCREC (to payer) + DRAFT ACCPAY (to anaesthetist, undiscounted payable) linked
@@ -72,6 +75,7 @@ out of scope); integrations (11).
 - [ ] Authorise → invoices → Xero tab shows the right contact per counterparty type: a hospital invoice hits its persistent organisation contact (no hidden ID), a patient invoice runs the hidden-ID workflow (repeat patient reuses; NHI nowhere) — and the ACCREC + DRAFT ACCPAY pair carries similar numbers.
 - [ ] A repeat patient with an unpaid prior episode surfaces the outstanding-balance banner before the new episode bills; invoicing a patient whose contact was archived brings it back into use with the unarchive-TBC note.
 - [ ] Full payment webhook flips the paired ACCPAY to AUTHORISED; a partial payment authorises pro-rata and Overdue shows the remaining balance.
+- [ ] Paying a pre-payment pre-invoice via the payment webhook clears that card's completion block without an override (closes Phase 09's deferred verification of the pre-payment gate).
 - [ ] Webhook + poll double-delivery causes no duplicate effect.
 - [ ] Payables run pays AUTHORISED ACCPAYs; the invoice shows paid-in ✓ / disbursed ✓ as separate states with dates.
 - [ ] Anaesthetist balances appear only after advancing to the next day; GST summary totals match payments received in the period.
