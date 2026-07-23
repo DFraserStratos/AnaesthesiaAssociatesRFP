@@ -1,0 +1,3649 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive master guide for understanding and demonstrating the Anaesthesia Associates prototype.">
+  <title>Anaesthesia Associates — Interactive Prototype Demo Guide</title>
+  <style>
+    :root {
+      --ink: #172320;
+      --slate: #58635f;
+      --mist: #7c8984;
+      --line: #dfe6e3;
+      --line-strong: #cbd6d1;
+      --paper: #ffffff;
+      --canvas: #f4f7f6;
+      --canvas-deep: #eaf0ed;
+      --crimson: #a91e3e;
+      --crimson-dark: #79152d;
+      --crimson-soft: #f9e9ed;
+      --teal: #0d6e63;
+      --teal-dark: #07564e;
+      --teal-soft: #e6f4f1;
+      --blue: #2e66e5;
+      --blue-soft: #eaf0ff;
+      --violet: #6e56cf;
+      --violet-soft: #f0edff;
+      --amber: #a16207;
+      --amber-soft: #fff3d8;
+      --green: #1e8e5a;
+      --green-soft: #e7f6ee;
+      --red: #c2403c;
+      --red-soft: #fdeceb;
+      --shadow: 0 18px 55px rgba(23, 35, 32, 0.09);
+      --shadow-soft: 0 8px 25px rgba(23, 35, 32, 0.07);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 98px;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 86% 4%, rgba(169, 30, 62, 0.08), transparent 23rem),
+        radial-gradient(circle at 8% 16%, rgba(13, 110, 99, 0.08), transparent 27rem),
+        var(--canvas);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.58;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    button,
+    summary,
+    select {
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid rgba(46, 102, 229, 0.35);
+      outline-offset: 3px;
+    }
+
+    a {
+      color: var(--teal-dark);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    a:hover {
+      color: var(--crimson);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+    }
+
+    h1 {
+      max-width: 860px;
+      margin-bottom: 24px;
+      font-size: clamp(2.6rem, 7vw, 5.7rem);
+      font-weight: 650;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: clamp(2rem, 4.5vw, 3.7rem);
+      font-weight: 650;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 650;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 16px;
+      z-index: 1000;
+      padding: 10px 16px;
+      color: white;
+      background: var(--ink);
+      border-radius: 8px;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    .reading-progress {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      height: 4px;
+      background: transparent;
+    }
+
+    .reading-progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--crimson), var(--teal));
+      transition: width 80ms linear;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      border-bottom: 1px solid rgba(203, 214, 209, 0.8);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+    }
+
+    .header-inner {
+      width: min(calc(100% - 32px), var(--max));
+      min-height: 78px;
+      margin-inline: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      flex: 0 0 auto;
+    }
+
+    .brand img {
+      width: 178px;
+      height: auto;
+    }
+
+    .brand-tag {
+      padding-left: 13px;
+      border-left: 1px solid var(--line-strong);
+      color: var(--slate);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .desktop-nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .desktop-nav a {
+      padding: 9px 10px;
+      border-radius: 8px;
+      color: var(--slate);
+      font-size: 0.86rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .desktop-nav a:hover,
+    .desktop-nav a[aria-current="true"] {
+      color: var(--crimson-dark);
+      background: var(--crimson-soft);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .mobile-menu {
+      display: none;
+      position: relative;
+    }
+
+    .mobile-menu summary {
+      list-style: none;
+    }
+
+    .mobile-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .mobile-menu nav {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(300px, calc(100vw - 32px));
+      padding: 10px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .mobile-menu nav a {
+      display: block;
+      padding: 11px 12px;
+      border-radius: 8px;
+      color: var(--ink);
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 15px;
+      color: var(--ink);
+      background: white;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover {
+      color: var(--ink);
+      background: var(--canvas);
+      border-color: var(--mist);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .btn-primary:hover {
+      color: white;
+      background: var(--teal-dark);
+      border-color: var(--teal-dark);
+    }
+
+    .btn-crimson {
+      color: white;
+      background: var(--crimson);
+      border-color: var(--crimson);
+    }
+
+    .btn-crimson:hover {
+      color: white;
+      background: var(--crimson-dark);
+      border-color: var(--crimson-dark);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .container {
+      width: min(calc(100% - 40px), var(--max));
+      margin-inline: auto;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(72px, 10vw, 130px) 0 74px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      top: 30px;
+      right: -170px;
+      border: 1px solid rgba(169, 30, 62, 0.14);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 65px rgba(169, 30, 62, 0.03),
+        0 0 0 130px rgba(13, 110, 99, 0.025);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--crimson);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 30px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    .hero-lede {
+      max-width: 800px;
+      margin-bottom: 30px;
+      color: var(--slate);
+      font-size: clamp(1.08rem, 2vw, 1.34rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 52px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 780px;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .hero-stat {
+      padding: 22px 24px 20px 0;
+    }
+
+    .hero-stat + .hero-stat {
+      padding-left: 24px;
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .hero-stat strong {
+      display: block;
+      color: var(--crimson);
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .hero-stat span {
+      display: block;
+      margin-top: 8px;
+      color: var(--slate);
+      font-size: 0.92rem;
+    }
+
+    section {
+      padding: clamp(64px, 8vw, 105px) 0;
+    }
+
+    section[id] {
+      scroll-margin-top: 95px;
+    }
+
+    .section-rule {
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.55fr);
+      gap: clamp(28px, 6vw, 90px);
+      align-items: end;
+      margin-bottom: 40px;
+    }
+
+    .section-head p {
+      margin-bottom: 0;
+      color: var(--slate);
+      font-size: 1.04rem;
+    }
+
+    .surface {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .purpose-map {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      align-items: center;
+      gap: 10px;
+      padding: 34px;
+    }
+
+    .purpose-node {
+      min-height: 150px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--canvas);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    .purpose-node strong {
+      font-size: 1.04rem;
+    }
+
+    .purpose-node span {
+      color: var(--slate);
+      font-size: 0.86rem;
+    }
+
+    .purpose-number {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 22px;
+      color: white !important;
+      background: var(--teal);
+      border-radius: 50%;
+      font-weight: 800;
+    }
+
+    .purpose-node:nth-of-type(5) .purpose-number,
+    .purpose-node:nth-of-type(7) .purpose-number {
+      background: var(--crimson);
+    }
+
+    .purpose-arrow {
+      color: var(--mist);
+      font-size: 1.45rem;
+      text-align: center;
+    }
+
+    .correction {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 18px;
+      align-items: start;
+      margin-top: 24px;
+      padding: 22px 24px;
+      background: var(--crimson-soft);
+      border-left: 5px solid var(--crimson);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+
+    .correction-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      color: white;
+      background: var(--crimson);
+      border-radius: 50%;
+      font-weight: 900;
+    }
+
+    .correction p {
+      margin: 4px 0 0;
+    }
+
+    .correction strong {
+      color: var(--crimson-dark);
+    }
+
+    .model-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.15fr);
+      gap: 30px;
+      align-items: stretch;
+    }
+
+    .model-tree {
+      position: relative;
+      display: grid;
+      gap: 10px;
+    }
+
+    .model-tree::before {
+      content: "";
+      position: absolute;
+      top: 24px;
+      bottom: 24px;
+      left: 25px;
+      width: 2px;
+      background: var(--line-strong);
+    }
+
+    .model-button {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 54px;
+      padding: 12px 16px 12px 58px;
+      color: var(--ink);
+      background: transparent;
+      border: 0;
+      border-radius: 12px;
+      font-weight: 750;
+      text-align: left;
+    }
+
+    .model-button::before {
+      content: "";
+      position: absolute;
+      top: 17px;
+      left: 17px;
+      width: 16px;
+      height: 16px;
+      background: var(--paper);
+      border: 4px solid var(--mist);
+      border-radius: 50%;
+    }
+
+    .model-button:hover {
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .model-button[aria-selected="true"] {
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+    }
+
+    .model-button[aria-selected="true"]::before {
+      border-color: var(--teal);
+    }
+
+    .detail-panel {
+      min-height: 380px;
+      padding: clamp(26px, 5vw, 48px);
+    }
+
+    .detail-kicker {
+      margin-bottom: 10px;
+      color: var(--crimson);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .detail-panel h3 {
+      margin-bottom: 14px;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+    }
+
+    .detail-panel > p {
+      max-width: 700px;
+      color: var(--slate);
+      font-size: 1.05rem;
+    }
+
+    .detail-facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .detail-fact {
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .detail-fact span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--mist);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .detail-fact strong {
+      font-size: 0.98rem;
+    }
+
+    .identity-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .identity {
+      position: relative;
+      overflow: hidden;
+      padding: 26px;
+    }
+
+    .identity::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -54px;
+      bottom: -58px;
+      border: 24px solid var(--teal-soft);
+      border-radius: 50%;
+    }
+
+    .identity:nth-child(2)::after {
+      border-color: var(--crimson-soft);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      margin-bottom: 28px;
+      color: white;
+      background: var(--teal);
+      border-radius: 50%;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .identity:nth-child(2) .avatar {
+      background: var(--crimson);
+    }
+
+    .identity h3 {
+      margin-bottom: 6px;
+      font-size: 1.45rem;
+    }
+
+    .identity p {
+      max-width: 480px;
+      margin-bottom: 0;
+      color: var(--slate);
+    }
+
+    .persona-explorer {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .persona-tabs {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+    }
+
+    .persona-tab {
+      padding: 16px;
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .persona-tab strong,
+    .persona-tab span {
+      display: block;
+    }
+
+    .persona-tab span {
+      margin-top: 3px;
+      color: var(--mist);
+      font-size: 0.82rem;
+    }
+
+    .persona-tab:hover {
+      background: white;
+      border-color: var(--line);
+    }
+
+    .persona-tab[aria-selected="true"] {
+      background: white;
+      border-color: var(--teal);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .persona-panel {
+      padding: clamp(26px, 5vw, 46px);
+    }
+
+    .panel-topline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-ready {
+      color: #12643f;
+      background: var(--green-soft);
+    }
+
+    .badge-flight {
+      color: #805004;
+      background: var(--amber-soft);
+    }
+
+    .badge-planned {
+      color: #46514d;
+      background: var(--canvas-deep);
+    }
+
+    .badge-mobile {
+      color: #1e4fb9;
+      background: var(--blue-soft);
+    }
+
+    .badge-web {
+      color: #5540ad;
+      background: var(--violet-soft);
+    }
+
+    .badge-admin {
+      color: var(--crimson-dark);
+      background: var(--crimson-soft);
+    }
+
+    .persona-panel h3 {
+      margin-bottom: 10px;
+      font-size: clamp(1.65rem, 3vw, 2.5rem);
+    }
+
+    .persona-summary {
+      max-width: 800px;
+      color: var(--slate);
+      font-size: 1.04rem;
+    }
+
+    .persona-columns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 30px;
+      margin-top: 28px;
+    }
+
+    .mini-heading {
+      margin: 0 0 10px;
+      color: var(--mist);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .compact-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .compact-list li + li {
+      margin-top: 7px;
+    }
+
+    .handoff {
+      margin-top: 28px;
+      padding: 18px 20px;
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+      border-radius: var(--radius-sm);
+    }
+
+    .handoff strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .external-actors {
+      margin-top: 28px;
+    }
+
+    .actor-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .actor {
+      padding: 18px;
+      border-top: 3px solid var(--line-strong);
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .actor strong,
+    .actor span {
+      display: block;
+    }
+
+    .actor span {
+      margin-top: 6px;
+      color: var(--slate);
+      font-size: 0.86rem;
+    }
+
+    .workflow-track {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(9, minmax(80px, 1fr));
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .workflow-track::before {
+      content: "";
+      position: absolute;
+      top: 28px;
+      left: 4%;
+      right: 4%;
+      height: 2px;
+      background: var(--line-strong);
+    }
+
+    .workflow-step {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      padding: 0 2px;
+      color: var(--slate);
+      background: transparent;
+      border: 0;
+      text-align: center;
+    }
+
+    .workflow-dot {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      margin: 6px auto 10px;
+      color: var(--slate);
+      background: white;
+      border: 2px solid var(--line-strong);
+      border-radius: 50%;
+      font-size: 0.78rem;
+      font-weight: 850;
+    }
+
+    .workflow-step span:last-child {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 750;
+      line-height: 1.25;
+    }
+
+    .workflow-step[data-readiness="ready"] .workflow-dot {
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .workflow-step[data-readiness="flight"] .workflow-dot {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .workflow-step[data-readiness="planned"] .workflow-dot {
+      color: var(--mist);
+      border-style: dashed;
+    }
+
+    .workflow-step[aria-selected="true"] .workflow-dot {
+      color: white;
+      background: var(--teal);
+      border-color: var(--teal);
+      transform: scale(1.08);
+    }
+
+    .workflow-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.65fr);
+      gap: 40px;
+      padding: clamp(28px, 5vw, 46px);
+    }
+
+    .workflow-panel h3 {
+      margin: 8px 0 12px;
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+    }
+
+    .workflow-panel p {
+      color: var(--slate);
+    }
+
+    .workflow-meta {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      padding-left: 28px;
+      border-left: 1px solid var(--line);
+    }
+
+    .workflow-meta strong,
+    .workflow-meta span {
+      display: block;
+    }
+
+    .workflow-meta span {
+      margin-bottom: 4px;
+      color: var(--mist);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .readiness-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .state-intro {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .operational-states {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .status-chip {
+      padding: 6px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: white;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+
+    .lifecycle {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .state-card {
+      padding: 24px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    .state-card strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.15rem;
+    }
+
+    .state-card p {
+      margin-bottom: 0;
+      color: var(--slate);
+      font-size: 0.9rem;
+    }
+
+    .state-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--teal);
+      font-size: 1.5rem;
+    }
+
+    .no-return {
+      grid-column: 1 / -1;
+      padding: 13px 16px;
+      color: var(--crimson-dark);
+      background: var(--crimson-soft);
+      border-radius: 10px;
+      font-weight: 750;
+      text-align: center;
+    }
+
+    .permission-wrap {
+      margin-top: 32px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--slate);
+      background: var(--canvas);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:not(:first-child),
+    th:not(:first-child) {
+      text-align: center;
+    }
+
+    .yes {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .no {
+      color: var(--mist);
+    }
+
+    .storyboard-shell {
+      overflow: hidden;
+    }
+
+    .story-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 24px;
+      background: var(--canvas-deep);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .control-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .control-group label {
+      color: var(--slate);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    select {
+      min-height: 44px;
+      padding: 9px 38px 9px 12px;
+      color: var(--ink);
+      background: white;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      font-weight: 700;
+    }
+
+    .story-progress-wrap {
+      min-width: min(100%, 260px);
+    }
+
+    .story-progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 7px;
+      color: var(--slate);
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+
+    .story-progress {
+      height: 8px;
+      overflow: hidden;
+      background: white;
+      border-radius: 999px;
+    }
+
+    .story-progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: var(--teal);
+      border-radius: inherit;
+      transition: width 220ms ease;
+    }
+
+    .story-body {
+      display: grid;
+      grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
+      min-height: 570px;
+    }
+
+    .story-index {
+      padding: 30px 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .story-index ol {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .story-index button {
+      width: 100%;
+      padding: 11px 12px;
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink);
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      text-align: left;
+    }
+
+    .story-index button:hover {
+      background: var(--canvas);
+    }
+
+    .story-index button[aria-current="step"] {
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+    }
+
+    .step-number {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .story-index button[data-complete="true"] .step-number {
+      color: white;
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .index-title {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .index-time {
+      color: var(--mist);
+      font-size: 0.72rem;
+    }
+
+    .story-detail {
+      padding: clamp(28px, 5vw, 48px);
+    }
+
+    .story-detail h3 {
+      margin: 12px 0 8px;
+      font-size: clamp(1.7rem, 3.5vw, 2.75rem);
+    }
+
+    .story-context {
+      color: var(--slate);
+      font-weight: 650;
+    }
+
+    .story-triptych {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 30px;
+    }
+
+    .story-block {
+      min-width: 0;
+      padding: 20px;
+      background: var(--canvas);
+      border-radius: 12px;
+    }
+
+    .story-block h4 {
+      margin: 0 0 12px;
+      color: var(--crimson);
+      font-size: 0.76rem;
+      font-weight: 850;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .story-block ol,
+    .story-block ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.88rem;
+    }
+
+    .story-block li + li {
+      margin-top: 7px;
+    }
+
+    .say-quote {
+      margin: 30px 0 0;
+      padding: 22px 24px;
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 12px 12px 0;
+      font-size: 1.02rem;
+    }
+
+    .story-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .story-actions-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .run-sheet {
+      margin-top: 32px;
+    }
+
+    .run-sheet h3 {
+      margin-bottom: 14px;
+    }
+
+    .cheat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .term-button {
+      min-height: 112px;
+      padding: 18px;
+      color: var(--ink);
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      text-align: left;
+      transition: border-color 160ms ease, transform 160ms ease;
+    }
+
+    .term-button:hover {
+      border-color: var(--teal);
+      transform: translateY(-2px);
+    }
+
+    .term-button[aria-selected="true"] {
+      color: white;
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .term-button strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.08rem;
+    }
+
+    .term-button span {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .term-detail {
+      margin-top: 12px;
+      padding: 22px 24px;
+      background: var(--teal-soft);
+      border-radius: 14px;
+    }
+
+    .term-detail strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--teal-dark);
+    }
+
+    .language-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .language-panel {
+      padding: 28px;
+    }
+
+    .language-panel.good {
+      border-top: 5px solid var(--green);
+    }
+
+    .language-panel.avoid {
+      border-top: 5px solid var(--red);
+    }
+
+    .language-panel ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .language-panel li + li {
+      margin-top: 9px;
+    }
+
+    .billing-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: 24px;
+      align-items: start;
+      margin-top: 34px;
+    }
+
+    .equation {
+      padding: clamp(28px, 5vw, 44px);
+      color: white;
+      background: linear-gradient(140deg, var(--teal-dark), var(--teal));
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .equation small {
+      display: block;
+      margin-bottom: 18px;
+      opacity: 0.76;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .formula {
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      font-weight: 750;
+      letter-spacing: -0.035em;
+      line-height: 1.25;
+    }
+
+    .equation p {
+      margin: 22px 0 0;
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .time-bars {
+      display: grid;
+      gap: 16px;
+      padding: 28px;
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .time-row strong,
+    .time-row span {
+      display: block;
+    }
+
+    .time-row span {
+      color: var(--slate);
+      font-size: 0.82rem;
+    }
+
+    .bar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      padding-inline: 10px;
+      color: white;
+      background: var(--blue);
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .bar.fast {
+      width: 67%;
+      background: var(--violet);
+    }
+
+    .routes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .route {
+      padding: 22px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .route-number {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 16px;
+      color: white;
+      background: var(--crimson);
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 850;
+    }
+
+    .route strong,
+    .route span {
+      display: block;
+    }
+
+    .route span {
+      margin-top: 8px;
+      color: var(--slate);
+      font-size: 0.88rem;
+    }
+
+    .money-flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: center;
+      margin-top: 34px;
+      padding: 28px;
+    }
+
+    .money-node {
+      padding: 18px 12px;
+      text-align: center;
+      background: var(--canvas);
+      border-radius: 12px;
+    }
+
+    .money-node strong,
+    .money-node span {
+      display: block;
+    }
+
+    .money-node span {
+      margin-top: 5px;
+      color: var(--slate);
+      font-size: 0.78rem;
+    }
+
+    .money-arrow {
+      color: var(--teal);
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .rule-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .rule {
+      padding: 20px;
+      background: white;
+      border-top: 3px solid var(--teal);
+      border-radius: 0 0 12px 12px;
+    }
+
+    .rule p {
+      margin-bottom: 0;
+      color: var(--slate);
+      font-size: 0.9rem;
+    }
+
+    .app-matrix {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .app-card {
+      overflow: hidden;
+    }
+
+    .app-card header {
+      padding: 22px 24px;
+      color: white;
+      background: var(--teal);
+    }
+
+    .app-card:nth-child(2) header {
+      background: var(--violet);
+    }
+
+    .app-card:nth-child(3) header {
+      background: var(--crimson);
+    }
+
+    .app-card header span {
+      display: block;
+      margin-top: 3px;
+      opacity: 0.78;
+      font-size: 0.8rem;
+    }
+
+    .app-card ul {
+      margin: 0;
+      padding: 24px 24px 24px 42px;
+    }
+
+    .app-card li + li {
+      margin-top: 8px;
+    }
+
+    .accordion-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 26px;
+    }
+
+    details.accordion {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    details.accordion summary {
+      position: relative;
+      padding: 18px 50px 18px 20px;
+      list-style: none;
+      font-weight: 750;
+    }
+
+    details.accordion summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.accordion summary::after {
+      content: "+";
+      position: absolute;
+      top: 13px;
+      right: 18px;
+      color: var(--teal);
+      font-size: 1.45rem;
+      font-weight: 400;
+    }
+
+    details.accordion[open] summary::after {
+      content: "−";
+    }
+
+    .accordion-body {
+      padding: 0 20px 20px;
+      color: var(--slate);
+    }
+
+    .accordion-body p:last-child,
+    .accordion-body ul:last-child {
+      margin-bottom: 0;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .readiness-table td:first-child,
+    .readiness-table th:first-child {
+      text-align: left;
+    }
+
+    .source-footer {
+      color: #e5eeeb;
+      background: var(--ink);
+    }
+
+    .source-footer .container {
+      padding-top: 70px;
+      padding-bottom: 70px;
+    }
+
+    .source-footer h2 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+    }
+
+    .source-footer p {
+      color: #b7c4bf;
+    }
+
+    .source-links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .source-links a {
+      min-height: 112px;
+      padding: 18px;
+      color: white;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .source-links a span {
+      display: block;
+      margin-top: 6px;
+      color: #9eada8;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    .source-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .closing-line {
+      max-width: 900px;
+      margin: 48px 0 0;
+      padding-top: 34px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      color: white !important;
+      font-size: clamp(1.2rem, 2.5vw, 1.7rem);
+    }
+
+    dialog {
+      width: min(680px, calc(100% - 30px));
+      max-height: 86vh;
+      padding: 0;
+      color: var(--ink);
+      background: white;
+      border: 0;
+      border-radius: 20px;
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.28);
+    }
+
+    dialog::backdrop {
+      background: rgba(13, 24, 21, 0.64);
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .dialog-body {
+      padding: 26px;
+    }
+
+    .rescue-steps {
+      counter-reset: rescue;
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .rescue-steps li {
+      counter-increment: rescue;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .rescue-steps li::before {
+      content: counter(rescue);
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      color: white;
+      background: var(--crimson);
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .dialog-close {
+      width: 38px;
+      height: 38px;
+      color: var(--slate);
+      background: var(--canvas);
+      border: 0;
+      border-radius: 50%;
+      font-size: 1.25rem;
+    }
+
+    .muted {
+      color: var(--slate);
+    }
+
+    .screen-only {
+      display: block;
+    }
+
+    @media (max-width: 1040px) {
+      .desktop-nav {
+        display: none;
+      }
+
+      .mobile-menu {
+        display: block;
+      }
+
+      .workflow-track {
+        grid-template-columns: repeat(5, 1fr);
+        row-gap: 18px;
+      }
+
+      .workflow-track::before {
+        display: none;
+      }
+
+      .story-triptych {
+        grid-template-columns: 1fr;
+      }
+
+      .cheat-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .persona-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .section-head,
+      .model-layout,
+      .state-intro,
+      .workflow-panel,
+      .billing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .purpose-map {
+        grid-template-columns: 1fr;
+      }
+
+      .purpose-node {
+        min-height: auto;
+      }
+
+      .purpose-arrow {
+        transform: rotate(90deg);
+      }
+
+      .persona-explorer {
+        grid-template-columns: 1fr;
+      }
+
+      .persona-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workflow-meta {
+        padding: 22px 0 0;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+
+      .story-body {
+        grid-template-columns: 1fr;
+      }
+
+      .story-index {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .story-index ol {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .actor-grid,
+      .source-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .app-matrix,
+      .rule-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .money-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .money-arrow {
+        transform: rotate(90deg);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .container,
+      .header-inner {
+        width: min(calc(100% - 24px), var(--max));
+      }
+
+      .brand img {
+        width: 146px;
+      }
+
+      .brand-tag {
+        display: none;
+      }
+
+      .header-actions > .btn {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 66px;
+      }
+
+      .hero-stats,
+      .identity-strip,
+      .persona-columns,
+      .language-grid,
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stat + .hero-stat {
+        padding-left: 0;
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .identity-strip {
+        gap: 12px;
+      }
+
+      .persona-tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-track {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .lifecycle {
+        grid-template-columns: 1fr;
+      }
+
+      .state-arrow {
+        transform: rotate(90deg);
+      }
+
+      .story-index ol {
+        grid-template-columns: 1fr;
+      }
+
+      .story-controls {
+        align-items: stretch;
+      }
+
+      .control-group,
+      .control-group select,
+      .story-progress-wrap {
+        width: 100%;
+      }
+
+      .cheat-grid,
+      .routes,
+      .actor-grid,
+      .source-links {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-facts {
+        grid-template-columns: 1fr;
+      }
+
+      .time-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .bar.fast {
+        width: 82%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    @media print {
+      :root {
+        --canvas: white;
+      }
+
+      body {
+        color: #111;
+        background: white;
+        font-size: 10.5pt;
+      }
+
+      .reading-progress,
+      .site-header,
+      .hero-actions,
+      .story-controls,
+      .story-index,
+      .story-actions,
+      .screen-only,
+      dialog {
+        display: none !important;
+      }
+
+      .container {
+        width: 100%;
+      }
+
+      section {
+        padding: 28px 0;
+      }
+
+      .hero {
+        padding: 30px 0;
+      }
+
+      h1 {
+        font-size: 34pt;
+      }
+
+      h2 {
+        font-size: 24pt;
+      }
+
+      .surface {
+        box-shadow: none;
+      }
+
+      .story-body {
+        display: block;
+        min-height: 0;
+      }
+
+      .story-detail {
+        padding: 24px;
+      }
+
+      details {
+        break-inside: avoid;
+      }
+
+      .source-footer {
+        color: #111;
+        background: white;
+        border-top: 2px solid #111;
+      }
+
+      .source-footer p,
+      .closing-line {
+        color: #111 !important;
+      }
+
+      .source-links a {
+        color: #111;
+        background: white;
+        border-color: #bbb;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main guide</a>
+  <div class="reading-progress" aria-hidden="true"><span id="readingProgress"></span></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="Anaesthesia Associates demo guide home">
+        <img src="../assets/Anasthesia-logo-1.png" alt="Anaesthesia Associates">
+        <span class="brand-tag">Prototype<br>demo guide</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Guide sections">
+        <a href="#purpose">Purpose</a>
+        <a href="#model">Mental model</a>
+        <a href="#personas">People</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#storyboard">Demo</a>
+        <a href="#cheat-sheet">Cheat sheet</a>
+        <a href="#readiness">Readiness</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-ghost" type="button" data-open-rescue>Demo rescue</button>
+        <button class="btn" type="button" id="printGuide">Print / save PDF</button>
+        <details class="mobile-menu">
+          <summary class="btn" aria-label="Open guide navigation">Menu</summary>
+          <nav aria-label="Mobile guide sections">
+            <a href="#purpose">Purpose</a>
+            <a href="#model">Mental model</a>
+            <a href="#personas">People</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#storyboard">Demo</a>
+            <a href="#cheat-sheet">Cheat sheet</a>
+            <a href="#readiness">Readiness</a>
+            <button class="btn btn-crimson" type="button" data-open-rescue>Demo rescue</button>
+          </nav>
+        </details>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="container">
+        <div class="eyebrow">The whole RFP story, without reading the whole RFP</div>
+        <div class="panel-topline" aria-label="Prototype readiness">
+          <span class="badge badge-ready">Prototype verified through invoicing</span>
+          <span class="badge badge-planned">Payment and disbursement are target state</span>
+        </div>
+        <h1>From theatre schedule to paid anaesthetist.</h1>
+        <p class="hero-lede">
+          Anaesthesia Associates coordinates bookings and billing for about 85 independent
+          anaesthetists. This guide shows who uses the prototype, how work moves between them, what
+          to click in the demo, and where to be honest about work still in progress.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#purpose">Understand the app</a>
+          <a class="btn btn-crimson" href="#storyboard">Run the demo</a>
+          <button class="btn" type="button" data-open-rescue>Open demo rescue</button>
+        </div>
+        <div class="hero-stats" aria-label="Prototype at a glance">
+          <div class="hero-stat">
+            <strong>3</strong>
+            <span>application surfaces</span>
+          </div>
+          <div class="hero-stat">
+            <strong>2</strong>
+            <span>core human identities</span>
+          </div>
+          <div class="hero-stat">
+            <strong>1</strong>
+            <span>guided story, verified through invoicing</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="purpose">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">01 · What the app is for</div>
+            <h2>One connected operating and billing workflow.</h2>
+          </div>
+          <p>
+            The prototype is not a roster marketplace. It keeps a changing theatre schedule,
+            captures the inputs that determine fees, controls who can edit, and follows the money
+            from payer to anaesthetist.
+          </p>
+        </div>
+
+        <div class="purpose-map surface" aria-label="High-level product flow">
+          <div class="purpose-node">
+            <span class="purpose-number">1</span>
+            <strong>Schedule</strong>
+            <span>AA maintains AM/PM Lists across the roster.</span>
+          </div>
+          <div class="purpose-arrow" aria-hidden="true">→</div>
+          <div class="purpose-node">
+            <span class="purpose-number">2</span>
+            <strong>Capture</strong>
+            <span>Anaesthetists complete Cards and BTM inputs.</span>
+          </div>
+          <div class="purpose-arrow" aria-hidden="true">→</div>
+          <div class="purpose-node">
+            <span class="purpose-number">3</span>
+            <strong>Control</strong>
+            <span>Office reviews, corrects and authorises the List.</span>
+          </div>
+          <div class="purpose-arrow" aria-hidden="true">→</div>
+          <div class="purpose-node">
+            <span class="purpose-number">4</span>
+            <strong>Bill</strong>
+            <span>The Billing Engine rates and issues invoices.</span>
+          </div>
+          <div class="purpose-arrow" aria-hidden="true">→</div>
+          <div class="purpose-node">
+            <span class="purpose-number">5</span>
+            <strong>Settle</strong>
+            <span>Target state: AA collects, then separately pays the anaesthetist.</span>
+          </div>
+        </div>
+
+        <div class="correction">
+          <div class="correction-mark" aria-hidden="true">!</div>
+          <div>
+            <strong>The key correction to remember</strong>
+            <p>
+              The RFP contains no “SSA” and no self-service shift claiming. The user is an
+              <strong>anaesthetist</strong>; the scheduling unit is a half-day
+              <strong>List</strong>. Anaesthetists maintain availability and help identify cover,
+              while the AA office assigns or reassigns Lists. The prototype’s request/offer controls
+              are a proposed interaction, not an RFP-mandated acceptance workflow.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="model">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">02 · The mental model</div>
+            <h2>Learn the nesting once. The whole app starts to make sense.</h2>
+          </div>
+          <p>
+            Select each level to see what it represents, who owns it and why it matters in the
+            demo.
+          </p>
+        </div>
+
+        <div class="model-layout">
+          <div class="model-tree" role="tablist" aria-label="Scheduling and billing hierarchy">
+            <button class="model-button" type="button" role="tab" aria-selected="true" data-model="schedule">Schedule</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="day">Day</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="anaesthetist">Anaesthetist</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="list">AM / PM List</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="card">Card</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="procedure">Procedure</button>
+            <button class="model-button" type="button" role="tab" aria-selected="false" data-model="line">Billing line</button>
+          </div>
+
+          <div class="detail-panel surface" id="modelPanel" role="tabpanel" aria-live="polite">
+            <div class="detail-kicker" id="modelKicker">The outer canvas</div>
+            <h3 id="modelTitle">Schedule</h3>
+            <p id="modelDescription">
+              A rolling four-month calendar. The system keeps exactly two half-day Lists for every
+              active anaesthetist on every day.
+            </p>
+            <div class="detail-facts">
+              <div class="detail-fact">
+                <span>Owner</span>
+                <strong id="modelOwner">System, configured by AA office</strong>
+              </div>
+              <div class="detail-fact">
+                <span>Demo proof</span>
+                <strong id="modelProof">Admin Day View shows the repeated AM/PM rhythm</strong>
+              </div>
+              <div class="detail-fact">
+                <span>Must remember</span>
+                <strong id="modelRule">The fixed canvas exists even when there is no activity</strong>
+              </div>
+              <div class="detail-fact">
+                <span>Feeds into</span>
+                <strong id="modelNext">Daily office operations</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="personas">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">03 · Who uses it</div>
+            <h2>Two people. Several working contexts.</h2>
+          </div>
+          <p>
+            Dr Melanie Souter is the anaesthetist on both mobile and web. Kirsty W. is the office
+            user wearing scheduling, review and exception-management hats.
+          </p>
+        </div>
+
+        <div class="identity-strip">
+          <article class="identity surface">
+            <div class="avatar" aria-hidden="true">MS</div>
+            <h3>Dr Melanie Souter</h3>
+            <p>
+              Independent anaesthetist working across locations. Mobile for the procedure day; web
+              for the wider planning and accounts view.
+            </p>
+          </article>
+          <article class="identity surface">
+            <div class="avatar" aria-hidden="true">KW</div>
+            <h3>Kirsty W.</h3>
+            <p>
+              AA office user with the complete cross-roster view. Coordinates the day, resolves
+              exceptions, reviews submitted Lists and controls billing handoff.
+            </p>
+          </article>
+        </div>
+
+        <div class="persona-explorer">
+          <div class="persona-tabs" role="tablist" aria-label="Persona contexts">
+            <button class="persona-tab" type="button" role="tab" aria-selected="true" data-persona="mobile">
+              <strong>Dr Souter · Mobile</strong>
+              <span>Procedure-day work</span>
+            </button>
+            <button class="persona-tab" type="button" role="tab" aria-selected="false" data-persona="web">
+              <strong>Dr Souter · Web</strong>
+              <span>Overview and planning</span>
+            </button>
+            <button class="persona-tab" type="button" role="tab" aria-selected="false" data-persona="scheduler">
+              <strong>Kirsty · Scheduling</strong>
+              <span>Whole-day control</span>
+            </button>
+            <button class="persona-tab" type="button" role="tab" aria-selected="false" data-persona="reviewer">
+              <strong>Kirsty · Review</strong>
+              <span>Sanity-check and lock</span>
+            </button>
+            <button class="persona-tab" type="button" role="tab" aria-selected="false" data-persona="exceptions">
+              <strong>Secondary office hats</strong>
+              <span>Exceptions and finance</span>
+            </button>
+          </div>
+
+          <article class="persona-panel surface" id="personaPanel" role="tabpanel" aria-live="polite">
+            <div class="panel-topline" id="personaBadges">
+              <span class="badge badge-mobile">Mobile</span>
+              <span class="badge badge-ready">Ready</span>
+            </div>
+            <h3 id="personaTitle">The mobile-first anaesthetist</h3>
+            <p class="persona-summary" id="personaSummary">
+              Dr Souter moves between hospitals. Her phone is the fastest place to see assigned
+              Lists, review patient Cards and capture the data AA needs for billing.
+            </p>
+            <div class="persona-columns">
+              <div>
+                <p class="mini-heading">What she is trying to achieve</p>
+                <ul class="compact-list" id="personaGoals"></ul>
+              </div>
+              <div>
+                <p class="mini-heading">What she can and cannot do</p>
+                <ul class="compact-list" id="personaPermissions"></ul>
+              </div>
+              <div>
+                <p class="mini-heading">Pressure this design relieves</p>
+                <ul class="compact-list" id="personaPains"></ul>
+              </div>
+            </div>
+            <div class="handoff">
+              <strong>Handoff</strong>
+              <span id="personaHandoff"></span>
+            </div>
+          </article>
+        </div>
+
+        <div class="external-actors">
+          <p class="mini-heading">External actors — context, not prototype login personas</p>
+          <div class="actor-grid">
+            <div class="actor">
+              <strong>Surgeon rooms</strong>
+              <span>Phone for a List and email PDFs or changes.</span>
+            </div>
+            <div class="actor">
+              <strong>Hospital / PAS</strong>
+              <span>Sends new, modified, rescheduled and cancelled bookings.</span>
+            </div>
+            <div class="actor">
+              <strong>Patient / payer</strong>
+              <span>Receives or pays an invoice; booking sources supply the Card details.</span>
+            </div>
+            <div class="actor">
+              <strong>Billing Engine + Xero</strong>
+              <span>System actors for invoices, receivables and banking.</span>
+            </div>
+          </div>
+          <p class="muted" style="margin-top: 14px;">
+            There is no patient, hospital or surgeon portal in the RFP.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="workflow">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">04 · How work moves</div>
+            <h2>The end-to-end handoff.</h2>
+          </div>
+          <p>
+            Select a stage to see its trigger, human or system owner, action and handoff. Colour
+            tells you what is safe to demonstrate now.
+          </p>
+        </div>
+
+        <div class="readiness-key" aria-label="Readiness legend">
+          <span class="badge badge-ready">Ready · safe now</span>
+          <span class="badge badge-planned">Planned · narrate only</span>
+        </div>
+
+        <div class="workflow-track" role="tablist" aria-label="End-to-end workflow stages">
+          <button class="workflow-step" type="button" role="tab" aria-selected="true" data-stage="canvas" data-readiness="ready">
+            <span class="workflow-dot">01</span><span>Canvas</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="book" data-readiness="ready">
+            <span class="workflow-dot">02</span><span>Book</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="change" data-readiness="ready">
+            <span class="workflow-dot">03</span><span>Change</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="cover" data-readiness="ready">
+            <span class="workflow-dot">04</span><span>Cover</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="capture" data-readiness="ready">
+            <span class="workflow-dot">05</span><span>Capture</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="review" data-readiness="ready">
+            <span class="workflow-dot">06</span><span>Review</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="invoice" data-readiness="ready">
+            <span class="workflow-dot">07</span><span>Invoice</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="money" data-readiness="planned">
+            <span class="workflow-dot">08</span><span>Money</span>
+          </button>
+          <button class="workflow-step" type="button" role="tab" aria-selected="false" data-stage="exceptions" data-readiness="planned">
+            <span class="workflow-dot">09</span><span>Exceptions</span>
+          </button>
+        </div>
+
+        <div class="workflow-panel surface" id="workflowPanel" role="tabpanel" aria-live="polite">
+          <div>
+            <div class="panel-topline" id="workflowBadges">
+              <span class="badge badge-ready">Ready</span>
+              <span class="badge badge-admin">System + office</span>
+            </div>
+            <h3 id="workflowTitle">Maintain the fixed schedule canvas</h3>
+            <p id="workflowSummary">
+              The system ensures every active anaesthetist has an AM and PM List for every day in
+              the rolling four-month horizon. Permanent arrangements and exceptions are applied to
+              that stable structure.
+            </p>
+            <p class="mini-heading">What happens</p>
+            <ol class="compact-list" id="workflowSteps"></ol>
+          </div>
+          <aside class="workflow-meta">
+            <div>
+              <span>Trigger</span>
+              <strong id="workflowTrigger">The horizon advances or standing data changes</strong>
+            </div>
+            <div>
+              <span>Handoff</span>
+              <strong id="workflowHandoff">Office receives a stable canvas for assignments and Cards</strong>
+            </div>
+            <div>
+              <span>Best demo proof</span>
+              <strong id="workflowProof">Admin Day View: repeated AM/PM rhythm</strong>
+            </div>
+            <div>
+              <span>Guardrail</span>
+              <strong id="workflowGuardrail">Office manages exceptions; it does not invent every “shift”</strong>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="lifecycle">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">05 · The control model</div>
+            <h2>Three states decide who may edit.</h2>
+          </div>
+          <p>
+            Operational status describes what a List is used for. Approval state controls
+            mutability. They are separate concepts.
+          </p>
+        </div>
+
+        <div class="state-intro">
+          <div>
+            <h3>Operational List status</h3>
+            <p class="muted">What the half-day session is being used for.</p>
+            <div class="operational-states">
+              <span class="status-chip">Private</span>
+              <span class="status-chip">Public</span>
+              <span class="status-chip">Pre-op assessment</span>
+              <span class="status-chip">Holiday</span>
+              <span class="status-chip">Unavailable</span>
+              <span class="status-chip">Free</span>
+            </div>
+          </div>
+
+          <div class="lifecycle" aria-label="List approval lifecycle">
+            <div class="state-card">
+              <strong>DRAFT</strong>
+              <p>Anaesthetist, office and mapped integrations may update.</p>
+            </div>
+            <div class="state-arrow" aria-hidden="true">→</div>
+            <div class="state-card">
+              <strong>SUBMITTED</strong>
+              <p>Anaesthetist is read-only. Office checks and may correct.</p>
+            </div>
+            <div class="state-arrow" aria-hidden="true">→</div>
+            <div class="state-card">
+              <strong>AUTHORISED</strong>
+              <p>All Cards lock. The List hands to the Billing Engine.</p>
+            </div>
+            <div class="no-return">There is no RETURNED state. Office phones, clarifies and corrects.</div>
+          </div>
+        </div>
+
+        <div class="permission-wrap">
+          <h3>Permission matrix</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Anaesthetist</th>
+                  <th>Office</th>
+                  <th>System / integration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>View own Lists and Cards</td><td class="yes">Yes</td><td class="yes">Yes, all</td><td>As needed</td></tr>
+                <tr><td>View colleagues’ patient details</td><td class="no">No</td><td class="yes">Yes</td><td>As needed</td></tr>
+                <tr><td>Edit a DRAFT Card</td><td class="yes">Own only</td><td class="yes">Yes</td><td class="yes">Mapped updates</td></tr>
+                <tr><td>Edit a SUBMITTED Card</td><td class="no">No</td><td class="yes">Yes</td><td class="no">Park for intervention</td></tr>
+                <tr><td>Edit an AUTHORISED Card</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+                <tr><td>Submit a List</td><td class="yes">Own only</td><td class="no">Receives it</td><td class="no">No</td></tr>
+                <tr><td>Authorise / reassign / master data</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin-top: 12px;">
+            The DRAFT / SUBMITTED / AUTHORISED edit restrictions come from the RFP. “Own Lists”
+            versus “all Lists” patient visibility is the prototype’s role-based access-control
+            choice and should be confirmed during discovery.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="storyboard">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">06 · Presenter mode</div>
+            <h2>Walk the story, beat by beat.</h2>
+          </div>
+          <p>
+            Use one continuous object: Dr Souter’s Tuesday 21 July PM List at Southern Cross.
+            Choose a scenario, then use the checklist as you rehearse.
+          </p>
+        </div>
+
+        <div class="storyboard-shell surface">
+          <div class="story-controls">
+            <div class="control-group">
+              <label for="scenarioSelect">Scenario</label>
+              <select id="scenarioSelect">
+                <option value="core">Core story · capture to invoices</option>
+                <option value="illness">Optional · illness at 7 a.m.</option>
+                <option value="phone">Optional · phone booking / missing Card</option>
+                <option value="complex">Technical Q&amp;A · complex funding</option>
+              </select>
+            </div>
+            <div class="story-progress-wrap">
+              <div class="story-progress-label">
+                <span>Rehearsal progress</span>
+                <span id="storyProgressText">0 of 7</span>
+              </div>
+              <div class="story-progress" aria-hidden="true"><span id="storyProgressBar"></span></div>
+            </div>
+          </div>
+
+          <div class="story-body">
+            <nav class="story-index" aria-label="Scenario steps">
+              <ol id="storyIndex"></ol>
+            </nav>
+
+            <article class="story-detail" aria-live="polite">
+              <div class="panel-topline" id="storyBadges"></div>
+              <h3 id="storyTitle"></h3>
+              <p class="story-context" id="storyContext"></p>
+
+              <div class="story-triptych">
+                <div class="story-block">
+                  <h4>Click</h4>
+                  <ol id="storyClicks"></ol>
+                </div>
+                <div class="story-block">
+                  <h4>Point out</h4>
+                  <ul id="storyPoints"></ul>
+                </div>
+                <div class="story-block">
+                  <h4>Expected result</h4>
+                  <p id="storyExpected"></p>
+                </div>
+              </div>
+
+              <blockquote class="say-quote" id="storySay"></blockquote>
+
+              <div class="story-actions">
+                <div class="story-actions-group">
+                  <button class="btn" type="button" id="storyPrev">← Previous</button>
+                  <button class="btn" type="button" id="storyNext">Next →</button>
+                </div>
+                <div class="story-actions-group">
+                  <button class="btn btn-primary" type="button" id="storyComplete">Mark rehearsed</button>
+                  <button class="btn btn-ghost" type="button" id="storyReset">Reset checks</button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="run-sheet">
+          <h3>The 15-minute target-state run sheet</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>Story beat</th><th>Current stance</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>0:00–2:00</td><td>Admin Day View and fixed canvas</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>2:00–3:00</td><td>Anaesthetist web overview</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>3:00–7:00</td><td>Mobile Ellison BTM capture</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>7:00–8:00</td><td>Submit List</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>8:00–11:00</td><td>Office review and authorise</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>11:00–13:00</td><td>Invoices and List disappearance</td><td><span class="badge badge-ready">Ready</span></td></tr>
+                <tr><td>13:00–15:00</td><td>Xero payment / disbursement recap</td><td><span class="badge badge-planned">Narrate only</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="cheat-sheet">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">07 · Presenter cheat sheet</div>
+            <h2>The words and rules worth memorising.</h2>
+          </div>
+          <p>
+            Start with the five nouns. Then remember the lifecycle, the Billing Engine’s role and
+            the difference between money collected and money disbursed.
+          </p>
+        </div>
+
+        <h3>The five nouns</h3>
+        <div class="cheat-grid" role="tablist" aria-label="Five core terms">
+          <button class="term-button" type="button" role="tab" aria-selected="true" data-term="schedule">
+            <strong>Schedule</strong><span>Rolling four-month canvas</span>
+          </button>
+          <button class="term-button" type="button" role="tab" aria-selected="false" data-term="list">
+            <strong>List</strong><span>One AM or PM session</span>
+          </button>
+          <button class="term-button" type="button" role="tab" aria-selected="false" data-term="card">
+            <strong>Card</strong><span>One patient appointment</span>
+          </button>
+          <button class="term-button" type="button" role="tab" aria-selected="false" data-term="procedure">
+            <strong>Procedure</strong><span>Clinical work + own payer route</span>
+          </button>
+          <button class="term-button" type="button" role="tab" aria-selected="false" data-term="btm">
+            <strong>BTM</strong><span>Base + Time + Modifiers</span>
+          </button>
+        </div>
+        <div class="term-detail" id="termDetail" role="tabpanel" aria-live="polite">
+          <strong id="termTitle">Schedule</strong>
+          <span id="termText">The rolling four-month calendar that holds every anaesthetist’s AM and PM Lists.</span>
+        </div>
+
+        <div class="language-grid">
+          <article class="language-panel good surface">
+            <h3>Strong phrases to use</h3>
+            <ul>
+              <li>“The List is the unit of availability and approval.”</li>
+              <li>“The fixed canvas exists even when there is no activity.”</li>
+              <li>“Status, hospital, surgeon and Cards are painted onto the canvas.”</li>
+              <li>“The office handles exceptions; the system removes repetitive work.”</li>
+              <li>“The captured inputs remain reproducible, not just the final total.”</li>
+              <li>“This is a candidate design we would validate during discovery.”</li>
+            </ul>
+          </article>
+          <article class="language-panel avoid surface">
+            <h3>Statements to avoid</h3>
+            <ul>
+              <li>“Anaesthetists pick up open shifts.”</li>
+              <li>“The app automatically chooses the clinical RVG code.”</li>
+              <li>“ACC has its own billing route.”</li>
+              <li>“Every insured patient is billed to an insurer.”</li>
+              <li>“Xero calculates the invoice.”</li>
+              <li>“The prototype is connected to live hospital or payment services.”</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="billing-grid">
+          <div class="equation">
+            <small>The core calculation</small>
+            <div class="formula">Fee = (Base + Time + Modifiers) × Dr Souter’s own unit value</div>
+            <p>
+              The anaesthetist chooses the RVG code. The system validates and calculates; it does
+              not infer clinical judgement.
+            </p>
+          </div>
+          <div class="time-bars surface" aria-label="Tiered time unit calculation">
+            <h3>Time units get faster after two hours</h3>
+            <div class="time-row">
+              <div><strong>First 2 hours</strong><span>1 unit per 15 minutes</span></div>
+              <div class="bar">4 units per hour</div>
+            </div>
+            <div class="time-row">
+              <div><strong>After 2 hours</strong><span>1 unit per 10 minutes</span></div>
+              <div class="bar fast">6 units per hour</div>
+            </div>
+            <p class="muted" style="margin: 4px 0 0;">
+              Partial-interval rounding is not settled by the RFP; the prototype rounds up per
+              started interval as a discovery assumption.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 38px;">Three explicit billing routes — per Procedure</h3>
+        <div class="routes">
+          <div class="route">
+            <span class="route-number">1</span>
+            <strong>Hospital / contract holder</strong>
+            <span>Includes ACC-related work. ACC is context, not a fourth route.</span>
+          </div>
+          <div class="route">
+            <span class="route-number">2</span>
+            <strong>Billable Party</strong>
+            <span>Usually the patient or guardian, including reimbursement-style insurance.</span>
+          </div>
+          <div class="route">
+            <span class="route-number">3</span>
+            <strong>Direct-claim Insurer</strong>
+            <span>Only where the insurer accepts a direct claim from AA.</span>
+          </div>
+        </div>
+
+        <div class="rule-grid">
+          <div class="rule">
+            <h3>Additional Procedure</h3>
+            <p>Time-only. Do not repeat Base or Modifier units in the same episode.</p>
+          </div>
+          <div class="rule">
+            <h3>Two funders</h3>
+            <p>Conserved billing lines may be allocated across funders; the prototype groups by counterparty.</p>
+          </div>
+          <div class="rule">
+            <h3>Contracts</h3>
+            <p>Type 1 standard/reference, Type 2 agreed/discount, Type 3 fixed price.</p>
+          </div>
+        </div>
+
+        <div class="money-flow surface" aria-label="Money collection and disbursement flow">
+          <div class="money-node"><strong>Payer</strong><span>hospital, insurer or patient</span></div>
+          <div class="money-arrow" aria-hidden="true">→</div>
+          <div class="money-node"><strong>ACCREC → AA account</strong><span>money collected into AA</span></div>
+          <div class="money-arrow" aria-hidden="true">→</div>
+          <div class="money-node"><strong>ACCPAY → Anaesthetist</strong><span>money separately disbursed</span></div>
+        </div>
+        <p class="muted" style="margin-top: 12px;">
+          Paid into AA and disbursed to the anaesthetist are separate states. Partial receipts
+          authorise proportional payment. Anaesthetist apps read the Billing Engine mirror, never
+          Xero directly.
+        </p>
+
+        <h3 style="margin-top: 42px;">What each app is for</h3>
+        <div class="app-matrix">
+          <article class="app-card surface">
+            <header><strong>Anaesthetist Mobile</strong><span>Procedure-day tool</span></header>
+            <ul>
+              <li>Assigned Lists and Cards</li>
+              <li>BTM capture and fee preview</li>
+              <li>Complete Card and submit List</li>
+              <li>Add, copy or photograph a missing Card; attach supporting records</li>
+              <li>Availability and cover</li>
+              <li>Later: live balances</li>
+            </ul>
+          </article>
+          <article class="app-card surface">
+            <header><strong>Anaesthetist Web</strong><span>Wide planning view</span></header>
+            <ul>
+              <li>Dashboard and date-ranged Lists</li>
+              <li>Same underlying List/Card detail</li>
+              <li>Availability and cover</li>
+              <li>Accounts and GST activity</li>
+              <li>Seeded financial summaries for now</li>
+            </ul>
+          </article>
+          <article class="app-card surface">
+            <header><strong>Admin Web</strong><span>Office control tower</span></header>
+            <ul>
+              <li>Whole-day schedule operations</li>
+              <li>Phone changes and Card moves</li>
+              <li>Whole-List reassignment</li>
+              <li>Review, correction and authorisation</li>
+              <li>Master data and audit</li>
+              <li>Later: billing and integration monitoring</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule" id="readiness">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">08 · Be credible</div>
+            <h2>Know what to click, verify or narrate.</h2>
+          </div>
+          <p>
+            Phases 00–08 are recorded complete, including billing, invoice documents and the
+            cross-app walkthrough. Phases 09–12 remain target state.
+          </p>
+        </div>
+
+        <div class="table-wrap readiness-table">
+          <table>
+            <thead>
+              <tr><th>Area</th><th>Status</th><th>Presenter stance</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Mobile Lists, Cards, BTM, completion and submit</td><td><span class="badge badge-ready">Ready</span></td><td>Use as the primary workflow</td></tr>
+              <tr><td>Web dashboard, Lists, availability and seeded accounts</td><td><span class="badge badge-ready">Ready</span></td><td>Use briefly for context</td></tr>
+              <tr><td>Admin day view, cover, review, authorisation, masters, audit</td><td><span class="badge badge-ready">Ready</span></td><td>Use as the office control story</td></tr>
+              <tr><td>Billing run and invoice documents</td><td><span class="badge badge-ready">Ready · Phase 08</span></td><td>Use after authorisation</td></tr>
+              <tr><td>Pre-payment, addendum, billing monitor and retry</td><td><span class="badge badge-planned">Planned · Phase 09</span></td><td>Narrate only</td></tr>
+              <tr><td>Xero pairs, payment, balances and disbursement</td><td><span class="badge badge-planned">Planned · Phase 10</span></td><td>Narrate only</td></tr>
+              <tr><td>HL7/FHIR/PDF ingestion and monitoring</td><td><span class="badge badge-planned">Planned · Phase 11</span></td><td>Narrate only</td></tr>
+              <tr><td>Scenario jumps and final guided script</td><td><span class="badge badge-planned">Planned · Phase 12</span></td><td>Use this guide instead</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="two-column" style="margin-top: 42px;">
+          <div>
+            <h3>Likely evaluator questions</h3>
+            <div class="accordion-stack">
+              <details class="accordion">
+                <summary>Who uses mobile versus web?</summary>
+                <div class="accordion-body">The same anaesthetist. Mobile is the in-theatre/on-the-move interface; web is the wider planning and accounts view.</div>
+              </details>
+              <details class="accordion">
+                <summary>Who creates the “shifts”?</summary>
+                <div class="accordion-body">The system creates the AM/PM List canvas. Permanent Lists provide recurring defaults. Office staff reserve and amend Lists and handle exceptions. “Shift” is not the RFP term.</div>
+              </details>
+              <details class="accordion">
+                <summary>Can Dr Souter edit after submission?</summary>
+                <div class="accordion-body">No. SUBMITTED Cards are read-only to her and editable only by office. AUTHORISED Cards are immutable.</div>
+              </details>
+              <details class="accordion">
+                <summary>What happens when office finds a mistake?</summary>
+                <div class="accordion-body">Office phones for clarification and makes the correction. There is no Returned state.</div>
+              </details>
+              <details class="accordion">
+                <summary>Why is Xero not doing all the billing?</summary>
+                <div class="accordion-body">AA has Procedure-level rating, grouping and agency rules. The Billing Engine calculates and issues invoices; Xero is the AR and banking add-on.</div>
+              </details>
+              <details class="accordion">
+                <summary>Is the demo using live patient or integration data?</summary>
+                <div class="accordion-body">No. All names and data are fictional. OCR/NHI and invoice email are simulated in-browser. Hospital feeds, Xero and payment simulations are planned for later phases and are not yet working demo flows.</div>
+              </details>
+            </div>
+          </div>
+
+          <div>
+            <h3>Discovery decisions — do not overclaim</h3>
+            <div class="accordion-stack">
+              <details class="accordion">
+                <summary>NHI in Xero is contradictory</summary>
+                <div class="accordion-body">One RFP section allows a searchable Xero cross-reference; Appendix 2 says NHI never leaves the practice system. The prototype chooses the stricter no-NHI-in-Xero reading.</div>
+              </details>
+              <details class="accordion">
+                <summary>Exact List disappearance trigger</summary>
+                <div class="accordion-body">The RFP is internally tense between AUTHORISED and invoice generation. The prototype removes the List after the billing run stamps <code>billedAt</code>.</div>
+              </details>
+              <details class="accordion">
+                <summary>Card failure isolation and monitor location</summary>
+                <div class="accordion-body">The prototype plans to isolate a failed Card and place monitoring in Admin Web. Both are design proposals to confirm.</div>
+              </details>
+              <details class="accordion">
+                <summary>Reassignment and availability mechanics</summary>
+                <div class="accordion-body">Free-target, absorb and regenerate preserves the fixed canvas. Availability and holiday clashes are advisory flags. The RFP leaves both mechanics open.</div>
+              </details>
+              <details class="accordion">
+                <summary>Split billing and pre-payment</summary>
+                <div class="accordion-body">Different counterparties receive separate invoices. The prototype’s per-line funder allocation is its chosen representation for the RFP’s internally tense route/split model. Pre-payment timing and an office override are planned interpretations.</div>
+              </details>
+              <details class="accordion">
+                <summary>Concurrency, modifiers and rounding</summary>
+                <div class="accordion-body">Production update conflicts remain a discovery topic. Demo modifier values are not a certified NZSA table, and partial time rounding is a prototype assumption.</div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div class="correction" style="margin-top: 38px;">
+          <div class="correction-mark" aria-hidden="true">↺</div>
+          <div>
+            <strong>If the demo goes wrong</strong>
+            <p>
+              Open <strong>Demo: Control Panel → Reset demo data</strong>. The reset returns to
+              Tuesday 21 July 2026, 08:00. For Ellison’s live Finish now path, advance
+              <strong>+1 hour nine times</strong>, then <strong>+15 min once</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="source-footer">
+    <div class="container">
+      <div class="eyebrow">Original reference documents</div>
+      <h2>Go deeper only when you need to.</h2>
+      <p>
+        This master guide synthesises the four demo documents. The RFP remains the source of truth;
+        prototype requirements and progress record the chosen interpretations and actual readiness.
+      </p>
+      <div class="source-links">
+        <a href="01-personas-and-responsibilities.md">Personas and responsibilities<span>Full roles, goals, permissions and pain points</span></a>
+        <a href="02-workflows-and-handoffs.md">Workflows and handoffs<span>Detailed trigger-to-handoff business flows</span></a>
+        <a href="03-demo-storyboard.md">Demo storyboard<span>Exact clicks, narration and optional scenarios</span></a>
+        <a href="04-presenter-cheat-sheet.md">Presenter cheat sheet<span>Vocabulary, billing rules, Q&amp;A and caveats</span></a>
+      </div>
+      <p class="closing-line">
+        “A single audited flow from a changing theatre schedule to captured clinical billing inputs,
+        controlled office authorisation, reliable invoicing, and transparent collection and
+        disbursement.”
+      </p>
+    </div>
+  </footer>
+
+  <dialog id="rescueDialog" aria-labelledby="rescueTitle">
+    <div class="dialog-head">
+      <h2 id="rescueTitle">Demo rescue</h2>
+      <button class="dialog-close" type="button" data-close-rescue aria-label="Close demo rescue">×</button>
+    </div>
+    <div class="dialog-body">
+      <p><strong>Get back to the proven path in under a minute.</strong></p>
+      <ol class="rescue-steps">
+        <li><span>Open <strong>Demo: Control Panel</strong>.</span></li>
+        <li><span>Select <strong>Reset demo data</strong> and confirm.</span></li>
+        <li><span>Confirm Tuesday 21 July 2026, 08:00.</span></li>
+        <li><span>Advance <strong>+1 hour</strong> nine times and <strong>+15 min</strong> once.</span></li>
+        <li><span>Mobile → Southern Cross → Margaret Ellison → Finish now → Mark complete.</span></li>
+        <li><span>Mark list completed → Submit to office → Admin Review queue → Authorise.</span></li>
+        <li><span>Select <strong>View invoices</strong>; open the new document and show the billed List leaving Mobile Done.</span></li>
+      </ol>
+      <div class="handoff">
+        <strong>Your one-line fallback</strong>
+        “The List is the unit of availability and approval; Dr Souter captures the inputs, office
+        controls the handoff, and the Billing Engine turns the authorised snapshot into money.”
+      </div>
+      <p class="muted" style="margin: 18px 0 0;">
+        Continue through invoice generation and List disappearance. Narrate Xero, payments and live
+        integrations until their phases are built.
+      </p>
+    </div>
+  </dialog>
+
+  <script>
+    const modelData = {
+      schedule: {
+        kicker: "The outer canvas",
+        title: "Schedule",
+        description: "A rolling four-month calendar. The system keeps exactly two half-day Lists for every active anaesthetist on every day.",
+        owner: "System, configured by AA office",
+        proof: "Admin Day View shows the repeated AM/PM rhythm",
+        rule: "The fixed canvas exists even when there is no activity",
+        next: "Daily office operations"
+      },
+      day: {
+        kicker: "The office control view",
+        title: "Day",
+        description: "A single operating day across the active anaesthetist roster. Kirsty sees booked, Free, holiday, unavailable and conflicting sessions together.",
+        owner: "AA scheduling coordinator",
+        proof: "Status-coloured grid, notes and full-day two-block bookings",
+        rule: "Operational status is not approval state",
+        next: "A specific anaesthetist and session"
+      },
+      anaesthetist: {
+        kicker: "The clinical owner",
+        title: "Anaesthetist",
+        description: "An independent clinician with their own schedule, availability, Cards, dollar-per-unit value and financial view. Dr Souter is the prototype identity.",
+        owner: "Dr Melanie Souter",
+        proof: "Same underlying data appears on mobile and web",
+        rule: "Mobile and web are contexts, not different personas",
+        next: "Their AM or PM List"
+      },
+      list: {
+        kicker: "The crucial scheduling unit",
+        title: "AM / PM List",
+        description: "One anaesthetist’s half-day operating session. A List owns hospital/surgeon context, Cards and the approval state that moves from DRAFT to SUBMITTED to AUTHORISED.",
+        owner: "Anaesthetist for capture; office for coordination and approval",
+        proof: "Submit and authorise the whole Southern Cross PM List",
+        rule: "The List is the unit of availability and approval",
+        next: "Time-ordered patient Cards"
+      },
+      card: {
+        kicker: "The patient appointment",
+        title: "Card",
+        description: "One patient appointment inside a List. It holds identity and operation context, one or more Procedures, attachments and append-only audit history. Each Procedure owns its BTM inputs and route.",
+        owner: "Anaesthetist, office and integration while DRAFT",
+        proof: "Complete Margaret Ellison’s unfinished Card",
+        rule: "Soft-cancel; never erase its history",
+        next: "One or more Procedures"
+      },
+      procedure: {
+        kicker: "The billing decision point",
+        title: "Procedure",
+        description: "A clinical procedure inside a Card. Hospital advice or AA staff set its explicit route; the prototype can allocate conserved lines across funders as a proposed representation.",
+        owner: "Anaesthetist captures clinical inputs; office sets routing; Billing Engine rates",
+        proof: "Show Hospital, Billable Party and direct Insurer examples",
+        rule: "An additional Procedure is time-only",
+        next: "Snapshot billing lines"
+      },
+      line: {
+        kicker: "The reproducible financial output",
+        title: "Billing line",
+        description: "A rated line derived from captured Base, Time, Modifier or permitted fixed/rate-by-time inputs. Lines are grouped by counterparty into invoice documents.",
+        owner: "Billing Engine",
+        proof: "Invoice preview shows units, GST, total and payer",
+        rule: "Billing Engine calculates and issues; Xero does not",
+        next: "Invoice, collection and payable"
+      }
+    };
+
+    const personaData = {
+      mobile: {
+        badges: [["Mobile", "mobile"], ["Ready", "ready"]],
+        title: "The mobile-first anaesthetist",
+        summary: "Dr Souter moves between hospitals. Her phone is the fastest place to see assigned Lists, review patient Cards and capture the data AA needs for billing.",
+        goals: [
+          "See assigned AM/PM Lists, hospital, surgeon and patient Cards.",
+          "Capture ASA, RVG, start/finish, Base, Time, Modifiers and notes.",
+          "Add or photograph a missing Card, attach supporting records, or copy for an additional Procedure.",
+          "Complete every active Card, then submit the whole List.",
+          "Maintain availability and see colleagues’ availability to coordinate cover; request/offer controls are a prototype proposal."
+        ],
+        permissions: [
+          "May edit her own DRAFT Cards and submit her own List.",
+          "SUBMITTED is view-only; AUTHORISED is locked.",
+          "Prototype scope: colleagues’ availability is visible, not their patient details.",
+          "Cannot authorise, edit master data or use office monitoring."
+        ],
+        pains: [
+          "Late or mismatched hospital data.",
+          "Financially significant BTM complexity.",
+          "Short-notice cover and low software confidence."
+        ],
+        handoff: "When every active Card is complete, Dr Souter submits the List to Kirsty’s Review queue."
+      },
+      web: {
+        badges: [["Web", "web"], ["Ready", "ready"]],
+        title: "The same anaesthetist at a desktop",
+        summary: "Away from theatre, Dr Souter wants a wider view of upcoming work, availability and financial information. Web uses the same Lists, Cards and BTM rules as mobile.",
+        goals: [
+          "Review the dashboard, week strip and date-ranged Lists.",
+          "Drill into the same List/Card detail as mobile.",
+          "Find Free anaesthetists; the prototype models a proposed cover-request interaction.",
+          "Review flat individual ACCPAY balance rows and GST-period activity."
+        ],
+        permissions: [
+          "Same anaesthetist permissions as mobile.",
+          "Prototype scope: only her own clinical records are visible.",
+          "Receivables and productivity are seeded demo figures for now.",
+          "GST activity and Request Leave are not complete workflows."
+        ],
+        pains: [
+          "A phone-sized view is poor for longer-range planning.",
+          "Schedule, availability and accounts need one wider context.",
+          "Live financial detail depends on Phase 10."
+        ],
+        handoff: "Web provides context; use mobile for the live procedure-day capture so the demo does not repeat itself."
+      },
+      scheduler: {
+        badges: [["Admin", "admin"], ["Ready", "ready"]],
+        title: "The AA scheduling coordinator",
+        summary: "Kirsty sees the whole roster and coordinates standing arrangements, ad-hoc bookings, hospital changes, cancellations and short-notice cover.",
+        goals: [
+          "Use the one-day dashboard as the operational control tower.",
+          "Create phone bookings and keep hospital, surgeon and times current.",
+          "Move one Card for a routine reschedule.",
+          "Reassign a whole List for illness cover without losing Cards or history.",
+          "Maintain schedule masters and investigate audit history."
+        ],
+        permissions: [
+          "Sees all Lists and patient Cards.",
+          "May edit DRAFT and SUBMITTED data.",
+          "May reassign a Card or whole List.",
+          "May not edit an AUTHORISED Card."
+        ],
+        pains: [
+          "Phone, email and PDF remain major booking channels.",
+          "Several sources can change the same Card.",
+          "Illness and late changes need a fast, auditable answer."
+        ],
+        handoff: "Accurate DRAFT Lists appear immediately in the assigned anaesthetist’s mobile and web views."
+      },
+      reviewer: {
+        badges: [["Admin", "admin"], ["Ready", "ready"]],
+        title: "The billing review and authorisation officer",
+        summary: "Kirsty reviews a submitted List as a set, corrects office-owned data, records any clarification and decides when the immutable billing snapshot is ready.",
+        goals: [
+          "Inspect route, Contract, Insurer, reference, BTM and calculated fee.",
+          "Resolve missing references, ACC advisories and manual adjustments.",
+          "Log a phone note when clarification was required.",
+          "Authorise the whole List and monitor its later billing status."
+        ],
+        permissions: [
+          "May correct SUBMITTED Cards in the office.",
+          "Cannot return the List to Dr Souter for re-editing.",
+          "Authorisation locks every Card.",
+          "Only office can authorise the billing handoff."
+        ],
+        pains: [
+          "Incomplete references and unusual manual values.",
+          "Complex routing, Contracts and split funding.",
+          "No formal send-back loop to the anaesthetist."
+        ],
+        handoff: "One List-authorised event hands every active Card to the Billing Engine."
+      },
+      exceptions: {
+        badges: [["Admin", "admin"], ["Planned / mixed", "planned"]],
+        title: "Integration, exception and finance responsibilities",
+        summary: "These capabilities are explicit in the RFP, although separate job titles are inferred. They are best explained as additional office hats rather than extra login personas.",
+        goals: [
+          "Monitor failed, duplicate or late HL7/FHIR/PDF events and retry safely.",
+          "Prototype proposal: park updates that target SUBMITTED or AUTHORISED Lists.",
+          "Monitor invoice failures, partial receipts and unmatched remittances.",
+          "Run disbursements and distinguish paid-in from paid-out."
+        ],
+        permissions: [
+          "Operational monitoring belongs with authorised office staff.",
+          "Automated actions must write audit history.",
+          "The app reads the Billing Engine mirror, never Xero directly.",
+          "Exact monitor placement is a discovery decision."
+        ],
+        pains: [
+          "Partner-specific formats and unreliable feeds.",
+          "Partial receipts and unmatched remittances.",
+          "Automated failures must become visible human work."
+        ],
+        handoff: "Failures become visible office work; successful receipts authorise the matching anaesthetist payable."
+      }
+    };
+
+    const workflowData = {
+      canvas: {
+        readiness: "Ready", readinessClass: "ready", actor: "System + office", actorClass: "admin",
+        title: "Maintain the fixed schedule canvas",
+        summary: "The system ensures every active anaesthetist has an AM and PM List for every day in the rolling four-month horizon. Permanent arrangements and exceptions are applied to that stable structure.",
+        steps: ["Create exactly two half-day Lists per active anaesthetist per day.", "Project Permanent Lists and reconcile availability/holidays.", "Keep Free and conflicting slots visible instead of deleting them."],
+        trigger: "The horizon advances or standing data changes",
+        handoff: "Office receives a stable canvas for assignments and Cards",
+        proof: "Admin Day View: repeated AM/PM rhythm",
+        guardrail: "Office manages exceptions; it does not invent every “shift”"
+      },
+      book: {
+        readiness: "Ready manually", readinessClass: "ready", actor: "Office + external sources", actorClass: "admin",
+        title: "Reserve a List and populate Cards",
+        summary: "Standing arrangements, phone calls, hospital updates, surgeon PDFs and anaesthetist fallbacks progressively populate a List with patient Cards.",
+        steps: ["Assign hospital and surgeon to a suitable List.", "Create time-ordered Cards with patient and Procedure context.", "Audit every add, change, move or soft-cancellation.", "Use phone/manual/photo paths now; PDF and feeds arrive later."],
+        trigger: "Recurring arrangement, phone, feed, PDF or missing Card",
+        handoff: "The populated DRAFT List appears to its anaesthetist",
+        proof: "Phone-advice booking or mobile Add Card",
+        guardrail: "Hospital and surgeon are external sources, not app personas"
+      },
+      change: {
+        readiness: "Ready", readinessClass: "ready", actor: "Kirsty · scheduling", actorClass: "admin",
+        title: "Manage late schedule changes",
+        summary: "Kirsty locates the List in the day view, edits its context, moves one Card for a routine reschedule, or soft-cancels while keeping the record and history.",
+        steps: ["Locate by anaesthetist, time, hospital and colour.", "Open the List drawer and relevant Card.", "Move one Card or amend context and times.", "Record reasons and internal notes."],
+        trigger: "A booking source or anaesthetist reports a change",
+        handoff: "DRAFT updates appear immediately on Dr Souter’s devices",
+        proof: "Move one Card, then show its History",
+        guardrail: "A Card move is not the same as whole-List reassignment"
+      },
+      cover: {
+        readiness: "Ready · proposed mechanics", readinessClass: "ready", actor: "Dr Souter + Kirsty", actorClass: "admin",
+        title: "Find cover and reassign a whole List",
+        summary: "Availability identifies a Free target. Office reassigns the whole List, preserves every Card and audit entry, and keeps the fixed AM/PM canvas intact.",
+        steps: ["Anaesthetist records unavailability or reports the need for cover; request/offer UI is a prototype proposal.", "Office finds a Free session at AM/PM granularity.", "Reassign the entire List and absorb the target Free slot.", "Regenerate the vacated canvas slot and audit the change."],
+        trigger: "Short-notice illness or cover need",
+        handoff: "Replacement anaesthetist sees the List and Cards",
+        proof: "Illness at 7 a.m. optional scenario",
+        guardrail: "Do not call this claiming an open shift; mechanics need discovery confirmation"
+      },
+      capture: {
+        readiness: "Ready", readinessClass: "ready", actor: "Dr Souter · mobile", actorClass: "mobile",
+        title: "Capture BTM and complete the Card",
+        summary: "Dr Souter records the reproducible clinical billing inputs. The system applies tiered time, validates modifiers and uses her personal dollar-per-unit value.",
+        steps: ["Confirm patient, hospital, surgeon and operation.", "Select RVG base code and record start/finish.", "Capture ASA, Modifiers, notes and any permitted extra line.", "Review validation and fee; mark the Card complete."],
+        trigger: "The procedure has occurred",
+        handoff: "All active Cards complete makes the List submit-ready",
+        proof: "Margaret Ellison → Finish now → Mark complete",
+        guardrail: "The software does not choose the clinical RVG code"
+      },
+      review: {
+        readiness: "Ready", readinessClass: "ready", actor: "Dr Souter → Kirsty", actorClass: "admin",
+        title: "Submit, sanity-check and authorise",
+        summary: "Dr Souter submits the whole List. Kirsty reviews route, Contract, Insurer, reference, BTM and flags, corrects in the office, then authorises.",
+        steps: ["Complete and submit the whole List.", "Anaesthetist becomes read-only; office may correct.", "Resolve issues by phone and optionally log a note.", "Authorise: every Card locks and the queue count falls."],
+        trigger: "Every active Card is complete and valid",
+        handoff: "One List-authorised event enters billing",
+        proof: "Mobile submit → Admin Review queue → Authorise",
+        guardrail: "No Returned state and no automated reject loop"
+      },
+      invoice: {
+        readiness: "Ready · Phase 08", readinessClass: "ready", actor: "Billing Engine + office", actorClass: "admin",
+        title: "Calculate and issue invoices",
+        summary: "The Billing Engine resolves the explicit route per Procedure, applies the governing Contract, snapshots the result and groups lines by counterparty.",
+        steps: ["Iterate active Cards and Procedures.", "Resolve payer, Contract and rating method.", "Enforce time-only additional Procedures and conserved splits.", "Create, preview and simulate delivery of invoice documents.", "Stamp billedAt when the run completes."],
+        trigger: "List reaches AUTHORISED",
+        handoff: "Invoice values proceed to Xero collection/payable pairs",
+        proof: "View invoices → open document → Email invoice",
+        guardrail: "Billing Engine, not Xero, calculates and issues the invoice"
+      },
+      money: {
+        readiness: "Planned · Phase 10", readinessClass: "planned", actor: "Xero + finance", actorClass: "admin",
+        title: "Collect money and disburse it",
+        summary: "A matched ACCREC/ACCPAY pair separates what the payer owes AA from what AA owes the anaesthetist. Receipts and disbursements remain separate states.",
+        steps: ["Create ACCREC collection and DRAFT ACCPAY.", "Detect full or partial receipt into AA.", "Authorise the payable proportionally.", "Run payables and update the Billing Engine mirror.", "Show flat balances and GST activity to Dr Souter."],
+        trigger: "An invoice has been generated",
+        handoff: "Episode closes after receipt and disbursement complete",
+        proof: "Narrate the pair and payment state change",
+        guardrail: "Anaesthetist apps never query Xero directly"
+      },
+      exceptions: {
+        readiness: "Planned / mixed · Phases 09–11", readinessClass: "planned", actor: "Office exception operator", actorClass: "admin",
+        title: "Handle late additions, failures and compliance",
+        summary: "Office needs visible, retryable work for pre-payment, post-op addenda, billing failures, bad integration messages and compliance decisions.",
+        steps: ["Block or override unpaid pre-payment with a reason.", "Use a linked addendum Card instead of changing authorised history.", "Isolate and retry a failed billing Card.", "Prototype proposal: deduplicate, retry and park malformed integration events.", "Audit all human and automated changes."],
+        trigger: "Automation cannot safely continue or work arrives late",
+        handoff: "Resolved exception re-enters its normal workflow safely",
+        proof: "Narrate until phases are complete",
+        guardrail: "Failure isolation, monitoring location and NHI-to-Xero are discovery decisions"
+      }
+    };
+
+    const glossary = {
+      schedule: ["Schedule", "The rolling four-month calendar that holds every anaesthetist’s AM and PM Lists."],
+      list: ["List", "One anaesthetist’s half-day AM or PM operating session. It is the unit of availability and approval."],
+      card: ["Card", "One patient appointment inside a List, containing identity, clinical context, Procedures, billing inputs and audit history."],
+      procedure: ["Procedure", "One clinical procedure inside a Card. Each Procedure has its own explicit billing route and rated lines."],
+      btm: ["BTM", "Base units + tiered Time units + Modifier units. The total is multiplied by the anaesthetist’s own value per unit."]
+    };
+
+    const scenarioData = {
+      core: [
+        {
+          title: "Reset and stage the clock", time: "Pre-demo", readiness: "Ready", readinessClass: "ready",
+          actor: "Presenter", surface: "Demo: Control Panel",
+          clicks: ["Select Reset demo data and confirm.", "Confirm Tue 21 Jul 2026, 08:00.", "Select +1 hour nine times.", "Select +15 min once; finish at 17:15."],
+          points: ["Deterministic fictional data", "Repeatable identifiers", "Why Finish now will produce useful Time units"],
+          expected: "The seed is pristine and the demo clock is 17:15.",
+          say: "I’m using deterministic fictional data so every state change is repeatable."
+        },
+        {
+          title: "Establish the office control tower", time: "2 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Day view",
+          clicks: ["Switch to Admin Web App.", "Stay on Day view for Tuesday 21 July.", "Point to Dr Souter’s AM and PM blocks.", "Optionally open and close her PM List."],
+          points: ["Repeated AM/PM rhythm", "Status colours", "Rutherford at Forte shows a full-day booking across adjacent AM/PM Lists"],
+          expected: "Audience understands fixed structure versus changing booking data.",
+          say: "The schedule is a rolling four-month canvas. Every active anaesthetist has exactly two half-day Lists each day. The office manages the exceptions."
+        },
+        {
+          title: "Show the wider anaesthetist view", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Melanie Souter", surface: "Anaesthetist Web · Dashboard",
+          clicks: ["Switch to Anaesthetist Web App.", "Point to the week strip and workload.", "Open Availability and optionally Free-only.", "Move directly to mobile."],
+          points: ["Same identity and data as mobile", "Web is planning context", "Current financial figures are seeded"],
+          expected: "Audience sees mobile and web as two contexts for one role.",
+          say: "This is the same anaesthetist and the same data as mobile. Web is the wider planning view; mobile is the procedure-day tool."
+        },
+        {
+          title: "Complete Margaret Ellison’s Card", time: "4 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Melanie Souter", surface: "Anaesthetist Mobile · Lists",
+          clicks: ["Open the Southern Cross List.", "Open Margaret Ellison.", "Scroll to BTM.", "Select Finish now.", "Select Mark complete.", "Wait for the return to the List."],
+          points: ["ASA and RVG code", "Start/finish and tiered Time", "Base, Time, Modifiers and calculated fee"],
+          expected: "Ellison shows complete and the List becomes submit-eligible.",
+          say: "Dr Souter captures the billing inputs, not just a dollar figure. The app validates and calculates, but it does not infer the correct clinical code."
+        },
+        {
+          title: "Submit the whole List", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Melanie Souter", surface: "Anaesthetist Mobile · List",
+          clicks: ["Select Mark list completed.", "Review the confirmation.", "Select Submit to office.", "Tap Back to return to Forward Lists.", "Open Done and show Southern Cross remains visible."],
+          points: ["Approval state belongs to the List", "SUBMITTED is read-only to Dr Souter", "Completed/unbilled remains visible"],
+          expected: "The List is SUBMITTED and appears in the office Review queue.",
+          say: "Once every active Card is complete, Dr Souter submits the List. It is now read-only to her and editable only by office. There is no send-back state."
+        },
+        {
+          title: "Review and authorise", time: "3 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Review queue",
+          clicks: ["Open Review queue.", "Open the Souter / Southern Cross List.", "Inspect totals, route, Contract and reference.", "Point to the manual time-adjustment flag.", "Optionally log a phone note.", "Select Authorise for billing and confirm."],
+          points: ["Human sanity-check", "Office can correct SUBMITTED data", "Rows lock after authorisation"],
+          expected: "Authorisation banner appears, rows lock and queue count falls.",
+          say: "The office checks the Cards as a set. Questions are resolved by phone and corrected here. Authorisation locks every Card and hands the List to the Billing Engine."
+        },
+        {
+          title: "Show invoices and List disappearance", time: "2 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Billing Engine + Kirsty", surface: "Admin Web · Invoices",
+          clicks: ["Select View invoices.", "Open a contract-holder invoice.", "Point to InvoiceNumber, CaseReference, GST and total.", "Select Email invoice.", "Return to Mobile Done and confirm the billed List disappears."],
+          points: ["Payer is explicit per Procedure", "Billing Engine issues the invoice", "Disappearance follows billedAt"],
+          expected: "Invoice snapshot is visible and the billed List leaves Dr Souter’s work view.",
+          say: "The Billing Engine applies the governing Contract and groups by counterparty. Xero follows as receivables and banking; it is not the billing brain."
+        },
+        {
+          title: "Close on collection and disbursement", time: "2 min", readiness: "Planned", readinessClass: "planned",
+          actor: "Presenter", surface: "Target-state narration only",
+          clicks: ["Do not open the Xero or Balances placeholders.", "Point back to the ACCREC → AA → ACCPAY mental model.", "Close on paid-in versus disbursed."],
+          points: ["ACCREC is collection into AA", "ACCPAY is what AA owes Dr Souter", "Partial receipts authorise proportional payment"],
+          expected: "Audience understands the target money model without mistaking a placeholder for built functionality.",
+          say: "The target state keeps money collected into AA separate from money disbursed to Dr Souter. Her apps will read the Billing Engine’s mirror, never Xero directly."
+        }
+      ],
+      illness: [
+        {
+          title: "Show the morning conflict", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Day view",
+          clicks: ["Navigate to Wednesday 22 July.", "Open a booked List with an availability conflict.", "Open its List drawer."],
+          points: ["Booked work versus availability", "AM/PM granularity"],
+          expected: "The cover problem is visible without deleting the List.",
+          say: "The fixed canvas lets the office see the clash immediately."
+        },
+        {
+          title: "Find a Free target", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Reassign list",
+          clicks: ["Select Reassign list.", "Find a Free anaesthetist in the matching session."],
+          points: ["Whole-List operation", "Target really is Free"],
+          expected: "A valid replacement target is selected.",
+          say: "This is office-coordinated cover, not an anaesthetist claiming an open shift."
+        },
+        {
+          title: "Reassign and prove history", time: "3 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Day view / History",
+          clicks: ["Confirm reassignment; the drawer closes.", "Re-open the target anaesthetist’s block.", "Show the target now owns every Card.", "Show the vacated anaesthetist still has a canvas slot.", "Open History."],
+          points: ["Cards move together", "Audit trail preserved", "Vacated slot regenerated"],
+          expected: "Coverage changes without breaking the fixed AM/PM canvas.",
+          say: "A whole-List reassignment preserves Cards and history. Absorb-and-regenerate is the prototype’s proposed mechanic and would be confirmed in discovery."
+        }
+      ],
+      phone: [
+        {
+          title: "Create a phone-advice booking", time: "2 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Kirsty W.", surface: "Admin Web · Day view",
+          clicks: ["Find a genuinely Free Dr Souter List.", "Select Book (phone advice).", "Choose the Hospital.", "Select Continue to add card.", "Select Enter manually.", "Complete the fields and select Save card.", "Select Done to commit the List context."],
+          points: ["Phone remains a valid source", "Office assigns context", "Change is audited"],
+          expected: "A new Card appears on the chosen DRAFT List.",
+          say: "Modern integration is the goal, but phone and PDF remain essential fallbacks."
+        },
+        {
+          title: "Show the anaesthetist handoff", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Souter", surface: "Anaesthetist Mobile",
+          clicks: ["Switch to Anaesthetist Mobile, which is fixed to Dr Souter.", "Open the booked List and locate the new Card."],
+          points: ["Same shared record", "No duplicate re-keying on mobile"],
+          expected: "The office booking is immediately visible to its anaesthetist.",
+          say: "The source may be manual, but the resulting Card enters the same controlled workflow."
+        },
+        {
+          title: "Alternative: add a missing Card by photo", time: "1 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Souter", surface: "Anaesthetist Mobile · Add Card",
+          clicks: ["Select Add Card.", "Choose the simulated photo path and a sample Card.", "Wait for extraction and review every field.", "Select Save card.", "Select Done."],
+          points: ["Extraction is simulated", "Human confirmation before ingest", "Missing patient can still be handled"],
+          expected: "A reviewed draft Card is added without pretending OCR is a live service.",
+          say: "The design improves manual fallbacks instead of pretending they disappear on day one."
+        }
+      ],
+      complex: [
+        {
+          title: "Additional Procedure is time-only", time: "2 min", readiness: "Ready", readinessClass: "ready",
+          actor: "Dr Souter", surface: "Mobile or Web · Card",
+          clicks: ["Open a multi-Procedure Card.", "Show the additional Procedure fields."],
+          points: ["Base disabled", "Modifiers disabled", "Time remains chargeable"],
+          expected: "The UI prevents duplicate Base and Modifier charging.",
+          say: "An additional Procedure in the same episode is time-only."
+        },
+        {
+          title: "Split funding and invoice grouping", time: "2 min", readiness: "Ready with pre-staging", readinessClass: "ready",
+          actor: "Billing Engine", surface: "Admin Web · Invoice",
+          clicks: ["Before the audience arrives, stage and authorise Dr Souter’s Monday 20 July PM two-funder List through the guard console.", "Open the resulting invoices.", "Show the prototype’s conserved line allocation and separate counterparty documents."],
+          points: ["Explicit route per Procedure", "No duplicated lines", "Per-line allocation is the prototype’s proposed representation"],
+          expected: "Different funders receive their own invoice snapshot.",
+          say: "Different counterparties receive separate invoices. The prototype’s per-line allocation is a design reading we would confirm during discovery."
+        },
+        {
+          title: "Pre-payment and Card failure", time: "2 min", readiness: "Planned", readinessClass: "planned",
+          actor: "Kirsty W.", surface: "Future Billing Monitor",
+          clicks: ["Narrate the pre-payment completion block.", "Narrate reasoned office override.", "Narrate per-Card isolation, correction and retry."],
+          points: ["Original authorised history stays immutable", "One failed Card need not block others"],
+          expected: "Audience understands the target control design without seeing a placeholder.",
+          say: "These are proposed exception mechanics for validation, not completed prototype behaviour."
+        },
+        {
+          title: "Partial payment and incremental payable", time: "2 min", readiness: "Planned", readinessClass: "planned",
+          actor: "Finance / Billing Engine", surface: "Future Xero simulator",
+          clicks: ["Narrate a partial receipt.", "Narrate proportional ACCPAY authorisation.", "Narrate the balance receipt and second incremental payables run."],
+          points: ["Paid-in versus disbursed", "No double payment", "Apps read Billing Engine mirror"],
+          expected: "Collection and disbursement remain separately traceable.",
+          say: "AA tracks money into its account separately from money paid out to the anaesthetist."
+        }
+      ]
+    };
+
+    const byId = (id) => document.getElementById(id);
+    const renderList = (element, items) => {
+      element.replaceChildren(...items.map((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        return li;
+      }));
+    };
+
+    document.querySelectorAll("[data-model]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const data = modelData[button.dataset.model];
+        document.querySelectorAll("[data-model]").forEach((peer) => peer.setAttribute("aria-selected", String(peer === button)));
+        byId("modelKicker").textContent = data.kicker;
+        byId("modelTitle").textContent = data.title;
+        byId("modelDescription").textContent = data.description;
+        byId("modelOwner").textContent = data.owner;
+        byId("modelProof").textContent = data.proof;
+        byId("modelRule").textContent = data.rule;
+        byId("modelNext").textContent = data.next;
+      });
+    });
+
+    const badgeClass = (kind) => `badge badge-${kind}`;
+    const renderBadges = (element, badges) => {
+      element.replaceChildren(...badges.map(([label, kind]) => {
+        const span = document.createElement("span");
+        span.className = badgeClass(kind);
+        span.textContent = label;
+        return span;
+      }));
+    };
+
+    document.querySelectorAll("[data-persona]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const data = personaData[button.dataset.persona];
+        document.querySelectorAll("[data-persona]").forEach((peer) => peer.setAttribute("aria-selected", String(peer === button)));
+        renderBadges(byId("personaBadges"), data.badges);
+        byId("personaTitle").textContent = data.title;
+        byId("personaSummary").textContent = data.summary;
+        renderList(byId("personaGoals"), data.goals);
+        renderList(byId("personaPermissions"), data.permissions);
+        renderList(byId("personaPains"), data.pains);
+        byId("personaHandoff").textContent = data.handoff;
+      });
+    });
+
+    const initialPersona = personaData.mobile;
+    renderList(byId("personaGoals"), initialPersona.goals);
+    renderList(byId("personaPermissions"), initialPersona.permissions);
+    renderList(byId("personaPains"), initialPersona.pains);
+    byId("personaHandoff").textContent = initialPersona.handoff;
+
+    document.querySelectorAll("[data-stage]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const data = workflowData[button.dataset.stage];
+        document.querySelectorAll("[data-stage]").forEach((peer) => peer.setAttribute("aria-selected", String(peer === button)));
+        renderBadges(byId("workflowBadges"), [[data.readiness, data.readinessClass], [data.actor, data.actorClass]]);
+        byId("workflowTitle").textContent = data.title;
+        byId("workflowSummary").textContent = data.summary;
+        renderList(byId("workflowSteps"), data.steps);
+        byId("workflowTrigger").textContent = data.trigger;
+        byId("workflowHandoff").textContent = data.handoff;
+        byId("workflowProof").textContent = data.proof;
+        byId("workflowGuardrail").textContent = data.guardrail;
+      });
+    });
+    renderList(byId("workflowSteps"), workflowData.canvas.steps);
+
+    document.querySelectorAll("[data-term]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const [title, text] = glossary[button.dataset.term];
+        document.querySelectorAll("[data-term]").forEach((peer) => peer.setAttribute("aria-selected", String(peer === button)));
+        byId("termTitle").textContent = title;
+        byId("termText").textContent = text;
+      });
+    });
+
+    let currentScenario = "core";
+    let currentStep = 0;
+    const progressKey = "aa-demo-guide-progress-v1";
+    let savedProgress = {};
+    try {
+      savedProgress = JSON.parse(localStorage.getItem(progressKey) || "{}");
+    } catch {
+      savedProgress = {};
+    }
+
+    const completedFor = (scenario) => new Set(savedProgress[scenario] || []);
+
+    function saveCompleted(scenario, set) {
+      savedProgress[scenario] = [...set];
+      try {
+        localStorage.setItem(progressKey, JSON.stringify(savedProgress));
+      } catch {
+        /* The guide remains fully usable if local storage is unavailable. */
+      }
+    }
+
+    function renderStory() {
+      const steps = scenarioData[currentScenario];
+      currentStep = Math.max(0, Math.min(currentStep, steps.length - 1));
+      const step = steps[currentStep];
+      const completed = completedFor(currentScenario);
+
+      byId("storyIndex").replaceChildren(...steps.map((item, index) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.complete = String(completed.has(index));
+        if (index === currentStep) button.setAttribute("aria-current", "step");
+        button.addEventListener("click", () => {
+          currentStep = index;
+          renderStory();
+        });
+
+        const number = document.createElement("span");
+        number.className = "step-number";
+        number.textContent = completed.has(index) ? "✓" : String(index + 1);
+        const title = document.createElement("span");
+        title.className = "index-title";
+        title.textContent = item.title;
+        const time = document.createElement("span");
+        time.className = "index-time";
+        time.textContent = item.time;
+        button.append(number, title, time);
+        li.append(button);
+        return li;
+      }));
+
+      renderBadges(byId("storyBadges"), [[step.readiness, step.readinessClass], [step.actor, step.actor.includes("Souter") ? "mobile" : "admin"]]);
+      byId("storyTitle").textContent = step.title;
+      byId("storyContext").textContent = `${step.actor} · ${step.surface} · ${step.time}`;
+      renderList(byId("storyClicks"), step.clicks);
+      renderList(byId("storyPoints"), step.points);
+      byId("storyExpected").textContent = step.expected;
+      byId("storySay").textContent = step.say;
+      byId("storyPrev").disabled = currentStep === 0;
+      byId("storyNext").disabled = currentStep === steps.length - 1;
+      byId("storyComplete").textContent = completed.has(currentStep) ? "Rehearsed ✓" : "Mark rehearsed";
+      byId("storyComplete").classList.toggle("btn-primary", !completed.has(currentStep));
+
+      byId("storyProgressText").textContent = `${completed.size} of ${steps.length}`;
+      byId("storyProgressBar").style.width = `${(completed.size / steps.length) * 100}%`;
+    }
+
+    byId("scenarioSelect").addEventListener("change", (event) => {
+      currentScenario = event.target.value;
+      currentStep = 0;
+      renderStory();
+    });
+
+    byId("storyPrev").addEventListener("click", () => {
+      currentStep -= 1;
+      renderStory();
+    });
+
+    byId("storyNext").addEventListener("click", () => {
+      currentStep += 1;
+      renderStory();
+    });
+
+    byId("storyComplete").addEventListener("click", () => {
+      const completed = completedFor(currentScenario);
+      if (completed.has(currentStep)) completed.delete(currentStep);
+      else completed.add(currentStep);
+      saveCompleted(currentScenario, completed);
+      renderStory();
+    });
+
+    byId("storyReset").addEventListener("click", () => {
+      saveCompleted(currentScenario, new Set());
+      renderStory();
+    });
+
+    renderStory();
+
+    const rescueDialog = byId("rescueDialog");
+    document.querySelectorAll("[data-open-rescue]").forEach((button) => {
+      button.addEventListener("click", () => rescueDialog.showModal());
+    });
+    document.querySelectorAll("[data-close-rescue]").forEach((button) => {
+      button.addEventListener("click", () => rescueDialog.close());
+    });
+    rescueDialog.addEventListener("click", (event) => {
+      if (event.target === rescueDialog) rescueDialog.close();
+    });
+
+    byId("printGuide").addEventListener("click", () => window.print());
+
+    function updateReadingProgress() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const percent = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
+      byId("readingProgress").style.width = `${percent}%`;
+    }
+    updateReadingProgress();
+    window.addEventListener("scroll", updateReadingProgress, { passive: true });
+    window.addEventListener("resize", updateReadingProgress);
+
+    const sections = [...document.querySelectorAll("main section[id]")];
+    const navLinks = [...document.querySelectorAll(".desktop-nav a")];
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        navLinks.forEach((link) => {
+          const active = link.getAttribute("href") === `#${visible.target.id}`;
+          if (active) link.setAttribute("aria-current", "true");
+          else link.removeAttribute("aria-current");
+        });
+      }, { rootMargin: "-25% 0px -60% 0px", threshold: [0, 0.2, 0.5] });
+      sections.forEach((section) => observer.observe(section));
+    }
+
+    const printDetails = [...document.querySelectorAll("details.accordion")];
+    let detailsOpenBeforePrint = [];
+    window.addEventListener("beforeprint", () => {
+      detailsOpenBeforePrint = printDetails.map((detail) => detail.open);
+      printDetails.forEach((detail) => { detail.open = true; });
+    });
+    window.addEventListener("afterprint", () => {
+      printDetails.forEach((detail, index) => { detail.open = detailsOpenBeforePrint[index]; });
+    });
+  </script>
+</body>
+</html>
