@@ -24,7 +24,7 @@ function marker(key: string): string {
 }
 
 describe('the seeded paid pre-payment slice', () => {
-  it('ships exactly one prePayment invoice and one paid case for the mixed + full card', () => {
+  it('ships exactly one prePayment invoice and clears the gate for the mixed + full card', () => {
     const api = createAppStore()
     const billing = api.getState().billing
     const prePayInvoices = Object.values(billing.invoices).filter((i) => i.kind === 'prePayment')
@@ -35,28 +35,30 @@ describe('the seeded paid pre-payment slice', () => {
     // Card B's full pre-payment procedure: base 5 + T4 + M0 = 9 units at $26.50.
     expect(invoice.subtotal).toBe(238.5)
 
-    const paid = Object.values(billing.cases).filter((c) => c.status === 'paid')
-    expect(paid).toHaveLength(1)
-    expect(paid[0]!.invoiceId).toBe(invoice.id)
-    expect(paid[0]!.cardId).toBe(SEED_PREPAID_CARD_ID)
+    // The pre-payment case is fully paid in (and, in the seed, disbursed).
+    const preCase = Object.values(billing.cases).find((c) => c.invoiceId === invoice.id)!
+    expect(preCase.cardId).toBe(SEED_PREPAID_CARD_ID)
+    expect(preCase.receivedAmount).toBe(invoice.total)
 
-    // The gate reads paid via the case->invoice join.
+    // The gate reads paid via the case->invoice join (money-based).
     expect(prepaymentStatusFor(api.getState(), SEED_PREPAID_CARD_ID)).toBe('paid')
   })
 
-  it('bumps the billing counters so the seeded ids are INV/BC/IL/number 0001 and the run starts at 0002', () => {
+  it('numbers the seeded pre-payment INV/BC/IL/number 0001 and the runtime run starts at 0002', () => {
     const api = createAppStore()
-    const seededInvoice = Object.values(api.getState().billing.invoices)[0]!
-    expect(seededInvoice.id).toBe('INV0001')
-    expect(seededInvoice.invoiceNumber).toBe('AA-2026-0001')
-    expect(seededInvoice.caseReference).toBe('BC0001')
+    // The AA-2026-#### series: the seeded pre-payment is 0001 (history uses the
+    // disjoint AA-2026-H## series, so the runtime run continues cleanly at 0002).
+    const prePayInvoice = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'prePayment')!
+    expect(prePayInvoice.id).toBe('INV0001')
+    expect(prePayInvoice.invoiceNumber).toBe('AA-2026-0001')
+    expect(prePayInvoice.caseReference).toBe('BC0001')
 
     // First runtime run: a single-invoice list continues the sequence at 0002.
     const cosList = api.getState().schedule.cards[marker('cosAccContractCard')]!.listId
     expect(submitList(api, OFFICE, cosList).ok).toBe(true)
     expect(authoriseList(api, OFFICE, cosList).ok).toBe(true)
     expect(runBillingForList(api, cosList).ok).toBe(true)
-    const runtime = Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'standard')
+    const runtime = Object.values(api.getState().billing.invoices).filter((i) => /^AA-2026-\d{4}$/.test(i.invoiceNumber) && i.kind === 'standard')
     expect(runtime).toHaveLength(1)
     expect(runtime[0]!.id).toBe('INV0002')
     expect(runtime[0]!.invoiceNumber).toBe('AA-2026-0002')

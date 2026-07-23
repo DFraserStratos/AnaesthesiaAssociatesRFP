@@ -42,7 +42,9 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByText('Attn: Accounts')).toBeVisible()
   await expect(page.getByText(/Billed by Anaesthesia Associates as agent for/)).toBeVisible()
   await expect(page.getByText('GST (15%)')).toBeVisible()
-  await expect(page.getByText('Xero handoff pending · Phase 10')).toBeVisible()
+  // Phase 10: authorising now hands the invoice off to Xero, so the document
+  // shows its ACCREC / ACCPAY pair (was "Xero handoff pending · Phase 10").
+  await expect(page.getByText(/Xero: ACCREC AA-2026-/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a8-03-contract-holder-doc.png', fullPage: true })
 
   // Email = mark emailed-at, demo-badged as a simulated send.

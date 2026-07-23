@@ -698,10 +698,53 @@ export interface BillingCase {
   accPayId?: string
   status: BillingPipelineStatus
   /**
+   * The MONEY source of truth (Phase 10; D-money-state). "Paid in" and
+   * "disbursed" are two INDEPENDENT axes the single `status` enum cannot hold,
+   * so `status` becomes a derived label and these three cumulative amounts are
+   * authoritative. All default to 0 on every case creator.
+   *   - `receivedAmount`   — cumulative received on the ACCREC (money in to AA).
+   *   - `authorisedAmount` — cumulative authorised on the ACCPAY (pro-rata of received).
+   *   - `disbursedAmount`  — cumulative disbursed to the anaesthetist (payables runs).
+   */
+  receivedAmount: number
+  authorisedAmount: number
+  disbursedAmount: number
+  /** Stamped when `receivedAmount` first reaches the ACCREC's `amountDue`. */
+  paidInAtISO?: IsoDateTime
+  /** Stamped when the case is fully disbursed (disbursed reaches authorised, at full pay-in). */
+  disbursedAtISO?: IsoDateTime
+  /**
+   * A Xero HANDOFF fault (Phase 10; D-handoff) — data, not a throw. The case
+   * stays `status:'invoiced'` with no pair; the monitor surfaces it and a
+   * retry re-invokes the idempotent handoff. Distinct from `failure` (a
+   * billing-RUN fault, keyed off `status:'failed'`).
+   */
+  handoffFailure?: { code: string; message: string }
+  /**
    * Why a 'failed' case failed — the system of record the Phase 09 monitor
    * retries against (the audit entry is the history, not the current state).
    */
   failure?: { code: string; message: string; procedureId?: ProcedureId }
+}
+
+/**
+ * A billing-side receipt of money in (Phase 10; D-money-state). Append-only:
+ * the GST-report source (each row carries its GST component) AND the payment
+ * idempotency key-set (a webhook replay / poll re-detect whose key is already
+ * present is a no-op). Attributed to the anaesthetist directly so the GST
+ * report needs no card→list join. `grossAmount` is the amount received;
+ * `gstAmount` its GST component (gross × 0.15 / 1.15).
+ */
+export interface BillingReceipt {
+  id: string
+  caseId: string
+  anaesthetistId: AnaesthetistId
+  accRecId: string
+  grossAmount: number
+  gstAmount: number
+  atISO: IsoDateTime
+  idempotencyKey: string
+  source: 'webhook' | 'poll'
 }
 
 // ---------------------------------------------------------------------------
@@ -798,7 +841,32 @@ export interface IntegrationMessage {
 // Demo settings
 // ---------------------------------------------------------------------------
 
+/**
+ * The Xero contact-volume story (Phase 10; 5th review #11): seeded aggregate
+ * counters the Xero-sim archiving callout narrates and the archive job
+ * decrements. Scale is NARRATED, not simulated (N4) — these are counters, not
+ * ~28k seeded records.
+ */
+export interface XeroVolumeStory {
+  /** Approximate invoices per year (RFP: ≈28,000). */
+  invoicesPerYear: number
+  /** Approximate share of one-time clients (RFP: ~99%). */
+  oneTimePct: number
+  /** Active (non-archived) contacts, near the soft limit; the archive job decrements it. */
+  activeContacts: number
+  /** Xero's ~10k soft contact limit. */
+  softLimit: number
+}
+
 /** Demo-configurable settings (2nd review #11: the archive window is a setting, seeded at 90). */
 export interface DemoSettings {
   contactArchiveInactivityDays: number
+  /**
+   * When set, the NEXT Xero handoff records a `handoffFailure` and creates no
+   * pair, then clears this flag (Phase 10 demo control; D-handoff). Badged
+   * demo-only trigger.
+   */
+  failNextHandoff?: boolean
+  /** Seeded aggregate contact-volume counters for the Xero-sim callout. */
+  volumeStory: XeroVolumeStory
 }

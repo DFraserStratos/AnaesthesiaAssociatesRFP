@@ -2,7 +2,15 @@ import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Contract } from '../../../domain/types'
-import { createHospital, setInsurerDirectClaims, useAppStore, type Actor } from '../../../store'
+import {
+  createHospital,
+  eligibleArchiveContactIds,
+  runArchiveJob,
+  setArchiveWindowDays,
+  setInsurerDirectClaims,
+  useAppStore,
+  type Actor,
+} from '../../../store'
 import { Button, TextField, useSurface } from '../../../shared'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
@@ -27,6 +35,7 @@ type Entity =
   | 'rvgCodes'
   | 'modifierCodes'
   | 'listStatuses'
+  | 'xeroArchiving'
 
 const NAV: { entity: Entity; label: string }[] = [
   { entity: 'anaesthetists', label: 'Anaesthetists' },
@@ -39,6 +48,7 @@ const NAV: { entity: Entity; label: string }[] = [
   { entity: 'rvgCodes', label: 'RVG codes' },
   { entity: 'modifierCodes', label: 'Modifier codes' },
   { entity: 'listStatuses', label: 'List statuses' },
+  { entity: 'xeroArchiving', label: 'Xero & archiving' },
 ]
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -92,6 +102,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {entity === 'rvgCodes' && <RvgCodesView />}
         {entity === 'modifierCodes' && <ModifierCodesView />}
         {entity === 'listStatuses' && <ListStatusesView />}
+        {entity === 'xeroArchiving' && <XeroArchivingView actor={actor} />}
       </div>
 
       {/* Sheets */}
@@ -452,6 +463,89 @@ function ListStatusesView() {
           </tr>
         ))}
       </Table>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Xero & archiving (the configurable inactivity window + the nightly job)
+// ---------------------------------------------------------------------------
+
+function XeroArchivingView({ actor }: { actor: Actor }) {
+  const settings = useAppStore((s) => s.settings)
+  const xero = useAppStore((s) => s.xero)
+  const billing = useAppStore((s) => s.billing)
+  const clock = useAppStore((s) => s.clock)
+  const [windowInput, setWindowInput] = useState(String(settings.contactArchiveInactivityDays))
+  const [windowMsg, setWindowMsg] = useState<string | null>(null)
+  const [runMsg, setRunMsg] = useState<string | null>(null)
+
+  const eligible = useMemo(
+    () => eligibleArchiveContactIds({ xero, billing, settings, clock }),
+    [xero, billing, settings, clock],
+  )
+  const archivedCount = useMemo(() => Object.values(xero.contacts).filter((c) => c.archived).length, [xero.contacts])
+  const vs = settings.volumeStory
+
+  function saveWindow() {
+    const outcome = setArchiveWindowDays(useAppStore, actor, Number(windowInput))
+    setWindowMsg(
+      outcome.ok
+        ? `Archive window set to ${Math.round(Number(windowInput))} days. Next-run eligibility updated.`
+        : outcome.message,
+    )
+  }
+
+  function runNow() {
+    const outcome = runArchiveJob(useAppStore)
+    if (!outcome.ok) {
+      setRunMsg(outcome.message)
+      return
+    }
+    setRunMsg(
+      outcome.value.count === 0
+        ? 'No individual contacts are eligible to archive right now (fully paid + inactive beyond the window).'
+        : `Archived ${outcome.value.count} contact${outcome.value.count === 1 ? '' : 's'}. Active-contact count is now ${useAppStore.getState().settings.volumeStory.activeContacts.toLocaleString('en-NZ')}.`,
+    )
+  }
+
+  return (
+    <>
+      <Header title="Xero & archiving" sub="Contact-archive policy for the Xero contact store. Patient and Billable Party contacts archive once fully paid and inactive; organisational contacts never archive." />
+
+      {/* Configurable window */}
+      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Contact archive inactivity window</div>
+        <div style={{ fontSize: 12.5, color: neutral.slate }}>
+          The RFP gives 90 days as an illustrative example, not a fixed rule, so it is a configurable
+          setting. Changing it changes which contacts the next nightly run archives.
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+          <div style={{ width: 160 }}>
+            <TextField label="Inactivity days" value={windowInput} onChange={setWindowInput} mono />
+          </div>
+          <Button variant="secondary" onClick={saveWindow}>Save window</Button>
+        </div>
+        {windowMsg !== null && <div style={{ fontSize: 12.5, color: accent.pressed }}>{windowMsg}</div>}
+      </div>
+
+      {/* Nightly job */}
+      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Nightly contact-archive job</div>
+        <div style={{ fontSize: 12.5, color: neutral.slate }}>
+          The scheduled job runs automatically each time the demo clock advances a day. Run it now to
+          archive currently-eligible contacts. {eligible.length} contact{eligible.length === 1 ? '' : 's'} eligible right now;
+          {' '}{archivedCount} already archived.
+        </div>
+        <div style={{ fontSize: 12, color: neutral.mist, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>
+          Scale (narrated, not simulated): ~{vs.invoicesPerYear.toLocaleString('en-NZ')} invoices/year, ~{vs.oneTimePct}% one-time
+          clients, {vs.activeContacts.toLocaleString('en-NZ')} active contacts against Xero's ~{vs.softLimit.toLocaleString('en-NZ')} soft limit.
+        </div>
+        <div>
+          <Button variant="secondary" onClick={runNow}>Run nightly archive job now</Button>
+        </div>
+        {runMsg !== null && <div style={{ fontSize: 12.5, color: accent.pressed }}>{runMsg}</div>}
+      </div>
     </>
   )
 }

@@ -380,18 +380,20 @@ describe('invoice identity and delivery', () => {
     const api = store()
     stageAndBill(api, MORRISON_LIST)
     stageAndBill(api, WHITAKER_LIST)
-    const numbers = Object.values(api.getState().billing.invoices).map((i) => i.invoiceNumber)
-    // 6 (Morrison) + 5 (Whitaker) runtime invoices + the seeded PAID pre-payment
-    // invoice that ships with every store (Phase 09) = 12, all unique.
+    // Scope to the AA-2026-#### series (runtime + the seeded pre-payment); the
+    // seeded historical mirror uses a disjoint AA-2026-H## series (Phase 10).
+    const series = Object.values(api.getState().billing.invoices).filter((i) => /^AA-2026-\d{4}$/.test(i.invoiceNumber))
+    const numbers = series.map((i) => i.invoiceNumber)
+    // 6 (Morrison) + 5 (Whitaker) runtime + the seeded PAID pre-payment = 12, all unique.
     expect(numbers).toHaveLength(12)
-    for (const n of numbers) expect(n).toMatch(/^AA-2026-\d{4}$/)
     expect(new Set(numbers).size).toBe(numbers.length)
-    // Every invoice carries a BillingCase as its internal case reference. The
-    // seeded pre-payment invoice's case is 'paid'; runtime invoices are 'invoiced'.
-    for (const inv of Object.values(api.getState().billing.invoices)) {
+    // Every such invoice carries a BillingCase as its internal case reference. The
+    // seeded pre-payment invoice's case is fully paid (disbursed); runtime = 'invoiced'.
+    for (const inv of series) {
       const c = api.getState().billing.cases[inv.caseReference]
       expect(c?.invoiceId).toBe(inv.id)
-      expect(c?.status).toBe(inv.kind === 'prePayment' ? 'paid' : 'invoiced')
+      if (inv.kind === 'prePayment') expect(['paid', 'disbursed']).toContain(c?.status)
+      else expect(c?.status).toBe('invoiced')
     }
   })
 

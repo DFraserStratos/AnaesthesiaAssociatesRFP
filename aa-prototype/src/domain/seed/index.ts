@@ -59,6 +59,7 @@ import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
 import { buildCards, type CardScenarioIds } from './cards'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
+import { buildHistory } from './history'
 
 export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
 export { slotRng, hashStringToSeed } from './slotHash'
@@ -68,16 +69,12 @@ export { BP, PAT } from './patients'
 export {
   ANAESTHETIST_DASHBOARD,
   deriveDashboardFigures,
-  bucketForAgingDays,
   type AnaesthetistDashboardSeed,
   type DashboardFigures,
-  type DerivedOutstanding,
-  type OutstandingAccount,
-  type AgingBuckets,
-  type AgingBucketKey,
   type ProductivitySeed,
   type LeaveSeed,
 } from './anaesthetistDashboard'
+export { bucketForAgingDays, epochDayOf, daysBetween, type AgingBucketKey } from '../dateDays'
 
 /** The demo seed constant (the pinned demo date as a number). */
 export const SEED = 20260721
@@ -358,13 +355,36 @@ function buildSeedInternal(): SeedBuild {
 
   const patients = buildPatients(SEED)
 
+  const anaesthetistsRec = byId(ANAESTHETISTS, (a) => a.registrationNumber)
+  const hospitalsRec = byId(HOSPITALS, (h) => h.id)
+  const surgeonsRec = byId(SURGEONS, (s) => s.id)
+  const organisationsRec = byId(ORGANISATIONS, (o) => o.id)
+  const patientsRec = byId(patients, (p) => p.hiddenInternalId)
+
+  // Seeded historical billing-mirror rows (Phase 10): merge their Lists/Cards/
+  // Procedures into the schedule. Their billing + Xero side is composed by
+  // `buildSeedBillingSlice`, which rebuilds the same deterministic graph.
+  const history = buildHistory({
+    anaesthetists: anaesthetistsRec,
+    hospitals: hospitalsRec,
+    surgeons: surgeonsRec,
+    organisations: organisationsRec,
+    patients: patientsRec,
+    billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
+  })
+  const cardsRec = byId(cardsBuild.cards, (c) => c.id)
+  const proceduresRec = byId(cardsBuild.procedures, (p) => p.id)
+  for (const [id, l] of Object.entries(history.lists)) lists[id] = l
+  for (const [id, c] of Object.entries(history.cards)) cardsRec[id] = c
+  for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
+
   const state: SeedState = {
     masters: {
-      anaesthetists: byId(ANAESTHETISTS, (a) => a.registrationNumber),
-      surgeons: byId(SURGEONS, (s) => s.id),
-      hospitals: byId(HOSPITALS, (h) => h.id),
+      anaesthetists: anaesthetistsRec,
+      surgeons: surgeonsRec,
+      hospitals: hospitalsRec,
       insurers: byId(INSURERS, (i) => i.id),
-      organisations: byId(ORGANISATIONS, (o) => o.id),
+      organisations: organisationsRec,
       contracts: byId(CONTRACTS, (c) => c.id),
       contractPrices: byId(CONTRACT_PRICES, (p) => p.id),
       rvgCodes: byId(RVG_CODES, (r) => r.code),
@@ -373,17 +393,22 @@ function buildSeedInternal(): SeedBuild {
       permanentLists: byId(PERMANENT_LISTS, (p) => p.id),
       availability: byId(AVAILABILITY, (a) => a.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
-      patients: byId(patients, (p) => p.hiddenInternalId),
+      patients: patientsRec,
       billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
     },
     schedule: {
       lists,
-      cards: byId(cardsBuild.cards, (c) => c.id),
-      procedures: byId(cardsBuild.procedures, (p) => p.id),
+      cards: cardsRec,
+      procedures: proceduresRec,
       billingLines: byId(cardsBuild.billingLines, (l) => l.id),
     },
     audit: cardsBuild.audit,
-    settings: { contactArchiveInactivityDays: 90 },
+    settings: {
+      contactArchiveInactivityDays: 90,
+      // Narrated scale (N4): counters near Xero's ~10k soft contact limit, the
+      // archive job decrements `activeContacts`. Not ~28k seeded records.
+      volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
+    },
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     counters: {

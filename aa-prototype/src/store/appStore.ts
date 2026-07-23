@@ -20,6 +20,7 @@ import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
 import type {
   BillingCase,
+  BillingReceipt,
   Disbursement,
   IntegrationFeed,
   IntegrationMessage,
@@ -40,6 +41,15 @@ export interface BillingSlice {
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
   cases: Record<string, BillingCase>
+  /** Append-only receipts ledger (Phase 10) — GST-report source + payment idempotency key-set. */
+  receipts: Record<string, BillingReceipt>
+  /**
+   * PMS-side ContactID cache (Phase 10; RFP Appendix 2 contact resolution: a
+   * cached ContactID is tried first, then a lookup by ContactNumber, then
+   * create). Keyed by the composite `${kind}:${id}` (never a raw id — 4 disjoint
+   * org namespaces). A hint only: never authoritative, never NHI-derived.
+   */
+  contactIdCache: Record<string, string>
 }
 
 export interface XeroSlice {
@@ -80,7 +90,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v5: Phase 09 — new seed cards (relocated unpaid pre-payment card, the mixed
+/** v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
+ *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
+ *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
+ *  billing-mirror + Xero rows (Souter receivables/GST) and the seeded
+ *  missed-webhook PaymentIn, new counters (XC/XR/XP/PMT/DSB/PR/RCT).
+ *  v5: Phase 09 — new seed cards (relocated unpaid pre-payment card, the mixed
  *  + full pre-payment card, the multi-card billing-failure list), the seeded
  *  PAID pre-invoice billing slice, and new `Card` fields (cardType /
  *  addendumOfCardId). v4: Phase 06 — `dayNotes` slice added to SeedState (3
@@ -88,10 +103,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 5
+export const PERSIST_VERSION = 6
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, cases: {} }
+  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
   return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {} }
@@ -111,8 +126,14 @@ export function freshAppState(): AppState {
     ...seed,
     counters: seedBilling.counters,
     clock: INITIAL_CLOCK,
-    billing: { invoices: seedBilling.invoices, invoiceLines: seedBilling.invoiceLines, cases: seedBilling.cases },
-    xero: emptyXeroSlice(),
+    billing: {
+      invoices: seedBilling.invoices,
+      invoiceLines: seedBilling.invoiceLines,
+      cases: seedBilling.cases,
+      receipts: seedBilling.receipts,
+      contactIdCache: seedBilling.contactIdCache,
+    },
+    xero: seedBilling.xero,
     integrations: emptyIntegrationsSlice(),
     shell: { currentApp: 'mobile' },
   }

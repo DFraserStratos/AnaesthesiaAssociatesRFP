@@ -1,13 +1,16 @@
-import { useState } from 'react'
-import { RotateCcw, Zap, MapPin, CalendarDays, Info, ChevronsRight, AlertTriangle, Stethoscope } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { RotateCcw, Zap, MapPin, CalendarDays, Info, ChevronsRight, AlertTriangle, Stethoscope, CreditCard, PlugZap } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import {
   advanceClockDays,
   advanceClockMinutes,
+  armHandoffFault,
   authoriseList,
   editContract,
+  openAccRecs,
+  receivePayment,
   resetDemo,
   submitList,
   useAppStore,
@@ -16,6 +19,8 @@ import {
   type Actor,
 } from '../../store'
 import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
+import { roundToCents } from '../../domain/billing/money'
+import { formatCurrency } from '../../shared/format'
 import { DemoBadge } from '../../shared'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
 
@@ -264,6 +269,10 @@ export function DemoControlPanel() {
         )}
       </ControlCard>
 
+      {/* Phase 10 demo triggers: Xero payment webhook + handoff fault */}
+      <PaymentReceivedCard />
+      <HandoffFaultCard />
+
       {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}
       <div
         style={{
@@ -349,5 +358,133 @@ export function DemoControlPanel() {
       </div>
 
     </DemoSurface>
+  )
+}
+
+/** Badged demo trigger: simulate a Xero payment webhook against an open ACCREC. */
+function PaymentReceivedCard() {
+  const xero = useAppStore((s) => s.xero)
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  const candidates = useMemo(() => openAccRecs({ xero, billing, masters }), [xero, billing, masters])
+
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'full' | 'partial'>('full')
+  const [keyN, setKeyN] = useState(1)
+  const [last, setLast] = useState<{ accRecId: string; key: string; amount: number } | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  const active = candidates.find((c) => c.accRecId === selectedId) ?? candidates[0]
+
+  function recordPayment() {
+    if (active === undefined) return
+    const partial = roundToCents(active.remaining / 2)
+    const amount = mode === 'partial' && partial > 0 ? partial : active.remaining
+    const key = `WEBHOOK-${active.accRecId}-${keyN}`
+    const res = receivePayment(useAppStore, { accRecId: active.accRecId, amount, idempotencyKey: key, source: 'webhook' })
+    setKeyN((n) => n + 1)
+    setLast({ accRecId: active.accRecId, key, amount })
+    setMsg(
+      res.ok
+        ? res.value.applied
+          ? `Webhook applied ${formatCurrency(amount)} to ${active.invoiceNumber}. The paired ACCPAY is authorised pro-rata.`
+          : 'No change (already fully paid).'
+        : `Refused: ${res.message}`,
+    )
+  }
+
+  function replayLast() {
+    if (last === null) return
+    const res = receivePayment(useAppStore, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key, source: 'webhook' })
+    setMsg(
+      res.ok && !res.value.applied
+        ? 'Duplicate webhook ignored (idempotent by key). No double effect.'
+        : 'Replayed.',
+    )
+  }
+
+  return (
+    <ControlCard icon={CreditCard} eyebrow="Xero payments" title="Payment received (webhook)">
+      <div><DemoBadge label="Demo trigger" /></div>
+      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
+        Simulates a Xero INVOICE webhook: the ACCREC is marked (part) paid and its paired ACCPAY is
+        authorised proportionally. Replaying reuses the last key to show idempotency. A missed webhook
+        is caught by the daily reconciliation poll when you advance the day.
+      </span>
+      {candidates.length === 0 ? (
+        <span style={{ fontSize: 12.5, color: neutral.mist, marginTop: 4 }}>
+          No open invoices. Authorise a list (or raise a pre-payment invoice) to create an ACCREC first.
+        </span>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          <select
+            value={active?.accRecId ?? ''}
+            onChange={(e) => setSelectedId(e.target.value)}
+            style={{ font: 'inherit', fontSize: 13, padding: '7px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}
+          >
+            {candidates.map((c) => (
+              <option key={c.accRecId} value={c.accRecId}>
+                {c.invoiceNumber} · {c.counterpartyLabel} · {formatCurrency(c.remaining)} due
+              </option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {(['full', 'partial'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                style={{ ...actionButtonStyle, background: mode === m ? neutral.sunken : neutral.surface, borderColor: mode === m ? neutral.slate : neutral.lineStrong }}
+              >
+                {m === 'full' ? 'Full payment' : 'Half (partial)'}
+              </button>
+            ))}
+            <button type="button" onClick={recordPayment} style={{ ...actionButtonStyle, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
+              Record payment
+            </button>
+            <button type="button" onClick={replayLast} disabled={last === null} style={{ ...actionButtonStyle, opacity: last === null ? 0.5 : 1, cursor: last === null ? 'not-allowed' : 'pointer' }}>
+              Replay last event
+            </button>
+          </div>
+        </div>
+      )}
+      {msg !== null && (
+        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
+      )}
+    </ControlCard>
+  )
+}
+
+/** Badged demo trigger: arm the next Xero handoff to fault (D-handoff). */
+function HandoffFaultCard() {
+  const [msg, setMsg] = useState<string | null>(null)
+  const armed = useAppStore((s) => s.settings.failNextHandoff === true)
+  return (
+    <ControlCard icon={PlugZap} eyebrow="Xero handoff" title="Fail the next Xero handoff">
+      <div><DemoBadge label="Demo trigger" /></div>
+      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
+        Arms the next ACCREC/ACCPAY handoff to fault. The invoice still stands; the case records a
+        handoff failure and no pair is created. Then authorise a list (or raise a pre-payment invoice):
+        the billing monitor shows the fault with a Resolve &amp; retry that re-runs the idempotent handoff.
+      </span>
+      <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={() => {
+            armHandoffFault(useAppStore, OFFICE)
+            setMsg('Armed. The next Xero handoff will fault once, then clear.')
+          }}
+          style={actionButtonStyle}
+          onMouseEnter={(e) => (e.currentTarget.style.background = neutral.sunken)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = neutral.surface)}
+        >
+          Arm handoff failure
+        </button>
+        {armed && <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint }}>Armed</span>}
+      </div>
+      {msg !== null && (
+        <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
+      )}
+    </ControlCard>
   )
 }

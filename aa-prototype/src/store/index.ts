@@ -98,9 +98,16 @@ export {
   retryBillingCase,
   markInvoiceEmailed,
   wireBillingRun,
+  handoffListCases,
   type BillingRunResult,
   type BillingRunException,
 } from './billingRun'
+export { handoffCase, handoffCasesForCard, type HandoffResult } from './xeroHandoff'
+export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
+export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentInput } from './paymentActions'
+export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
+export { runPayables, payablesDue, type PayablesRunResult, type PayablesDue } from './payablesActions'
+export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
 export * from './selectors'

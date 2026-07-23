@@ -37,6 +37,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const invoice = billing.invoices[invoiceId]
 
   const lines = useMemo(() => invoiceLinesFor({ billing }, invoiceId), [billing, invoiceId])
+  const theCase = useMemo(
+    () => Object.values(billing.cases).find((c) => c.invoiceId === invoiceId),
+    [billing.cases, invoiceId],
+  )
 
   const procedures = useMemo(() => {
     const ids = new Set(lines.map((l) => l.procedureId).filter((id): id is string => id !== undefined))
@@ -169,6 +173,33 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
           </div>
         </div>
 
+        {/* Two-state money (RFP): paid into the AA account, then disbursed to the
+            anaesthetist. Two independent, separately-tracked states. */}
+        {theCase !== undefined && theCase.accRecId !== undefined && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
+            <StateChip
+              on={theCase.paidInAtISO !== undefined}
+              label={
+                theCase.paidInAtISO !== undefined
+                  ? `Paid into AA account ${dateTimeMicroCap(theCase.paidInAtISO)}`
+                  : theCase.receivedAmount > 0
+                    ? `Part paid ${formatCurrency(theCase.receivedAmount)} of ${formatCurrency(invoice.total)}`
+                    : 'Awaiting payment'
+              }
+            />
+            <StateChip
+              on={theCase.disbursedAtISO !== undefined}
+              label={
+                theCase.disbursedAtISO !== undefined
+                  ? `Disbursed to anaesthetist ${dateTimeMicroCap(theCase.disbursedAtISO)}`
+                  : theCase.disbursedAmount > 0
+                    ? `Part disbursed ${formatCurrency(theCase.disbursedAmount)}`
+                    : 'Not yet disbursed'
+              }
+            />
+          </div>
+        )}
+
         <div style={{ fontSize: 10.5, color: neutral.mist, borderTop: `1px solid ${neutral.line}`, paddingTop: 10 }}>
           GST at the NZ standard rate of {GST_RATE * 100}% is a demo assumption; the RFP describes only the GST component of amounts received. A discovery item for AA.
         </div>
@@ -202,11 +233,38 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         <Button variant="secondary" onClick={() => window.print()}>
           <Printer size={15} aria-hidden style={{ marginRight: 6 }} /> Print
         </Button>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: neutral.mist, marginLeft: 'auto' }}>
-          <Clock size={13} aria-hidden /> Xero handoff pending · Phase 10
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: theCase?.handoffFailure !== undefined ? semantic.warning.onTint : neutral.mist, marginLeft: 'auto' }}>
+          <Clock size={13} aria-hidden />
+          {theCase?.handoffFailure !== undefined
+            ? 'Xero handoff failed · resolve in the billing monitor'
+            : theCase?.accRecId !== undefined
+              ? `Xero: ACCREC ${invoice.invoiceNumber} · ACCPAY ${invoice.invoiceNumber}-P`
+              : 'Xero handoff pending'}
         </span>
       </div>
     </div>
+  )
+}
+
+/** A two-state money chip: a filled tick when the state is reached, muted otherwise. */
+function StateChip({ on, label }: { on: boolean; label: string }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        borderRadius: 999,
+        padding: '5px 12px',
+        background: on ? semantic.success.tint : neutral.sunken,
+        color: on ? semantic.success.onTint : neutral.slate,
+      }}
+    >
+      <span aria-hidden>{on ? '✓' : '○'}</span>
+      {label}
+    </span>
   )
 }
 

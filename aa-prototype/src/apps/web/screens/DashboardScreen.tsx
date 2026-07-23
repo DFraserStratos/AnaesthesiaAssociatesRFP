@@ -4,7 +4,7 @@ import { accent, neutral, semantic } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
 import type { List, Session } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
-import { useAppStore } from '../../../store'
+import { receivablesAgingFor, useAppStore } from '../../../store'
 import { formatCurrency } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
@@ -53,8 +53,16 @@ export function DashboardScreen({
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const cardsRecord = useAppStore((s) => s.schedule.cards)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
+  const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
 
   const figures = useDashboardFigures(anaesthetistId)
+  // Receivables aging now derives from the billing mirror (Phase 10; W1/W4).
+  const receivables = useMemo(
+    () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO),
+    [billing, schedule, masters, anaesthetistId, todayISO],
+  )
 
   // The mockup greets by surname ("Kia ora, Dr Souter").
   const surname = personaName.replace(/^Dr\s+/, '').split(' ').pop() ?? personaName
@@ -177,19 +185,19 @@ export function DashboardScreen({
           title="Receivables aging"
           action={
             <span className="mono" style={{ fontSize: 14, fontWeight: 600 }}>
-              {figures !== undefined ? `${formatCurrency(figures.aging.total)} outstanding` : ''}
+              {receivables.aging.total > 0 ? `${formatCurrency(receivables.aging.total)} outstanding` : ''}
             </span>
           }
           style={{ gridColumn: 'span 7' }}
         >
-          {figures === undefined ? (
-            <EmptyNote>No billed work yet. Receivables appear once billing runs (Phase 10).</EmptyNote>
+          {receivables.rows.length === 0 ? (
+            <EmptyNote>No outstanding accounts. Receivables appear here once billed work goes unpaid.</EmptyNote>
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {AGING_ROWS.map((r) => {
-                  const amount = figures.aging[r.key]
-                  const pct = figures.aging.total > 0 ? Math.round((amount / figures.aging.total) * 100) : 0
+                  const amount = receivables.aging[r.key]
+                  const pct = receivables.aging.total > 0 ? Math.round((amount / receivables.aging.total) * 100) : 0
                   return (
                     <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ width: 72, fontSize: 12, fontWeight: 600, color: neutral.slate }}>{r.label}</span>
@@ -202,7 +210,7 @@ export function DashboardScreen({
                 })}
               </div>
               <div style={{ fontSize: 13, color: neutral.slate, borderTop: `1px solid ${neutral.sunken}`, paddingTop: 12 }}>
-                {figures.accountsOver60} {figures.accountsOver60 === 1 ? 'account' : 'accounts'} over 60 days ·{' '}
+                {receivables.accountsOver60} {receivables.accountsOver60 === 1 ? 'account' : 'accounts'} over 60 days ·{' '}
                 <LinkButton onClick={onViewOverdue}>view overdue accounts</LinkButton>
               </div>
             </>

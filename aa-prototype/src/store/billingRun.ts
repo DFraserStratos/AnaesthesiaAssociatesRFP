@@ -40,9 +40,10 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { billingContextForCard, cardsForList, prePaidByProcedure, proceduresForCard } from './selectors'
+import { billingContextForCard, cardsForList, casesForList, prePaidByProcedure, proceduresForCard } from './selectors'
 import { getCard } from './lifecycle'
 import { onAppEvent } from './events'
+import { handoffCase } from './xeroHandoff'
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
 
@@ -146,6 +147,9 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           id: bc.id,
           cardId,
           status: 'failed',
+          receivedAmount: 0,
+          authorisedAmount: 0,
+          disbursedAmount: 0,
           failure: {
             code: result.code,
             message: result.message,
@@ -211,7 +215,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           if (line.units !== undefined) stored.units = line.units
           invoiceLines[il.id] = stored
         }
-        cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced' } satisfies BillingCase
+        cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
         cardInvoiceIds.push(inv.id)
         metas.push({
           entityType: 'invoice',
@@ -249,7 +253,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     })
 
     return {
-      billing: { invoices, invoiceLines, cases },
+      billing: { ...s.billing, invoices, invoiceLines, cases },
       schedule: {
         ...s.schedule,
         // Re-read from `s`, not the pre-run closure: if another listAuthorised
@@ -360,7 +364,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
         if (line.units !== undefined) stored.units = line.units
         invoiceLines[il.id] = stored
       }
-      cases[bcId] = { id: bcId, cardId: card.id, invoiceId: inv.id, status: 'invoiced' } satisfies BillingCase
+      cases[bcId] = { id: bcId, cardId: card.id, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
       invoiceIds.push(inv.id)
       metas.push({
         entityType: 'invoice',
@@ -379,7 +383,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
       stampCardId: null,
     })
 
-    return { billing: { invoices, invoiceLines, cases }, counters }
+    return { billing: { ...s.billing, invoices, invoiceLines, cases }, counters }
   })
 
   return ok({ invoiceIds, exceptions: [] })
@@ -432,11 +436,28 @@ export function markInvoiceEmailed(api: AppStoreApi, actor: Actor, invoiceId: st
 }
 
 /**
+ * Hand every eligible case of a just-run List off to Xero (Phase 10). Reads the
+ * committed cases via a fresh `getState()` (the run committed synchronously
+ * before this), so it never depends on a second listAuthorised listener's
+ * ordering (D-handoff). Idempotent per case; a fault is recorded on the case.
+ */
+export function handoffListCases(api: AppStoreApi, listId: string): void {
+  for (const c of casesForList(api.getState(), listId)) {
+    if (c.invoiceId !== undefined && c.accRecId === undefined && c.status !== 'failed') {
+      handoffCase(api, c.id)
+    }
+  }
+}
+
+/**
  * Subscribe the billing run to `listAuthorised` for one store. Call once at
- * app bootstrap for the singleton; returns the unsubscribe (tests use it).
+ * app bootstrap for the singleton; returns the unsubscribe (tests use it). The
+ * run commits synchronously, then its cases are handed off to Xero (Phase 10).
  */
 export function wireBillingRun(api: AppStoreApi): () => void {
   return onAppEvent((event) => {
-    if (event.type === 'listAuthorised') runBillingForList(api, event.listId)
+    if (event.type !== 'listAuthorised') return
+    const result = runBillingForList(api, event.listId)
+    if (result.ok) handoffListCases(api, event.listId)
   })
 }

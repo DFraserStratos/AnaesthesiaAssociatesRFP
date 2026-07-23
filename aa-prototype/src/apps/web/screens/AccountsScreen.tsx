@@ -1,12 +1,17 @@
-import { useState } from 'react'
-import { format, parseISO } from 'date-fns'
+import { useMemo, useState } from 'react'
+import { format, parseISO, startOfMonth, subMonths } from 'date-fns'
 import { neutral } from '../../../theme/tokens'
-import { type AgingBucketKey, type DerivedOutstanding } from '../../../domain/seed'
-import { useAppStore } from '../../../store'
+import { type AgingBucketKey } from '../../../domain/seed'
+import {
+  gstActivityFor,
+  receivablesAgingFor,
+  useAppStore,
+  useToday,
+  type AccpayInvoiceRow,
+} from '../../../store'
 import { Segmented } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
 import { Panel } from '../components'
-import { useDashboardFigures } from '../useDashboardFigures'
 
 export type AccountsSubTab = 'overdue' | 'gst'
 
@@ -27,17 +32,11 @@ type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
 
 /**
  * The Accounts area (W4 + M11 GST report). Sub-nav: Overdue (a flat
- * accounts-outstanding table, ordered by date, NO rollup, per Appendix 5) and
- * GST activity (a date-ranged transaction list of amounts received with their
- * GST component). Overdue reads the seeded outstanding accounts (Phase 10
- * replaces with billing-mirror derivation); GST is honest-empty with a working
- * period selector until Phase 10's payment simulation produces received money.
- *
- * Phase 08 note: `state.billing` now holds real invoices once a list is
- * billed, but these views stay seeded/honest-empty deliberately — the RFP's
- * balance view is one flat row per ACCPAY invoice, which exists only after
- * Phase 10's Xero handoff ("awaiting Xero sync"). The Phase 08 view effect
- * here is the billed list DISAPPEARING from Lists/Dashboard (isListBilled).
+ * accounts-outstanding table, ordered by date, NO rollup, one row per ACCPAY
+ * invoice) and GST activity (a date-ranged transaction list of amounts received
+ * with their GST component). BOTH now derive from the billing MIRROR (Phase 10;
+ * convention 9 — never `state.xero`): outstanding ACCPAY invoices and the
+ * receipts ledger.
  */
 export function AccountsScreen({ anaesthetistId, subTab, onSubTab }: AccountsScreenProps) {
   return (
@@ -52,42 +51,45 @@ export function AccountsScreen({ anaesthetistId, subTab, onSubTab }: AccountsScr
         <SubTabButton active={subTab === 'gst'} onClick={() => onSubTab('gst')}>GST activity</SubTabButton>
       </div>
 
-      {subTab === 'overdue' ? <OverdueTable anaesthetistId={anaesthetistId} /> : <GstReport />}
+      {subTab === 'overdue' ? <OverdueTable anaesthetistId={anaesthetistId} /> : <GstReport anaesthetistId={anaesthetistId} />}
     </div>
   )
 }
 
 function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
-  const patients = useAppStore((s) => s.masters.patients)
-  const contracts = useAppStore((s) => s.masters.contracts)
-  const surgeons = useAppStore((s) => s.masters.surgeons)
+  const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const todayISO = useToday()
 
-  const figures = useDashboardFigures(anaesthetistId)
+  const { rows, aging } = useMemo(
+    () => receivablesAgingFor({ billing, schedule, masters }, anaesthetistId, todayISO),
+    [billing, schedule, masters, anaesthetistId, todayISO],
+  )
 
-  if (figures === undefined || figures.outstanding.length === 0) {
+  if (rows.length === 0) {
     return (
       <Panel>
         <div style={{ fontSize: 14, color: neutral.mist, padding: '8px 0' }}>
-          No outstanding accounts. Balances appear here once billing runs (Phase 10).
+          No outstanding accounts. Unpaid ACCPAY invoices appear here the day after they are billed.
         </div>
       </Panel>
     )
   }
 
-  const rows = figures.outstanding
   return (
     <Panel flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, color: neutral.mist }}>
-        One row per outstanding account, ordered by first-account date. No rollup (per the RFP).
+        One row per outstanding ACCPAY invoice, ordered by date raised. No rollup (per the RFP).
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 820 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
+              <Th>Invoice</Th>
               <Th>Patient</Th>
-              <Th>Contract</Th>
-              <Th>Surgeon</Th>
-              <Th>First account</Th>
+              <Th>Payer</Th>
+              <Th>Raised</Th>
               {AGING_COLS.map((c) => (
                 <Th key={c.key} right>{c.label}</Th>
               ))}
@@ -95,15 +97,15 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r: DerivedOutstanding) => (
-              <tr key={r.id} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
-                <Td>{patients[r.patientId]?.name ?? r.patientId}</Td>
-                <Td>{contracts[r.contractId]?.name ?? r.contractId}</Td>
-                <Td>{surgeons[r.surgeonId]?.name ?? r.surgeonId}</Td>
-                <Td mono>{format(parseISO(r.firstAccountDateISO), 'd MMM yyyy')}</Td>
+            {rows.map((r: AccpayInvoiceRow) => (
+              <tr key={r.caseId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
+                <Td mono>{r.invoiceNumber}</Td>
+                <Td>{r.patientName}</Td>
+                <Td>{r.counterpartyLabel}</Td>
+                <Td mono>{format(parseISO(r.raisedAtISO.slice(0, 10)), 'd MMM yyyy')}</Td>
                 {AGING_COLS.map((c) => (
                   <Td key={c.key} mono right>
-                    {r.bucket === c.key ? formatCurrency(r.amount) : '·'}
+                    {r.bucket === c.key ? formatCurrency(r.outstanding) : '·'}
                   </Td>
                 ))}
                 <Td center>{r.accRelated ? <span style={{ fontSize: 11, fontWeight: 600, color: neutral.slate }}>ACC</span> : '·'}</Td>
@@ -115,10 +117,10 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
               <Td>Totals</Td>
               <Td>{''}</Td>
               <Td>{''}</Td>
-              <Td right>{''}</Td>
+              <Td>{''}</Td>
               {AGING_COLS.map((c) => (
                 <Td key={c.key} mono right bold>
-                  {formatCurrency(figures.aging[c.key])}
+                  {formatCurrency(aging[c.key])}
                 </Td>
               ))}
               <Td center>{''}</Td>
@@ -131,7 +133,7 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
               <Td mono right bold>{''}</Td>
               <Td mono right bold>{''}</Td>
               <Td mono right bold>{''}</Td>
-              <Td mono right bold>{formatCurrency(figures.aging.total)}</Td>
+              <Td mono right bold>{formatCurrency(aging.total)}</Td>
               <Td center>{''}</Td>
             </tr>
           </tfoot>
@@ -141,13 +143,28 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
   )
 }
 
-function GstReport() {
-  const [period, setPeriod] = useState<GstPeriod>('monthly')
-  const periodLabel: Record<GstPeriod, string> = {
-    monthly: 'Monthly',
-    biMonthly: 'Bi-monthly',
-    sixMonthly: 'Six-monthly',
-  }
+/** The GST period window ending at today (rolling N calendar months). */
+function periodWindow(period: GstPeriod, todayISO: string): { fromISO: string; toISO: string } {
+  const months = period === 'monthly' ? 1 : period === 'biMonthly' ? 2 : 6
+  const today = parseISO(todayISO)
+  return { fromISO: format(startOfMonth(subMonths(today, months - 1)), 'yyyy-MM-dd'), toISO: format(today, 'yyyy-MM-dd') }
+}
+
+function GstReport({ anaesthetistId }: { anaesthetistId: string }) {
+  const billing = useAppStore((s) => s.billing)
+  const masters = useAppStore((s) => s.masters)
+  const todayISO = useToday()
+  const defaultPeriod = (masters.anaesthetists[anaesthetistId]?.gstPeriod ?? 'monthly') as GstPeriod
+  const [period, setPeriod] = useState<GstPeriod>(defaultPeriod)
+
+  const { fromISO, toISO } = periodWindow(period, todayISO)
+  const activity = useMemo(
+    () => gstActivityFor({ billing, masters }, anaesthetistId, fromISO, toISO),
+    [billing, masters, anaesthetistId, fromISO, toISO],
+  )
+
+  const periodLabel: Record<GstPeriod, string> = { monthly: 'Monthly', biMonthly: 'Bi-monthly', sixMonthly: 'Six-monthly' }
+
   return (
     <Panel
       title="GST activity"
@@ -166,7 +183,8 @@ function GstReport() {
       }
     >
       <div style={{ fontSize: 12, color: neutral.mist }}>
-        {periodLabel[period]} period · one row per receipt, each with its GST component; period totals below.
+        {periodLabel[period]} period ({format(parseISO(fromISO), 'd MMM')} to {format(parseISO(toISO), 'd MMM yyyy')}) · one row per amount
+        received, each with its GST component; period totals below.
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 560 }}>
@@ -180,20 +198,31 @@ function GstReport() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan={5} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
-                No payments received in this period yet. Received money (and its GST) appears here once the
-                billing and payment simulation runs (Phase 10).
-              </td>
-            </tr>
+            {activity.rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
+                  No payments received in this period.
+                </td>
+              </tr>
+            ) : (
+              activity.rows.map((r) => (
+                <tr key={r.receiptId} style={{ borderBottom: `1px solid ${neutral.sunken}` }}>
+                  <Td mono>{format(parseISO(r.atISO.slice(0, 10)), 'd MMM yyyy')}</Td>
+                  <Td mono>{r.invoiceNumber}</Td>
+                  <Td>{r.payerLabel}</Td>
+                  <Td mono right>{formatCurrency(r.grossAmount)}</Td>
+                  <Td mono right>{formatCurrency(r.gstAmount)}</Td>
+                </tr>
+              ))
+            )}
           </tbody>
           <tfoot>
             <tr style={{ borderTop: `2px solid ${neutral.line}` }}>
               <Td bold>Period total</Td>
               <Td>{''}</Td>
               <Td>{''}</Td>
-              <Td mono right bold>{formatCurrency(0)}</Td>
-              <Td mono right bold>{formatCurrency(0)}</Td>
+              <Td mono right bold>{formatCurrency(activity.totalGross)}</Td>
+              <Td mono right bold>{formatCurrency(activity.totalGst)}</Td>
             </tr>
           </tfoot>
         </table>

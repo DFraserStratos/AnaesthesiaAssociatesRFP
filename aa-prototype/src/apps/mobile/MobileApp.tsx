@@ -169,7 +169,7 @@ export function MobileApp() {
       <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: neutral.bg, color: neutral.ink }}>
         {tab === 'lists' && <SlideStack layers={listsLayers} depth={depth} />}
         {tab === 'availability' && <AvailabilityScreen actor={actor} anaesthetistId={anaesthetistId} initials={persona.initials} />}
-        {tab === 'balances' && <BalancesScreen initials={persona.initials} />}
+        {tab === 'balances' && <BalancesScreen initials={persona.initials} anaesthetistId={anaesthetistId} />}
         {tab === 'more' && <MoreScreen personaName={persona.name} personaRole={persona.role} initials={persona.initials} />}
 
         {showTabBar && <BottomTabBar active={tab} onSelect={setTab} />}

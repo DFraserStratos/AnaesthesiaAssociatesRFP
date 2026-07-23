@@ -17,7 +17,7 @@
 import type { ActorRole, AuditEntry, AuditSource, CardId } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { emptyIntegrationsSlice, emptyXeroSlice, type AppState, type AppStoreApi } from './appStore'
+import { emptyIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 
 // ---------------------------------------------------------------------------
 // Actors & outcomes
@@ -82,6 +82,15 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   invoiceLine: { prefix: 'IL', pad: 4 },
   billingCase: { prefix: 'BC', pad: 4 },
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
+  // Xero simulation + payments (Phase 10). Top-level counters on AppState (not
+  // under `billing`), like the billing kinds above.
+  xeroContact: { prefix: 'XC', pad: 4 },
+  xeroAccRec: { prefix: 'XR', pad: 4 },
+  xeroAccPay: { prefix: 'XP', pad: 4 },
+  paymentIn: { prefix: 'PMT', pad: 4 },
+  disbursement: { prefix: 'DSB', pad: 4 },
+  payablesRun: { prefix: 'PR', pad: 4 },
+  receipt: { prefix: 'RCT', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -217,8 +226,14 @@ export function resetDomainState(api: AppStoreApi): void {
     settings: seed.settings,
     dayNotes: seed.dayNotes,
     counters: seedBilling.counters,
-    billing: { invoices: seedBilling.invoices, invoiceLines: seedBilling.invoiceLines, cases: seedBilling.cases },
-    xero: emptyXeroSlice(),
+    billing: {
+      invoices: seedBilling.invoices,
+      invoiceLines: seedBilling.invoiceLines,
+      cases: seedBilling.cases,
+      receipts: seedBilling.receipts,
+      contactIdCache: seedBilling.contactIdCache,
+    },
+    xero: seedBilling.xero,
     integrations: emptyIntegrationsSlice(),
   })
 }

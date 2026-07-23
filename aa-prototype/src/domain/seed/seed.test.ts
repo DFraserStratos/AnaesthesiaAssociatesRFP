@@ -53,7 +53,9 @@ describe('seed determinism', () => {
 describe('the canvas', () => {
   const horizon = horizonFor(DEMO_TODAY)
   const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)
-  const lists = Object.values(seed.schedule.lists)
+  // The Phase-10 seeded historical billed Lists (L-HIST-*) sit outside the
+  // generated canvas; the canvas invariants below are about generated Lists.
+  const lists = Object.values(seed.schedule.lists).filter((l) => !l.id.startsWith('L-HIST'))
 
   it('holds exactly 2 Lists per anaesthetist per day across the whole horizon', () => {
     const byKey = new Map<string, number>()

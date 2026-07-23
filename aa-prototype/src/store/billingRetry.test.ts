@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, retryBillingCase } from './billingRun'
+import { handoffCase } from './xeroHandoff'
 import { editContract } from './contractActions'
 import { failedCases, invoicesForList } from './selectors'
 import type { Actor } from './mutate'
@@ -97,6 +98,22 @@ describe('retryBillingCase', () => {
     // A second retry is a no-op (the case is no longer failed).
     expect(retryBillingCase(api, OFFICE, failedCaseId)).toMatchObject({ ok: false, code: 'caseNotFailed' })
     expect(invoicesForList(api.getState(), listId)).toHaveLength(2)
+  })
+
+  it('a recovered case is then handed off to Xero (the monitor resolve-and-retry flow)', () => {
+    const api = store()
+    triggerFailure(api)
+    const failedCaseId = failedCases(api.getState())[0]!.id
+    expect(editContract(api, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2027-01-01' }).ok).toBe(true)
+    expect(retryBillingCase(api, OFFICE, failedCaseId).ok).toBe(true)
+
+    // The monitor hands the rebuilt invoice off so it becomes payable.
+    expect(api.getState().billing.cases[failedCaseId]!.accRecId).toBeUndefined()
+    expect(handoffCase(api, failedCaseId).ok).toBe(true)
+    const c = api.getState().billing.cases[failedCaseId]!
+    expect(c.status).toBe('handedOff')
+    expect(c.accRecId).toBeDefined()
+    expect(c.accPayId).toBeDefined()
   })
 
   it('refuses a retry on a case that never failed', () => {

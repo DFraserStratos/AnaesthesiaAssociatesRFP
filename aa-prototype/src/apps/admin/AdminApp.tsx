@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import type { List } from '../../domain/types'
-import { addDayNote, failedCases, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
+import { addDayNote, billingAttentionCount, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
 import { ANAESTHETISTS } from '../../domain/seed'
 import { SideNav, type NavSection } from './components/SideNav'
 import { DayNav, type SortMode } from './components/DayNav'
@@ -109,8 +109,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     [reviewLists, masters, cardsRecord],
   )
 
-  // Billing exceptions across the pipeline (the billing-monitor nav badge).
-  const exceptionCount = useMemo(() => failedCases({ billing }).length, [billing])
+  // Billing exceptions across the pipeline (the billing-monitor nav badge):
+  // billing-run failures + Xero handoff faults (Phase 10).
+  const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
 
   // Lists on the selected day holding a card whose pre-payment is flagged — a
   // day-grid indicator (Phase 09). Outstanding (required/invoiced-unpaid) wins

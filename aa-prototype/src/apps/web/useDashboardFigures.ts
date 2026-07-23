@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { deriveDashboardFigures, type DashboardFigures } from '../../domain/seed'
-import { useAppStore, useToday } from '../../store'
+import { useAppStore } from '../../store'
 
 /**
  * The web component adapter for the seeded dashboard figures (W1/W4): subscribes
@@ -14,9 +14,8 @@ import { useAppStore, useToday } from '../../store'
  */
 export function useDashboardFigures(anaesthetistId: string): DashboardFigures | undefined {
   const dashboards = useAppStore((s) => s.dashboards)
-  const todayISO = useToday()
   return useMemo(() => {
     const seed = dashboards[anaesthetistId]
-    return seed !== undefined ? deriveDashboardFigures(seed, todayISO) : undefined
-  }, [dashboards, anaesthetistId, todayISO])
+    return seed !== undefined ? deriveDashboardFigures(seed) : undefined
+  }, [dashboards, anaesthetistId])
 }

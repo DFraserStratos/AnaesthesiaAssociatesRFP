@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
-import { billedLists, counterpartyName, invoiceCountsByList, useAppStore } from '../../../store'
+import { billedLists, counterpartyName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { listShortLabel } from '../util'
@@ -30,7 +30,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   const masters = useAppStore((s) => s.masters)
 
   const invoices = useMemo(
-    () => Object.values(billing.invoices).sort((a, b) => b.id.localeCompare(a.id)),
+    // The seeded historical backdrop (Phase 10) belongs to the anaesthetist money
+    // views, not this office pipeline table — exclude it (the billing monitor does too).
+    () => Object.values(billing.invoices).filter((i) => !isBackdropInvoice(i)).sort((a, b) => b.id.localeCompare(a.id)),
     [billing.invoices],
   )
 

@@ -44,6 +44,7 @@ import {
   proceduresForCard,
 } from './selectors'
 import { getCard } from './lifecycle'
+import { handoffCasesForCard } from './xeroHandoff'
 
 /**
  * Raise the pre-procedure invoice for a Card's patient-funded portion.
@@ -142,7 +143,7 @@ export function raisePreProcedureInvoice(
         if (line.units !== undefined) stored.units = line.units
         invoiceLines[il.id] = stored
       }
-      cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced' } satisfies BillingCase
+      cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
       invoiceIds.push(inv.id)
       metas.push({
         entityType: 'invoice',
@@ -162,8 +163,12 @@ export function raisePreProcedureInvoice(
       })
     }
 
-    return { billing: { invoices, invoiceLines, cases }, counters }
+    return { billing: { ...s.billing, invoices, invoiceLines, cases }, counters }
   })
+
+  // Hand the pre-invoice case(s) off to Xero as a full ACCREC+ACCPAY pair
+  // (D-pre-invoice-pair) once the raise has committed. Idempotent.
+  handoffCasesForCard(api, cardId)
 
   return ok({ invoiceIds })
 }

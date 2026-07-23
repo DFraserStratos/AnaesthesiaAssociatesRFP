@@ -1,77 +1,135 @@
 /**
- * Phase 05 — seeded anaesthetist-dashboard figures + the receivables/aging
- * derivation (W1/W4). The derivation is pure over a seed + a today; the
- * selector wraps it with the demo clock. Uses isolated, non-persisted stores.
+ * Anaesthetist money views (Phase 05 productivity/leave + Phase 10 billing-mirror
+ * receivables / GST). Productivity + leave are seeded demo figures; receivables
+ * aging, the flat outstanding ACCPAY list and the GST activity report all derive
+ * from the seeded historical billing mirror (`seed/history.ts`), read through the
+ * `billing` slice only (convention 9). Uses isolated, non-persisted stores.
  */
 
 import { describe, expect, it } from 'vitest'
-import { createAppStore } from './appStore'
-import { dashboardFiguresFor } from './selectors'
+import { createAppStore, type BoundAppStore } from './appStore'
+import {
+  dashboardFiguresFor,
+  gstActivityFor,
+  outstandingAccpayInvoicesFor,
+  receivablesAgingFor,
+} from './selectors'
+import { authoriseList, submitList } from './lifecycle'
+import { runBillingForList, handoffListCases } from './billingRun'
 import { advanceClockDays } from './clockActions'
-import { ANAESTHETIST_DASHBOARD, deriveDashboardFigures } from '../domain/seed'
-import { ANAE } from '../domain/seed'
+import { deriveDashboardFigures, ANAESTHETIST_DASHBOARD, ANAE, SEED_LIST_IDS } from '../domain/seed'
+import type { Actor } from './mutate'
 
 const SOUTER = ANAE.souter
 const DEMO_TODAY = '2026-07-21'
+const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
-describe('deriveDashboardFigures (pure aging derivation)', () => {
-  const seed = ANAESTHETIST_DASHBOARD[SOUTER]!
+function store(): BoundAppStore {
+  return createAppStore()
+}
+function mirror(api: BoundAppStore) {
+  const s = api.getState()
+  return { billing: s.billing, schedule: s.schedule, masters: s.masters }
+}
 
-  it('buckets each outstanding account against today and sums the bars', () => {
-    const f = deriveDashboardFigures(seed, DEMO_TODAY)
-    expect(f.aging.current).toBe(2605.5)
-    expect(f.aging.d31_60).toBe(2390)
-    expect(f.aging.d61_90).toBe(1930)
-    expect(f.aging.d90plus).toBe(860)
-    expect(f.aging.total).toBe(7785.5)
-  })
-
-  it('counts exactly the accounts more than 60 days old', () => {
-    expect(deriveDashboardFigures(seed, DEMO_TODAY).accountsOver60).toBe(3)
-  })
-
-  it('orders outstanding accounts by first-account date (flat, no rollup)', () => {
-    const dates = deriveDashboardFigures(seed, DEMO_TODAY).outstanding.map((o) => o.firstAccountDateISO)
-    expect(dates).toEqual([...dates].sort())
-    // Every outstanding row is its own account — no aggregation.
-    expect(deriveDashboardFigures(seed, DEMO_TODAY).outstanding.length).toBe(seed.outstanding.length)
-  })
-
-  it('is deterministic (two calls deep-equal)', () => {
-    expect(deriveDashboardFigures(seed, DEMO_TODAY)).toEqual(deriveDashboardFigures(seed, DEMO_TODAY))
-  })
-
-  it('ages forward as today advances (bars shift into older buckets)', () => {
-    const early = deriveDashboardFigures(seed, '2026-03-19') // one day after the oldest account
-    // With an early today almost everything is Current and nothing is 90d+.
-    expect(early.aging.d90plus).toBe(0)
-    expect(early.accountsOver60).toBe(0)
-    const later = deriveDashboardFigures(seed, '2026-10-01')
-    expect(later.accountsOver60).toBeGreaterThan(deriveDashboardFigures(seed, DEMO_TODAY).accountsOver60)
+describe('deriveDashboardFigures (productivity + leave)', () => {
+  it('returns the seeded productivity and leave, deterministically', () => {
+    const seed = ANAESTHETIST_DASHBOARD[SOUTER]!
+    const f = deriveDashboardFigures(seed)
+    expect(f.productivity.units).toBe(274)
+    expect(f.leave.some((l) => l.status === 'pending')).toBe(true)
+    expect(deriveDashboardFigures(seed)).toEqual(f)
   })
 })
 
 describe('dashboardFiguresFor (store selector, view-scoped)', () => {
-  it('returns Souter’s seeded figures aged against the demo clock', () => {
-    const store = createAppStore()
-    const f = dashboardFiguresFor(store.getState(), SOUTER)
-    expect(f).toBeDefined()
-    expect(f?.aging.total).toBe(7785.5)
+  it('returns Souter’s seeded figures', () => {
+    const f = dashboardFiguresFor(store().getState(), SOUTER)
     expect(f?.productivity.units).toBe(274)
-    expect(f?.leave.some((l) => l.status === 'pending')).toBe(true)
+    expect(f?.leave.length).toBe(2)
   })
-
   it('is honest-empty for anaesthetists with no seeded figures', () => {
-    const store = createAppStore()
-    expect(dashboardFiguresFor(store.getState(), ANAE.rutherford)).toBeUndefined()
-    expect(dashboardFiguresFor(store.getState(), '00000')).toBeUndefined()
+    expect(dashboardFiguresFor(store().getState(), ANAE.rutherford)).toBeUndefined()
+  })
+})
+
+describe('receivables aging (billing mirror)', () => {
+  it('buckets the seeded outstanding ACCPAY invoices against today', () => {
+    const { aging, accountsOver60 } = receivablesAgingFor(mirror(store()), SOUTER, DEMO_TODAY)
+    expect(aging.current).toBe(2605.5)
+    expect(aging.d31_60).toBe(2390)
+    expect(aging.d61_90).toBe(1930)
+    expect(aging.d90plus).toBe(860)
+    expect(aging.total).toBe(7785.5)
+    expect(accountsOver60).toBe(3)
   })
 
-  it('re-ages when the demo clock advances', () => {
-    const store = createAppStore()
-    const before = dashboardFiguresFor(store.getState(), SOUTER)!.accountsOver60
-    advanceClockDays(store, 40)
-    const after = dashboardFiguresFor(store.getState(), SOUTER)!.accountsOver60
-    expect(after).toBeGreaterThanOrEqual(before)
+  it('is honest-empty (zeroed) for an anaesthetist with no billed work', () => {
+    const { aging, rows } = receivablesAgingFor(mirror(store()), ANAE.rutherford, DEMO_TODAY)
+    expect(rows).toHaveLength(0)
+    expect(aging.total).toBe(0)
+  })
+
+  it('ages forward as today advances (accountsOver60 grows)', () => {
+    const api = store()
+    const before = receivablesAgingFor(mirror(api), SOUTER, DEMO_TODAY).accountsOver60
+    advanceClockDays(api, 60)
+    const after = receivablesAgingFor(mirror(api), SOUTER, api.getState().clock.todayISO).accountsOver60
+    expect(after).toBeGreaterThan(before)
+  })
+})
+
+describe('outstanding ACCPAY invoices (flat, no rollup)', () => {
+  it('lists one row per unpaid ACCPAY invoice, oldest first', () => {
+    const rows = outstandingAccpayInvoicesFor(mirror(store()), SOUTER, DEMO_TODAY)
+    expect(rows).toHaveLength(8)
+    const dates = rows.map((r) => r.raisedAtISO)
+    expect(dates).toEqual([...dates].sort())
+    // Every row is its own ACCPAY invoice — no aggregation.
+    expect(new Set(rows.map((r) => r.invoiceId)).size).toBe(rows.length)
+  })
+})
+
+describe('GST activity report', () => {
+  it('lists amounts received in the period with their GST component; totals reconcile', () => {
+    // July window: the two seeded July receipts + the seeded pre-payment (Jul 14).
+    const activity = gstActivityFor(store().getState(), SOUTER, '2026-07-01', '2026-07-21')
+    expect(activity.rows.length).toBeGreaterThanOrEqual(2)
+    const gross = activity.rows.reduce((s, r) => s + r.grossAmount, 0)
+    const gst = activity.rows.reduce((s, r) => s + r.gstAmount, 0)
+    expect(activity.totalGross).toBeCloseTo(gross, 2)
+    expect(activity.totalGst).toBeCloseTo(gst, 2)
+    // GST is 3/23 of the gross on each row.
+    for (const r of activity.rows) expect(r.gstAmount).toBeCloseTo((r.grossAmount * 0.15) / 1.15, 2)
+  })
+
+  it('widening the window from July to six months includes more receipts', () => {
+    const api = store()
+    const july = gstActivityFor(api.getState(), SOUTER, '2026-07-01', '2026-07-21').rows.length
+    const sixMonths = gstActivityFor(api.getState(), SOUTER, '2026-02-01', '2026-07-21').rows.length
+    expect(sixMonths).toBeGreaterThan(july)
+  })
+})
+
+describe('next-day visibility (RFP handover)', () => {
+  it('a freshly-billed invoice is hidden until the next day', () => {
+    const api = store()
+    const before = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
+
+    // Bill Souter's design-day AM list today.
+    const listId = SEED_LIST_IDS.souterAm21
+    expect(submitList(api, OFFICE, listId).ok).toBe(true)
+    expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
+    expect(runBillingForList(api, listId).ok).toBe(true)
+    handoffListCases(api, listId)
+
+    // Raised today → not yet visible.
+    const sameDay = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
+    expect(sameDay).toBe(before)
+
+    // Advance a day → the new invoices appear.
+    advanceClockDays(api, 1)
+    const nextDay = outstandingAccpayInvoicesFor(mirror(api), SOUTER, api.getState().clock.todayISO).length
+    expect(nextDay).toBeGreaterThan(before)
   })
 })
