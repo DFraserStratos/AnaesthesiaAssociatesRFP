@@ -188,8 +188,19 @@ export function DemoData() {
   )
 
   const guardTargets = useMemo(() => {
+    // Lists holding a seeded scenario card (SEED_MARKERS) are always offered,
+    // whatever their date — Phase 08's billing exemplars (split pair, two
+    // funders, bariatric Type 3, rate x time, insured reimbursement, COS) sit
+    // on past DRAFT lists and must be stageable from here (P7: jump to seeded
+    // scenario states) for the submit → authorise → billing-run demo.
+    const markerListIds = new Set(
+      Object.values(SEED_MARKERS)
+        .filter((m) => m.entityType === 'card')
+        .map((m) => schedule.cards[m.entityId]?.listId)
+        .filter((id): id is string => id !== undefined),
+    )
     const interestingLists = Object.values(schedule.lists)
-      .filter((l) => l.state !== 'DRAFT' || l.dateISO === todayISO)
+      .filter((l) => l.state !== 'DRAFT' || l.dateISO === todayISO || markerListIds.has(l.id))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
     const listIds = new Set(interestingLists.map((l) => l.id))
     const cards = Object.values(schedule.cards)

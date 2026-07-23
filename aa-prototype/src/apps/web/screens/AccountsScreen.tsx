@@ -32,6 +32,12 @@ type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
  * GST component). Overdue reads the seeded outstanding accounts (Phase 10
  * replaces with billing-mirror derivation); GST is honest-empty with a working
  * period selector until Phase 10's payment simulation produces received money.
+ *
+ * Phase 08 note: `state.billing` now holds real invoices once a list is
+ * billed, but these views stay seeded/honest-empty deliberately — the RFP's
+ * balance view is one flat row per ACCPAY invoice, which exists only after
+ * Phase 10's Xero handoff ("awaiting Xero sync"). The Phase 08 view effect
+ * here is the billed list DISAPPEARING from Lists/Dashboard (isListBilled).
  */
 export function AccountsScreen({ anaesthetistId, subTab, onSubTab }: AccountsScreenProps) {
   return (

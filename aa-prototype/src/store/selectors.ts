@@ -6,7 +6,16 @@
  * every snapshot.
  */
 
-import type { Card, DayNote, List, Procedure, Session } from '../domain/types'
+import type {
+  Card,
+  CounterpartyRef,
+  DayNote,
+  Invoice,
+  InvoiceLine,
+  List,
+  Procedure,
+  Session,
+} from '../domain/types'
 import type { CardBillingContext } from '../domain/billing/validateCardForBilling'
 import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { useAppStore, type AppState } from './appStore'
@@ -48,7 +57,7 @@ export function listsForDate(state: AppState, dateISO: string): List[] {
     )
 }
 
-export function cardsForList(state: AppState, listId: string): Card[] {
+export function cardsForList(state: Pick<AppState, 'schedule'>, listId: string): Card[] {
   return Object.values(state.schedule.cards)
     .filter((c) => c.listId === listId)
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -109,6 +118,56 @@ export function dashboardFiguresFor(state: AppState, anaesthetistId: string): Da
   const seed = state.dashboards[anaesthetistId]
   if (seed === undefined) return undefined
   return deriveDashboardFigures(seed, state.clock.todayISO)
+}
+
+/** Every billed List, most recently billed first (Phase 08). */
+export function billedLists(state: Pick<AppState, 'schedule'>): List[] {
+  return Object.values(state.schedule.lists)
+    .filter((l) => l.billedAtISO !== undefined)
+    .sort((a, b) => (b.billedAtISO ?? '').localeCompare(a.billedAtISO ?? ''))
+}
+
+/** A List's invoices (via its Cards), in raise order (Phase 08). */
+export function invoicesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): Invoice[] {
+  const cardIds = new Set(cardsForList(state, listId).map((c) => c.id))
+  return Object.values(state.billing.invoices)
+    .filter((i) => cardIds.has(i.cardId))
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/** An invoice's lines, in emit order (Phase 08). */
+export function invoiceLinesFor(state: Pick<AppState, 'billing'>, invoiceId: string): InvoiceLine[] {
+  return Object.values(state.billing.invoiceLines)
+    .filter((l) => l.invoiceId === invoiceId)
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/** Invoice count per List id — the "recently billed" panels' shared derivation (Phase 08). */
+export function invoiceCountsByList(state: Pick<AppState, 'schedule' | 'billing'>): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const invoice of Object.values(state.billing.invoices)) {
+    const listId = state.schedule.cards[invoice.cardId]?.listId
+    if (listId !== undefined) counts[listId] = (counts[listId] ?? 0) + 1
+  }
+  return counts
+}
+
+/** Display name for a billing counterparty (any kind), falling back to its id. */
+export function counterpartyName(state: Pick<AppState, 'masters'>, ref: CounterpartyRef): string {
+  switch (ref.kind) {
+    case 'hospital':
+      return state.masters.hospitals[ref.id]?.name ?? ref.id
+    case 'insurer':
+      return state.masters.insurers[ref.id]?.name ?? ref.id
+    case 'surgeon':
+      return state.masters.surgeons[ref.id]?.name ?? ref.id
+    case 'organisation':
+      return state.masters.organisations[ref.id]?.name ?? ref.id
+    case 'patient':
+      return state.masters.patients[ref.id]?.name ?? ref.id
+    case 'billableParty':
+      return state.masters.billableParties[ref.id]?.name ?? ref.id
+  }
 }
 
 /** Assemble the validator context for a Card from store state. */

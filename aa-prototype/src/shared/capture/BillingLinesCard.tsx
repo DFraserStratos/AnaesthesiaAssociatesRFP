@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { accent, neutral, semantic } from '../../theme/tokens'
-import type { BillingLine, Contract, CounterpartyRef, Procedure } from '../../domain/types'
+import type { BillingLine, Contract, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
-import { removeBillingLine, useAppStore, type Actor, type AppState } from '../../store'
+import { counterpartyName, removeBillingLine, useAppStore, type Actor, type AppState } from '../../store'
 import { AddBillingLineSheet } from './AddBillingLineSheet'
 import { CaptureSection, Caption, FailureNotes } from './ui'
 
@@ -17,23 +17,6 @@ interface BillingLinesCardProps {
   canCapture: boolean
   /** billingLines failures — the Method 3 gate + conservation (verbatim). */
   failures: BillingValidationFailure[]
-}
-
-function counterpartyName(ref: CounterpartyRef, masters: AppState['masters']): string {
-  switch (ref.kind) {
-    case 'hospital':
-      return masters.hospitals[ref.id]?.name ?? ref.id
-    case 'insurer':
-      return masters.insurers[ref.id]?.name ?? ref.id
-    case 'surgeon':
-      return masters.surgeons[ref.id]?.name ?? ref.id
-    case 'organisation':
-      return masters.organisations[ref.id]?.name ?? ref.id
-    case 'patient':
-      return masters.patients[ref.id]?.name ?? ref.id
-    case 'billableParty':
-      return masters.billableParties[ref.id]?.name ?? ref.id
-  }
 }
 
 /**
@@ -77,7 +60,7 @@ export function BillingLinesCard({
               )}
               {line.funderOverride !== undefined && (
                 <span style={{ fontSize: 12, color: neutral.slate }}>
-                  Billed to {counterpartyName(line.funderOverride, masters)}
+                  Billed to {counterpartyName({ masters }, line.funderOverride)}
                 </span>
               )}
             </span>

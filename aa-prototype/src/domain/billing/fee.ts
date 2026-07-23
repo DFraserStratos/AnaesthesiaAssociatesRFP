@@ -186,10 +186,13 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
   const contract = ctx.contract
   let unitRate: number | null = ctx.anaesthetist.unitValue
   if (contract?.type === 2 && contract.type2Detail !== undefined) {
+    // A per-unit dollar rate is money: the derived discount rate rounds to
+    // cents HERE so the charged amount and any displayed/snapshotted "$x.xx
+    // per unit" can never disagree (8th review; reproducibility principle 10).
     unitRate =
       contract.type2Detail.basis === 'agreedUnitRate'
         ? contract.type2Detail.unitRate
-        : ctx.anaesthetist.unitValue * (1 - contract.type2Detail.percent / 100)
+        : roundToCents(ctx.anaesthetist.unitValue * (1 - contract.type2Detail.percent / 100))
   }
 
   let fixedPrice: ContractPrice | undefined
@@ -200,6 +203,15 @@ export function feeFor(procedure: Procedure, ctx: FeeContext): FeeResult {
       surgeonId: ctx.surgeonId,
       procedureOrdinal: ctx.procedureOrdinal,
     })
+    // Split-billing hard rule vs fixed pricing (8th review): an ADDITIONAL
+    // procedure takes a fixed price only when the contract explicitly priced
+    // its ordinal (e.g. the bariatric second-procedure row). A row with no
+    // ordinal key priced the code AS A PRIMARY, and charging it in full for an
+    // add-on would re-claim the base component — fall to the BTM path instead,
+    // where the time-only rule applies (Decisions log 2026-07-22 fallback).
+    if (fixedPrice !== undefined && procedure.isAdditional && fixedPrice.procedureOrdinal === undefined) {
+      fixedPrice = undefined
+    }
   }
 
   if (fixedPrice !== undefined) {

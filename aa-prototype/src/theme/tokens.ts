@@ -48,7 +48,7 @@ export const semantic = {
   error: { solid: '#C2403C', tint: '#FAE9E7', onTint: '#9C332F' },
 } as const
 
-/** Font families. Georgia serif stack is the wordmark only. */
+/** Font families. Georgia serif stack: the wordmark + the invoice document voice (Phase 08). */
 export const fontFamily = {
   ui: "'Schibsted Grotesk', system-ui, sans-serif",
   mono: "'Spline Sans Mono', ui-monospace, monospace",

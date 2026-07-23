@@ -2,7 +2,11 @@ import { CircleDollarSign } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
 import { MobileHeader } from '../components'
 
-/** Balances tab — an honest stub; real balances arrive with billing (Phase 10). */
+/**
+ * Balances tab — an honest stub. Phase 08's run raises invoices, but the RFP's
+ * outstanding-balance view is one flat row per ACCPAY invoice (M11), which
+ * exists only after Phase 10's Xero handoff — so this stays a stub until then.
+ */
 export function BalancesScreen({ initials }: { initials: string }) {
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: '64px 20px 116px' }}>

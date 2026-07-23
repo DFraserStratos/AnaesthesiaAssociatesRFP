@@ -19,5 +19,14 @@ export function onAppEvent(listener: Listener): () => void {
 }
 
 export function emitAppEvent(event: AppEvent): void {
-  for (const listener of listeners) listener(event)
+  for (const listener of listeners) {
+    // A listener error must never destroy the emitting mutation's outcome —
+    // authoriseList emits AFTER its commit, and a throw here would strand the
+    // committed state with the caller's `ok` lost (Phase 08, 8th review).
+    try {
+      listener(event)
+    } catch (error) {
+      console.error('app-event listener failed', event.type, error)
+    }
+  }
 }

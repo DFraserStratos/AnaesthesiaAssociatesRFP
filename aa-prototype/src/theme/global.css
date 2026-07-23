@@ -231,3 +231,34 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Print (Phase 08): only the open invoice document prints — the RFP's
+ * "printed from the Billing Engine" is browser print of the on-screen
+ * document (no PDF library; Decisions log 2026-07-22). Works because the
+ * document renders INLINE (no positioned ancestor), so the absolutely
+ * positioned node escapes the app chrome to the page origin. Exactly one
+ * `.aa-invoice-doc` is ever mounted at a time.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .aa-invoice-doc,
+  .aa-invoice-doc * {
+    visibility: visible;
+  }
+  .aa-invoice-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@page {
+  margin: 14mm;
+}

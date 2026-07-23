@@ -16,6 +16,8 @@ interface ReviewScreenProps {
   onBack: () => void
   /** Open another list (the "Next in queue" jump). */
   onOpen: (listId: string) => void
+  /** Jump to the Invoices section (post-authorise, Phase 08). */
+  onViewInvoices: () => void
 }
 
 const cellStyle = adminCell()
@@ -32,12 +34,13 @@ const numCell = { ...cellStyle, textAlign: 'right' as const }
  * shows the RFP billing route, not the anaesthetic technique. FLAGS come from
  * the RFP-grounded `reviewFlags` helper (no invented duration-outlier flag).
  */
-export function ReviewScreen({ listId, actor, onBack, onOpen }: ReviewScreenProps) {
+export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: ReviewScreenProps) {
   const { Overlay } = useSurface()
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const cardsRecord = useAppStore((s) => s.schedule.cards)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  const invoicesRecord = useAppStore((s) => s.billing.invoices)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
 
@@ -85,6 +88,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen }: ReviewScreenProp
   const submitAt = audit.filter((a) => a.entityId === listId && a.action === 'list.submit').at(-1)?.atISO
   const authAt = audit.filter((a) => a.entityId === listId && a.action === 'list.authorise').at(-1)?.atISO
   const dayLabel = dayMicroCap(list.dateISO)
+
+  // Invoices the billing run raised for this list (via its cards) — the run is
+  // synchronous with authorise, so these exist by the time the banner renders.
+  const listCardIds = new Set(Object.values(cardsRecord).filter((c) => c.listId === listId).map((c) => c.id))
+  const raisedCount = Object.values(invoicesRecord).filter((i) => listCardIds.has(i.cardId)).length
 
   const nextListId = Object.values(listsRecord)
     .filter((l) => l.state === 'SUBMITTED' && l.id !== listId)
@@ -151,12 +159,22 @@ export function ReviewScreen({ listId, actor, onBack, onOpen }: ReviewScreenProp
             </span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: semantic.success.onTint }}>List authorised · locked for billing</div>
-              <div style={{ fontSize: 12, color: semantic.success.onTint }}>{dayLabel}{authAt !== undefined ? `, ${hhmm(authAt)}` : ''} · {actor.who} · Invoices will be raised in the next billing run</div>
+              <div style={{ fontSize: 12, color: semantic.success.onTint }}>
+                {dayLabel}{authAt !== undefined ? `, ${hhmm(authAt)}` : ''} · {actor.who} ·{' '}
+                {raisedCount > 0 ? `${raisedCount} invoice${raisedCount === 1 ? '' : 's'} raised by the billing run` : 'Handed to the billing run'}
+              </div>
             </div>
           </div>
-          <button onClick={() => (nextListId !== undefined ? onOpen(nextListId) : onBack())} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-            {nextListId !== undefined ? 'Next in queue →' : 'Back to queue →'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {raisedCount > 0 && (
+              <button onClick={onViewInvoices} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                View invoices →
+              </button>
+            )}
+            <button onClick={() => (nextListId !== undefined ? onOpen(nextListId) : onBack())} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              {nextListId !== undefined ? 'Next in queue →' : 'Back to queue →'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -263,7 +281,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen }: ReviewScreenProp
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Authorise this list for billing?</div>
           <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-            Authorising locks every Card on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised in the next billing run. There is no return to the anaesthetist from here.
+            Authorising locks every Card on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="secondary" block onClick={() => setConfirmOpen(false)}>Cancel</Button>

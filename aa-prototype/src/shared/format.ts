@@ -24,6 +24,11 @@ export function hhmm(iso: string | undefined): string {
   return iso !== undefined && iso.length >= 16 ? iso.slice(11, 16) : ''
 }
 
+/** "TUE 21 JUL · 08:00" for a local-naive ISO datetime ("·" when absent). */
+export function dateTimeMicroCap(iso: string | undefined): string {
+  return iso !== undefined && iso.length >= 16 ? `${dayMicroCap(iso.slice(0, 10))} · ${hhmm(iso)}` : '·'
+}
+
 /**
  * RFP billing-route labels for the office surfaces (the authorisation review +
  * office billing setup), single-sourced so the two agree. The mobile capture

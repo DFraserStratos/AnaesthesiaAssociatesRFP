@@ -17,7 +17,8 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
-  await expect(page.getByText('Handed to billing')).toBeVisible()
+  // Phase 08 replaced the "Handed to billing" placeholder with the live panel.
+  await expect(page.getByText('Recently billed')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-01-queue.png', fullPage: true })
 
   // Open Morrison's submitted list → the sanity-check review screen.

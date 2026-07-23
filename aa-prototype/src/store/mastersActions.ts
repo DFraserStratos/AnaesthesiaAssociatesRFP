@@ -64,12 +64,15 @@ export function createHospital(
     const hospitalAlloc = allocateId(s.counters, 'hospital')
     const contractAlloc = allocateId(hospitalAlloc.counters, 'contract')
     hospital = { id: hospitalAlloc.id, name: trimmed }
+    // Effective from the seed epoch, not today: the protected default is the
+    // guaranteed billing fallback and must cover PAST service dates too — a
+    // list dated before the hospital's creation still bills (8th review).
     contract = defaultType1(
       contractAlloc.id,
       `${trimmed} standard units (default Type 1)`,
       'hospital',
       hospitalAlloc.id,
-      s.clock.todayISO,
+      '2020-01-01',
     )
     metas.push(
       { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed } },

@@ -2,7 +2,7 @@ import { Wordmark } from '../../../shared'
 import { brand, neutral } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 
-export type NavSection = 'day' | 'review' | 'billing' | 'masters' | 'audit'
+export type NavSection = 'day' | 'review' | 'invoices' | 'billing' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -25,6 +25,7 @@ export function SideNav({ active, reviewBadge, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
+    { section: 'invoices', label: 'Invoices' },
     { section: 'billing', label: 'Billing monitor' },
     { section: 'masters', label: 'Master data' },
     { section: 'audit', label: 'Audit' },

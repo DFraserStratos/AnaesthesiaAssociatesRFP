@@ -96,10 +96,12 @@ export type ContractEditPatch = Partial<Omit<Contract, 'id' | 'isDefault'>>
 /**
  * Edit a contract. The default-Type-1 invariant refuses any edit of the
  * protected default that would remove the fallback: END-DATING it (a non-empty
- * `effectiveToISO`), changing its `type` away from 1, or moving its holder
- * (`holderType`/`holderId`). Cosmetic edits (its name, effective-from) stay
- * allowed. Guarded in the STORE independently of the UI (convention 6). Audited
- * `contract.update`.
+ * `effectiveToISO`), FORWARD-DATING it (`effectiveFromISO` — since Phase 08's
+ * billing fallback date-filters on the service date, moving the start is
+ * effective-dating it away, exactly what B2 forbids; 8th review), changing its
+ * `type` away from 1, or moving its holder (`holderType`/`holderId`). Cosmetic
+ * edits (its name) stay allowed. Guarded in the STORE independently of the UI
+ * (convention 6). Audited `contract.update`.
  */
 export function editContract(api: AppStoreApi, actor: Actor, contractId: string, patch: ContractEditPatch): Outcome {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a contract.')
@@ -108,11 +110,12 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
   if (existing === undefined) return refuse('notFound', 'Contract not found.')
   if (isProtectedDefault(existing)) {
     const endDated = 'effectiveToISO' in patch && patch.effectiveToISO !== undefined && patch.effectiveToISO !== ''
+    const reFromDated = patch.effectiveFromISO !== undefined && patch.effectiveFromISO !== existing.effectiveFromISO
     const reTyped = patch.type !== undefined && patch.type !== 1
     const reHeld =
       (patch.holderType !== undefined && patch.holderType !== existing.holderType) ||
       (patch.holderId !== undefined && patch.holderId !== existing.holderId)
-    if (endDated || reTyped || reHeld) {
+    if (endDated || reFromDated || reTyped || reHeld) {
       return refuse('defaultContractProtected', DEFAULT_PROTECTED_MESSAGE)
     }
   }
@@ -141,7 +144,10 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
 
 /**
  * Delete a contract and its price rows. The default-Type-1 invariant refuses the
- * protected default. Audited `contract.delete`.
+ * protected default, and a contract still governing booked procedures cannot be
+ * deleted — a dangling `governingContractId` would blur a missing surgeon-held
+ * arrangement into the hospital fallback at billing time (8th review); end-date
+ * it instead. Audited `contract.delete`.
  */
 export function deleteContract(api: AppStoreApi, actor: Actor, contractId: string): Outcome {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can delete a contract.')
@@ -149,6 +155,12 @@ export function deleteContract(api: AppStoreApi, actor: Actor, contractId: strin
   const existing = state.masters.contracts[contractId]
   if (existing === undefined) return refuse('notFound', 'Contract not found.')
   if (isProtectedDefault(existing)) return refuse('defaultContractProtected', DEFAULT_PROTECTED_MESSAGE)
+  if (Object.values(state.schedule.procedures).some((p) => p.governingContractId === contractId)) {
+    return refuse(
+      'contractInUse',
+      'This contract governs booked procedures and cannot be deleted. End date it instead.',
+    )
+  }
 
   mutate(
     api,

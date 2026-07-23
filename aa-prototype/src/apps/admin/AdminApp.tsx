@@ -13,6 +13,7 @@ import { ListDrawer } from './components/ListDrawer'
 import { AdminCardDetail } from './screens/AdminCardDetail'
 import { ReviewQueue } from './screens/ReviewQueue'
 import { ReviewScreen } from './screens/ReviewScreen'
+import { InvoicesScreen } from './screens/InvoicesScreen'
 import { MasterData } from './screens/MasterData'
 import { AuditViewer } from './screens/AuditViewer'
 import { isBooked, surnameOf } from './util'
@@ -40,6 +41,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const [drawerListId, setDrawerListId] = useState<string | null>(null)
   const [cardDetailId, setCardDetailId] = useState<string | null>(null)
   const [reviewListId, setReviewListId] = useState<string | null>(null)
+  const [invoiceId, setInvoiceId] = useState<string | null>(null)
 
   // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
   // NB: Object.values(record) would sort by registration number (numeric-like
@@ -123,6 +125,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     setCardDetailId(null)
     setDrawerListId(null)
     if (next !== 'review') setReviewListId(null)
+    if (next !== 'invoices') setInvoiceId(null)
   }
 
   const reviewOpen = reviewListId !== null && listsRecord[reviewListId] !== undefined
@@ -134,10 +137,12 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {section === 'review' ? (
           reviewOpen ? (
-            <ReviewScreen listId={reviewListId!} actor={OFFICE} onBack={() => setReviewListId(null)} onOpen={setReviewListId} />
+            <ReviewScreen listId={reviewListId!} actor={OFFICE} onBack={() => setReviewListId(null)} onOpen={setReviewListId} onViewInvoices={() => navigate('invoices')} />
           ) : (
-            <ReviewQueue onOpen={setReviewListId} />
+            <ReviewQueue onOpen={setReviewListId} onViewInvoices={() => navigate('invoices')} />
           )
+        ) : section === 'invoices' ? (
+          <InvoicesScreen actor={OFFICE} selectedInvoiceId={invoiceId} onSelect={setInvoiceId} />
         ) : section === 'masters' ? (
           <MasterData actor={OFFICE} todayISO={todayISO} />
         ) : section === 'audit' ? (

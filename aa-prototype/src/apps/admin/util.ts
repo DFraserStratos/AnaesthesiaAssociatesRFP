@@ -4,7 +4,7 @@
  * and the day-grid block geometry (the mockup's left=(start-7)/11 formula).
  */
 
-import type { List, Session } from '../../domain/types'
+import type { Anaesthetist, Hospital, List, Session } from '../../domain/types'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
 export const RULER_START = 7
@@ -52,6 +52,21 @@ export function surnameFirst(name: string): string {
 export function surnameOf(name: string): string {
   const parts = name.replace(/^Dr\.?\s+/i, '').trim().split(/\s+/)
   return parts[parts.length - 1] ?? name
+}
+
+/**
+ * "Souter · Forte Health AM" — the admin row label for a List, single-sourced
+ * so the review queue and the invoices screen name lists identically.
+ */
+export function listShortLabel(
+  list: List,
+  masters: { anaesthetists: Record<string, Anaesthetist>; hospitals: Record<string, Hospital> },
+): string {
+  const anae = masters.anaesthetists[list.anaesthetistId]
+  const who = anae !== undefined ? surnameOf(anae.name) : list.anaesthetistId
+  const hospital =
+    list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'Unassigned'
+  return `${who} · ${hospital} ${list.session}`
 }
 
 const BOOKED = new Set(['private', 'public', 'preop'])

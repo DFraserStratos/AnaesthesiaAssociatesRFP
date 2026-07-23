@@ -18,7 +18,8 @@ export interface ContractQuery {
   dateISO: string
 }
 
-function isEffectiveOn(contract: Contract, dateISO: string): boolean {
+/** True when the contract is in effect on the date (open-ended when no end date). */
+export function isEffectiveOn(contract: Contract, dateISO: string): boolean {
   if (contract.effectiveFromISO > dateISO) return false
   if (contract.effectiveToISO !== undefined && contract.effectiveToISO < dateISO) return false
   return true

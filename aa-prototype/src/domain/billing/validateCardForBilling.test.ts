@@ -225,6 +225,15 @@ describe('validateCardForBilling — price override reason', () => {
     })
     expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
   })
+
+  it('an override that drives the fee negative fails (8th review: no negative invoices)', () => {
+    const p = validProcedure({
+      priceOverride: { kind: 'dollarAdjustment', amount: -10000, reason: 'Stress test' },
+    })
+    const failures = validateCardForBilling(card, [p], mkCtx())
+    expect(fieldsOf(failures)).toContain('priceOverride')
+    expect(failures.some((f) => f.message.includes('negative'))).toBe(true)
+  })
 })
 
 describe('validateCardForBilling — two-funder conservation', () => {

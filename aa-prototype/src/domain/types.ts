@@ -688,6 +688,11 @@ export interface BillingCase {
   accRecId?: string
   accPayId?: string
   status: BillingPipelineStatus
+  /**
+   * Why a 'failed' case failed — the system of record the Phase 09 monitor
+   * retries against (the audit entry is the history, not the current state).
+   */
+  failure?: { code: string; message: string; procedureId?: ProcedureId }
 }
 
 // ---------------------------------------------------------------------------

@@ -81,6 +81,13 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   contractPrice: { prefix: 'CPN', pad: 3 },
   permanentList: { prefix: 'PLN', pad: 3 },
   holiday: { prefix: 'HHN', pad: 3 },
+  // Billing run (Phase 08). `invoiceNumber` is the human-facing remittance
+  // key (unique, RFP), separate from the invoice's entity id. The year is
+  // deliberately pinned like DEMO_TODAY — the demo lives in July 2026.
+  invoice: { prefix: 'INV', pad: 4 },
+  invoiceLine: { prefix: 'IL', pad: 4 },
+  billingCase: { prefix: 'BC', pad: 4 },
+  invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */

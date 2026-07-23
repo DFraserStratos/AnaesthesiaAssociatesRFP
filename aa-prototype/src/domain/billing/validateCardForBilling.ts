@@ -229,9 +229,17 @@ export function validateCardForBilling(
       }
     }
 
-    // Price override always carries a reason (7th review A6/B5).
-    if (procedure.priceOverride !== undefined && procedure.priceOverride.reason.trim() === '') {
-      fail(id, 'priceOverride', 'Give a reason for the price override.')
+    // Price override always carries a reason (7th review A6/B5), and may not
+    // drive the fee negative (8th review): a negative invoice is a credit
+    // note, which this system never raises.
+    if (procedure.priceOverride !== undefined) {
+      if (procedure.priceOverride.reason.trim() === '') {
+        fail(id, 'priceOverride', 'Give a reason for the price override.')
+      }
+      const fee = feeFor(procedure, feeContextFor(procedure, index + 1, ctx))
+      if (fee.total < 0) {
+        fail(id, 'priceOverride', `The price override makes the fee negative ($${fee.total.toFixed(2)}). Adjust the override.`)
+      }
     }
 
     // Conservation (5th review #4): once any line carries a funder override,

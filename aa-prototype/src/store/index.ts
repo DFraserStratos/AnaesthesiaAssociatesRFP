@@ -92,6 +92,13 @@ export {
   type ContractPriceInput,
   type ContractPricePatch,
 } from './contractActions'
+export {
+  runBillingForList,
+  markInvoiceEmailed,
+  wireBillingRun,
+  type BillingRunResult,
+  type BillingRunException,
+} from './billingRun'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
 export * from './selectors'
