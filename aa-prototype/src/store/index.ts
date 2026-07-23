@@ -33,6 +33,7 @@ export {
   completionBlockersFor,
   submitList,
   authoriseList,
+  logListNote,
   cancelCard,
   editCard,
   editProcedure,
@@ -67,7 +68,30 @@ export {
 } from './billingLineActions'
 export { createBillableParty, type BillablePartyDetails } from './billablePartyActions'
 export { addDayNote, initialsFor } from './dayNoteActions'
-export { createHospital, setInsurerDirectClaims } from './mastersActions'
+export {
+  createHospital,
+  setInsurerDirectClaims,
+  editAnaesthetist,
+  addAnaesthetist,
+  addHospitalHoliday,
+  addPermanentList,
+  editPermanentList,
+  type AnaesthetistPatch,
+  type NewAnaesthetistFields,
+  type NewPermanentListFields,
+  type PermanentListPatch,
+} from './mastersActions'
+export {
+  createContract,
+  editContract,
+  deleteContract,
+  addContractPrice,
+  editContractPrice,
+  type ContractInput,
+  type ContractEditPatch,
+  type ContractPriceInput,
+  type ContractPricePatch,
+} from './contractActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
 export * from './selectors'

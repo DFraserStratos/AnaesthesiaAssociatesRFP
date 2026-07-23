@@ -12,11 +12,46 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { List } from '../domain/types'
+import type { AuditEntry, BillingRoute, List } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
   return format(parseISO(dateISO), 'EEE d MMM').toUpperCase()
+}
+
+/** The "HH:MM" slice of a local-naive ISO datetime ("" when absent/short). */
+export function hhmm(iso: string | undefined): string {
+  return iso !== undefined && iso.length >= 16 ? iso.slice(11, 16) : ''
+}
+
+/**
+ * RFP billing-route labels for the office surfaces (the authorisation review +
+ * office billing setup), single-sourced so the two agree. The mobile capture
+ * context (`BtmCaptureBlock`) keeps its own richer wording for the anaesthetist.
+ */
+export const ROUTE_LABELS: Record<BillingRoute, string> = {
+  hospital: 'Contract holder',
+  billableParty: 'Billable party',
+  insurer: 'Insurer',
+}
+
+export function routeLabel(route: BillingRoute | undefined): string {
+  return route !== undefined ? ROUTE_LABELS[route] : 'Not set'
+}
+
+/** Render an audit entry's captured value ("" when absent). */
+function auditValue(value: unknown): string {
+  if (value === undefined) return ''
+  if (typeof value === 'string') return value
+  return JSON.stringify(value)
+}
+
+/** The "before to after" change string for an audit entry (history + audit viewer). */
+export function formatAuditChange(entry: AuditEntry): string {
+  const before = auditValue(entry.before)
+  const after = auditValue(entry.after)
+  if (before !== '' && after !== '') return `${before} to ${after}`
+  return after !== '' ? after : before
 }
 
 /** Day-section heading: prefixes "TODAY · " when the date is the demo today. */

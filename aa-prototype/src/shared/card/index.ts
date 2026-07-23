@@ -1,3 +1,5 @@
 /** Shared card-detail body (Phase 05); mobile + web wrap it in platform chrome. */
 export { CardDetailBody } from './CardDetailBody'
 export { OfficeBillingSetup } from './OfficeBillingSetup'
+export { HistoryTimeline } from './HistoryTimeline'
+export { HistorySheet } from './HistorySheet'

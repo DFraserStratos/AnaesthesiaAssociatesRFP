@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { List, Procedure } from '../../domain/types'
+import { billingReferenceMissing } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
+import { ROUTE_LABELS } from '../format'
 import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from '../flows'
 
 interface OfficeBillingSetupProps {
@@ -13,12 +15,6 @@ interface OfficeBillingSetupProps {
   actor: Actor
   /** Office may edit (DRAFT or SUBMITTED, not AUTHORISED, not cancelled). */
   canEdit: boolean
-}
-
-const ROUTE_LABEL: Record<string, string> = {
-  hospital: 'Contract holder',
-  billableParty: 'Billable party',
-  insurer: 'Insurer',
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -48,7 +44,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
   const payer = procedure.billablePartyId !== undefined ? masters.billableParties[procedure.billablePartyId] : undefined
   const lines = Object.values(billingLinesRecord).filter((l) => l.procedureId === procedure.id)
   const funderLines = lines.filter((l) => l.funderOverride !== undefined)
-  const refMissing = route === 'hospital' && (procedure.billingReference === undefined || procedure.billingReference.trim() === '')
+  const refMissing = billingReferenceMissing(procedure)
 
   const overrideLabel = (() => {
     const o = procedure.priceOverride
@@ -66,7 +62,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
         </div>
       </div>
 
-      <Row label="Route">{route !== undefined ? ROUTE_LABEL[route] : <Missing>Not set</Missing>}</Row>
+      <Row label="Route">{route !== undefined ? ROUTE_LABELS[route] : <Missing>Not set</Missing>}</Row>
       {route === 'insurer' && <Row label="Insurer">{insurer?.name ?? <Missing>Not set</Missing>}</Row>}
       {route === 'billableParty' && (
         <>

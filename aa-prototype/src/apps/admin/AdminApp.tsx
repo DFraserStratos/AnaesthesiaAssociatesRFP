@@ -11,17 +11,14 @@ import { DayGrid } from './components/DayGrid'
 import { RightRail } from './components/RightRail'
 import { ListDrawer } from './components/ListDrawer'
 import { AdminCardDetail } from './screens/AdminCardDetail'
+import { ReviewQueue } from './screens/ReviewQueue'
+import { ReviewScreen } from './screens/ReviewScreen'
+import { MasterData } from './screens/MasterData'
+import { AuditViewer } from './screens/AuditViewer'
 import { isBooked, surnameOf } from './util'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-
-const PLACEHOLDERS: Record<Exclude<NavSection, 'day'>, { title: string; phase: string; body: string }> = {
-  review: { title: 'Review queue', phase: 'Phase 07', body: 'The authorisation review queue (submitted lists, per-card flags, authorise choreography) is built in Phase 07.' },
-  billing: { title: 'Billing monitor', phase: 'Phase 09', body: 'The billing run monitor, exceptions and dead-letter handling arrive in Phase 09.' },
-  masters: { title: 'Master data', phase: 'Phase 07', body: 'The anaesthetist / hospital / contract / RVG master-data screens arrive in Phase 07.' },
-  audit: { title: 'Audit', phase: 'Phase 07', body: 'The append-only audit-trail viewer arrives in Phase 07.' },
-}
 
 export function AdminApp() {
   const todayISO = useToday()
@@ -42,6 +39,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const [sortMode, setSortMode] = useState<SortMode>('roster')
   const [drawerListId, setDrawerListId] = useState<string | null>(null)
   const [cardDetailId, setCardDetailId] = useState<string | null>(null)
+  const [reviewListId, setReviewListId] = useState<string | null>(null)
 
   // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
   // NB: Object.values(record) would sort by registration number (numeric-like
@@ -100,7 +98,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         const count = Object.values(cardsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
         return {
           listId: l.id,
-          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} — ${hospital} ${l.session}`,
+          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${l.session}`,
           sub: `${count} card${count === 1 ? '' : 's'} · submitted`,
         }
       }),
@@ -120,14 +118,33 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     setDrawerListId(null)
   }
 
+  function navigate(next: NavSection) {
+    setSection(next)
+    setCardDetailId(null)
+    setDrawerListId(null)
+    if (next !== 'review') setReviewListId(null)
+  }
+
+  const reviewOpen = reviewListId !== null && listsRecord[reviewListId] !== undefined
+
   return (
     <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
-      <SideNav active={section} reviewBadge={reviewLists.length} onNavigate={(s) => { setSection(s); setCardDetailId(null); setDrawerListId(null) }} />
+      <SideNav active={section} reviewBadge={reviewLists.length} onNavigate={navigate} />
 
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {section !== 'day' ? (
-          <Placeholder title={PLACEHOLDERS[section].title} phase={PLACEHOLDERS[section].phase}>
-            {PLACEHOLDERS[section].body}
+        {section === 'review' ? (
+          reviewOpen ? (
+            <ReviewScreen listId={reviewListId!} actor={OFFICE} onBack={() => setReviewListId(null)} onOpen={setReviewListId} />
+          ) : (
+            <ReviewQueue onOpen={setReviewListId} />
+          )
+        ) : section === 'masters' ? (
+          <MasterData actor={OFFICE} todayISO={todayISO} />
+        ) : section === 'audit' ? (
+          <AuditViewer />
+        ) : section === 'billing' ? (
+          <Placeholder title="Billing monitor" phase="Phase 09">
+            The billing run monitor, exceptions and dead-letter handling arrive in Phase 09.
           </Placeholder>
         ) : cardDetailId !== null ? (
           <AdminCardDetail cardId={cardDetailId} actor={OFFICE} todayISO={todayISO} onBack={() => setCardDetailId(null)} />
@@ -144,7 +161,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
                 notes={notes}
                 onAddNote={(text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged)}
                 reviewRows={reviewRows}
-                onReviewList={() => setSection('review')}
+                onReviewList={(listId) => { setSection('review'); setReviewListId(listId) }}
               />
             </div>
           </>

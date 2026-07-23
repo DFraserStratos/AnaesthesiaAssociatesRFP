@@ -39,6 +39,20 @@ export interface BillingValidationFailure {
 export const INDIVIDUAL_ARRANGEMENT_MESSAGE =
   'A rate and time billing line needs a governing contract that permits an individually arranged fee structure.'
 
+/**
+ * A4's "reference completeness" check, single-sourced (6th review #6): the
+ * hospital's contract/approval reference is expected on the contract-holder
+ * (`hospital`) route. True when it is absent/blank there. The office billing
+ * setup and the Phase 07 authorisation-review FLAGS both read this one
+ * predicate so they never drift.
+ */
+export function billingReferenceMissing(procedure: Procedure): boolean {
+  return (
+    procedure.billingRoute === 'hospital' &&
+    (procedure.billingReference === undefined || procedure.billingReference.trim() === '')
+  )
+}
+
 export interface CardBillingContext {
   anaesthetist: Anaesthetist
   /** RVG master, keyed by code. */

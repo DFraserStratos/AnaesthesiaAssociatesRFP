@@ -76,6 +76,11 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   list: { prefix: 'LG', pad: 4 },
   hospital: { prefix: 'HN', pad: 3 },
   contract: { prefix: 'CTN', pad: 3 },
+  // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
+  // allocation can never collide with a seeded master row (Phase 07).
+  contractPrice: { prefix: 'CPN', pad: 3 },
+  permanentList: { prefix: 'PLN', pad: 3 },
+  holiday: { prefix: 'HHN', pad: 3 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */

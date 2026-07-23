@@ -1,5 +1,6 @@
 import { Wordmark } from '../../../shared'
 import { brand, neutral } from '../../../theme/tokens'
+import { RolesInfo } from '../RolesInfo'
 
 export type NavSection = 'day' | 'review' | 'billing' | 'masters' | 'audit'
 
@@ -71,11 +72,14 @@ export function SideNav({ active, reviewBadge, onNavigate }: SideNavProps) {
         })}
       </nav>
 
-      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-        <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>KW</span>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#FFFFFF' }}>Kirsty W.</span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Office</span>
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <RolesInfo />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
+          <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>KW</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#FFFFFF' }}>Kirsty W.</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Office</span>
+          </div>
         </div>
       </div>
     </div>

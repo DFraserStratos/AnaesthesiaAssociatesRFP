@@ -283,6 +283,21 @@ export interface CoverRequest {
   status: 'pending'
 }
 
+/**
+ * An office-logged phone-call note on a List (Phase 07). During the
+ * authorisation review the office records a call it made about the List (e.g.
+ * clarifying a missing reference with the hospital); the note shows on the
+ * review action bar AND in the List's audit trail. There is deliberately NO
+ * return-to-anaesthetist action anywhere — a SUBMITTED List flows only forward
+ * to AUTHORISED (no Returned state, convention 6). Optional; the seed populates
+ * none, so no PERSIST_VERSION bump.
+ */
+export interface ListPhoneNote {
+  text: string
+  by: string
+  atISO: IsoDateTime
+}
+
 export interface List {
   id: ListId
   dateISO: IsoDate
@@ -298,6 +313,8 @@ export interface List {
   conflicts: ListConflict[]
   /** A pending cover offer/request on a Free List (Phase 03). */
   coverRequest?: CoverRequest
+  /** Office-logged phone-call notes (Phase 07 review); never a return channel. */
+  phoneNotes?: ListPhoneNote[]
   /**
    * Stamped at completion of the List's billing run (Phase 08; 3rd review
    * #12). Lists vanish from the anaesthetist's forward views at invoice

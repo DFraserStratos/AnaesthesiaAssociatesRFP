@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
+import { HistorySheet } from '../../../shared/card'
 import { sessionTimeRange } from '../../../shared/format'
 import { attentionReasons, isBooked, surnameFirst } from '../util'
 import { EditListSheet } from '../flows/EditListSheet'
@@ -18,7 +19,7 @@ interface ListDrawerProps {
   onOpenCard: (cardId: string) => void
 }
 
-type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | { move: string }
+type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | { move: string }
 
 export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
@@ -95,8 +96,11 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
           <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
           {(isBooked(list.statusKey) || activeCards.length > 0) && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
           {isFreeEmpty && <ActionBtn primary onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
+          <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
         </div>
       </div>
+
+      <HistorySheet open={sheet === 'history'} entityIds={[listId]} title="List history" onClose={() => setSheet('none')} />
 
       <EditListSheet open={sheet === 'edit'} list={list} actor={actor} onClose={() => setSheet('none')} />
       <ReassignListFlow open={sheet === 'reassign'} list={list} actor={actor} onClose={() => setSheet('none')} onReassigned={() => { setSheet('none'); onClose() }} />

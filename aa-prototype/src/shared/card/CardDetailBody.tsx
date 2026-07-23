@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, ImagePlus, Minus, Plus, XCircle } from 'lucide-react'
+import { Copy, History, ImagePlus, Minus, Plus, XCircle } from 'lucide-react'
 import { accent, brand, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
@@ -24,6 +24,7 @@ import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../assets/samplePaperCards'
 import { CancelCardSheet, EditPatientSheet, EditProcedureSheet } from '../flows'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
+import { HistorySheet } from './HistorySheet'
 
 interface CardDetailBodyProps {
   cardId: string
@@ -99,6 +100,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
    *  never a wall of red on first open; thereafter it live-clears. */
   const [showValidation, setShowValidation] = useState(false)
   const [completeError, setCompleteError] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [overlay, setOverlay] = useState(false)
   const overlayTimer = useRef<number | null>(null)
 
@@ -138,6 +140,17 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
     if (list === undefined || procedures.length === 0) return { units: 0, total: 0 }
     return cardFee(procedures, list, masters, billingLinesRecord)
   }, [list, procedures, masters, billingLinesRecord])
+
+  // The card's full history: its own id plus its procedures' and billing lines'
+  // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
+  const historyEntityIds = useMemo(() => {
+    const procedureIds = procedures.map((p) => p.id)
+    const procedureIdSet = new Set(procedureIds)
+    const lineIds = Object.values(billingLinesRecord)
+      .filter((l) => procedureIdSet.has(l.procedureId))
+      .map((l) => l.id)
+    return [cardId, ...procedureIds, ...lineIds]
+  }, [cardId, procedures, billingLinesRecord])
 
   if (card === undefined || list === undefined) return null
   const patient = masters.patients[card.patientId]
@@ -222,6 +235,16 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
 
   const content = (
     <>
+      {/* History affordance (Phase 07) — the card's reconstructable audit trail,
+          available on every platform (A6/A7). Own-data view is fine per A8. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setHistoryOpen(true)}
+          style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
+          <History size={15} aria-hidden /> History
+        </button>
+      </div>
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
           <strong>Card cancelled.</strong> {card.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
@@ -395,6 +418,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           onClose={() => setSheet('none')}
         />
       )}
+      <HistorySheet open={historyOpen} entityIds={historyEntityIds} title="Card history" onClose={() => setHistoryOpen(false)} />
     </>
   )
 }

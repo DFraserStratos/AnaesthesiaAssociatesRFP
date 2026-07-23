@@ -12,7 +12,7 @@
  *   - integration-sourced writes only while the List is DRAFT.
  */
 
-import type { Card, CoverRequest, List, ListStatusKey, Procedure, Session } from '../domain/types'
+import type { Card, CoverRequest, List, ListPhoneNote, ListStatusKey, Procedure, Session } from '../domain/types'
 import { validateCardForBilling } from '../domain/billing/validateCardForBilling'
 import {
   allocateId,
@@ -290,6 +290,50 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
     }),
   )
   emitAppEvent({ type: 'listAuthorised', listId })
+  return ok(undefined)
+}
+
+// ---------------------------------------------------------------------------
+// logListNote (the office's phone-call note on a List)
+// ---------------------------------------------------------------------------
+
+/**
+ * Append an office-logged phone-call note to a List (Phase 07 review). Records
+ * a call the office made about the List (e.g. clarifying a reference with the
+ * hospital) — it surfaces on the review action bar AND, via the audit entry, in
+ * the List's history. Office-initiated; allowed in any List state since it is
+ * an annotation, not a Card edit. There is NO return-to-anaesthetist action
+ * anywhere: a SUBMITTED List flows only forward to AUTHORISED (convention 6, no
+ * Returned state).
+ */
+export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text: string): Outcome {
+  const state = api.getState()
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return refuse('notFound', 'List not found.')
+  if (actor.role !== 'office') {
+    return refuse('officeOnly', 'Only the office logs a phone note on a List.')
+  }
+  const trimmed = text.trim()
+  if (trimmed === '') return refuse('textRequired', 'A phone note needs some text.')
+
+  const note: ListPhoneNote = { text: trimmed, by: actor.who, atISO: clockISO(state.clock) }
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'list',
+      entityId: listId,
+      action: 'list.phoneNote',
+      after: { text: trimmed },
+      stampCardId: null,
+    },
+    (s) => ({
+      schedule: {
+        ...s.schedule,
+        lists: { ...s.schedule.lists, [listId]: { ...list, phoneNotes: [...(list.phoneNotes ?? []), note] } },
+      },
+    }),
+  )
   return ok(undefined)
 }
 

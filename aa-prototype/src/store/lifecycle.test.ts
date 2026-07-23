@@ -11,12 +11,14 @@ import {
   completeCard,
   editCard,
   editProcedure,
+  logListNote,
   reassignCard,
   reassignList,
   requestCover,
   setAvailability,
   submitList,
 } from './lifecycle'
+import * as lifecycleModule from './lifecycle'
 import { auditForEntity, cardsForList, listForSlot, proceduresForCard } from './selectors'
 import { onAppEvent, type AppEvent } from './events'
 import type { Actor } from './mutate'
@@ -541,5 +543,37 @@ describe('requestCover', () => {
     const outcome = requestCover(api, OFFICE, listId, 'offer')
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('anaesthetistOnly')
+  })
+})
+
+describe('logListNote (office phone note; no return channel)', () => {
+  it('appends an office phone note and audits it into the list history', () => {
+    const api = store()
+    const outcome = logListNote(api, OFFICE, MORRISON_LIST, "Confirmed the reference with St George's.")
+    expect(outcome.ok).toBe(true)
+    const list = api.getState().schedule.lists[MORRISON_LIST]
+    expect(list?.phoneNotes?.length).toBe(1)
+    expect(list?.phoneNotes?.[0]?.by).toBe('Kirsty W.')
+    expect(list?.phoneNotes?.[0]?.text).toBe("Confirmed the reference with St George's.")
+    expect(auditForEntity(api.getState(), MORRISON_LIST).at(-1)?.action).toBe('list.phoneNote')
+    // The note is an annotation, never a state change — the List stays SUBMITTED.
+    expect(list?.state).toBe('SUBMITTED')
+  })
+
+  it('is office-only and requires text', () => {
+    const api = store()
+    const denied = logListNote(api, SOUTER, SOUTER_AM, 'x')
+    expect(denied.ok).toBe(false)
+    if (!denied.ok) expect(denied.code).toBe('officeOnly')
+    const blank = logListNote(api, OFFICE, MORRISON_LIST, '   ')
+    expect(blank.ok).toBe(false)
+    if (!blank.ok) expect(blank.code).toBe('textRequired')
+  })
+
+  it('exposes NO return-to-anaesthetist / Returned transition anywhere', () => {
+    // Convention 6: DRAFT to SUBMITTED to AUTHORISED only; there is no Returned
+    // state and no action that sends a SUBMITTED List back to the anaesthetist.
+    const names = Object.keys(lifecycleModule)
+    expect(names.some((n) => /return|unsubmit|reject|revert|reopenlist/i.test(n))).toBe(false)
   })
 })
