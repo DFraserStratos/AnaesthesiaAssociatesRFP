@@ -20,10 +20,12 @@ import type {
   Contract,
   ContractHolderOrganisation,
   ContractPrice,
+  DayNote,
   DemoSettings,
   Hospital,
   HospitalHoliday,
   Insurer,
+  IsoDate,
   List,
   ListStatus,
   ListStatusKey,
@@ -53,6 +55,7 @@ import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
 import { PERMANENT_LISTS } from './permanentLists'
 import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
+import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
 import { buildCards, type CardScenarioIds } from './cards'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
@@ -119,6 +122,8 @@ export interface SeedState {
    * receivables/overdue portion with billing-mirror derivation.
    */
   dashboards: Record<string, AnaesthetistDashboardSeed>
+  /** Per-day internal office notes (Phase 06), keyed by calendar date. */
+  dayNotes: Record<IsoDate, DayNote[]>
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -238,6 +243,51 @@ function applyDesignFixups(lists: Record<string, List>): void {
   patchSlot(lists, ANAE.strand, THU23, 'PM', { ...FREE })
 }
 
+/**
+ * Phase 06 conflict fixup: seed one holiday-kind and one availability-kind
+ * advisory `ListConflict` onto two different BOOKED Wed 22 Jul Lists, so the
+ * admin day view's advisory flags are one `>` click from today (Tue 21 stays
+ * pristine). Applied after generation so it does not fight the generator's
+ * clean-generation rule. Deterministic: the two lowest-id booked Wed-22 Lists
+ * with distinct anaesthetists (Souter excluded — she is the mobile persona, her
+ * forward view stays clean).
+ */
+function applyPhase06Conflicts(lists: Record<string, List>): void {
+  const WED22 = '2026-07-22'
+  const isBooked = (k: ListStatusKey) => k === 'private' || k === 'public' || k === 'preop'
+  const booked = Object.values(lists)
+    .filter((l) => l.dateISO === WED22 && isBooked(l.statusKey) && l.anaesthetistId !== ANAE.souter)
+    .sort((a, b) => a.id.localeCompare(b.id))
+  const holidayList = booked[0]
+  if (holidayList !== undefined) {
+    lists[holidayList.id] = {
+      ...holidayList,
+      conflicts: [
+        ...holidayList.conflicts,
+        {
+          kind: 'holiday',
+          message:
+            'This List falls on a hospital holiday closure. Advisory only: confirm the theatre is running or rebook.',
+        },
+      ],
+    }
+  }
+  const availList = booked.find((l) => holidayList !== undefined && l.anaesthetistId !== holidayList.anaesthetistId)
+  if (availList !== undefined) {
+    lists[availList.id] = {
+      ...availList,
+      conflicts: [
+        ...availList.conflicts,
+        {
+          kind: 'availability',
+          message:
+            'The anaesthetist is now marked unavailable for this session. Advisory only: rebook or clear this List.',
+        },
+      ],
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // buildSeed
 // ---------------------------------------------------------------------------
@@ -260,6 +310,7 @@ function buildSeedInternal(): SeedBuild {
   const lists = byId(generated, (l) => l.id)
 
   applyDesignFixups(lists)
+  applyPhase06Conflicts(lists)
 
   const cardsBuild = buildCards(SEED, Object.values(lists))
 
@@ -299,6 +350,7 @@ function buildSeedInternal(): SeedBuild {
     audit: cardsBuild.audit,
     settings: { contactArchiveInactivityDays: 90 },
     dashboards: ANAESTHETIST_DASHBOARD,
+    dayNotes: DAY_NOTES,
     counters: {
       audit: cardsBuild.next.audit,
       card: cardsBuild.next.card,
@@ -307,6 +359,7 @@ function buildSeedInternal(): SeedBuild {
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
       availability: AVAILABILITY.length + 1,
+      dayNote: DAY_NOTE_NEXT,
       list: 1,
       hospital: 1,
       contract: 1,

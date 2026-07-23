@@ -420,6 +420,63 @@ export function editProcedure(
 }
 
 // ---------------------------------------------------------------------------
+// editList (office/anaesthetist field edits — NOT status or anaesthetist)
+// ---------------------------------------------------------------------------
+
+/**
+ * Editable List fields. Status and anaesthetist are deliberately absent — those
+ * change only through availability reconciliation and reassignment. The office
+ * assigns/corrects hospital, surgeon and the session's start/end times (5th
+ * review #6: List times "have a default value, but that may be overridden");
+ * a `notes` edit is the office's day annotation on the row.
+ */
+export type ListPatch = Partial<Pick<List, 'hospitalId' | 'surgeonId' | 'startTime' | 'endTime' | 'notes'>>
+
+/**
+ * Patch a List's hospital/surgeon/times/notes through the standard edit-rights
+ * matrix (office edits DRAFT and SUBMITTED; the anaesthetist only their own
+ * DRAFT; AUTHORISED blocked). An empty string (or explicit undefined) on a key
+ * present in the patch clears that field. Audited `list.update`, stamps no Card.
+ */
+export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: ListPatch): Outcome {
+  const state = api.getState()
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return refuse('notFound', 'List not found.')
+  const rights = editRefusal(actor, list)
+  if (rights !== null) return rights
+
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'list',
+      entityId: listId,
+      action: 'list.update',
+      before: Object.fromEntries(Object.keys(patch).map((k) => [k, list[k as keyof List]])),
+      after: patch,
+      stampCardId: null,
+    },
+    (s) => {
+      const next: List = { ...list }
+      const setOrDelete = <K extends 'hospitalId' | 'surgeonId' | 'startTime' | 'endTime' | 'notes'>(
+        key: K,
+        value: List[K] | undefined,
+      ) => {
+        if (value === undefined || value === '') delete next[key]
+        else next[key] = value
+      }
+      if ('hospitalId' in patch) setOrDelete('hospitalId', patch.hospitalId)
+      if ('surgeonId' in patch) setOrDelete('surgeonId', patch.surgeonId)
+      if ('startTime' in patch) setOrDelete('startTime', patch.startTime)
+      if ('endTime' in patch) setOrDelete('endTime', patch.endTime)
+      if ('notes' in patch) setOrDelete('notes', patch.notes)
+      return { schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: next } } }
+    },
+  )
+  return ok(undefined)
+}
+
+// ---------------------------------------------------------------------------
 // reassignList / reassignCard
 // ---------------------------------------------------------------------------
 

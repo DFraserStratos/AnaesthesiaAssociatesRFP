@@ -584,6 +584,25 @@ export interface ListStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Day notes (Phase 06 — the Admin Day mockup's Internal notes panel)
+// ---------------------------------------------------------------------------
+
+/**
+ * A per-day internal office note. Stored per calendar date on the app state
+ * (`dayNotes`), never on a List — these are the office's day-level annotations
+ * (Admin Day mockup). A `flagged` note renders with an amber left bar.
+ */
+export interface DayNote {
+  id: string
+  atISO: IsoDateTime
+  by: string
+  /** Display initials, e.g. "KW" — derived from the author's name. */
+  initials: string
+  text: string
+  flagged: boolean
+}
+
+// ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
 

@@ -8,9 +8,10 @@
  * office's per-funder allocation editor is Phase 06.
  */
 
-import type { BillingLine } from '../domain/types'
-import { INDIVIDUAL_ARRANGEMENT_MESSAGE } from '../domain/billing/validateCardForBilling'
-import { roundToCents } from '../domain/billing/money'
+import type { BillingLine, CounterpartyRef } from '../domain/types'
+import { INDIVIDUAL_ARRANGEMENT_MESSAGE, feeContextFor } from '../domain/billing/validateCardForBilling'
+import { feeFor } from '../domain/billing/fee'
+import { roundToCents, toCents } from '../domain/billing/money'
 import {
   allocateId,
   mutate,
@@ -22,6 +23,7 @@ import {
 } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { editRefusal, getCard } from './lifecycle'
+import { billingContextForCard, proceduresForCard } from './selectors'
 
 export interface AddBillingLineInput {
   chargeBasis: 'fixed' | 'rateTime'
@@ -114,6 +116,178 @@ export function addBillingLine(
   })
 
   return ok({ billingLineId })
+}
+
+/** Office edit of a billing line's per-funder allocation (Phase 06). */
+export interface BillingLineAllocationPatch {
+  /** Set the counterparty this line bills to; `null` clears the override. */
+  funderOverride?: CounterpartyRef | null
+  /** Set the line's dollar amount (rounded to cents). */
+  amount?: number
+}
+
+/**
+ * Set a billing line's per-funder allocation — the office capture side of the
+ * RFP's one-procedure-two-funders split (5th review #4; 7th review A4/B4).
+ * Office-only (the anaesthetist is refused, mirroring `removeBillingLine`).
+ * CONSERVATION GUARD: after applying the edit, if any of the procedure's lines
+ * carries a funder override the stored amounts must still sum, to the cent, to
+ * the computed procedure fee — otherwise `allocationNotConserved` (the same
+ * rule the completion validator enforces). Audited `billingLine.update`.
+ */
+export function setBillingLineAllocation(
+  api: AppStoreApi,
+  actor: Actor,
+  billingLineId: string,
+  patch: BillingLineAllocationPatch,
+): Outcome {
+  const state = api.getState()
+  const line = state.schedule.billingLines[billingLineId]
+  if (line === undefined) return refuse('notFound', 'Billing line not found.')
+  const procedure = state.schedule.procedures[line.procedureId]
+  if (procedure === undefined) return refuse('notFound', 'The billing line has no procedure.')
+  const found = getCard(state, procedure.cardId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+
+  if (actor.role === 'anaesthetist') {
+    return refuse(
+      'funderAllocationOfficeOnly',
+      'Per funder billing allocation is set by the office, not the anaesthetist.',
+    )
+  }
+  const rights = editRefusal(actor, found.list)
+  if (rights !== null) return rights
+
+  const nextLine: BillingLine = { ...line }
+  if (patch.amount !== undefined) nextLine.amount = roundToCents(patch.amount)
+  if (patch.funderOverride !== undefined) {
+    if (patch.funderOverride === null) delete nextLine.funderOverride
+    else nextLine.funderOverride = patch.funderOverride
+  }
+
+  // Conservation: recompute the procedure fee with the edited line in place.
+  const ctx = billingContextForCard(state, found.card)
+  if (ctx === undefined) return refuse('missingContext', 'This Card is missing its List or anaesthetist.')
+  const editedLines = ctx.billingLines.map((l) => (l.id === billingLineId ? nextLine : l))
+  const procedureLines = editedLines.filter((l) => l.procedureId === procedure.id)
+  if (procedureLines.some((l) => l.funderOverride !== undefined)) {
+    const ordinal = proceduresForCard(state, procedure.cardId).findIndex((p) => p.id === procedure.id) + 1
+    const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
+    const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
+    if (toCents(allocated) !== toCents(fee.total)) {
+      return refuse(
+        'allocationNotConserved',
+        `Billing line amounts must add up to the procedure fee of $${fee.total.toFixed(2)} (they add up to $${allocated.toFixed(2)}).`,
+      )
+    }
+  }
+
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'billingLine',
+      entityId: billingLineId,
+      action: 'billingLine.update',
+      before: { amount: line.amount, funderOverride: line.funderOverride },
+      after: patch,
+      stampCardId: procedure.cardId,
+    },
+    (s) => ({
+      schedule: { ...s.schedule, billingLines: { ...s.schedule.billingLines, [billingLineId]: nextLine } },
+    }),
+  )
+  return ok(undefined)
+}
+
+/** One line's target allocation in a batch (`setProcedureFunderAllocation`). */
+export interface FunderAllocationEntry {
+  billingLineId: string
+  funderOverride?: CounterpartyRef | null
+  amount?: number
+}
+
+/**
+ * Apply a whole procedure's per-line funder allocation in ONE audited commit —
+ * so a genuine two-line re-split (move dollars from line A to line B, total
+ * unchanged) conserves and saves, which a sequence of single-line
+ * `setBillingLineAllocation` calls cannot (each intermediate state would fail
+ * conservation). Office-only; conservation is checked once on the final set.
+ * Each changed line audits `billingLine.update`.
+ */
+export function setProcedureFunderAllocation(
+  api: AppStoreApi,
+  actor: Actor,
+  procedureId: string,
+  entries: readonly FunderAllocationEntry[],
+): Outcome {
+  const state = api.getState()
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
+  const found = getCard(state, procedure.cardId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+
+  if (actor.role === 'anaesthetist') {
+    return refuse(
+      'funderAllocationOfficeOnly',
+      'Per funder billing allocation is set by the office, not the anaesthetist.',
+    )
+  }
+  const rights = editRefusal(actor, found.list)
+  if (rights !== null) return rights
+
+  const ctx = billingContextForCard(state, found.card)
+  if (ctx === undefined) return refuse('missingContext', 'This Card is missing its List or anaesthetist.')
+
+  const byId = new Map(entries.map((e) => [e.billingLineId, e]))
+  const nextById: Record<string, BillingLine> = {}
+  const editedLines = ctx.billingLines.map((line) => {
+    const entry = byId.get(line.id)
+    if (entry === undefined || line.procedureId !== procedureId) return line
+    const next: BillingLine = { ...line }
+    if (entry.amount !== undefined) next.amount = roundToCents(entry.amount)
+    if (entry.funderOverride !== undefined) {
+      if (entry.funderOverride === null) delete next.funderOverride
+      else next.funderOverride = entry.funderOverride
+    }
+    nextById[line.id] = next
+    return next
+  })
+
+  const procedureLines = editedLines.filter((l) => l.procedureId === procedureId)
+  if (procedureLines.some((l) => l.funderOverride !== undefined)) {
+    const ordinal = proceduresForCard(state, procedure.cardId).findIndex((p) => p.id === procedureId) + 1
+    const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
+    const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
+    if (toCents(allocated) !== toCents(fee.total)) {
+      return refuse(
+        'allocationNotConserved',
+        `Billing line amounts must add up to the procedure fee of $${fee.total.toFixed(2)} (they add up to $${allocated.toFixed(2)}).`,
+      )
+    }
+  }
+
+  const changedIds = Object.keys(nextById)
+  if (changedIds.length === 0) return ok(undefined)
+
+  const metas: MutationMeta[] = changedIds.map((id) => {
+    const before = state.schedule.billingLines[id]!
+    const next = nextById[id]!
+    return {
+      entityType: 'billingLine',
+      entityId: id,
+      action: 'billingLine.update',
+      before: { amount: before.amount, funderOverride: before.funderOverride },
+      after: { amount: next.amount, funderOverride: next.funderOverride },
+      stampCardId: procedure.cardId,
+    }
+  })
+  mutate(api, actor, metas, (s) => {
+    const billingLines = { ...s.schedule.billingLines }
+    for (const id of changedIds) billingLines[id] = nextById[id]!
+    return { schedule: { ...s.schedule, billingLines } }
+  })
+  return ok(undefined)
 }
 
 /**

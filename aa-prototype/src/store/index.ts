@@ -40,11 +40,13 @@ export {
   reassignCard,
   setAvailability,
   requestCover,
+  editList,
   editRefusal,
   getCard,
   type CompletionBlocker,
   type CardPatch,
   type ProcedurePatch,
+  type ListPatch,
 } from './lifecycle'
 export {
   upsertPatient,
@@ -54,7 +56,17 @@ export {
   type PatientEditPatch,
 } from './intake'
 export { createCard, copyCard, addProcedure, type CreateCardInput } from './cardActions'
-export { addBillingLine, removeBillingLine, type AddBillingLineInput } from './billingLineActions'
+export {
+  addBillingLine,
+  removeBillingLine,
+  setBillingLineAllocation,
+  setProcedureFunderAllocation,
+  type AddBillingLineInput,
+  type BillingLineAllocationPatch,
+  type FunderAllocationEntry,
+} from './billingLineActions'
+export { createBillableParty, type BillablePartyDetails } from './billablePartyActions'
+export { addDayNote, initialsFor } from './dayNoteActions'
 export { createHospital, setInsurerDirectClaims } from './mastersActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'

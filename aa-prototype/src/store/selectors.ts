@@ -6,7 +6,7 @@
  * every snapshot.
  */
 
-import type { Card, List, Procedure, Session } from '../domain/types'
+import type { Card, DayNote, List, Procedure, Session } from '../domain/types'
 import type { CardBillingContext } from '../domain/billing/validateCardForBilling'
 import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { useAppStore, type AppState } from './appStore'
@@ -63,6 +63,30 @@ export function proceduresForCard(state: AppState, cardId: string): Procedure[] 
 
 export function auditForEntity(state: AppState, entityId: string) {
   return state.audit.filter((a) => a.entityId === entityId)
+}
+
+/** Per-day internal office notes for a date, in insertion order (Phase 06). */
+export function dayNotesFor(state: AppState, dateISO: string): DayNote[] {
+  return state.dayNotes[dateISO] ?? []
+}
+
+/**
+ * Every SUBMITTED List awaiting authorisation — the review queue (Phase 07).
+ * The admin review-queue badge count derives from this rather than a hardcoded
+ * figure, so a live submit grows it. Ordered by date then anaesthetist.
+ */
+export function submittedLists(state: AppState): List[] {
+  return Object.values(state.schedule.lists)
+    .filter((l) => l.state === 'SUBMITTED')
+    .sort((a, b) =>
+      a.dateISO === b.dateISO
+        ? a.anaesthetistId.localeCompare(b.anaesthetistId)
+        : a.dateISO.localeCompare(b.dateISO),
+    )
+}
+
+export function submittedListCount(state: AppState): number {
+  return submittedLists(state).length
 }
 
 /**

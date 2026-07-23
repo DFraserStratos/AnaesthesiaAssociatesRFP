@@ -55,6 +55,34 @@ export interface CardBillingContext {
 }
 
 /**
+ * Assemble the `feeFor` context for one procedure from a card billing context
+ * and its 1-based ordinal. Single-sourced so the completion validator's
+ * conservation check and the office's per-line allocation guard (Phase 06's
+ * `setBillingLineAllocation`) compute the procedure fee identically.
+ */
+export function feeContextFor(
+  procedure: Procedure,
+  procedureOrdinal: number,
+  ctx: CardBillingContext,
+): Parameters<typeof feeFor>[1] {
+  const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
+  const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
+  const baseCode = procedure.rvgBaseCode !== undefined ? ctx.rvgCodes[procedure.rvgBaseCode] : undefined
+  const contract =
+    procedure.governingContractId !== undefined ? ctx.contracts[procedure.governingContractId] : undefined
+  const feeCtx: Parameters<typeof feeFor>[1] = {
+    anaesthetist: ctx.anaesthetist,
+    contractPrices: ctx.contractPrices,
+    procedureOrdinal,
+    nonRvgLines,
+  }
+  if (contract !== undefined) feeCtx.contract = contract
+  if (baseCode !== undefined) feeCtx.baseCode = baseCode
+  if (ctx.surgeonId !== undefined) feeCtx.surgeonId = ctx.surgeonId
+  return feeCtx
+}
+
+/**
  * Validate a Card's procedures for billing. `procedures` must be in Card
  * order — a procedure's ordinal (2nd-procedure contract pricing) is its
  * 1-based position in this array.
@@ -196,20 +224,7 @@ export function validateCardForBilling(
     // the stored lines are the explicit allocation of the WHOLE fee — their
     // amounts must sum, to the cent, to the computed fee.
     if (storedLines.some((l) => l.funderOverride !== undefined)) {
-      const contract =
-        procedure.governingContractId !== undefined
-          ? ctx.contracts[procedure.governingContractId]
-          : undefined
-      const feeCtx: Parameters<typeof feeFor>[1] = {
-        anaesthetist: ctx.anaesthetist,
-        contractPrices: ctx.contractPrices,
-        procedureOrdinal: index + 1,
-        nonRvgLines,
-      }
-      if (contract !== undefined) feeCtx.contract = contract
-      if (baseCode !== undefined) feeCtx.baseCode = baseCode
-      if (ctx.surgeonId !== undefined) feeCtx.surgeonId = ctx.surgeonId
-      const fee = feeFor(procedure, feeCtx)
+      const fee = feeFor(procedure, feeContextFor(procedure, index + 1, ctx))
       const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
       if (toCents(allocated) !== toCents(fee.total)) {
         fail(

@@ -72,6 +72,7 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
   availability: { prefix: 'AV', pad: 4 },
+  dayNote: { prefix: 'DN', pad: 4 },
   list: { prefix: 'LG', pad: 4 },
   hospital: { prefix: 'HN', pad: 3 },
   contract: { prefix: 'CTN', pad: 3 },
@@ -110,7 +111,7 @@ export interface MutationMeta {
 
 /** What a recipe may replace. Audit is the wrapper's job — never the recipe's. */
 export type DomainPatch = Partial<
-  Pick<AppState, 'masters' | 'schedule' | 'settings' | 'counters' | 'billing' | 'xero' | 'integrations'>
+  Pick<AppState, 'masters' | 'schedule' | 'settings' | 'counters' | 'billing' | 'xero' | 'integrations' | 'dayNotes'>
 >
 
 function deriveStampCardId(meta: MutationMeta, schedule: AppState['schedule']): CardId | null {
@@ -205,6 +206,7 @@ export function resetDomainState(api: AppStoreApi): void {
     schedule: seed.schedule,
     audit: seed.audit,
     settings: seed.settings,
+    dayNotes: seed.dayNotes,
     counters: seed.counters,
     billing: emptyBillingSlice(),
     xero: emptyXeroSlice(),

@@ -23,6 +23,7 @@ import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee } from '../cap
 import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../assets/samplePaperCards'
 import { CancelCardSheet, EditPatientSheet, EditProcedureSheet } from '../flows'
+import { OfficeBillingSetup } from './OfficeBillingSetup'
 
 interface CardDetailBodyProps {
   cardId: string
@@ -140,7 +141,14 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
 
   if (card === undefined || list === undefined) return null
   const patient = masters.patients[card.patientId]
-  const canEdit = list.state === 'DRAFT' && !cancelled
+  // Mirror the store's editRefusal so the UI never offers an action the guard
+  // would refuse, nor hides one it allows: the office edits DRAFT and SUBMITTED
+  // (never AUTHORISED); the anaesthetist only their own DRAFT. This is what lets
+  // the office correct billing setup, edit the patient/times/BTM, amend and
+  // cancel a Card on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
+  // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
+  // behaviour is unchanged (DRAFT-only).
+  const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'DRAFT' || actor.role === 'office')
   const canCapture = canEdit && !card.completed
   const badge = nhiBadge(patient?.nhi)
 
@@ -310,19 +318,29 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           (the ordinal feeds Type 3 second-procedure pricing). */}
       {!cancelled &&
         procedures.map((procedure, index) => (
-          <BtmCaptureBlock
-            key={procedure.id}
-            procedure={procedure}
-            list={list}
-            actor={actor}
-            ordinal={index + 1}
-            procedureCount={procedures.length}
-            canCapture={canCapture}
-            failures={failures.filter((f) => f.procedureId === procedure.id)}
-            showValidation={showValidation}
-            onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
-            onError={setError}
-          />
+          <div key={procedure.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <BtmCaptureBlock
+              procedure={procedure}
+              list={list}
+              actor={actor}
+              ordinal={index + 1}
+              procedureCount={procedures.length}
+              canCapture={canCapture}
+              failures={failures.filter((f) => f.procedureId === procedure.id)}
+              showValidation={showValidation}
+              onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
+              onError={setError}
+            />
+            {actor.role === 'office' && (
+              <OfficeBillingSetup
+                procedure={procedure}
+                list={list}
+                ordinal={index + 1}
+                actor={actor}
+                canEdit={canEdit}
+              />
+            )}
+          </div>
         ))}
 
       {canCapture && (
@@ -356,7 +374,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
         <Footer>
           <CompleteBar
             completed={card.completed}
-            canAmend={list.state === 'DRAFT'}
+            canAmend={canEdit}
             onComplete={markComplete}
             onAmend={amend}
           />

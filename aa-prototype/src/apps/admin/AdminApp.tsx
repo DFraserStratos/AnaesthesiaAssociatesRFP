@@ -1,142 +1,159 @@
-import { Wordmark } from '../../shared'
+import { useMemo, useState } from 'react'
+import { neutral } from '../../theme/tokens'
+import { SurfaceProvider } from '../../shared'
+import type { List } from '../../domain/types'
+import { addDayNote, useAppStore, useToday, type Actor } from '../../store'
+import { ANAESTHETISTS } from '../../domain/seed'
 import { Placeholder } from '../Placeholder'
-import { DEMO_TODAY_LABEL } from '../../domain/clock'
-import { neutral, brand } from '../../theme/tokens'
+import { SideNav, type NavSection } from './components/SideNav'
+import { DayNav, type SortMode } from './components/DayNav'
+import { DayGrid } from './components/DayGrid'
+import { RightRail } from './components/RightRail'
+import { ListDrawer } from './components/ListDrawer'
+import { AdminCardDetail } from './screens/AdminCardDetail'
+import { isBooked, surnameOf } from './util'
 
-interface NavItem {
-  label: string
-  /** Optional count badge (e.g. Review queue). */
-  badge?: number
+/** The office persona actor, built once (Decisions log 2026-07-21). */
+const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+const PLACEHOLDERS: Record<Exclude<NavSection, 'day'>, { title: string; phase: string; body: string }> = {
+  review: { title: 'Review queue', phase: 'Phase 07', body: 'The authorisation review queue (submitted lists, per-card flags, authorise choreography) is built in Phase 07.' },
+  billing: { title: 'Billing monitor', phase: 'Phase 09', body: 'The billing run monitor, exceptions and dead-letter handling arrive in Phase 09.' },
+  masters: { title: 'Master data', phase: 'Phase 07', body: 'The anaesthetist / hospital / contract / RVG master-data screens arrive in Phase 07.' },
+  audit: { title: 'Audit', phase: 'Phase 07', body: 'The append-only audit-trail viewer arrives in Phase 07.' },
 }
 
-/**
- * Side-nav items per `Admin Day.dc.html`, extended to the build's full set
- * (Decisions log 2026-07-21: the design shows a subset; we add Billing monitor,
- * Master data and Audit using the same pattern).
- */
-const NAV_ITEMS: readonly NavItem[] = [
-  { label: 'Day view' },
-  { label: 'Review queue', badge: 3 },
-  { label: 'Billing monitor' },
-  { label: 'Master data' },
-  { label: 'Audit' },
-]
-
-function SideNav() {
+export function AdminApp() {
+  const todayISO = useToday()
   return (
-    <div
-      style={{
-        width: 216,
-        flex: 'none',
-        background: neutral.ink,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px 12px',
-        gap: 24,
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* wordmark (serif text, echoing the logo) + crimson ADMIN eyebrow, on the dark nav */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 8px' }}>
-        <Wordmark tone="dark" size={15} />
-        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: '#D89AA9', paddingLeft: 2 }}>
-          ADMIN
-        </span>
-      </div>
-
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map((item, i) => {
-          const activeItem = i === 0
-          return (
-            <span
-              key={item.label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '10px 12px',
-                borderRadius: 9,
-                fontSize: 13.5,
-                fontWeight: activeItem ? 600 : 500,
-                color: activeItem ? '#FFFFFF' : 'rgba(255,255,255,0.65)',
-                background: activeItem ? 'rgba(255,255,255,0.08)' : 'transparent',
-                boxShadow: activeItem ? `inset 3px 0 0 ${brand.base}` : 'none',
-                cursor: 'default',
-              }}
-            >
-              <span>{item.label}</span>
-              {item.badge !== undefined && (
-                <span
-                  style={{
-                    background: brand.base,
-                    color: '#FFFFFF',
-                    borderRadius: 999,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                  }}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </span>
-          )
-        })}
-      </nav>
-
-      {/* persona footer */}
-      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-        <span
-          aria-hidden
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 999,
-            background: brand.tint,
-            color: brand.base,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 11,
-            fontWeight: 700,
-            flex: 'none',
-          }}
-        >
-          KW
-        </span>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#FFFFFF' }}>Kirsty W.</span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Office</span>
-        </div>
-      </div>
-    </div>
+    <SurfaceProvider variant="web">
+      <AdminShell todayISO={todayISO} />
+    </SurfaceProvider>
   )
 }
 
-/**
- * Admin web app — the shell only, with the dark-ink side nav from
- * `Admin Day.dc.html`. The one-day dashboard, review queue, authorisation,
- * master data and audit views arrive in Phases 06 to 07.
- */
-export function AdminApp() {
+function AdminShell({ todayISO }: { todayISO: string }) {
+  const listsRecord = useAppStore((s) => s.schedule.lists)
+  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const masters = useAppStore((s) => s.masters)
+  const dayNotesRecord = useAppStore((s) => s.dayNotes)
+  const [section, setSection] = useState<NavSection>('day')
+  const [selectedDate, setSelectedDate] = useState(todayISO)
+  const [sortMode, setSortMode] = useState<SortMode>('roster')
+  const [drawerListId, setDrawerListId] = useState<string | null>(null)
+  const [cardDetailId, setCardDetailId] = useState<string | null>(null)
+
+  // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
+  // NB: Object.values(record) would sort by registration number (numeric-like
+  // keys enumerate ascending), so we drive roster order from the cast array.
+  const anaesthetists = useMemo(() => {
+    const all = ANAESTHETISTS.map((a) => masters.anaesthetists[a.registrationNumber]).filter(
+      (a): a is NonNullable<typeof a> => a !== undefined,
+    )
+    if (sortMode === 'az') return [...all].sort((a, b) => surnameOf(a.name).localeCompare(surnameOf(b.name)))
+    return all
+  }, [masters.anaesthetists, sortMode])
+
+  const dayLists = useMemo(() => Object.values(listsRecord).filter((l) => l.dateISO === selectedDate), [listsRecord, selectedDate])
+
+  const listsByAnaesthetist = useMemo(() => {
+    const map: Record<string, List[]> = {}
+    for (const l of dayLists) (map[l.anaesthetistId] ??= []).push(l)
+    return map
+  }, [dayLists])
+
+  const activeCardCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const c of Object.values(cardsRecord)) {
+      if (c.cancellation === undefined) counts[c.listId] = (counts[c.listId] ?? 0) + 1
+    }
+    return counts
+  }, [cardsRecord])
+
+  const summary = useMemo(() => {
+    // A Free list booked via phone-advice (cards or an assigned hospital) counts
+    // as a session, not free, matching the grid's derived display.
+    const effectivelyBooked = (l: List) =>
+      isBooked(l.statusKey) || (l.statusKey === 'free' && ((activeCardCounts[l.id] ?? 0) > 0 || l.hospitalId !== undefined))
+    const anaes = new Set(dayLists.map((l) => l.anaesthetistId)).size
+    const sessions = dayLists.filter(effectivelyBooked).length
+    const free = dayLists.filter((l) => l.statusKey === 'free' && !effectivelyBooked(l)).length
+    const submitted = dayLists.filter((l) => l.state === 'SUBMITTED').length
+    return `${anaes} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted`
+  }, [dayLists, activeCardCounts])
+
+  // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
+  const reviewLists = useMemo(
+    () =>
+      Object.values(listsRecord)
+        .filter((l) => l.state === 'SUBMITTED')
+        .sort((a, b) =>
+          a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO),
+        ),
+    [listsRecord],
+  )
+  const reviewRows = useMemo(
+    () =>
+      reviewLists.map((l) => {
+        const anae = masters.anaesthetists[l.anaesthetistId]
+        const hospital = l.hospitalId !== undefined ? masters.hospitals[l.hospitalId]?.name : 'Unassigned'
+        const count = Object.values(cardsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
+        return {
+          listId: l.id,
+          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} — ${hospital} ${l.session}`,
+          sub: `${count} card${count === 1 ? '' : 's'} · submitted`,
+        }
+      }),
+    [reviewLists, masters, cardsRecord],
+  )
+
+  const notes = dayNotesRecord[selectedDate] ?? []
+
+  function navigateDate(dateISO: string) {
+    setSelectedDate(dateISO)
+    setDrawerListId(null)
+    setCardDetailId(null)
+  }
+
+  function openCard(cardId: string) {
+    setCardDetailId(cardId)
+    setDrawerListId(null)
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
-      <SideNav />
+      <SideNav active={section} reviewBadge={reviewLists.length} onNavigate={(s) => { setSection(s); setCardDetailId(null); setDrawerListId(null) }} />
+
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>
-            {DEMO_TODAY_LABEL}
-          </h1>
-          <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>
-            14 anaesthetists · 22 sessions · 5 free · 2 lists submitted today
-          </div>
-        </div>
-        <Placeholder title="One-day dashboard" phase="Phase 06">
-          The day grid, right-rail calendar, internal notes and review queue from{' '}
-          <em>Admin Day.dc.html</em> are built in Phases 06 to 07. This screen is the shell only.
-        </Placeholder>
+        {section !== 'day' ? (
+          <Placeholder title={PLACEHOLDERS[section].title} phase={PLACEHOLDERS[section].phase}>
+            {PLACEHOLDERS[section].body}
+          </Placeholder>
+        ) : cardDetailId !== null ? (
+          <AdminCardDetail cardId={cardDetailId} actor={OFFICE} todayISO={todayISO} onBack={() => setCardDetailId(null)} />
+        ) : (
+          <>
+            <DayNav selectedDateISO={selectedDate} summary={summary} sortMode={sortMode} onSort={setSortMode} onNavigateDate={navigateDate} todayISO={todayISO} />
+            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              <DayGrid anaesthetists={anaesthetists} listsByAnaesthetist={listsByAnaesthetist} masters={masters} activeCardCounts={activeCardCounts} onSelectList={setDrawerListId} />
+              <RightRail
+                monthDateISO={selectedDate}
+                selectedDateISO={selectedDate}
+                todayISO={todayISO}
+                onNavigateDate={navigateDate}
+                notes={notes}
+                onAddNote={(text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged)}
+                reviewRows={reviewRows}
+                onReviewList={() => setSection('review')}
+              />
+            </div>
+          </>
+        )}
       </div>
+
+      {drawerListId !== null && (
+        <ListDrawer listId={drawerListId} actor={OFFICE} onClose={() => setDrawerListId(null)} onOpenCard={openCard} />
+      )}
     </div>
   )
 }
