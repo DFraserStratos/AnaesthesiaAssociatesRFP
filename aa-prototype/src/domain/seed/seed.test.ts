@@ -336,7 +336,7 @@ describe('scenario states', () => {
   it('seeds the staged submit audit entries', () => {
     const submits = seed.audit.filter((a) => a.action === 'list.submit')
     expect(submits.map((s) => s.entityId).sort()).toEqual(
-      [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17].sort(),
+      [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17, SEED_LIST_IDS.billingFailure].sort(),
     )
   })
 })

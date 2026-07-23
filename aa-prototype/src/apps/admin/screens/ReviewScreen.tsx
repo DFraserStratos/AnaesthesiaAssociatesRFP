@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, Check, Lock } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { BillingRoute, Card, Procedure } from '../../../domain/types'
-import { authoriseList, logListNote, useAppStore, type Actor } from '../../../store'
+import { authoriseList, logListNote, prepaymentStatusFor, useAppStore, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useSurface } from '../../../shared'
 import { cardFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, routeLabel, sessionTimeRange } from '../../../shared/format'
@@ -40,6 +40,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const cardsRecord = useAppStore((s) => s.schedule.cards)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
   const invoicesRecord = useAppStore((s) => s.billing.invoices)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
@@ -63,7 +65,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         .sort((a, b) => a.id.localeCompare(b.id))
       const views = procs.map((p, i) => procedureFee({ procedure: p, list, ordinal: i + 1, masters, billingLines: billingLinesRecord }))
       const totals = cardFee(procs, list, masters, billingLinesRecord)
-      const flags = reviewFlagsForCard({ card, procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, baseCode: views[i]!.baseCode })) })
+      const flags = reviewFlagsForCard({
+        card,
+        procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, baseCode: views[i]!.baseCode })),
+        prepaymentStatus: prepaymentStatusFor({ schedule, billing }, card.id),
+      })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
       const routes = new Set(procs.map((p) => p.billingRoute).filter((r): r is BillingRoute => r !== undefined))
@@ -73,7 +79,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const entityIds = [card.id, ...procs.map((p) => p.id), ...lineIds]
       return { card, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds }
     })
-  }, [list, listId, cardsRecord, proceduresRecord, billingLinesRecord, masters])
+  }, [list, listId, cardsRecord, proceduresRecord, billingLinesRecord, masters, schedule, billing])
 
   if (list === undefined) return null
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
@@ -92,7 +98,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   // Invoices the billing run raised for this list (via its cards) — the run is
   // synchronous with authorise, so these exist by the time the banner renders.
   const listCardIds = new Set(Object.values(cardsRecord).filter((c) => c.listId === listId).map((c) => c.id))
-  const raisedCount = Object.values(invoicesRecord).filter((i) => listCardIds.has(i.cardId)).length
+  // Only standard (run) invoices — a pre-payment pre-invoice is not run output (Phase 09).
+  const raisedCount = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listCardIds.has(i.cardId)).length
 
   const nextListId = Object.values(listsRecord)
     .filter((l) => l.state === 'SUBMITTED' && l.id !== listId)

@@ -45,6 +45,18 @@ export interface InvoiceBuildContext extends CardBillingContext {
   listHospitalId?: string
   /** The Card's patient — the Billable Party route's default payer (7th review A1). */
   patientId: string
+  /**
+   * EX-GST amounts already invoiced ahead of the procedure (Phase 09
+   * pre-payment), keyed by procedure id, WITH the counterparty the pre-invoice
+   * was raised against. The balance run threads this in and
+   * `buildInvoicesForCard` appends one visible deduction line per prepaid
+   * procedure so the invoice bills only the remaining balance. A full
+   * pre-payment nets that procedure's group to $0 (no balance invoice). The
+   * stored counterparty is checked against the procedure's CURRENT counterparty
+   * so an office payer-change after the deposit fails the Card for review
+   * rather than crediting the wrong party.
+   */
+  prePaidByProcedure?: Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }>
 }
 
 export type ContractResolutionExceptionCode =
@@ -280,6 +292,40 @@ export function buildInvoicesForCard(
     const fee = feeFor(procedure, feeCtx)
 
     const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
+
+    // A procedure that was pre-invoiced nets its deposit off the balance below
+    // (non-override branch only).
+    const prePaid = ctx.prePaidByProcedure?.[procedure.id]
+    if (prePaid !== undefined) {
+      // A funder split on the same procedure would make "which funder does the
+      // deposit reduce" ambiguous, so refuse it to review.
+      if (storedLines.some((l) => l.funderOverride !== undefined)) {
+        return {
+          kind: 'exception',
+          procedureId: procedure.id,
+          code: 'prepaidFunderOverride',
+          message:
+            'This procedure was pre-invoiced but also carries a funder split. Resolve the allocation before rebilling the balance.',
+        }
+      }
+      // The deposit credit must land on the party the deposit was invoiced to.
+      // If the payer changed after the deposit was raised (an office edit),
+      // netting against the new party would orphan the old party's deposit, so
+      // fail the Card for review.
+      if (
+        prePaid.counterparty.kind !== procedureCounterparty.kind ||
+        prePaid.counterparty.id !== procedureCounterparty.id
+      ) {
+        return {
+          kind: 'exception',
+          procedureId: procedure.id,
+          code: 'prepaidCounterpartyChanged',
+          message:
+            'This procedure was pre-invoiced to a different payer than it now bills to. Reallocate the pre-payment before rebilling the balance.',
+        }
+      }
+    }
+
     if (storedLines.some((l) => l.funderOverride !== undefined)) {
       // Once any line carries a funder override, the stored lines ARE the
       // explicit allocation of the WHOLE fee (validator-conserved to the cent
@@ -330,6 +376,22 @@ export function buildInvoicesForCard(
         },
       })
     }
+
+    // Net off any pre-payment already invoiced for this procedure, as a
+    // VISIBLE deduction line on the procedure's resolved counterparty group
+    // (not a fee-line mutation — preserves the principle-10 rate snapshot).
+    // The deposit was raised as an ex-GST subtotal, so it subtracts from the
+    // ex-GST fee subtotal here and the two reconcile to the full fee.
+    if (prePaid !== undefined && prePaid.amount > 0) {
+      tagged.push({
+        counterparty: procedureCounterparty,
+        line: {
+          procedureId: procedure.id,
+          description: 'Less pre-payment deposit already invoiced',
+          amount: -roundToCents(prePaid.amount),
+        },
+      })
+    }
   }
 
   // Group by counterparty in first-appearance order (deterministic).
@@ -346,19 +408,109 @@ export function buildInvoicesForCard(
     const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
     // A negative invoice is never raised (a real practice issues a credit
     // note; Xero refuses negative ACCREC totals). Completion validation gates
-    // negative override fees, so this belt catches only moved/edge cards.
+    // negative override fees, so this belt catches moved/edge cards and a
+    // pre-payment (deposit or full estimate) that exceeds the final rated fee.
     if (subtotal < 0) {
       return {
         kind: 'exception',
         procedureId: lines[0]?.procedureId ?? '',
         code: 'negativeTotal',
-        message: `The lines billed to one counterparty add up to a negative amount ($${subtotal.toFixed(2)}). Review the price override before rebilling.`,
+        message: `The lines billed to one counterparty add up to a negative amount ($${subtotal.toFixed(2)}). Review the pre-payment or price override before rebilling; an overpaid pre-payment needs a manual credit.`,
       }
     }
+    // A group that nets to $0 raises no invoice — the full-pre-payment case
+    // (deposit == fee) has nothing left to bill, cleaner than a $0 invoice.
+    if (toCents(subtotal) === 0) continue
     const gst = roundToCents(subtotal * GST_RATE)
     invoices.push({
       counterparty,
       layout: layoutFor(counterparty),
+      lines,
+      subtotal,
+      gst,
+      total: roundToCents(subtotal + gst),
+    })
+  }
+  return { kind: 'invoices', invoices }
+}
+
+/**
+ * Build the PRE-PAYMENT (pre-procedure) invoice boundaries for one Card
+ * (Phase 09; B7). Covers ONLY the patient-funded procedures — those on the
+ * Billable Party route with the `selfFundedPrepayment` category; a mixed
+ * card's contract-holder procedures are untouched here (they bill normally
+ * after authorisation). Two shapes:
+ *
+ *   - `split`: a flat AGREED deposit line (the `depositAmount` figure, never
+ *     via `feeFor` — the deposit is a negotiated number, not a fraction of the
+ *     estimated fee);
+ *   - `full`:  the estimated full fee via `feeFor` (the same calculator the
+ *     balance run uses, so the balance nets to exactly $0).
+ *
+ * Deposit lines are EX-GST subtotals (an $800 deposit invoices as
+ * 800 / GST 120 / total 920); the later balance run subtracts the same ex-GST
+ * figure from the ex-GST fee subtotal, so deposit + balance reconciles to the
+ * full fee. Grouped by counterparty (the typed BillableParty else the
+ * patient); always the patient layout.
+ */
+export function buildPrePaymentInvoiceForCard(
+  card: Card,
+  procedures: readonly Procedure[],
+  ctx: InvoiceBuildContext,
+): CardBuildResult {
+  if (card.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
+
+  const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
+  for (const [index, procedure] of procedures.entries()) {
+    if (
+      procedure.billingRoute !== 'billableParty' ||
+      procedure.patientPaymentCategory !== 'selfFundedPrepayment'
+    ) {
+      continue
+    }
+    const counterparty = counterpartyForProcedure(procedure, undefined, ctx.patientId)
+    const detail = procedure.prepaymentDetail
+    if (detail?.type === 'split') {
+      // The validator guarantees a positive depositAmount on a split.
+      const amount = roundToCents(detail.depositAmount ?? 0)
+      if (amount <= 0) continue
+      tagged.push({
+        counterparty,
+        line: { procedureId: procedure.id, description: 'Pre-payment deposit', amount },
+      })
+    } else {
+      // Full pre-payment: the estimated full fee via the same calculator the
+      // balance run uses.
+      const feeCtx = feeContextFor(procedure, index + 1, ctx)
+      delete feeCtx.contract
+      const fee = feeFor(procedure, feeCtx)
+      const amount = roundToCents(fee.total)
+      if (amount <= 0) continue
+      const line: DraftInvoiceLine = {
+        procedureId: procedure.id,
+        description: 'Pre-payment, estimated full fee',
+        amount,
+      }
+      if (fee.billableUnits > 0) line.units = fee.billableUnits
+      tagged.push({ counterparty, line })
+    }
+  }
+
+  const groups = new Map<string, { counterparty: CounterpartyRef; lines: DraftInvoiceLine[] }>()
+  for (const { counterparty, line } of tagged) {
+    const key = `${counterparty.kind}:${counterparty.id}`
+    const group = groups.get(key)
+    if (group === undefined) groups.set(key, { counterparty, lines: [line] })
+    else group.lines.push(line)
+  }
+
+  const invoices: DraftInvoice[] = []
+  for (const { counterparty, lines } of groups.values()) {
+    const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
+    const gst = roundToCents(subtotal * GST_RATE)
+    invoices.push({
+      counterparty,
+      layout: 'patient',
       lines,
       subtotal,
       gst,

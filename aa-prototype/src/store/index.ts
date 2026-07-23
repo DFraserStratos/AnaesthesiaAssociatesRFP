@@ -56,7 +56,8 @@ export {
   type IntakeResult,
   type PatientEditPatch,
 } from './intake'
-export { createCard, copyCard, addProcedure, type CreateCardInput } from './cardActions'
+export { createCard, copyCard, addProcedure, addPostOpAddendum, type CreateCardInput } from './cardActions'
+export { raisePreProcedureInvoice, overridePrepaymentGate } from './prepaymentActions'
 export {
   addBillingLine,
   removeBillingLine,
@@ -94,6 +95,7 @@ export {
 } from './contractActions'
 export {
   runBillingForList,
+  retryBillingCase,
   markInvoiceEmailed,
   wireBillingRun,
   type BillingRunResult,

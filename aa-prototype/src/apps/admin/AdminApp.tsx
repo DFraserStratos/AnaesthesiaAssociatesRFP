@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import type { List } from '../../domain/types'
-import { addDayNote, useAppStore, useToday, type Actor } from '../../store'
+import { addDayNote, failedCases, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
 import { ANAESTHETISTS } from '../../domain/seed'
-import { Placeholder } from '../Placeholder'
 import { SideNav, type NavSection } from './components/SideNav'
 import { DayNav, type SortMode } from './components/DayNav'
 import { DayGrid } from './components/DayGrid'
@@ -14,6 +13,7 @@ import { AdminCardDetail } from './screens/AdminCardDetail'
 import { ReviewQueue } from './screens/ReviewQueue'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { InvoicesScreen } from './screens/InvoicesScreen'
+import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
 import { MasterData } from './screens/MasterData'
 import { AuditViewer } from './screens/AuditViewer'
 import { isBooked, surnameOf } from './util'
@@ -33,6 +33,8 @@ export function AdminApp() {
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const schedule = useAppStore((s) => s.schedule)
+  const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
   const [section, setSection] = useState<NavSection>('day')
@@ -107,6 +109,25 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     [reviewLists, masters, cardsRecord],
   )
 
+  // Billing exceptions across the pipeline (the billing-monitor nav badge).
+  const exceptionCount = useMemo(() => failedCases({ billing }).length, [billing])
+
+  // Lists on the selected day holding a card whose pre-payment is flagged — a
+  // day-grid indicator (Phase 09). Outstanding (required/invoiced-unpaid) wins
+  // over an overridden gate on the same list; both surface so an override is
+  // never invisible at a glance.
+  const prepaymentFlags = useMemo(() => {
+    const map = new Map<string, 'outstanding' | 'overridden'>()
+    for (const card of Object.values(cardsRecord)) {
+      const list = listsRecord[card.listId]
+      if (list === undefined || list.dateISO !== selectedDate) continue
+      const status = prepaymentStatusFor({ schedule, billing }, card.id)
+      if (status === 'required' || status === 'outstanding') map.set(list.id, 'outstanding')
+      else if (status === 'overridden' && !map.has(list.id)) map.set(list.id, 'overridden')
+    }
+    return map
+  }, [cardsRecord, listsRecord, selectedDate, schedule, billing])
+
   const notes = dayNotesRecord[selectedDate] ?? []
 
   function navigateDate(dateISO: string) {
@@ -132,7 +153,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
-      <SideNav active={section} reviewBadge={reviewLists.length} onNavigate={navigate} />
+      <SideNav active={section} reviewBadge={reviewLists.length} billingBadge={exceptionCount} onNavigate={navigate} />
 
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {section === 'review' ? (
@@ -148,16 +169,14 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         ) : section === 'audit' ? (
           <AuditViewer />
         ) : section === 'billing' ? (
-          <Placeholder title="Billing monitor" phase="Phase 09">
-            The billing run monitor, exceptions and dead-letter handling arrive in Phase 09.
-          </Placeholder>
+          <BillingMonitorScreen actor={OFFICE} />
         ) : cardDetailId !== null ? (
           <AdminCardDetail cardId={cardDetailId} actor={OFFICE} todayISO={todayISO} onBack={() => setCardDetailId(null)} />
         ) : (
           <>
             <DayNav selectedDateISO={selectedDate} summary={summary} sortMode={sortMode} onSort={setSortMode} onNavigateDate={navigateDate} todayISO={todayISO} />
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              <DayGrid anaesthetists={anaesthetists} listsByAnaesthetist={listsByAnaesthetist} masters={masters} activeCardCounts={activeCardCounts} onSelectList={setDrawerListId} />
+              <DayGrid anaesthetists={anaesthetists} listsByAnaesthetist={listsByAnaesthetist} masters={masters} activeCardCounts={activeCardCounts} prepaymentFlags={prepaymentFlags} onSelectList={setDrawerListId} />
               <RightRail
                 monthDateISO={selectedDate}
                 selectedDateISO={selectedDate}

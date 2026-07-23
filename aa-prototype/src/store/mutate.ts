@@ -15,15 +15,9 @@
  */
 
 import type { ActorRole, AuditEntry, AuditSource, CardId } from '../domain/types'
-import { buildSeed } from '../domain/seed'
+import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import {
-  emptyBillingSlice,
-  emptyIntegrationsSlice,
-  emptyXeroSlice,
-  type AppState,
-  type AppStoreApi,
-} from './appStore'
+import { emptyIntegrationsSlice, emptyXeroSlice, type AppState, type AppStoreApi } from './appStore'
 
 // ---------------------------------------------------------------------------
 // Actors & outcomes
@@ -212,6 +206,9 @@ export function mutate(
  */
 export function resetDomainState(api: AppStoreApi): void {
   const seed = buildSeed()
+  // Restore the seeded PAID pre-payment slice through the same seam as
+  // freshAppState (Phase 09), with the counters it bumped.
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_CARD_ID)
   api.setState({
     clock: INITIAL_CLOCK,
     masters: seed.masters,
@@ -219,8 +216,8 @@ export function resetDomainState(api: AppStoreApi): void {
     audit: seed.audit,
     settings: seed.settings,
     dayNotes: seed.dayNotes,
-    counters: seed.counters,
-    billing: emptyBillingSlice(),
+    counters: seedBilling.counters,
+    billing: { invoices: seedBilling.invoices, invoiceLines: seedBilling.invoiceLines, cases: seedBilling.cases },
     xero: emptyXeroSlice(),
     integrations: emptyIntegrationsSlice(),
   })

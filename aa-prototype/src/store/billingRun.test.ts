@@ -381,12 +381,17 @@ describe('invoice identity and delivery', () => {
     stageAndBill(api, MORRISON_LIST)
     stageAndBill(api, WHITAKER_LIST)
     const numbers = Object.values(api.getState().billing.invoices).map((i) => i.invoiceNumber)
-    expect(numbers).toHaveLength(11)
+    // 6 (Morrison) + 5 (Whitaker) runtime invoices + the seeded PAID pre-payment
+    // invoice that ships with every store (Phase 09) = 12, all unique.
+    expect(numbers).toHaveLength(12)
     for (const n of numbers) expect(n).toMatch(/^AA-2026-\d{4}$/)
     expect(new Set(numbers).size).toBe(numbers.length)
-    // Every invoice carries a BillingCase as its internal case reference.
+    // Every invoice carries a BillingCase as its internal case reference. The
+    // seeded pre-payment invoice's case is 'paid'; runtime invoices are 'invoiced'.
     for (const inv of Object.values(api.getState().billing.invoices)) {
-      expect(api.getState().billing.cases[inv.caseReference]).toMatchObject({ invoiceId: inv.id, status: 'invoiced' })
+      const c = api.getState().billing.cases[inv.caseReference]
+      expect(c?.invoiceId).toBe(inv.id)
+      expect(c?.status).toBe(inv.kind === 'prePayment' ? 'paid' : 'invoiced')
     }
   })
 

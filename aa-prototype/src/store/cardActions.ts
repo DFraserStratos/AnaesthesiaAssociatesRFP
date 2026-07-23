@@ -22,7 +22,7 @@ import {
 import type { AppStoreApi } from './appStore'
 import { editRefusal, getCard } from './lifecycle'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
-import { proceduresForCard } from './selectors'
+import { cardsForList, listForSlot, proceduresForCard } from './selectors'
 
 // ---------------------------------------------------------------------------
 // createCard
@@ -231,6 +231,137 @@ export function copyCard(api: AppStoreApi, actor: Actor, sourceCardId: string): 
   })
 
   return ok({ cardId })
+}
+
+// ---------------------------------------------------------------------------
+// addPostOpAddendum
+// ---------------------------------------------------------------------------
+
+/**
+ * Post-op addendum (B8; Phase 09) — a post-procedure charge against a
+ * billed/locked episode (e.g. an HDU review, pain consult, nerve catheter).
+ * The RFP's immutability answer: the original Card stays LOCKED; the addendum
+ * is a NEW linked Card (`cardType: 'postOpAddendum'`, `addendumOfCardId`) that
+ * runs its own capture -> submit -> authorise -> bill cycle.
+ *
+ * It lands on the original anaesthetist's empty/free DRAFT List for today (AM
+ * before PM) — an empty List is required because submission is completion-gated
+ * for the whole List, so a shared List would block on incomplete siblings or
+ * bill them together (same pattern as Phase 06 phone-advice booking). Refused
+ * `noOpenSession` when neither of today's sessions is a free, empty DRAFT List.
+ * The patient is reused; the billing setup is inherited from the original's
+ * first procedure. Audited `card.create` + `procedure.create`; original untouched.
+ */
+export function addPostOpAddendum(
+  api: AppStoreApi,
+  actor: Actor,
+  originalCardId: string,
+): Outcome<{ cardId: string; listId: string }> {
+  const state = api.getState()
+  const found = getCard(state, originalCardId)
+  if (found === undefined) return refuse('notFound', 'Card not found.')
+  const { card: original, list: originalList } = found
+
+  if (originalList.state !== 'AUTHORISED') {
+    return refuse(
+      'notAuthorised',
+      'A post-op addendum is only added to a locked (authorised) episode. The original Card is not authorised yet.',
+    )
+  }
+
+  const anaesthetistId = originalList.anaesthetistId
+  const todayISO = state.clock.todayISO
+  const candidates = (['AM', 'PM'] as const)
+    .map((session) => listForSlot(state, anaesthetistId, todayISO, session))
+    .filter((l): l is NonNullable<typeof l> => l !== undefined)
+  const target = candidates.find(
+    (l) =>
+      l.state === 'DRAFT' &&
+      l.statusKey === 'free' &&
+      l.hospitalId === undefined &&
+      l.surgeonId === undefined &&
+      cardsForList(state, l.id).filter((c) => c.cancellation === undefined).length === 0,
+  )
+  if (target === undefined) {
+    return refuse(
+      'noOpenSession',
+      "No free, empty session is open today for this anaesthetist to hold the post-op addendum. Free one of today's sessions first.",
+    )
+  }
+
+  const rights = editRefusal(actor, target)
+  if (rights !== null) return rights
+
+  const first = proceduresForCard(state, originalCardId)[0]
+
+  let cardId = ''
+  const listId = target.id
+  const metas: MutationMeta[] = []
+  mutate(api, actor, metas, (s) => {
+    let counters = s.counters
+    const cardAlloc = allocateId(counters, 'card')
+    counters = cardAlloc.counters
+    cardId = cardAlloc.id
+    const procAlloc = allocateId(counters, 'procedure')
+    counters = procAlloc.counters
+    const procedureId = procAlloc.id
+    const atISO = clockISO(s.clock)
+
+    const card: Card = {
+      id: cardId,
+      listId,
+      patientId: original.patientId,
+      completed: false,
+      cardType: 'postOpAddendum',
+      addendumOfCardId: originalCardId,
+      attachments: [],
+      lastModifiedBy: actor.who,
+      lastModifiedAtISO: atISO,
+    }
+
+    const procedure: Procedure = {
+      id: procedureId,
+      cardId,
+      description: '',
+      accRelated: false,
+      isAdditional: false,
+      selectedModifierCodes: [],
+    }
+    // Inherit the funding context (the same episode); the post-op event bills
+    // its own B/T/M (not time-only — it is a distinct billable item).
+    if (first?.billingRoute !== undefined) procedure.billingRoute = first.billingRoute
+    if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
+    if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
+    if (first?.patientPaymentCategory !== undefined) {
+      // A post-op event is never itself pre-paid: an inherited selfFundedPrepayment
+      // downgrades to a post-procedure self-funded charge, else the addendum is born
+      // demanding a pre-payment it has no deposit/detail for (and cannot complete).
+      // prepaymentDetail is deliberately never inherited.
+      procedure.patientPaymentCategory =
+        first.patientPaymentCategory === 'selfFundedPrepayment' ? 'selfFundedPostProcedure' : first.patientPaymentCategory
+    }
+    if (first?.governingContractId !== undefined) procedure.governingContractId = first.governingContractId
+
+    metas.push(
+      {
+        entityType: 'card',
+        entityId: cardId,
+        action: 'card.create',
+        after: { listId, patientId: original.patientId, cardType: 'postOpAddendum', addendumOfCardId: originalCardId },
+      },
+      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { cardId } },
+    )
+    return {
+      schedule: {
+        ...s.schedule,
+        cards: { ...s.schedule.cards, [cardId]: card },
+        procedures: { ...s.schedule.procedures, [procedureId]: procedure },
+      },
+      counters,
+    }
+  })
+
+  return ok({ cardId, listId })
 }
 
 // ---------------------------------------------------------------------------

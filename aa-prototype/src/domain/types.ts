@@ -378,6 +378,15 @@ export interface Card {
   completedAtISO?: IsoDateTime
   /** Card Copy is the RFP's additional-procedure mechanism (M6; 3rd review #2). */
   copiedFromCardId?: CardId
+  /**
+   * Post-op addendum Cards (B8; Phase 09) carry `cardType: 'postOpAddendum'`
+   * and link back to the original episode via `addendumOfCardId`. The addendum
+   * is a NEW Card that runs its own capture->submit->authorise->bill cycle; the
+   * original stays locked and immutable (the RFP's immutability answer). Both
+   * fields absent on ordinary Cards.
+   */
+  cardType?: 'postOpAddendum'
+  addendumOfCardId?: CardId
   correlationRef?: IntegrationCorrelationRef
   cancellation?: CardCancellation
   prepaymentOverride?: PrepaymentOverride

@@ -1,17 +1,25 @@
 import { useState } from 'react'
-import { RotateCcw, Zap, MapPin, CalendarDays, Info, ChevronsRight } from 'lucide-react'
+import { RotateCcw, Zap, MapPin, CalendarDays, Info, ChevronsRight, AlertTriangle, Stethoscope } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import {
   advanceClockDays,
   advanceClockMinutes,
+  authoriseList,
+  editContract,
   resetDemo,
+  submitList,
   useAppStore,
   useClockTimeLabel,
   useToday,
+  type Actor,
 } from '../../store'
-import { neutral, accent, radius, elevation } from '../../theme/tokens'
+import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
+import { DemoBadge } from '../../shared'
+import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
+
+const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 interface ComingControl {
   icon: LucideIcon
@@ -97,8 +105,52 @@ export function DemoControlPanel() {
   const todayISO = useToday()
   const timeLabel = useClockTimeLabel()
   const [confirmingReset, setConfirmingReset] = useState(false)
+  const [failureMsg, setFailureMsg] = useState<string | null>(null)
+  const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
 
   const dateLabel = format(parseISO(todayISO), 'EEEE d MMMM yyyy')
+
+  // Phase 09 demo trigger: date out the COS ACC contract (no default fallback)
+  // and authorise the seeded failure list; the wired billing run raises the
+  // sibling's invoice and fails the COS card, which surfaces in the monitor.
+  function triggerBillingFailure() {
+    const listId = SEED_LIST_IDS.billingFailure
+    const list = useAppStore.getState().schedule.lists[listId]
+    if (list === undefined) {
+      setFailureMsg('The billing-failure list is not present in this seed.')
+      return
+    }
+    if (list.billedAtISO !== undefined) {
+      setFailureMsg('Already triggered. Open the Admin app billing monitor to resolve and retry the failed card.')
+      return
+    }
+    editContract(useAppStore, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' })
+    if (list.state === 'DRAFT') submitList(useAppStore, OFFICE, listId)
+    const outcome = authoriseList(useAppStore, OFFICE, listId)
+    setFailureMsg(
+      outcome.ok
+        ? 'Done. In the Admin app billing monitor the COS card shows a rating failure while its clean sibling billed. Use Resolve & retry.'
+        : `Refused: ${outcome.message}`,
+    )
+  }
+
+  // Phase 09 demo trigger: authorise (lock + bill) an original episode and keep
+  // a free empty session today for its anaesthetist, so "Add post-op event" on
+  // the locked card has somewhere to land.
+  function stagePostOpScenario() {
+    const listId = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
+    const list = useAppStore.getState().schedule.lists[listId]
+    if (list === undefined) {
+      setPostOpMsg('The post-op original list is not present in this seed.')
+      return
+    }
+    if (list.state === 'DRAFT') submitList(useAppStore, OFFICE, listId)
+    const submitted = useAppStore.getState().schedule.lists[listId]
+    if (submitted?.state === 'SUBMITTED') authoriseList(useAppStore, OFFICE, listId)
+    setPostOpMsg(
+      'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its card and use "Add post-op event"; it lands on her free Tue 21 PM session.',
+    )
+  }
 
   const advances: readonly AdvanceButton[] = [
     { label: '+15 min', run: () => advanceClockMinutes(useAppStore, 15) },
@@ -171,6 +223,45 @@ export function DemoControlPanel() {
             </button>
           )}
         </div>
+      </ControlCard>
+
+      {/* Phase 09 demo triggers */}
+      <ControlCard icon={AlertTriangle} eyebrow="Billing exceptions" title="Trigger billing failure">
+        <div><DemoBadge label="Demo trigger" /></div>
+        <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
+          Dates out the externally held COS ACC contract (a group holder with no default fallback) and authorises the
+          seeded multi-card list. One card fails to rate; its clean sibling still invoices, so the monitor shows
+          per-card isolation and a Resolve &amp; retry path.
+        </span>
+        <div style={{ marginTop: 4 }}>
+          <button type="button" onClick={triggerBillingFailure} style={actionButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.background = neutral.sunken)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = neutral.surface)}>
+            Trigger failure
+          </button>
+        </div>
+        {failureMsg !== null && (
+          <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{failureMsg}</div>
+        )}
+      </ControlCard>
+
+      <ControlCard icon={Stethoscope} eyebrow="Post-op addendum" title="Stage post-op scenario">
+        <div><DemoBadge label="Demo trigger" /></div>
+        <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
+          Authorises (locks and bills) an original episode and keeps a free session open today for its anaesthetist,
+          ready for "Add post-op event" on the locked card. The addendum runs its own capture to invoice; the original
+          stays immutable.
+        </span>
+        <div style={{ marginTop: 4 }}>
+          <button type="button" onClick={stagePostOpScenario} style={actionButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.background = neutral.sunken)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = neutral.surface)}>
+            Stage scenario
+          </button>
+        </div>
+        {postOpMsg !== null && (
+          <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{postOpMsg}</div>
+        )}
       </ControlCard>
 
       {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}

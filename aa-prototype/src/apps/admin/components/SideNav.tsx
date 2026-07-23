@@ -1,5 +1,5 @@
 import { Wordmark } from '../../../shared'
-import { brand, neutral } from '../../../theme/tokens'
+import { brand, neutral, semantic } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 
 export type NavSection = 'day' | 'review' | 'invoices' | 'billing' | 'masters' | 'audit'
@@ -8,11 +8,15 @@ interface NavItem {
   section: NavSection
   label: string
   badge?: number
+  /** 'warn' badges (billing exceptions) read amber; the default is crimson. */
+  badgeTone?: 'warn'
 }
 
 interface SideNavProps {
   active: NavSection
   reviewBadge: number
+  /** Billing-monitor exceptions count (Phase 09) — amber, distinct from the crimson review badge. */
+  billingBadge?: number
   onNavigate: (section: NavSection) => void
 }
 
@@ -21,12 +25,12 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
-    { section: 'billing', label: 'Billing monitor' },
+    { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
     { section: 'masters', label: 'Master data' },
     { section: 'audit', label: 'Audit' },
   ]
@@ -66,7 +70,7 @@ export function SideNav({ active, reviewBadge, onNavigate }: SideNavProps) {
             >
               <span>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
-                <span style={{ background: brand.base, color: '#FFFFFF', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
+                <span style={{ background: item.badgeTone === 'warn' ? semantic.warning.solid : brand.base, color: '#FFFFFF', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
               )}
             </button>
           )

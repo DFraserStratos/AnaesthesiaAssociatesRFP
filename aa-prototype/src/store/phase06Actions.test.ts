@@ -291,9 +291,10 @@ describe('Wed-22 advisory conflicts', () => {
 })
 
 describe('submitted-list selectors', () => {
-  it('counts the two seeded SUBMITTED lists (the derived review badge)', () => {
+  it('counts the seeded SUBMITTED lists (the derived review badge)', () => {
     const api = store()
-    expect(submittedListCount(api.getState())).toBe(2)
+    // Morrison + Whitaker (Phase 02) + the Phase-09 billing-failure exemplar.
+    expect(submittedListCount(api.getState())).toBe(3)
     expect(submittedLists(api.getState()).every((l) => l.state === 'SUBMITTED')).toBe(true)
   })
 })

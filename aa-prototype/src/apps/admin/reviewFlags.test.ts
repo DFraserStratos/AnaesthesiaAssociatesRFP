@@ -73,6 +73,23 @@ describe('reviewFlags (pure)', () => {
     expect(flags.some((f) => f.text === 'B set manually')).toBe(true)
   })
 
+  it('(e) flags outstanding pre-payment and an overridden gate (warn), input-driven', () => {
+    const outstanding = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'outstanding' })
+    expect(outstanding.find((f) => f.text === 'Pre-payment outstanding')?.tone).toBe('warn')
+
+    const required = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'required' })
+    expect(required.some((f) => f.text === 'Pre-payment outstanding')).toBe(true)
+
+    const overridden = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'overridden' })
+    expect(overridden.find((f) => f.text === 'Pre-payment gate overridden')?.tone).toBe('warn')
+
+    // Paid / none / absent add no pre-payment flag.
+    for (const status of ['paid', 'none', undefined] as const) {
+      const flags = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: status })
+      expect(flags.some((f) => f.text.startsWith('Pre-payment'))).toBe(false)
+    }
+  })
+
   it('yields no flags for a cancelled card', () => {
     const cancelled = card({
       completed: false,

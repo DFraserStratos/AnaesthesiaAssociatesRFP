@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, ImagePlus, Minus, Plus, XCircle } from 'lucide-react'
+import { Copy, History, ImagePlus, Minus, Plus, Receipt, ShieldAlert, Stethoscope, XCircle } from 'lucide-react'
 import { accent, brand, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
@@ -8,10 +8,13 @@ import {
   type CardBillingContext,
 } from '../../domain/billing'
 import {
+  addPostOpAddendum,
   addProcedure,
   completeCard,
   copyCard,
   editCard,
+  prepaymentStatusFor,
+  raisePreProcedureInvoice,
   uncompleteCard,
   useAppStore,
   useToday,
@@ -22,7 +25,7 @@ import { useSurface } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee } from '../capture'
 import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../assets/samplePaperCards'
-import { CancelCardSheet, EditPatientSheet, EditProcedureSheet } from '../flows'
+import { CancelCardSheet, EditPatientSheet, EditProcedureSheet, PrepaymentOverrideSheet } from '../flows'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { HistorySheet } from './HistorySheet'
 
@@ -35,7 +38,7 @@ interface CardDetailBodyProps {
   onCopied: () => void
 }
 
-type SheetState = 'none' | 'cancel' | 'patient' | { kind: 'procedure'; procedureId: string }
+type SheetState = 'none' | 'cancel' | 'patient' | 'prepaymentOverride' | { kind: 'procedure'; procedureId: string }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -65,6 +68,23 @@ function EditLink({ onClick }: { onClick: () => void }) {
   )
 }
 
+/** A teal-only office action button used inside the pre-payment banner (convention 17). */
+const officeActionStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  minHeight: 36,
+  padding: '0 12px',
+  borderRadius: radius.ctl,
+  border: `1px solid ${accent.base}`,
+  background: neutral.surface,
+  color: accent.base,
+  fontFamily: 'inherit',
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: 'pointer',
+}
+
 /**
  * The card-detail body (Phase 05 extraction). Everything from the old mobile
  * `CardDetailScreen` below the header: the patient / scheduled-time /
@@ -83,6 +103,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
+  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, cardId))
   const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
@@ -102,6 +123,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   const [completeError, setCompleteError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [overlay, setOverlay] = useState(false)
+  const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -163,6 +185,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   // behaviour is unchanged (DRAFT-only).
   const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'DRAFT' || actor.role === 'office')
   const canCapture = canEdit && !card.completed
+  const isOffice = actor.role === 'office'
   const badge = nhiBadge(patient?.nhi)
 
   const showBar = !cancelled && (card.completed || canCapture)
@@ -233,6 +256,21 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
     }
   }
 
+  function doRaisePrepayment() {
+    run(raisePreProcedureInvoice(useAppStore, actor, cardId))
+  }
+
+  function doAddPostOp() {
+    const outcome = addPostOpAddendum(useAppStore, actor, cardId)
+    if (!outcome.ok) {
+      setPostOpMsg(null)
+      setError(outcome.message)
+      return
+    }
+    setError(null)
+    setPostOpMsg("Post-op addendum created on today's free session for this anaesthetist. Open it from the day view or list to capture and bill it.")
+  }
+
   const content = (
     <>
       {/* History affordance (Phase 07) — the card's reconstructable audit trail,
@@ -253,6 +291,48 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
       {card.copiedFromCardId !== undefined && (
         <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
           Additional procedure, copied from an earlier card on this list. It bills for time units only.
+        </div>
+      )}
+      {card.cardType === 'postOpAddendum' && (
+        <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
+          <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new card through its own cycle; the original card stays locked and immutable (the RFP immutability answer).
+        </div>
+      )}
+      {prepaymentStatus !== 'none' && (
+        <div style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.warning.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.warning.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+            <ShieldAlert size={16} aria-hidden />
+            {prepaymentStatus === 'required' && 'Pre-payment required'}
+            {prepaymentStatus === 'outstanding' && 'Pre-payment outstanding'}
+            {prepaymentStatus === 'overridden' && 'Pre-payment gate overridden'}
+            {prepaymentStatus === 'paid' && 'Pre-payment received'}
+          </div>
+          <span>
+            {prepaymentStatus === 'required' &&
+              'A patient-funded procedure on this card requires pre-payment before the procedure proceeds. Completing the card is blocked until the pre-invoice is paid or the office records an override.'}
+            {prepaymentStatus === 'outstanding' &&
+              'The pre-procedure invoice has been raised but is not yet paid. Completing the card is blocked until payment clears (live payment lands in Phase 10) or the office records an override.'}
+            {prepaymentStatus === 'overridden' &&
+              `The office lifted the pre-payment gate. Reason: ${card.prepaymentOverride?.reason ?? 'not recorded'}.`}
+            {prepaymentStatus === 'paid' && 'The pre-payment invoice has been paid. The completion gate is cleared.'}
+          </span>
+          {(prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && (
+            <span style={{ fontSize: 11.5, opacity: 0.85 }}>
+              Pre-payment timing against the AUTHORISED billing trigger is an RFP open question. The prototype raises the pre-invoice before the procedure and bills only the balance at the run.
+            </span>
+          )}
+          {isOffice && (prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && canEdit && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+              {prepaymentStatus === 'required' && (
+                <button onClick={doRaisePrepayment} style={officeActionStyle}>
+                  <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
+                </button>
+              )}
+              <button onClick={() => setSheet('prepaymentOverride')} style={officeActionStyle}>
+                <ShieldAlert size={14} aria-hidden /> Override gate
+              </button>
+            </div>
+          )}
         </div>
       )}
       {error !== null && (
@@ -386,6 +466,25 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           </button>
         </div>
       )}
+
+      {/* Post-op addendum (B8) — on a locked (authorised/billed) card. The
+          original stays immutable; the addendum is a new linked card. */}
+      {!cancelled && list.state === 'AUTHORISED' && card.cardType !== 'postOpAddendum' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          {postOpMsg !== null && (
+            <div style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
+              {postOpMsg}
+            </div>
+          )}
+          <Button variant="secondary" block onClick={doAddPostOp}>
+            <Stethoscope size={16} aria-hidden /> Add post-op event
+          </Button>
+          <span style={{ fontSize: 11.5, color: neutral.mist }}>
+            A post-op charge (an HDU review, pain consult or nerve catheter) bills as a new linked card on today's
+            free session; this locked card stays immutable (the RFP immutability answer).
+          </span>
+        </div>
+      )}
     </>
   )
 
@@ -407,6 +506,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
       {overlay && <CompletionOverlay units={cardTotals.units} fee={cardTotals.total} />}
 
       <CancelCardSheet open={sheet === 'cancel'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
+      <PrepaymentOverrideSheet open={sheet === 'prepaymentOverride'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onOverridden={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} cardId={cardId} actor={actor} onClose={() => setSheet('none')} />
       )}

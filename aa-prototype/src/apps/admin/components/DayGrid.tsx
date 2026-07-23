@@ -14,6 +14,9 @@ interface DayGridProps {
   /** Active (non-cancelled) card count per list — a Free list that gains cards
    *  via the phone-advice path renders as a booked block. */
   activeCardCounts: Record<string, number>
+  /** Lists holding a card whose pre-payment is flagged (Phase 09): outstanding
+   *  (required / invoiced-unpaid) or an office-overridden gate. */
+  prepaymentFlags: Map<string, 'outstanding' | 'overridden'>
   onSelectList: (listId: string) => void
 }
 
@@ -45,7 +48,7 @@ function segmentsFor(lists: List[]): Segment[] {
   return lists.map((l) => ({ list: l, ...listSpan(l) }))
 }
 
-export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCardCounts, onSelectList }: DayGridProps) {
+export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCardCounts, prepaymentFlags, onSelectList }: DayGridProps) {
   const rows = useMemo(
     () => anaesthetists.map((a) => ({ anaesthetist: a, segments: segmentsFor(listsByAnaesthetist[a.registrationNumber] ?? []) })),
     [anaesthetists, listsByAnaesthetist],
@@ -70,7 +73,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
           </span>
           <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: 'repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)' }}>
             {segments.map((seg) => (
-              <GridBlock key={seg.list.id} seg={seg} masters={masters} hasCards={(activeCardCounts[seg.list.id] ?? 0) > 0} onClick={() => onSelectList(seg.list.id)} />
+              <GridBlock key={seg.list.id} seg={seg} masters={masters} hasCards={(activeCardCounts[seg.list.id] ?? 0) > 0} prepaymentFlag={prepaymentFlags.get(seg.list.id)} onClick={() => onSelectList(seg.list.id)} />
             ))}
           </span>
         </div>
@@ -87,6 +90,10 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
           <span style={{ width: 7, height: 7, borderRadius: 99, background: '#172320', opacity: 0.55 }} />
           Has note
         </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
+          <span style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
+          Pre-payment flagged
+        </span>
       </div>
       <div style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
         Showing the demo's 14 anaesthetists. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
@@ -95,7 +102,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
   )
 }
 
-function GridBlock({ seg, masters, hasCards, onClick }: { seg: Segment; masters: AppState['masters']; hasCards: boolean; onClick: () => void }) {
+function GridBlock({ seg, masters, hasCards, prepaymentFlag, onClick }: { seg: Segment; masters: AppState['masters']; hasCards: boolean; prepaymentFlag?: 'outstanding' | 'overridden'; onClick: () => void }) {
   const { list } = seg
   // A Free list booked via the phone-advice path (cards added or a hospital
   // assigned) renders as a booked block, even though its statusKey stays free
@@ -171,6 +178,9 @@ function GridBlock({ seg, masters, hasCards, onClick }: { seg: Segment; masters:
       )}
       {showNoteDot && (
         <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: '#172320', opacity: 0.55 }} />
+      )}
+      {prepaymentFlag !== undefined && (
+        <span title={prepaymentFlag === 'overridden' ? 'Pre-payment gate overridden' : 'Pre-payment outstanding'} style={{ position: 'absolute', bottom: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
       )}
     </button>
   )

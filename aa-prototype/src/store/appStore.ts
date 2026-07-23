@@ -17,7 +17,7 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { buildSeed, type SeedState } from '../domain/seed'
+import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
 import type {
   BillingCase,
   Disbursement,
@@ -80,12 +80,15 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v4: Phase 06 — `dayNotes` slice added to SeedState (3 seeded Tue-21 notes)
- *  + two advisory ListConflicts seeded onto Wed 22 booked Lists. v3: Phase 05 —
- *  seeded anaesthetist-dashboard figures added to SeedState (`dashboards`;
- *  W1/W4). v2: Phase 04 — Ellison handover unseeded (live Finish-now demo) +
- *  the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 4
+/** v5: Phase 09 — new seed cards (relocated unpaid pre-payment card, the mixed
+ *  + full pre-payment card, the multi-card billing-failure list), the seeded
+ *  PAID pre-invoice billing slice, and new `Card` fields (cardType /
+ *  addendumOfCardId). v4: Phase 06 — `dayNotes` slice added to SeedState (3
+ *  seeded Tue-21 notes) + two advisory ListConflicts seeded onto Wed 22 booked
+ *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
+ *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
+ *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
+export const PERSIST_VERSION = 5
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {} }
@@ -99,10 +102,16 @@ export function emptyIntegrationsSlice(): IntegrationsSlice {
 
 /** A pristine full app state from the deterministic seed. */
 export function freshAppState(): AppState {
+  const seed = buildSeed()
+  // The pristine seed ships one PAID pre-payment slice (Phase 09), with the
+  // counters bumped past the ids it consumed so the first runtime billing run
+  // continues the sequence cleanly.
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_CARD_ID)
   return {
-    ...buildSeed(),
+    ...seed,
+    counters: seedBilling.counters,
     clock: INITIAL_CLOCK,
-    billing: emptyBillingSlice(),
+    billing: { invoices: seedBilling.invoices, invoiceLines: seedBilling.invoiceLines, cases: seedBilling.cases },
     xero: emptyXeroSlice(),
     integrations: emptyIntegrationsSlice(),
     shell: { currentApp: 'mobile' },

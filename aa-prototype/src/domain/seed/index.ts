@@ -288,6 +288,39 @@ function applyPhase06Conflicts(lists: Record<string, List>): void {
   }
 }
 
+/**
+ * Phase 09 scenario slots: paint the three lists the pre-payment and
+ * billing-failure exemplars sit on (Souter Fri 24 AM/PM, Ropata Thu 16 AM) as
+ * booked private sessions with a hospital + surgeon, so they read coherently in
+ * the day grid and monitor. Applied after generation (like the design fixups)
+ * and pinned in `cards.ts` so the filler never books them.
+ */
+function applyPhase09Slots(lists: Record<string, List>): void {
+  const FRI24 = '2026-07-24'
+  const THU16 = '2026-07-16'
+  patchSlot(lists, ANAE.souter, FRI24, 'AM', {
+    statusKey: 'private',
+    hospitalId: HOSP.forte,
+    surgeonId: SURG.lim,
+    startTime: '09:00',
+    endTime: '12:00',
+  })
+  patchSlot(lists, ANAE.souter, FRI24, 'PM', {
+    statusKey: 'private',
+    hospitalId: HOSP.forte,
+    surgeonId: SURG.nand,
+    startTime: '13:00',
+    endTime: '15:30',
+  })
+  patchSlot(lists, ANAE.ropata, THU16, 'AM', {
+    statusKey: 'private',
+    hospitalId: HOSP.stg,
+    surgeonId: SURG.hale,
+    startTime: '08:00',
+    endTime: '11:00',
+  })
+}
+
 // ---------------------------------------------------------------------------
 // buildSeed
 // ---------------------------------------------------------------------------
@@ -311,12 +344,14 @@ function buildSeedInternal(): SeedBuild {
 
   applyDesignFixups(lists)
   applyPhase06Conflicts(lists)
+  applyPhase09Slots(lists)
 
   const cardsBuild = buildCards(SEED, Object.values(lists))
 
-  // The two seeded SUBMITTED lists awaiting authorisation (past dates — the
-  // clock seeds at 08:00, so today's lists are DRAFT mid-capture).
-  for (const id of [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17]) {
+  // The seeded SUBMITTED lists awaiting authorisation (past dates — the clock
+  // seeds at 08:00, so today's lists are DRAFT mid-capture): the two Phase-02
+  // queue lists plus the Phase-09 billing-failure exemplar (Ropata Thu 16).
+  for (const id of [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17, SEED_LIST_IDS.billingFailure]) {
     const list = lists[id]
     if (list !== undefined) lists[id] = { ...list, state: 'SUBMITTED' }
   }
@@ -377,6 +412,11 @@ export const SEED_LIST_IDS = {
   rutherfordPm21: listIdForSlot(ANAE.rutherford, DEMO_TODAY, 'PM'),
   morrisonMon20: listIdForSlot(ANAE.morrison, '2026-07-20', 'AM'),
   whitakerFri17: listIdForSlot(ANAE.whitaker, '2026-07-17', 'AM'),
+  // Phase 09: the unpaid pre-payment card's list, the mixed + full (seeded
+  // paid) card's list, and the multi-card billing-failure exemplar list.
+  prepaymentUnpaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'AM'),
+  prepaymentPaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'PM'),
+  billingFailure: listIdForSlot(ANAE.ropata, '2026-07-16', 'AM'),
 } as const
 
 /**
@@ -394,6 +434,15 @@ const SEED_BUILD: SeedBuild = buildSeedInternal()
 export function buildSeed(): SeedState {
   return SEED_BUILD.state
 }
+
+export { buildSeedBillingSlice, type SeedBillingSlice } from './billing'
+
+/**
+ * The Card whose full pre-payment invoice the seeded billing slice materialises
+ * as PAID (Phase 09). `freshAppState`/`resetDomainState` pass this to
+ * `buildSeedBillingSlice`.
+ */
+export const SEED_PREPAID_CARD_ID: string = SEED_BUILD.scenario.prepaymentPaid
 
 // ---------------------------------------------------------------------------
 // Seeded-scenario markers (the inspector's finder + the seed tests)
@@ -499,10 +548,22 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       detail: 'Grace Park (12); billable party override set to her mother.',
     },
     prepaymentCard: {
-      label: 'Pre-payment card (split deposit)',
+      label: 'Pre-payment card (split, unpaid)',
       entityType: 'card',
       entityId: scenario.prepayment,
-      detail: 'selfFundedPrepayment with typed split detail and an $800 deposit.',
+      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, $800 deposit on a $1,200 self funded fee. Unpaid: gate blocks completion.',
+    },
+    prepaymentPaidCard: {
+      label: 'Pre-payment card (mixed + full, seeded paid)',
+      entityType: 'card',
+      entityId: scenario.prepaymentPaid,
+      detail: 'Souter Fri 24 PM; one hospital procedure + one full pre-payment (seeded PAID). Completes with no override; no balance invoice.',
+    },
+    billingFailureCard: {
+      label: 'Billing failure card (COS ACC)',
+      entityType: 'card',
+      entityId: scenario.billingFailure,
+      detail: 'Ropata Thu 16, SUBMITTED. Fails when the COS ACC contract is dated out (no default fallback); its sibling still invoices.',
     },
     insuredReimbursementCard: {
       label: 'Insured reimbursement card',

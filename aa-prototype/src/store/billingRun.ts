@@ -40,7 +40,8 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { billingContextForCard, cardsForList, proceduresForCard } from './selectors'
+import { billingContextForCard, cardsForList, prePaidByProcedure, proceduresForCard } from './selectors'
+import { getCard } from './lifecycle'
 import { onAppEvent } from './events'
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
@@ -90,11 +91,16 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         },
       }
     }
+    // Net off any pre-payment already invoiced for this card (Phase 09): the
+    // run bills only the remaining balance (a full pre-payment nets to $0 and
+    // raises no balance invoice).
+    const prePaid = prePaidByProcedure(state, card.id)
     const buildCtx: InvoiceBuildContext = {
       ...cardCtx,
       listDateISO: list.dateISO,
       patientId: card.patientId,
       ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
+      ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
     }
     // Per-card isolation is absolute: a build error becomes a failed
     // BillingCase, never a throw — the run executes inside authoriseList's
@@ -256,6 +262,127 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
   })
 
   return ok({ invoiceIds, exceptions })
+}
+
+const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system', source: 'system' }
+
+/**
+ * Resolve-and-retry a single failed BillingCase (Phase 09 monitor). Rebuilds
+ * ONLY that Card against current data (after the office fixed it, e.g. restored
+ * a contract) and, on success, flips the failed case to `invoiced` reusing its
+ * id. Idempotent: a case that is not `failed` is refused (a second retry after
+ * success is a no-op), and a rebuild that still fails leaves the case untouched.
+ * The rebill is a billing-engine action, so it audits source=system regardless
+ * of who pressed the button; office-gated (the monitor button is office).
+ *
+ * Failure isolation (the recorded reading): retrying one Card never touches the
+ * List's other invoices — no duplication.
+ */
+export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string): Outcome<BillingRunResult> {
+  const state = api.getState()
+  const failed = state.billing.cases[caseId]
+  if (failed === undefined) return refuse('notFound', 'Billing case not found.')
+  if (actor.role !== 'office') {
+    return refuse('officeOnly', 'Only the office can retry a failed billing case.')
+  }
+  if (failed.status !== 'failed') {
+    return refuse('caseNotFailed', 'This billing case is not in a failed state; nothing to retry.')
+  }
+  const found = getCard(state, failed.cardId)
+  if (found === undefined) return refuse('notFound', 'The failed case has no Card.')
+  const { card, list } = found
+
+  const cardCtx = billingContextForCard(state, card)
+  if (cardCtx === undefined) return refuse('noContext', 'Billing context could not be assembled for this Card.')
+  const prePaid = prePaidByProcedure(state, card.id)
+  const buildCtx: InvoiceBuildContext = {
+    ...cardCtx,
+    listDateISO: list.dateISO,
+    patientId: card.patientId,
+    ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
+    ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
+  }
+
+  let result: CardBuildResult
+  try {
+    result = buildInvoicesForCard(card, proceduresForCard(state, card.id), buildCtx)
+  } catch (error) {
+    return refuse('runError', error instanceof Error ? error.message : 'The billing run failed on this Card.')
+  }
+  if (result.kind === 'exception') {
+    // Still failing — the data is not fixed. Leave the case failed unchanged.
+    return refuse(result.code, result.message)
+  }
+
+  const invoiceIds: InvoiceId[] = []
+  const metas: MutationMeta[] = []
+  mutate(api, BILLING_RETRY_ACTOR, metas, (s) => {
+    let counters = s.counters
+    const invoices = { ...s.billing.invoices }
+    const invoiceLines = { ...s.billing.invoiceLines }
+    const cases = { ...s.billing.cases }
+    const atISO = clockISO(s.clock)
+
+    result.invoices.forEach((draft, index) => {
+      // The first invoice reuses the failed case's id (flip failed -> invoiced,
+      // dropping its `failure`); any extra invoices allocate fresh cases (COS is
+      // single-counterparty, so this is a defensive belt).
+      let bcId = failed.id
+      if (index > 0) {
+        const bc = allocateId(counters, 'billingCase')
+        counters = bc.counters
+        bcId = bc.id
+      }
+      const inv = allocateId(counters, 'invoice')
+      counters = inv.counters
+      const num = allocateId(counters, 'invoiceNumber')
+      counters = num.counters
+
+      const invoice: Invoice = {
+        id: inv.id,
+        invoiceNumber: num.id,
+        caseReference: bcId,
+        cardId: card.id,
+        counterparty: draft.counterparty,
+        layout: draft.layout,
+        kind: 'standard',
+        subtotal: draft.subtotal,
+        gst: draft.gst,
+        total: draft.total,
+        raisedAtISO: atISO,
+      }
+      invoices[inv.id] = invoice
+      for (const line of draft.lines) {
+        const il = allocateId(counters, 'invoiceLine')
+        counters = il.counters
+        const stored: InvoiceLine = { id: il.id, invoiceId: inv.id, description: line.description, amount: line.amount }
+        if (line.procedureId !== undefined) stored.procedureId = line.procedureId
+        if (line.units !== undefined) stored.units = line.units
+        invoiceLines[il.id] = stored
+      }
+      cases[bcId] = { id: bcId, cardId: card.id, invoiceId: inv.id, status: 'invoiced' } satisfies BillingCase
+      invoiceIds.push(inv.id)
+      metas.push({
+        entityType: 'invoice',
+        entityId: inv.id,
+        action: 'invoice.create',
+        after: { invoiceNumber: num.id, caseReference: bcId, cardId: card.id, counterparty: draft.counterparty, total: draft.total },
+        stampCardId: null,
+      })
+    })
+
+    metas.push({
+      entityType: 'card',
+      entityId: card.id,
+      action: 'card.billed',
+      after: { invoiceIds, retriedCaseId: failed.id },
+      stampCardId: null,
+    })
+
+    return { billing: { invoices, invoiceLines, cases }, counters }
+  })
+
+  return ok({ invoiceIds, exceptions: [] })
 }
 
 /**

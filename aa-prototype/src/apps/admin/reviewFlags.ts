@@ -39,9 +39,14 @@ export interface ReviewProcedureInput {
   baseCode?: RvgCode
 }
 
+/** The derived pre-payment status, passed in so `reviewFlags` stays pure (no store). */
+export type ReviewPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid' | 'overridden'
+
 export interface ReviewCardInput {
   card: Card
   procedures: readonly ReviewProcedureInput[]
+  /** From the store's `prepaymentStatusFor` (Phase 09). Absent = not evaluated. */
+  prepaymentStatus?: ReviewPrepaymentStatus
 }
 
 /** The natural (non-overridden) B/T/M computation, to diff a manual override against. */
@@ -54,13 +59,21 @@ function naturalBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdown {
 }
 
 /** Flags for a single Card. A cancelled Card yields none (excluded from review). */
-export function reviewFlagsForCard({ card, procedures }: ReviewCardInput): ReviewFlag[] {
+export function reviewFlagsForCard({ card, procedures, prepaymentStatus }: ReviewCardInput): ReviewFlag[] {
   if (card.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
   // (a) not marked completed.
   if (!card.completed) {
     flags.push({ tone: 'neutral', text: 'Not marked completed', cardId: card.id })
+  }
+
+  // (e) pre-payment still to resolve, or lifted by an office override (Phase 09;
+  // B7). Both are flagged (warn) so the office sees them at authorisation.
+  if (prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') {
+    flags.push({ tone: 'warn', text: 'Pre-payment outstanding', cardId: card.id })
+  } else if (prepaymentStatus === 'overridden') {
+    flags.push({ tone: 'warn', text: 'Pre-payment gate overridden', cardId: card.id })
   }
 
   for (const { procedure, fee, baseCode } of procedures) {

@@ -43,6 +43,8 @@ export interface CardScenarioIds {
   accRelated: string
   guardianMinor: string
   prepayment: string
+  prepaymentPaid: string
+  billingFailure: string
   insuredReimbursement: string
   provisionalNoNhi: string
   repeatMitchell: [string, string]
@@ -71,7 +73,6 @@ const WED22 = '2026-07-22'
 const THU23 = '2026-07-23'
 const FRI24 = '2026-07-24'
 const MON27 = '2026-07-27'
-const WED29 = '2026-07-29'
 const THU09 = '2026-07-09'
 const TUE14 = '2026-07-14'
 const WED15 = '2026-07-15'
@@ -783,19 +784,27 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     patientPaymentCategory: 'selfFundedPostProcedure',
   })
 
-  // Pre-payment (split deposit) — Fitzgerald, Wed 29 Jul, Forte / Ms Lim.
-  const fitzWed29 = listIdForSlot(ANAE.fitzgerald, WED29, 'AM')
+  // Pre-payment (split deposit) — the UNPAID exemplar, on Souter's own Fri 24
+  // AM list so the outstanding flag + completion gate are reachable in the
+  // mobile app (Phase 09; B7). A self funded cosmetic case billed as a flat
+  // agreed professional fee ($1,200), so an $800 deposit leaves a coherent
+  // $400 balance (deposit + balance = the full fee).
+  const souterFri24Am = listIdForSlot(ANAE.souter, FRI24, 'AM')
   const prepaymentCard = addCard({
-    listId: fitzWed29,
+    listId: souterFri24Am,
     patientId: PAT.riley,
     scheduledTime: '09:00',
   })
-  addProcedure(prepaymentCard, {
-    description: 'Rhinoplasty, pre-payment required',
-    rvgBaseCode: '41800',
+  const prepaymentProc = addProcedure(prepaymentCard, {
+    description: 'Rhinoplasty, self funded, pre-payment required',
     billingRoute: 'billableParty',
     patientPaymentCategory: 'selfFundedPrepayment',
     prepaymentDetail: { type: 'split', depositAmount: 800 },
+  })
+  addLine(prepaymentProc, {
+    chargeBasis: 'fixed',
+    amount: 1200,
+    description: 'Anaesthesia professional fee, agreed self funded package',
   })
 
   // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
@@ -840,6 +849,86 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     patientPaymentCategory: 'selfFundedPostProcedure',
     governingContractId: CONTRACT.ariaHourly,
   })
+
+  // MIXED + FULL pre-payment card, designated for the seeded PAID pre-invoice
+  // (Phase 09; B7) — Souter Fri 24 PM. One hospital-funded procedure that bills
+  // normally, plus one BillableParty selfFundedPrepayment{full} procedure whose
+  // full fee is pre-invoiced and seeded paid (see domain/seed/billing.ts): it
+  // demos the mixed case (hospital portion untouched), the full case (no balance
+  // invoice) and the payment-cleared gate (completes with no override). Left
+  // NOT completed so the presenter clears the gate live; both procedures carry
+  // full capture so only the (already cleared) gate stands between it and done.
+  const souterFri24Pm = listIdForSlot(ANAE.souter, FRI24, 'PM')
+  const prepaidCard = addCard({
+    listId: souterFri24Pm,
+    patientId: PAT.nair,
+    scheduledTime: '13:00',
+  })
+  addProcedure(prepaidCard, {
+    description: 'Septoplasty, hospital funded',
+    rvgBaseCode: '41789',
+    startISO: iso(FRI24, '13:00'),
+    handoverISO: iso(FRI24, '14:00'),
+    asaClass: 'AS1',
+    billingRoute: 'hospital',
+    governingContractId: CONTRACT.forteDefault,
+    billingReference: 'FH-2026-2150',
+  })
+  addProcedure(prepaidCard, {
+    description: 'Rhinoplasty, cosmetic component, self funded (pre-paid in full)',
+    rvgBaseCode: '41800',
+    startISO: iso(FRI24, '14:00'),
+    handoverISO: iso(FRI24, '15:00'),
+    asaClass: 'AS1',
+    billingRoute: 'billableParty',
+    patientPaymentCategory: 'selfFundedPrepayment',
+    prepaymentDetail: { type: 'full' },
+  })
+
+  // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,
+  // MULTI-card list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
+  // card is on the COS externally held ACC Type 2 (an organisation holder with
+  // NO default fallback), effective when seeded; the demo control panel dates
+  // it out then authorises this list, so the card is a genuine rating failure
+  // (contractIneffective). The clean hospital-route sibling still invoices,
+  // demonstrating per-card failure isolation.
+  const ropataThu16 = listIdForSlot(ANAE.ropata, THU16, 'AM')
+  const failureCard = addCard({
+    listId: ropataThu16,
+    patientId: PAT.tuilagi,
+    scheduledTime: '08:00',
+    completedAtISO: iso(THU16, '09:35'),
+    auditComplete: true,
+  })
+  addProcedure(failureCard, {
+    description: 'ACL reconstruction, ACC via Canterbury Orthopaedic Surgeons',
+    rvgBaseCode: '49561',
+    startISO: iso(THU16, '08:05'),
+    handoverISO: iso(THU16, '09:30'),
+    asaClass: 'AS2',
+    billingRoute: 'hospital',
+    governingContractId: CONTRACT.cosAcc,
+    billingReference: 'ACC45-118844',
+    accRelated: true,
+  })
+  const failureSiblingCard = addCard({
+    listId: ropataThu16,
+    patientId: PAT.walker,
+    scheduledTime: '09:45',
+    completedAtISO: iso(THU16, '10:40'),
+    auditComplete: true,
+  })
+  addProcedure(failureSiblingCard, {
+    description: 'Knee arthroscopy',
+    rvgBaseCode: '49558',
+    startISO: iso(THU16, '09:50'),
+    handoverISO: iso(THU16, '10:35'),
+    asaClass: 'AS1',
+    billingRoute: 'hospital',
+    governingContractId: CONTRACT.stgDefault,
+    billingReference: 'SG-2026-0810',
+  })
+  addListAudit(ropataThu16, 'list.submit', NAME_BY_ID.get(ANAE.ropata) ?? 'Dr Hannah Ropata', iso(THU16, '11:00'))
 
   // -------------------------------------------------------------------------
   // Near-future mockup counts: Wed 22 CES x6, Thu 23 CPH x8 + pre-op x6
@@ -903,8 +992,8 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
 
   const pinnedListIds = new Set<string>([
     souterAm21, souterPm21, morrisonMon20, whitakerFri17, souterMon20Am, souterMon20Pm,
-    fitzTue14, fitzWed15, ruthThu16, ruthThu09, sharmaTue14, chenFri24, fitzWed29,
-    souterMon27, wed22Ces, thu23Cph, thu23Preop,
+    fitzTue14, fitzWed15, ruthThu16, ruthThu09, sharmaTue14, chenFri24,
+    souterMon27, souterFri24Am, souterFri24Pm, ropataThu16, wed22Ces, thu23Cph, thu23Preop,
   ])
 
   const sortedLists = [...lists].sort((a, b) =>
@@ -1030,6 +1119,8 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       accRelated: accRelatedCardId,
       guardianMinor: guardianCard.id,
       prepayment: prepaymentCard.id,
+      prepaymentPaid: prepaidCard.id,
+      billingFailure: failureCard.id,
       insuredReimbursement: reimbursementCard.id,
       provisionalNoNhi: provisionalCard.id,
       repeatMitchell: [mitchellFirst.id, mitchellRepeat.id],

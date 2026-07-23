@@ -25,7 +25,7 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { billingContextForCard, cardsForList, listForSlot, proceduresForCard } from './selectors'
+import { billingContextForCard, cardsForList, listForSlot, prepaymentStatusFor, proceduresForCard } from './selectors'
 import { emitAppEvent } from './events'
 
 // ---------------------------------------------------------------------------
@@ -107,8 +107,21 @@ export function completionBlockersFor(state: AppState, card: Card): CompletionBl
     })
   }
 
-  // Phase 09 extension point: the unpaid selfFundedPrepayment gate appends
-  // its blocker here (liftable only by the audited override).
+  // Pre-payment gate (B7; Phase 09): "payment must be collected before the
+  // procedure proceeds". completeCard is the last checkpoint the prototype
+  // controls, so an unpaid selfFundedPrepayment card is blocked here — liftable
+  // only by the audited `overridePrepaymentGate` (which sets prepaymentOverride,
+  // moving the status to 'overridden') or a paid pre-invoice (status 'paid').
+  const prepayment = prepaymentStatusFor(state, card.id)
+  if (prepayment === 'required' || prepayment === 'outstanding') {
+    blockers.push({
+      code: 'prepaymentUnpaid',
+      message:
+        prepayment === 'required'
+          ? 'Pre-payment is required for this Card and no pre-procedure invoice has been raised yet. Raise and collect the pre-payment, or record an office override, before completing.'
+          : 'The pre-procedure invoice for this Card is unpaid. Collect the pre-payment, or record an office override, before completing.',
+    })
+  }
 
   return blockers
 }

@@ -61,6 +61,9 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
     const distinct = [...new Set(procedures.map((p) => p.patientPaymentCategory).filter((c): c is PatientPaymentCategory => c !== undefined))]
     return distinct.length > 0 ? distinct : ['selfFundedPostProcedure']
   })()
+  // Pre-payment detail for the category note (deposit vs full, and this
+  // invoice's kind — the pre-invoice vs the post-procedure balance).
+  const prepaymentProc = procedures.find((p) => p.patientPaymentCategory === 'selfFundedPrepayment')
   const gstLabel = `GST (${GST_RATE * 100}%)`
 
   function doEmail() {
@@ -126,7 +129,15 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
 
         {/* Patient payment-category wording (patient layout only) — one note
             per distinct category when a grouped invoice spans several. */}
-        {isPatientLayout && paymentCategories.map((category) => <PaymentCategoryNote key={category} category={category} />)}
+        {isPatientLayout && paymentCategories.map((category) => (
+          <PaymentCategoryNote
+            key={category}
+            category={category}
+            invoiceKind={invoice.kind}
+            prepaymentType={prepaymentProc?.prepaymentDetail?.type}
+            depositAmount={prepaymentProc?.prepaymentDetail?.depositAmount}
+          />
+        ))}
 
         {/* Lines */}
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -231,7 +242,25 @@ function TotalRow({ label, value }: { label: string; value: string }) {
  * invoice: this document goes to the PATIENT, who claims from their own
  * insurer; AA never sends it on.
  */
-function PaymentCategoryNote({ category }: { category: PatientPaymentCategory }) {
+function PaymentCategoryNote({
+  category,
+  invoiceKind,
+  prepaymentType,
+  depositAmount,
+}: {
+  category: PatientPaymentCategory
+  invoiceKind: 'standard' | 'prePayment'
+  prepaymentType?: 'full' | 'split'
+  depositAmount?: number
+}) {
+  const prepaymentText =
+    invoiceKind === 'prePayment'
+      ? prepaymentType === 'split'
+        ? `This pre-procedure invoice is the agreed deposit${depositAmount !== undefined ? ` of ${formatCurrency(depositAmount)}` : ''}. Payment is required before the procedure proceeds; the balance is invoiced after the procedure. The timing of pre-payment against the billing trigger is a discovery point for AA.`
+        : 'This pre-procedure invoice is the full estimated fee, payable before the procedure proceeds. The timing of pre-payment against the billing trigger is a discovery point for AA.'
+      : prepaymentType === 'split'
+        ? 'A pre-payment deposit has already been invoiced for this procedure. This invoice covers the balance.'
+        : 'This procedure was pre-paid; this invoice covers any remaining balance.'
   const content =
     category === 'insuredReimbursement'
       ? {
@@ -239,13 +268,7 @@ function PaymentCategoryNote({ category }: { category: PatientPaymentCategory })
           text: 'You may claim this invoice from your insurer. It is issued to you, and Anaesthesia Associates does not send it to your insurer.',
         }
       : category === 'selfFundedPrepayment'
-        ? {
-            badge: 'Pre-payment',
-            // Safe on a post-run invoice (which is by definition the balance
-            // document); Phase 09's pre-payment workflow refines this against
-            // `prepaymentDetail` (deposit vs paid-in-full) and the invoice kind.
-            text: 'A pre-payment arrangement applies to this procedure. This invoice covers the balance.',
-          }
+        ? { badge: invoiceKind === 'prePayment' ? 'Pre-payment (pre-procedure)' : 'Pre-payment balance', text: prepaymentText }
         : {
             badge: 'Self funded',
             text: 'Payment is due on receipt of this invoice.',
