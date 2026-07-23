@@ -139,6 +139,32 @@ export function freshAppState(): AppState {
   }
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Rehydration merge for the persisted store: start from the fresh `current`
+ * state, overlay the `persisted` state, and for every object-valued top-level
+ * slice overlay one level deep so a sub-key missing from the persisted store
+ * (e.g. `settings.volumeStory`, `billing.receipts`, a new counter) is filled
+ * from the fresh seed instead of vanishing. Exactly one level deep on purpose:
+ * record maps live one level down and are copied wholesale, so a record the
+ * demo deleted is never resurrected. Exported for the regression test.
+ */
+export function backfillMerge(current: AppStore, persisted: unknown): AppStore {
+  const p = isPlainObject(persisted) ? persisted : {}
+  const merged: Record<string, unknown> = { ...current, ...p }
+  for (const key of Object.keys(current) as (keyof AppStore)[]) {
+    const cv = current[key]
+    const pv = p[key as string]
+    if (isPlainObject(cv) && isPlainObject(pv)) {
+      merged[key as string] = { ...cv, ...pv }
+    }
+  }
+  return merged as unknown as AppStore
+}
+
 export interface CreateAppStoreOptions {
   /** Persist to localStorage under the versioned key (the app singleton does; tests do not). */
   persisted?: boolean
@@ -151,7 +177,29 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
   })
 
   if (options.persisted === true) {
-    return create<AppStore>()(persist(initializer, { name: PERSIST_KEY, version: PERSIST_VERSION }))
+    return create<AppStore>()(
+      persist(initializer, {
+        name: PERSIST_KEY,
+        version: PERSIST_VERSION,
+        // A PERSIST_VERSION bump means the seed shape/content CHANGED, so a
+        // different-version persisted store must be DISCARDED and reseeded. zustand
+        // does NOT auto-discard on a version mismatch, so migrate returns the
+        // pristine current-shape seed. (This alone is not enough — see merge.)
+        migrate: () => freshAppState() as AppStore,
+        // migrate only fires on a version MISMATCH. A store persisted at the
+        // CURRENT version but from before a nested field existed (dev churn, or
+        // a shape change that forgot to bump the version) takes the no-migrate
+        // path, and zustand's default merge is a SHALLOW spread: the persisted
+        // `settings` (no `volumeStory`) clobbers the fresh one wholesale, so
+        // DemoXero reads `undefined.softLimit` and the app blank-screens. Backfill
+        // one level deep so every slice's sub-keys always exist: persisted (live)
+        // values win where present, fresh seed fills the gaps. Only whole missing
+        // sub-keys are added, and record maps (invoices, contacts, ...) are taken
+        // wholesale from the persisted store, so no deleted seed record is
+        // resurrected. Deep record-SHAPE changes still require a version bump.
+        merge: (persisted, current) => backfillMerge(current as AppStore, persisted),
+      }),
+    )
   }
   return create<AppStore>()(initializer)
 }
