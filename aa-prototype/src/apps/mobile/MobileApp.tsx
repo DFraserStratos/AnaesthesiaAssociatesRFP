@@ -15,8 +15,8 @@ import {
   ListDetailScreen,
   MoreScreen,
 } from './screens'
-import { AddCardSheet } from './flows/AddCardSheet'
-import { RequestCoverSheet } from './flows/RequestCoverSheet'
+import { SurfaceProvider } from '../../shared'
+import { AddCardFlow, RequestCoverSheet } from '../../shared/flows'
 
 type Tab = 'lists' | 'availability' | 'balances' | 'more'
 
@@ -164,7 +164,8 @@ export function MobileApp() {
   const showTabBar = tab !== 'lists' || depth === 0
 
   return (
-    <PhoneFrame>
+    <SurfaceProvider variant="mobile">
+      <PhoneFrame>
       <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: neutral.bg, color: neutral.ink }}>
         {tab === 'lists' && <SlideStack layers={listsLayers} depth={depth} />}
         {tab === 'availability' && <AvailabilityScreen actor={actor} anaesthetistId={anaesthetistId} initials={persona.initials} />}
@@ -174,7 +175,7 @@ export function MobileApp() {
         {showTabBar && <BottomTabBar active={tab} onSelect={setTab} />}
 
         {listId !== null && (
-          <AddCardSheet
+          <AddCardFlow
             open={addOpen}
             listId={listId}
             actor={actor}
@@ -196,6 +197,7 @@ export function MobileApp() {
           />
         )}
       </div>
-    </PhoneFrame>
+      </PhoneFrame>
+    </SurfaceProvider>
   )
 }

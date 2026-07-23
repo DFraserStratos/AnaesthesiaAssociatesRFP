@@ -1,32 +1,32 @@
 import { useMemo } from 'react'
 import { ChevronLeft } from 'lucide-react'
-import { accent, neutral } from '../../../theme/tokens'
+import { accent, elevation, neutral, radius } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
-import { useAppStore, useToday, type Actor } from '../../../store'
+import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { CardDetailBody } from '../../../shared/card'
 import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
 
-interface CardDetailScreenProps {
+interface CardDetailViewProps {
   cardId: string
   actor: Actor
+  todayISO: string
   onBack: () => void
   onCopied: () => void
 }
 
 /**
- * Mobile card detail — phone chrome (60px status-bar inset, back link, patient
- * header) around the shared `CardDetailBody` (Phase 05). All the capture,
- * validation and lifecycle behaviour lives in the shared body, so mobile and
- * the web card view behave identically; only this header + the surrounding
- * `position:relative` phone-frame column are mobile-specific.
+ * Web card detail (drill-down page; W2 / M6-M7 parity). Desktop chrome (header +
+ * panel) around the shared `CardDetailBody` — identical BTM capture, validation
+ * and lifecycle guards to mobile; the edit / copy / add-card flows render as
+ * centred dialogs via the web surface. The panel is `position:relative` so the
+ * completion overlay and the sticky complete/amend footer land inside it.
  */
-export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetailScreenProps) {
+export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: CardDetailViewProps) {
   const card = useAppStore((s) => s.schedule.cards[cardId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
-  const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
@@ -42,17 +42,16 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {/* Header */}
-      <div style={{ padding: '60px 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface, flex: 'none' }}>
-        <button
-          onClick={onBack}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 44, border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
-        >
-          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
-          List
-        </button>
-        <div style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>{patient?.name ?? 'Unknown patient'}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720 }}>
+      <button
+        onClick={onBack}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+      >
+        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
+      </button>
+
+      <div>
+        <h1 style={{ margin: 0, fontSize: 26, lineHeight: '32px', fontWeight: 700, letterSpacing: '-0.01em' }}>{patient?.name ?? 'Unknown patient'}</h1>
         <div className="mono" style={{ fontSize: 12, color: neutral.slate, marginTop: 4 }}>
           {badge.text}
           {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
@@ -64,7 +63,17 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         </div>
       </div>
 
-      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} />
+      <div
+        style={{
+          position: 'relative',
+          background: neutral.surface,
+          border: `1px solid ${neutral.line}`,
+          borderRadius: radius.panel,
+          boxShadow: elevation.e1,
+        }}
+      >
+        <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} />
+      </div>
     </div>
   )
 }

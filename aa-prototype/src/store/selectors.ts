@@ -8,7 +8,7 @@
 
 import type { Card, List, Procedure, Session } from '../domain/types'
 import type { CardBillingContext } from '../domain/billing/validateCardForBilling'
-import { listIdForSlot } from '../domain/seed'
+import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
 
@@ -73,6 +73,18 @@ export function auditForEntity(state: AppState, entityId: string) {
  */
 export function isListBilled(list: List): boolean {
   return list.billedAtISO !== undefined
+}
+
+/**
+ * The seeded dashboard figures for an anaesthetist, aged against the demo
+ * clock's today (Phase 05; W1/W4). Returns undefined when no figures are seeded
+ * for that anaesthetist (honest-empty). Phase 10 replaces the receivables /
+ * overdue portion with billing-mirror derivation.
+ */
+export function dashboardFiguresFor(state: AppState, anaesthetistId: string): DashboardFigures | undefined {
+  const seed = state.dashboards[anaesthetistId]
+  if (seed === undefined) return undefined
+  return deriveDashboardFigures(seed, state.clock.todayISO)
 }
 
 /** Assemble the validator context for a Card from store state. */

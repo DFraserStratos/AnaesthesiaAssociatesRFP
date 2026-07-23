@@ -80,9 +80,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v2: Phase 04 — Ellison handover unseeded (live Finish-now demo) + the
- *  Souter rate x time capture card + patient (Decisions log 2026-07-23). */
-export const PERSIST_VERSION = 2
+/** v3: Phase 05 — seeded anaesthetist-dashboard figures added to SeedState
+ *  (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded (live
+ *  Finish-now demo) + the Souter rate x time capture card + patient. */
+export const PERSIST_VERSION = 3
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {} }

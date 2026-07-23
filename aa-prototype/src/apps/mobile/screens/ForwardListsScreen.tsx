@@ -4,7 +4,7 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Card, List } from '../../../domain/types'
 import { isListBilled, useAppStore, useToday } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
-import { dayHeading, sessionStart } from '../format'
+import { dayHeading, sessionStart } from '../../../shared/format'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 

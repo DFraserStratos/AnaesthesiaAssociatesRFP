@@ -6,8 +6,8 @@ import type { Card } from '../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { TickBadge } from '../components'
-import { SubmitListSheet } from '../flows/SubmitListSheet'
-import { sessionTimeRange } from '../format'
+import { SubmitListSheet } from '../../../shared/flows'
+import { sessionTimeRange } from '../../../shared/format'
 
 interface ListDetailScreenProps {
   listId: string

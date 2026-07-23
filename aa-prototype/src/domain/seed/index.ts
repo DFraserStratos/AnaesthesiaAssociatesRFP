@@ -55,12 +55,26 @@ import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { RVG_CODES } from './rvgCodes'
 import { buildCards, type CardScenarioIds } from './cards'
+import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 
 export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
 export { slotRng, hashStringToSeed } from './slotHash'
 export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS } from './cast'
 export { CONTRACT } from './contracts'
 export { BP, PAT } from './patients'
+export {
+  ANAESTHETIST_DASHBOARD,
+  deriveDashboardFigures,
+  bucketForAgingDays,
+  type AnaesthetistDashboardSeed,
+  type DashboardFigures,
+  type DerivedOutstanding,
+  type OutstandingAccount,
+  type AgingBuckets,
+  type AgingBucketKey,
+  type ProductivitySeed,
+  type LeaveSeed,
+} from './anaesthetistDashboard'
 
 /** The demo seed constant (the pinned demo date as a number). */
 export const SEED = 20260721
@@ -99,6 +113,12 @@ export interface SeedState {
   schedule: SeedSchedule
   audit: AuditEntry[]
   settings: DemoSettings
+  /**
+   * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
+   * registration number. Labelled demo figures; Phase 10 replaces the
+   * receivables/overdue portion with billing-mirror derivation.
+   */
+  dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -278,6 +298,7 @@ function buildSeedInternal(): SeedBuild {
     },
     audit: cardsBuild.audit,
     settings: { contactArchiveInactivityDays: 90 },
+    dashboards: ANAESTHETIST_DASHBOARD,
     counters: {
       audit: cardsBuild.next.audit,
       card: cardsBuild.next.card,

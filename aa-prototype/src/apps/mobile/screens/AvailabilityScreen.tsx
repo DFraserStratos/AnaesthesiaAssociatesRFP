@@ -5,7 +5,7 @@ import { freeDashedBorder, statusColours, unavailableHatchTint, type StatusKey }
 import type { List, Session } from '../../../domain/types'
 import { setAvailability, useAppStore, useToday, type Actor } from '../../../store'
 import { MobileHeader } from '../components'
-import { RequestCoverSheet } from '../flows/RequestCoverSheet'
+import { RequestCoverSheet } from '../../../shared/flows'
 
 interface AvailabilityScreenProps {
   actor: Actor
