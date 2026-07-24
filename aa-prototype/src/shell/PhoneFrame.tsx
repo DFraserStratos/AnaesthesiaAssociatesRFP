@@ -1,7 +1,9 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useClockTimeLabel } from '../store'
 import { accent, neutral, phoneBackdrop } from '../theme/tokens'
+import { gradientCssVars } from '../theme/mobileGradient'
+import { AtmosphereLayer, GradientLab, useMobileGradient } from './gradientLab'
 
 /**
  * iOS device frame — adapted from `docs/design/ios-frame.jsx` (`IOSDevice`)
@@ -178,6 +180,8 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({ children, time }: PhoneFrameProps) {
   const clockTime = useClockTimeLabel()
+  const { config: gradient, controller: labController } = useMobileGradient()
+  const atmosVars = gradientCssVars(gradient)
   const backdropRef = useRef<HTMLDivElement>(null)
   const [scale, setScaleState] = useState<number>(() => readStoredScale() ?? 1)
   // Until the user has an explicit preference we auto-fit to the viewport.
@@ -243,11 +247,18 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
             borderRadius: 48,
             overflow: 'hidden',
             position: 'relative',
+            // Opaque fallback beneath the atmosphere; the shared `--aa-atmos-*`
+            // vars (set here) drive the fixed AtmosphereLayer AND the SlideStack
+            // layers so the whole mobile canvas paints one seamless field.
             background: neutral.bg,
             boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
             WebkitFontSmoothing: 'antialiased',
-          }}
+            ...atmosVars,
+          } as CSSProperties}
         >
+          {/* atmospheric background — pinned to the device, content scrolls over it */}
+          <AtmosphereLayer enabled={gradient.enabled} />
+
           {/* dynamic island */}
         <div
           style={{
@@ -290,6 +301,9 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
       </div>
 
       <ZoomControl scale={scale} onChange={setScale} onFit={fitNow} />
+
+      {/* Temporary Phase 13 tuning lab — outside the device, behind the gate. */}
+      {labController !== null && <GradientLab config={gradient} controller={labController} />}
     </div>
   )
 }

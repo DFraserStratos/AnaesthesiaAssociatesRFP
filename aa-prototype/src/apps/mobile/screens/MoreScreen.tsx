@@ -1,5 +1,5 @@
-import { brand, neutral } from '../../../theme/tokens'
-import { DemoBadge } from '../../../shared'
+import { neutral } from '../../../theme/tokens'
+import { Avatar, DemoBadge } from '../../../shared'
 import { MobileHeader } from '../components'
 
 interface MoreScreenProps {
@@ -26,23 +26,7 @@ export function MoreScreen({ personaName, personaRole, initials }: MoreScreenPro
           gap: 12,
         }}
       >
-        <span
-          aria-hidden
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 999,
-            background: brand.tint,
-            color: brand.base,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 15,
-            fontWeight: 700,
-          }}
-        >
-          {initials}
-        </span>
+        <Avatar initials={initials} size={44} />
         <div>
           <div style={{ fontSize: 16, fontWeight: 600 }}>{personaName}</div>
           <div style={{ fontSize: 13, color: neutral.slate }}>{personaRole}</div>

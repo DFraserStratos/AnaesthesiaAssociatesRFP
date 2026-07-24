@@ -1,6 +1,7 @@
 /** Cross-app shared components. */
 export { Logo } from './Logo'
 export { Wordmark } from './Wordmark'
+export { Avatar } from './Avatar'
 export { StatusChip } from './StatusChip'
 export { StatusBlock } from './StatusBlock'
 export { StatusLegend } from './StatusLegend'

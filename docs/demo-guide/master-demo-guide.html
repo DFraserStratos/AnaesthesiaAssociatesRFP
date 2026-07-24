@@ -146,6 +146,74 @@
   ul.tight li { margin: 4px 0; }
   .footer { margin-top: 40px; font-size: 13px; color: var(--mist); text-align: center; }
   a { color: var(--accent); }
+
+  /* ---- Learn tab (interactive) ---- */
+  .learn-intro { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; margin: 14px 0; }
+  .progress-wrap { margin-top: 12px; }
+  .progress-track { height: 10px; background: var(--sunken); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 999px; transition: width 450ms ease; }
+  .progress-label { font-size: 12.5px; color: var(--slate); margin-top: 7px; font-weight: 600; }
+
+  .wizard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; box-shadow: 0 1px 3px rgba(23,35,32,0.05); }
+  .lstep { display: none; animation: fade 220ms ease; }
+  .lstep.active { display: block; }
+  .lstep .step-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .lstep h3 { font-size: 22px; margin: 6px 0 12px; letter-spacing: -0.01em; }
+  .lstep p { font-size: 15px; color: var(--ink); }
+  .big-idea { font-size: 20px; line-height: 1.5; font-weight: 600; letter-spacing: -0.01em; }
+  .muted { color: var(--slate); }
+
+  .wizard-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; gap: 12px; }
+  .dots { display: flex; gap: 7px; }
+  .dot-nav { width: 9px; height: 9px; border-radius: 999px; background: var(--line-strong); border: none; padding: 0; cursor: pointer; }
+  .dot-nav.on { background: var(--accent); transform: scale(1.25); }
+  .dot-nav.done { background: var(--success); }
+  .btn { appearance: none; font: inherit; font-size: 14px; font-weight: 600; border-radius: var(--ctl); padding: 9px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .layer { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 14px; margin: 6px 0; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .layer:hover { border-color: var(--accent); }
+  .layer .reveal { display: none; font-weight: 400; color: var(--slate); font-size: 13.5px; margin-top: 5px; }
+  .layer.open .reveal { display: block; }
+  .layer .indent { color: var(--mist); font-family: var(--font-mono); }
+
+  .cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 10px 0; }
+  .flip { background: transparent; perspective: 900px; border: none; padding: 0; cursor: pointer; height: 128px; font: inherit; }
+  .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 500ms; transform-style: preserve-3d; }
+  .flip.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; border: 1px solid var(--line); }
+  .flip-front { background: var(--accent-tint); color: var(--ink); font-size: 17px; font-weight: 700; }
+  .flip-back { background: var(--surface); color: var(--slate); font-size: 13.5px; line-height: 1.45; transform: rotateY(180deg); }
+  .flip-hint { font-size: 12.5px; color: var(--mist); }
+
+  .stagebar { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .stage-btn { flex: 1; min-width: 110px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 10px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; color: var(--slate); }
+  .stage-btn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-tint); }
+  .stage-detail { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; min-height: 62px; }
+
+  .quiz-q { margin: 16px 0; }
+  .quiz-q .q { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .quiz-opt { display: block; width: 100%; text-align: left; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 10px 14px; margin: 6px 0; cursor: pointer; font: inherit; font-size: 14px; color: var(--ink); }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+  .quiz-opt.correct { border-color: var(--success); background: var(--success-tint); color: var(--success-on); font-weight: 600; }
+  .quiz-opt.wrong { border-color: var(--brand); background: var(--brand-tint); }
+  .quiz-why { display: none; font-size: 13.5px; color: var(--slate); margin: 8px 2px 0; }
+  .quiz-why.show { display: block; }
+  .quiz-score { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 12px; display: none; }
+
+  .task { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .task:first-child { border-top: none; }
+  .task input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--accent); flex: none; }
+  .task label { cursor: pointer; }
+  .task.checked label { color: var(--mist); text-decoration: line-through; }
+
+  .celebrate { text-align: center; padding: 8px 0; }
+  .celebrate .tick { width: 64px; height: 64px; border-radius: 999px; background: var(--success-tint); color: var(--success-on); display: inline-flex; align-items: center; justify-content: center; font-size: 34px; animation: pop 500ms ease; }
+  @keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+  .confetti { position: fixed; top: -14px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(106vh) rotate(560deg); opacity: 0.6; } }
+  @media (prefers-reduced-motion: reduce) { .confetti { display: none; } .flip-inner, .progress-fill { transition: none; } .celebrate .tick { animation: none; } }
 </style>
 </head>
 <body>
@@ -162,7 +230,8 @@
 
 <nav class="tabs" aria-label="Sections">
   <div class="tabs-inner" role="tablist">
-    <button class="tab" role="tab" data-panel="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-panel="learn" aria-selected="true">Learn</button>
+    <button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button>
     <button class="tab" role="tab" data-panel="personas" aria-selected="false">Personas</button>
     <button class="tab" role="tab" data-panel="workflows" aria-selected="false">Workflows</button>
     <button class="tab" role="tab" data-panel="script" aria-selected="false">Demo script</button>
@@ -174,8 +243,115 @@
 <div class="page">
 <main>
 
+<!-- ===================== LEARN (interactive) ===================== -->
+<section class="panel active" id="learn" role="tabpanel">
+  <h1 class="pt">Learn it, gently</h1>
+  <p class="lead">Six small steps, a couple of minutes each. It remembers where you stopped, so do one
+  and walk away if you want. By the end you can present the core story.</p>
+
+  <div class="learn-intro">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <strong style="font-size:15px">Your progress</strong>
+      <button class="btn" id="learn-reset" type="button" style="font-size:12px;padding:5px 12px">Start over</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">0 of 6 done</div>
+    </div>
+  </div>
+
+  <div class="wizard" id="wizard">
+    <div class="lstep active" data-step="0">
+      <span class="step-eyebrow">Step 1 of 6 · about 1 min</span>
+      <h3>The whole thing, in one breath</h3>
+      <p class="big-idea">Anaesthesia Associates books half-day operating sessions for about 85
+      anaesthetists, and turns the work they do into invoices.</p>
+      <p class="muted">That is the whole job. Everything else is detail. The one twist worth knowing
+      now: a separate <strong>Billing Engine</strong> does the clever invoicing (agency rules, who pays,
+      grouping); Xero just moves the money afterwards.</p>
+    </div>
+
+    <div class="lstep" data-step="1">
+      <span class="step-eyebrow">Step 2 of 6 · about 2 min</span>
+      <h3>The shape of it</h3>
+      <p class="muted">Everything nests. Tap each layer to see what it means.</p>
+      <button class="layer" type="button" data-layer><strong>Schedule</strong><span class="reveal">A rolling four-month calendar. It always exists, even when empty.</span></button>
+      <button class="layer" type="button" data-layer><span class="indent">&#9492; </span><strong>List</strong><span class="reveal">One anaesthetist's half-day session (AM or PM). This is the unit, not a "shift".</span></button>
+      <button class="layer" type="button" data-layer><span class="indent">&nbsp;&nbsp;&#9492; </span><strong>Card</strong><span class="reveal">One patient's appointment inside a List.</span></button>
+      <button class="layer" type="button" data-layer><span class="indent">&nbsp;&nbsp;&nbsp;&nbsp;&#9492; </span><strong>Procedure</strong><span class="reveal">One clinical procedure on that Card. Each one decides who gets billed.</span></button>
+      <button class="layer" type="button" data-layer><span class="indent">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492; </span><strong>Billing line</strong><span class="reveal">The money detail the invoice is built from.</span></button>
+    </div>
+
+    <div class="lstep" data-step="2">
+      <span class="step-eyebrow">Step 3 of 6 · about 2 min</span>
+      <h3>Five words, five cards</h3>
+      <p class="muted">Tap a card to flip it. These five words carry most conversations.</p>
+      <div class="cards-row">
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Schedule</div><div class="flip-face flip-back">The rolling four-month calendar</div></div></button>
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">List</div><div class="flip-face flip-back">One half-day AM or PM session</div></div></button>
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Card</div><div class="flip-face flip-back">One patient appointment in a List</div></div></button>
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">Procedure</div><div class="flip-face flip-back">One procedure; sets its own billing route</div></div></button>
+        <button class="flip" type="button" data-flip><div class="flip-inner"><div class="flip-face flip-front">BTM</div><div class="flip-face flip-back">Base + Time + Modifier units, the fee recipe</div></div></button>
+      </div>
+      <p class="flip-hint">Flip all five, then move on.</p>
+    </div>
+
+    <div class="lstep" data-step="3">
+      <span class="step-eyebrow">Step 4 of 6 · about 2 min</span>
+      <h3>The life of a List</h3>
+      <p class="muted">A List moves through these states. Tap each to see who can touch it.</p>
+      <div class="stagebar" id="stagebar">
+        <button class="stage-btn on" type="button" data-stage="0">DRAFT</button>
+        <button class="stage-btn" type="button" data-stage="1">SUBMITTED</button>
+        <button class="stage-btn" type="button" data-stage="2">AUTHORISED</button>
+        <button class="stage-btn" type="button" data-stage="3">Billed</button>
+      </div>
+      <div class="stage-detail" id="stage-detail"></div>
+      <p class="muted" style="font-size:13px;margin-top:10px">There is no "returned" state. If the office
+      spots a problem after submission, they phone and fix it themselves.</p>
+    </div>
+
+    <div class="lstep" data-step="4">
+      <span class="step-eyebrow">Step 5 of 6 · about 2 min</span>
+      <h3>Quick quiz, no stakes</h3>
+      <p class="muted">Four questions, instant feedback. Just for the dopamine.</p>
+      <div id="quiz"></div>
+    </div>
+
+    <div class="lstep" data-step="5">
+      <span class="step-eyebrow">Step 6 of 6 · about 3 min</span>
+      <h3>Now drive it, once</h3>
+      <p class="muted">Reading is a third of it. Run scenario S1 in the app and tick these off. Start it
+      with <code>npm run dev</code>, then:</p>
+      <div id="drive">
+        <div class="task"><input type="checkbox" id="t0"><label for="t0">App switcher &#8594; <strong>Demo: Control Panel</strong> &#8594; Reset demo data &#8594; Confirm</label></div>
+        <div class="task"><input type="checkbox" id="t1"><label for="t1">Scenario jumps &#8594; <strong>S1</strong> &#8594; Jump &#8594; Confirm jump</label></div>
+        <div class="task"><input type="checkbox" id="t2"><label for="t2">Click <strong>Procedure day · 28 Jul</strong></label></div>
+        <div class="task"><input type="checkbox" id="t3"><label for="t3">Go to Mobile app &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
+        <div class="task"><input type="checkbox" id="t4"><label for="t4">Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office</label></div>
+      </div>
+      <div class="celebrate" id="celebrate" style="display:none">
+        <div class="tick">&#10003;</div>
+        <h3 style="margin:12px 0 4px">You have got the core story.</h3>
+        <p class="muted">Honestly, you could present S1 to S3 from here. When you have the energy, the
+        other tabs go deeper and the demo script walks S2 to S5. No rush.</p>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn" id="btn-back" type="button">Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="btn primary" id="btn-next" type="button">Next</button>
+    </div>
+  </div>
+
+  <p class="muted" style="font-size:13px;margin-top:16px">Want the reference instead? The other tabs
+  above (Overview, Personas, Workflows, Demo script, Cheat sheet, Discovery) are there whenever you want
+  to go deeper.</p>
+</section>
+
 <!-- ===================== OVERVIEW ===================== -->
-<section class="panel active" id="overview" role="tabpanel">
+<section class="panel" id="overview" role="tabpanel">
   <h1 class="pt">The prototype in one page</h1>
   <p class="lead">A fully interactive React front end over a fake in-browser backend that demonstrates
   every major feature of the RFP's candidate architecture. It is a demo prototype, not production
@@ -779,6 +955,179 @@ simulated integrations · not production software.</div>
     tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.panel); }); });
     var initial = (location.hash || '').replace('#', '');
     if (initial && document.getElementById(initial)) show(initial);
+  })();
+</script>
+
+<script>
+  // ---- Learn tab: wizard, flashcards, quiz, checklist, progress (self-contained) ----
+  (function () {
+    var KEY = 'aa-guide-learn';
+    var TOTAL = 6;
+    var state = load();
+    if (!state.done) state.done = [];
+    if (!state.checks) state.checks = {};
+    if (typeof state.step !== 'number') state.step = 0;
+
+    function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+    var steps = Array.prototype.slice.call(document.querySelectorAll('.lstep'));
+    var dotsWrap = document.getElementById('dots');
+    var fill = document.getElementById('progress-fill');
+    var plabel = document.getElementById('progress-label');
+    var btnBack = document.getElementById('btn-back');
+    var btnNext = document.getElementById('btn-next');
+    if (!steps.length || !btnNext) return;
+
+    function isDone(i) { return state.done.indexOf(i) !== -1; }
+    function markDone(i) { if (!isDone(i)) { state.done.push(i); save(); renderProgress(); renderDots(); } }
+
+    function renderProgress() {
+      var n = state.done.length;
+      fill.style.width = Math.round((n / TOTAL) * 100) + '%';
+      plabel.textContent = n + ' of ' + TOTAL + ' done' + (n >= TOTAL ? ' · nice work' : '');
+      if (n >= TOTAL && !state.celebrated) { state.celebrated = true; save(); confetti(); }
+    }
+    function renderDots() {
+      dotsWrap.innerHTML = '';
+      for (var i = 0; i < TOTAL; i++) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dot-nav' + (i === state.step ? ' on' : '') + (isDone(i) ? ' done' : '');
+        b.setAttribute('aria-label', 'Go to step ' + (i + 1));
+        (function (idx) { b.addEventListener('click', function () { go(idx); }); })(i);
+        dotsWrap.appendChild(b);
+      }
+    }
+    function show(i) {
+      steps.forEach(function (s, idx) { s.classList.toggle('active', idx === i); });
+      btnBack.disabled = i === 0;
+      btnNext.textContent = i === TOTAL - 1 ? 'Finish' : 'Next';
+      renderDots();
+    }
+    function go(i) { state.step = Math.max(0, Math.min(TOTAL - 1, i)); save(); show(state.step); }
+
+    btnNext.addEventListener('click', function () {
+      markDone(state.step);
+      if (state.step < TOTAL - 1) go(state.step + 1);
+      else { celebrate.style.display = ''; }
+    });
+    btnBack.addEventListener('click', function () { go(state.step - 1); });
+
+    // Step 2 — expanding layers
+    document.querySelectorAll('[data-layer]').forEach(function (el) {
+      el.addEventListener('click', function () { el.classList.toggle('open'); });
+    });
+    // Step 3 — flip cards
+    document.querySelectorAll('[data-flip]').forEach(function (el) {
+      el.addEventListener('click', function () { el.classList.toggle('flipped'); });
+    });
+
+    // Step 4 — stage bar
+    var stageData = [
+      'DRAFT. Anaesthetist, office and integrations can all edit. The work is still being prepared.',
+      'SUBMITTED. Office only. The anaesthetist can see it but not edit; she has handed the whole List over.',
+      'AUTHORISED. Locked for everyone. The office has approved it, so it goes to the Billing Engine.',
+      'Billed. The billing run has finished, invoices exist, and the List drops off the anaesthetist’s work view.'
+    ];
+    var stageDetail = document.getElementById('stage-detail');
+    var stageBtns = Array.prototype.slice.call(document.querySelectorAll('.stage-btn'));
+    function setStage(i) {
+      stageBtns.forEach(function (b, idx) { b.classList.toggle('on', idx === i); });
+      stageDetail.textContent = stageData[i];
+    }
+    stageBtns.forEach(function (b, idx) { b.addEventListener('click', function () { setStage(idx); }); });
+    if (stageBtns.length) setStage(0);
+
+    // Step 5 — quiz
+    var quizData = [
+      { q: 'Is a "List" the same as a work shift?',
+        opts: [{ t: 'Yes, a shift someone signs up for', ok: false }, { t: 'No, a half-day operating session', ok: true }],
+        why: 'A List is a half-day AM or PM session on the fixed canvas. "Shift" and "sign up" are not RFP words.' },
+      { q: 'Who actually calculates the invoice?',
+        opts: [{ t: 'Xero', ok: false }, { t: 'The Billing Engine', ok: true }],
+        why: 'The Billing Engine applies the agency rules and grouping. Xero just handles receivables and banking afterwards.' },
+      { q: 'After a List is SUBMITTED, can the anaesthetist still edit her Card?',
+        opts: [{ t: 'No, it is office-only from then on', ok: true }, { t: 'Yes, until it is authorised', ok: false }],
+        why: 'Submission hands it over. The office edits from there; there is no send-back to the anaesthetist.' },
+      { q: 'Does the patient’s NHI get sent into Xero?',
+        opts: [{ t: 'Yes, as a searchable reference', ok: false }, { t: 'No, only a hidden internal ID', ok: true }],
+        why: 'The prototype takes the stricter reading: no NHI in Xero. It is a flagged RFP contradiction to confirm with AA.' }
+    ];
+    var quizWrap = document.getElementById('quiz');
+    (function buildQuiz() {
+      if (!quizWrap) return;
+      var answered = 0;
+      var score = document.createElement('div');
+      score.className = 'quiz-score';
+      score.textContent = 'Done. That is the stuff people actually ask about.';
+      quizData.forEach(function (item, qi) {
+        var q = document.createElement('div'); q.className = 'quiz-q';
+        var h = document.createElement('div'); h.className = 'q'; h.textContent = (qi + 1) + '. ' + item.q; q.appendChild(h);
+        var why = document.createElement('div'); why.className = 'quiz-why'; why.textContent = item.why;
+        item.opts.forEach(function (opt, oi) {
+          var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'quiz-opt'; btn.textContent = opt.t;
+          btn.addEventListener('click', function () {
+            if (q.getAttribute('data-answered')) return;
+            q.setAttribute('data-answered', '1');
+            Array.prototype.forEach.call(q.querySelectorAll('.quiz-opt'), function (o, idx) {
+              o.disabled = true;
+              if (item.opts[idx].ok) o.classList.add('correct');
+            });
+            if (!opt.ok) btn.classList.add('wrong');
+            why.classList.add('show');
+            answered++;
+            if (answered === quizData.length) { score.style.display = 'block'; markDone(4); }
+          });
+          q.appendChild(btn);
+        });
+        q.appendChild(why);
+        quizWrap.appendChild(q);
+      });
+      quizWrap.appendChild(score);
+    })();
+
+    // Step 6 — drive checklist
+    var driveInputs = Array.prototype.slice.call(document.querySelectorAll('#drive input[type=checkbox]'));
+    var celebrate = document.getElementById('celebrate');
+    function refreshDrive() {
+      driveInputs.forEach(function (c) { c.closest('.task').classList.toggle('checked', c.checked); });
+      var all = driveInputs.length > 0 && driveInputs.every(function (c) { return c.checked; });
+      if (all) { celebrate.style.display = ''; markDone(5); }
+    }
+    driveInputs.forEach(function (c) {
+      if (state.checks[c.id]) c.checked = true;
+      c.addEventListener('change', function () { state.checks[c.id] = c.checked; save(); refreshDrive(); });
+    });
+    refreshDrive();
+    if (isDone(5)) celebrate.style.display = '';
+
+    // Reset
+    var resetBtn = document.getElementById('learn-reset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    });
+
+    // Confetti (this is a static doc page, so Math.random is fine here)
+    function confetti() {
+      var colors = ['#2E66E5', '#6E56CF', '#C26A0E', '#1FA463', '#0D6E63', '#A91E3E'];
+      for (var i = 0; i < 26; i++) {
+        var s = document.createElement('span');
+        s.className = 'confetti';
+        s.style.left = (Math.random() * 100) + 'vw';
+        s.style.background = colors[i % colors.length];
+        s.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+        s.style.animationDelay = (Math.random() * 0.3) + 's';
+        s.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+        document.body.appendChild(s);
+        (function (node) { setTimeout(function () { node.remove(); }, 3400); })(s);
+      }
+    }
+
+    // Init
+    show(state.step);
+    renderProgress();
   })();
 </script>
 </body>

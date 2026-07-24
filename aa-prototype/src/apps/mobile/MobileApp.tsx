@@ -166,7 +166,9 @@ export function MobileApp() {
   return (
     <SurfaceProvider variant="mobile">
       <PhoneFrame>
-      <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: neutral.bg, color: neutral.ink }}>
+      {/* Transparent root: the PhoneFrame AtmosphereLayer shows through for
+          Availability / Balances / More and the Lists base (Phase 13). */}
+      <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}>
         {tab === 'lists' && <SlideStack layers={listsLayers} depth={depth} />}
         {tab === 'availability' && <AvailabilityScreen actor={actor} anaesthetistId={anaesthetistId} initials={persona.initials} />}
         {tab === 'balances' && <BalancesScreen initials={persona.initials} anaesthetistId={anaesthetistId} />}

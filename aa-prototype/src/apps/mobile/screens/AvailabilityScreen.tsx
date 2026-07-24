@@ -5,6 +5,7 @@ import { freeDashedBorder, statusColours, unavailableHatchTint, type StatusKey }
 import type { List, Session } from '../../../domain/types'
 import { setAvailability, useAppStore, useToday, type Actor } from '../../../store'
 import { MobileHeader } from '../components'
+import { Avatar } from '../../../shared'
 import { RequestCoverSheet } from '../../../shared/flows'
 
 interface AvailabilityScreenProps {
@@ -180,7 +181,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
         {/* My availability */}
         <div style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>{initials}</span>
+            <Avatar initials={initials} size={34} />
             <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>My availability</span>
           </div>
           {(['AM', 'PM'] as const).map((session) => {

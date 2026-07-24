@@ -1,9 +1,10 @@
-import { brand, neutral } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
+import { Avatar } from '../../../shared'
 
 interface MobileHeaderProps {
   eyebrow: string
   title: string
-  /** Avatar initials — the crimson-tint identity avatar (brand = identity only). */
+  /** Avatar initials — the persona identity avatar. */
   initials: string
 }
 
@@ -27,24 +28,7 @@ export function MobileHeader({ eyebrow, title, initials }: MobileHeaderProps) {
           {title}
         </div>
       </div>
-      <span
-        aria-hidden
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 999,
-          background: brand.tint,
-          color: brand.base,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 15,
-          fontWeight: 700,
-          flex: 'none',
-        }}
-      >
-        {initials}
-      </span>
+      <Avatar initials={initials} size={44} />
     </div>
   )
 }

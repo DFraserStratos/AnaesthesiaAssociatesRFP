@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { neutral } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 
 export interface SlideLayer {
@@ -37,9 +36,15 @@ export function SlideStack({ layers, depth }: SlideStackProps) {
             key={layer.key}
             aria-hidden={i !== depth}
             style={{
+              // Opaque layers (so a parked layer-behind never shows through the
+              // active layer's gutters) that paint the SAME atmosphere as the
+              // rest of the canvas via PhoneFrame's shared `--aa-atmos-*` vars.
+              // Pixel-aligned with the fixed AtmosphereLayer at rest, so push /
+              // pop stays seamless (no flash or restart) and parallax is intact.
               position: 'absolute',
               inset: 0,
-              background: neutral.bg,
+              background: 'var(--aa-atmos-base, #F6F8F7)',
+              backgroundImage: 'var(--aa-atmos-image, none)',
               transform,
               transition: `transform ${motion.cardAdvance.in}ms ${motion.cardAdvance.easing}`,
               boxShadow: i === depth && i > 0 ? '-16px 0 32px rgba(23,35,32,0.12)' : 'none',
