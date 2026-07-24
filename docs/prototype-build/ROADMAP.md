@@ -1,6 +1,6 @@
 # AA Prototype — High-level Roadmap
 
-Thirteen phases, each sized for **one focused Claude Code session with one coherent deliverable**.
+Fourteen phases, each sized for **one focused Claude Code session with one coherent deliverable**.
 Each phase has a detailed plan in `phases/`, a kick-off prompt in `index.html`, and ends by
 updating `PROGRESS.md` so the next session starts with full context.
 
@@ -11,6 +11,7 @@ Apps          03 mobile: schedule & cards ─▶ 04 mobile: BTM capture & submit
 Money         08 billing: run & invoices ─▶ 09 billing: exceptions & monitor ─▶ 10 Xero & payments
 Edges         11 integrations (any time after 07)
 Wrap          12 demo polish & guided script
+Visual        13 mobile atmospheric gradient & tuning lab
 ```
 
 | # | Phase | Delivers | Depends on |
@@ -27,14 +28,17 @@ Wrap          12 demo polish & guided script
 | 09 | Billing: exceptions & monitor | Pre-payment, post-op addendum, billing monitor, failure isolation + retry | 08 |
 | 10 | Xero & payments simulation | Xero sim screen, ACCREC/ACCPAY pairs, contact lifecycle & archiving, webhook + poll, payables run, two-state money, live balance/GST views | 09 |
 | 11 | Integrations simulation | HL7 v2 → FHIR replay, FHIR-native feed, PDF ingestion, integration monitor + failure/retry, NHI dual-format validator | 03 + 07 |
-| 12 | Demo polish & guided script | Seeded scenarios S1–S5, finished control panel, QA sweep, DEMO-SCRIPT.md, README | all |
+| 12 | Demo polish & guided script | Seeded scenarios S1–S5, finished control panel, QA sweep, DEMO-SCRIPT.md, README | all feature phases |
+| 13 | Mobile atmospheric gradient & tuning lab | Brand-derived in-phone atmosphere; temporary outer-frame controls for live colour, position, spread, intensity and falloff tuning | 12 |
 
 **Sequencing rules:** 00 → 01 → 02 strictly first. 03 → 04 → 05 → 06 → 07 in order (each reuses
 the previous phase's components). 08 → 09 → 10 in order. 11 any time after 07 (independent of
-08–10). 12 last.
+08–10). Phase 12 follows the feature phases. The later-added Phase 13 runs last.
 
 **Milestone demos** (what you can show at each point):
 - After 04: the anaesthetist's day — lists, cards, BTM capture, validated submit.
 - After 07: the full booking-to-authorised office workflow, including illness-cover reassignment.
 - After 10: the complete money story — authorise → invoice → Xero pair → payment → disbursement.
 - After 12: the scripted end-to-end "day in the life" demo across all three apps.
+- After 13: the mobile experience has the final brand-derived atmosphere and a live tuning lab for
+  selecting the exact gradient values.

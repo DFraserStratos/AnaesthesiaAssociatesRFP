@@ -21,6 +21,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 10 | Xero & payments simulation | DONE | 2026-07-24 | Xero handoff (atomic ACCREC + DRAFT ACCPAY pair, Appendix-2 contact resolution, idempotent + fault/retry); webhook + daily reconciliation poll (idempotent by receipt key, pro-rata ACCPAY authorise); office payables run + two-state paid-in/disbursed; nightly contact-archive job + configurable window + volume story; real Xero sim surface (no NHI, discovery callouts); anaesthetist money views LIVE over the billing mirror (outstanding flat list, receivables aging, GST) + seeded historical rows; PERSIST v6; 415 tests + 29 Playwright; 5-lens scaled review-fix pass |
 | 11 | Integrations simulation | DONE | 2026-07-24 | Mapping-driven HL7 v2 → FHIR R4 extractor + FHIR-native feed (3 seeded feeds, load-bearing St George's-PID-2 / Christchurch-Public-PID-3 mapping difference); ~11 canned SIU messages + PDF ingestion; store `integrationActions` (process/retry/reprocess/dedupe/setFeedMapping/correctEthnicityCode/ingestPdfRow) through the audited write-paths; integration simulator (3-pane/2-pane) + un-badged admin Integrations monitor (Messages·Feed config·Surgeon PDFs·Data quality·Validators) + amber nav badge; PERSIST v7; 447 tests + 36 Playwright; 4-lens scaled review-fix pass |
 | 12 | Demo polish & guided script | NOT STARTED | — | — |
+| 13 | Mobile atmospheric gradient & tuning lab | NOT STARTED | — | Final visual phase after 12; brand-derived in-phone atmosphere + temporary live controls outside the phone frame |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
 of a session, leave it IN PROGRESS and state exactly what remains.
@@ -55,6 +56,7 @@ Record every deviation from a phase doc, every resolved ambiguity, and every kil
 one-line why. Later sessions must not re-litigate entries here.
 
 - **2026-07-21 · Design run adopted as visual starting point** (user decision). Outputs in `docs/design/`; convention 17 added. Entries below capture its rulings.
+- **2026-07-24 · Phase 13 added as the final visual phase after Phase 12** (user decision). Execution order is **11 → 12 → 13** so the already-planned Phase 12 session can finish uninterrupted. Phase 13 adds one subtle brand-derived atmospheric background across the in-phone mobile canvas and a temporary, clearly badged Gradient Lab in the grey preview area outside the scaled device. The lab exposes live colour, position, spread, intensity and falloff tuning, persists separately from domain state, and is isolated behind one removable prototype feature gate. It must not recolour the outer `#E4E8E6` backdrop, action/status tokens, web/admin apps or domain behaviour.
 - **2026-07-21 · DEMO_TODAY = 2026-07-21** (was 2026-06-23). The mockups' content lives on Tue 21 Jul 2026; the seed follows the design so screens match the reference 1:1.
 - **2026-07-21 · Demo personas from the design**: anaesthetist persona = **Dr Melanie Souter** ("MS", crimson-tint avatar), office persona = **Kirsty W.** Seed must include them and the mockups' supporting cast (Rutherford, Sharma, Ngata, Beaumont, A. Chen, Ropata, Delaney, Fitzgerald, Hughes, Morrison, Whitaker, Ngatai, Strand — 14 total).
 - **2026-07-21 · Status colour mapping** (from Design Language): Private #2E66E5, Public #6E56CF, Pre-op #C26A0E, Holiday #D25C74, Unavailable #64716C (hatched fill), Free #1FA463 (dashed border, "inviting"). Never colour-only — every block carries its label.
@@ -533,7 +535,7 @@ Append one entry per completed session, newest last, using this template:
 - ✓ `npm run build` + `npx vitest run` (447) + `npx oxlint` green; 36 Playwright specs pass.
 **Adversarial review-fix pass:** 4 lenses (bugs/correctness · plan-adherence · quality · RFP-fidelity); findings + fixes recorded in the Decisions log entry above (top fixes: non-atomic cross-List S13, cancelled-target guard, HL7 SCH-7/AIS-4 fidelity, the mod-24/Modulus-24 validator note, the NHI-service over-claim wording).
 **Known gaps / handoff notes:**
-- **Phase 12 consumes:** the integration surfaces are the last feature set; Phase 12 is demo polish + the guided script (and the demo control panel's remaining "Jump to a scenario" Phase-12 placeholder).
+- **Phase 12 consumes first:** demo polish + the guided script (and the demo control panel's remaining "Jump to a scenario" placeholder). **Phase 13 then closes:** the completed mobile surfaces receive the brand-derived atmospheric background and temporary outer-frame tuning lab.
 - Integration creates route to fixed Souter forward Lists (demo config); a real feed would carry AIL/AIP location/personnel — out of the demo extractor's scope (§10), honestly noted in `messages.ts`.
 - `feedsForHospital` is provided per the plan and test-covered though not yet consumed by a UI surface.
 - Working tree left for the user to review and commit (agents do not commit — CLAUDE.md).

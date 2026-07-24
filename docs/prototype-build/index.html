@@ -96,9 +96,9 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
 <header class="hero">
   <p class="kicker">Anaesthesia Associates RFP · Prototype · The plan</p>
   <h1>The AA prototype: <em>three apps, one demo</em></h1>
-  <p class="hero-sub">A fully interactive, true-to-life React front end over a fake in-browser backend, demonstrating every major feature of the Anaesthesia Associates Booking &amp; Billing RFP: the scheduling canvas, BTM timesheet capture, the DRAFT→SUBMITTED→AUTHORISED approval flow, the billing engine with its three billing methods and split-billing rules, the ACCREC/ACCPAY Xero pairing, payments and disbursement, and the HL7→FHIR integration story. One app switcher in the corner flips between the Anaesthetist Mobile App (floating in a phone frame on a grey backdrop), the Anaesthetist Web App, and the Admin Web App — plus the demo-only simulators that make the invisible parts visible. Thirteen phases, each one session, each one coherent deliverable.</p>
+  <p class="hero-sub">A fully interactive, true-to-life React front end over a fake in-browser backend, demonstrating every major feature of the Anaesthesia Associates Booking &amp; Billing RFP: the scheduling canvas, BTM timesheet capture, the DRAFT→SUBMITTED→AUTHORISED approval flow, the billing engine with its three billing methods and split-billing rules, the ACCREC/ACCPAY Xero pairing, payments and disbursement, and the HL7→FHIR integration story. One app switcher in the corner flips between the Anaesthetist Mobile App (floating in a phone frame on a grey backdrop), the Anaesthetist Web App, and the Admin Web App — plus the demo-only simulators that make the invisible parts visible. Fourteen phases, each one session, each one coherent deliverable.</p>
   <div class="stats">
-    <div class="stat"><b>13</b><span>phases (00–12)</span></div>
+    <div class="stat"><b>14</b><span>phases (00–13)</span></div>
     <div class="stat"><b>3</b><span>apps in one shell</span></div>
     <div class="stat"><b>6</b><span>RFP components covered</span></div>
     <div class="stat"><b>0</b><span>real backends / APIs</span></div>
@@ -114,7 +114,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
     <thead><tr><th>Document</th><th>Role</th></tr></thead>
     <tbody>
       <tr><td><code>docs/prototype-build/REQUIREMENTS.md</code></td><td class="read">The full requirements catalogue (P/D/M/W/A/B/X/I/N numbered) distilled from the RFP + our data-model reading. Every phase doc cites the IDs it covers.</td></tr>
-      <tr><td><code>docs/prototype-build/PROGRESS.md</code></td><td class="read">The living record: binding conventions (1–17), phase status, decisions log. <b>Every session reads it first and updates it last</b> — it is how each fresh chat inherits context.</td></tr>
+      <tr><td><code>docs/prototype-build/PROGRESS.md</code></td><td class="read">The living record: binding conventions (1–18), phase status, decisions log. <b>Every session reads it first and updates it last</b> — it is how each fresh chat inherits context.</td></tr>
       <tr><td><code>docs/prototype-build/phases/*.md</code></td><td class="read">One detailed plan per phase: work items, scope fences, and the manual test checklist you run before calling it done.</td></tr>
     </tbody>
   </table>
@@ -141,7 +141,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
   <div class="rule"></div>
   <ol class="howto">
     <li><b>Run Phase 00 first</b> — it scaffolds the app, the switcher, the phone frame and the design tokens, and puts PROGRESS.md on rails.</li>
-    <li><b>Pick the next phase</b> from the PROGRESS.md status table, respecting the gates: 00→01→02 strictly first; 03→04→05→06→07 in order; 08→09→10 in order; 11 any time after 07; 12 last.</li>
+    <li><b>Pick the next phase</b> from the PROGRESS.md status table, respecting the gates: 00→01→02 strictly first; 03→04→05→06→07 in order; 08→09→10 in order; 11 any time after 07; 12 follows the feature phases; 13 is the final visual phase.</li>
     <li><b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt below. The agent reads PROGRESS.md, REQUIREMENTS.md and its phase doc before touching anything.</li>
     <li><b>The agent enters plan mode</b>, verifies the current state of <code>aa-prototype/</code> against what PROGRESS.md claims, turns the phase doc into work-sized steps, and waits for approval before changing code.</li>
     <li><b>Every phase ends the same way:</b> <code>npm run build</code> and <code>npx vitest run</code> green, the phase's manual test checklist run and reported item-by-item, then (from Phase 05 on) an <b>adversarial review-and-fix pass</b> — a few Opus review subagents fanned out for quality, bugs and plan-adherence, their findings independently verified and fixed by the session (PROGRESS convention 18) — and PROGRESS.md updated (status row, phase entry, decisions) so the next session inherits the truth.</li>
@@ -153,7 +153,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
     <span class="fpar">foundations:</span> <span class="fnode">00 scaffold + shell</span> &rarr; <span class="fnode">01 domain + calculator</span> &rarr; <span class="fnode">02 seed + store</span><br>
     <span class="fpar">apps:</span> <span class="fnode">03 mobile: schedule + cards</span> &rarr; <span class="fnode">04 mobile: BTM + submit</span> &rarr; <span class="fnode">05 anaesthetist web</span> &rarr; <span class="fnode">06 admin: day dashboard</span> &rarr; <span class="fnode">07 admin: authorisation + masters</span><br>
     <span class="fpar">money &amp; edges:</span> <span class="fnode">08 billing: run + invoices</span> &rarr; <span class="fnode">09 billing: exceptions + monitor</span> &rarr; <span class="fnode">10 Xero + payments</span> · <span class="fnode">11 integrations (after 07)</span><br>
-    <span class="fpar">wrap:</span> <span class="fnode">12 demo polish + script</span>
+    <span class="fpar">wrap &amp; visual finish:</span> <span class="fnode">12 demo polish + script</span> &rarr; <span class="fnode">13 mobile gradient + tuning lab</span>
   </div>
 </section>
 
@@ -176,6 +176,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
       <tr><td>10</td><td>Xero &amp; payments simulation (ACCREC/ACCPAY, webhook, payables run)</td><td><span class="tag c">Money</span></td><td>M</td><td>med</td><td>Idempotency + no-NHI-in-Xero tests</td></tr>
       <tr><td>11</td><td>Integrations simulation (HL7→FHIR, PDF ingest, monitor, NHI formats)</td><td><span class="tag c">Edges</span></td><td>M</td><td>low-med</td><td>Checklist + validator tests</td></tr>
       <tr><td>12</td><td>Demo polish &amp; guided script (scenarios, control panel, QA sweep)</td><td><span class="tag a">Wrap</span></td><td>M</td><td>low</td><td>S1–S5 run clean from reset</td></tr>
+      <tr><td>13</td><td>Mobile atmospheric gradient &amp; tuning lab (brand depth, live outer-frame controls)</td><td><span class="tag b">Visual</span></td><td>S–M</td><td>low-med</td><td>Cross-screen visual QA + lab persistence tests</td></tr>
     </tbody>
   </table>
 </section>
@@ -795,7 +796,7 @@ Phase goal: hospital messages, surgeon PDFs and the FHIR-first target state all 
     <div class="phase-title">
       <h3>Demo polish &amp; guided script</h3>
       <div class="badges">
-        <span class="badge dep">Last — after everything</span>
+        <span class="badge dep">After the feature phases</span>
         <span class="badge est">1 session</span>
         <a class="badge doc" href="phases/phase-12-demo-polish.md">plan doc &nearr;</a>
       </div>
@@ -815,7 +816,7 @@ Phase goal: hospital messages, surgeon PDFs and the FHIR-first target state all 
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-12">Copy</button>
     </div>
-    <pre id="prompt-12">Please run Phase 12 (Demo polish &amp; guided script) of the Anaesthesia Associates prototype build — the closing phase. No new features: polish, scenarios, and the presenter script.
+    <pre id="prompt-12">Please run Phase 12 (Demo polish &amp; guided script) of the Anaesthesia Associates prototype build. No new features: polish, scenarios, and the presenter script.
 
 Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — the full build record: every phase entry, decision and deferral, plus the "Discovered for later" list.
@@ -831,9 +832,64 @@ While working:
 - Write docs/prototype-build/DEMO-SCRIPT.md: per scenario, where to click, the one-line RFP tie-in to say, and the expected result — plus a recovering-from-accidents note.
 - Write aa-prototype/README.md (run instructions, stack, folder map, doc pointers).
 
-When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18 — for this final phase a whole-prototype QA sweep across all three apps and the demo surfaces, not just this phase's diff: fan out a few Opus review subagents, independently verify each finding, fix the confirmed ones, re-green build + tests), then close out PROGRESS.md — all statuses final, the review pass and handoff notes swept tidy — and give me short, clear notes.
+When done: run the manual test checklist and report each item, run the adversarial review-and-fix pass (convention 18 — for this phase a whole-prototype QA sweep across all three apps and the demo surfaces, not just this phase's diff: fan out a few Opus review subagents, independently verify each finding, fix the confirmed ones, re-green build + tests), update PROGRESS.md with the Phase 12 status, review pass and tidy handoff notes for the final Phase 13 visual work, and give me short, clear notes.
 
 Phase goal: a rehearsed, resettable, scriptable demo that one presenter can drive cold.</pre>
+  </div>
+</article>
+
+<article class="phase trackB" id="phase-13">
+  <div class="phase-head">
+    <span class="pnum">13</span>
+    <div class="phase-title">
+      <h3>Mobile atmospheric gradient &amp; tuning lab</h3>
+      <div class="badges">
+        <span class="badge dep">Final · after Phase 12</span>
+        <span class="badge est">1 session</span>
+        <a class="badge doc" href="phases/phase-13-mobile-atmospheric-gradient.md">plan doc &nearr;</a>
+      </div>
+    </div>
+  </div>
+  <p class="goal">Give the Anaesthetist Mobile App a quiet, brand-derived atmospheric canvas: a warm neutral base with broad pale teal and blush fields, visible behind crisp white content without disturbing semantic status colours or dense clinical/billing legibility. Add a temporary Gradient Lab in the grey preview area outside the phone, with live controls for colour, X/Y position, spread, opacity, intensity and falloff, plus persistence, reset and copy actions so the final treatment can be tuned without editing code.</p>
+  <details>
+    <summary>What to check when it's done</summary>
+    <ul class="checks">
+      <li>Forward Lists, Availability, Balances, More, List detail and Card detail share one continuous, fixed in-phone atmosphere with no white flash, seam or gradient restart.</li>
+      <li>The Gradient Lab stays outside the scaled 390×844 device, updates the phone instantly, persists through navigation/refresh, resets exactly and copies stable JSON/CSS values.</li>
+      <li>The grey preview backdrop, device chrome, white content hierarchy, action teal and all semantic status colours remain unchanged; narrow layouts collapse the lab without covering the phone or zoom/Fit controls.</li>
+    </ul>
+  </details>
+  <div class="prompt-wrap">
+    <div class="prompt-bar">
+      <span>Kick-off prompt - paste into a fresh Claude Code session</span>
+      <button class="copy" data-target="prompt-13">Copy</button>
+    </div>
+    <pre id="prompt-13">Please run Phase 13 (Mobile atmospheric gradient &amp; tuning lab) of the Anaesthesia Associates prototype build. This is the final focused visual-elevation phase, run after Phase 12 without changing the scenarios, domain behaviour or presenter flow it completed.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/PROGRESS.md — binding conventions, design decisions and what Phase 12 actually completed.
+2. docs/prototype-build/REQUIREMENTS.md — §1.P4/P8 and §9.N1/N2.
+3. docs/prototype-build/phases/phase-13-mobile-atmospheric-gradient.md — the complete requirements and acceptance checklist for this phase.
+4. docs/design/Design Language.dc.html — open it in a browser as the authoritative AA token/visual reference.
+5. Inspect the running /mobile app after Phase 12 across Lists, Availability, Balances, More, List detail and Card detail; use the Phase 11 current-state findings in the phase doc as the original flat-canvas baseline, and inspect PhoneFrame.tsx, MobileApp.tsx and SlideStack.tsx before proposing the implementation.
+
+Before choosing any checked-in gradient default, explicitly invoke the available front-end design skill (or the workspace's equivalent visual-design workflow). The supplied random-app screenshots are references for softness, scale and atmospheric technique only — never sample their cyan/lavender colours. The AA Design Language and AA mobile reference pages are the palette and hierarchy source of truth. If that skill is unavailable, say so and perform the same browser-led visual comparison explicitly.
+
+Then enter plan mode: turn the Phase 13 document into work-sized steps (shared atmosphere → transparent/continuous mobile layers → temporary outer-frame Gradient Lab → verification), name the files you expect to touch, and wait for my approval before changing code.
+
+While working:
+- Build one static, CSS-only atmospheric canvas inside the phone. Start from the phase doc's AA recipe: neutral.bg (#F6F8F7), a broad accent.tint (#E1F0ED) field near 12% / -8%, a quieter brand.tint (#F7E7EC) field near 96% / 2%, and a lower neutral return. Because these are already-pale tint tokens, begin around 85% and 70% layer opacity respectively with large 70%+ falloffs; do not mistakenly reduce tint-token opacity until the result is invisible. It should still read as white first and colour second. No status colour, saturated crimson, texture, raster image, animated gradient or new palette.
+- Use the front-end design skill and Gradient Lab to compare a few deliberate AA variants on screenshots of the real mobile screens, then make and document a visual judgement about the checked-in default. Do not blindly preserve the starter numbers if a more balanced brand-token composition looks better.
+- Make the canvas continuous behind all four mobile tabs and every Lists slide-stack depth. SlideStack layers currently paint neutral.bg, so fix the shared seam deliberately; the gradient must not flash, restart, scroll-repeat or break the existing push/pop parallax. Keep the outer #E4E8E6 preview backdrop, device chrome, web/admin apps and business/domain state unchanged.
+- Keep white cards and dense Card detail/BTM sections crisp. Only make small translucent-chrome adjustments where needed to avoid hard strips. Deep teal remains the only action colour; AA crimson remains identity-only; semantic List/status/success/warning/error colours must not be decoratively tinted or exposed to the lab.
+- Add a clearly badged "Gradient Lab · temporary prototype control" as a sibling of the scaled phone inside PhoneFrame's grey preview canvas, never inside MobileApp or the 390×844 device. Keep the phone centred and the existing zoom/Fit toolbar usable. On narrow canvases collapse the panel to an outside-the-phone button.
+- The lab updates the live phone immediately and provides: atmosphere on/off, global intensity, base colour, and at least two independently enabled fields with colour picker + validated hex, X/Y anchor, horizontal/vertical spread, opacity, inner stop and fade/falloff; show numeric values/units and a miniature preview. Experimental values may go outside the palette, but warn rather than silently clamp; checked-in defaults stay brand-derived.
+- Keep lab state out of Zustand/domain persistence. Persist it under a dedicated versioned localStorage key, retain it across mobile navigation and refresh, and include Reset to AA default, Copy configuration (stable readable JSON) and Copy CSS with brief feedback. Put the entire temporary lab behind one named removable prototype feature gate.
+- Add the config validation/serialisation and Playwright coverage in the phase plan. Verify Fit, 100% and 130%, a narrow desktop viewport, all four tabs, List/Card push-pop, scroll, sheets/overlays and dense BTM content. Keep build, full Vitest, oxlint, existing Playwright and console green.
+
+When done: run and report every Phase 13 checklist item, run the convention-18 adversarial review-and-fix pass with visual/accessibility, bugs/correctness and plan-adherence lenses, independently verify and fix confirmed findings, re-green everything, and update PROGRESS.md with the final checked-in gradient values, lab feature gate/key and the review result.
+
+Phase goal: calm AA-branded depth inside the mobile canvas, plus safe temporary controls outside the frame that let me tune the final look without touching code.</pre>
   </div>
 </article>
 
@@ -841,7 +897,7 @@ Phase goal: a rehearsed, resettable, scriptable demo that one presenter can driv
 
 </div>
 <footer class="wrap" style="padding-top:0">
-  <span>AA prototype build plan · authored 2026-07-21, restructured to 13 single-deliverable phases same day · from the July 2026 RFP + Data-Model-and-Flow reading</span>
+  <span>AA prototype build plan · authored 2026-07-21, expanded to 14 single-deliverable phases · from the July 2026 RFP + Data-Model-and-Flow reading</span>
   <span>docs/prototype-build/index.html</span>
 </footer>
 

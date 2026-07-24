@@ -53,7 +53,7 @@ New features. Anything discovered that's bigger than a polish fix gets logged to
 
 ## Adversarial review (after build)
 
-After the manual test checklist and `npm run build` / `npx vitest run` are green — and before closing out the PROGRESS file — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**. For this final phase it is a **whole-prototype QA sweep** across all three apps and the demo surfaces, not just this phase's diff: fan out a few independent Opus review subagents (quality · bugs/correctness · plan adherence), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
+After the manual test checklist and `npm run build` / `npx vitest run` are green — and before updating PROGRESS — run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**. For this phase it is a **whole-prototype QA sweep** across all three apps and the demo surfaces, not just this phase's diff: fan out a few independent Opus review subagents (quality · bugs/correctness · plan adherence), then this session independently verifies every finding against the source docs and the code, fixes the confirmed ones, re-greens build + tests, and records the pass in the phase entry. Do not re-raise anything already settled in the Decisions log.
 
 **Steer this phase's reviewers at:**
 - S1–S5 each run clean from a hard reset exactly as `DEMO-SCRIPT.md` describes; reset returns to identical pristine state (invoice numbers restart).
@@ -64,4 +64,5 @@ After the manual test checklist and `npm run build` / `npx vitest run` are green
 
 ## PROGRESS.md updates
 
-Status row + entry; close out the file: mark all phases final, sweep "Discovered for later" into a tidy handoff list, and note anything a future real-build team should read first.
+Status row + entry; sweep "Discovered for later" into a tidy handoff list, note anything a future
+real-build team should read first, and leave a clean visual handoff for Phase 13.

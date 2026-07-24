@@ -13,7 +13,7 @@ backend** — no real servers, APIs, or data. It exists to demonstrate every maj
 RFP's Candidate Architecture during vendor presentation workshops; it is **not** production
 software. It presents three apps behind one app-switcher — **Anaesthetist Mobile App**,
 **Anaesthetist Web App**, **Admin Web App** — plus demo-only simulators (Xero, HL7/FHIR
-integrations, a demo control panel). The build is organised into 13 phases (00–12).
+integrations, a demo control panel). The build is organised into 14 phases (00–13).
 
 ## Where things live
 
@@ -21,9 +21,9 @@ integrations, a demo control panel). The build is organised into 13 phases (00�
   - `PROGRESS.md` — the living record: binding conventions, phase status, decisions log.
     **Read it first and update it last, every session.**
   - `REQUIREMENTS.md` — the numbered requirements catalogue (P/D/M/W/A/B/X/I/N).
-  - `ROADMAP.md` — the 13-phase sequence, dependencies and milestone demos.
+  - `ROADMAP.md` — the 14-phase sequence, dependencies and milestone demos.
   - `index.html` — a styled build page with a copy-paste kick-off prompt per phase.
-  - `phases/phase-00…12.md` — one detailed plan per phase.
+  - `phases/phase-00…13.md` — one detailed plan per phase.
 - **RFP & data model** — `docs/rfp-reference/`
   - `RFP.md` — full RFP text (the source of truth for requirements); the RFP PDF sits alongside it.
   - `Data-Model-and-Flow.md` / `.html` — our reading of the candidate data model, the List/Card
