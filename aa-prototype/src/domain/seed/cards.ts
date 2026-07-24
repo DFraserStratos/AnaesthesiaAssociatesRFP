@@ -14,9 +14,11 @@ import type {
   BillingLine,
   Card,
   CardCancellation,
+  IntegrationCorrelationRef,
   List,
   Procedure,
 } from '../types'
+import { APPT, FEED } from '../integrations'
 import { slotRng } from './slotHash'
 import { listIdForSlot } from './canvas'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
@@ -51,6 +53,12 @@ export interface CardScenarioIds {
   repeatWalker: [string, string]
   /** Procedure ids with the deliberately missing billing references. */
   missingRefProcedures: [string, string]
+  /** Phase 11 integration-origin Cards (correlationRef set) the modify messages target. */
+  integrationS13Time: string
+  integrationS13Move: string
+  integrationS14: string
+  integrationS15: string
+  integrationLockedTarget: string
 }
 
 export interface CardsBuild {
@@ -147,6 +155,8 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     cancellation?: CardCancellation
     /** Write a card.complete audit entry (staged cards only). */
     auditComplete?: boolean
+    /** Integration provenance (Phase 11) — modify messages locate the Card by it. */
+    correlationRef?: IntegrationCorrelationRef
   }
 
   function anaesthetistNameFor(listId: string): string {
@@ -174,6 +184,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     }
     if (spec.scheduledTime !== undefined) card.scheduledTime = spec.scheduledTime
     if (spec.completedAtISO !== undefined) card.completedAtISO = spec.completedAtISO
+    if (spec.correlationRef !== undefined) card.correlationRef = spec.correlationRef
     if (spec.cancellation !== undefined) {
       card.cancellation = spec.cancellation
       card.lastModifiedBy = spec.cancellation.by
@@ -931,6 +942,58 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   addListAudit(ropataThu16, 'list.submit', NAME_BY_ID.get(ANAE.ropata) ?? 'Dr Hannah Ropata', iso(THU16, '11:00'))
 
   // -------------------------------------------------------------------------
+  // Integration-origin cards (Phase 11) — bookings that arrived via the St
+  // George's feed, each carrying `{sourceFeedId, externalAppointmentId}` so the
+  // S13/S14/S15 messages locate them by appointment id (never patient
+  // guesswork). Four sit on Souter's forward DRAFT St George's Lists (reachable
+  // in the mobile app); the fifth is on a SUBMITTED (office-locked) List for the
+  // manual-intervention demo.
+  // -------------------------------------------------------------------------
+
+  const souterTue28Am = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
+  const souterMon27Pm = listIdForSlot(ANAE.souter, '2026-07-27', 'PM')
+  // Delaney Fri 17 AM (St George's / Mr Doyle) — a real past operating list (Delaney
+  // is not on leave then; Beaumont/Morrison/Whitaker were unsuitable). Marked
+  // SUBMITTED in index.ts to host the locked-target Card.
+  const delaneyFri17Am = listIdForSlot(ANAE.delaney, FRI17, 'AM')
+
+  const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
+
+  const s13TimeCard = addCard({ listId: souterTue28Am, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
+  addProcedure(s13TimeCard, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0901' })
+
+  const s13MoveCard = addCard({ listId: souterMon27Pm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
+  addProcedure(s13MoveCard, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0902' })
+
+  const s14Card = addCard({ listId: souterTue28Am, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
+  addProcedure(s14Card, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0903' })
+
+  const s15Card = addCard({ listId: souterTue28Am, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
+  addProcedure(s15Card, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0904' })
+
+  // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
+  // completed + valid, so index.ts marks the List SUBMITTED. The S14
+  // locked-target message addresses it and parks as manual-intervention.
+  const lockedTargetCard = addCard({
+    listId: delaneyFri17Am,
+    patientId: PAT.prentice,
+    scheduledTime: '10:00',
+    completedAtISO: iso(FRI17, '11:05'),
+    auditComplete: true,
+    correlationRef: stgRef(APPT.lockedTarget),
+  })
+  addProcedure(lockedTargetCard, {
+    description: 'TURP',
+    rvgBaseCode: '36840',
+    startISO: iso(FRI17, '10:05'),
+    handoverISO: iso(FRI17, '11:00'),
+    asaClass: 'AS2',
+    billingRoute: 'hospital',
+    governingContractId: CONTRACT.stgDefault,
+    billingReference: 'SG-2026-0905',
+  })
+
+  // -------------------------------------------------------------------------
   // Near-future mockup counts: Wed 22 CES x6, Thu 23 CPH x8 + pre-op x6
   // -------------------------------------------------------------------------
 
@@ -994,6 +1057,10 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     souterAm21, souterPm21, morrisonMon20, whitakerFri17, souterMon20Am, souterMon20Pm,
     fitzTue14, fitzWed15, ruthThu16, ruthThu09, sharmaTue14, chenFri24,
     souterMon27, souterFri24Am, souterFri24Pm, ropataThu16, wed22Ces, thu23Cph, thu23Preop,
+    // Phase 11 integration demo lists: the seeded correlated Cards + the
+    // Souter forward Lists the creates land on (kept clear of generic filler).
+    souterTue28Am, souterMon27Pm, delaneyFri17Am,
+    listIdForSlot(ANAE.souter, '2026-07-28', 'PM'), listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
   ])
 
   const sortedLists = [...lists].sort((a, b) =>
@@ -1126,6 +1193,11 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       repeatMitchell: [mitchellFirst.id, mitchellRepeat.id],
       repeatWalker: [whitakerCards[0]?.id ?? '', amCards[0]?.id ?? ''],
       missingRefProcedures: [missingRefProc1, missingRefProc2.id],
+      integrationS13Time: s13TimeCard.id,
+      integrationS13Move: s13MoveCard.id,
+      integrationS14: s14Card.id,
+      integrationS15: s15Card.id,
+      integrationLockedTarget: lockedTargetCard.id,
     },
     next: { card: cardN + 1, procedure: procN + 1, billingLine: lineN + 1, audit: auditN + 1 },
   }

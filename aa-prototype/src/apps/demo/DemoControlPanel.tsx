@@ -10,6 +10,7 @@ import {
   authoriseList,
   editContract,
   openAccRecs,
+  processMessage,
   receivePayment,
   resetDemo,
   submitList,
@@ -18,6 +19,7 @@ import {
   useToday,
   type Actor,
 } from '../../store'
+import { CANNED_MESSAGES } from '../../domain/integrations'
 import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
 import { roundToCents } from '../../domain/billing/money'
 import { formatCurrency } from '../../shared/format'
@@ -35,7 +37,6 @@ interface ComingControl {
 
 /** Controls that arrive in later phases — shown here as disabled placeholders. */
 const COMING: readonly ComingControl[] = [
-  { icon: Zap, label: 'Fire integration events', description: 'Replay HL7 / FHIR / payment messages into the fake backend.', phase: 'Phase 11' },
   { icon: MapPin, label: 'Jump to a scenario', description: 'Preload a demo scenario for the guided presentation script.', phase: 'Phase 12' },
 ]
 
@@ -273,6 +274,9 @@ export function DemoControlPanel() {
       <PaymentReceivedCard />
       <HandoffFaultCard />
 
+      {/* Phase 11 demo trigger: fire an HL7/FHIR message + dedupe replay */}
+      <IntegrationTriggerCard />
+
       {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}
       <div
         style={{
@@ -448,6 +452,65 @@ function PaymentReceivedCard() {
           </div>
         </div>
       )}
+      {msg !== null && (
+        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
+      )}
+    </ControlCard>
+  )
+}
+
+/** Badged demo trigger: fire a canned HL7/FHIR message + a dedupe replay. */
+function IntegrationTriggerCard() {
+  const [selectedId, setSelectedId] = useState<string>(CANNED_MESSAGES[0]?.id ?? '')
+  const [last, setLast] = useState<string | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  function fire() {
+    const res = processMessage(useAppStore, selectedId)
+    setLast(selectedId)
+    setMsg(
+      res.ok
+        ? `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`
+        : `Refused: ${res.message}`,
+    )
+  }
+  function replay() {
+    if (last === null) return
+    const res = processMessage(useAppStore, last)
+    setMsg(
+      res.ok
+        ? res.value.outcome === 'duplicate'
+          ? 'Deduplicated: same message control ID, no second Card created.'
+          : `Replayed ${last}: ${res.value.outcome}.`
+        : `Refused: ${res.message}`,
+    )
+  }
+
+  return (
+    <ControlCard icon={Zap} eyebrow="Integrations" title="Fire an integration message">
+      <div><DemoBadge label="Demo trigger" /></div>
+      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
+        Sends a canned hospital HL7 / FHIR message into the fake backend. Replaying the same message
+        shows idempotent dedupe (no double Card). The full simulator lives at the Integrations demo
+        surface; the message log is in the Admin app Integrations monitor.
+      </span>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+        <select
+          value={selectedId}
+          onChange={(e) => setSelectedId(e.target.value)}
+          style={{ font: 'inherit', fontSize: 13, padding: '7px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, maxWidth: 340 }}
+        >
+          {CANNED_MESSAGES.map((m) => (
+            <option key={m.id} value={m.id}>{m.label} · {m.id}</option>
+          ))}
+        </select>
+        <button type="button" onClick={fire} style={{ ...actionButtonStyle, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
+          Fire message
+        </button>
+        <button type="button" onClick={replay} disabled={last === null} style={{ ...actionButtonStyle, opacity: last === null ? 0.5 : 1, cursor: last === null ? 'not-allowed' : 'pointer' }}>
+          Replay last (dedupe)
+        </button>
+      </div>
       {msg !== null && (
         <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
       )}

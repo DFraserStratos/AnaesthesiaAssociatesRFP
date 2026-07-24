@@ -8,7 +8,14 @@
  * write is audited and honours the role/source/state matrix.
  */
 
-import type { BillingRoute, Card, CardAttachment, PatientPaymentCategory, Procedure } from '../domain/types'
+import type {
+  BillingRoute,
+  Card,
+  CardAttachment,
+  IntegrationCorrelationRef,
+  PatientPaymentCategory,
+  Procedure,
+} from '../domain/types'
 import {
   allocateId,
   clockISO,
@@ -44,6 +51,13 @@ export interface CreateCardInput {
   notes?: string
   /** A photo/file to attach (the photo-capture path adds a `kind:'photo'` one). */
   attachment?: { name: string; kind: CardAttachment['kind']; dataUrl?: string }
+  /**
+   * Integration provenance (Phase 11): the `{sourceFeedId, externalAppointmentId}`
+   * correlation ref an HL7/FHIR create stamps, so later S13/S14/S15 messages
+   * locate this Card by its appointment id. Backward-compatible: manual/photo/
+   * PDF paths omit it.
+   */
+  correlationRef?: IntegrationCorrelationRef
 }
 
 /**
@@ -108,6 +122,7 @@ export function createCard(
     }
     if (input.scheduledTime !== undefined) card.scheduledTime = input.scheduledTime
     if (input.notes !== undefined && input.notes.trim() !== '') card.notes = input.notes.trim()
+    if (input.correlationRef !== undefined) card.correlationRef = input.correlationRef
 
     const procedure: Procedure = {
       id: procedureId,

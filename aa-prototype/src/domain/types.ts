@@ -816,12 +816,17 @@ export interface IntegrationFeed {
   fieldMapping: Record<string, string>
 }
 
+/**
+ * Message-log statuses. `duplicate` (Phase 11) is a message replayed after it
+ * already processed: deduped by MSH-10, recorded but with no second effect.
+ */
 export type IntegrationMessageStatus =
   | 'pending'
   | 'processed'
   | 'retrying'
   | 'deadLetter'
   | 'manualIntervention'
+  | 'duplicate'
 
 export interface IntegrationMessage {
   id: string
@@ -834,7 +839,15 @@ export interface IntegrationMessage {
   status: IntegrationMessageStatus
   attempts: number
   receivedAtISO: IsoDateTime
+  /** Last processing attempt time (Phase 11). */
+  updatedAtISO?: IsoDateTime
   raw?: string
+  /** Why the last attempt failed / parked (Phase 11) — rendered in the monitor. */
+  failureReason?: string
+  /** The Card this message created or affected (Phase 11), for the monitor's link. */
+  resultCardId?: CardId
+  /** Extracted patient display name (Phase 11), for the log's patient-ref column. */
+  patientRef?: string
 }
 
 // ---------------------------------------------------------------------------

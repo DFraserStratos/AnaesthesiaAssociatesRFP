@@ -12,15 +12,21 @@ import type {
   Card,
   CounterpartyRef,
   DayNote,
+  IntegrationCorrelationRef,
+  IntegrationFeed,
+  IntegrationMessage,
+  IntegrationMessageStatus,
   Invoice,
   InvoiceLine,
   List,
+  Patient,
   Procedure,
   ProcedureId,
   Session,
 } from '../domain/types'
 import type { CardBillingContext } from '../domain/billing/validateCardForBilling'
 import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
+import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useAppStore, type AppState } from './appStore'
@@ -809,6 +815,129 @@ export function clockTimeLabel(state: Pick<AppState, 'clock'>): string {
 }
 
 export { clockISO }
+
+// ---------------------------------------------------------------------------
+// Integration selectors (Phase 11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Locate a Card by its integration correlation ref (`{sourceFeedId,
+ * externalAppointmentId}`) — how S13/S14/S15 messages find the appointment they
+ * modify, never by patient guesswork. Returns the first match (any state).
+ */
+export function findCardByCorrelation(
+  state: Pick<AppState, 'schedule'>,
+  ref: IntegrationCorrelationRef,
+): Card | undefined {
+  return Object.values(state.schedule.cards).find(
+    (c) =>
+      c.correlationRef !== undefined &&
+      c.correlationRef.sourceFeedId === ref.sourceFeedId &&
+      c.correlationRef.externalAppointmentId === ref.externalAppointmentId,
+  )
+}
+
+/** Non-cancelled Cards on a List whose patient carries the given (normalised) NHI (PDF dedupe). */
+export function cardsOnListByNhi(state: Pick<AppState, 'schedule' | 'masters'>, listId: string, normalisedNhi: string): Card[] {
+  return cardsForList(state, listId).filter(
+    (c) => c.cancellation === undefined && state.masters.patients[c.patientId]?.nhi === normalisedNhi,
+  )
+}
+
+/** The feeds configured for a hospital (Phase 11 feed-config view). */
+export function feedsForHospital(state: Pick<AppState, 'integrations'>, hospitalId: string): IntegrationFeed[] {
+  return Object.values(state.integrations.feeds).filter((f) => f.hospitalId === hospitalId)
+}
+
+export interface IntegrationMonitorRow {
+  id: string
+  feedId: string
+  feedName: string
+  eventType: string
+  messageControlId: string
+  appointmentId?: string
+  patientRef?: string
+  status: IntegrationMessageStatus
+  /** The RFP's "retried" is a DERIVED label (processed with attempts > 1), not a stored status. */
+  displayStatus: string
+  attempts: number
+  failureReason?: string
+  resultCardId?: string
+  atISO: string
+}
+
+function displayStatusFor(m: IntegrationMessage): string {
+  switch (m.status) {
+    case 'processed':
+      return m.attempts > 1 ? 'Retried' : 'Processed'
+    case 'duplicate':
+      return 'Duplicate'
+    case 'deadLetter':
+      return 'Dead-letter'
+    case 'manualIntervention':
+      return 'Manual intervention'
+    case 'retrying':
+      return 'Retrying'
+    case 'pending':
+      return 'Pending'
+  }
+}
+
+/** The message log (Phase 11 monitor), most recent first. */
+export function integrationMonitor(state: Pick<AppState, 'integrations'>): IntegrationMonitorRow[] {
+  return Object.values(state.integrations.messages)
+    .map((m): IntegrationMonitorRow => {
+      const row: IntegrationMonitorRow = {
+        id: m.id,
+        feedId: m.feedId,
+        feedName: FEED_META[m.feedId]?.name ?? m.feedId,
+        eventType: m.eventType,
+        messageControlId: m.messageControlId,
+        status: m.status,
+        displayStatus: displayStatusFor(m),
+        attempts: m.attempts,
+        atISO: m.updatedAtISO ?? m.receivedAtISO,
+      }
+      if (m.correlationRef !== undefined) row.appointmentId = m.correlationRef.externalAppointmentId
+      if (m.patientRef !== undefined) row.patientRef = m.patientRef
+      if (m.failureReason !== undefined) row.failureReason = m.failureReason
+      if (m.resultCardId !== undefined) row.resultCardId = m.resultCardId
+      return row
+    })
+    .sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id))
+}
+
+/** Messages needing office attention (the amber nav badge): dead-letter + manual intervention. */
+export function integrationAttentionCount(state: Pick<AppState, 'integrations'>): number {
+  return Object.values(state.integrations.messages).filter(
+    (m) => m.status === 'deadLetter' || m.status === 'manualIntervention',
+  ).length
+}
+
+export interface DataQualityItem {
+  patientId: string
+  name: string
+  nhi?: string
+  receivedCode: string
+  reason: string
+}
+
+/** Patients with a quarantined ethnicity code (the data-quality tab; I5). */
+export function dataQualityItems(state: Pick<AppState, 'masters'>): DataQualityItem[] {
+  return Object.values(state.masters.patients)
+    .filter((p): p is Patient & { ethnicityPending: NonNullable<Patient['ethnicityPending']> } => p.ethnicityPending !== undefined)
+    .map((p) => {
+      const item: DataQualityItem = {
+        patientId: p.hiddenInternalId,
+        name: p.name,
+        receivedCode: p.ethnicityPending.receivedCode,
+        reason: p.ethnicityPending.reason,
+      }
+      if (p.nhi !== undefined) item.nhi = p.nhi
+      return item
+    })
+    .sort((a, b) => a.patientId.localeCompare(b.patientId))
+}
 
 // ---------------------------------------------------------------------------
 // Primitive-returning hooks (safe to use directly in components)

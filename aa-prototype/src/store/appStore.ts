@@ -18,6 +18,7 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
+import { INTEGRATION_FEEDS } from '../domain/integrations'
 import type {
   BillingCase,
   BillingReceipt,
@@ -90,7 +91,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
+/** v7: Phase 11 — seeded integration feeds (3) in the integrations slice, five
+ *  integration-origin seed Cards (correlationRef set) with a new SUBMITTED
+ *  locked-target List (Beaumont Mon 20), new `Card.correlationRef` usage, and
+ *  the `IntegrationMessage` log shape ('duplicate' status + failure/result
+ *  fields). Reseeds on load.
+ *  v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
  *  paidIn/disbursed stamps + handoffFailure), the `receipts` ledger on the
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
  *  billing-mirror + Xero rows (Souter receivables/GST) and the seeded
@@ -103,7 +109,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 6
+export const PERSIST_VERSION = 7
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }
@@ -113,6 +119,13 @@ export function emptyXeroSlice(): XeroSlice {
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
+}
+
+/** The seeded integrations slice: the three feed configs, no messages yet (Phase 11). */
+export function seededIntegrationsSlice(): IntegrationsSlice {
+  const feeds: Record<string, IntegrationFeed> = {}
+  for (const feed of INTEGRATION_FEEDS) feeds[feed.id] = feed
+  return { feeds, messages: {} }
 }
 
 /** A pristine full app state from the deterministic seed. */
@@ -134,7 +147,7 @@ export function freshAppState(): AppState {
       contactIdCache: seedBilling.contactIdCache,
     },
     xero: seedBilling.xero,
-    integrations: emptyIntegrationsSlice(),
+    integrations: seededIntegrationsSlice(),
     shell: { currentApp: 'mobile' },
   }
 }

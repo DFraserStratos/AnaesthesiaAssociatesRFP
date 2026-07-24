@@ -293,8 +293,9 @@ describe('Wed-22 advisory conflicts', () => {
 describe('submitted-list selectors', () => {
   it('counts the seeded SUBMITTED lists (the derived review badge)', () => {
     const api = store()
-    // Morrison + Whitaker (Phase 02) + the Phase-09 billing-failure exemplar.
-    expect(submittedListCount(api.getState())).toBe(3)
+    // Morrison + Whitaker (Phase 02) + the Phase-09 billing-failure exemplar +
+    // the Phase-11 locked-target list (Delaney Fri 17).
+    expect(submittedListCount(api.getState())).toBe(4)
     expect(submittedLists(api.getState()).every((l) => l.state === 'SUBMITTED')).toBe(true)
   })
 })

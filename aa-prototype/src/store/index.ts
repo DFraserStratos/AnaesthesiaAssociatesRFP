@@ -109,5 +109,15 @@ export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationP
 export { runPayables, payablesDue, type PayablesRunResult, type PayablesDue } from './payablesActions'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
 export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
+export {
+  processMessage,
+  retryMessage,
+  reprocessMessage,
+  setFeedMapping,
+  correctEthnicityCode,
+  ingestPdfRow,
+  wireIntegrationRetry,
+  MAX_ATTEMPTS,
+} from './integrationActions'
 export { onAppEvent, emitAppEvent, type AppEvent } from './events'
 export * from './selectors'

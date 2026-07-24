@@ -17,7 +17,7 @@
 import type { ActorRole, AuditEntry, AuditSource, CardId } from '../domain/types'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { emptyIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 
 // ---------------------------------------------------------------------------
 // Actors & outcomes
@@ -91,6 +91,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   disbursement: { prefix: 'DSB', pad: 4 },
   payablesRun: { prefix: 'PR', pad: 4 },
   receipt: { prefix: 'RCT', pad: 4 },
+  // Integration message-log rows (Phase 11).
+  integrationMessage: { prefix: 'IM', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -234,6 +236,6 @@ export function resetDomainState(api: AppStoreApi): void {
       contactIdCache: seedBilling.contactIdCache,
     },
     xero: seedBilling.xero,
-    integrations: emptyIntegrationsSlice(),
+    integrations: seededIntegrationsSlice(),
   })
 }

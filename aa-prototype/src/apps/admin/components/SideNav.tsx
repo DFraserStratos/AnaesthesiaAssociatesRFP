@@ -2,7 +2,7 @@ import { Wordmark } from '../../../shared'
 import { brand, neutral, semantic } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 
-export type NavSection = 'day' | 'review' | 'invoices' | 'billing' | 'masters' | 'audit'
+export type NavSection = 'day' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -17,6 +17,8 @@ interface SideNavProps {
   reviewBadge: number
   /** Billing-monitor exceptions count (Phase 09) — amber, distinct from the crimson review badge. */
   billingBadge?: number
+  /** Integration-monitor attention count (Phase 11; dead-letter + manual intervention) — amber. */
+  integrationBadge?: number
   onNavigate: (section: NavSection) => void
 }
 
@@ -25,12 +27,13 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
+    { section: 'integrations', label: 'Integrations', badge: integrationBadge, badgeTone: 'warn' },
     { section: 'masters', label: 'Master data' },
     { section: 'audit', label: 'Audit' },
   ]

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import type { List } from '../../domain/types'
-import { addDayNote, billingAttentionCount, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
+import { addDayNote, billingAttentionCount, integrationAttentionCount, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
 import { ANAESTHETISTS } from '../../domain/seed'
 import { SideNav, type NavSection } from './components/SideNav'
 import { DayNav, type SortMode } from './components/DayNav'
@@ -14,6 +14,7 @@ import { ReviewQueue } from './screens/ReviewQueue'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { InvoicesScreen } from './screens/InvoicesScreen'
 import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
+import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
 import { MasterData } from './screens/MasterData'
 import { AuditViewer } from './screens/AuditViewer'
 import { isBooked, surnameOf } from './util'
@@ -36,6 +37,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
+  const integrations = useAppStore((s) => s.integrations)
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
   const [section, setSection] = useState<NavSection>('day')
   const [selectedDate, setSelectedDate] = useState(todayISO)
@@ -112,6 +114,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Billing exceptions across the pipeline (the billing-monitor nav badge):
   // billing-run failures + Xero handoff faults (Phase 10).
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
+  const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
 
   // Lists on the selected day holding a card whose pre-payment is flagged — a
   // day-grid indicator (Phase 09). Outstanding (required/invoiced-unpaid) wins
@@ -154,7 +157,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
-      <SideNav active={section} reviewBadge={reviewLists.length} billingBadge={exceptionCount} onNavigate={navigate} />
+      <SideNav active={section} reviewBadge={reviewLists.length} billingBadge={exceptionCount} integrationBadge={integrationCount} onNavigate={navigate} />
 
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {section === 'review' ? (
@@ -171,6 +174,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
           <AuditViewer />
         ) : section === 'billing' ? (
           <BillingMonitorScreen actor={OFFICE} />
+        ) : section === 'integrations' ? (
+          <IntegrationMonitorScreen actor={OFFICE} />
         ) : cardDetailId !== null ? (
           <AdminCardDetail cardId={cardDetailId} actor={OFFICE} todayISO={todayISO} onBack={() => setCardDetailId(null)} />
         ) : (

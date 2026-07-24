@@ -347,8 +347,15 @@ function buildSeedInternal(): SeedBuild {
 
   // The seeded SUBMITTED lists awaiting authorisation (past dates — the clock
   // seeds at 08:00, so today's lists are DRAFT mid-capture): the two Phase-02
-  // queue lists plus the Phase-09 billing-failure exemplar (Ropata Thu 16).
-  for (const id of [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17, SEED_LIST_IDS.billingFailure]) {
+  // queue lists, the Phase-09 billing-failure exemplar (Ropata Thu 16), and the
+  // Phase-11 locked-target list (Delaney Fri 17 — its integration-origin Card
+  // is what the locked-target message parks against).
+  for (const id of [
+    SEED_LIST_IDS.morrisonMon20,
+    SEED_LIST_IDS.whitakerFri17,
+    SEED_LIST_IDS.billingFailure,
+    SEED_LIST_IDS.integrationLocked,
+  ]) {
     const list = lists[id]
     if (list !== undefined) lists[id] = { ...list, state: 'SUBMITTED' }
   }
@@ -442,6 +449,12 @@ export const SEED_LIST_IDS = {
   prepaymentUnpaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'AM'),
   prepaymentPaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'PM'),
   billingFailure: listIdForSlot(ANAE.ropata, '2026-07-16', 'AM'),
+  // Phase 11: the SUBMITTED (office-locked) List holding the locked-target
+  // integration Card, plus the Souter forward Lists integration creates land on.
+  integrationLocked: listIdForSlot(ANAE.delaney, '2026-07-17', 'AM'),
+  integrationStgList: listIdForSlot(ANAE.souter, '2026-07-28', 'AM'),
+  integrationSxList: listIdForSlot(ANAE.souter, '2026-07-28', 'PM'),
+  integrationCphList: listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
 } as const
 
 /**
@@ -637,6 +650,36 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       entityType: 'contract',
       entityId: CONTRACT.ariaHourly,
       detail: 'Billable-party held; permitsIndividualArrangement gates rate x time capture.',
+    },
+    integrationS13Time: {
+      label: 'Integration card · S13 reschedule target (same list)',
+      entityType: 'card',
+      entityId: scenario.integrationS13Time,
+      detail: "Souter Tue 28 AM (St George's); correlationRef set. The same-list S13 message retimes it.",
+    },
+    integrationS13Move: {
+      label: 'Integration card · S13 move target',
+      entityType: 'card',
+      entityId: scenario.integrationS13Move,
+      detail: "Souter Mon 27 PM (St George's); the cross-list S13 message reassigns it to Tue 28 AM.",
+    },
+    integrationS14: {
+      label: 'Integration card · S14 modification target',
+      entityType: 'card',
+      entityId: scenario.integrationS14,
+      detail: "Souter Tue 28 AM (St George's); the S14 message updates it, located by appointment id.",
+    },
+    integrationS15: {
+      label: 'Integration card · S15 cancellation target',
+      entityType: 'card',
+      entityId: scenario.integrationS15,
+      detail: "Souter Tue 28 AM (St George's); the S15 message soft-cancels it.",
+    },
+    integrationLockedTarget: {
+      label: 'Integration card · locked target (SUBMITTED list)',
+      entityType: 'card',
+      entityId: scenario.integrationLockedTarget,
+      detail: 'Delaney Fri 17 (SUBMITTED); the locked-target S14 message parks as manual intervention, card unchanged.',
     },
   }
 }
