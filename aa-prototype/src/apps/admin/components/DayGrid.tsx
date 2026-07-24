@@ -87,7 +87,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
           Needs attention
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
-          <span style={{ width: 7, height: 7, borderRadius: 99, background: '#172320', opacity: 0.55 }} />
+          <span style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
           Has note
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
@@ -177,7 +177,7 @@ function GridBlock({ seg, masters, hasCards, prepaymentFlag, onClick }: { seg: S
         <span style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
       {showNoteDot && (
-        <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: '#172320', opacity: 0.55 }} />
+        <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
       )}
       {prepaymentFlag !== undefined && (
         <span title={prepaymentFlag === 'overridden' ? 'Pre-payment gate overridden' : 'Pre-payment outstanding'} style={{ position: 'absolute', bottom: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>$</span>

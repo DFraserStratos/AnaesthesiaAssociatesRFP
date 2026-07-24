@@ -1,4 +1,4 @@
-import { neutral } from '../../../theme/tokens'
+import { brand, neutral } from '../../../theme/tokens'
 import { DemoBadge } from '../../../shared'
 import { MobileHeader } from '../components'
 
@@ -32,8 +32,8 @@ export function MoreScreen({ personaName, personaRole, initials }: MoreScreenPro
             width: 44,
             height: 44,
             borderRadius: 999,
-            background: '#F7E7EC',
-            color: '#A91E3E',
+            background: brand.tint,
+            color: brand.base,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

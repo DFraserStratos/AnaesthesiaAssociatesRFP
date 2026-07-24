@@ -108,7 +108,13 @@ export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentI
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
 export { runPayables, payablesDue, type PayablesRunResult, type PayablesDue } from './payablesActions'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
-export { advanceClockMinutes, advanceClockDays, resetDemo } from './clockActions'
+export {
+  advanceClockMinutes,
+  advanceClockDays,
+  advanceClockToNextMorning,
+  advanceClockToDate,
+  resetDemo,
+} from './clockActions'
 export {
   processMessage,
   retryMessage,

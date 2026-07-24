@@ -93,7 +93,7 @@ export function RequestCoverSheet({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
           <TickBadge size={72} animate />
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#157A49' }}>Request sent</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Request sent</div>
           <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center' }}>
             {kind === 'offer'
               ? 'Your free session has been offered for cover. You will be notified when someone accepts.'

@@ -20,8 +20,8 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 09 | Billing: exceptions & monitor | DONE | 2026-07-24 | Pre-payment gate + audited override + raise-pre-invoice; deduction-line balance run (deposit+balance = full fee, full → no balance); post-op addendum (new linked Card); billing monitor + per-card failure isolation + resolve-&-retry; seeded PAID pre-invoice slice; PERSIST v5; 387 tests + Playwright; 4-lens scaled review-fix pass |
 | 10 | Xero & payments simulation | DONE | 2026-07-24 | Xero handoff (atomic ACCREC + DRAFT ACCPAY pair, Appendix-2 contact resolution, idempotent + fault/retry); webhook + daily reconciliation poll (idempotent by receipt key, pro-rata ACCPAY authorise); office payables run + two-state paid-in/disbursed; nightly contact-archive job + configurable window + volume story; real Xero sim surface (no NHI, discovery callouts); anaesthetist money views LIVE over the billing mirror (outstanding flat list, receivables aging, GST) + seeded historical rows; PERSIST v6; 415 tests + 29 Playwright; 5-lens scaled review-fix pass |
 | 11 | Integrations simulation | DONE | 2026-07-24 | Mapping-driven HL7 v2 → FHIR R4 extractor + FHIR-native feed (3 seeded feeds, load-bearing St George's-PID-2 / Christchurch-Public-PID-3 mapping difference); ~11 canned SIU messages + PDF ingestion; store `integrationActions` (process/retry/reprocess/dedupe/setFeedMapping/correctEthnicityCode/ingestPdfRow) through the audited write-paths; integration simulator (3-pane/2-pane) + un-badged admin Integrations monitor (Messages·Feed config·Surgeon PDFs·Data quality·Validators) + amber nav badge; PERSIST v7; 447 tests + 36 Playwright; 4-lens scaled review-fix pass |
-| 12 | Demo polish & guided script | NOT STARTED | — | — |
-| 13 | Mobile atmospheric gradient & tuning lab | NOT STARTED | — | Final visual phase after 12; brand-derived in-phone atmosphere + temporary live controls outside the phone frame |
+| 12 | Demo polish & guided script | DONE | 2026-07-24 | Control panel finished (labelled groups · S1 to S5 scenario jumps · PDF/reconciliation/archive/payables triggers · 2 new clock helpers); S1 to S5 proven from reset (new `demoScenarios` test); QA sweep (NHI badge + literals retinted/tokenized, dead `Placeholder` removed); `docs/demo-guide/` consolidated + brought current + fresh HTML; `aa-prototype/README.md` + a pointer `DEMO-SCRIPT.md`; 457 tests + 37 Playwright; 3-lens whole-prototype review-fix pass |
+| 13 | Mobile atmospheric gradient & tuning lab | NOT STARTED | — | Final visual phase after 12; brand-derived in-phone atmosphere + temporary live controls outside the phone frame. Clean visual handoff left by Phase 12 (see its entry) |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
 of a session, leave it IN PROGRESS and state exactly what remains.
@@ -135,33 +135,51 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-07-24 · Phase 11 — message-shape + feed decisions (S15 soft-cancel NOT re-decided).** (1) **Three seeded feeds**: A = St George's HL7 v2/webPAS (mapping CORRECT, `nhi ← PID-2`); B = Christchurch Public HL7 v2 (mapping MISCONFIGURED at onboarding, `nhi ← PID-2`, but it actually sends the NHI in PID-3 → dead-letters until the operator fixes it to PID-3); C = Southern Cross FHIR-native (no HL7 pane). A(PID-2)/B(PID-3) differ post-fix, so the per-hospital mapping is genuinely load-bearing, not decorative. **Hospital A = PID-2 is the plan's explicit choice (work item 1a)**; the RFP's one webPAS sample carries the identifier in PID-3, so this is a labelled demo choice (the RFP is vague on the NHI's exact PID field), not a contradiction. (2) **HL7 segment positions follow the RFP's annotated SIU sample** (review-fix): appointment id ← SCH-2, procedure ← SCH-7, start time ← AIS-4 (was AIS-3/SCH-11 before the RFP-fidelity review corrected them). MSH-9 trigger + MSH-10 control id read from their fixed positions; SCH-6 cancel reason, NTE-3 update note read fixed (not per-hospital mapped). (3) **~11 canned messages** (`domain/integrations/messages.ts`), unique MSH-10 + distinct SCH-2 ids in `APPT`. Creates route to Souter forward DRAFT Lists via canned demo metadata (the AIL/AIP location/personnel segments a real feed carries are out of the demo extractor's scope, honestly noted — §10 fence); modifies locate their Card by `findCardByCorrelation({sourceFeedId, externalAppointmentId})`. (4) **Five seeded integration-origin Cards** (`correlationRef` set): S13-time/S14/S15 targets on Souter Tue 28 AM (STG, DRAFT), S13-move source on Souter Mon 27 PM, and the locked-target on **Delaney Fri 17 AM (STG/Mr Doyle), a new SUBMITTED List** — Delaney is not on leave then (Beaumont/Morrison/Whitaker were unsuitable: Beaumont is on annual leave Jul 13-26 so its list is a holiday; Morrison/Whitaker are billing-tested for exact invoice counts). This makes **4 seeded SUBMITTED lists** (was 3; `phase06Actions.test.ts` updated). (5) **`processMessage` reliability**: MSH-10 dedupe → `duplicate` no-op row (new `IntegrationMessageStatus`); `MAX_ATTEMPTS = 3`; a transient fault fails attempt 1 then succeeds (auto-retried by the UI-layer `wireIntegrationRetry` short timer, wired in `main.tsx`); the malformed message fails deterministically every attempt → `deadLetter`; a locked-target/no-match/cancelled-target parks as `manualIntervention`. "Retried" is a DERIVED display label (processed with attempts>1), never stored. Cross-List S13 reassigns BEFORE editing the time so a refused move strands nothing (review-fix). (6) **No new domain maths** — integration writes reuse `createCard`/`editCard`/`reassignCard`/`cancelCard`/`upsertPatient`/`editProcedure` with a `{who:<feed label>, role:'system', source:'integration'}` actor, so the lifecycle DRAFT-only source guard, the NHI/ethnicity validators and the `ethnicityPending` quarantine are all load-bearing for free. (7) **`correctEthnicityCode`** (office) is a focused action because `editPatient`'s patch cannot carry ethnicity. (8) **The monitor is un-badged** (proposed product UI); only the `/demo/integrations` simulator and the demo-control-panel fire/dedupe triggers are `DemoBadge`d. (9) **FHIR `Coding.system`** points at a distinct NZHIS-L4 code-system URI, not the extension StructureDefinition URL (review-fix). (10) **`PERSIST_VERSION` 6 → 7** (seeded feeds + 5 integration Cards + the new SUBMITTED List + the `IntegrationMessage` log shape).
 - **2026-07-24 · Phase 11 adversarial review-fix pass (SCALED: 4 lenses per convention 18 — bugs/correctness · plan-adherence · quality · RFP-fidelity).** Four Opus reviewers read PROGRESS + the phase doc + REQUIREMENTS I1-I5/D8 + the RFP integration section + the diff. **Verdicts:** no high-severity bugs (the HL7 field off-by-one, dedupe/transient/dead-letter/manual-intervention, correlation-locate, `wireIntegrationRetry` safety, determinism and audit completeness all verified clean); plan fully delivered with no scope-fence breaches or Decisions-log violations; copy rule (no en/em dashes in rendered text) and colour rules (no crimson button/status; teal-only actions) pass. **Confirmed and fixed (a test added where meaningful):** (bugs) **cross-List S13 was non-atomic** — it committed the time edit before the (refusable) move, so a locked target could strand a time change; now reassigns first; (bugs, defensive) a modify targeting a **soft-cancelled Card** now parks as manual-intervention instead of silently editing it (+test); (RFP-fidelity, medium) the **HL7 segment positions** were corrected to the RFP's annotated sample (procedure SCH-7, start time AIS-4); (RFP + plan, the top shared finding) the **NHI validator copy** now reconciles the RFP's "Modulus 24" label with the mod-11 algorithm the prototype uses and flags it a discovery item (the honesty flag previously lived only in a code comment); (RFP) the simulator callout no longer over-claims identity is "confirmed against the NHI service" (it is validated + deduped; a production build confirms via the Hub) and now frames the SFTP-batch → near-real-time move; the monitor copy drops the unmodeled "acknowledged per message" ACK claim; the **FHIR ethnicity `Coding.system`** is now distinct from the extension URL; (quality) a dead no-op block in `MappingRow` removed, `SEGMENT_TONES` no longer uses the teal action colour for decoration, `feedsForHospital` given a test consumer, and `integrationMonitor` fed the real integrations slice. **Noted, not treated as defects (with why):** the effect pane identifies the resulting Card as a text chip rather than a navigable link (cross-app shell; it names the Card and directs to the mobile app); `Callout`/`TabButton` duplicated from `DemoXero` kept local per the Phase-05 precedent for demo-surface chrome (extracting would touch the DONE Xero surface for marginal gain); the two-encoding status vocabulary between simulator and monitor is deliberate (the simulator wants the richer "attempt N" wording); St George's = PID-2 is the plan's explicit choice; the missing AIL/AIP personnel segments are honestly fenced (§10, routing is demo config). Re-greened: `tsc -b` + `npm run build` + `npx oxlint` clean, **447** vitest tests, **36** Playwright specs.
 
-## Discovered for later
+## Discovered for later — handoff list
 
-Small issues/ideas noticed mid-phase that belong to a later phase — park them here instead of
-scope-creeping.
+Small issues/ideas parked instead of scope-creeping. Phase 12 swept these into a prioritised handoff
+for whoever builds the real system (or runs Phase 13). None is a demo blocker; all S1 to S5 run clean.
 
-- **Phase 05 (DONE):** the design dashboard's "Who's free Wed 22 PM" names Dr Ngatai, but she is
-  seeded on leave until Wed 29 (the mockups are internally inconsistent here) — resolved: the web
-  dashboard's "who's free" panel reads the LIVE availability data, so its names legitimately differ
-  from the mockup.
-- **Phase 10+ (review advisory; NOT in the Phase 09 plan, deferred again):** holder-coherence flag —
-  the office contract picker offers every contract unfiltered, and the run derives the counterparty
-  FROM the resolved holder, so one wrong pick silently redirects an invoice (e.g. a billableParty-held
-  contract on a hospital-route procedure bills the clinic on a patient layout). A `reviewFlags`
-  advisory when the resolved holder is surprising for the route/list context (plus picker grouping)
-  was not a Phase 09 work item; still open (8th review, fee-maths F10/O3).
-- **Phase 09 (DONE):** the invoice document's pre-payment wording now reads `prepaymentDetail`
-  (deposit vs full) + the `prePayment` invoice kind (`InvoiceDocument` PaymentCategoryNote), so the
-  pre-procedure invoice and the balance invoice each carry their own wording.
-- **Phase 10 (reconciliation note):** GST rounds per invoice, so a funder-split procedure's summed
-  GST can differ from the unsplit figure by a cent (e.g. $19.88 + $11.93 vs $31.80) — expected;
-  keep in mind when the Xero mirror reconciles totals (8th review O2).
-- **Type 2 percent-discount** is implemented + pure-tested through the run (rate rounds to cents at
-  derivation) but no seeded card exercises it end-to-end; seed one if a demo ever needs it.
-- **§11 discovery-question candidate:** whether a Type 3 price list must key second-procedure rows
-  by `procedureOrdinal` (Phase 08's picked reading: an ordinal-agnostic row never prices an
-  additional procedure — it falls to BTM time-only) or whether some contracts intend a flat
-  per-occurrence price.
+**What a real-build team should read FIRST:** this file's *Binding conventions* and *Decisions log*
+(the readings we picked and why, with the settled rulings that must not be re-litigated), then
+`docs/rfp-reference/RFP.md` + `Data-Model-and-Flow.md`, then `docs/demo-guide/` for the working mental
+model. The prototype is a fake-backend demo (convention 4); the money/route/BTM maths in
+`src/domain/billing/` is pure and the real reference. The §11 discovery items surfaced in the app UI
+and the demo guide are the open questions to take to AA.
+
+**Prioritised open items:**
+
+1. **(P1) Holder-coherence advisory flag** (Phase 10+; NOT a Phase 09/12 work item, deferred again).
+   The office contract picker offers every contract unfiltered and the billing run derives the
+   counterparty FROM the resolved holder, so one wrong pick silently redirects an invoice (e.g. a
+   billableParty-held contract on a hospital-route procedure bills the clinic on a patient layout). A
+   `reviewFlags` advisory when the resolved holder is surprising for the route/list context, plus
+   picker grouping, is the fix (8th review, fee-maths F10/O3).
+2. **(P2) Type 3 second-procedure ordinal keying** (§11 discovery question). Whether a Type 3 price
+   list must key second-procedure rows by `procedureOrdinal` (Phase 08's picked reading: an
+   ordinal-agnostic row never prices an additional procedure and falls to BTM time-only) or whether
+   some contracts intend a flat per-occurrence price. A question for AA.
+3. **(P3) GST per-invoice rounding on funder splits** (expected, not a bug). GST rounds per invoice,
+   so a funder-split procedure's summed GST can differ from the unsplit figure by a cent (e.g.
+   $19.88 + $11.93 vs $31.80). Keep in mind when the Xero mirror reconciles totals (8th review O2).
+4. **(P4) Type 2 percent-discount has no seeded end-to-end card.** It is implemented and pure-tested
+   through the run (rate rounds to cents at derivation) but no seeded card exercises it end-to-end;
+   seed one if a demo ever needs it.
+
+**Resolved / informational (kept for the record):**
+- Phase 05: the design dashboard's "Who's free Wed 22 PM" names Dr Ngatai though she is seeded on
+  leave until Wed 29 (the mockups are internally inconsistent) — resolved: the panel reads LIVE
+  availability, so its names legitimately differ from the mockup.
+- Phase 09: the invoice document's pre-payment wording reads `prepaymentDetail` (deposit vs full) +
+  the `prePayment` invoice kind, so the pre-procedure invoice and the balance invoice each carry their
+  own wording.
+
+**Visual handoff for Phase 13:** Phases 00 to 12 are functionally complete and green; Phase 13 is the
+only remaining phase and is purely visual (the mobile atmospheric gradient + a badged tuning lab
+outside the phone frame, per the 2026-07-24 Decisions-log entry). It must preserve Phase 12's
+scenarios, flow and docs, and must not recolour the `#E4E8E6` backdrop, the action/status tokens, or
+the web/admin apps. The demo control panel, `docs/demo-guide/` and `README.md` deliberately describe
+visual work as not fully finished (Phase 13 upcoming) so nothing over-claims.
 
 ---
 
@@ -538,4 +556,31 @@ Append one entry per completed session, newest last, using this template:
 - **Phase 12 consumes first:** demo polish + the guided script (and the demo control panel's remaining "Jump to a scenario" placeholder). **Phase 13 then closes:** the completed mobile surfaces receive the brand-derived atmospheric background and temporary outer-frame tuning lab.
 - Integration creates route to fixed Souter forward Lists (demo config); a real feed would carry AIL/AIP location/personnel — out of the demo extractor's scope (§10), honestly noted in `messages.ts`.
 - `feedsForHospital` is provided per the plan and test-covered though not yet consumed by a UI surface.
+- Working tree left for the user to review and commit (agents do not commit — CLAUDE.md).
+
+### Phase 12 — Demo polish & guided script (2026-07-24)
+**Built:**
+- **Demo control panel finished** (`src/apps/demo/DemoControlPanel.tsx`) — the flat trigger stack is now four labelled `SectionHeading` groups: **Clock & reset** · **Scenario jumps · S1 to S5** · **Booking & integration events** · **Billing, money & exceptions**. New: a `ScenarioJumps` card whose five entries each **confirm → `resetDemo` → minimal staging → a result message + optional "Go to X" nav** (`useNavigate` + `APP_CONFIG`): S1 `processMessage('MSG-STG-1001')`; S2 reset then narrate the office day; S3 `submitList` Souter Mon 20 AM (split-billing) into the review queue; S4 enumerate the four exception sub-triggers; S5 point at audit/NHI/no-NHI-Xero/contract effective-dating. A **PDF arrival** trigger (`ingestPdfRow`, clean row, deduped by NHI) and an **automated jobs** card (Run reconciliation poll / archive job / payables). Two clock buttons added — **Next morning** and **Procedure day · 28 Jul** — backed by new `advanceClockToNextMorning` / `advanceClockToDate` in `store/clockActions.ts` (forward-only; the latter no-ops on today/past and its button disables once the day is reached). The disabled `COMING` "Jump to a scenario" stub is gone; every trigger still states what it does before firing, and demo-only badging holds (convention 13).
+- **S1 to S5 proven from a hard reset** — new `store/demoScenarios.test.ts` (7): S1 lands a DRAFT Card on Souter Tue 28 Jul AM + procedure-day clock jump; S2 review queue populated; S3 full spine (submit → authorise → billing run → Xero pair → webhook payment → payables); S4/S5 prerequisites; PDF create-then-dedupe. No seed/flow repairs were needed (every prerequisite was already seeded).
+- **Cross-app QA fixes** — the NHI-format info chip retinted off the crimson identity tokens to neutral (`shared/card/CardDetailBody.tsx`, convention 17a); the ListRow amber pill and the two `#157A49` success headings tokenized to `semantic.*`; the mobile-avatar crimson literals and two DayGrid `#172320` dots tokenized to `brand.*` / `neutral.ink` (review pass); dead `apps/Placeholder.tsx` removed. No en/em dashes in any app-facing copy.
+- **`docs/demo-guide/` consolidated into the single learning hub** — every file brought current (Phases 00 to 12 built and clickable, Phase 13 the only upcoming/visual phase; all stale "Planned / narrate only" readiness removed). The storyboard became `03-demo-script.md`, the canonical S1 to S5 presenter run-sheet (per-beat click/say/expected, discovery talking points, accident-recovery). `master-demo-guide.html` replaced with a fresh, self-contained, dependency-free page (inline CSS/JS, app tokens, tab + collapse nav; renders clean, no console errors) as the primary read-to-get-up-to-speed artifact.
+- **Phase artifact + README** — `docs/prototype-build/DEMO-SCRIPT.md` is a short pointer into the hub (deliberate single-source deviation, below); `aa-prototype/README.md` replaces the Vite boilerplate (what-this-is + prototype note, run scripts, exact stack, `src/` map, doc pointers).
+- A new `visual/phase12.spec.ts` click-through of the panel (scenario jump → nav, procedure-day jump, PDF ingest, job run) asserts a clean console; new clock-helper tests in `canvasRoll.test.ts`, whose reset-determinism test was broadened to snapshot ALL domain slices (integrations/billing/xero/dayNotes) after genuinely dirtying them (review-pass finding).
+
+**Deviations from plan:** (1) **`DEMO-SCRIPT.md` is a pointer, not a competing script** — the user's single-source-of-truth decision put the runnable script in `docs/demo-guide/03-demo-script.md`; the phase doc's literal "write DEMO-SCRIPT.md" and its "run from DEMO-SCRIPT.md alone" checklist item resolve via that pointer. (2) The plan's "PDF arrival" trigger ingests one clean row directly on the panel and points at the Integrations simulator for the full review-before-ingest flow (the panel is a quick trigger; the review UI already exists in Phase 11). No new features (scope fence held): every control wires pre-existing store actions.
+
+**Manual test checklist:**
+- ✓ From a hard reset, S1 to S5 each stage and run start to finish exactly as `03-demo-script.md` describes (proven by `demoScenarios.test.ts` + the `phase12` Playwright click-through; walked manually via the dev server).
+- ✓ Every switcher/nav/tab/drill-down leads somewhere real; the scenario-jump "Go to" buttons route correctly; no dead ends or lorem. (The COMING stub is gone.)
+- ✓ Reset returns identical pristine state — the broadened reset-determinism test deep-equals the full domain snapshot twice after dirtying every slice; invoice numbers restart (counters re-seeded).
+- ✓ Full suite + build green (457 Vitest, `tsc -b && vite build`); oxlint clean; console clean across the whole click-through (asserted in `phase12.spec.ts`); 37 Playwright specs pass.
+- ✓ Fresh-profile smoke: Playwright runs in fresh browser contexts (empty localStorage → seed → interact), i.e. the clear-localStorage → reseed → S1 to S5 path.
+- ✓ A cold presenter can run the demo from the hub alone (`03-demo-script.md` / the HTML): setup, S1 to S5, discovery points, recovery.
+
+**Adversarial review-fix pass (whole-prototype QA sweep, convention 18):** 3 independent Opus lenses — quality · bugs/correctness · plan-adherence — read PROGRESS + the phase doc + the code across all three apps and the demo surfaces (not just the diff). No high/medium findings. Confirmed and fixed: (quality) mobile-avatar crimson hex literals → `brand.*` (`MoreScreen`, `AvailabilityScreen` ×2), two DayGrid `#172320` → `neutral.ink`, dead `Placeholder.tsx` deleted, the panel's repeated hover handlers extracted to one `secondaryHover`; (bugs) the reset-determinism test under-covered pristine state (broadened + now dirties integrations/billing/xero/dayNotes), and the forward-only "Procedure day" jump gave no feedback when already past (button now disables once reached); (plan) the S4 script named card titles rather than button labels (script + HTML now name both). Verified-and-NOT-a-defect: the clock arithmetic (all edge cases sound), scenario-staging determinism, guard/lifecycle correctness, no `Date.now()`/`Math.random()`, the global event bus (no subscriber leak under the panel or tests), crimson-as-identity (today markers / count badge / avatars all design-authorised against the mockups) — none re-raised. Re-greened build + 457 Vitest + oxlint + 37 Playwright.
+
+**Known gaps / handoff notes:**
+- **Phase 13 is the only remaining phase and is purely visual** — the in-phone atmospheric gradient + a badged tuning lab outside the phone frame (2026-07-24 Decisions-log entry). It must preserve Phase 12's scenarios/flow/docs and must not recolour the outer backdrop, action/status tokens, or the web/admin apps. The build is NOT marked final (Phase 13 outstanding); the panel, demo guide and README describe visual work as not fully finished so nothing over-claims.
+- The prioritised open items and "read first" note live in the swept **Discovered for later — handoff list** above.
+- The 500 kB chunk-size build warning is pre-existing and expected for a single-bundle demo (no code-splitting); not a Phase 12 concern.
 - Working tree left for the user to review and commit (agents do not commit — CLAUDE.md).

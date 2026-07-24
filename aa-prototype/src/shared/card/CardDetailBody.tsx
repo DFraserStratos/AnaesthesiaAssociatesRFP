@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Copy, History, ImagePlus, Minus, Plus, Receipt, ShieldAlert, Stethoscope, XCircle } from 'lucide-react'
-import { accent, brand, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
   validateCardForBilling,
@@ -354,7 +354,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
         <Row label="NHI">
           <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
           {badge.formatLabel !== null && (
-            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: brand.base, background: brand.tint, borderRadius: 999, padding: '2px 8px' }}>
+            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: neutral.slate, background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: 999, padding: '2px 8px' }}>
               {badge.formatLabel}
             </span>
           )}

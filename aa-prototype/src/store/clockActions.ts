@@ -10,6 +10,7 @@
  * rolled day, source 'demo'.
  */
 
+import { differenceInCalendarDays, parseISO } from 'date-fns'
 import {
   advanceDays,
   advanceMinutes,
@@ -78,6 +79,31 @@ export function advanceClockMinutes(api: AppStoreApi, minutes: number): void {
 /** Advance the clock by whole days, rolling the canvas forward. */
 export function advanceClockDays(api: AppStoreApi, days: number): void {
   applyClock(api, advanceDays(api.getState().clock, days))
+}
+
+const MORNING_MINUTES = 8 * 60
+
+/**
+ * Advance forward to 08:00 on the next calendar day (rolling the canvas exactly
+ * as the day advances do). Forward-only, so it always lands on the following
+ * morning regardless of the current time of day.
+ */
+export function advanceClockToNextMorning(api: AppStoreApi): void {
+  const { minutesSinceMidnight } = api.getState().clock
+  const minutesToNextMorning = 24 * 60 - minutesSinceMidnight + MORNING_MINUTES
+  advanceClockMinutes(api, minutesToNextMorning)
+}
+
+/**
+ * Forward jump to 08:00 on `dateISO`, rolling the canvas over every day gained.
+ * No-op when the target is today or in the past (the clock cannot rewind).
+ */
+export function advanceClockToDate(api: AppStoreApi, dateISO: string): void {
+  const clock = api.getState().clock
+  const daysDelta = differenceInCalendarDays(parseISO(dateISO), parseISO(clock.todayISO))
+  if (daysDelta <= 0) return
+  const totalMinutes = daysDelta * 24 * 60 + (MORNING_MINUTES - clock.minutesSinceMidnight)
+  advanceClockMinutes(api, totalMinutes)
 }
 
 /** Reset to the pristine seed (clock included; the shell slice is preserved). */

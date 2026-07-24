@@ -110,10 +110,10 @@ functionality.
 
 ### Current prototype caveats
 
-- Receivables, productivity and overdue figures are seeded demo figures until the live money model
-  arrives in Phase 10.
-- GST activity is an honest empty state until Phase 10.
-- The Request Leave control is not yet a complete workflow.
+- Balances and GST activity are now live: the anaesthetist money views read the Billing Engine's
+  mirror (outstanding payables, receivables aging, GST transaction list), over seeded historical rows
+  plus anything a demo payment adds. They never query Xero directly.
+- The Request Leave control is a deliberately shallow affordance, not a complete workflow.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator
 
@@ -243,7 +243,9 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 
 ### Prototype status
 
-Planned for Phase 11. Do not present the current Integrations placeholder as working functionality.
+Built in Phase 11. The Admin Integrations monitor (Messages, Feed config, Surgeon PDFs, Data quality,
+Validators) and the badged Integrations simulator are clickable: fire a canned HL7/FHIR message, watch
+the HL7-to-FHIR transform, dedupe a replay, fix a feed mapping and reprocess a dead-letter.
 
 ## Secondary admin responsibility: finance and reconciliation
 
@@ -263,8 +265,9 @@ organisational assumption.
 
 ### Prototype status
 
-Invoice calculation and documents are complete in Phase 08. Xero pairs, payments, payables and live
-balance views are planned for Phase 10.
+Built. Invoice calculation and documents (Phase 08), then the Xero collection/payable pairs, payment
+webhook and reconciliation poll, payables run with separate paid-in and disbursed states, contact
+archiving and live anaesthetist balances (Phase 10) are all clickable.
 
 ## External actors, not prototype login personas
 

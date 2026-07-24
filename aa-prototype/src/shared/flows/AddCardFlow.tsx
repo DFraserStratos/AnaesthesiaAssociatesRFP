@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Camera, PencilLine } from 'lucide-react'
-import { accent, neutral, radius } from '../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import { Button, TickBadge } from '../ui'
 import { useSurface } from '../surface'
@@ -51,7 +51,7 @@ export function AddCardFlow({ open, listId, actor, onClose, onCreated }: AddCard
       {mode === 'done' && result !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
           <TickBadge size={72} animate />
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#157A49' }}>Card added</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Card added</div>
           <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center' }}>
             {result.reused
               ? 'Linked to an existing patient record by NHI. No duplicate was created.'

@@ -173,22 +173,31 @@ Payer -> ACCREC -> AA account -> ACCPAY -> Anaesthetist
 
 ## Prototype readiness
 
-### Safe now
+Snapshot date: **24 July 2026**. Phases 00 to 12 are built and clickable. Phase 13, a subtle
+mobile atmospheric background, is the only remaining phase and is purely visual.
+
+### Built and clickable
 
 - Mobile Lists, Cards, BTM, completion and submission
-- Web dashboard, Lists, availability and seeded accounts views
+- Web dashboard, Lists, availability and accounts views
 - Admin day view, changes, cover, review, authorisation, masters and audit
-- Phase 08 billing run, invoice documents and billed-List disappearance
+- Billing run, invoice documents and billed-List disappearance (Phase 08)
+- Pre-payment gate, post-op addendum and billing monitor with per-card isolation and retry (Phase 09)
+- Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
+- HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
+- The finished demo control panel with S1 to S5 scenario jumps (Phase 12)
 
-### Do not click as completed functionality yet
+### Present but honestly demo-only (keep the badge in view)
 
-- Balances driven by real payments
-- Billing Monitor
-- Xero/payment simulator
-- Integration simulator
-- Scenario jump controls
+- The Xero simulator, integration simulator and the control panel are labelled "demo simulation":
+  they simulate external systems and are not proposed end-user product screens.
+- The billing monitor itself is proposed product UI; only its simulation triggers are badged.
 
-These are planned for Phases 09 to 12.
+### Still upcoming
+
+- Phase 13 adds one brand-derived atmospheric gradient behind the in-phone mobile canvas, plus a
+  clearly badged tuning lab in the grey area outside the phone. It changes nothing in the workflows,
+  data, web or admin apps.
 
 ## RFP ambiguities: present as discovery decisions
 
@@ -213,7 +222,7 @@ Say:
 ### 3. Billing failure isolation
 
 - The RFP asks whether one failed Card blocks the whole List.
-- The planned prototype isolates the failed Card and bills the others.
+- The prototype isolates the failed Card and bills the others, then supports resolve-and-retry.
 
 ### 4. Monitoring location
 
@@ -241,7 +250,7 @@ Say:
 - The RFP requires payment before the procedure.
 - It does not specify how pre-procedure invoicing fits the normal authorised-List billing trigger or
   whether an override exists.
-- The planned prototype uses a visible completion block and a reasoned office override.
+- The prototype uses a visible completion block and a reasoned, audited office override.
 
 ### 9. Concurrency
 

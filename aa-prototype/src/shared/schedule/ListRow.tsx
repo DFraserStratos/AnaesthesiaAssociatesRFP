@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { elevation, neutral, radius } from '../../theme/tokens'
+import { elevation, neutral, radius, semantic } from '../../theme/tokens'
 import { freeDashedBorder, statusColours, type StatusKey } from '../../theme/statusColours'
 import { TickBadge } from '../ui/TickBadge'
 
@@ -53,7 +53,7 @@ function RightCluster({ right }: { right: ListRowRight }) {
   if (right.kind === 'toFinish') {
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Pill bg="#F9F0DC" color="#7C4D08">
+        <Pill bg={semantic.warning.tint} color={semantic.warning.onTint}>
           {right.count} to finish
         </Pill>
         <Chevron />

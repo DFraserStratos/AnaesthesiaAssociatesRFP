@@ -98,8 +98,8 @@ session.
 
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
-**Prototype readiness:** Manual phone booking and mobile photo/manual Card creation are ready.
-HL7/FHIR and surgeon-PDF ingestion are planned for Phase 11.
+**Prototype readiness:** Ready. Manual phone booking, mobile photo/manual Card creation, and the
+HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 
 ### Triggers
 
@@ -124,7 +124,8 @@ HL7/FHIR and surgeon-PDF ingestion are planned for Phase 11.
 - **Phone advice:** Kirsty creates the booking in Admin.
 - **Mobile/web manual Card:** Dr Souter enters the missing Card and its advised billing route.
 - **Photo:** Dr Souter photographs a paper Card; simulated extraction pre-fills a draft for review.
-- **PDF:** office reviews extracted rows before ingesting them. This is planned.
+- **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
+  NHI, so a re-ingest updates rather than duplicates).
 
 ### Handoff
 
@@ -361,7 +362,7 @@ two invoices. The prototype groups by counterparty: two invoices arise where fun
 
 **Primary actors:** Xero, Billing Engine, finance/reconciliation officer
 
-**Prototype readiness:** Planned for Phase 10
+**Prototype readiness:** Ready (Phase 10)
 
 ### Trigger
 
@@ -403,8 +404,8 @@ payment followed by two payables runs to prove no double payment.
 
 **Primary actors:** Office exception operator, Billing Engine and integration automation
 
-**Prototype readiness:** Audit, NHI validation and master controls partly ready; full workflows planned
-for Phases 09 to 11
+**Prototype readiness:** Ready. Audit, NHI validation, master controls and the full
+exception/payment/integration workflows (Phases 09 to 11) are built.
 
 ### Cases
 
@@ -412,7 +413,7 @@ for Phases 09 to 11
 
 - A patient-funded Procedure may require full or split pre-payment.
 - Payment is required before the procedure.
-- The prototype plans a visible completion block until the pre-invoice is paid or an office-only,
+- The prototype shows a visible completion block until the pre-invoice is paid or an office-only,
   reasoned override is recorded.
 - Exact timing relative to the normal `AUTHORISED` billing trigger is a prototype reading.
 
@@ -420,12 +421,12 @@ for Phases 09 to 11
 
 - A later pain consult or ward review can create another charge.
 - The original authorised Card stays immutable.
-- The prototype plans a linked addendum Card that follows its own submit, authorise and bill cycle.
+- The prototype adds a linked addendum Card that follows its own submit, authorise and bill cycle.
 
 #### Billing failure
 
 - A Card may fail rating after the List is authorised.
-- The prototype plans to isolate that Card, let the others invoice, correct the cause and retry.
+- The prototype isolates that Card, lets the others invoice, then corrects the cause and retries.
 - Card-level isolation is an explicit prototype choice; the RFP leaves it open.
 
 #### Integration failure
@@ -443,16 +444,17 @@ for Phases 09 to 11
 
 ## Workflow-to-prototype readiness
 
-| Workflow | Ready now | In flight | Planned |
-|---|---:|---:|---:|
-| Fixed canvas and Permanent Lists | Yes |  |  |
-| Manual phone booking and office changes | Yes |  |  |
-| Mobile/web manual and photo Card creation | Yes |  |  |
-| Cover request and office List reassignment | Yes |  |  |
-| BTM capture, completion and submit | Yes |  |  |
-| Office review and authorisation | Yes |  |  |
-| Invoice calculation and documents | Yes (Phase 08) |  |  |
-| Pre-payment, addendum, billing monitor/retry |  |  | Phase 09 |
-| Xero pairs, payment, balances and disbursement |  |  | Phase 10 |
-| HL7/FHIR/PDF ingestion and monitoring |  |  | Phase 11 |
-| Scenario jump controls and final rehearsal script |  |  | Phase 12 |
+| Workflow | Ready now | Built in |
+|---|---:|---|
+| Fixed canvas and Permanent Lists | Yes | Phase 02 |
+| Manual phone booking and office changes | Yes | Phase 06 |
+| Mobile/web manual and photo Card creation | Yes | Phases 03 to 05 |
+| Cover request and office List reassignment | Yes | Phases 03, 06 |
+| BTM capture, completion and submit | Yes | Phase 04 |
+| Office review and authorisation | Yes | Phase 07 |
+| Invoice calculation and documents | Yes | Phase 08 |
+| Pre-payment, addendum, billing monitor/retry | Yes | Phase 09 |
+| Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |
+| Scenario jump controls and guided script | Yes | Phase 12 |
+| Mobile atmospheric gradient (visual only) | Upcoming | Phase 13 |
