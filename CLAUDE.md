@@ -13,25 +13,57 @@ backend** — no real servers, APIs, or data. It exists to demonstrate every maj
 RFP's Candidate Architecture during vendor presentation workshops; it is **not** production
 software. It presents three apps behind one app-switcher — **Anaesthetist Mobile App**,
 **Anaesthetist Web App**, **Admin Web App** — plus demo-only simulators (Xero, HL7/FHIR
-integrations, a demo control panel). The build is organised into 14 phases (00–13).
+integrations, a demo control panel).
+
+## Current state
+
+**The build is finished.** All 14 phases (00 to 13) are DONE, the app runs end to end, and the
+Vitest + Playwright suites are green. Work from here is fixes, polish and demo preparation for the
+vendor workshops — not new phases.
+
+Before changing anything, read two things so you don't re-find a known item or reopen a settled one:
+PROGRESS.md's **Discovered for later** handoff list (open items P1 to P9) and
+`docs/prototype-build/prototype-review/00-SUMMARY.md` (the 2026-07-27 conformance review of the
+finished prototype against the whole RFP).
 
 ## Where things live
 
-- **Build plan** — `docs/prototype-build/`
-  - `PROGRESS.md` — the living record: binding conventions, phase status, decisions log.
-    **Read it first and update it last, every session.**
+- **The app** — `aa-prototype/` at the repo root. Never create a second app folder. Its `README.md`
+  is the developer entry point: scripts, stack versions and a `src/` folder map.
+- **Build record** — `docs/prototype-build/`
+  - `PROGRESS.md` — the living record: binding conventions, phase status, decisions log, per-phase
+    entries, open-items handoff. **Read it first and update it last, every session.**
   - `REQUIREMENTS.md` — the numbered requirements catalogue (P/D/M/W/A/B/X/I/N).
-  - `ROADMAP.md` — the 14-phase sequence, dependencies and milestone demos.
-  - `index.html` — a styled build page with a copy-paste kick-off prompt per phase.
-  - `phases/phase-00…13.md` — one detailed plan per phase.
-- **RFP & data model** — `docs/rfp-reference/`
-  - `RFP.md` — full RFP text (the source of truth for requirements); the RFP PDF sits alongside it.
-  - `Data-Model-and-Flow.md` / `.html` — our reading of the candidate data model, the List/Card
-    lifecycle, and the end-to-end booking → billing → payment flow.
+  - `prototype-review/` — the 2026-07-27 whole-RFP conformance review; start at `00-SUMMARY.md`.
+  - `ROADMAP.md`, `phases/phase-00…13.md`, `index.html` — the build plan (historical, but the phase
+    docs remain the best account of why each surface is the way it is).
+- **Demo guide** — `docs/demo-guide/`: personas, workflows, the S1 to S5 run sheet and the presenter
+  cheat sheet; `master-demo-guide.html` is the self-contained single-page version. Behaviour changes
+  that affect a scripted beat must be mirrored here.
+- **RFP & data model** — `docs/rfp-reference/`: `RFP.md` (the source of truth for requirements, PDF
+  alongside) and `Data-Model-and-Flow.md` / `.html` (our reading of the data model, the List/Card
+  lifecycle, and the booking → billing → payment flow).
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
 - **Assets** — `docs/assets/` (the AA logo).
-- **The app** — `aa-prototype/` at the repo root. It is created in Phase 00 and does not exist
-  before then. Never create a second app folder.
+
+## Working in the app
+
+PROGRESS.md's binding conventions (1 to 18) govern. The ones most easily broken:
+
+- **Fake backend only.** No `fetch`, no endpoints. Components never own domain state — they read and
+  write through typed store hooks, and every mutation goes through the audited `mutate()` wrapper
+  and the lifecycle guards in `src/store/`. Simulated external systems are store actions.
+- **Determinism.** Never `Date.now()`, `new Date()` or `Math.random()`. Time comes from the demo
+  clock (`src/domain/clock.ts`; `DEMO_TODAY` = 2026-07-21), randomness from the seeded RNG. Same
+  seed → identical data.
+- **Bump `PERSIST_VERSION`** (`src/store/appStore.ts`, currently 7) whenever the seed's shape or
+  content changes, or stale persisted state survives the reload.
+- **Billing maths is pure** — all fee/unit/route/split logic lives in `src/domain/billing/` with
+  Vitest tests; UI only formats results.
+- **Finish green:** `npm run build` and `npx vitest run` both pass before handing work back, then
+  update PROGRESS.md.
+- **Don't re-litigate.** The Decisions log records the readings we picked and why, across eight
+  review rounds. Several plausible-looking "bugs" are settled rulings — check there first.
 
 ## Design — follow the design files
 
@@ -42,17 +74,23 @@ doesn't already cover.
 - `docs/design/Design Language.dc.html` is the **token source of truth**: palette and neutrals, the
   six status colours (with tint / on-tint values, the hatched Unavailable and dashed Free
   treatments), type (Schibsted Grotesk UI + Spline Sans Mono data, tabular-nums), 4pt spacing,
-  radii, elevations, and the four named motion patterns. Transcribe tokens from it verbatim.
+  radii, elevations, and the four named motion patterns. It is transcribed into `src/theme/`, which
+  is what components read — keep the two in step.
 - The six sample pages — Mobile App, Mobile Availability, Web Dashboard, Web Availability,
   Admin Day, Admin Review — are the **layout reference** for their screens.
 - **Two hard rules:**
-  1. AA crimson `#A91E3E` is **identity only** (masthead, active nav, avatars) — never buttons,
-     never status. Deep teal `#0D6E63` is the only action colour.
+  1. AA crimson `#A91E3E` is **identity only** (masthead, active nav, avatars, and the mobile
+     canvas's faint atmospheric wash) — never buttons, never status. Deep teal `#0D6E63` is the only
+     action colour.
   2. Where a mockup simplified a business rule for demo purposes, **the RFP rule wins** (see
      PROGRESS.md's Decisions log).
 - Aesthetic: slick, clean, calm clinical confidence; **ease of use is the headline requirement**.
   Mobile is genuinely mobile-first (bottom sheets and slide-in cards, not desktop modals); the two
   web apps are proper desktop layouts.
+- The mobile atmosphere ships from `AA_DEFAULT_GRADIENT` (`src/theme/mobileGradient.ts`). The
+  temporary Gradient Lab that tunes it sits behind `GRADIENT_LAB_ENABLED`
+  (`src/theme/gradientLabGate.ts`) — the prototype's only feature flag, removable after sign-off
+  without touching the shipped look.
 
 ## Copy & typography
 
@@ -61,8 +99,12 @@ doesn't already cover.
   Use a middot `·`, a comma, or the word "to" for ranges (e.g. "Phases 03 to 04"); a plain hyphen
   `-` is fine where a joiner is genuinely needed. (The planning docs under `docs/` are exempt — this
   rule is about the prototype UI.)
-- The AA logo (`docs/assets/Anasthesia-logo-1.png`, copied to `aa-prototype/src/assets/aa-logo.png`)
-  is the wordmark everywhere a masthead appears — use the `Logo` component, not re-typeset text.
+- The wordmark is never re-typeset by hand. The cropped logo image
+  (`docs/assets/Anasthesia-logo-Short.png`, copied to `aa-prototype/src/assets/aa-logo.png`) renders
+  through the shared `Logo` component on light surfaces; the admin dark side nav uses the shared
+  `Wordmark` text component instead, because crimson-on-ink doesn't read.
+- Person names have one home: `src/shared/format.ts` (`drSurname`, `surnameOf`, `initialsOf`,
+  `nameWithoutTitle`), so the three apps can't drift on the same person.
 
 ## Git — do not commit or push
 
@@ -70,6 +112,5 @@ doesn't already cover.
 `git commit`, `git push`, or any command that creates commits or writes to a remote (including
 `git commit --amend`, `git rebase`, `git merge`, tag pushes, or PR creation).
 
-Make and stage file changes as needed, but stop there — leave the working tree and index for the
-user to review and commit. When work is ready, tell the user what changed. Do not commit it
-yourself.
+Make and stage file changes as needed, but stop there. When work is ready, tell the user what
+changed — do not commit it yourself.
