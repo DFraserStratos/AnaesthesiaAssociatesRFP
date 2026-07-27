@@ -40,7 +40,16 @@ test('attachments add and remove, and indexes never collide', async ({ page }) =
   for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Add photo' }).click()
   await expect(page.getByRole('button', { name: /^Remove Photo/ })).toHaveCount(3)
 
-  await page.getByRole('button', { name: 'Remove Photo 2' }).click()
+  // Hidden until the thumbnail is hovered, but mounted the whole time so a
+  // keyboard can still reach it.
+  const removeSecond = page.getByRole('button', { name: 'Remove Photo 2' })
+  await expect(removeSecond).toHaveCSS('opacity', '0')
+  await removeSecond.hover()
+  await expect(removeSecond).toHaveCSS('opacity', '1')
+  await removeSecond.focus()
+  await expect(removeSecond).toHaveCSS('opacity', '1')
+
+  await removeSecond.click()
   await expect(page.getByRole('button', { name: /^Remove Photo/ })).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Remove Photo 1' })).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Remove Photo 3' })).toHaveCount(1)

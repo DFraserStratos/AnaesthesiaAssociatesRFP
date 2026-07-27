@@ -148,6 +148,8 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   const [showValidation, setShowValidation] = useState(false)
   const [completeError, setCompleteError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  /** Which attachment is showing its Remove button (hover, or keyboard focus). */
+  const [hoveredPhoto, setHoveredPhoto] = useState<string | null>(null)
   const [overlay, setOverlay] = useState(false)
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
@@ -535,22 +537,30 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
         ) : (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {card.attachments.map((a) => (
-              <div key={a.id} style={{ width: 72, display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+              <div
+                key={a.id}
+                onMouseEnter={() => setHoveredPhoto(a.id)}
+                onMouseLeave={() => setHoveredPhoto((current) => (current === a.id ? null : current))}
+                style={{ width: 72, display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}
+              >
                 {a.dataUrl !== undefined ? (
                   <img src={a.dataUrl} alt={a.name} style={{ width: 72, height: 92, objectFit: 'cover', borderRadius: 8, border: `1px solid ${neutral.line}` }} />
                 ) : (
                   <div style={{ width: 72, height: 92, borderRadius: 8, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.mist, fontSize: 11 }}>{a.kind}</div>
                 )}
                 {/* On the thumbnail, not a row of Remove links: the target is
-                    what it deletes. Small and cornered because a scan is
-                    dropped rarely and by mistake never. */}
+                    what it deletes. It fades in on hover so a wall of scans
+                    reads as scans, and stays MOUNTED while hidden — focus
+                    reveals it, which is what keeps it reachable by keyboard. */}
                 {canEdit && (
                   <button
                     type="button"
                     aria-label={`Remove ${a.name}`}
                     title={`Remove ${a.name}`}
                     onClick={() => removePhoto(a.id)}
-                    style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: semantic.error.onTint, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: elevation.e1 }}
+                    onFocus={() => setHoveredPhoto(a.id)}
+                    onBlur={() => setHoveredPhoto((current) => (current === a.id ? null : current))}
+                    style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: semantic.error.onTint, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: elevation.e1, opacity: hoveredPhoto === a.id ? 1 : 0, transition: 'opacity 120ms ease-out' }}
                   >
                     <X size={13} strokeWidth={2.6} aria-hidden />
                   </button>
