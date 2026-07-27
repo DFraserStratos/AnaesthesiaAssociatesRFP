@@ -12,6 +12,7 @@ export interface ExtractionFields {
   nhi?: string
   name?: string
   dobISO?: string
+  phone?: string
   ethnicityCode?: string
   operation?: string
   rvgBaseCode?: string
@@ -19,19 +20,21 @@ export interface ExtractionFields {
   billingRoute?: BillingRoute
   insurerId?: string
   patientPaymentCategory?: PatientPaymentCategory
+  billingReference?: string
 }
 
 interface ManualCardFormProps {
   listId: string
   actor: Actor
   initial?: ExtractionFields
+  emptyLookupPrefill?: ExtractionFields & { nhi: string }
   attachment?: { name: string; kind: 'photo' | 'pdf' | 'other'; dataUrl?: string }
   onSaved: (result: { cardId: string; reused: boolean }) => void
 }
 
 type LookupState =
   | { kind: 'idle' }
-  | { kind: 'hit'; name: string }
+  | { kind: 'hit'; name: string; fullBooking: boolean }
   | { kind: 'miss' }
 
 const ROUTE_OPTIONS: { value: BillingRoute; label: string }[] = [
@@ -46,7 +49,7 @@ const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
   { value: 'insuredReimbursement', label: 'Reimbursement' },
 ]
 
-export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: ManualCardFormProps) {
+export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, attachment, onSaved }: ManualCardFormProps) {
   const rvgCodes = useAppStore((s) => s.masters.rvgCodes)
   const insurers = useAppStore((s) => s.masters.insurers)
   const billableParties = useAppStore((s) => s.masters.billableParties)
@@ -54,7 +57,7 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
   const [nhi, setNhi] = useState(initial?.nhi ?? '')
   const [name, setName] = useState(initial?.name ?? '')
   const [dob, setDob] = useState(initial?.dobISO ?? '')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState(initial?.phone ?? '')
   const [ethnicityCode, setEthnicityCode] = useState(initial?.ethnicityCode ?? '')
   const [operation, setOperation] = useState(initial?.operation ?? '')
   const [rvgBaseCode, setRvgBaseCode] = useState(initial?.rvgBaseCode ?? '')
@@ -63,7 +66,7 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
   const [insurerId, setInsurerId] = useState(initial?.insurerId ?? '')
   const [billablePartyId, setBillablePartyId] = useState('')
   const [category, setCategory] = useState<PatientPaymentCategory>(initial?.patientPaymentCategory ?? 'selfFundedPostProcedure')
-  const [billingReference, setBillingReference] = useState('')
+  const [billingReference, setBillingReference] = useState(initial?.billingReference ?? '')
 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
@@ -71,12 +74,25 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
   const rvgList = useMemo(() => Object.values(rvgCodes).sort((a, b) => a.description.localeCompare(b.description)), [rvgCodes])
 
   function runLookup() {
-    const result = lookupNhi(nhi)
+    const useEmptyPrefill = nhi.trim() === '' && emptyLookupPrefill !== undefined
+    const lookupValue = useEmptyPrefill ? emptyLookupPrefill.nhi : nhi
+    const result = lookupNhi(lookupValue)
     if (result.found) {
+      setNhi(lookupValue)
       setName(result.name)
       setDob(result.dobISO)
+      if (result.phone !== undefined) setPhone(result.phone)
       setEthnicityCode(result.ethnicityCode)
-      setLookup({ kind: 'hit', name: result.name })
+      if (useEmptyPrefill) {
+        if (emptyLookupPrefill.operation !== undefined) setOperation(emptyLookupPrefill.operation)
+        if (emptyLookupPrefill.rvgBaseCode !== undefined) setRvgBaseCode(emptyLookupPrefill.rvgBaseCode)
+        if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
+        if (emptyLookupPrefill.billingRoute !== undefined) setBillingRoute(emptyLookupPrefill.billingRoute)
+        if (emptyLookupPrefill.insurerId !== undefined) setInsurerId(emptyLookupPrefill.insurerId)
+        if (emptyLookupPrefill.patientPaymentCategory !== undefined) setCategory(emptyLookupPrefill.patientPaymentCategory)
+        if (emptyLookupPrefill.billingReference !== undefined) setBillingReference(emptyLookupPrefill.billingReference)
+      }
+      setLookup({ kind: 'hit', name: result.name, fullBooking: useEmptyPrefill })
     } else {
       setLookup({ kind: 'miss' })
     }
@@ -129,14 +145,14 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
           <div style={{ flex: 1 }}>
             <TextField label="NHI" value={nhi} onChange={(v) => { setNhi(v); setLookup({ kind: 'idle' }) }} placeholder="ABC1234" mono />
           </div>
-          <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === ''} style={{ minHeight: 48 }}>
+          <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined} style={{ minHeight: 48 }}>
             <Search size={16} strokeWidth={2.2} aria-hidden /> Look up
           </Button>
         </div>
         <DemoBadge label="NHI FHIR lookup · Digital Services Hub" />
         {lookup.kind === 'hit' && (
           <div style={{ fontSize: 13, color: semantic.success.onTint }}>
-            Found {lookup.name}. Details pre-filled, still editable.
+            Found {lookup.name}. {lookup.fullBooking ? 'Patient and booking details' : 'Patient details'} pre-filled, still editable.
           </div>
         )}
         {lookup.kind === 'miss' && (

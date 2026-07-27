@@ -98,3 +98,47 @@ test('admin phase 06 office edits a SUBMITTED card', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Cancel card/ })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-10-submitted-card.png', fullPage: true })
 })
+
+test('S2 phone-advice lookup fills and saves the complete booking', async ({ page }) => {
+  await page.goto('/admin')
+  await page.waitForLoadState('networkidle')
+
+  const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
+  await sharmaRow.getByRole('button').nth(1).click()
+  await page.getByRole('button', { name: 'Book (phone advice)' }).click()
+  await page.getByLabel('Hospital').selectOption({ label: "St George's" })
+  await page.getByLabel('Surgeon').selectOption({ label: 'Mr T. Hale' })
+  await page.getByRole('button', { name: 'Continue to add card' }).click()
+  await page.getByRole('button', { name: 'Enter manually' }).click()
+
+  const lookup = page.getByRole('button', { name: 'Look up' })
+  await expect(lookup).toBeEnabled()
+  await lookup.click()
+
+  await expect(page.getByLabel('NHI')).toHaveValue('DEM1239')
+  await expect(page.getByLabel('Name')).toHaveValue('Demo Patient')
+  await expect(page.getByLabel('Date of birth')).toHaveValue('1990-01-01')
+  await expect(page.getByLabel('Phone')).toHaveValue('021 555 0190')
+  await expect(page.getByLabel('Procedure code')).toHaveValue('20950')
+  await expect(page.getByLabel('Operation')).toHaveValue('Appendicectomy, laparoscopic')
+  await expect(page.getByLabel('Scheduled time')).toHaveValue('15:00')
+  await expect(page.getByLabel('Insurer (optional)')).toHaveValue('I-NIB')
+  await expect(page.getByLabel('Billing reference')).toHaveValue('STG-HALE-2107')
+  await expect(page.getByText(/Patient and booking details pre-filled/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Save card' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByText('Demo Patient', { exact: true })).toBeVisible()
+})
+
+test('generic manual-card lookup still requires an NHI', async ({ page }) => {
+  await page.goto('/mobile')
+  await page.waitForLoadState('networkidle')
+  await page.getByText('Southern Cross', { exact: false }).first().click()
+  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Enter manually', { exact: false }).first().click()
+
+  await expect(page.getByRole('button', { name: 'Look up' })).toBeDisabled()
+  await expect(page.getByLabel('Name')).toHaveValue('')
+  await expect(page.getByLabel('Procedure code')).toHaveValue('')
+})

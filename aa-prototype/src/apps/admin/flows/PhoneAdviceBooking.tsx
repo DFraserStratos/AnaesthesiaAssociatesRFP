@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
+import { ANAE, HOSP, SURG } from '../../../domain/seed'
 import { editList, useAppStore, type Actor, type ListPatch } from '../../../store'
 import { Button, FieldLabel } from '../../../shared/ui'
 import { AddCardFlow } from '../../../shared/flows'
@@ -22,6 +23,16 @@ const selectStyle = {
   padding: '0 12px',
   fontFamily: 'inherit',
   fontSize: 14,
+} as const
+
+const PHONE_ADVICE_LOOKUP_PREFILL = {
+  nhi: 'DEM1239',
+  rvgBaseCode: '20950',
+  operation: 'Appendicectomy, laparoscopic',
+  scheduledTime: '15:00',
+  billingRoute: 'hospital',
+  insurerId: 'I-NIB',
+  billingReference: 'STG-HALE-2107',
 } as const
 
 /**
@@ -74,8 +85,24 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
     onBooked(cardId)
   }
 
+  const isScriptedS2Booking =
+    list.anaesthetistId === ANAE.sharma &&
+    list.dateISO === '2026-07-21' &&
+    list.session === 'PM' &&
+    hospitalId === HOSP.stg &&
+    surgeonId === SURG.hale
+
   if (step === 'card') {
-    return <AddCardFlow open={open} listId={list.id} actor={actor} onClose={onClose} onCreated={onCardCreated} />
+    return (
+      <AddCardFlow
+        open={open}
+        listId={list.id}
+        actor={actor}
+        manualEmptyLookupPrefill={isScriptedS2Booking ? PHONE_ADVICE_LOOKUP_PREFILL : undefined}
+        onClose={onClose}
+        onCreated={onCardCreated}
+      />
+    )
   }
 
   return (

@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   RotateCcw,
   Zap,
-  MapPin,
   CalendarDays,
   Info,
-  ChevronsRight,
   AlertTriangle,
   Stethoscope,
   CreditCard,
@@ -19,10 +17,6 @@ import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import {
-  advanceClockDays,
-  advanceClockMinutes,
-  advanceClockToDate,
-  advanceClockToNextMorning,
   armHandoffFault,
   authoriseList,
   completeCard,
@@ -48,23 +42,13 @@ import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../../domain/seed'
 import { roundToCents } from '../../domain/billing/money'
 import { formatCurrency } from '../../shared/format'
+import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
 import { DemoBadge } from '../../shared'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
-
-/** The S1 booking's procedure day (Dr Souter's seeded Tue 28 Jul St George's List). */
-const S1_PROCEDURE_DAY = '2026-07-28'
-
-interface AdvanceButton {
-  label: string
-  run: () => void
-  icon?: LucideIcon
-  /** Disabled when the jump would be a no-op (the clock is forward-only). */
-  disabled?: boolean
-}
 
 function ControlCard({ icon: Icon, title, eyebrow, children }: {
   icon: LucideIcon
@@ -163,7 +147,6 @@ export function DemoControlPanel() {
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
 
   const dateLabel = format(parseISO(todayISO), 'EEEE d MMMM yyyy')
-  const procDayLabel = format(parseISO(S1_PROCEDURE_DAY), 'd MMM')
 
   // Phase 09 demo trigger: date out the COS ACC contract (no default fallback)
   // and authorise the seeded failure list; the wired billing run raises the
@@ -207,20 +190,7 @@ export function DemoControlPanel() {
     )
   }
 
-  const advances: readonly AdvanceButton[] = [
-    { label: '+15 min', run: () => advanceClockMinutes(useAppStore, 15) },
-    { label: '+1 hour', run: () => advanceClockMinutes(useAppStore, 60) },
-    { label: 'Next day', run: () => advanceClockDays(useAppStore, 1) },
-    { label: 'Next morning', run: () => advanceClockToNextMorning(useAppStore) },
-    { label: '+7 days', run: () => advanceClockDays(useAppStore, 7) },
-    {
-      label: `Procedure day · ${procDayLabel}`,
-      run: () => advanceClockToDate(useAppStore, S1_PROCEDURE_DAY),
-      icon: MapPin,
-      // Forward-only: once the clock reaches the procedure day the jump is a no-op.
-      disabled: todayISO >= S1_PROCEDURE_DAY,
-    },
-  ]
+  const advances = demoClockShortcuts(useAppStore, todayISO)
 
   return (
     <DemoSurface
@@ -234,15 +204,16 @@ export function DemoControlPanel() {
         <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
           Advancing past midnight rolls the canvas: new far edge days generate from Permanent Lists
           with the same deterministic generator the seed uses. Next morning jumps to 08:00 tomorrow;
-          Procedure day jumps forward to the S1 booking's operating day.
+          Procedure day jumps forward to the S1 booking's operating day. These advance controls are
+          also available from the live clock beside the app switcher.
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
           {advances.map((a) => {
-            const Icon = a.icon ?? ChevronsRight
-            const disabled = a.disabled === true
+            const Icon = a.icon
+            const disabled = a.disabled
             return (
               <button
-                key={a.label}
+                key={a.id}
                 type="button"
                 onClick={a.run}
                 disabled={disabled}

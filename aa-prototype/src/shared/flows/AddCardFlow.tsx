@@ -4,20 +4,21 @@ import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import { Button, TickBadge } from '../ui'
 import { useSurface } from '../surface'
-import { ManualCardForm } from './ManualCardForm'
+import { ManualCardForm, type ExtractionFields } from './ManualCardForm'
 import { PhotoCaptureFlow } from './PhotoCaptureFlow'
 
 interface AddCardFlowProps {
   open: boolean
   listId: string
   actor: Actor
+  manualEmptyLookupPrefill?: ExtractionFields & { nhi: string }
   onClose: () => void
   onCreated: (cardId: string) => void
 }
 
 type Mode = 'choose' | 'manual' | 'photo' | 'done'
 
-export function AddCardFlow({ open, listId, actor, onClose, onCreated }: AddCardFlowProps) {
+export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onClose, onCreated }: AddCardFlowProps) {
   const { Overlay } = useSurface()
   const [mode, setMode] = useState<Mode>('choose')
   const [result, setResult] = useState<{ cardId: string; reused: boolean } | null>(null)
@@ -45,7 +46,14 @@ export function AddCardFlow({ open, listId, actor, onClose, onCreated }: AddCard
         </div>
       )}
 
-      {mode === 'manual' && <ManualCardForm listId={listId} actor={actor} onSaved={handleSaved} />}
+      {mode === 'manual' && (
+        <ManualCardForm
+          listId={listId}
+          actor={actor}
+          emptyLookupPrefill={manualEmptyLookupPrefill}
+          onSaved={handleSaved}
+        />
+      )}
       {mode === 'photo' && <PhotoCaptureFlow listId={listId} actor={actor} onSaved={handleSaved} />}
 
       {mode === 'done' && result !== null && (

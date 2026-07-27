@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { APP_CONFIG, appIdForPath, type AppId } from './appConfig'
 import { AppSwitcher } from './AppSwitcher'
+import { DemoClockMenu } from './DemoClockMenu'
 import { neutral, brand } from '../theme/tokens'
 
 /**
@@ -96,6 +97,7 @@ export function AppShell() {
             </span>
           </div>
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
+          <DemoClockMenu />
         </div>
       </header>
 

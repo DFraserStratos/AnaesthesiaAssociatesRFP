@@ -355,9 +355,9 @@
       <div id="drive">
         <div class="task"><input type="checkbox" id="t0"><label for="t0">App switcher &#8594; <strong>Demo: Control Panel</strong> &#8594; Reset demo data &#8594; Confirm</label></div>
         <div class="task"><input type="checkbox" id="t1"><label for="t1">Scenario jumps &#8594; <strong>S1</strong> &#8594; Jump &#8594; Confirm jump</label></div>
-        <div class="task"><input type="checkbox" id="t2"><label for="t2">Click <strong>Procedure day · 28 Jul</strong>, then <strong>+1 hour</strong></label></div>
+        <div class="task"><input type="checkbox" id="t2"><label for="t2">Open the live clock beside the app switcher &#8594; <strong>Procedure day · 28 Jul</strong> &#8594; <strong>+1 hour</strong></label></div>
         <div class="task"><input type="checkbox" id="t3"><label for="t3">Go to Mobile app &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
-        <div class="task"><input type="checkbox" id="t4"><label for="t4">Choose code <strong>20950</strong> &#8594; Start now &#8594; control panel +1 hour &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit</label></div>
+        <div class="task"><input type="checkbox" id="t4"><label for="t4">Choose code <strong>20950</strong> &#8594; Start now &#8594; live clock +1 hour &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit</label></div>
       </div>
       <div class="celebrate" id="celebrate" style="display:none">
         <div class="tick">&#10003;</div>
@@ -681,7 +681,9 @@
       <li>Keep this guide open in a second tab, not the Data Inspector.</li>
     </ol>
     <p style="font-size:13px;color:var(--slate);margin:6px 0 0">The panel is grouped: Clock &amp; reset;
-    Scenario jumps (S1 to S5); Booking &amp; integration events; Billing, money &amp; exceptions.</p>
+    Scenario jumps (S1 to S5); Booking &amp; integration events; Billing, money &amp; exceptions. After
+    staging, use the live clock immediately to the right of the app switcher to advance time without
+    leaving the screen you are presenting.</p>
   </div>
 
   <details><summary>Direct URLs · jump straight to a beat</summary><div class="details-body">
@@ -743,13 +745,13 @@
     </div>
     <div class="beat">
       <h4>Beat 2 · the Card fills over the days</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Clock &amp; reset &#8594; Procedure day &#183; 28 Jul &#8594; +1 hour.</span></div>
+      <div class="row"><span class="k">Click</span><span>Stay on the Integration simulator. Open the live clock beside the app switcher &#8594; Procedure day &#183; 28 Jul &#8594; +1 hour in the same popup.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Patient and booking data can change right up to the day. The canvas rolls forward deterministically as the clock advances."</span></div>
       <div class="row"><span class="k">Expect</span><span>The clock reads Tuesday 28 July 2026, 9:00.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · capture on mobile and submit</h4>
-      <div class="row"><span class="k">Click</span><span>Mobile app &#8594; Tue 28 St George's List &#8594; Sarah Mitchell &#8594; choose <strong>20950 · Appendicectomy, laparoscopic</strong> &#8594; Start now. Return to the control panel &#8594; +1 hour. Return to Sarah &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office.</span></div>
+      <div class="row"><span class="k">Click</span><span>Mobile app &#8594; Tue 28 St George's List &#8594; Sarah Mitchell &#8594; choose <strong>20950 · Appendicectomy, laparoscopic</strong> &#8594; Start now. Without leaving Sarah, open the live clock beside the app switcher &#8594; +1 hour &#8594; close the popup &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. Once every Card is complete she submits the whole List; it is now read-only to her."</span></div>
       <div class="row"><span class="k">Expect</span><span>Sarah changes the List from 3 of 4 complete to 4 of 4; the fee updates and the List moves to SUBMITTED and into the Review queue.</span></div>
       <div class="row"><span class="k">Point at</span><span>The Card total is <strong>pinned to the bottom of the phone</strong>, so every ASA tap, modifier and time nudge ticks the units and the dollar figure while your thumb is still on the control. Scroll once and the masthead folds to a nav row to make the room for it; on a Card with more than one procedure the dock carries a chip per procedure, so its height never grows.</span></div>
@@ -771,9 +773,9 @@
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
-      <div class="row"><span class="k">Click</span><span>Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice). Choose St George's Hospital, Mr T. Hale and keep 13:00–17:00. Continue &#8594; Enter manually: Demo Patient, DOB 1 Jan 1990, code 20950, time 15:00, Hospital route &#8594; Save card &#8594; Done.</span></div>
+      <div class="row"><span class="k">Click</span><span>Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice). Choose St George's Hospital, Mr T. Hale and keep 13:00–17:00. Continue &#8594; Enter manually &#8594; Look up. The blank form fills NHI DEM1239, Demo Patient, DOB 1 Jan 1990, phone, code 20950, Appendicectomy, laparoscopic, time 15:00, Hospital route, informational nib and the St George's billing reference. Review &#8594; Save card &#8594; Done.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The Free block repaints as booked on the admin grid; the Card is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The Free block repaints as booked on the admin grid; the Card is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
@@ -810,7 +812,7 @@
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; choose the nib invoice &#8594; Full payment &#8594; Record payment &#8594; Replay last event (idempotency). Clock &#8594; Next day (poll catches a missed webhook). Run payables. Then Web app &#8594; Accounts.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; choose the nib invoice &#8594; Full payment &#8594; Record payment &#8594; Replay last event (idempotency). Live clock beside the app switcher &#8594; Next day (poll catches a missed webhook). Run payables. Then Web app &#8594; Accounts.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment authorises the payable proportionally. The apps read the Billing Engine's mirror, never Xero directly."</span></div>
       <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY authorised, duplicate webhook ignored, payables disburses, balances reflect it.</span></div>
     </div>

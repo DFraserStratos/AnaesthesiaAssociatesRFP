@@ -64,16 +64,26 @@ describe('lookupNhi — simulated Digital Services Hub lookup', () => {
     })
   })
 
+  it('returns the complete phone-advice demo patient', () => {
+    expect(lookupNhi('DEM1239')).toEqual({
+      found: true,
+      name: 'Demo Patient',
+      dobISO: '1990-01-01',
+      phone: '021 555 0190',
+      ethnicityCode: '11111',
+    })
+  })
+
   it('normalises input before looking up', () => {
     expect(lookupNhi(' cqy9304 ').found).toBe(true)
   })
 
   it('returns not-found for an unseeded NHI', () => {
-    expect(lookupNhi('ZAA0067')).toEqual({ found: false })
+    expect(lookupNhi('ABC1234')).toEqual({ found: false })
   })
 
   it('every canned NHI validates and every canned ethnicity code is in the demo subset', () => {
-    for (const nhi of ['CQY9304', 'WQS3635', 'JKL1188', 'MYY54SL', 'RUE29KR']) {
+    for (const nhi of ['CQY9304', 'WQS3635', 'JKL1188', 'MYY54SL', 'RUE29KR', 'DEM1239']) {
       expect(validateNhi(nhi).valid, `${nhi} should validate`).toBe(true)
       const hit = lookupNhi(nhi)
       expect(hit.found).toBe(true)

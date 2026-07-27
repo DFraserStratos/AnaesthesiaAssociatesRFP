@@ -85,6 +85,7 @@ export interface NhiLookupHit {
   found: true
   name: string
   dobISO: string
+  phone?: string
   ethnicityCode: string
 }
 export interface NhiLookupMiss {
@@ -93,10 +94,10 @@ export interface NhiLookupMiss {
 export type NhiLookupResult = NhiLookupHit | NhiLookupMiss
 
 /**
- * Canned lookup data — fictional patients keyed by NHIs our own generator
- * produced (`generateNhi` with `mulberry32(20260721)`, so every key validates;
- * both formats represented). The Phase 02 seed will include these patients so
- * the ad-hoc card-creation flow (Phase 03) can demo a live-feeling lookup.
+ * Canned lookup data — fictional patients keyed by valid NHIs, with both
+ * formats represented. Five were produced by the seeded generator and match
+ * the Phase 02 seed; DEM1239 is the scenario-only patient returned by S2's
+ * phone-advice lookup.
  */
 const CANNED_PATIENTS: ReadonlyMap<string, NhiLookupHit> = new Map([
   ['CQY9304', { found: true, name: 'Sarah Mitchell', dobISO: '1988-04-12', ethnicityCode: '11111' }],
@@ -104,6 +105,7 @@ const CANNED_PATIENTS: ReadonlyMap<string, NhiLookupHit> = new Map([
   ['JKL1188', { found: true, name: 'Losa Tuilagi', dobISO: '1992-01-27', ethnicityCode: '31111' }],
   ['MYY54SL', { found: true, name: 'Priya Nair', dobISO: '1969-11-08', ethnicityCode: '43111' }],
   ['RUE29KR', { found: true, name: 'Grace Park', dobISO: '2014-06-30', ethnicityCode: '42111' }],
+  ['DEM1239', { found: true, name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111' }],
 ])
 
 /**

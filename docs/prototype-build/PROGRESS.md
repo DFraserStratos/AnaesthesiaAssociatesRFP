@@ -56,6 +56,8 @@ Record every deviation from a phase doc, every resolved ambiguity, and every kil
 one-line why. Later sessions must not re-litigate entries here.
 
 - **2026-07-21 · Design run adopted as visual starting point** (user decision). Outputs in `docs/design/`; convention 17 added. Entries below capture its rulings.
+- **2026-07-28 · S2 phone-advice lookup fills the complete scripted booking** (user decision). The blank NHI lookup is enabled only for Dr Priya Sharma's Tue 21 PM phone-advice path after St George's and Mr T. Hale are selected. One click returns a unique valid fictional NHI and fills the patient, phone, operation/code, scheduled time, Hospital route, informational insurer and billing reference, with every value still editable. The shared mobile/web manual flow, photo-review flow and every other phone booking retain the original NHI-required patient-only lookup; no seed or `PERSIST_VERSION` change.
+- **2026-07-28 · Demo clock promoted into the global harness** (user decision). The presenter no longer leaves the screen being demonstrated just to advance time: a compact clock icon + live `h:mm` control now sits immediately to the right of the app switcher on every app and demo surface. Its popover carries all six established shortcuts (`+15 min`, `+1 hour`, `Next day`, `Next morning`, `+7 days`, `Procedure day · 28 Jul`), remains open for consecutive jumps, updates live through the existing persisted Zustand clock, and never navigates or reloads the current screen. The original control-panel clock and reset remain as the explanatory/recovery surface. Both clock UIs read one shared shortcut registry, while all arithmetic, canvas rolling and `dayAdvanced` jobs remain in `clockActions.ts`; no seed or `PERSIST_VERSION` change.
 - **2026-07-24 · Phase 13 final visual pick: "Brand whisper"; lab hidden behind a button; avatar contrast fixed** (user decisions). The user chose the faintest brand-crimson preset ("Brand whisper": `#ECCED5` at opacity 0.45, broad, fading by 84%) as the shipped default. The Gradient Lab now starts collapsed behind its toggle button on every viewport (it is a temporary tuning tool, kept out of the presentation). Because the crimson-tint avatar blended into the new crimson wash, the persona avatar was reworked (via a new shared `Avatar` component) to an **elevated-white chip** — the user's pick from a standalone 10-option comparison page (`aa-prototype/avatar-options.html`, non-routed): white fill, crimson initials, no ring, carrying the list cards' `elevation.e1` shadow so it lifts off the wash and white cards alike by elevation rather than colour. Applied to the header, the More profile card and the "My availability" avatars; colleague-list avatars keep the tint chip (a "you vs others" distinction). Final visual values still the user's sign-off.
 - **2026-07-24 · Phase 13 default → a soft brand-crimson wash (logo red as ambient identity)** (user decision, supersedes the teal-default choice below for the *default* only). The user noted mobile carried almost none of the logo's crimson (only the small avatar) and asked to bring the red in, "strong enough to feel but not overpowering". The default is now a single soft brand-derived crimson tint (`#ECCED5`, brand.base lightened ~78%) washed from the top and dissolving to white ("Brand dawn"). Crimson stays a TINT used purely as ambient identity (never a button or status colour), which keeps the mockups' crimson-is-identity rule (masthead/avatars) in spirit; teal remains the sole action/status colour untouched. The lab presets carry a red family (soft/dawn/warm/crown/whisper) plus teal, the original duo, mist and flat so the strength/hue is the user's dial. Final visual values remain the user's sign-off.
 - **2026-07-24 · Phase 13 default → a single calm teal hue; 10 switchable presets added to the lab** (user decision). On review the checked-in teal + brand-blush default read as an unwanted red/green pairing. The default is now a SINGLE `accent.tint` teal wash from the top ("Teal dawn") — teal is the app's own accent, so a lone teal reads clinical and unmistakably AA, white-first. The lab gained a `GRADIENT_PRESETS` grid of ten deliberate ideas to switch between and review (six single-teal placements, two weak warm-blush singles, a near-colourless neutral "mist", and a flat baseline); the two field controls were relabelled Primary/Secondary (any hue can go in either). Final visual values remain the user's sign-off via the lab.
@@ -758,3 +760,26 @@ Append one entry per completed session, newest last, using this template:
   reasoning, the seam changes and what was deliberately left out.
 - Verification (this item): `npm run build`, `npm run lint`, **543** Vitest tests across 44 files and
   **54** Playwright specs all green. Decision aid kept at `aa-prototype/dock-options.html`.
+- **Global demo clock added beside the app switcher.** `DemoClockMenu` shows the live time in the
+  harness and opens a viewport-safe, non-modal popover with the same six forward-only shortcuts as the
+  control panel. Actions leave the popover, current route and current Card in place; the date/time
+  updates synchronously, outside click and Escape dismiss it, and Escape restores focus to the
+  trigger. The shared `demoClockShortcuts` registry removes the old duplicate label/action list from
+  `DemoControlPanel`; reset remains control-panel-only and Procedure day still disables once reached.
+  The S1 and S3 instructions in `03-demo-script.md` and `master-demo-guide.html` now use the global
+  clock instead of navigating away from the active workflow.
+- Verification (this item): `npm run build` green (existing single-bundle warning only), `npm run
+  test` green (**543** Vitest tests across 44 files), `npm run lint` green, and focused Playwright
+  coverage green for both the new live/persisted clock flow and the original Phase 12 control-panel
+  flow. The browser check pins all six controls, keyboard/outside dismissal, route preservation,
+  Procedure day plus one hour, reload persistence, header ordering and viewport containment.
+- **S2 phone-advice lookup made one-click.** The exact scripted Sharma Tue 21 PM + St George's +
+  Hale combination now enables Look up on the blank manual form. It returns fictional valid NHI
+  `DEM1239` and fills Demo Patient, DOB, phone, 20950 Appendicectomy, 15:00, Hospital route,
+  informational nib and billing reference `STG-HALE-2107`; every field remains editable. The preset
+  is passed through the existing shared flow only for that exact List/context, so generic
+  mobile/web manual lookup, photo review and all other phone bookings are unchanged.
+- Verification (this item): `npm run build` green (existing single-bundle warning only), `npm run
+  test` green (**544** Vitest tests across 44 files), `npm run lint` green, and two focused
+  Playwright checks green: the complete S2 lookup-to-saved-drawer journey and the unchanged blank
+  generic mobile lookup.

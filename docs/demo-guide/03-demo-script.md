@@ -27,7 +27,9 @@ unfinished Margaret Ellison Card designed for live capture.
 
 The control panel is grouped: **Clock & reset**, **Scenario jumps (S1 to S5)**, **Booking & integration
 events**, and **Billing, money & exceptions**. Each scenario jump confirms first, resets the data,
-stages the scenario, and prints where to go next with one-click navigation.
+stages the scenario, and prints where to go next with one-click navigation. After staging, use the
+live clock immediately to the right of the app switcher to advance time without leaving the screen
+you are presenting.
 
 ## Direct URLs
 
@@ -107,8 +109,8 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 
 ### Beat 2: the Card fills over the days before theatre
 
-- **Click:** return to the control panel. Under Clock & reset, select **Procedure day · 28 Jul**, then
-  **+1 hour** so the live capture starts at 09:00.
+- **Click:** stay on the Integration simulator. Open the live clock beside the app switcher, select
+  **Procedure day · 28 Jul**, then **+1 hour** in the same popup so live capture starts at 09:00.
 - **Say:** "Between booking and theatre, patient and booking data can change right up to the day. The
   canvas rolls forward deterministically as the clock advances."
 - **Expected:** the clock reads Tuesday 28 July 2026, 9:00.
@@ -117,8 +119,8 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 
 - **Click:** switch to the **Anaesthetist Mobile App**, open the Tue 28 Jul St George's List, then Sarah
   Mitchell. Under Procedure code choose **20950 — Appendicectomy, laparoscopic**, then **Start now**.
-  Return to the control panel, select **+1 hour**, return to Sarah and select **Finish now → Mark
-  complete → Mark list completed → Submit to office**.
+  Without leaving Sarah, open the live clock beside the app switcher and select **+1 hour**. Close the
+  popup, then select **Finish now → Mark complete → Mark list completed → Submit to office**.
 - **Say:** "The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
   tiered Time plus Modifiers at her own value per unit. Once every active Card is complete she submits
   the whole List; it is now read-only to her and editable only by the office."
@@ -155,13 +157,16 @@ day's data is already seeded). Use **Go to Admin app**.
 
 - **Click:** open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**. Choose **St George's
   Hospital** and **Mr T. Hale**, keep 13:00 to 17:00, then **Continue to add card → Enter manually**.
-  Enter name **Demo Patient**, DOB **1 Jan 1990**, code **20950**, scheduled time **15:00**, keep
-  **Hospital**, then **Save card → Done**.
+  Select **Look up** on the blank form. It fills NHI **DEM1239**, **Demo Patient**, DOB **1 Jan
+  1990**, phone, code **20950**, **Appendicectomy, laparoscopic**, scheduled time **15:00**,
+  **Hospital**, the informational nib record and the St George's billing reference. Review the
+  result, then **Save card → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
-- **Expected:** the Free block repaints as booked on the admin day grid and the new Card sits on that
-  List (open the block's drawer to see it). The anaesthetist's own web and mobile views still label the
-  session Free for now; if asked, name that honestly as an open polish item on the phone-booking path.
+- **Expected:** the lookup fills the complete booking and leaves every field editable. The Free block
+  repaints as booked on the admin day grid and the new Card sits on that List (open the block's drawer
+  to see it). The anaesthetist's own web and mobile views still label the session Free for now; if
+  asked, name that honestly as an open polish item on the phone-booking path.
 
 ### Beat 3: illness cover, reassign a whole List
 
@@ -228,10 +233,10 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 ### Beat 3: payment, balances and disbursement
 
 - **Click:** control panel, Billing, money & exceptions, **Payment received (webhook)**: pick the
-  **nib** invoice, **Full payment**, **Record payment**. Then **Replay last event** to show idempotency. Advance
-  the clock **Next day** to show the reconciliation poll catch a missed webhook. Then **Run payables**
-  (or run it from the Admin app). Finally switch to the **Anaesthetist Web App**, Accounts, to show the
-  flat balances and GST activity update.
+  **nib** invoice, **Full payment**, **Record payment**. Then **Replay last event** to show idempotency.
+  Use the live clock beside the app switcher and select **Next day** to show the reconciliation poll
+  catch a missed webhook. Then **Run payables** (or run it from the Admin app). Finally switch to the
+  **Anaesthetist Web App**, Accounts, to show the flat balances and GST activity update.
 - **Say:** "Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment
   authorises the payable proportionally. The anaesthetist apps read the Billing Engine's mirror; they
   never query Xero directly."
