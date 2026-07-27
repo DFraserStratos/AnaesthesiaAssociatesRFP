@@ -5,7 +5,7 @@ import { statusColours } from '../../../theme/statusColours'
 import type { List, Session } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
 import { receivablesAgingFor, useAppStore } from '../../../store'
-import { formatCurrency } from '../../../shared/format'
+import { drSurname, formatCurrency } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
 import type { CoverTarget } from '../types'
@@ -64,8 +64,8 @@ export function DashboardScreen({
     [billing, schedule, masters, anaesthetistId, todayISO],
   )
 
-  // The mockup greets by surname ("Kia ora, Dr Souter").
-  const surname = personaName.replace(/^Dr\s+/, '').split(' ').pop() ?? personaName
+  // The mockup greets by surname ("Kia ora, Dr Souter"); mobile does the same.
+  const greetingName = drSurname(personaName)
 
   // Day summary: today's booked lists + active cards + lists ready to submit.
   const daySummary = useMemo(() => {
@@ -144,7 +144,7 @@ export function DashboardScreen({
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-            Kia ora, Dr {surname}
+            Kia ora, {greetingName}
           </h1>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{summaryLine}</div>
         </div>
@@ -326,7 +326,7 @@ export function DashboardScreen({
                           opacity: requested ? 0.7 : 1,
                         }}
                       >
-                        {e.name}
+                        {drSurname(e.name)}
                         {requested ? ' ✓' : ''}
                       </button>
                     )

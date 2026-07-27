@@ -130,3 +130,47 @@ export function shiftWeeks(dateISO: string, weeks: number): string {
 export function formatCurrency(n: number): string {
   return `$${n.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
+
+// ---------------------------------------------------------------------------
+// Person names — ONE short form across all three apps
+// ---------------------------------------------------------------------------
+//
+// An anaesthetist is stored under one full name ("Dr Melanie Souter"). Three
+// display shapes derive from it, and each has exactly one home here so the apps
+// can never drift apart on the same person:
+//
+//   full name   nav bar, More/profile card, availability rows, sheet headers
+//   `drSurname` greetings, who's-free cover chips, cover-request copy
+//   `initialsOf` avatars and grid initials
+//
+// The mockups' two greetings ("Kia ora, Dr Souter", mobile and web alike) and
+// the web dashboard's cover chips ("Dr Strand") set the short form. The mobile
+// cover sheet's mockup reached for a first name instead ("Ask Dr Melanie…");
+// that is the one place the design contradicted itself, and the surname wins.
+
+/** Drop a leading title: "Dr Melanie Souter" -> "Melanie Souter". */
+export function nameWithoutTitle(name: string): string {
+  return name.replace(/^Dr\.?\s+/i, '').trim()
+}
+
+/** "Dr Melanie Souter" -> "Souter" (A-Z sort key, admin row labels). */
+export function surnameOf(name: string): string {
+  const parts = nameWithoutTitle(name).split(/\s+/).filter((p) => p !== '')
+  return parts[parts.length - 1] ?? name
+}
+
+/** "Dr Melanie Souter" -> "Dr Souter": the short form the apps address people by. */
+export function drSurname(name: string): string {
+  const surname = surnameOf(name)
+  return surname === '' ? name : `Dr ${surname}`
+}
+
+/** "Dr Melanie Souter" -> "MS" (avatar / grid initials, at most two letters). */
+export function initialsOf(name: string): string {
+  return nameWithoutTitle(name)
+    .split(/\s+/)
+    .filter((p) => p !== '')
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .slice(0, 2)
+    .join('')
+}

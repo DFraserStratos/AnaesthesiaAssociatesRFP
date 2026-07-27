@@ -5,6 +5,7 @@
  */
 
 import type { Anaesthetist, Hospital, List, Session } from '../../domain/types'
+import { nameWithoutTitle, surnameOf } from '../../shared/format'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
 export const RULER_START = 7
@@ -41,18 +42,15 @@ export function blockGeometry(start: number, end: number): { left: string; width
 
 /** "Dr Melanie Souter" -> "Souter, Melanie" (grid row label). */
 export function surnameFirst(name: string): string {
-  const parts = name.replace(/^Dr\.?\s+/i, '').trim().split(/\s+/)
+  const parts = nameWithoutTitle(name).split(/\s+/).filter((p) => p !== '')
   if (parts.length < 2) return parts[0] ?? name
   const surname = parts[parts.length - 1]
   const rest = parts.slice(0, -1).join(' ')
   return `${surname}, ${rest}`
 }
 
-/** Just the surname (A-Z sort key). */
-export function surnameOf(name: string): string {
-  const parts = name.replace(/^Dr\.?\s+/i, '').trim().split(/\s+/)
-  return parts[parts.length - 1] ?? name
-}
+/** Just the surname (A-Z sort key) — the shared helper, re-exported for admin callers. */
+export { surnameOf }
 
 /**
  * "Souter · Forte Health AM" — the admin row label for a List, single-sourced

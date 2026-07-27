@@ -4,7 +4,7 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Card, List } from '../../../domain/types'
 import { isListBilled, useAppStore, useToday } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
-import { dayHeading, sessionStart } from '../../../shared/format'
+import { dayHeading, drSurname, sessionStart } from '../../../shared/format'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -42,7 +42,9 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   const todayISO = useToday()
   const [filter, setFilter] = useState<Filter>('week')
 
-  const firstName = personaName.replace(/^Dr\s+/, '').split(' ')[0] ?? personaName
+  // Greet by surname ("Kia ora, Dr Souter") — the same short form as the web
+  // dashboard, single-sourced in `drSurname`.
+  const greetingName = drSurname(personaName)
 
   const sections = useMemo(() => {
     const cardsByList = new Map<string, Card[]>()
@@ -168,7 +170,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '64px 20px 0', flex: 'none' }}>
-        <MobileHeader eyebrow={dayHeading(todayISO, todayISO)} title={`Kia ora, Dr ${firstName}`} initials={initials} />
+        <MobileHeader eyebrow={dayHeading(todayISO, todayISO)} title={`Kia ora, ${greetingName}`} initials={initials} />
       </div>
 
       <div style={{ display: 'flex', gap: 8, padding: '16px 20px 10px', flex: 'none' }}>

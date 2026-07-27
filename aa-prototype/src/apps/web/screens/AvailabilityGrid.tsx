@@ -6,6 +6,7 @@ import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../
 import type { List, Session } from '../../../domain/types'
 import { useAppStore } from '../../../store'
 import { StatusChip } from '../../../shared'
+import { initialsOf } from '../../../shared/format'
 import { Panel } from '../components'
 import type { CoverTarget } from '../types'
 
@@ -23,10 +24,6 @@ interface GridRow {
   am: List | undefined
   pm: List | undefined
   hasFree: boolean
-}
-
-function initialsOf(name: string): string {
-  return name.replace(/^Dr\s+/, '').split(' ').map((w) => w[0]).slice(0, 2).join('')
 }
 
 /**

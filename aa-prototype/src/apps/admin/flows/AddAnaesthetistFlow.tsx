@@ -64,7 +64,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
         <div style={{ fontSize: 18, fontWeight: 700 }}>Add an anaesthetist</div>
         <div style={{ fontSize: 12.5, color: neutral.slate }}>Adding an anaesthetist extends the canvas forward for them, two list slots a day.</div>
         <TextField label="Registration number (ID)" value={registrationNumber} onChange={setRegistrationNumber} mono placeholder="e.g. 41552" />
-        <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Dr Aroha Ngata" />
+        <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Dr Nadia Kerr" />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono />

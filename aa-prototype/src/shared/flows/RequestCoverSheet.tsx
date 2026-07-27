@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import { statusColours } from '../../theme/statusColours'
 import { requestCover, useAppStore, type Actor } from '../../store'
+import { drSurname } from '../format'
 import { Button, TextArea, TickBadge } from '../ui'
 import { useSurface } from '../surface'
 
@@ -58,8 +59,10 @@ export function RequestCoverSheet({
     onSent()
   }
 
-  const firstName = personName.replace(/^Dr\s+/, '')
-  const verb = kind === 'offer' ? 'Offer cover for' : `Ask ${firstName} to cover`
+  // The sheet header carries the full name; the body copy addresses the person
+  // by the apps' one short form ("Ask Dr Souter to cover").
+  const shortName = drSurname(personName)
+  const verb = kind === 'offer' ? 'Offer cover for' : `Ask ${shortName} to cover`
 
   return (
     <Overlay open={open} onClose={onClose}>
@@ -97,7 +100,7 @@ export function RequestCoverSheet({
           <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center' }}>
             {kind === 'offer'
               ? 'Your free session has been offered for cover. You will be notified when someone accepts.'
-              : `${firstName} has been asked to cover. You will be notified when they respond.`}
+              : `${shortName} has been asked to cover. You will be notified when they respond.`}
           </div>
           <Button variant="secondary" block onClick={onClose} style={{ marginTop: 4 }}>
             Done

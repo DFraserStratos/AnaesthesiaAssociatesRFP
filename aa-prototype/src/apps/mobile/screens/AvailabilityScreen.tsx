@@ -7,6 +7,7 @@ import { setAvailability, useAppStore, useToday, type Actor } from '../../../sto
 import { MobileHeader } from '../components'
 import { Avatar } from '../../../shared'
 import { RequestCoverSheet } from '../../../shared/flows'
+import { initialsOf } from '../../../shared/format'
 
 interface AvailabilityScreenProps {
   actor: Actor
@@ -207,7 +208,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
             <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 34, height: 34, borderRadius: 999, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flex: 'none' }}>
-                  {r.anaesthetist.name.replace(/^Dr\s+/, '').split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                  {initialsOf(r.anaesthetist.name)}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.anaesthetist.name}</span>
                 {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: statusColours.free.onTint, background: statusColours.free.tint, borderRadius: 999, padding: '3px 9px' }}>Free</span>}

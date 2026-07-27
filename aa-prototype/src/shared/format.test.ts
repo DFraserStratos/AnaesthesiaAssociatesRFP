@@ -1,7 +1,7 @@
 /** Phase 05 — the Monday-anchored week helpers behind the dashboard week strip. */
 
 import { describe, expect, it } from 'vitest'
-import { mondayOf, weekDays, shiftWeeks, formatCurrency } from './format'
+import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf } from './format'
 
 // DEMO_TODAY (2026-07-21) is a Tuesday; its week runs Mon 20 to Sun 26 Jul.
 
@@ -44,5 +44,39 @@ describe('formatCurrency', () => {
     expect(formatCurrency(845)).toBe('$845.00')
     expect(formatCurrency(2605.5)).toBe('$2,605.50')
     expect(formatCurrency(0)).toBe('$0.00')
+  })
+})
+
+describe('surnameOf', () => {
+  it('drops the title and keeps the last name', () => {
+    expect(surnameOf('Dr Melanie Souter')).toBe('Souter')
+    expect(surnameOf('Dr. Alistair Chen')).toBe('Chen')
+    expect(surnameOf('Kirsty W.')).toBe('W.')
+  })
+
+  it('survives a single word and an empty string', () => {
+    expect(surnameOf('Souter')).toBe('Souter')
+    expect(surnameOf('')).toBe('')
+  })
+})
+
+describe('drSurname', () => {
+  it('is the ONE short form: mobile and web greet identically', () => {
+    // The bug this pins: mobile greeted "Dr Melanie", web "Dr Souter".
+    expect(drSurname('Dr Melanie Souter')).toBe('Dr Souter')
+    expect(drSurname('Dr Oliver Strand')).toBe('Dr Strand')
+  })
+
+  it('does not title an empty name', () => {
+    expect(drSurname('')).toBe('')
+  })
+})
+
+describe('initialsOf', () => {
+  it('takes at most two upper-case initials, ignoring the title', () => {
+    expect(initialsOf('Dr Melanie Souter')).toBe('MS')
+    expect(initialsOf('Dr James Rutherford')).toBe('JR')
+    expect(initialsOf('Souter')).toBe('S')
+    expect(initialsOf('')).toBe('')
   })
 })
