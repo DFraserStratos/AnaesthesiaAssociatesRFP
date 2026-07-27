@@ -9,7 +9,6 @@ import { AsaCard } from './AsaCard'
 import { ProcedureCodeCard } from './ProcedureCodeCard'
 import { TimesCard } from './TimesCard'
 import { UnitsCard } from './UnitsCard'
-import { FeeSummaryPanel } from './FeeSummaryPanel'
 import { OverrideCard } from './OverrideCard'
 import { BillingLinesCard } from './BillingLinesCard'
 import { NotesCard } from './NotesCard'
@@ -53,9 +52,14 @@ interface BtmCaptureBlockProps {
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
  * Phase 01 calculator = the maths). Composition: context header → ASA →
- * procedure code → times → B/T/M + chips → ink fee panel (where the surface
- * places money inline; a desktop pins it in the rail instead) → override →
- * billing lines → notes. Write strategy (the logged capture-UX decision):
+ * procedure code → times → B/T/M + chips → override → billing lines → notes.
+ *
+ * No money object of its own: every surface now PINS the Card total (the desktop
+ * rail, the phone dock), and a per-procedure panel here as well would print the
+ * same dollar figure twice on the common one-procedure Card. Where a Card has
+ * several procedures, the pinned total names each one's contribution.
+ *
+ * Write strategy (the logged capture-UX decision):
  * write-through per tap for steppers / chips / ASA / nudges / stamps — each
  * tap is one real audited procedure.update and drives the fee tick —
  * commit-on-blur/Save for all free text. Never debounced.
@@ -80,7 +84,7 @@ export function BtmCaptureBlock({
   onRemove,
   onError,
 }: BtmCaptureBlockProps) {
-  const { Pair, feePlacement } = useSurface()
+  const { Pair } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const [sheetHint, setSheetHint] = useState(false)
@@ -235,8 +239,6 @@ export function BtmCaptureBlock({
         isAdditional={procedure.isAdditional}
         onError={onError}
       />
-
-      {feePlacement === 'inline' && <FeeSummaryPanel fee={fee} isAdditional={procedure.isAdditional} />}
 
       <Pair>
         <OverrideCard

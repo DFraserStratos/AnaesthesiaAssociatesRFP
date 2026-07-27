@@ -124,6 +124,10 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
   the whole List; it is now read-only to her and editable only by the office."
 - **Expected:** Sarah changes the List from **3 of 4 complete** to **4 of 4 complete**; the fee updates,
   and the List moves to `SUBMITTED` and into the office Review queue.
+- **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
+  modifier and time nudge ticks the units and the dollar figure while your thumb is still on the
+  control. Scroll down once and the masthead folds to a nav row to make the room for it. On a Card with
+  more than one procedure the dock also carries a chip per procedure, so its height never grows.
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
 interval); the RFP defines the tiers but not the rounding.

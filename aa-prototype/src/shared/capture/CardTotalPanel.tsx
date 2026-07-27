@@ -1,47 +1,27 @@
-import type { ReactNode } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
+import type { CardTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
-
-/** One line above the total: a procedure on a multi-procedure Card, or one of a
- *  single procedure's fee lines when it has more than one. */
-export interface CardTotalLine {
-  label: string
-  amount: number
-  /** A short qualifier, e.g. "time units only". */
-  note?: string
-}
-
-interface CardTotalPanelProps {
-  /** Summed billable units across the Card's procedures (`cardFee`). */
-  units: number
-  /** Summed fee across the Card's procedures (`cardFee`). */
-  fee: number
-  /** Breakdown rows; empty when there is nothing to break down. */
-  lines: readonly CardTotalLine[]
-  /** The applied rate, e.g. "FEE @ $26.50/UNIT", or null when procedures disagree. */
-  rateLabel: string | null
-  /** Price-override note, or null. */
-  overrideNote: string | null
-  /** The complete / amend bar, rendered inside the panel. Omitted on a locked Card. */
-  action?: ReactNode
-}
 
 /**
  * The desktop commit block: everything about what the Card comes to, and the
  * button that commits it, in one pinned object.
  *
- * On a surface with `feePlacement: 'pinned'` this is the ONLY place money
- * appears, so it carries what `FeeSummaryPanel` shows inline on the phone: the
- * applied rate (or FIXED CONTRACT PRICE on a Type 3 match), the line breakdown,
- * and the override note. On a one-procedure Card an inline panel as well would
- * simply print the same dollar figure twice (user finding, 2026-07-27).
+ * This is the ONLY place money appears on the desktop, so it carries the applied
+ * rate (or FIXED CONTRACT PRICE on a Type 3 match), the line breakdown, and the
+ * override note. A per-procedure panel as well would simply print the same
+ * dollar figure twice on the common one-procedure Card (user finding,
+ * 2026-07-27). `CardTotalStrip` is the phone's shape of the same object.
  *
- * It shares the procedure panel's value-tick and green flash, so one modifier
- * tap reads as one movement. Figures come from the Phase 01 calculator via
+ * The rail has room to stack a row per line, so it uses `lines` whichever kind
+ * they are and ignores `linesArePerProcedure` — the label carries the meaning
+ * either way. Only the phone, which chips them, has to know the difference.
+ *
+ * It shares the strip's value-tick and green flash, so one modifier tap reads as
+ * one movement on either surface. Figures come from the Phase 01 calculator via
  * `cardFee` / `procedureFee` — this only formats.
  */
-export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: CardTotalPanelProps) {
+export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: CardTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
 

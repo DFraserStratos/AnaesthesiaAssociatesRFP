@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AA · Pinned card total, 10 options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#172320; --slate:#58635F; --mist:#8A9490; --line-strong:#C9D1CE;
+    --line:#E2E7E5; --sunken:#EDF1EF; --bg:#F6F8F7; --surface:#FFFFFF;
+    --brand:#A91E3E; --brand-deep:#8C1533; --brand-tint:#F7E7EC;
+    --accent:#0D6E63; --accent-hover:#0A5A51; --accent-pressed:#084A43; --accent-tint:#E1F0ED;
+    --ok:#1E8E5A; --ok-tint:#E3F4EB; --ok-on:#157A49;
+    --warn:#A16207; --warn-tint:#F9F0DC; --warn-on:#7C4D08;
+    --err:#C2403C; --err-tint:#FAE9E7; --err-on:#9C332F;
+    --info:#2E66E5; --info-tint:#E8EEFC; --info-on:#1F44A3;
+    --scrim:rgba(23,35,32,0.32);
+    --e1:0 1px 2px rgba(23,35,32,0.05), 0 2px 6px rgba(23,35,32,0.05);
+    --e2:0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09);
+    --e3:0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18);
+    --font:'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, monospace;
+    --backdrop:#E4E8E6;
+    --flash:rgba(31,164,99,0.45);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--backdrop);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:1840px;margin:0 auto;padding:28px 24px 120px}
+  h1{font-size:32px;line-height:38px;font-weight:700;letter-spacing:-0.02em;margin:0 0 8px}
+  .lede{font-size:15px;line-height:22px;color:var(--slate);max-width:880px;margin:0 0 14px}
+  .note{font-size:13px;line-height:19px;color:var(--mist);max-width:880px;margin:0 0 8px}
+  .note code{font-family:var(--mono);font-size:12px;color:var(--slate)}
+  .note b{color:var(--slate);font-weight:600}
+
+  /* ---- The budget instrument -------------------------------------------- */
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin:22px 0 22px;box-shadow:var(--e1);max-width:980px}
+  .summary h2{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--mist);margin:0 0 4px}
+  .summary p{font-size:12px;line-height:17px;color:var(--mist);margin:0 0 12px;max-width:720px}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:left;font-size:13px;padding:7px 10px 7px 0;border-bottom:1px solid var(--sunken);
+    vertical-align:middle}
+  th{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist);
+    white-space:nowrap;vertical-align:bottom}
+  th .sub{display:block;font-weight:500;font-size:10.5px;text-transform:none;letter-spacing:0;
+    color:var(--line-strong)}
+  td.n{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right;padding-right:14px}
+  td.name{font-weight:600;min-width:270px}
+  tr.is-now td{color:var(--slate)}
+  tr.is-rec td.name{color:var(--accent-pressed)}
+  .delta{font-family:var(--mono);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .delta.up{color:var(--ok-on)} .delta.flat{color:var(--slate)} .delta.down{color:var(--err-on)}
+  /* Stacked 844px budget: masthead / working room / dock, to scale. */
+  .bud{display:flex;width:250px;height:11px;border-radius:99px;overflow:hidden;background:var(--sunken)}
+  .bud span{display:block;height:11px}
+  .b-h{background:var(--line-strong)}
+  .b-c{background:var(--accent)}
+  .b-d{background:var(--ink)}
+  .b-s{background:var(--slate)}
+  .legend{display:flex;gap:16px;margin:12px 0 0;font-size:11.5px;color:var(--mist)}
+  .legend i{display:inline-block;width:22px;height:8px;border-radius:99px;margin-right:6px;vertical-align:middle}
+
+  /* ---- Toolbar ---------------------------------------------------------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:0 0 8px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;
+    box-shadow:var(--e1);max-width:980px}
+  .ctl{display:flex;align-items:center;gap:8px}
+  .ctl > label{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  .seg2{display:flex;background:var(--sunken);border-radius:10px;padding:3px;gap:3px}
+  .seg2 button{border:none;background:transparent;font:inherit;font-size:13px;font-weight:600;
+    color:var(--slate);border-radius:7px;padding:6px 11px;cursor:pointer}
+  .seg2 button.on{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(23,35,32,0.2)}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:var(--slate);background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;padding:8px 13px;cursor:pointer}
+  .btn:hover{background:var(--sunken)}
+
+  /* ---- Option cards ---------------------------------------------------- */
+  .grid{display:flex;flex-wrap:wrap;gap:38px;margin-top:26px}
+  .opt{width:390px;display:flex;flex-direction:column;gap:10px}
+  .opt-head{display:flex;align-items:baseline;gap:10px}
+  .num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--surface);
+    background:var(--ink);border-radius:7px;padding:3px 7px;flex:none}
+  .num.now{background:var(--slate)}
+  .num.rec{background:var(--accent)}
+  .opt h3{font-size:17px;line-height:22px;font-weight:600;margin:0;flex:1}
+  .hbadge{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--slate);
+    background:var(--sunken);border-radius:7px;padding:3px 8px;flex:none;white-space:nowrap}
+  .hbadge.gain{background:var(--ok-tint);color:var(--ok-on)}
+  .hbadge.even{background:var(--warn-tint);color:var(--warn-on)}
+  .hbadge.loss{background:var(--err-tint);color:var(--err-on)}
+  .what{font-size:13px;line-height:19px;color:var(--slate);margin:0}
+  .meta{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .meta li{font-size:12px;line-height:17px;color:var(--mist);padding-left:16px;position:relative}
+  .meta li:before{position:absolute;left:0;font-weight:700}
+  .meta li.win:before{content:'+';color:var(--ok-on)}
+  .meta li.risk:before{content:'!';color:var(--warn-on)}
+  .meta li.ref:before{content:'\2192';color:var(--mist)}
+
+  /* ---- The phone ------------------------------------------------------- */
+  .phone{width:390px;height:844px;position:relative;border-radius:48px;overflow:hidden;
+    background:var(--bg);box-shadow:0 24px 48px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.12)}
+  /* The shipped atmosphere: broad teal field, quieter identity blush, white-first. */
+  .phone:before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 72% at 10% 4%, rgba(13,110,99,0.075), transparent 62%),
+      radial-gradient(96% 58% at 92% 0%, rgba(169,30,62,0.05), transparent 58%)}
+  .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:126px;height:37px;
+    border-radius:24px;background:#000;z-index:50}
+  .sbar{position:absolute;top:0;left:0;right:0;height:54px;z-index:10;display:flex;align-items:center;
+    justify-content:space-between;padding:14px 32px 0;pointer-events:none}
+  .sbar .t{font-family:-apple-system,'SF Pro',system-ui,sans-serif;font-weight:600;font-size:15px;
+    line-height:20px;font-variant-numeric:tabular-nums}
+  .sbar .g{display:flex;align-items:center;gap:7px}
+  .home{position:absolute;bottom:0;left:0;right:0;height:34px;z-index:60;display:flex;
+    justify-content:center;align-items:flex-end;padding-bottom:8px;pointer-events:none}
+  .home i{width:139px;height:5px;border-radius:100px;background:rgba(0,0,0,0.25)}
+  .screen{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+
+  /* Header, four treatments driven by one DOM */
+  .hdr{flex:none;background:var(--surface);border-bottom:1px solid var(--line);padding:60px 20px 14px;
+    position:relative;z-index:20}
+  .h-row1{display:flex;align-items:center;gap:10px;min-height:44px}
+  .back{font-size:15px;font-weight:600;color:var(--accent);flex:none;display:inline-flex;
+    align-items:center;gap:2px;cursor:pointer}
+  .h-inline{flex:1;min-width:0;display:flex;align-items:center;gap:8px;
+    opacity:0;max-width:0;overflow:hidden;white-space:nowrap;
+    transition:opacity 200ms ease-out, max-width 240ms cubic-bezier(0.2,0.8,0.2,1)}
+  .h-inline b{font-size:17px;font-weight:600;letter-spacing:-0.01em}
+  .h-large{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.01em;
+    max-height:32px;overflow:hidden;
+    transition:max-height 240ms cubic-bezier(0.2,0.8,0.2,1), opacity 180ms ease-out, margin 240ms}
+  .h-nhi{font-family:var(--mono);font-size:12px;color:var(--slate);margin-top:4px;
+    max-height:20px;overflow:hidden;
+    transition:max-height 240ms cubic-bezier(0.2,0.8,0.2,1), opacity 180ms ease-out, margin 240ms}
+  .h-op{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;
+    max-height:60px;overflow:hidden;
+    transition:max-height 240ms cubic-bezier(0.2,0.8,0.2,1), opacity 180ms ease-out, margin 240ms}
+  .h-op .op{font-size:14px}
+  .h-meta{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;
+    max-height:32px;overflow:hidden;
+    transition:max-height 240ms cubic-bezier(0.2,0.8,0.2,1), opacity 180ms ease-out, margin 240ms}
+  .fac{font-size:12px;color:var(--mist)}
+  /* Collapsed (scrolled) state, and the two static reductions. */
+  .hdr.coll .h-large, .hdr.coll .h-nhi, .hdr.coll .h-op, .hdr.coll .h-meta{
+    max-height:0;opacity:0;margin-top:0}
+  .hdr.coll .h-inline{opacity:1;max-width:260px}
+  .hdr.no-anim, .hdr.no-anim *{transition:none !important}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--info-tint);border-radius:999px;
+    padding:4px 10px;font-size:12px;font-weight:600;color:var(--info-on);flex:none}
+  .pill i{width:7px;height:7px;border-radius:99px;background:var(--info)}
+  .pill.sm{padding:3px 8px;font-size:11px}
+
+  /* Scroll region (transparent, so the atmosphere shows through as it does in app) */
+  .scroll{flex:1;overflow:auto;padding:14px 20px 130px;display:flex;flex-direction:column;gap:12px;
+    scrollbar-width:thin}
+
+  /* Dock — MobileFooter verbatim: absolute, blurred, 14/20/32 */
+  .dock{position:absolute;left:0;right:0;bottom:0;z-index:45;padding:14px 20px 32px;
+    background:rgba(246,248,247,0.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:flex;flex-direction:column;gap:8px}
+  .dock.plain{background:rgba(246,248,247,0.92)}
+  .dock.pillrow{align-items:flex-end}
+
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;
+    display:flex;flex-direction:column;gap:10px}
+  .card.g14{gap:14px}
+  .cap{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  .cap-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .link{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:none;
+    padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+  .link.sm{font-size:13px}
+  .caption{font-size:12px;line-height:16px;color:var(--mist)}
+  .caption.slate{color:var(--slate)}
+  .row{display:flex;align-items:baseline;gap:10px}
+  .row .rlbl{width:96px;flex:none;font-size:12px;color:var(--mist)}
+  .row .rval{flex:1;font-size:14px}
+  .srow{display:flex;align-items:center;gap:12px;min-height:44px}
+  .srow .lbl{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .srow .lbl b{font-size:15px;font-weight:600}
+  .step{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);font:inherit;font-size:20px;font-weight:600;color:var(--slate);cursor:pointer}
+  .val{width:36px;text-align:center;font-family:var(--mono);font-size:20px;font-weight:700;
+    font-variant-numeric:tabular-nums;flex:none}
+  .seg{display:flex;background:var(--sunken);border-radius:12px;padding:4px;gap:4px}
+  .seg button{flex:1;height:44px;border-radius:9px;border:none;font:inherit;font-size:16px;
+    font-weight:600;cursor:pointer;background:transparent;color:var(--slate)}
+  .seg button.on{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(23,35,32,0.2)}
+  /* Modifier band track — ModifierChips mobile arrangement verbatim */
+  .band{display:flex;flex-direction:column;gap:6px}
+  .band > .bl{font-size:12px;font-weight:600;color:var(--slate)}
+  .track{display:grid;grid-template-columns:1fr 1fr;background:var(--sunken);border-radius:12px;
+    padding:4px;gap:4px}
+  .tseg{min-width:0;height:44px;padding:0 8px;border-radius:9px;border:none;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;background:transparent;color:var(--slate);display:flex;
+    flex-direction:column;align-items:center;justify-content:center;line-height:1.15;white-space:nowrap;
+    transition:background 150ms,color 150ms}
+  .tseg.on{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(23,35,32,0.2)}
+  .tseg .u{font-family:var(--mono);font-size:11px;font-weight:600;opacity:0.72}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:11px 14px;border-radius:999px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    transition:background 150ms,border-color 150ms;background:var(--surface);color:var(--slate);
+    border:1.5px solid var(--line);text-align:left}
+  .chip.on{background:var(--accent-tint);color:var(--accent-hover);border-color:var(--accent)}
+  .ta{width:100%;min-height:64px;border-radius:10px;border:1px solid var(--line);padding:12px;
+    font:inherit;font-size:15px;resize:none;background:var(--bg);color:var(--ink)}
+  .banner{background:var(--accent-tint);color:var(--accent-pressed);border-radius:10px;padding:10px 12px;
+    font-size:13px;line-height:18px}
+  .routechip{padding:4px 10px;border-radius:999px;background:var(--sunken);font-size:12px;font-weight:600;
+    color:var(--slate);flex:none}
+  .phdr{display:flex;align-items:baseline;gap:10px}
+  .phdr .l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .phdr .ord{font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--mist)}
+  .phdr .nm{font-size:16px;font-weight:600}
+  .addbtn{min-height:48px;border-radius:10px;border:1px solid var(--accent);background:var(--surface);
+    font:inherit;font-size:15px;font-weight:600;color:var(--accent);cursor:pointer;width:100%}
+
+  /* Ink money objects */
+  .ink{background:var(--ink);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .ink .k{font-size:11px;line-height:1.25;font-weight:600;letter-spacing:0.06em;
+    color:rgba(255,255,255,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ink .big{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  .ink .col{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .ink .col.r{align-items:flex-end}
+  .ink .fig{display:flex;align-items:baseline;gap:5px}
+  .num-u{font-family:var(--mono);font-size:28px;line-height:1;font-weight:700;color:#fff;
+    font-variant-numeric:tabular-nums}
+  .un{font-family:var(--font);font-size:12px;line-height:1;font-weight:600;color:rgba(255,255,255,0.55)}
+  .num-f{font-family:var(--mono);font-size:28px;line-height:1;font-weight:700;color:#fff;
+    font-variant-numeric:tabular-nums}
+  .fwrap{border-radius:8px;padding:2px 8px;margin-right:-8px;background:rgba(31,164,99,0);
+    transition:background 240ms ease-out}
+  .fwrap.flash{background:var(--flash)}
+  .lines{display:flex;flex-direction:column;gap:6px}
+  .lrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:12px;
+    color:rgba(255,255,255,0.7);padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.14)}
+  .lrow .lt{min-width:0;display:flex;flex-direction:column;gap:1px}
+  .lrow .lt span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lrow .lnote{font-size:11px;color:rgba(255,255,255,0.45)}
+  .lrow .la{font-family:var(--mono);flex:none;font-variant-numeric:tabular-nums}
+
+  /* The compact strip (options 03, 04, 06, 08 and the combos) */
+  .strip{background:var(--ink);border-radius:12px;padding:11px 14px;display:flex;align-items:center;
+    justify-content:space-between;gap:10px}
+  /* With several procedures the strip stacks: the chip row is part of the money
+     object, exactly as CardTotalPanel's line rows are, only laid out across. */
+  .strip.stack{flex-direction:column;align-items:stretch;gap:9px}
+  /* flex:1 matters in the unstacked case, where .sfigs is the row's only child
+     and would otherwise shrink to its content, stranding the fee mid-strip. */
+  .strip .sfigs{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .strip .schips{display:flex;gap:6px;overflow:hidden;padding-bottom:9px;
+    border-bottom:1px solid rgba(255,255,255,0.14)}
+  .strip .su{display:flex;align-items:baseline;gap:5px}
+  .strip .su em{font-family:var(--font);font-style:normal;font-size:11px;line-height:1;font-weight:600;
+    letter-spacing:0.04em;color:rgba(255,255,255,0.55)}
+  .strip .sr{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0}
+  .strip .rate{font-size:10px;line-height:1;font-weight:600;letter-spacing:0.05em;
+    color:rgba(255,255,255,0.45);white-space:nowrap}
+  .strip .sf{font-family:var(--mono);font-size:24px;line-height:1;font-weight:700;color:#fff;
+    font-variant-numeric:tabular-nums}
+  .strip.tap{cursor:pointer}
+  /* Delta tape (option 04) */
+  .tape{flex:1;min-width:0;display:flex;justify-content:center;overflow:hidden}
+  .tape .t{display:flex;align-items:baseline;gap:5px;max-width:100%;min-width:0;
+    font-size:11.5px;line-height:1.35;font-weight:600;color:#fff;background:rgba(31,164,99,0.32);
+    border:1px solid rgba(31,164,99,0.5);border-radius:999px;padding:3px 9px;
+    animation:tapein 1600ms cubic-bezier(0.2,0.8,0.2,1) forwards}
+  .tape .t.minus{background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.22)}
+  /* The sign never truncates; the label gives way first. */
+  .tape .t b{flex:none;font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums}
+  .tape .t i{min-width:0;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @keyframes tapein{
+    0%{opacity:0;transform:translateY(9px)}
+    14%{opacity:1;transform:translateY(0)}
+    72%{opacity:1;transform:translateY(0)}
+    100%{opacity:0;transform:translateY(-7px)}
+  }
+  /* Procedure fee chips (option 08) */
+  .pchip{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,0.08);
+    border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.62);
+    white-space:nowrap}
+  .pchip.live{background:rgba(255,255,255,0.16);color:#fff}
+  .pchip b{font-family:var(--mono);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  /* Fee pill (option 07) */
+  .feepill{display:inline-flex;align-items:baseline;gap:8px;background:var(--ink);border-radius:999px;
+    padding:8px 14px;box-shadow:var(--e2);cursor:pointer;align-self:flex-end}
+  .feepill .pu{font-family:var(--mono);font-size:12px;line-height:1;font-weight:600;
+    color:rgba(255,255,255,0.6);font-variant-numeric:tabular-nums}
+  .feepill .pf{font-family:var(--mono);font-size:18px;line-height:1;font-weight:700;color:#fff;
+    font-variant-numeric:tabular-nums}
+  /* Grabber (option 06) */
+  .grab{align-self:center;width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,0.30);
+    border:none;padding:0;cursor:pointer;margin:-2px 0 2px}
+  /* Sticky top strip (option 05) */
+  .sticky{position:sticky;top:0;z-index:30;margin:-14px -20px 0;padding:10px 20px 10px;
+    background:rgba(246,248,247,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+
+  /* CTA */
+  .cta{width:100%;height:56px;border:none;border-radius:14px;background:var(--accent);color:#fff;
+    font:inherit;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--e2);
+    display:flex;align-items:center;justify-content:center;gap:10px}
+  .cta.money{justify-content:space-between;padding:0 20px}
+  .cta .cf{font-family:var(--mono);font-size:19px;line-height:1;font-weight:700;
+    font-variant-numeric:tabular-nums}
+  .cta .cu{font-family:var(--mono);font-size:11px;line-height:1;font-weight:600;opacity:0.72;margin-left:6px}
+  .cta.quiet{background:var(--surface);color:var(--accent);border:1px solid var(--accent);box-shadow:none}
+
+  .hint{position:absolute;left:0;right:0;bottom:0;z-index:70;pointer-events:none;
+    display:flex;justify-content:center;padding-bottom:6px}
+  .hint span{font-size:10.5px;font-weight:600;background:rgba(23,35,32,0.66);color:#fff;
+    border-radius:999px;padding:3px 9px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pinned card total · 10 options</h1>
+  <p class="lede">
+    On the desktop the ink calculation block is pinned to the top of the commit rail, so a modifier tap
+    ticks the fee in place. On the phone the same block sits inline, mid-scroll, and the tap that changes
+    the number often happens with the number off screen. Below: the current build, ten ways to pin it, and
+    three recommended combinations, each rendered at true 390 x 844 with the real tokens. <b>Tap the band
+    segments, the chips and the steppers</b> in any phone; the figures roll on the real 320 ms tween with
+    the green flash.
+  </p>
+  <p class="note">
+    Decision aid only. Nothing in the app changed. Standalone file
+    (<code>aa-prototype/dock-options.html</code>) outside the router and bundle, following the
+    <code>modifier-options.html</code> precedent. Chrome is transcribed from
+    <code>PhoneFrame.tsx</code> (390 x 844, 60px header inset) and <code>SurfaceProvider.tsx</code>
+    (<code>MobileFooter</code>'s 14 / 20 / 32 padding, blur 14, the absolute bar); the money objects from
+    <code>FeeSummaryPanel.tsx</code> and <code>CardTotalPanel.tsx</code>; the modifier controls from
+    <code>ModifierChips.tsx</code>. Card: appendicectomy, base 5 from RVG, 4 time units, ASA II seeding +1,
+    $26.50 per unit; the second procedure bills time units only.
+  </p>
+  <p class="note">
+    <b>Options 01 to 10 keep today's header</b>, so each is judged on its dock alone. The three
+    combinations spend the header reclaim as well. Use the controls to force one header treatment across
+    every phone and compare like for like.
+  </p>
+
+  <div class="summary">
+    <h2>Vertical budget, measured live</h2>
+    <p>
+      844px of device, minus the masthead, minus whatever is permanently docked. What is left is the
+      working room: the space a captured card actually gets. Delta is against the current build under the
+      same settings, so it answers the real question directly.
+    </p>
+    <table>
+      <thead><tr>
+        <th>Option</th>
+        <th style="text-align:right">Masthead<span class="sub">working · at rest</span></th>
+        <th style="text-align:right">Docked</th>
+        <th style="text-align:right">Working room</th>
+        <th style="text-align:right">Vs now</th>
+        <th>844px, to scale</th>
+      </tr></thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+    <p class="legend">
+      <span><i class="b-h"></i>Masthead</span>
+      <span><i class="b-c"></i>Working room</span>
+      <span><i class="b-s"></i>Sticky strip</span>
+      <span><i class="b-d"></i>Docked</span>
+    </p>
+  </div>
+
+  <div class="toolbar">
+    <div class="ctl">
+      <label>Procedures</label>
+      <div class="seg2" id="ctl-procs"></div>
+    </div>
+    <div class="ctl">
+      <label>Header</label>
+      <div class="seg2" id="ctl-header"></div>
+    </div>
+    <button class="btn" id="reset">Reset every card</button>
+    <button class="btn" id="remeasure">Re-measure</button>
+  </div>
+  <p class="note" style="max-width:980px">
+    The <b>Collapsing</b> header is live: scroll any phone and the masthead folds to a 44px nav row, the
+    way iOS large titles do. Every phone opens scrolled to the modifier block, which is where the taps are.
+  </p>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+// ===========================================================================
+// Card data, transcribed from the app
+// ===========================================================================
+const RATE = 26.5
+const BASE_UNITS = 5              // RVG 42702-ish base for an appendicectomy
+const ASA_UNITS = { AS1:0, AS2:1, AS3:3, AS4:4 }
+
+/** MODIFIER_CODES minus the AS group (AsaCard owns it), in master-table order. */
+const CODES = [
+  { code:'PA1', group:'PA', units:1, label:'Phone pre-assessment, brief',  seg:'Phone, brief' },
+  { code:'PA2', group:'PA', units:2, label:'Phone pre-assessment, complex',seg:'Phone, complex' },
+  { code:'PA3', group:'PA', units:3, label:'Pre-assessment, standard',     seg:'Standard' },
+  { code:'PA4', group:'PA', units:4, label:'Pre-assessment, complex',      seg:'Complex' },
+  { code:'PA5', group:'PA', units:1, label:'Phone follow-up' },
+  { code:'A1',  group:'A',  units:1, label:'Very old',       seg:'Very old' },
+  { code:'A2',  group:'A',  units:2, label:'Very young',     seg:'Very young' },
+  { code:'ASE', group:'ASE',units:2, label:'Emergency' },
+  { code:'OB1', group:'OB', units:0, label:'BMI under 30',   seg:'Under 30' },
+  { code:'OB2', group:'OB', units:1, label:'BMI 30 to 35',   seg:'30 to 35' },
+  { code:'OB3', group:'OB', units:2, label:'BMI 35 to 40',   seg:'35 to 40' },
+  { code:'OB4', group:'OB', units:3, label:'BMI over 40',    seg:'Over 40' },
+  { code:'P1',  group:'P',  units:2, label:'Positioning' },
+  { code:'AI1', group:'AI', units:2, label:'Awake intubation' },
+  { code:'PO1', group:'POSTOP', units:1, label:'Post-op ward review' },
+  { code:'PO2', group:'POSTOP', units:2, label:'Post-op pain management' },
+]
+const BY_CODE = new Map(CODES.map(c => [c.code, c]))
+const BAND_TITLES = { PA:'Pre-assessment', A:'Age extreme', OB:'BMI band' }
+const EXCLUSIVE = new Set(['PA','A','OB'])
+const STACKS = new Set(['PA5'])
+const BANDS = ['PA','A','OB'].map(b => ({
+  band:b, codes:CODES.filter(c => c.group === b && !STACKS.has(c.code)),
+}))
+const STACKING = CODES.filter(c => EXCLUSIVE.has(c.group) === false || STACKS.has(c.code))
+
+function bandOf(code){
+  const m = BY_CODE.get(code)
+  if(m === undefined || STACKS.has(code)) return undefined
+  return EXCLUSIVE.has(m.group) ? m.group : undefined
+}
+/** toggleModifierCode, ported: turning one on drops its band sibling. */
+function toggle(sel, code){
+  const next = new Set(sel)
+  if(next.has(code)){ next.delete(code); return next }
+  const band = bandOf(code)
+  if(band !== undefined) for(const c of [...next]) if(bandOf(c) === band) next.delete(c)
+  next.add(code)
+  return next
+}
+function liveIn(sel, band){
+  return CODES.find(c => c.group === band && !STACKS.has(c.code) && sel.has(c.code))
+}
+
+const P1_NAME = 'Appendicectomy, laparoscopic'
+const P2_NAME = 'Adhesiolysis, extensive'
+
+function mUnits(st){
+  let n = ASA_UNITS[st.asa]
+  for(const c of CODES) if(st.sel.has(c.code)) n += c.units
+  return n
+}
+/** Per-procedure and card figures. Procedure 2 is `isAdditional`: time only. */
+function figures(st, procs){
+  const u1 = BASE_UNITS + st.time + mUnits(st)
+  const f1 = Math.round(u1 * RATE * 100) / 100
+  const u2 = st.time2
+  const f2 = Math.round(u2 * RATE * 100) / 100
+  const units = procs === 2 ? u1 + u2 : u1
+  const fee = Math.round((procs === 2 ? f1 + f2 : f1) * 100) / 100
+  const lines = procs === 2
+    ? [{ label:P1_NAME, amount:f1 }, { label:P2_NAME, amount:f2, note:'Time units only' }]
+    : []
+  return { u1, f1, u2, f2, units, fee, lines }
+}
+function money(n){ return '$' + n.toLocaleString('en-NZ', {minimumFractionDigits:2, maximumFractionDigits:2}) }
+
+/** The M row's caption — modifierBreakdown(), ported. */
+function mCaption(st){
+  const parts = [st.asa + ' +' + ASA_UNITS[st.asa]]
+  for(const c of CODES) if(st.sel.has(c.code)) parts.push(c.code + ' ' + c.label.toLowerCase() + ' +' + c.units)
+  return parts.join(' · ')
+}
+
+// ===========================================================================
+// DOM helper
+// ===========================================================================
+function h(tag, attrs, kids){
+  const n = document.createElement(tag)
+  if(attrs) for(const k in attrs){
+    const v = attrs[k]
+    if(v === undefined || v === null || v === false) continue
+    if(k === 'style') n.style.cssText = v
+    else if(k === 'class') n.className = v
+    else if(k.slice(0,2) === 'on') n.addEventListener(k.slice(2).toLowerCase(), v)
+    else n.setAttribute(k, v)
+  }
+  const list = kids === undefined || kids === null ? [] : (Array.isArray(kids) ? kids : [kids])
+  for(const c of list.flat()){
+    if(c === undefined || c === null || c === false) continue
+    n.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c)
+  }
+  return n
+}
+const svgNS = 'http://www.w3.org/2000/svg'
+function svg(w, hh, vb, paths){
+  const n = document.createElementNS(svgNS, 'svg')
+  n.setAttribute('width', w); n.setAttribute('height', hh); n.setAttribute('viewBox', vb)
+  n.setAttribute('aria-hidden', 'true')
+  for(const p of paths){
+    const el = document.createElementNS(svgNS, p.t)
+    for(const a in p){ if(a !== 't') el.setAttribute(a, p[a]) }
+    n.appendChild(el)
+  }
+  return n
+}
+
+// ===========================================================================
+// Global settings
+// ===========================================================================
+const settings = { procs:1, header:'rec' }
+
+// ===========================================================================
+// Money objects. Every figure node is tagged so the tween can paint it without
+// a re-render: [data-u] units, [data-f] fee, [data-flash] the flash wrapper.
+// ===========================================================================
+const rateLabel = 'FEE @ $' + RATE.toFixed(2) + '/UNIT'
+
+function unitsNode(cls){
+  return h('span', {class:'num-u ' + (cls || ''), 'data-u':'1'}, '0')
+}
+function feeNode(cls){
+  return h('span', {class:'fwrap', 'data-flash':'1'}, h('span', {class:cls || 'num-f', 'data-f':'1'}, '$0.00'))
+}
+function lineRows(lines){
+  if(lines.length === 0) return false
+  return h('div', {class:'lines'}, lines.map(l => h('div', {class:'lrow'}, [
+    h('span', {class:'lt'}, [ h('span', {}, l.label), l.note ? h('span',{class:'lnote'}, l.note) : false ]),
+    h('span', {class:'la'}, money(l.amount)),
+  ])))
+}
+
+/** FeeSummaryPanel / CardTotalPanel verbatim: the full ink block. */
+function inkPanel(lines, opts){
+  const o = opts || {}
+  return h('div', {class:'ink'}, [
+    lineRows(lines),
+    h('div', {class:'big'}, [
+      h('span', {class:'col'}, [
+        h('span', {class:'k'}, 'CARD TOTAL'),
+        h('span', {class:'fig'}, [ unitsNode(), h('span',{class:'un'},'units') ]),
+      ]),
+      h('span', {class:'col r'}, [ h('span',{class:'k'}, rateLabel), feeNode() ]),
+    ]),
+    o.action || false,
+  ])
+}
+
+/**
+ * The compact strip. `mid` fills the figures row's centre (the delta tape);
+ * `chips` adds the per-procedure row above, inside the same ink object.
+ */
+function inkStrip(mid, opts){
+  const o = opts || {}
+  const figs = h('div', {class:'sfigs'}, [
+    h('span', {class:'su'}, [ h('span',{class:'num-u','data-u':'1',style:'font-size:22px'},'0'), h('em',{},'UNITS') ]),
+    mid || h('span', {class:'tape'}),
+    h('span', {class:'sr'}, [
+      h('span', {class:'rate'}, rateLabel),
+      h('span', {class:'fwrap','data-flash':'1'}, h('span',{class:'sf','data-f':'1'},'$0.00')),
+    ]),
+  ])
+  const cls = 'strip' + (o.chips ? ' stack' : '') + (o.tap ? ' tap' : '')
+  return h('div', {class:cls, onclick:o.onTap || undefined}, [
+    o.chips ? h('div', {class:'schips'}, o.chips) : false,
+    figs,
+  ])
+}
+
+/** The per-procedure fee chips, live chip first. Null on a one-procedure card. */
+function procChips(fg){
+  if(settings.procs !== 2) return null
+  return [
+    h('span', {class:'pchip live'}, [ h('span',{},'P1'), h('b',{}, money(fg.f1)) ]),
+    h('span', {class:'pchip'}, [ h('span',{},'P2'), h('b',{}, money(fg.f2)) ]),
+  ]
+}
+
+function cta(label){
+  return h('button', {class:'cta', type:'button'}, label || 'Mark complete')
+}
+
+// ===========================================================================
+// The card content (one builder, shared by every option)
+// ===========================================================================
+function headerNode(opt, st){
+  const mode = settings.header === 'rec' ? opt.header : settings.header
+  const cls = 'hdr' + (mode === 'slim' ? ' slim' : '') + (mode === 'min' ? ' coll' : '')
+  const showNhi = mode === 'full'
+  const showOp = mode === 'full'
+  const showLarge = mode !== 'min'
+  const showMeta = mode === 'full' || mode === 'slim' || mode === 'collapse'
+
+  const hdr = h('div', {class:cls, 'data-hdr':mode}, [
+    h('div', {class:'h-row1'}, [
+      h('span', {class:'back'}, ['‹', ' List']),
+      h('span', {class:'h-inline'}, [
+        h('b', {}, 'Sarah Mitchell'),
+        h('span', {class:'pill sm'}, [ h('i',{}), h('span',{},'Private') ]),
+      ]),
+    ]),
+    showLarge ? h('div', {class:'h-large'}, 'Sarah Mitchell') : false,
+    showNhi ? h('div', {class:'h-nhi'}, 'NHI CQY9304 · DOB 12 APR 1988 (38y)') : false,
+    showOp ? h('div', {class:'h-op'}, [
+      h('span', {class:'op'}, P1_NAME),
+      h('span', {class:'pill'}, [ h('i',{}), h('span',{},'Private') ]),
+      h('span', {class:'fac'}, "St George's"),
+    ]) : false,
+    (showMeta && !showOp) ? h('div', {class:'h-meta'}, [
+      h('span', {class:'pill'}, [ h('i',{}), h('span',{},'Private') ]),
+      h('span', {class:'fac'}, P1_NAME + " · St George's"),
+    ]) : false,
+  ])
+  if(mode === 'collapse') hdr.setAttribute('data-collapsing', '1')
+  return hdr
+}
+
+function patientCard(){
+  return h('div', {class:'card'}, [
+    h('div', {class:'cap-row'}, [ h('div',{class:'cap'},'Patient'), h('button',{class:'link',type:'button'},'Edit') ]),
+    h('div', {class:'row'}, [ h('span',{class:'rlbl'},'NHI'),
+      h('span',{class:'rval',style:"font-family:var(--mono)"},'NHI CQY9304') ]),
+    h('div', {class:'row'}, [ h('span',{class:'rlbl'},'Date of birth'),
+      h('span',{class:'rval'},'12 APR 1988 · 38 years') ]),
+    h('div', {class:'row'}, [ h('span',{class:'rlbl'},'Contact'), h('span',{class:'rval'},'021 555 3458') ]),
+    h('div', {class:'srow'}, [
+      h('span', {style:'width:96px;flex:none;font-size:12px;color:var(--mist)'}, 'Scheduled'),
+      h('span', {style:'flex:1;font-family:var(--mono);font-size:14px'}, '08:30'),
+      h('button', {class:'step', type:'button'}, '−'),
+      h('button', {class:'step', type:'button'}, '+'),
+    ]),
+  ])
+}
+
+function unitsCard(st, rr, opts){
+  const o = opts || {}
+  const disabled = o.timeOnly === true
+  const stepRow = (title, caption, value, onStep) => h('div', {class:'srow'}, [
+    h('span', {class:'lbl'}, [ h('b',{}, title), h('span',{class:'caption'}, caption) ]),
+    onStep ? h('button',{class:'step',type:'button',onclick:() => onStep(-1)},'−') : false,
+    h('span', {class:'val'}, String(value)),
+    onStep ? h('button',{class:'step',type:'button',onclick:() => onStep(1)},'+') : false,
+  ])
+
+  if(disabled){
+    return h('div', {class:'card g14'}, [
+      h('div', {class:'cap'}, 'Units'),
+      stepRow('B · Base', 'Not charged on an additional procedure', 0, null),
+      stepRow('T · Time', 'From start / finish stamps', st.time2, (d) => rr({time2:Math.max(0, st.time2 + d)})),
+      stepRow('M · Modifiers', 'Not charged on an additional procedure', 0, null),
+    ])
+  }
+
+  return h('div', {class:'card g14'}, [
+    h('div', {class:'cap'}, 'Units'),
+    stepRow('B · Base', 'From procedure code', BASE_UNITS, () => {}),
+    stepRow('T · Time', 'From start / finish stamps', st.time, (d) => rr({time:Math.max(0, st.time + d)})),
+    stepRow('M · Modifiers', mCaption(st), mUnits(st), () => {}),
+    h('div', {style:'display:flex;flex-direction:column;gap:14px'}, [
+      BANDS.map(({band, codes}) => {
+        const live = liveIn(st.sel, band)
+        return h('div', {class:'band'}, [
+          h('div', {class:'bl'}, BAND_TITLES[band]),
+          h('div', {class:'track'}, codes.map(m => h('button', {
+            class:'tseg' + (live && live.code === m.code ? ' on' : ''), type:'button',
+            onclick:() => rr({sel:toggle(st.sel, m.code), delta:deltaFor(st, m)}),
+          }, [ h('span',{}, m.seg), h('span',{class:'u'}, '+' + m.units) ]))),
+        ])
+      }),
+      h('div', {class:'band'}, [
+        h('div', {class:'bl'}, 'Also applies'),
+        h('div', {class:'chips'}, STACKING.map(m => h('button', {
+          class:'chip' + (st.sel.has(m.code) ? ' on' : ''), type:'button',
+          onclick:() => rr({sel:toggle(st.sel, m.code), delta:deltaFor(st, m)}),
+        }, m.label + ' · +' + m.units))),
+      ]),
+      h('div', {class:'caption'},
+        "Modifier values are demo-plausible within the RFP's stated ranges, not an authoritative NZSA schedule."),
+    ]),
+  ])
+}
+
+/**
+ * The tape's own label register. The strip's centre holds about 70px, so the
+ * tape borrows the band controls' shortened wording and clips the two long
+ * post-op labels the same way. The full label stays in the M row's caption.
+ */
+const TAPE_LABEL = { PA5:'Follow-up', PO1:'Ward review', PO2:'Pain management' }
+function tapeLabel(m){ return TAPE_LABEL[m.code] || m.seg || m.label }
+
+/**
+ * What the tape says about a tap: the NET units the card gained or lost, and
+ * the code responsible. A band swap nets the difference, so choosing "Complex"
+ * over "Standard" reads +1, not +4, which is what the fee actually did.
+ */
+function deltaFor(st, m){
+  if(st.sel.has(m.code)) return { sign:-1, units:m.units, label:tapeLabel(m) }
+  const band = bandOf(m.code)
+  let dropped = 0
+  if(band !== undefined) {
+    for(const c of CODES) if(c.code !== m.code && bandOf(c.code) === band && st.sel.has(c.code)) dropped += c.units
+  }
+  const net = m.units - dropped
+  return { sign: net < 0 ? -1 : 1, units:net, label:tapeLabel(m) }
+}
+
+/** The tape node, or an empty spacer that holds the strip's centre open. */
+function tapeNode(st){
+  const d = st.delta
+  if(!d) return h('span', {class:'tape'})
+  return h('span', {class:'tape'}, h('span', {class:'t' + (d.sign < 0 ? ' minus' : '')}, [
+    h('b', {}, (d.sign < 0 ? '−' : '+') + Math.abs(d.units)),
+    h('i', {}, d.label),
+  ]))
+}
+
+function procedureBlock(st, rr, ordinal, procs){
+  const additional = ordinal === 2
+  return h('div', {style:'display:flex;flex-direction:column;gap:12px'}, [
+    h('div', {class:'phdr', style: ordinal > 1 ? 'margin-top:8px' : ''}, [
+      h('span', {class:'l'}, [
+        procs > 1 ? h('span',{class:'ord'}, 'PROCEDURE ' + ordinal) : false,
+        h('span', {class:'nm'}, additional ? P2_NAME : P1_NAME),
+      ]),
+      h('button', {class:'link', type:'button'}, 'Edit'),
+      additional ? h('button',{class:'link',type:'button',style:'color:var(--err-on)'},'Remove') : false,
+    ]),
+    h('div', {style:'display:flex;align-items:center;gap:8px;flex-wrap:wrap'}, [
+      h('span', {class:'routechip'}, 'Insurer (direct claim)'),
+      h('span', {class:'caption'}, 'Southern Cross · AA standard'),
+    ]),
+    additional ? h('div', {class:'banner'},
+      'Additional procedure. It bills for time units only; base and modifier units stay on the first procedure.') : false,
+    !additional ? h('div', {class:'card'}, [
+      h('div', {class:'cap'}, 'ASA status'),
+      h('div', {class:'seg'}, ['AS1','AS2','AS3','AS4'].map((a, i) => h('button', {
+        type:'button', class: st.asa === a ? 'on' : '',
+        onclick:() => rr({asa:a, delta:{sign:ASA_UNITS[a] >= ASA_UNITS[st.asa] ? 1 : -1,
+          units:Math.abs(ASA_UNITS[a] - ASA_UNITS[st.asa]), label:'ASA ' + (i+1)}}),
+      }, ['I','II','III','IV'][i]))),
+      h('div', {class:'caption slate'}, 'ASA II seeds +1 modifier unit.'),
+    ]) : false,
+    !additional ? h('div', {class:'card'}, [
+      h('div', {class:'cap-row'}, [ h('div',{class:'cap'},'Procedure code'), h('button',{class:'link sm',type:'button'},'Change') ]),
+      h('div', {class:'row'}, [
+        h('span', {class:'rval', style:'font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent)'}, '42702'),
+      ]),
+      h('div', {class:'caption slate'}, 'Appendicectomy, laparoscopic · base ' + BASE_UNITS + ' units'),
+    ]) : false,
+    h('div', {class:'card'}, [
+      h('div', {class:'cap'}, 'Times'),
+      h('div', {class:'row'}, [ h('span',{class:'rlbl'},'Anaesthetic start'),
+        h('span',{class:'rval',style:'font-family:var(--mono)'}, additional ? '10:05' : '08:34') ]),
+      h('div', {class:'row'}, [ h('span',{class:'rlbl'},'Handover'),
+        h('span',{class:'rval',style:'font-family:var(--mono)'}, additional ? '10:50' : '09:32') ]),
+      h('div', {class:'caption'}, 'Part intervals round up (assumption).'),
+    ]),
+    unitsCard(st, rr, additional ? {timeOnly:true} : undefined),
+  ])
+}
+
+function tailCards(){
+  return [
+    h('div', {class:'card'}, [
+      h('div', {class:'cap-row'}, [ h('div',{class:'cap'},'Price override'), h('button',{class:'link sm',type:'button'},'Override') ]),
+      h('div', {class:'caption'}, 'No override. The calculated fee applies.'),
+    ]),
+    h('div', {class:'card'}, [
+      h('div', {class:'cap-row'}, [ h('div',{class:'cap'},'Fee lines'), h('button',{class:'link sm',type:'button'},'Add line') ]),
+      h('div', {class:'caption'}, 'No extra lines beyond the RVG fee.'),
+    ]),
+    h('div', {class:'card'}, [
+      h('div', {class:'cap'}, 'Notes for the office'),
+      h('textarea', {class:'ta', placeholder:'Anything the office should know…'}),
+    ]),
+  ]
+}
+
+function contextCards(){
+  return [
+    h('div', {style:'display:flex;justify-content:flex-end'},
+      h('button', {class:'link sm', type:'button'}, 'History')),
+    patientCard(),
+    h('div', {class:'card'}, [
+      h('div', {class:'cap-row'}, [ h('div',{class:'cap'},'Attachments'), h('button',{class:'link',type:'button'},'Add photo') ]),
+      h('div', {class:'caption'}, 'No attachments.'),
+    ]),
+  ]
+}
+
+// ===========================================================================
+// Options
+// ===========================================================================
+const OPTIONS = [
+{
+  id:'now', badge:'NOW', kind:'now', header:'full',
+  title:'Current build',
+  what:'The ink panel sits inline, straight after the Units card, and the footer carries only the teal CTA. '
+     + 'The tap that moves the number is usually below the number.',
+  meta:[
+    ['risk','Scroll the modifier block into thumb reach and the panel is off screen. The value tick, which is the point, plays where nobody is looking.'],
+    ['ref','SurfaceProvider.tsx:151 sets feePlacement inline; BtmCaptureBlock.tsx:239 renders it'],
+  ],
+  inline:true,
+  dock:() => [cta()],
+},
+{
+  id:'o1', badge:'01', header:'full',
+  title:'Straight port of the desktop block',
+  what:'CardTotalPanel moved into the footer verbatim, CTA inside it, breakdown lines and rate label intact. '
+     + 'The honest baseline: one component, both surfaces, no new object to design.',
+  meta:[
+    ['win','Zero new UI. The desktop block already handles lines, rate, override note and the embedded action.'],
+    ['risk','The tallest dock of the set, and it grows a row per procedure. This is the version the fear is about.'],
+    ['ref','CardTotalPanel.tsx, already built for exactly this job'],
+  ],
+  dock:(st, rr, fg) => [inkPanel(fg.lines, {action:cta()})],
+},
+{
+  id:'o2', badge:'02', header:'full',
+  title:'The total is the button',
+  what:'No panel at all. The CTA carries the money: label left, fee right, units as a mono superscript. '
+     + 'Pinning the figure costs nothing, because the pinned thing was already there.',
+  meta:[
+    ['win','Free. Working room is identical to today, and the fee is permanently in the thumb zone.'],
+    ['win','One object to look at instead of two, which is the calmest reading of the screen.'],
+    ['risk','A rolling number inside a button reads as instability on the control you are about to press.'],
+    ['risk','Once completed the CTA becomes the success / Amend bar, so the money has nowhere to live.'],
+  ],
+  dock:() => [
+    h('button', {class:'cta money', type:'button'}, [
+      h('span', {}, 'Mark complete'),
+      h('span', {style:'display:flex;align-items:baseline'}, [
+        h('span', {class:'fwrap','data-flash':'1'}, h('span',{class:'cf','data-f':'1'},'$0.00')),
+        h('span', {class:'cu'}, [ h('span',{'data-u':'1'},'0'), 'u' ]),
+      ]),
+    ]),
+  ],
+},
+{
+  id:'o3', badge:'03', header:'full',
+  title:'Two-tier dock',
+  what:'A one-row ink strip above the CTA: units left, rate and fee right. The panel reduced to the two '
+     + 'figures that move, and nothing else.',
+  meta:[
+    ['win','Costs about 60px over today and puts the live figure directly above the thumb.'],
+    ['win','The CTA keeps its own full-width weight, so the action and the readout stay separate objects.'],
+    ['risk','The breakdown, the rate provenance and the override note have nowhere to go without a tap.'],
+  ],
+  dock:() => [inkStrip(), cta()],
+},
+{
+  id:'o4', badge:'04', header:'full',
+  title:'Two-tier dock with a delta tape',
+  what:'Option 03, plus the centre of the strip narrates the change: "+2 Positioning" rides in as the '
+     + 'number rolls, then clears. You see what moved the fee, not only that it moved.',
+  meta:[
+    ['win','The strongest workshop beat of the set. The tap, the reason and the money are one motion.'],
+    ['win','Costs no height: the tape lives in space the strip already has.'],
+    ['win','Doubles as reassurance on a mis-tap, since the tape names the code that just came off.'],
+    ['risk','New motion to specify, and it must respect prefers-reduced-motion (fade, no travel).'],
+    ['risk','The strip centre holds about 70px, so the tape uses the band controls\' short wording and ellipsises the rest.'],
+    ['ref','a band swap nets the difference: Complex over Standard reads +1, not +4'],
+  ],
+  dock:(st) => [inkStrip(tapeNode(st)), cta()],
+},
+{
+  id:'o5', badge:'05', header:'full',
+  title:'Sticky to the top of the scroll',
+  what:'The strip sticks under the masthead instead of over the home indicator: at rest it is simply the '
+     + 'first thing on the card, and it holds there as everything scrolls beneath. The literal read of the '
+     + 'desktop rail.',
+  meta:[
+    ['win','Closest to what the desktop actually does, so the two surfaces explain each other.'],
+    ['win','Costs nothing at the top of the card, where the fee is not yet interesting.'],
+    ['risk','Stacks under the masthead, so the top of the phone becomes one 200px block of chrome. Only viable with a slimmed or collapsing header.'],
+    ['risk','Furthest possible point from the thumb doing the tapping.'],
+  ],
+  stickyTop:() => inkStrip(),
+  dock:() => [cta()],
+},
+{
+  id:'o6', badge:'06', header:'full',
+  title:'Dock that pulls up',
+  what:'Collapsed it is the 03 strip. The grabber lifts it into the full breakdown: per-procedure lines, '
+     + 'rate, override note. Detail on demand, in the sheet idiom the phone already uses everywhere.',
+  meta:[
+    ['win','Small at rest, complete when asked. Nothing is lost, nothing is permanently paid for.'],
+    ['win','Reuses the bottom-sheet gesture vocabulary rather than inventing a control.'],
+    ['risk','A gesture nobody performs is a feature nobody sees; the breakdown becomes effectively hidden.'],
+    ['risk','Third pinned state to build and test on a screen that already has sheets over it.'],
+  ],
+  dock:(st, rr, fg) => st.open
+    ? [
+        h('button', {class:'grab', type:'button', onclick:() => rr({open:false})}),
+        h('div', {class:'ink'}, [
+          lineRows(fg.lines.length > 0 ? fg.lines : [{label:P1_NAME, amount:fg.f1}]),
+          h('div', {class:'big'}, [
+            h('span', {class:'col'}, [ h('span',{class:'k'},'CARD TOTAL'),
+              h('span', {class:'fig'}, [ unitsNode(), h('span',{class:'un'},'units') ]) ]),
+            h('span', {class:'col r'}, [ h('span',{class:'k'}, rateLabel), feeNode() ]),
+          ]),
+        ]),
+        cta(),
+      ]
+    : [
+        h('button', {class:'grab', type:'button', onclick:() => rr({open:true})}),
+        inkStrip(null, {tap:true, onTap:() => rr({open:true})}),
+        cta(),
+      ],
+},
+{
+  id:'o7', badge:'07', header:'full',
+  title:'Floating fee pill',
+  what:'No strip spanning the screen. A small elevated ink pill, right-aligned above the CTA: units in a '
+     + 'quiet mono, fee at weight. It reads as an instrument rather than as chrome.',
+  meta:[
+    ['win','The lightest visible-money option. About 46px over today, and the dock still looks like a CTA.'],
+    ['win','Because it does not span the width, it never competes with the button for authority.'],
+    ['risk','Small type on a projector. The fee is the thing the room is meant to watch.'],
+    ['risk','Nowhere for the rate label, so the "at $26.50 a unit" line drops off the card entirely.'],
+  ],
+  dock:() => [
+    h('button', {class:'feepill', type:'button'}, [
+      h('span', {class:'pu'}, [ h('span',{'data-u':'1'},'0'), ' units' ]),
+      h('span', {class:'fwrap','data-flash':'1'}, h('span',{class:'pf','data-f':'1'},'$0.00')),
+    ]),
+    cta(),
+  ],
+},
+{
+  id:'o8', badge:'08', header:'full',
+  title:'Procedures as chips, fixed height',
+  what:'The reason the panel is inline today is that a card can carry several procedures, and the desktop '
+     + 'block grows a row for each. Here they become one horizontal row of mono chips, so the dock is the '
+     + 'same height for one procedure or five, and the chip you are editing is the lit one.',
+  meta:[
+    ['win','Answers the multi-procedure objection outright: height stops depending on how many procedures exist.'],
+    ['win','On a one-procedure card the chip row is absent, so the common case pays nothing for the rare one.'],
+    ['win','The lit chip tells you which procedure your tap is changing, which the stacked rows never did.'],
+    ['risk','Chips overflow past three or four procedures and need a scroller or a "+2 more".'],
+    ['risk','Per-procedure fees lose their labels down to "P1", so the full names live only in the breakdown.'],
+  ],
+  dock:(st, rr, fg) => [inkStrip(null, {chips:procChips(fg)}), cta()],
+},
+{
+  id:'o9', badge:'09', header:'full',
+  title:'Money pinned, CTA back in the flow',
+  what:'The footer stops carrying two things. It holds the total only; "Mark complete" becomes the last '
+     + 'item in the column, after the capture it commits, which is where it belongs in the sequence.',
+  meta:[
+    ['win','Only one pinned object, so the dock is the smallest of any option that shows the money.'],
+    ['win','Reads correctly: you finish capturing, then you commit. A pinned CTA invites the tap too early.'],
+    ['risk','Convention 16 asks for thumb-reachable sticky contextual actions, and this gives that up.'],
+    ['risk','Mark complete is also how refusals are discovered, so scrolling to reach it is a real cost.'],
+    ['ref','CompleteBar.tsx would move from the surface Footer into the capture column'],
+  ],
+  flowCta:true,
+  dock:() => [inkStrip()],
+},
+{
+  id:'o10', badge:'10', header:'full',
+  title:'Panel that docks itself',
+  what:'The full panel keeps its inline place. When it scrolls out of view the compact strip fades in over '
+     + 'the CTA and takes the job; scroll back and it hands over again. One figure, two homes, whichever '
+     + 'the viewport can afford.',
+  meta:[
+    ['win','Full detail where there is room, and a live figure when there is not. Never both, never neither.'],
+    ['win','Working room is today\'s exactly whenever the inline panel is on screen.'],
+    ['risk','Most code of the set: an intersection observer, a cross-fade, and a dock height that changes as you scroll, which reflows the padding under it.'],
+    ['risk','Two places for one number is the thing the 2026-07-27 finding warned about, even staged in time.'],
+  ],
+  inline:true,
+  selfPin:true,
+  dock:(st) => st.stuck ? [inkStrip(), cta()] : [cta()],
+},
+{
+  id:'rA', badge:'03+08', kind:'rec', header:'collapse',
+  title:'Recommended · strip, chips, collapsing masthead',
+  what:'The two-tier strip (03), the fixed-height procedure chips (08), and a masthead that folds to a '
+     + '44px nav row as you scroll. The NHI, the date of birth and the operation come off the header '
+     + 'because the Patient card and the procedure heading below already carry them verbatim.',
+  meta:[
+    ['win','More working room than the current build, with the money permanently on screen. The header reclaim more than pays for the dock.'],
+    ['win','Full patient context on arrival, maximum room once you start working. Nothing is lost, only deferred.'],
+    ['win','Every pattern is one the app or iOS already establishes: strip, chips, collapsing large title.'],
+    ['risk','Largest diff: the surface gains a summary slot on mobile, and the header becomes scroll-aware.'],
+  ],
+  dock:(st, rr, fg) => [inkStrip(null, {chips:procChips(fg)}), cta()],
+},
+{
+  id:'rB', badge:'04+08', kind:'rec', header:'collapse',
+  title:'Recommended · the demo version',
+  what:'Recommendation A with the delta tape switched on. Same budget, same structure; the strip narrates '
+     + 'the tap as the fee rolls.',
+  meta:[
+    ['win','Costs nothing over A and is the beat worth building the workshop around: tap, reason, money, one motion.'],
+    ['win','The tape occupies the strip centre, which the chip row vacates on a one-procedure card.'],
+    ['risk','With two procedures the tape and the chips want the same centre, so one of them alternates.'],
+  ],
+  dock:(st, rr, fg) => [inkStrip(tapeNode(st), {chips:procChips(fg)}), cta()],
+},
+{
+  id:'rC', badge:'07+min', kind:'rec', header:'min',
+  title:'Recommended · smallest possible change',
+  what:'The floating pill (07) against a static 44px masthead. If the appetite is one afternoon rather '
+     + 'than one phase, this is the version: the biggest working room of any option that shows money, and '
+     + 'no new pinned surface.',
+  meta:[
+    ['win','Smallest diff that fixes the actual complaint. No summary slot, no scroll-aware header.'],
+    ['win','Most working room of the whole set.'],
+    ['risk','No rate label, no breakdown, and the fee is the smallest type of any option.'],
+    ['risk','A permanently minimal masthead loses the patient context that makes the card feel like a record.'],
+  ],
+  dock:() => [
+    h('button', {class:'feepill', type:'button'}, [
+      h('span', {class:'pu'}, [ h('span',{'data-u':'1'},'0'), ' units' ]),
+      h('span', {class:'fwrap','data-flash':'1'}, h('span',{class:'pf','data-f':'1'},'$0.00')),
+    ]),
+    cta(),
+  ],
+},
+]
+
+// ===========================================================================
+// State + render
+// ===========================================================================
+const INITIAL = () => ({
+  sel:new Set(['PA3','OB2']), asa:'AS2', time:4, time2:3,
+  open:false, stuck:false, delta:null, deltaSeq:0,
+  shownU:null, shownF:null, raf:null, flashT:null, tapeT:null,
+  h:0, dockH:0, stickyH:0, collapsedH:0, collapsing:false,
+})
+const state = {}
+const nodes = {}
+const scrollPos = {}
+
+function statusBar(){
+  const c = 'var(--ink)'
+  return h('div', {class:'sbar'}, [
+    h('span', {class:'t', style:'color:' + c}, '8:00'),
+    h('span', {class:'g'}, [
+      svg(19,12,'0 0 19 12',[
+        {t:'rect',x:0,y:7.5,width:3.2,height:4.5,rx:0.7,fill:'#172320'},
+        {t:'rect',x:4.8,y:5,width:3.2,height:7,rx:0.7,fill:'#172320'},
+        {t:'rect',x:9.6,y:2.5,width:3.2,height:9.5,rx:0.7,fill:'#172320'},
+        {t:'rect',x:14.4,y:0,width:3.2,height:12,rx:0.7,fill:'#172320'},
+      ]),
+      svg(17,12,'0 0 17 12',[
+        {t:'path',d:'M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z',fill:'#172320'},
+        {t:'path',d:'M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z',fill:'#172320'},
+        {t:'circle',cx:8.5,cy:10.5,r:1.5,fill:'#172320'},
+      ]),
+      svg(27,13,'0 0 27 13',[
+        {t:'rect',x:0.5,y:0.5,width:23,height:12,rx:3.5,stroke:'#172320','stroke-opacity':0.35,fill:'none'},
+        {t:'rect',x:2,y:2,width:20,height:9,rx:2,fill:'#172320'},
+        {t:'path',d:'M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z',fill:'#172320','fill-opacity':0.4},
+      ]),
+    ]),
+  ])
+}
+
+function renderPhone(opt){
+  const st = state[opt.id]
+  const host = nodes[opt.id]
+
+  const rr = (patch) => {
+    if(patch){
+      if(patch.sel) st.sel = patch.sel
+      for(const k of ['asa','time','time2','open','stuck']) if(k in patch) st[k] = patch[k]
+      if('delta' in patch){
+        st.delta = patch.delta
+        st.deltaSeq += 1
+        if(st.tapeT !== null) clearTimeout(st.tapeT)
+        st.tapeT = setTimeout(() => { st.delta = null; st.tapeT = null; renderPhone(opt) }, 1650)
+      }
+    }
+    renderPhone(opt)
+  }
+
+  const fg = figures(st, settings.procs)
+  if(st.shownU === null){ st.shownU = fg.units; st.shownF = fg.fee }
+
+  // --- scroll column -------------------------------------------------------
+  const scroll = h('div', {class:'scroll'}, [
+    opt.stickyTop ? h('div', {class:'sticky', 'data-sticky':'1'}, opt.stickyTop(st, rr, fg)) : false,
+    contextCards(),
+    h('div', {'data-anchor':'units'}, []),
+    procedureBlock(st, rr, 1, settings.procs),
+    opt.inline ? h('div', {'data-inline':'1'}, inkPanel(settings.procs === 2 ? fg.lines : [])) : false,
+    tailCards(),
+    settings.procs === 2 ? procedureBlock(st, rr, 2, settings.procs) : false,
+    h('button', {class:'addbtn', type:'button'}, '+  Add another procedure'),
+    opt.flowCta ? h('div', {style:'margin-top:4px'}, cta()) : false,
+  ])
+
+  const dock = h('div', {class:'dock', 'data-dock':'1'}, opt.dock(st, rr, fg))
+
+  const screen = h('div', {class:'screen'}, [ headerNode(opt, st), scroll ])
+  const phone = h('div', {class:'phone'}, [
+    h('div', {class:'island'}),
+    statusBar(),
+    screen,
+    dock,
+    h('div', {class:'home'}, h('i', {})),
+  ])
+
+  const prevScroll = scrollPos[opt.id]
+  host.replaceChildren(phone)
+
+  // The scroll column has to clear the dock, whose height we only know now.
+  measure(opt)
+  const s = phone.querySelector('.scroll')
+  s.style.paddingBottom = (st.dockH + 16) + 'px'
+
+  // Open on the modifier block (that is where the taps are), then hold position.
+  if(prevScroll === undefined){
+    const anchor = phone.querySelector('[data-anchor="units"]')
+    s.scrollTop = anchor ? Math.max(0, anchor.offsetTop - 30) : 0
+    scrollPos[opt.id] = s.scrollTop
+  } else {
+    s.scrollTop = prevScroll
+  }
+
+  wireScroll(opt, phone, s)
+  // Paint the CURRENT rolling values into the fresh DOM, then roll to the new
+  // target. Doing it here rather than in the tap handler means every route into
+  // a re-render ticks — including the procedure-count toggle, which changes the
+  // card total without any tap at all.
+  paintFigures(opt)
+  animateTo(opt, fg.units, fg.fee)
+  measure(opt)
+  refreshSummary()
+}
+
+/** Collapsing masthead + option 10's self-pinning both key off scrollTop. */
+function wireScroll(opt, phone, s){
+  const st = state[opt.id]
+  const hdr = phone.querySelector('.hdr')
+  const collapsing = hdr.getAttribute('data-collapsing') === '1'
+  const inline = phone.querySelector('[data-inline]')
+
+  const apply = () => {
+    scrollPos[opt.id] = s.scrollTop
+    if(collapsing){
+      const want = s.scrollTop > 20
+      if(want !== hdr.classList.contains('coll')){
+        hdr.classList.toggle('coll', want)
+        setTimeout(() => { measure(opt); refreshSummary() }, 260)
+      }
+    }
+    if(opt.selfPin && inline !== null){
+      // Docked once the inline panel's foot has passed above the viewport.
+      const stuck = inline.offsetTop + inline.offsetHeight - s.scrollTop < 0
+      if(stuck !== st.stuck){ st.stuck = stuck; renderPhone(opt) }
+    }
+  }
+  s.addEventListener('scroll', apply, {passive:true})
+  apply()
+}
+
+/** Write the rolling figures into every tagged node, without a re-render. */
+function paintFigures(opt){
+  const st = state[opt.id]
+  const host = nodes[opt.id]
+  for(const n of host.querySelectorAll('[data-u]')) n.textContent = String(Math.round(st.shownU))
+  for(const n of host.querySelectorAll('[data-f]')) n.textContent = money(st.shownF)
+}
+
+/** useTickingValue, ported: a 320 ms cubic ease-out with the flash decay. */
+function animateTo(opt, targetU, targetF){
+  const st = state[opt.id]
+  const fromU = st.shownU, fromF = st.shownF
+  if(Math.abs(targetF - fromF) < 0.005 && Math.abs(targetU - fromU) < 0.005) return
+  if(st.raf !== null) cancelAnimationFrame(st.raf)
+  const host = nodes[opt.id]
+  for(const n of host.querySelectorAll('[data-flash]')) n.classList.add('flash')
+  if(st.flashT !== null) clearTimeout(st.flashT)
+  st.flashT = setTimeout(() => {
+    for(const n of nodes[opt.id].querySelectorAll('[data-flash]')) n.classList.remove('flash')
+  }, 320 + 60)
+
+  const t0 = performance.now()
+  const step = (t) => {
+    const p = Math.min(1, (t - t0) / 320)
+    const e = 1 - Math.pow(1 - p, 3)
+    st.shownU = fromU + (targetU - fromU) * e
+    st.shownF = fromF + (targetF - fromF) * e
+    paintFigures(opt)
+    if(p < 1) st.raf = requestAnimationFrame(step)
+    else st.raf = null
+  }
+  st.raf = requestAnimationFrame(step)
+}
+
+// ===========================================================================
+// Measurement — 844px, minus masthead, minus whatever is permanently there
+// ===========================================================================
+const DEVICE_H = 844
+
+function measure(opt){
+  const st = state[opt.id]
+  const host = nodes[opt.id]
+  const hdr = host.querySelector('.hdr')
+  const dock = host.querySelector('[data-dock]')
+  const sticky = host.querySelector('[data-sticky]')
+  if(hdr === null || dock === null) return
+
+  st.dockH = Math.round(dock.getBoundingClientRect().height)
+  st.stickyH = sticky === null ? 0 : Math.round(sticky.getBoundingClientRect().height)
+  st.collapsing = hdr.getAttribute('data-collapsing') === '1'
+
+  if(st.collapsing){
+    // A collapsing masthead has two heights and both matter: at rest it gives
+    // full context, collapsed it is the state you work in. Measure each by
+    // forcing the class with transitions off — reading offsetHeight forces
+    // layout but never a paint, so the swap cannot flicker.
+    const wasColl = hdr.classList.contains('coll')
+    hdr.classList.add('no-anim')
+    hdr.classList.add('coll')
+    st.collapsedH = hdr.offsetHeight
+    hdr.classList.remove('coll')
+    st.expandedH = hdr.offsetHeight
+    hdr.classList.toggle('coll', wasColl)
+    void hdr.offsetHeight
+    hdr.classList.remove('no-anim')
+    st.h = st.collapsedH
+  } else {
+    st.h = Math.round(hdr.getBoundingClientRect().height)
+    st.collapsedH = st.h
+    st.expandedH = st.h
+  }
+}
+
+function budget(st){
+  const head = st.collapsing ? st.collapsedH : st.h
+  const dockH = st.dockH
+  const stickyH = st.stickyH
+  const room = DEVICE_H - head - dockH - stickyH
+  return { head, dockH, stickyH, room }
+}
+
+function refreshSummary(){
+  const body = document.getElementById('summary-body')
+  if(body === null) return
+  const nowB = budget(state['now'])
+  const rows = OPTIONS.map(o => ({ o, b:budget(state[o.id]) }))
+
+  body.replaceChildren(...rows.map(({o, b}) => {
+    const d = b.room - nowB.room
+    const dCls = o.id === 'now' ? 'flat' : d > 8 ? 'up' : d > -40 ? 'flat' : 'down'
+    const pct = (v) => (100 * v / DEVICE_H) + '%'
+    const st = state[o.id]
+    const headTxt = st.collapsing && st.expandedH !== st.collapsedH
+      ? st.collapsedH + ' · ' + st.expandedH
+      : String(b.head)
+    const badge = document.getElementById('badge-' + o.id)
+    if(badge !== null){
+      badge.textContent = o.id === 'now' ? b.room + 'px room' : (d >= 0 ? '+' : '−') + Math.abs(d) + 'px room'
+      badge.className = 'hbadge ' + (o.id === 'now' ? '' : d > 8 ? 'gain' : d > -40 ? 'even' : 'loss')
+    }
+    return h('tr', {class: o.kind === 'now' ? 'is-now' : o.kind === 'rec' ? 'is-rec' : ''}, [
+      h('td', {class:'name'}, o.badge + ' · ' + o.title),
+      h('td', {class:'n'}, headTxt),
+      h('td', {class:'n'}, String(b.dockH + b.stickyH)),
+      h('td', {class:'n'}, String(b.room)),
+      h('td', {}, h('span', {class:'delta ' + dCls},
+        o.id === 'now' ? '—' : (d >= 0 ? '+' : '−') + Math.abs(d) + 'px')),
+      h('td', {}, h('div', {class:'bud'}, [
+        h('span', {class:'b-h', style:'width:' + pct(b.head)}),
+        b.stickyH > 0 ? h('span', {class:'b-s', style:'width:' + pct(b.stickyH)}) : false,
+        h('span', {class:'b-c', style:'width:' + pct(Math.max(0, b.room))}),
+        h('span', {class:'b-d', style:'width:' + pct(b.dockH)}),
+      ])),
+    ])
+  }))
+}
+
+// ===========================================================================
+// Build
+// ===========================================================================
+function buildOption(opt){
+  const host = h('div', {})
+  nodes[opt.id] = host
+  const kindCls = opt.kind === 'now' ? ' now' : opt.kind === 'rec' ? ' rec' : ''
+  return h('section', {class:'opt'}, [
+    h('div', {class:'opt-head'}, [
+      h('span', {class:'num' + kindCls}, opt.badge),
+      h('h3', {}, opt.title),
+      h('span', {class:'hbadge', id:'badge-' + opt.id}, '…'),
+    ]),
+    h('p', {class:'what'}, opt.what),
+    h('ul', {class:'meta'}, opt.meta.map(([k, t]) => h('li', {class:k}, t))),
+    host,
+  ])
+}
+
+const grid = document.getElementById('grid')
+for(const opt of OPTIONS){
+  state[opt.id] = INITIAL()
+  grid.appendChild(buildOption(opt))
+}
+function renderAll(){ for(const opt of OPTIONS) renderPhone(opt); refreshSummary() }
+renderAll()
+
+// Controls -------------------------------------------------------------------
+function segControl(hostId, items, get, set){
+  const host = document.getElementById(hostId)
+  const draw = () => host.replaceChildren(...items.map(([v, label]) => h('button', {
+    type:'button', class: get() === v ? 'on' : '',
+    onclick:() => { set(v); draw(); resetScroll(); renderAll() },
+  }, label)))
+  draw()
+}
+/** Procedure count and header treatment both change the column, so re-anchor. */
+function resetScroll(){ for(const k in scrollPos) delete scrollPos[k] }
+
+segControl('ctl-procs', [[1, '1'], [2, '2']],
+  () => settings.procs, (v) => { settings.procs = v })
+segControl('ctl-header',
+  [['rec', 'As recommended'], ['full', 'Full (now)'], ['slim', 'Slim'], ['min', 'Minimal'], ['collapse', 'Collapsing']],
+  () => settings.header, (v) => { settings.header = v })
+
+document.getElementById('reset').addEventListener('click', () => {
+  for(const opt of OPTIONS) state[opt.id] = INITIAL()
+  resetScroll()
+  renderAll()
+})
+document.getElementById('remeasure').addEventListener('click', () => {
+  for(const opt of OPTIONS) measure(opt)
+  refreshSummary()
+})
+
+// Webfonts change every height, so measure again once they land.
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => { for(const o of OPTIONS) measure(o); refreshSummary() })
+}
+window.addEventListener('resize', () => { for(const o of OPTIONS) measure(o); refreshSummary() })
+</script>
+</body>
+</html>

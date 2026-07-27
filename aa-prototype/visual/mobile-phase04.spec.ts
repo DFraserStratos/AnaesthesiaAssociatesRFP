@@ -25,13 +25,15 @@ async function advanceClockTo1715(page: Page): Promise<void> {
 test('capture: Ellison BTM block', async ({ page }) => {
   await openEllison(page)
   await page.screenshot({ path: 'visual/shots/m4-01-card-top.png', fullPage: true })
-  // Scroll the phone frame's content to the capture block and the ink panel.
+  // Scroll the phone frame's content to the capture block. The Card total is
+  // pinned in the dock now, so it is already on screen — what the scroll shows
+  // is the masthead folded to its nav row.
   await page.getByText('ASA status', { exact: true }).scrollIntoViewIfNeeded()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/m4-01-btm-block.png', fullPage: true })
-  await page.getByText('TOTAL UNITS', { exact: true }).scrollIntoViewIfNeeded()
-  await page.waitForTimeout(300)
-  await page.screenshot({ path: 'visual/shots/m4-01-fee-panel.png', fullPage: true })
+  await page.getByText('Modifiers', { exact: false }).first().scrollIntoViewIfNeeded()
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: 'visual/shots/m4-01-fee-dock.png', fullPage: true })
 })
 
 test('capture: code picker sheet', async ({ page }) => {

@@ -21,16 +21,8 @@ import {
   type Actor,
 } from '../../store'
 import { Button } from '../ui'
-import { useSurface } from '../surface'
-import {
-  BtmCaptureBlock,
-  CardTotalPanel,
-  CompleteBar,
-  CompletionOverlay,
-  cardFee,
-  procedureFee,
-  type CardTotalLine,
-} from '../capture'
+import { useSurface, type CardTotalLine } from '../surface'
+import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee, procedureFee } from '../capture'
 import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../assets/samplePaperCards'
 import {
@@ -50,6 +42,13 @@ interface CardDetailBodyProps {
   onBack: () => void
   /** Called after a Card Copy (chrome pops back to the list). */
   onCopied: () => void
+  /**
+   * The platform masthead, handed to the layout rather than rendered above the
+   * body, for chrome that wants it to react to the scroll it does not own —
+   * mobile folds its masthead to a nav row as you work. Web and admin render
+   * their own page header above the body and pass nothing.
+   */
+  header?: (collapsed: boolean) => React.ReactNode
 }
 
 type SheetState =
@@ -116,13 +115,13 @@ const officeActionStyle: React.CSSProperties = {
  * it — one body, one set of guards / validation, so a BTM edit behaves
  * identically on both platforms.
  *
- * It names the pieces (`history` / `banners` / `context` / `capture` /
+ * It names the pieces (`header` / `history` / `banners` / `context` / `capture` /
  * `actions` / `summary` / `completeBar` / `overlay`) and hands them to
  * `useSurface().CardLayout`, which owns the arrangement: one phone column, or
  * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
-export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBodyProps) {
-  const { CardLayout } = useSurface()
+export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: CardDetailBodyProps) {
+  const { CardLayout, CardTotal } = useSurface()
   const card = useAppStore((s) => s.schedule.cards[cardId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -192,16 +191,23 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   }, [list, procedures, masters, billingLinesRecord])
 
   /**
-   * The breakdown behind the Card total, for a surface that pins the money in
-   * one place instead of putting a panel under each procedure. Rows are per
-   * PROCEDURE on a multi-procedure Card, and per FEE LINE when a single
-   * procedure has more than one (a rate-by-time line beside the RVG fee).
+   * The breakdown behind the pinned Card total. Rows are per PROCEDURE on a
+   * multi-procedure Card, and per FEE LINE when a single procedure has more than
+   * one (a rate-by-time line beside the RVG fee) — `linesArePerProcedure` says
+   * which, because the phone's dock chips up the first kind and cannot chip the
+   * second (a fee line has no ordinal to name it by).
+   *
    * The rate label is shown only where every procedure agrees on it: a Card
    * mixing a Type 3 fixed price with a units-by-rate procedure has no single
    * rate to state, and inventing one would be worse than omitting it.
    */
   const cardBreakdown = useMemo(() => {
-    const empty = { lines: [] as CardTotalLine[], rateLabel: null as string | null, overrideNote: null as string | null }
+    const empty = {
+      lines: [] as CardTotalLine[],
+      linesArePerProcedure: false,
+      rateLabel: null as string | null,
+      overrideNote: null as string | null,
+    }
     if (list === undefined || procedures.length === 0) return empty
 
     const views = procedures.map((procedure, index) =>
@@ -238,7 +244,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           ? `Override applied · was $${overridden[0]!.fee.override!.before.toFixed(2)}`
           : `Override applied on ${overridden.length} of ${procedures.length} procedures`
 
-    return { lines, rateLabel, overrideNote }
+    return { lines, linesArePerProcedure: procedures.length > 1, rateLabel, overrideNote }
   }, [list, procedures, masters, billingLinesRecord])
 
   // The card's full history: its own id plus its procedures' and billing lines'
@@ -665,6 +671,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   return (
     <>
       <CardLayout
+        header={header ?? null}
         history={history}
         banners={banners}
         context={context}
@@ -674,10 +681,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           cancelled || procedures.length === 0
             ? null
             : (action) => (
-                <CardTotalPanel
+                <CardTotal
                   units={cardTotals.units}
                   fee={cardTotals.total}
                   lines={cardBreakdown.lines}
+                  linesArePerProcedure={cardBreakdown.linesArePerProcedure}
                   rateLabel={cardBreakdown.rateLabel}
                   overrideNote={cardBreakdown.overrideNote}
                   action={action}
