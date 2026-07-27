@@ -3,6 +3,7 @@ import { accent, neutral, semantic } from '../../theme/tokens'
 import type { List, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
+import { useSurface } from '../surface'
 import { procedureFee } from './feeContext'
 import { AsaCard } from './AsaCard'
 import { ProcedureCodeCard } from './ProcedureCodeCard'
@@ -43,17 +44,28 @@ interface BtmCaptureBlockProps {
   showValidation: boolean
   /** Open the EditProcedureSheet for THIS procedure. */
   onEdit: () => void
+  /** Open the RemoveProcedureSheet for THIS procedure. Never offered on the
+   *  Card's first procedure, which `removeProcedure` refuses to delete. */
+  onRemove?: (() => void) | undefined
   onError: (message: string) => void
 }
 
 /**
  * One procedure's Outcome/BTM capture block (mockup screen 3 = the skin; the
  * Phase 01 calculator = the maths). Composition: context header → ASA →
- * procedure code → times → B/T/M + chips → ink fee panel → override →
+ * procedure code → times → B/T/M + chips → ink fee panel (where the surface
+ * places money inline; a desktop pins it in the rail instead) → override →
  * billing lines → notes. Write strategy (the logged capture-UX decision):
  * write-through per tap for steppers / chips / ASA / nudges / stamps — each
  * tap is one real audited procedure.update and drives the fee tick —
  * commit-on-blur/Save for all free text. Never debounced.
+ *
+ * The order above is the capture order and never varies. What varies is the
+ * grouping: the two short reference cards (ASA, procedure code) and the two
+ * short money cards (override, billing lines) go through `useSurface().Pair`,
+ * so a desktop sets each pair side by side while the phone keeps them stacked.
+ * Times and units stay full width on both — the stamps, the B/T/M rows and the
+ * modifier chips all use the room a desktop gives them.
  */
 export function BtmCaptureBlock({
   procedure,
@@ -65,8 +77,10 @@ export function BtmCaptureBlock({
   failures,
   showValidation,
   onEdit,
+  onRemove,
   onError,
 }: BtmCaptureBlockProps) {
+  const { Pair, feePlacement } = useSurface()
   const masters = useAppStore((s) => s.masters)
   const billingLines = useAppStore((s) => s.schedule.billingLines)
   const [sheetHint, setSheetHint] = useState(false)
@@ -115,26 +129,48 @@ export function BtmCaptureBlock({
           </span>
         </div>
         {editable && (
-          <button
-            type="button"
-            onClick={onEdit}
-            onMouseEnter={() => setSheetHint(true)}
-            onMouseLeave={() => setSheetHint(false)}
-            style={{
-              border: 'none',
-              background: 'none',
-              padding: 0,
-              fontFamily: 'inherit',
-              fontSize: 14,
-              fontWeight: 600,
-              color: contextFailures.length > 0 ? semantic.error.onTint : accent.base,
-              cursor: 'pointer',
-              textDecoration: sheetHint || contextFailures.length > 0 ? 'underline' : 'none',
-              flex: 'none',
-            }}
-          >
-            Edit
-          </button>
+          <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>
+            <button
+              type="button"
+              onClick={onEdit}
+              onMouseEnter={() => setSheetHint(true)}
+              onMouseLeave={() => setSheetHint(false)}
+              style={{
+                border: 'none',
+                background: 'none',
+                padding: 0,
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 600,
+                color: contextFailures.length > 0 ? semantic.error.onTint : accent.base,
+                cursor: 'pointer',
+                textDecoration: sheetHint || contextFailures.length > 0 ? 'underline' : 'none',
+              }}
+            >
+              Edit
+            </button>
+            {/* Additional procedures only: the Card's first is its anchor and
+                `removeProcedure` refuses it, so never show an action that
+                cannot work. */}
+            {onRemove !== undefined && canCapture && ordinal > 1 && (
+              <button
+                type="button"
+                onClick={onRemove}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  padding: 0,
+                  fontFamily: 'inherit',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: semantic.error.onTint,
+                  cursor: 'pointer',
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -168,17 +204,19 @@ export function BtmCaptureBlock({
         </div>
       )}
 
-      <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} onError={onError} />
+      <Pair>
+        <AsaCard procedure={procedure} actor={actor} disabled={!canCapture || procedure.isAdditional} onError={onError} />
 
-      <ProcedureCodeCard
-        procedure={procedure}
-        baseCode={baseCode}
-        rvgCodes={masters.rvgCodes}
-        actor={actor}
-        canCapture={canCapture}
-        failures={forFields(['rvgBaseCode', 'baseUnitsSelected'])}
-        onError={onError}
-      />
+        <ProcedureCodeCard
+          procedure={procedure}
+          baseCode={baseCode}
+          rvgCodes={masters.rvgCodes}
+          actor={actor}
+          canCapture={canCapture}
+          failures={forFields(['rvgBaseCode', 'baseUnitsSelected'])}
+          onError={onError}
+        />
+      </Pair>
 
       <TimesCard
         procedure={procedure}
@@ -198,25 +236,27 @@ export function BtmCaptureBlock({
         onError={onError}
       />
 
-      <FeeSummaryPanel fee={fee} isAdditional={procedure.isAdditional} />
+      {feePlacement === 'inline' && <FeeSummaryPanel fee={fee} isAdditional={procedure.isAdditional} />}
 
-      <OverrideCard
-        procedure={procedure}
-        actor={actor}
-        canCapture={canCapture}
-        failures={forFields(['priceOverride'])}
-        onError={onError}
-      />
+      <Pair>
+        <OverrideCard
+          procedure={procedure}
+          actor={actor}
+          canCapture={canCapture}
+          failures={forFields(['priceOverride'])}
+          onError={onError}
+        />
 
-      <BillingLinesCard
-        procedure={procedure}
-        nonRvgLines={nonRvgLines}
-        contract={contract}
-        masters={masters}
-        actor={actor}
-        canCapture={canCapture}
-        failures={forFields(['billingLines'])}
-      />
+        <BillingLinesCard
+          procedure={procedure}
+          nonRvgLines={nonRvgLines}
+          contract={contract}
+          masters={masters}
+          actor={actor}
+          canCapture={canCapture}
+          failures={forFields(['billingLines'])}
+        />
+      </Pair>
 
       <NotesCard procedure={procedure} actor={actor} canCapture={canCapture} onError={onError} />
 

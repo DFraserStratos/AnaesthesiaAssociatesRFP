@@ -444,3 +444,95 @@ export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Ou
 
   return ok({ procedureId })
 }
+
+// ---------------------------------------------------------------------------
+// removeProcedure
+// ---------------------------------------------------------------------------
+
+/**
+ * Remove an ADDITIONAL procedure from a Card — the undo for `addProcedure` (and
+ * for a second procedure captured in error). A HARD delete with the removed row
+ * snapshotted into `before`, mirroring `removeBillingLine`: a procedure is a
+ * sub-entity of the Card, not a billable record in its own right, so there is
+ * nothing for a soft-cancel state to remain visible on. The Card itself keeps
+ * its soft-cancel; that is the audited "this happened and then did not" case.
+ *
+ * Two things make it safe:
+ *  - **The Card's first procedure is not removable** (user ruling, 2026-07-27).
+ *    It is the anchor: it carries the base and modifier units the additional
+ *    ones deliberately do not, and its position feeds Type 3 second-procedure
+ *    pricing. Deleting it would leave a Card billing time units only, and
+ *    silently promoting the next one would rewrite the billing basis of a
+ *    procedure nobody touched. A Card booked wholly in error is a card
+ *    CANCELLATION, which is the refusal's pointer.
+ *  - **Its billing lines go with it**, each separately audited in the same
+ *    commit, so no line is orphaned onto a procedure that no longer exists
+ *    (an orphan would break the completion validator's conservation check and
+ *    the invoice build). A line carrying an office funder allocation blocks an
+ *    anaesthetist, exactly as `removeBillingLine` does.
+ */
+export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: string): Outcome {
+  const state = api.getState()
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
+  const found = getCard(state, procedure.cardId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const { card, list } = found
+
+  if (card.cancellation !== undefined) {
+    return refuse('cardCancelled', 'This Card is cancelled. Its procedures cannot be changed.')
+  }
+  if (card.completed) {
+    return refuse('cardCompleted', 'This Card is already marked complete. Amend it before removing a procedure.')
+  }
+  const rights = editRefusal(actor, list)
+  if (rights !== null) return rights
+
+  // Position, not the stored `isAdditional` flag: what may not be removed is
+  // whatever the Card currently anchors on, which is what the UI numbers
+  // PROCEDURE 1.
+  const siblings = proceduresForCard(state, card.id)
+  if (siblings[0]?.id === procedureId) {
+    return refuse(
+      'primaryProcedure',
+      "A Card's first procedure cannot be removed. Remove the additional procedures, or cancel the Card if the whole booking is wrong.",
+    )
+  }
+
+  const lines = Object.values(state.schedule.billingLines).filter((l) => l.procedureId === procedureId)
+  if (actor.role === 'anaesthetist' && lines.some((l) => l.funderOverride !== undefined)) {
+    return refuse(
+      'funderAllocationOfficeOnly',
+      'This procedure carries a billing line the office allocated to a funder. Only the office can remove it.',
+    )
+  }
+
+  const metas: MutationMeta[] = [
+    {
+      entityType: 'procedure',
+      entityId: procedureId,
+      action: 'procedure.remove',
+      before: procedure,
+      stampCardId: card.id,
+    },
+    ...lines.map(
+      (line): MutationMeta => ({
+        entityType: 'billingLine',
+        entityId: line.id,
+        action: 'billingLine.remove',
+        before: line,
+        stampCardId: card.id,
+      }),
+    ),
+  ]
+
+  mutate(api, actor, metas, (s) => {
+    const procedures = { ...s.schedule.procedures }
+    delete procedures[procedureId]
+    const billingLines = { ...s.schedule.billingLines }
+    for (const line of lines) delete billingLines[line.id]
+    return { schedule: { ...s.schedule, procedures, billingLines } }
+  })
+
+  return ok(undefined)
+}

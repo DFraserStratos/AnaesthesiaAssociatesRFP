@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { ChevronLeft } from 'lucide-react'
-import { accent, elevation, neutral, radius } from '../../../theme/tokens'
+import { accent, neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
@@ -16,11 +16,18 @@ interface CardDetailViewProps {
 }
 
 /**
- * Web card detail (drill-down page; W2 / M6-M7 parity). Desktop chrome (header +
- * panel) around the shared `CardDetailBody` — identical BTM capture, validation
- * and lifecycle guards to mobile; the edit / copy / add-card flows render as
- * centred dialogs via the web surface. The panel is `position:relative` so the
- * completion overlay and the sticky complete/amend footer land inside it.
+ * Web card detail (drill-down page; W2 / M6-M7 parity). Desktop chrome around
+ * the shared `CardDetailBody` — identical BTM capture, validation and lifecycle
+ * guards to mobile; the edit / copy / add-card flows render as centred dialogs
+ * via the web surface.
+ *
+ * The chrome is a page header in the web app's own language (the 28/34 title
+ * and slate sub-line the dashboard and lists table use), and then the body
+ * spans the full page width. There is deliberately no wrapping panel: the web
+ * `CardLayout` puts the capture cards straight onto the grey canvas the way
+ * every other web screen puts its panels there. Nesting white cards inside one
+ * white panel was the mobile stack borrowed whole, and it flattened the
+ * hierarchy on a surface that has room for a real one.
  */
 export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: CardDetailViewProps) {
   const card = useAppStore((s) => s.schedule.cards[cardId])
@@ -42,7 +49,7 @@ export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: Ca
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <button
         onClick={onBack}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
@@ -50,30 +57,23 @@ export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: Ca
         <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
       </button>
 
-      <div>
-        <h1 style={{ margin: 0, fontSize: 26, lineHeight: '32px', fontWeight: 700, letterSpacing: '-0.01em' }}>{patient?.name ?? 'Unknown patient'}</h1>
-        <div className="mono" style={{ fontSize: 12, color: neutral.slate, marginTop: 4 }}>
-          {badge.text}
-          {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
+            {patient?.name ?? 'Unknown patient'}
+          </h1>
+          <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
+            {badge.text}
+            {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
+          </div>
+          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
+            {primary?.description || 'Operation to capture'} · {hospitalName}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 14 }}>{primary?.description || 'Operation to capture'}</span>
-          <StatusChip status={list.statusKey} />
-          <span style={{ fontSize: 12, color: neutral.mist }}>{hospitalName}</span>
-        </div>
+        <StatusChip status={list.statusKey} />
       </div>
 
-      <div
-        style={{
-          position: 'relative',
-          background: neutral.surface,
-          border: `1px solid ${neutral.line}`,
-          borderRadius: radius.panel,
-          boxShadow: elevation.e1,
-        }}
-      >
-        <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} />
-      </div>
+      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { neutral } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { editProcedure, useAppStore, type Actor } from '../../store'
 import { TextArea } from '../ui'
+import { useSurface } from '../surface'
 import { CaptureSection, Caption } from './ui'
 
 interface NotesCardProps {
@@ -15,8 +16,11 @@ interface NotesCardProps {
 /**
  * The legacy Outcome panel's Int Notes / Op Notes, committed on blur when
  * changed (free text never writes per keystroke — the capture-UX decision).
+ * The two fields go through `useSurface().Pair`: stacked on the phone, side by
+ * side on a desktop, where two 72px boxes in one row read as one notes step.
  */
 export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardProps) {
+  const { Pair } = useSurface()
   const [intNotes, setIntNotes] = useState(procedure.intNotes ?? '')
   const [opNotes, setOpNotes] = useState(procedure.opNotes ?? '')
 
@@ -48,20 +52,22 @@ export function NotesCard({ procedure, actor, canCapture, onError }: NotesCardPr
 
   return (
     <CaptureSection label="Notes" gap={12}>
-      <TextArea
-        label="Int notes"
-        value={intNotes}
-        onChange={setIntNotes}
-        onBlur={() => commit('intNotes', intNotes, procedure.intNotes)}
-        placeholder="Internal notes for AA"
-      />
-      <TextArea
-        label="Op notes"
-        value={opNotes}
-        onChange={setOpNotes}
-        onBlur={() => commit('opNotes', opNotes, procedure.opNotes)}
-        placeholder="Operation notes"
-      />
+      <Pair>
+        <TextArea
+          label="Int notes"
+          value={intNotes}
+          onChange={setIntNotes}
+          onBlur={() => commit('intNotes', intNotes, procedure.intNotes)}
+          placeholder="Internal notes for AA"
+        />
+        <TextArea
+          label="Op notes"
+          value={opNotes}
+          onChange={setOpNotes}
+          onBlur={() => commit('opNotes', opNotes, procedure.opNotes)}
+          placeholder="Operation notes"
+        />
+      </Pair>
     </CaptureSection>
   )
 }

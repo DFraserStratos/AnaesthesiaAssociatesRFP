@@ -22,10 +22,24 @@ import {
 } from '../../store'
 import { Button } from '../ui'
 import { useSurface } from '../surface'
-import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee } from '../capture'
+import {
+  BtmCaptureBlock,
+  CardTotalPanel,
+  CompleteBar,
+  CompletionOverlay,
+  cardFee,
+  procedureFee,
+  type CardTotalLine,
+} from '../capture'
 import { ageYears, formatDob, nhiBadge } from '../format'
 import { PAPER_CARD_A } from '../../assets/samplePaperCards'
-import { CancelCardSheet, EditPatientSheet, EditProcedureSheet, PrepaymentOverrideSheet } from '../flows'
+import {
+  CancelCardSheet,
+  EditPatientSheet,
+  EditProcedureSheet,
+  PrepaymentOverrideSheet,
+  RemoveProcedureSheet,
+} from '../flows'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { HistorySheet } from './HistorySheet'
 
@@ -38,7 +52,13 @@ interface CardDetailBodyProps {
   onCopied: () => void
 }
 
-type SheetState = 'none' | 'cancel' | 'patient' | 'prepaymentOverride' | { kind: 'procedure'; procedureId: string }
+type SheetState =
+  | 'none'
+  | 'cancel'
+  | 'patient'
+  | 'prepaymentOverride'
+  | { kind: 'procedure'; procedureId: string }
+  | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
 
 function shiftTime(time: string, deltaMin: number): string {
   const base = time === '' ? 8 * 60 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
@@ -91,19 +111,25 @@ const officeActionStyle: React.CSSProperties = {
  * attachments / notes sections, the per-procedure BTM capture blocks (ordinal
  * ordered), the live `validateCardForBilling` + the showValidation latch, the
  * copy / cancel / add-procedure / complete / amend handlers, the edit sheets,
- * the completion overlay, and the complete/amend bar rendered through
- * `useSurface().Footer`. Both mobile's `CardDetailScreen` and web's
- * `CardDetailView` are thin chrome wrappers around it — one body, one set of
- * guards / validation, so a BTM edit behaves identically on both platforms.
+ * the completion overlay, and the complete/amend bar. Both mobile's
+ * `CardDetailScreen` and web's `CardDetailView` are thin chrome wrappers around
+ * it — one body, one set of guards / validation, so a BTM edit behaves
+ * identically on both platforms.
+ *
+ * It names the pieces (`history` / `banners` / `context` / `capture` /
+ * `actions` / `summary` / `completeBar` / `overlay`) and hands them to
+ * `useSurface().CardLayout`, which owns the arrangement: one phone column, or
+ * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
 export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBodyProps) {
-  const { Body, Footer } = useSurface()
+  const { CardLayout } = useSurface()
   const card = useAppStore((s) => s.schedule.cards[cardId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, cardId))
+  const audit = useAppStore((s) => s.audit)
   const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
@@ -163,16 +189,91 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
     return cardFee(procedures, list, masters, billingLinesRecord)
   }, [list, procedures, masters, billingLinesRecord])
 
+  /**
+   * The breakdown behind the Card total, for a surface that pins the money in
+   * one place instead of putting a panel under each procedure. Rows are per
+   * PROCEDURE on a multi-procedure Card, and per FEE LINE when a single
+   * procedure has more than one (a rate-by-time line beside the RVG fee).
+   * The rate label is shown only where every procedure agrees on it: a Card
+   * mixing a Type 3 fixed price with a units-by-rate procedure has no single
+   * rate to state, and inventing one would be worse than omitting it.
+   */
+  const cardBreakdown = useMemo(() => {
+    const empty = { lines: [] as CardTotalLine[], rateLabel: null as string | null, overrideNote: null as string | null }
+    if (list === undefined || procedures.length === 0) return empty
+
+    const views = procedures.map((procedure, index) =>
+      procedureFee({ procedure, list, ordinal: index + 1, masters, billingLines: billingLinesRecord }),
+    )
+
+    const rateLabels = views.map(({ fee }) =>
+      fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ $${fee.unitRate.toFixed(2)}/UNIT`,
+    )
+    const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
+
+    let lines: CardTotalLine[]
+    if (procedures.length > 1) {
+      lines = procedures.map((procedure, index) => {
+        const line: CardTotalLine = {
+          label: procedure.description === '' ? `Procedure ${index + 1}` : procedure.description,
+          amount: views[index]!.fee.total,
+        }
+        if (procedure.isAdditional) line.note = 'Time units only'
+        return line
+      })
+    } else {
+      const only = views[0]!.fee
+      lines = only.lines.length > 1 ? only.lines.map((l) => ({ label: l.description, amount: l.amount })) : []
+    }
+
+    // One procedure states what it was before the override; several would need a
+    // per-row note, so the summary just says an override is in play.
+    const overridden = views.filter((v) => v.fee.override !== null)
+    const overrideNote =
+      overridden.length === 0
+        ? null
+        : overridden.length === 1 && procedures.length === 1
+          ? `Override applied · was $${overridden[0]!.fee.override!.before.toFixed(2)}`
+          : `Override applied on ${overridden.length} of ${procedures.length} procedures`
+
+    return { lines, rateLabel, overrideNote }
+  }, [list, procedures, masters, billingLinesRecord])
+
   // The card's full history: its own id plus its procedures' and billing lines'
   // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
+  //
+  // Live records alone would lose the trail of anything REMOVED — the procedure
+  // that was added, captured and then deleted would leave audit entries no
+  // screen could reach, which is exactly what A6/A7 forbid. So the removals are
+  // read back out of the log: a `procedure.remove` entry snapshots the whole
+  // procedure into `before`, which names the Card it belonged to, and the lines
+  // that went with it are matched on that procedure id.
+  const removedEntityIds = useMemo(() => {
+    const procedureIds = new Set<string>()
+    for (const entry of audit) {
+      if (entry.entityType !== 'procedure' || entry.action !== 'procedure.remove') continue
+      const before = entry.before as { cardId?: string } | undefined
+      if (before?.cardId === cardId) procedureIds.add(entry.entityId)
+    }
+    if (procedureIds.size === 0) return []
+    const lineIds = audit
+      .filter((entry) => {
+        if (entry.entityType !== 'billingLine') return false
+        const before = entry.before as { procedureId?: string } | undefined
+        return before?.procedureId !== undefined && procedureIds.has(before.procedureId)
+      })
+      .map((entry) => entry.entityId)
+    return [...procedureIds, ...new Set(lineIds)]
+  }, [audit, cardId])
+
   const historyEntityIds = useMemo(() => {
     const procedureIds = procedures.map((p) => p.id)
     const procedureIdSet = new Set(procedureIds)
     const lineIds = Object.values(billingLinesRecord)
       .filter((l) => procedureIdSet.has(l.procedureId))
       .map((l) => l.id)
-    return [cardId, ...procedureIds, ...lineIds]
-  }, [cardId, procedures, billingLinesRecord])
+    return [cardId, ...procedureIds, ...lineIds, ...removedEntityIds]
+  }, [cardId, procedures, billingLinesRecord, removedEntityIds])
 
   if (card === undefined || list === undefined) return null
   const patient = masters.patients[card.patientId]
@@ -271,18 +372,21 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
     setPostOpMsg("Post-op addendum created on today's free session for this anaesthetist. Open it from the day view or list to capture and bill it.")
   }
 
-  const content = (
+  /* History affordance (Phase 07) — the card's reconstructable audit trail,
+     available on every platform (A6/A7). Own-data view is fine per A8. */
+  const history = (
+    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <button
+        onClick={() => setHistoryOpen(true)}
+        style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+      >
+        <History size={15} aria-hidden /> History
+      </button>
+    </div>
+  )
+
+  const banners = (
     <>
-      {/* History affordance (Phase 07) — the card's reconstructable audit trail,
-          available on every platform (A6/A7). Own-data view is fine per A8. */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          onClick={() => setHistoryOpen(true)}
-          style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-        >
-          <History size={15} aria-hidden /> History
-        </button>
-      </div>
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
           <strong>Card cancelled.</strong> {card.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
@@ -348,7 +452,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           ))}
         </div>
       )}
+    </>
+  )
 
+  const context = (
+    <>
       {/* Patient */}
       <Section label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
         <Row label="NHI">
@@ -416,7 +524,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           <div style={{ fontSize: 14, color: card.notes !== undefined ? neutral.ink : neutral.mist }}>{card.notes ?? 'No notes.'}</div>
         )}
       </Section>
+    </>
+  )
 
+  const capture = (
+    <>
       {/* Outcome / BTM capture — one block per procedure, in Card order
           (the ordinal feeds Type 3 second-procedure pricing). */}
       {!cancelled &&
@@ -432,6 +544,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
               failures={failures.filter((f) => f.procedureId === procedure.id)}
               showValidation={showValidation}
               onEdit={() => setSheet({ kind: 'procedure', procedureId: procedure.id })}
+              onRemove={() => setSheet({ kind: 'removeProcedure', procedureId: procedure.id, ordinal: index + 1 })}
               onError={setError}
             />
             {actor.role === 'office' && (
@@ -451,7 +564,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           <Plus size={16} aria-hidden /> Add another procedure
         </Button>
       )}
+    </>
+  )
 
+  const actions = (
+    <>
       {/* Actions */}
       {canEdit && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
@@ -490,32 +607,60 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
 
   return (
     <>
-      <Body footerClearance={showBar}>{content}</Body>
-
-      {showBar && (
-        <Footer>
-          <CompleteBar
-            completed={card.completed}
-            canAmend={canEdit}
-            onComplete={markComplete}
-            onAmend={amend}
-          />
-        </Footer>
-      )}
-
-      {overlay && <CompletionOverlay units={cardTotals.units} fee={cardTotals.total} />}
+      <CardLayout
+        history={history}
+        banners={banners}
+        context={context}
+        capture={capture}
+        actions={actions}
+        summary={
+          cancelled || procedures.length === 0
+            ? null
+            : (action) => (
+                <CardTotalPanel
+                  units={cardTotals.units}
+                  fee={cardTotals.total}
+                  lines={cardBreakdown.lines}
+                  rateLabel={cardBreakdown.rateLabel}
+                  overrideNote={cardBreakdown.overrideNote}
+                  action={action}
+                />
+              )
+        }
+        completeBar={
+          showBar ? (
+            <CompleteBar
+              completed={card.completed}
+              canAmend={canEdit}
+              onComplete={markComplete}
+              onAmend={amend}
+            />
+          ) : null
+        }
+        overlay={overlay ? <CompletionOverlay units={cardTotals.units} fee={cardTotals.total} /> : null}
+      />
 
       <CancelCardSheet open={sheet === 'cancel'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
       <PrepaymentOverrideSheet open={sheet === 'prepaymentOverride'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onOverridden={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} cardId={cardId} actor={actor} onClose={() => setSheet('none')} />
       )}
-      {typeof sheet === 'object' && proceduresRecord[sheet.procedureId] !== undefined && (
+      {typeof sheet === 'object' && sheet.kind === 'procedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <EditProcedureSheet
           open
           procedure={proceduresRecord[sheet.procedureId]!}
           actor={actor}
           onClose={() => setSheet('none')}
+        />
+      )}
+      {typeof sheet === 'object' && sheet.kind === 'removeProcedure' && proceduresRecord[sheet.procedureId] !== undefined && (
+        <RemoveProcedureSheet
+          open
+          procedureId={sheet.procedureId}
+          ordinal={sheet.ordinal}
+          actor={actor}
+          onClose={() => setSheet('none')}
+          onRemoved={() => setError(null)}
         />
       )}
       <HistorySheet open={historyOpen} entityIds={historyEntityIds} title="Card history" onClose={() => setHistoryOpen(false)} />

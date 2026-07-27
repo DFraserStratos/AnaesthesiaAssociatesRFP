@@ -3,6 +3,7 @@ import { accent, neutral } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import { timeUnitsFromMinutes, type BillingValidationFailure } from '../../domain/billing'
 import { clockISO, editProcedure, useAppStore, type Actor } from '../../store'
+import { useSurface } from '../surface'
 import { durationLabel, isoTimeLabel, minutesBetweenIso, shiftIsoMinutes } from './timeIso'
 import { CaptureSection, Caption, FailureNotes, NudgeButton } from './ui'
 
@@ -23,8 +24,14 @@ interface TimesCardProps {
  * maths on the local-naive shape (`timeIso.ts`), never Date → toISOString.
  * The duration strip repeats the tiered rule and the ROUNDING ASSUMPTION
  * (Decisions log 2026-07-22: the RFP is silent on partial intervals).
+ *
+ * The stamps and the duration strip go through `useSurface().Pair`: stacked on
+ * the phone exactly as before, side by side on a desktop. Left full width the
+ * two stamp columns would each be about 400px, which turns "Finish now" into a
+ * slab and floats the mono times in empty space.
  */
 export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
+  const { Pair } = useSurface()
   const [stamped, setStamped] = useState<{ start: boolean; finish: boolean }>({ start: false, finish: false })
 
   const start = procedure.anaestheticStartISO
@@ -68,72 +75,74 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
 
   return (
     <CaptureSection label="Times">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {/* Start column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {start !== undefined ? (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
-              <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(start)}</div>
-              {canCapture && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <NudgeButton label="−5" onClick={() => nudgeStart(-5)} />
-                  <NudgeButton label="+5" onClick={() => nudgeStart(5)} />
-                </div>
-              )}
-              {stamped.start && <Caption>Stamped from the demo clock</Caption>}
-            </>
-          ) : canCapture ? (
-            <StampButton label="Start now" onClick={stampStart} />
-          ) : (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
-              <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
-            </>
-          )}
-        </div>
-
-        {/* Finish column appears once a start exists */}
-        {start !== undefined && (
+      <Pair>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* Start column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {finish !== undefined ? (
+            {start !== undefined ? (
               <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
-                <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(finish)}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
+                <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(start)}</div>
                 {canCapture && (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <NudgeButton label="−5" onClick={() => nudgeFinish(-5)} />
-                    <NudgeButton label="+5" onClick={() => nudgeFinish(5)} />
+                    <NudgeButton label="−5" onClick={() => nudgeStart(-5)} />
+                    <NudgeButton label="+5" onClick={() => nudgeStart(5)} />
                   </div>
                 )}
-                {stamped.finish && <Caption>Stamped from the demo clock</Caption>}
+                {stamped.start && <Caption>Stamped from the demo clock</Caption>}
               </>
             ) : canCapture ? (
-              <StampButton label="Finish now" onClick={stampFinish} />
+              <StampButton label="Start now" onClick={stampStart} />
             ) : (
               <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
                 <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
               </>
             )}
           </div>
-        )}
-      </div>
 
-      {minutes !== null && minutes > 0 && (
-        <div style={{ fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>
-            Duration {durationLabel(minutes)} →{' '}
-            <strong style={{ color: neutral.ink }}>
-              {timeUnitsFromMinutes(minutes)} time {timeUnitsFromMinutes(minutes) === 1 ? 'unit' : 'units'}
-            </strong>
-          </span>
-          <span style={{ color: neutral.mist }}>
-            1 unit per 15 min for the first 2 hours, then 1 per 10 min. Part intervals round up
-            (assumption to confirm with AA).
-          </span>
+          {/* Finish column appears once a start exists */}
+          {start !== undefined && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {finish !== undefined ? (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
+                  <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(finish)}</div>
+                  {canCapture && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <NudgeButton label="−5" onClick={() => nudgeFinish(-5)} />
+                      <NudgeButton label="+5" onClick={() => nudgeFinish(5)} />
+                    </div>
+                  )}
+                  {stamped.finish && <Caption>Stamped from the demo clock</Caption>}
+                </>
+              ) : canCapture ? (
+                <StampButton label="Finish now" onClick={stampFinish} />
+              ) : (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
+                  <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
+                </>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {minutes !== null && minutes > 0 && (
+          <div style={{ fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span>
+              Duration {durationLabel(minutes)} →{' '}
+              <strong style={{ color: neutral.ink }}>
+                {timeUnitsFromMinutes(minutes)} time {timeUnitsFromMinutes(minutes) === 1 ? 'unit' : 'units'}
+              </strong>
+            </span>
+            <span style={{ color: neutral.mist }}>
+              1 unit per 15 min for the first 2 hours, then 1 per 10 min. Part intervals round up
+              (assumption to confirm with AA).
+            </span>
+          </div>
+        )}
+      </Pair>
 
       <FailureNotes failures={[...startFailures, ...finishFailures]} />
     </CaptureSection>

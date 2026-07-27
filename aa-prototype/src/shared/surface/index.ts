@@ -8,4 +8,5 @@ export {
   type SurfaceVariant,
   type OverlayProps,
   type FooterProps,
+  type CardLayoutSlots,
 } from './context'

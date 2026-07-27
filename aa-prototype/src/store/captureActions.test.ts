@@ -1,14 +1,14 @@
 /**
  * Phase 04 store guard tests — addBillingLine / removeBillingLine (incl. the
  * Method 3 individual-arrangement gate and the funder-allocation protection),
- * addProcedure, uncompleteCard and completionBlockersFor. Every test uses an
- * isolated, non-persisted store seeded from buildSeed().
+ * addProcedure / removeProcedure, uncompleteCard and completionBlockersFor.
+ * Every test uses an isolated, non-persisted store seeded from buildSeed().
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { addBillingLine, removeBillingLine } from './billingLineActions'
-import { addProcedure } from './cardActions'
+import { addBillingLine, removeBillingLine, setBillingLineAllocation } from './billingLineActions'
+import { addProcedure, removeProcedure } from './cardActions'
 import {
   authoriseList,
   completionBlockersFor,
@@ -323,6 +323,118 @@ describe('addProcedure', () => {
     const outcome = addProcedure(api, MORRISON, morrisonCard)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
+  })
+})
+
+describe('removeProcedure', () => {
+  it('removes an added procedure, audited with the removed row snapshotted', () => {
+    const api = store()
+    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    expect(added.ok).toBe(true)
+    if (!added.ok) return
+    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(2)
+
+    const outcome = removeProcedure(api, SOUTER, added.value.procedureId)
+    expect(outcome).toEqual({ ok: true, value: undefined })
+    expect(api.getState().schedule.procedures[added.value.procedureId]).toBeUndefined()
+    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(1)
+
+    const entry = auditForEntity(api.getState(), added.value.procedureId).at(-1)
+    expect(entry?.action).toBe('procedure.remove')
+    // The snapshot names its Card, which is what lets the card's History still
+    // reach the trail of a procedure that no longer exists.
+    expect((entry?.before as { cardId?: string } | undefined)?.cardId).toBe(ELLISON_CARD)
+  })
+
+  it('takes the procedure\'s billing lines with it, each audited', () => {
+    const api = store()
+    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    if (!added.ok) throw new Error('addProcedure failed')
+    const line = addBillingLine(api, SOUTER, added.value.procedureId, {
+      description: 'Ancillary flat fee',
+      chargeBasis: 'fixed',
+      amount: 85.5,
+    })
+    if (!line.ok) throw new Error('addBillingLine failed')
+
+    expect(removeProcedure(api, SOUTER, added.value.procedureId).ok).toBe(true)
+    expect(api.getState().schedule.billingLines[line.value.billingLineId]).toBeUndefined()
+    expect(auditForEntity(api.getState(), line.value.billingLineId).at(-1)?.action).toBe('billingLine.remove')
+  })
+
+  it('refuses the Card\'s first procedure, whether or not it is the only one', () => {
+    const api = store()
+    const primary = firstProcedureId(api, ELLISON_CARD)
+
+    const alone = removeProcedure(api, SOUTER, primary)
+    expect(alone.ok).toBe(false)
+    if (!alone.ok) {
+      expect(alone.code).toBe('primaryProcedure')
+      expect(alone.message).toContain('cancel the Card')
+    }
+
+    // Still refused once the Card has an additional procedure to fall back on:
+    // the anchor carries the base and modifier units, and nothing is promoted
+    // into its place.
+    expect(addProcedure(api, SOUTER, ELLISON_CARD).ok).toBe(true)
+    const withSpare = removeProcedure(api, SOUTER, primary)
+    expect(withSpare.ok).toBe(false)
+    if (!withSpare.ok) expect(withSpare.code).toBe('primaryProcedure')
+    expect(api.getState().schedule.procedures[primary]).toBeDefined()
+    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(2)
+  })
+
+  it('refuses cancelled and completed cards, and the anaesthetist on a SUBMITTED list', () => {
+    const api = store()
+
+    const cancelledProcedure = firstProcedureId(api, CANCELLED_CARD)
+    const cancelled = removeProcedure(api, OFFICE, cancelledProcedure)
+    expect(cancelled.ok).toBe(false)
+    if (!cancelled.ok) expect(cancelled.code).toBe('cardCancelled')
+
+    // SPLIT_CARD is completed and carries two procedures, so the completion
+    // gate is what refuses, not the last-procedure guard.
+    const completed = removeProcedure(api, SOUTER, firstProcedureId(api, SPLIT_CARD))
+    expect(completed.ok).toBe(false)
+    if (!completed.ok) {
+      expect(completed.code).toBe('cardCompleted')
+      expect(completed.message).toContain('Amend it before removing a procedure')
+    }
+
+    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]!.id
+    expect(uncompleteCard(api, OFFICE, morrisonCard).ok).toBe(true)
+    const submitted = removeProcedure(api, MORRISON, firstProcedureId(api, morrisonCard))
+    expect(submitted.ok).toBe(false)
+    if (!submitted.ok) expect(submitted.code).toBe('listSubmitted')
+  })
+
+  it('blocks the anaesthetist when a line carries an office funder allocation, and lets the office through', () => {
+    const api = store()
+    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    if (!added.ok) throw new Error('addProcedure failed')
+    const line = addBillingLine(api, SOUTER, added.value.procedureId, {
+      description: 'Ancillary flat fee',
+      chargeBasis: 'fixed',
+      amount: 85.5,
+    })
+    if (!line.ok) throw new Error('addBillingLine failed')
+    // The additional procedure bills time units only and has no times, so its
+    // whole fee is the one line: allocating it conserves to the cent.
+    const allocated = setBillingLineAllocation(api, OFFICE, line.value.billingLineId, {
+      funderOverride: { kind: 'patient', id: api.getState().schedule.cards[ELLISON_CARD]!.patientId },
+      amount: 85.5,
+    })
+    expect(allocated.ok).toBe(true)
+
+    const refused = removeProcedure(api, SOUTER, added.value.procedureId)
+    expect(refused.ok).toBe(false)
+    if (!refused.ok) expect(refused.code).toBe('funderAllocationOfficeOnly')
+    expect(api.getState().schedule.procedures[added.value.procedureId]).toBeDefined()
+
+    const office = removeProcedure(api, OFFICE, added.value.procedureId)
+    expect(office.ok).toBe(true)
+    expect(api.getState().schedule.procedures[added.value.procedureId]).toBeUndefined()
+    expect(api.getState().schedule.billingLines[line.value.billingLineId]).toBeUndefined()
   })
 })
 
