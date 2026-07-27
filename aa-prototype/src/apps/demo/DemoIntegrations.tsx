@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Info, Play, Radio, RotateCw } from 'lucide-react'
+import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
 import { DemoSurface } from './DemoSurface'
-import { processMessage, useAppStore } from '../../store'
+import { processMessage, resetDemo, useAppStore } from '../../store'
 import { neutral, accent, radius, semantic } from '../../theme/tokens'
 import {
   CANNED_MESSAGES,
@@ -43,6 +43,7 @@ export function DemoIntegrations() {
   const [feedId, setFeedId] = useState<string>(FEED.stg)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [live, setLive] = useState(false)
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
   const feed = feeds[feedId]
   const library = useMemo(() => CANNED_MESSAGES.filter((m) => m.feedId === feedId), [feedId])
@@ -109,10 +110,18 @@ export function DemoIntegrations() {
     processMessage(useAppStore, selected.id)
   }
 
+  function resetSimulator() {
+    resetDemo(useAppStore)
+    setFeedId(FEED.stg)
+    setSelectedId(null)
+    setLive(false)
+    setConfirmingReset(false)
+  }
+
   return (
     <DemoSurface
       title="Integration simulator"
-      subtitle="Replay canned hospital messages into the fake backend and watch them translate and land on the schedule. HL7 v2 feeds are translated to FHIR R4; the Southern Cross feed is FHIR-native. All in-browser, no real endpoints."
+      subtitle="Replay canned hospital messages into the mock backend and watch them translate and land on the schedule. HL7 v2 feeds are translated to FHIR R4; the Southern Cross feed is FHIR-native. All in-browser, no real endpoints."
     >
       <Callout tone="info" title="Target state: FHIR-first, via the Digital Services Hub">
         Health NZ's direction is FHIR-first. This prototype translates each hospital's HL7 v2 into FHIR
@@ -161,19 +170,43 @@ export function DemoIntegrations() {
         })}
       </div>
 
-      {/* Live-feed control + mapping summary */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={() => setLive((v) => !v)}
-          style={{ ...pillButton, background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
-        >
-          <Radio size={14} strokeWidth={2.5} aria-hidden />
-          {live ? 'Streaming live feed...' : 'Start live feed'}
-        </button>
-        <span style={{ fontSize: 12, color: neutral.mist }}>
-          Drips this feed's messages one per second into the backend.
-        </span>
+      {/* Live-feed + reset controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setLive((v) => !v)}
+            style={{ ...pillButton, background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
+          >
+            <Radio size={14} strokeWidth={2.5} aria-hidden />
+            {live ? 'Streaming live feed...' : 'Start live feed'}
+          </button>
+          <span style={{ fontSize: 12, color: neutral.mist }}>
+            Drips this feed's messages one per second into the backend.
+          </span>
+        </div>
+        {confirmingReset ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: semantic.warning.onTint }}>
+              This resets all demo apps to the pristine seed.
+            </span>
+            <button
+              type="button"
+              onClick={resetSimulator}
+              style={{ ...pillButton, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}
+            >
+              Confirm reset
+            </button>
+            <button type="button" onClick={() => setConfirmingReset(false)} style={pillButton}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirmingReset(true)} style={pillButton}>
+            <RotateCcw size={14} strokeWidth={2.5} aria-hidden />
+            Reset demo data
+          </button>
+        )}
       </div>
 
       {feed !== undefined && (
@@ -187,28 +220,17 @@ export function DemoIntegrations() {
         </div>
       )}
 
-      {/* Message library */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {library.map((m) => (
-          <MessageRow
-            key={m.id}
-            message={m}
-            active={selected?.id === m.id}
-            statusLabel={statusLabelFor(m.id, messages)}
-            onSelect={() => setSelectedId(m.id)}
-            onReplay={() => {
-              setSelectedId(m.id)
-              processMessage(useAppStore, m.id)
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Panes */}
+      {/* Selected-message inspector stays above the long library so the
+          raw-to-FHIR story is visible as soon as the simulator opens. */}
       {selected !== undefined && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.label}</div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
+                Selected message
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.label}</div>
+            </div>
             <button type="button" onClick={replay} style={{ ...pillButton, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
               <RotateCw size={14} strokeWidth={2.5} aria-hidden />
               Replay message
@@ -238,6 +260,31 @@ export function DemoIntegrations() {
           </div>
         </div>
       )}
+
+      {/* Message library */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
+            Message library
+          </div>
+          <div style={{ fontSize: 12, color: neutral.slate }}>
+            Select a message to inspect it above, or replay it directly.
+          </div>
+        </div>
+        {library.map((m) => (
+          <MessageRow
+            key={m.id}
+            message={m}
+            active={selected?.id === m.id}
+            statusLabel={statusLabelFor(m.id, messages)}
+            onSelect={() => setSelectedId(m.id)}
+            onReplay={() => {
+              setSelectedId(m.id)
+              processMessage(useAppStore, m.id)
+            }}
+          />
+        ))}
+      </div>
     </DemoSurface>
   )
 }

@@ -9,9 +9,22 @@ import { expect, test } from '@playwright/test'
 test('integration simulator replays a message and shows the schedule effect', async ({ page }) => {
   await page.goto('/demo/integrations')
   await page.waitForLoadState('networkidle')
+  // The selected-message inspector is part of the opening viewport, not buried
+  // beneath the long canned-message library.
+  await expect(page.getByText('1 · Raw HL7 v2')).toBeInViewport()
+  await expect(page.getByText('2 · FHIR R4 (translated)')).toBeInViewport()
+
   // The default selected message is the headline S12 create; replay it.
   await page.getByRole('button', { name: 'Replay message' }).click()
   await expect(page.getByText(/Processed/).first()).toBeVisible()
+
+  // Reset is available in-context and restores both the shared fake backend
+  // and this simulator's local selection/live-feed state.
+  await page.getByRole('button', { name: 'Reset demo data' }).click()
+  await expect(page.getByText('This resets all demo apps to the pristine seed.')).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm reset' }).click()
+  await expect(page.getByText('Not replayed yet. Click Replay to apply this message.')).toBeVisible()
+
   await page.screenshot({ path: 'visual/shots/phase11-simulator.png', fullPage: true })
 })
 

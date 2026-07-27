@@ -288,7 +288,7 @@ document:
 - "Part intervals round up (assumption to confirm with AA)" on the BTM capture screen
   (`src/shared/capture/TimesCard.tsx:132`, visible in `visual/shots/m4-04-finish-stamped.png`).
 - "Modifier values are demo-plausible within the RFP's stated ranges, not an authoritative NZSA
-  schedule" beneath the modifier chips (`ModifierChips.tsx:77`) and on both master-data tabs.
+  schedule" beneath the modifier picker (`ModifierChips.tsx:167`) and on both master-data tabs.
 - "One row per outstanding ACCPAY invoice, ordered by date raised. No rollup (per the RFP)."
   on the Overdue table (`visual/shots/w-09-overdue.png`).
 - "Scale is narrated with counters, not simulated as records." in the Xero sim

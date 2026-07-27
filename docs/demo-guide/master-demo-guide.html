@@ -253,7 +253,7 @@
       <span class="ltd">Ltd</span>
       <span class="sub">Booking &amp; Billing · Master Demo Guide</span>
     </div>
-    <span class="snapshot">Prototype snapshot · 24 July 2026</span>
+    <span class="snapshot">Prototype snapshot · 28 July 2026</span>
   </div>
 </header>
 
@@ -737,7 +737,7 @@
     </div>
     <div class="beat">
       <h4>Beat 1 · the booking arrives</h4>
-      <div class="row"><span class="k">Click</span><span>Go to Integrations. Show raw HL7 v2 left, mapped FHIR-style representation right.</span></div>
+      <div class="row"><span class="k">Click</span><span>Go to Integrations. The selected-message inspector is above the library: show raw HL7 v2 left, translated FHIR R4 in the middle, and the processed schedule change right.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Hospitals may still send HL7 v2, but the target is FHIR-native. Messages are mapped per hospital, processed near real time and audited. This booking created a Card without re-keying."</span></div>
       <div class="row"><span class="k">Expect</span><span>A new Card for Sarah Mitchell on Dr Souter's Tue 28 Jul AM List; her NHI matched an existing record, so intake reused it.</span></div>
     </div>
@@ -890,8 +890,9 @@
 
   <div class="callout"><strong>Recovery from demo accidents.</strong> Every scenario jump resets first, so
   the fastest recovery is to re-run the scenario (Scenario jumps &#8594; the same Jump &#8594; Confirm jump), or
-  use Clock &amp; reset &#8594; Reset demo data. Reset returns the clock to Tue 21 Jul 2026, 8:00 and restarts
-  identifiers, so invoice numbers begin at the same point every time. If Finish now was stamped too early,
+  use Clock &amp; reset &#8594; Reset demo data. The Integration simulator also exposes the same whole-demo
+  reset beside Start live feed. Reset returns the clock to Tue 21 Jul 2026, 8:00 and restarts identifiers,
+  so invoice numbers begin at the same point every time. If Finish now was stamped too early,
   reset and advance the clock before reopening the Card. A stray refresh is no longer a problem: it returns
   you to the same screen, the back button retraces your steps, and you can paste a beat's address from
   Direct URLs.</div>
@@ -910,8 +911,10 @@
     <li>Each anaesthetist has an independent value per unit.</li>
     <li>The anaesthetist selects the RVG code; the system does not infer it. Some codes are ranges.</li>
     <li>Positioning cannot be charged again if the base code already includes it.</li>
-    <li>Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure: tapping a
-      sibling swaps it in. A pre-assessment follow-up stacks on top.</li>
+    <li>Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so each band
+      is a segmented control: picking a sibling swaps it in, and picking the live segment again clears the
+      band. The codes that genuinely stack (pre-assessment follow-up, emergency, positioning, awake
+      intubation, post-op care) stay as chips under "Also applies".</li>
     <li>Partial-interval rounding is a prototype assumption (round up per started interval).</li>
   </ul>
 

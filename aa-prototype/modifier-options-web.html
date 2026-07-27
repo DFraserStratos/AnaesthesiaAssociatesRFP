@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AA · Modifier list on the web card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#172320; --slate:#58635F; --mist:#8A9490; --line-strong:#C9D1CE;
+    --line:#E2E7E5; --sunken:#EDF1EF; --bg:#F6F8F7; --surface:#FFFFFF;
+    --brand:#A91E3E; --accent:#0D6E63; --accent-hover:#0A5A51; --accent-pressed:#084A43;
+    --accent-tint:#E1F0ED;
+    --ok:#1E8E5A; --ok-tint:#E3F4EB; --ok-on:#157A49;
+    --warn-tint:#F9F0DC; --warn-on:#7C4D08;
+    --err:#C2403C; --err-tint:#FAE9E7; --err-on:#9C332F;
+    --info:#2E66E5; --info-tint:#E8EEFC; --info-on:#1F44A3;
+    --e1:0 1px 2px rgba(23,35,32,0.05), 0 2px 6px rgba(23,35,32,0.05);
+    --e2:0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09);
+    --font:'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--sunken);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:28px 24px 120px}
+  h1{font-size:32px;line-height:38px;font-weight:700;letter-spacing:-0.02em;margin:0 0 8px}
+  .lede{font-size:15px;line-height:22px;color:var(--slate);max-width:860px;margin:0 0 12px}
+  .note{font-size:13px;line-height:19px;color:var(--mist);max-width:860px;margin:0 0 8px}
+  .note code{font-family:var(--mono);font-size:12px;color:var(--slate)}
+
+  .toolbar{position:sticky;top:0;z-index:20;margin:20px -24px 26px;padding:14px 24px;
+    background:rgba(237,241,239,0.92);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+  .tgroup{display:flex;align-items:center;gap:10px}
+  .tlbl{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  .pillseg{display:inline-flex;background:var(--surface);border:1px solid var(--line);
+    border-radius:999px;padding:4px;gap:4px}
+  .pillseg button{font:inherit;font-size:13px;font-weight:600;border:none;background:none;
+    color:var(--slate);padding:7px 13px;border-radius:999px;cursor:pointer}
+  .pillseg button.on{background:var(--accent);color:#fff}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:var(--slate);background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer}
+  .btn:hover{background:var(--sunken)}
+  .colnote{font-family:var(--mono);font-size:12px;color:var(--slate)}
+
+  /* Option sections */
+  .opt{margin:0 0 44px}
+  .opt-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .tag{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:#fff;background:var(--ink);border-radius:6px;padding:3px 8px}
+  .tag.now{background:var(--slate)}
+  .tag.rec{background:var(--accent)}
+  .opt h2{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.01em;margin:0}
+  .badges{display:flex;gap:8px;margin-left:auto}
+  .badge{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--slate);
+    background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:3px 9px;white-space:nowrap}
+  .badge.good{background:var(--ok-tint);border-color:transparent;color:var(--ok-on)}
+  .badge.bad{background:var(--err-tint);border-color:transparent;color:var(--err-on)}
+  .what{font-size:14px;line-height:20px;color:var(--slate);max-width:860px;margin:0 0 6px}
+  .meta{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;max-width:860px}
+  .meta li{font-size:12px;line-height:17px;color:var(--mist);padding-left:16px;position:relative}
+  .meta li:before{position:absolute;left:0;font-weight:700}
+  .meta li.win:before{content:'+';color:var(--ok-on)}
+  .meta li.risk:before{content:'!';color:var(--warn-on)}
+  .meta li.ref:before{content:'\2192';color:var(--mist)}
+
+  /* The record page, faithful to WebCardLayout: capture column + sticky rail */
+  .page{background:var(--bg);border:1px solid var(--line-strong);border-radius:12px;
+    padding:20px;box-shadow:var(--e2);display:inline-flex;gap:16px;align-items:flex-start}
+  .capture{display:flex;flex-direction:column;gap:16px;flex:none}
+  .rail{display:flex;flex-direction:column;gap:12px;flex:none}
+  .railstub{font-size:12px;line-height:17px;color:var(--mist);border:1px dashed var(--line-strong);
+    border-radius:12px;padding:12px 14px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;
+    display:flex;flex-direction:column}
+  .cap{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  .phead{display:flex;align-items:baseline;gap:10px}
+  .phead .t{font-size:16px;font-weight:600}
+  .phead .e{font-size:14px;font-weight:600;color:var(--accent)}
+  .route{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;
+    background:var(--sunken);font-size:12px;font-weight:600;color:var(--slate)}
+  .ctxline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ctxline .m{font-size:12px;color:var(--mist)}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}
+  .caption{font-size:12px;line-height:16px;color:var(--mist)}
+  .caption.slate{color:var(--slate)}
+  .link{font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:none;border:none;padding:0;cursor:pointer}
+
+  .srow{display:flex;align-items:center;gap:12px}
+  .srow .lbl{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .srow .lbl b{font-size:15px;font-weight:600}
+  .step{width:40px;height:40px;flex:none;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);font-size:20px;font-weight:600;color:var(--slate);cursor:pointer}
+  .val{width:36px;text-align:center;font-family:var(--mono);font-size:20px;font-weight:700;
+    font-variant-numeric:tabular-nums;flex:none}
+
+  /* Chips */
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:10px 14px;border-radius:999px;font:inherit;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background 150ms,border-color 150ms;background:var(--surface);
+    color:var(--slate);border:1.5px solid var(--line);text-align:left}
+  .chip:hover{border-color:var(--line-strong)}
+  .chip.on{background:var(--accent-tint);color:var(--accent-hover);border-color:var(--accent)}
+  .chip.on:hover{border-color:var(--accent)}
+  .chip .c{font-family:var(--mono);font-size:12px;font-weight:600}
+
+  /* Segmented band control (AsaCard pattern).
+     Segments size to their own content: a two option band must not stretch into
+     two slabs, and a four option band must never clip its longest label. Only
+     when the control cannot fit its row do segments share the space and stack
+     the unit under the label. */
+  .seg{display:inline-flex;max-width:100%;background:var(--sunken);border-radius:12px;padding:4px;gap:4px}
+  .seg button{flex:0 0 auto;height:40px;padding:0 14px;border-radius:9px;border:none;font:inherit;
+    font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--slate);
+    display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;transition:background 150ms,color 150ms}
+  .seg button:hover:not(.on){background:rgba(255,255,255,0.7)}
+  .seg button.on{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(23,35,32,0.2)}
+  .seg button .u{font-family:var(--mono);font-size:11px;font-weight:600;opacity:0.72}
+  .seg.fill button{flex:1 1 0;min-width:0;padding:0 8px}
+  .seg.stack button{flex-direction:column;gap:0;line-height:1.15;height:44px}
+  /* Narrow-window fallback: the phone's own two column segment grid. */
+  .seg.grid2{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .seg.asa{display:flex}
+  .seg.asa button{flex:1 1 0;height:44px;font-size:16px}
+
+  /* Variant A: aligned band rows */
+  .brow{display:flex;align-items:center;gap:12px}
+  .brow > .bl{width:140px;flex:none;font-size:13px;font-weight:600;color:var(--slate)}
+  .brow > .bc{flex:1;min-width:0;display:flex}
+  .rule{height:1px;background:var(--line);margin:2px 0}
+
+  /* Variant B: paired halves */
+  .halves{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .band{display:flex;flex-direction:column;gap:6px}
+  .band > .bl{font-size:12px;font-weight:600;color:var(--slate)}
+
+  /* Ink commit panel */
+  .ink{background:var(--ink);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .ink .k{font-size:11px;font-weight:600;letter-spacing:0.06em;color:rgba(255,255,255,0.55)}
+  .ink .v{font-family:var(--mono);font-size:30px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .ink .split{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .ink .col{display:flex;flex-direction:column;gap:4px}
+  .ink .col.r{align-items:flex-end}
+  .flash{border-radius:8px;padding:2px 8px;margin-right:-8px;background:rgba(31,164,99,0);
+    transition:background 240ms cubic-bezier(0.16,1,0.3,1)}
+  .flash.on{background:rgba(31,164,99,0.45);transition:none}
+  .ink .cta{width:100%;height:44px;border:none;border-radius:12px;background:var(--accent);
+    color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Modifier list · the web card</h1>
+  <p class="lede">
+    The same 1 + 5 fix, translated to the desktop surface. On the phone the argument was height. Here
+    it is not: the capture column is 832px wide, so the chips already fit two to four per row. The
+    problem is that six ragged rows of pills carry no structure, the band rule stays invisible, and
+    the M row's provenance caption sits 800px from its own stepper. What the width buys is alignment:
+    the band labels can hold a column of their own, so the modifier decisions read as a continuation
+    of the card's B / T / M rows rather than a separate wall.
+  </p>
+  <p class="note">
+    Decision aid only, nothing in the app changed. Standalone file
+    (<code>aa-prototype/modifier-options-web.html</code>), outside the router and the Vite build input,
+    like <code>avatar-options.html</code>. Geometry is derived from
+    <code>WebCardLayout</code> and <code>WebApp.tsx:68</code>: a 1320px container, 12 columns, 16px
+    gutters, capture on span 8 and the pinned commit rail on span 4. Codes, labels, unit values and the
+    band swap rule come from <code>modifierCodes.ts</code>. Every control below is live.
+  </p>
+  <p class="note">
+    1 + 5 is strictly what you picked: segmented controls for the three exclusive bands
+    (PA, A, OB), short labels for the six codes that stack freely. Options 08 to 10 from the phone
+    page (<code>modifier-options.html</code>) are independent and would apply to both surfaces.
+    Try the window sizes: the fallback is per band and fires only where a control cannot fit its row.
+  </p>
+
+  <div class="toolbar">
+    <div class="tgroup">
+      <span class="tlbl">Browser window</span>
+      <div class="pillseg" id="widths"></div>
+      <span class="colnote" id="colnote"></span>
+    </div>
+    <div class="tgroup">
+      <span class="tlbl">Badges</span>
+      <span class="colnote">structure · rows · height, modifier block only</span>
+    </div>
+    <button class="btn" id="reset" style="margin-left:auto">Reset selections</button>
+  </div>
+
+  <div id="sections"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Data, transcribed from src/domain/billing/modifierCodes.ts and
+// src/shared/capture/modifierLabels.ts. The AS group is excluded: the ASA card
+// owns it, as ModifierChips.tsx:28 already does.
+// ---------------------------------------------------------------------------
+const CODES = [
+  { code:'PA1', group:'PA',     units:1, label:'Phone pre-assessment, brief',   short:'Phone, brief' },
+  { code:'PA2', group:'PA',     units:2, label:'Phone pre-assessment, complex', short:'Phone, complex' },
+  { code:'PA3', group:'PA',     units:3, label:'Pre-assessment, standard',      short:'Standard' },
+  { code:'PA4', group:'PA',     units:4, label:'Pre-assessment, complex',       short:'Complex' },
+  { code:'PA5', group:'PA',     units:1, label:'Phone follow-up',               short:'Phone follow-up' },
+  { code:'A1',  group:'A',      units:1, label:'Very old',                      short:'Very old' },
+  { code:'A2',  group:'A',      units:2, label:'Very young',                    short:'Very young' },
+  { code:'ASE', group:'ASE',    units:2, label:'Emergency',                     short:'Emergency' },
+  { code:'OB1', group:'OB',     units:0, label:'BMI under 30',                  short:'Under 30' },
+  { code:'OB2', group:'OB',     units:1, label:'BMI 30 to 35',                  short:'30 to 35' },
+  { code:'OB3', group:'OB',     units:2, label:'BMI 35 to 40',                  short:'35 to 40' },
+  { code:'OB4', group:'OB',     units:3, label:'BMI over 40',                   short:'Over 40' },
+  { code:'P1',  group:'P',      units:2, label:'Positioning',                   short:'Positioning' },
+  { code:'AI1', group:'AI',     units:2, label:'Awake intubation',              short:'Awake intubation' },
+  { code:'PO1', group:'POSTOP', units:1, label:'Post-op ward review',           short:'Post-op ward review' },
+  { code:'PO2', group:'POSTOP', units:2, label:'Post-op pain management',       short:'Post-op pain management' },
+]
+const BY_CODE = new Map(CODES.map(c => [c.code, c]))
+const EXCLUSIVE = new Set(['PA','A','OB'])
+const STACKS = new Set(['PA5'])
+const BAND_LABEL = { PA:'Pre-assessment', A:'Age extreme', OB:'BMI band' }
+
+function bandOf(code){
+  const m = BY_CODE.get(code)
+  if(!m || STACKS.has(code)) return undefined
+  return EXCLUSIVE.has(m.group) ? m.group : undefined
+}
+function toggle(sel, code){
+  const next = new Set(sel)
+  if(next.has(code)){ next.delete(code); return next }
+  const band = bandOf(code)
+  if(band !== undefined) for(const c of [...next]) if(bandOf(c) === band) next.delete(c)
+  next.add(code)
+  return next
+}
+const codesOf = (sel) => CODES.filter(c => sel.has(c.code))
+const bandItems = (g) => CODES.filter(c => c.group === g && !STACKS.has(c.code))
+const activeIn = (sel, g) => bandItems(g).find(m => sel.has(m.code))
+const FLAGS = CODES.filter(m => !EXCLUSIVE.has(m.group) || STACKS.has(m.code))
+
+// Card context: RVG 42702 base 3, 60 min = 4 time units, ASA II seeds +1.
+const BASE_UNITS = 3, TIME_UNITS = 4, ASA_SEED = 1, RATE = 26.5
+const mUnits = (sel) => ASA_SEED + codesOf(sel).reduce((n,c) => n + c.units, 0)
+function mCaption(sel){
+  const parts = ['AS2 mild systemic disease +' + ASA_SEED]
+  for(const c of codesOf(sel)) parts.push(c.code + ' ' + c.label.toLowerCase() + ' +' + c.units)
+  return parts.join(' · ')
+}
+const money = (n) => '$' + n.toLocaleString('en-NZ', {minimumFractionDigits:2, maximumFractionDigits:2})
+const DISCLAIMER = 'Modifier values are demo-plausible within the RFP’s stated ranges, not an authoritative NZSA schedule.'
+
+// ---------------------------------------------------------------------------
+// Geometry, derived the way WebCardLayout does it.
+// ---------------------------------------------------------------------------
+const WINDOWS = [1440, 1180, 1024]
+function geometry(win){
+  const container = Math.min(1320, win)
+  const content = container - 64          // WebApp.tsx padding 32 each side
+  const unit = (content - 11 * 16) / 12   // repeat(12, 1fr), 16px gutters
+  return {
+    win,
+    capture: Math.round(unit * 8 + 7 * 16),
+    rail: Math.round(unit * 4 + 3 * 16),
+  }
+}
+
+function h(tag, attrs, kids){
+  const n = document.createElement(tag)
+  if(attrs) for(const k in attrs){
+    const v = attrs[k]
+    if(v === undefined || v === null || v === false) continue
+    if(k === 'style') n.style.cssText = v
+    else if(k === 'class') n.className = v
+    else if(k.slice(0,2) === 'on') n.addEventListener(k.slice(2).toLowerCase(), v)
+    else n.setAttribute(k, v)
+  }
+  const list = kids === undefined || kids === null ? [] : (Array.isArray(kids) ? kids : [kids])
+  for(const c of list.flat()){
+    if(c === undefined || c === null || c === false) continue
+    n.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c)
+  }
+  return n
+}
+
+// ---------------------------------------------------------------------------
+// Pieces
+// ---------------------------------------------------------------------------
+function chip(m, on, onTap, form){
+  const kids = form === 'short'
+    ? [m.label + ' · +' + m.units]
+    : [h('span',{class:'c'}, m.code), ' · ' + m.label + ' · +' + m.units]
+  return h('button',{class:'chip' + (on ? ' on' : ''), type:'button', onclick:onTap}, kids)
+}
+
+/**
+ * A band as a segmented control, sized to its own content. `fitBands` below
+ * switches it to shared-width stacked segments if it cannot fit its row.
+ */
+function seg(group, sel, rr){
+  const items = bandItems(group)
+  const active = activeIn(sel, group)
+  return h('div',{class:'seg'}, items.map(m =>
+    h('button',{ type:'button', class: active && active.code === m.code ? 'on' : '',
+      title: m.label, onclick:()=>rr({sel:toggle(sel, m.code)}) },
+      [ h('span',{}, m.short), h('span',{class:'u'}, '+' + m.units) ])))
+}
+
+/**
+ * The narrow-window fallback, applied per band and only when needed. A control
+ * whose natural width overruns its row shares the space and stacks the unit
+ * under the label; if a segment is still too narrow for its longest label, the
+ * control drops to the phone's two column grid rather than clipping the words.
+ */
+function fitBands(host){
+  for(const bc of host.querySelectorAll('.brow > .bc, .band')){
+    const control = bc.querySelector('.seg')
+    if(control === null) continue
+    control.classList.remove('fill','stack','grid2')
+    const room = bc.getBoundingClientRect().width - 0.5
+    if(control.getBoundingClientRect().width <= room) continue
+    control.classList.add('fill','stack')
+    const clipped = [...control.querySelectorAll('button')].some((b) => b.scrollWidth > b.clientWidth + 1)
+    if(clipped) control.classList.add('grid2')
+  }
+}
+
+function stepperRows(sel){
+  const row = (title, caption, value) => h('div',{class:'srow'}, [
+    h('span',{class:'lbl'}, [ h('b',{}, title), h('span',{class:'caption'}, caption) ]),
+    h('button',{class:'step', type:'button'},'−'),
+    h('span',{class:'val'}, String(value)),
+    h('button',{class:'step', type:'button'},'+'),
+  ])
+  return [
+    row('B · Base', 'From procedure code', BASE_UNITS),
+    row('T · Time', 'From start / finish stamps', TIME_UNITS),
+    row('M · Modifiers', mCaption(sel), mUnits(sel)),
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// The three modifier blocks
+// ---------------------------------------------------------------------------
+const BLOCKS = {
+  /** What ships today: one flex-wrap row of all 16 chips. */
+  current: (st, rr) => h('div',{class:'chips'},
+    CODES.map(m => chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full'))),
+
+  /**
+   * Aligned rows. A 168px label column, the control beside it, and a 160px
+   * right gutter so every band control stops where the stepper column above it
+   * begins. The hairline marks the seam: arithmetic above, clinical fact below.
+   */
+  rows: (st, rr) => {
+    const bandRow = (g) => h('div',{class:'brow'}, [
+      h('span',{class:'bl'}, BAND_LABEL[g]),
+      h('span',{class:'bc'}, seg(g, st.sel, rr)),
+    ])
+    return h('div',{style:'display:flex;flex-direction:column;gap:12px'}, [
+      h('div',{class:'rule'}),
+      bandRow('PA'),
+      bandRow('A'),
+      bandRow('OB'),
+      h('div',{class:'brow', style:'align-items:flex-start'}, [
+        h('span',{class:'bl', style:'padding-top:10px'}, 'Also applies'),
+        h('span',{class:'bc'}, h('div',{class:'chips'}, FLAGS.map(m =>
+          chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short')))),
+      ]),
+    ])
+  },
+
+  /** Paired halves: bands left, free-stacking flags right, on WebPair's grid. */
+  halves: (st, rr) => {
+    const band = (g) => h('div',{class:'band'}, [
+      h('span',{class:'bl'}, BAND_LABEL[g]),
+      seg(g, st.sel, rr),
+    ])
+    return h('div',{style:'display:flex;flex-direction:column;gap:12px'}, [
+      h('div',{class:'rule'}),
+      h('div',{class:'halves'}, [
+        h('div',{style:'display:flex;flex-direction:column;gap:12px'}, [band('PA'), band('A'), band('OB')]),
+        h('div',{class:'band'}, [
+          h('span',{class:'bl'}, 'Also applies'),
+          h('div',{class:'chips'}, FLAGS.map(m =>
+            chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short'))),
+        ]),
+      ]),
+    ])
+  },
+}
+
+const OPTIONS = [
+{
+  id:'cur', tag:'now', tagText:'Ships today', block:'current',
+  structure:'16 loose options', structureTone:'bad',
+  title:'One flex-wrap row of 16 chips',
+  what:'The phone component rendered at desktop width. Nothing is wrong with it; it is just undifferentiated. Six rows of pills, ragged right edge, and no way to see that picking OB3 will drop OB2.',
+  meta:[
+    ['risk','The band rule is invisible until a chip silently switches off.'],
+    ['risk','Ragged rows give the eye no column to follow, so scanning for one code means reading all sixteen.'],
+    ['ref','src/shared/capture/ModifierChips.tsx:44'],
+  ],
+},
+{
+  id:'rows', tag:'rec', tagText:'Recommended', block:'rows',
+  structure:'4 labelled decisions', structureTone:'good',
+  title:'Aligned band rows',
+  what:'Each exclusive band becomes a segmented control on its own labelled row, in the same label-left, control-right rhythm as B / T / M directly above. The six free-stacking codes keep their chips, on a fourth row with the same label. A hairline separates the seeded arithmetic from the clinical facts that drive it.',
+  meta:[
+    ['win','Four labelled rows, one label column, one right gutter. The controls stop where the stepper column begins, so the whole card reads on two alignments instead of none.'],
+    ['win','Exclusivity is stated by the control rather than discovered by a disappearing chip. Chips now mean only one thing on this card: things that stack.'],
+    ['win','Segments carry the unit inline at desktop width and fall back to shared-width stacked segments only when a control cannot fit its row, so one component serves a 1024px window too.'],
+    ['risk','Slightly TALLER than today at this width, and that is the right trade here. Height was never the desktop problem: the block sits in an 832px column beside a pinned rail, not in a phone viewport. Compare the row counts, not the pixels.'],
+    ['risk','Adds a variant branch to ModifierChips, keyed off useSurface().variant, the way Pair and feePlacement already are.'],
+    ['ref','Extends AsaCard’s segmented pattern; no new visual language'],
+  ],
+},
+{
+  id:'halves', tag:'', tagText:'Alternative', block:'halves',
+  structure:'4 labelled decisions', structureTone:'good',
+  title:'Paired halves',
+  what:'Bands stacked in the left half, stacking codes in the right, on the same two column grid WebPair already uses for the ASA and procedure-code cards.',
+  meta:[
+    ['win','Reuses the desktop density primitive verbatim, and keeps everything inside two columns so no row trails off into white space.'],
+    ['risk','Each segment gets half the width, so the pre-assessment band drops to its two column fallback even on a 1440px window, and the controls stop matching the ASA card they are imitating.'],
+    ['risk','Every band needs its own label above its control, so it measures taller than the aligned rows, not shorter (343px against 314px at this width).'],
+    ['risk','Nothing aligns with the B / T / M rows above, so the card still reads as two unrelated zones stacked on each other.'],
+    ['ref','WebPair, SurfaceProvider.tsx:139'],
+  ],
+},
+]
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+let winIdx = 0
+const INITIAL = () => ({ sel:new Set(['PA3','OB2']), lastTotal:null })
+const state = {}
+const hosts = {}
+
+function railPanel(total, st){
+  const fee = total * RATE
+  const flash = h('span',{class:'flash'}, h('span',{class:'v'}, money(fee)))
+  if(st.lastTotal !== null && st.lastTotal !== total){
+    flash.classList.add('on')
+    requestAnimationFrame(() => requestAnimationFrame(() => flash.classList.remove('on')))
+  }
+  st.lastTotal = total
+  return h('div',{class:'ink'}, [
+    h('div',{class:'split'}, [
+      h('span',{class:'col'}, [ h('span',{class:'k'},'CARD TOTAL UNITS'), h('span',{class:'v'}, String(total)) ]),
+      h('span',{class:'col r'}, [ h('span',{class:'k'},'FEE @ $26.50/UNIT'), flash ]),
+    ]),
+    h('button',{class:'cta', type:'button'},'Mark complete'),
+  ])
+}
+
+function render(opt){
+  const st = state[opt.id]
+  const geo = geometry(WINDOWS[winIdx])
+  const rr = (patch) => {
+    if(patch && patch.sel) st.sel = patch.sel
+    render(opt)
+    measureAll()
+  }
+
+  const block = BLOCKS[opt.block](st, rr, geo)
+  const unitsCard = h('div',{class:'card', style:'gap:14px'}, [
+    h('div',{class:'cap'},'Units'),
+    stepperRows(st.sel),
+    h('div',{'data-block':'1', style:'display:flex;flex-direction:column;gap:10px'},
+      [ block, h('div',{class:'caption'}, DISCLAIMER) ]),
+  ])
+
+  const asaCard = h('div',{class:'card', style:'gap:10px'}, [
+    h('div',{class:'cap'},'ASA status'),
+    h('div',{class:'seg asa'}, ['I','II','III','IV'].map((r,i) =>
+      h('button',{type:'button', class: i === 1 ? 'on' : ''}, r))),
+    h('div',{class:'caption slate'},'ASA II seeds +1 modifier unit.'),
+  ])
+  const codeCard = h('div',{class:'card', style:'gap:10px'}, [
+    h('div',{class:'cap'},'Procedure'),
+    h('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px'}, [
+      h('span',{style:'display:flex;flex-direction:column;gap:2px'}, [
+        h('span',{style:"font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)"},'42702'),
+        h('span',{style:'font-size:15px;font-weight:600'},'Cataract extraction with IOL'),
+        h('span',{class:'caption'},'Base 3 units'),
+      ]),
+      h('span',{class:'link'},'Change'),
+    ]),
+  ])
+
+  const total = BASE_UNITS + TIME_UNITS + mUnits(st.sel)
+  const page = h('div',{class:'page'}, [
+    h('div',{class:'capture', style:'width:' + geo.capture + 'px'}, [
+      h('div',{class:'phead'}, [
+        h('span',{class:'t', style:'flex:1'},'Cataract extraction with IOL'),
+        h('span',{class:'e'},'Edit'),
+      ]),
+      h('div',{class:'ctxline'}, [
+        h('span',{class:'route'},'Billable party'),
+        h('span',{class:'m'},'Christchurch Eye Surgery · Lachlan Robinson · NHI YZU6056'),
+      ]),
+      h('div',{class:'pair'}, [asaCard, codeCard]),
+      unitsCard,
+    ]),
+    h('div',{class:'rail', style:'width:' + geo.rail + 'px'}, [
+      railPanel(total, st),
+      h('div',{class:'railstub'},'Patient, scheduled time, attachments and notes continue down the rail. On this surface the commit block is the only place money appears, and it is pinned, so the fee ticks in place while the capture column scrolls.'),
+    ]),
+  ])
+
+  hosts[opt.id].replaceChildren(page)
+  fitBands(hosts[opt.id])
+}
+
+/**
+ * Height and row count of the modifier block. Height is reported plainly, not
+ * scored: on this surface the block sits in an 832px column beside a pinned
+ * rail, so a taller block is not automatically a worse one. What the badges are
+ * for is the row count and the structure claim.
+ */
+function measure(opt){
+  const host = hosts[opt.id]
+  const block = host.querySelector('[data-block]')
+  if(!block) return
+  const tops = new Set()
+  for(const n of block.querySelectorAll('.chip, .seg')) tops.add(Math.round(n.getBoundingClientRect().top))
+  state[opt.id].h = Math.round(block.getBoundingClientRect().height)
+  state[opt.id].rows = tops.size
+  const badge = document.getElementById('b-' + opt.id)
+  const rowsB = document.getElementById('r-' + opt.id)
+  if(badge) badge.textContent = state[opt.id].h + 'px tall'
+  if(rowsB) rowsB.textContent = tops.size + (tops.size === 1 ? ' row' : ' rows')
+}
+
+function measureAll(){ for(const o of OPTIONS) measure(o) }
+
+const sections = document.getElementById('sections')
+for(const opt of OPTIONS){
+  state[opt.id] = INITIAL()
+  const host = h('div',{})
+  hosts[opt.id] = host
+  sections.appendChild(h('section',{class:'opt'}, [
+    h('div',{class:'opt-head'}, [
+      h('span',{class:'tag ' + opt.tag}, opt.tagText),
+      h('h2',{}, opt.title),
+      h('span',{class:'badges'}, [
+        h('span',{class:'badge ' + (opt.structureTone || '')}, opt.structure),
+        h('span',{class:'badge', id:'r-' + opt.id},'...'),
+        h('span',{class:'badge', id:'b-' + opt.id},'...'),
+      ]),
+    ]),
+    h('p',{class:'what'}, opt.what),
+    h('ul',{class:'meta'}, opt.meta.map(([k,t]) => h('li',{class:k}, t))),
+    host,
+  ]))
+}
+
+const widths = document.getElementById('widths')
+function paintWidths(){
+  const geo = geometry(WINDOWS[winIdx])
+  widths.replaceChildren(...WINDOWS.map((w,i) => h('button',{ type:'button',
+    class: i === winIdx ? 'on' : '',
+    onclick: () => { winIdx = i; paintWidths(); for(const o of OPTIONS) render(o); measureAll() } }, w + 'px')))
+  document.getElementById('colnote').textContent =
+    'capture column ' + geo.capture + 'px · rail ' + geo.rail + 'px'
+}
+paintWidths()
+for(const o of OPTIONS) render(o)
+measureAll()
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(measureAll)
+window.addEventListener('resize', measureAll)
+document.getElementById('reset').addEventListener('click', () => {
+  for(const o of OPTIONS){ state[o.id] = INITIAL(); render(o) }
+  measureAll()
+})
+</script>
+</body>
+</html>

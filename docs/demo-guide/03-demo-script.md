@@ -96,8 +96,9 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 
 ### Beat 1: the booking arrives from the hospital
 
-- **Click:** Go to Integrations (the badged simulator). Show the fired St George's message: raw HL7 v2
-  on the left, the mapped FHIR-style internal representation on the right.
+- **Click:** Go to Integrations (the badged simulator). The selected-message inspector opens above the
+  message library. Show raw HL7 v2 on the left, translated FHIR R4 in the middle, and the processed
+  schedule change on the right.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
   mapped per hospital, processed near real time, and audited. This booking created a patient Card
   without anyone re-keying it."
@@ -382,6 +383,8 @@ payables run records disbursement.
 - Or use **Clock & reset → Reset demo data → Confirm reset** to return to the pristine seed. Reset
   returns the clock to Tuesday 21 July 2026, 8:00 and restarts deterministic identifiers, so invoice
   numbers begin at the same point every time.
+- The Integration simulator also has **Reset demo data → Confirm reset** beside Start live feed. It
+  performs the same whole-demo reset without making you return to the control panel.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Card.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from

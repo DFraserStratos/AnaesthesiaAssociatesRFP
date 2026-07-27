@@ -245,8 +245,11 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    - 1 unit per 10 minutes after two hours.
 6. She records ASA and any other applicable modifiers.
 7. The system prevents a positioning modifier if the base code already includes it.
-8. Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so tapping
-   a sibling swaps it in rather than adding to it; a pre-assessment follow-up stacks on top.
+8. Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so each
+   band is a segmented control and picking a sibling swaps it in rather than adding to it (tapping
+   the live segment again clears the band). The codes that genuinely stack — a pre-assessment
+   follow-up, emergency, positioning, awake intubation, post-op care — stay as chips under
+   "Also applies", so the shape of the control tells you the rule before you touch it.
 9. The fee updates using Dr Souter's own dollar value per unit.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
 11. She reviews validation messages and marks the Card complete.
