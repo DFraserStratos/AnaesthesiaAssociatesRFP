@@ -268,6 +268,20 @@ Say:
   swaps it: those per-group ranges only add up if one code applies. The RFP implies the rule rather
   than stating it, and a pre-assessment follow-up (PA5) stacks on top, which is a question for AA.
 
+### 11. Open versus genuinely overdue prior balances
+
+- The billing monitor's "Prior balance" intake flag reads any open (unpaid) prior episode.
+- The RFP asks whether to separately distinguish "open" from "genuinely overdue" in this check; the
+  prototype flags any open balance and holds the distinction as a discovery question.
+- Invoices carry a raised date but no due date, so aging is derived, not contractual.
+
+### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
+
+- ACC is not a billing route: ACC-related work bills through the normal contract-holder routes.
+- ACC pre-operative assessment has its own flat-fee code set (CS250, CS260, CS70); the prototype
+  captures these as ancillary fixed-amount billing lines with the code named in the description.
+- The RFP flags the code set as a special pre-assessment case to confirm with AA billing.
+
 ## Likely evaluator questions
 
 ### "Who actually uses mobile versus web?"

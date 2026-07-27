@@ -326,9 +326,9 @@
       <div id="drive">
         <div class="task"><input type="checkbox" id="t0"><label for="t0">App switcher &#8594; <strong>Demo: Control Panel</strong> &#8594; Reset demo data &#8594; Confirm</label></div>
         <div class="task"><input type="checkbox" id="t1"><label for="t1">Scenario jumps &#8594; <strong>S1</strong> &#8594; Jump &#8594; Confirm jump</label></div>
-        <div class="task"><input type="checkbox" id="t2"><label for="t2">Click <strong>Procedure day · 28 Jul</strong></label></div>
+        <div class="task"><input type="checkbox" id="t2"><label for="t2">Click <strong>Procedure day · 28 Jul</strong>, then <strong>+1 hour</strong></label></div>
         <div class="task"><input type="checkbox" id="t3"><label for="t3">Go to Mobile app &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
-        <div class="task"><input type="checkbox" id="t4"><label for="t4">Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office</label></div>
+        <div class="task"><input type="checkbox" id="t4"><label for="t4">Choose code <strong>20950</strong> &#8594; Start now &#8594; control panel +1 hour &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit</label></div>
       </div>
       <div class="celebrate" id="celebrate" style="display:none">
         <div class="tick">&#10003;</div>
@@ -630,7 +630,7 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves near-real-time hospital integration, the Card
       as the billing anchor, and BTM capture. 5 to 6 minutes.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S1 &#8594; Jump &#8594; Confirm jump (resets, then fires the St George's S12 booking).</span>
+      <span class="stage">Stage it: Scenario jumps &#8594; S1 &#8594; Jump &#8594; Confirm jump (resets, completes the three support Cards, then fires the St George's S12 booking; Sarah is the only Card left).</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · the booking arrives</h4>
@@ -640,15 +640,15 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Card fills over the days</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Clock &amp; reset &#8594; Procedure day &#183; 28 Jul.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Clock &amp; reset &#8594; Procedure day &#183; 28 Jul &#8594; +1 hour.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Patient and booking data can change right up to the day. The canvas rolls forward deterministically as the clock advances."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The clock reads Tuesday 28 July 2026, 8:00.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The clock reads Tuesday 28 July 2026, 9:00.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · capture on mobile and submit</h4>
-      <div class="row"><span class="k">Click</span><span>Mobile app &#8594; open the Tue 28 St George's List &#8594; Sarah Mitchell &#8594; BTM &#8594; select RVG &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office.</span></div>
+      <div class="row"><span class="k">Click</span><span>Mobile app &#8594; Tue 28 St George's List &#8594; Sarah Mitchell &#8594; choose <strong>20950 · Appendicectomy, laparoscopic</strong> &#8594; Start now. Return to the control panel &#8594; +1 hour. Return to Sarah &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. Once every Card is complete she submits the whole List; it is now read-only to her."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The Card gains the tick, the fee updates live, the List moves to SUBMITTED and into the Review queue.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Sarah changes the List from 3 of 4 complete to 4 of 4; the fee updates and the List moves to SUBMITTED and into the Review queue.</span></div>
     </div>
     <div class="callout warn">Discovery: partial-interval time rounding is a prototype assumption (round up per started interval); the RFP defines the tiers but not the rounding.</div>
   </div></details>
@@ -667,19 +667,19 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
-      <div class="row"><span class="k">Click</span><span>Find a Free List &#8594; Book (phone advice) &#8594; choose hospital &#8594; Continue to add card &#8594; Enter manually &#8594; Save card &#8594; Done.</span></div>
+      <div class="row"><span class="k">Click</span><span>Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice). Choose St George's Hospital, Mr T. Hale and keep 13:00–17:00. Continue &#8594; Enter manually: Demo Patient, DOB 1 Jan 1990, code 20950, time 15:00, Hospital route &#8594; Save card &#8594; Done.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The new Card appears and is visible in the anaesthetist's app while the List is DRAFT.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The Free block repaints as booked on the admin grid; the Card is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><span>Step to Wed 22 Jul &#8594; open a conflicted booked List &#8594; Reassign list &#8594; pick a Free target &#8594; confirm. Re-open the target; show the vacated slot regenerated; open History.</span></div>
+      <div class="row"><span class="k">Click</span><span>Wed 22 Jul &#8594; Dr James Rutherford AM, Christchurch Eye Surgery (availability conflict) &#8594; Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm. Re-open Sharma AM and History.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Cards and audit trail, different from moving one Card. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
       <div class="row"><span class="k">Expect</span><span>The List and Cards move; the vacated slot regenerates; the change is audited.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 4 · authorise a submitted List</h4>
-      <div class="row"><span class="k">Click</span><span>Review queue &#8594; open Morrison (Mon 20) or Whitaker (Fri 17) &#8594; review &#8594; Authorise for billing &#8594; confirm.</span></div>
+      <div class="row"><span class="k">Click</span><span>Review queue &#8594; Dr Kate Morrison, Mon 20 Jul &#8594; review &#8594; Authorise for billing &#8594; confirm.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Card and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
     </div>
@@ -690,23 +690,23 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves the Billing Engine at the centre, split billing,
       the Xero pair and the two money states. 6 to 8 minutes. Authorise live.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S3 &#8594; Jump &#8594; Confirm jump (resets, submits the Mon 20 split-billing List). Go to Admin app.</span>
+      <span class="stage">Stage it: Scenario jumps &#8594; S3 &#8594; Jump &#8594; Confirm jump (resets, submits both Mon 20 Lists: AM split-billing, PM two-funder). Go to Admin app.</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
-      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; the Souter/Forte List &#8594; Authorise for billing &#8594; View invoices. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". Show the split card's separate invoices. Email invoice.</span></div>
+      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List, then the Souter/St George's PM List &#8594; View invoices. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". Contrast one invoice (split Card, same funder) with two (two-funder Card, nib and St George's). Email invoice.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
-      <div class="row"><span class="k">Expect</span><span>Invoice rows derived from the same captured data, with contract-holder and patient layouts.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Card, two for the two-funder Card.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; select an invoice &#8594; show its ACCREC, its draft ACCPAY and the linked identifiers.</span></div>
+      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; select the nib invoice for Alan Prentice &#8594; show its ACCREC, draft ACCPAY and linked identifiers.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"AA receives all money into one account. The ACCREC records what the payer owes AA; the ACCPAY what AA owes the anaesthetist. No NHI ever crosses to Xero."</span></div>
       <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; Full payment &#8594; Record payment &#8594; Replay last event (idempotency). Clock &#8594; Next day (poll catches a missed webhook). Run payables. Then Web app &#8594; Accounts.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; choose the nib invoice &#8594; Full payment &#8594; Record payment &#8594; Replay last event (idempotency). Clock &#8594; Next day (poll catches a missed webhook). Run payables. Then Web app &#8594; Accounts.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment authorises the payable proportionally. The apps read the Billing Engine's mirror, never Xero directly."</span></div>
       <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY authorised, duplicate webhook ignored, payables disburses, balances reflect it.</span></div>
     </div>
@@ -720,27 +720,27 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
       <span class="stage">Stage it: Scenario jumps &#8594; S4 &#8594; Jump &#8594; Confirm jump (reset). Work top to bottom.</span>
     </div>
     <div class="beat"><h4>Beat 1 · pre-payment gate</h4>
-      <div class="row"><span class="k">Click</span><span>Mobile &#8594; Dr Souter Fri 24 Jul AM &#8594; the unpaid pre-payment Card &#8594; try to mark complete.</span></div>
+      <div class="row"><span class="k">Click</span><span>Mobile &#8594; Dr Souter Fri 24 Jul AM &#8594; Annette Riley &#8594; try Mark complete. Then Admin Day, Fri 24, Souter AM, Annette &#8594; Override pre-payment gate &#8594; reason “Manager approved theatre exception” &#8594; save. Return to Mobile and complete.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A browser prototype cannot gate a theatre list, so completion is blocked until the pre-invoice is paid or the office records a reasoned, audited override."</span></div>
       <div class="row"><span class="k">Expect</span><span>Completion blocked; the office override lifts it and is audited.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · post-op addendum</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Stage post-op scenario card &#8594; Stage scenario. Admin Day view &#8594; Tue 14 Jul &#8594; the locked Card &#8594; Add post-op event.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Stage post-op scenario &#8594; Stage scenario. Admin Day &#8594; Tue 14 Jul &#8594; Dr Priya Sharma AM &#8594; Sarah Mitchell &#8594; Add post-op event.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A later charge does not reopen the original. The addendum is a new linked Card with its own submit, authorise and bill cycle; the original stays immutable."</span></div>
       <div class="row"><span class="k">Expect</span><span>A new addendum Card; the original stays locked.</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · billing failure and retry</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Trigger billing failure card &#8594; Trigger failure. Admin billing monitor &#8594; Resolve &amp; retry.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Trigger billing failure &#8594; Trigger failure. Admin billing monitor &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A group-held contract with no default fallback was dated out. The prototype isolates the failed Card, still invoices its clean sibling, then corrects and retries."</span></div>
       <div class="row"><span class="k">Expect</span><span>The failed Card shows the rating failure while the sibling bills; retry clears it.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · integration dead-letter and fix</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Fire an integration message &#8594; MSG-CPH-2001. Admin Integrations monitor &#8594; fix feed mapping to PID-3 &#8594; reprocess.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Fire integration message &#8594; MSG-CPH-2001. Admin Integrations &#8594; Feed config &#8594; Christchurch Public patientNhi: PID-2 to PID-3 &#8594; Save. Message log &#8594; Reprocess MSG-CPH-2001.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Christchurch Public sends the NHI in PID-3 but the feed was onboarded reading PID-2. The bad NHI dead-letters after retries; fixing the mapping and reprocessing recovers it, without a duplicate."</span></div>
       <div class="row"><span class="k">Expect</span><span>Dead-letter, then a clean reprocess after the mapping fix.</span></div>
     </div>
     <div class="beat"><h4>Beat 5 · partial payment</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; Half (partial) &#8594; Record payment &#8594; Run payables. Fire the balance later, run payables again.</span></div>
+      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; AA-2026-0002 (St George's, clean sibling Hemi Walker) &#8594; Half (partial) &#8594; Record payment &#8594; Run payables. Select Full payment for the remaining balance, record, then run payables again.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A partial payment authorises only its proportional payable share. Two runs across a part-then-balance payment prove there is no double payment."</span></div>
       <div class="row"><span class="k">Expect</span><span>The payable authorises pro-rata; payables pays only the increment each run.</span></div>
     </div>
@@ -751,12 +751,12 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves audit, identity, data minimisation and contract
       effective-dating. 5 to 6 minutes.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (reset). Go to Admin app / Xero sim.</span>
+      <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (resets, stages David Chen's history and raises Health NZ contract snapshot invoices from Whitaker's Fri 17 List). Go to Admin app / Xero sim.</span>
     </div>
     <div class="beat"><h4>Beat 1 · audit trail of a much-edited Card</h4>
-      <div class="row"><span class="k">Click</span><span>Open David Chen's Card &#8594; History.</span></div>
+      <div class="row"><span class="k">Click</span><span>Admin Day, Tue 21 Jul &#8594; Dr Souter PM &#8594; David Chen &#8594; History.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every change, including automated ones, writes an append-only entry with who, role, source and before/after. The captured inputs stay reproducible, not just the total."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A full trail, including the manual time-unit adjustment provenance.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A multi-entry trail: completion plus the staged edits, each with who, role, source and before/after, plus the overridden time-unit provenance.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · NHI dual-format validator</h4>
       <div class="row"><span class="k">Click</span><span>Control panel &#8594; Fire an integration message &#8594; MSG-STG-1002 (new-format NHI), or add a Card manually and try both formats.</span></div>
@@ -769,7 +769,7 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
       <div class="row"><span class="k">Expect</span><span>The Xero surface shows the internal ID and a visible callout of the contradiction.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · contract effective-dating</h4>
-      <div class="row"><span class="k">Click</span><span>Admin master data &#8594; open a contract &#8594; effective-date it &#8594; open an already-raised invoice for it.</span></div>
+      <div class="row"><span class="k">Click</span><span>Admin Master data &#8594; Contracts &#8594; Health NZ agreed rate (Type 2) &#8594; Effective to: 16 Jul 2026 &#8594; save. Invoices &#8594; AA-2026-0002.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"Contracts are effective-dated. Changing one does not rewrite invoices already raised under the old terms; the invoice reproduces against what was true when it billed."</span></div>
       <div class="row"><span class="k">Expect</span><span>The contract change is recorded; the earlier invoice is unchanged.</span></div>
     </div>
@@ -910,6 +910,14 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
       BMI) are one per procedure, so tapping a sibling swaps it: those per-group ranges only add up if one
       code applies. The RFP implies that rather than stating it, and a pre-assessment follow-up (PA5) stacks
       on top, which is a question for AA.</p></div>
+    <div class="card"><h3>11 · Open vs genuinely overdue balances</h3><p style="font-size:14px">The billing
+      monitor's "Prior balance" intake flag reads any open (unpaid) prior episode. The RFP asks whether to
+      distinguish open from genuinely overdue; invoices carry a raised date but no due date, so the
+      prototype flags any open balance and holds the distinction as a discovery question.</p></div>
+    <div class="card"><h3>12 · ACC pre-op flat-fee codes</h3><p style="font-size:14px">ACC pre-operative
+      assessment has its own flat-fee code set (CS250, CS260, CS70), separate from the general BTM
+      structure. The prototype captures these as ancillary fixed-amount lines with the code in the
+      description; the code set and rates are a confirmation item with AA billing.</p></div>
   </div>
 
   <h2>Likely evaluator questions</h2>
