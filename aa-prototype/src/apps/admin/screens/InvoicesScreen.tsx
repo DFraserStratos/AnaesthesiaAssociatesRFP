@@ -88,7 +88,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         </div>
       )}
 
-      {/* Billing exceptions (Phase 09 owns the workflow) */}
+      {/* Billing exceptions are resolved through the monitor workflow. */}
       {failedCases.length > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
@@ -99,7 +99,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               <span className="mono">{c.cardId}</span> · {c.failure?.message ?? 'Needs manual review.'}
             </div>
           ))}
-          <span style={{ fontSize: 12, color: semantic.warning.onTint }}>The billing monitor handles retries in Phase 09.</span>
+          <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>
         </div>
       )}
 

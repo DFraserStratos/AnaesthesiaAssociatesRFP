@@ -142,7 +142,7 @@ export function resolveContractForProcedure(
     return {
       kind: 'exception',
       code: 'contractIneffective',
-      message: `No contract in effect on ${ctx.listDateISO}. ${stored.name} is held by a ${HOLDER_LABEL[stored.holderType]}, which carries no default fallback. This Card needs manual review in the billing monitor (Phase 09).`,
+      message: `No contract in effect on ${ctx.listDateISO}. ${stored.name} is held by a ${HOLDER_LABEL[stored.holderType]}, which carries no default fallback. This Card needs manual review in the billing monitor.`,
     }
   }
 

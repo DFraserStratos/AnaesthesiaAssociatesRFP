@@ -201,7 +201,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       statusKey: 'private',
       conflicts: [],
       billedAtISO: acc.raisedISO,
-      notes: 'Historical billed list (Phase 10 seed).',
+      notes: 'Historical billed list.',
     }
     if (acc.hospitalId !== undefined) list.hospitalId = acc.hospitalId
     list.surgeonId = acc.surgeonId

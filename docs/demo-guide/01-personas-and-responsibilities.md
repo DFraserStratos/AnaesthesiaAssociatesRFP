@@ -113,7 +113,7 @@ functionality.
 - Balances and GST activity are now live: the anaesthetist money views read the Billing Engine's
   mirror (outstanding payables, receivables aging, GST transaction list), over seeded historical rows
   plus anything a demo payment adds. They never query Xero directly.
-- The Request Leave control is a deliberately shallow affordance, not a complete workflow.
+- The Leave panel is read-only planning context; submitting leave requests is outside this prototype.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator
 

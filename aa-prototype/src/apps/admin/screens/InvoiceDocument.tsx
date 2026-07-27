@@ -216,7 +216,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '6px 12px' }}>
               <Upload size={14} aria-hidden /> Present via {addressee} upload portal
             </span>
-            <DemoBadge label="Portal stub" />
+            <DemoBadge label="Simulated portal handoff" />
           </>
         ) : invoice.emailedAtISO !== undefined ? (
           <>

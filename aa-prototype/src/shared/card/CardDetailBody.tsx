@@ -458,7 +458,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             {prepaymentStatus === 'required' &&
               'A patient-funded procedure on this card requires pre-payment before the procedure proceeds. Completing the card is blocked until the pre-invoice is paid or the office records an override.'}
             {prepaymentStatus === 'outstanding' &&
-              'The pre-procedure invoice has been raised but is not yet paid. Completing the card is blocked until payment clears (live payment lands in Phase 10) or the office records an override.'}
+              'The pre-procedure invoice has been raised but is not yet paid. Completing the card is blocked until payment clears or the office records an override.'}
             {prepaymentStatus === 'overridden' &&
               `The office lifted the pre-payment gate. Reason: ${card.prepaymentOverride?.reason ?? 'not recorded'}.`}
             {prepaymentStatus === 'paid' && 'The pre-payment invoice has been paid. The completion gate is cleared.'}

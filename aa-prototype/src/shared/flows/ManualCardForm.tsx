@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingRoute, PatientPaymentCategory } from '../../domain/types'
 import { lookupNhi } from '../../domain/nzhis'
 import { createCard, useAppStore, type Actor } from '../../store'
@@ -269,9 +269,6 @@ export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, att
         </div>
       )}
       <div style={{ height: 8 }} />
-      <div style={{ fontSize: 12, color: accent.pressed, textAlign: 'center' }}>
-        Billing detail (BTM) is captured later, in Phase 04.
-      </div>
     </div>
   )
 }

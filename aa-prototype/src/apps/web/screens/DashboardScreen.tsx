@@ -274,13 +274,6 @@ export function DashboardScreen({
               <EmptyNote>No leave booked.</EmptyNote>
             )}
           </div>
-          <button
-            type="button"
-            title="Visual stub · leave requests are a later phase"
-            style={{ height: 40, borderRadius: 10, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 'auto' }}
-          >
-            Request leave
-          </button>
         </Panel>
 
         {/* Who's free (live) */}

@@ -517,7 +517,7 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       label: 'Manually adjusted T card (Chen)',
       entityType: 'card',
       entityId: scenario.chen,
-      detail: 'Captured time units carry overridden provenance (Phase 07 flag).',
+      detail: 'Captured time units carry overridden provenance for authorisation review.',
     },
     submittedListMorrison: {
       label: 'SUBMITTED list (Morrison, Mon 20)',
@@ -631,13 +631,13 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       label: 'Missing billing reference 1 of 2',
       entityType: 'procedure',
       entityId: scenario.missingRefProcedures[0],
-      detail: 'Hospital route procedure without a billing reference (Phase 07 flag).',
+      detail: 'Hospital route procedure flagged for a missing billing reference.',
     },
     missingBillingRef2: {
       label: 'Missing billing reference 2 of 2',
       entityType: 'procedure',
       entityId: scenario.missingRefProcedures[1],
-      detail: 'Hospital route procedure without a billing reference (Phase 07 flag).',
+      detail: 'Hospital route procedure flagged for a missing billing reference.',
     },
     allDayBooking: {
       label: 'All day booking (Rutherford)',
