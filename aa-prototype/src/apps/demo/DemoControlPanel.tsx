@@ -225,7 +225,7 @@ export function DemoControlPanel() {
   return (
     <DemoSurface
       title="Demo control panel"
-      subtitle="The presenter's cockpit for the demo. Reset the data, advance the clock, jump to a scenario and fire simulated integration and money events, all against the fake in-browser backend."
+      subtitle="The presenter's cockpit for the demo. Reset the data, advance the clock, jump to a scenario and fire simulated integration and money events, all against the mock in-browser backend."
     >
       {/* ── Clock & reset ─────────────────────────────────────── */}
       <SectionHeading label="Clock & reset" />
@@ -706,7 +706,7 @@ function IntegrationTriggerCard() {
     <ControlCard icon={Zap} eyebrow="Integrations" title="Fire an integration message">
       <div><DemoBadge label="Demo trigger" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Sends a canned hospital HL7 / FHIR message into the fake backend. Includes the Christchurch
+        Sends a canned hospital HL7 / FHIR message into the mock backend. Includes the Christchurch
         Public dead-letter case (MSG-CPH-2001). Replaying the same message shows idempotent dedupe (no
         double Card). The full simulator lives at the Integrations demo surface; the message log is in
         the Admin app Integrations monitor.

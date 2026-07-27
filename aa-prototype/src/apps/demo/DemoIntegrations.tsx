@@ -245,7 +245,7 @@ export function DemoIntegrations() {
             <Pane title={selected.transport === 'fhir' ? 'FHIR R4 (native)' : '2 · FHIR R4 (translated)'} subtitle="Appointment · Patient · Practitioner">
               <pre style={codeBlock}>{fhirJson}</pre>
             </Pane>
-            <Pane title={selected.transport === 'fhir' ? 'Effect' : '3 · Schedule change'} subtitle="Applied to the fake backend">
+            <Pane title={selected.transport === 'fhir' ? 'Effect' : '3 · Schedule change'} subtitle="Applied to the mock backend">
               <EffectView
                 status={row?.status}
                 displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}

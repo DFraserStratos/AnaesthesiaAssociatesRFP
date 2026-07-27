@@ -31,7 +31,7 @@ of a session, leave it IN PROGRESS and state exactly what remains.
 1. **App location.** The app lives in `aa-prototype/` at the repo root. Docs live in `docs/prototype-build/`. Never create a second app folder.
 2. **Stack is fixed.** Vite + React 18 + TypeScript (strict, no `any`), React Router, Zustand for the store, Tailwind CSS + a design-token layer (`src/theme/`), lucide-react icons, date-fns, Vitest for unit tests. No additional UI framework without a decisions-log entry.
 3. **Folder shape.** `src/domain/` (types, seed, billing maths, validators — pure, no React), `src/store/` (Zustand slices, lifecycle guards, audit writer), `src/apps/mobile/`, `src/apps/web/`, `src/apps/admin/`, `src/apps/demo/` (demo-only surfaces: control panel, Xero sim, integrations, billing monitor), `src/shared/` (cross-app components), `src/shell/` (app switcher, phone frame, layout).
-4. **Fake backend only.** Components never own domain state; they read/write through typed store hooks. No `fetch`, no real endpoints. Simulated external systems (Xero, HL7, PDF/OCR) are store actions triggered from the demo control panel or demo screens.
+4. **Mock backend only.** Components never own domain state; they read/write through typed store hooks. No `fetch`, no real endpoints. Simulated external systems (Xero, HL7, PDF/OCR) are store actions triggered from the demo control panel or demo screens.
 5. **Deterministic seed.** All seed data generated from a seeded RNG + pinned demo date (`DEMO_TODAY`, 2026-07-21 — the design mockups' content date, see Decisions log). Same seed → identical data. Reset restores the pristine seed. Never call `Date.now()`/`new Date()` for domain logic — use the demo clock.
 6. **Lifecycle rules live in the store.** DRAFT → SUBMITTED → AUTHORISED transitions are guarded functions; SUBMITTED strips anaesthetist edit rights; AUTHORISED locks Cards immutable; there is **no Returned state**. UI can never bypass a guard.
 7. **Audit is append-only.** Every Card/Procedure mutation (and List reassignment/state change) writes an audit entry `{who, role, source, action, before→after, at}`. No mutation without one.
@@ -175,7 +175,7 @@ remains open.
 **What a real-build team should read FIRST:** this file's *Binding conventions* and *Decisions log*
 (the readings we picked and why, with the settled rulings that must not be re-litigated), then
 `docs/rfp-reference/RFP.md` + `Data-Model-and-Flow.md`, then `docs/demo-guide/` for the working mental
-model. The prototype is a fake-backend demo (convention 4); the money/route/BTM maths in
+model. The prototype is a mock-backend demo (convention 4); the money/route/BTM maths in
 `src/domain/billing/` is pure and the real reference. The §11 discovery items surfaced in the app UI
 and the demo guide are the open questions to take to AA.
 
@@ -728,5 +728,8 @@ Append one entry per completed session, newest last, using this template:
   the three visible panes; both guides identify the simulator's in-context reset. `phase11.spec.ts`
   asserts that the raw and translated panes start in the viewport and that replay followed by the
   in-context reset returns the effect pane to Not replayed yet.
+- **Backend terminology standardised.** All repository references to "fake backend," including
+  hyphenated and "fake in-browser backend" variants, now use "mock backend" consistently across app
+  copy, code comments, repository instructions, requirements, build documents, and review records.
 - Verification: `npm run build` green (existing single-bundle size warning only), `npm run lint` green,
   all 543 Vitest tests green, and the two Phase 11 Playwright integration specs green.

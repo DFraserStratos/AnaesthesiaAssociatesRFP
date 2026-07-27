@@ -18,7 +18,7 @@ test('integration simulator replays a message and shows the schedule effect', as
   await page.getByRole('button', { name: 'Replay message' }).click()
   await expect(page.getByText(/Processed/).first()).toBeVisible()
 
-  // Reset is available in-context and restores both the shared fake backend
+  // Reset is available in-context and restores both the shared mock backend
   // and this simulator's local selection/live-feed state.
   await page.getByRole('button', { name: 'Reset demo data' }).click()
   await expect(page.getByText('This resets all demo apps to the pristine seed.')).toBeVisible()

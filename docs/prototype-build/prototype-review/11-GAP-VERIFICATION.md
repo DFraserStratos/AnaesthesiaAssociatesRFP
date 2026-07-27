@@ -1201,7 +1201,7 @@ app by design. The simulator subtitle is honest, so the gap is only the absence 
 framing.
 
 **Verifier evidence.** `REQUIREMENTS.md` section 10 ("real Xero/API connections, real HL7/FHIR
-endpoints or SFTP" out of scope); PROGRESS binding convention 4 ("Fake backend only ... No `fetch`, no
+endpoints or SFTP" out of scope); PROGRESS binding convention 4 ("Mock backend only ... No `fetch`, no
 real endpoints"); `src/domain/integrations/fhir.ts:84` and `:171` do build a real
 `resourceType: 'Bundle'` with MessageHeader, Patient, Practitioner and Appointment entries;
 `src/apps/demo/DemoIntegrations.tsx:115` subtitle "All in-browser, no real endpoints".
@@ -1237,7 +1237,7 @@ HL7 to translated FHIR R4 resource to resulting Card, and I2 that one feed deliv
 directly; both are satisfied, and the FHIR feed's bundle really is the parse source via
 `extractFromFhir`. The RFP's translation paragraph asks for FHIR-equivalent internal representations,
 which `ParsedMessage` is; the stricter natively-FHIR ideal is an architecture aspiration for the real
-build with no observable consequence in a fake-backend prototype.
+build with no observable consequence in a mock-backend prototype.
 
 ---
 

@@ -96,7 +96,7 @@ footer { margin-top:80px; border-top:3px solid var(--ink); padding-top:16px; fon
 <header class="hero">
   <p class="kicker">Anaesthesia Associates RFP · Prototype · The plan</p>
   <h1>The AA prototype: <em>three apps, one demo</em></h1>
-  <p class="hero-sub">A fully interactive, true-to-life React front end over a fake in-browser backend, demonstrating every major feature of the Anaesthesia Associates Booking &amp; Billing RFP: the scheduling canvas, BTM timesheet capture, the DRAFT→SUBMITTED→AUTHORISED approval flow, the billing engine with its three billing methods and split-billing rules, the ACCREC/ACCPAY Xero pairing, payments and disbursement, and the HL7→FHIR integration story. One app switcher in the corner flips between the Anaesthetist Mobile App (floating in a phone frame on a grey backdrop), the Anaesthetist Web App, and the Admin Web App — plus the demo-only simulators that make the invisible parts visible. Fourteen phases, each one session, each one coherent deliverable.</p>
+  <p class="hero-sub">A fully interactive, true-to-life React front end over a mock in-browser backend, demonstrating every major feature of the Anaesthesia Associates Booking &amp; Billing RFP: the scheduling canvas, BTM timesheet capture, the DRAFT→SUBMITTED→AUTHORISED approval flow, the billing engine with its three billing methods and split-billing rules, the ACCREC/ACCPAY Xero pairing, payments and disbursement, and the HL7→FHIR integration story. One app switcher in the corner flips between the Anaesthetist Mobile App (floating in a phone frame on a grey backdrop), the Anaesthetist Web App, and the Admin Web App — plus the demo-only simulators that make the invisible parts visible. Fourteen phases, each one session, each one coherent deliverable.</p>
   <div class="stats">
     <div class="stat"><b>14</b><span>phases (00–13)</span></div>
     <div class="stat"><b>3</b><span>apps in one shell</span></div>
@@ -296,7 +296,7 @@ Phase goal: the RFP's hardest business rules proven correct in pure, tested func
       </div>
     </div>
   </div>
-  <p class="goal">The fake backend comes alive: a deterministic seeded dataset (the full canvas — 2 Lists per anaesthetist per day over the rolling horizon — masters, contracts of all three types, RVG/modifier tables, and the ready-made demo states later phases rely on), the Zustand store with lifecycle guards (DRAFT→SUBMITTED→AUTHORISED, no Returned state, role checks) and the append-only audit writer, localStorage persistence with reset, the working demo clock, and a data inspector that makes it all demoable.</p>
+  <p class="goal">The mock backend comes alive: a deterministic seeded dataset (the full canvas — 2 Lists per anaesthetist per day over the rolling horizon — masters, contracts of all three types, RVG/modifier tables, and the ready-made demo states later phases rely on), the Zustand store with lifecycle guards (DRAFT→SUBMITTED→AUTHORISED, no Returned state, role checks) and the append-only audit writer, localStorage persistence with reset, the working demo clock, and a data inspector that makes it all demoable.</p>
   <details>
     <summary>What to check when it's done</summary>
     <ul class="checks">
@@ -310,7 +310,7 @@ Phase goal: the RFP's hardest business rules proven correct in pure, tested func
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-02">Copy</button>
     </div>
-    <pre id="prompt-02">Please run Phase 02 (Seed data &amp; store) of the Anaesthesia Associates prototype build — the phase that brings the fake backend alive.
+    <pre id="prompt-02">Please run Phase 02 (Seed data &amp; store) of the Anaesthesia Associates prototype build — the phase that brings the mock backend alive.
 
 Before doing anything else, read these in order:
 1. docs/prototype-build/PROGRESS.md — binding conventions (especially 4–7), decisions log, and what Phases 00–01 actually built.
@@ -329,7 +329,7 @@ While working:
 
 When done: run the manual test checklist and report each item, update PROGRESS.md (status row + entry + seed decisions), and give me short, clear notes.
 
-Phase goal: a deterministic, guarded, audited fake backend — fully alive and inspectable behind the placeholder screens.</pre>
+Phase goal: a deterministic, guarded, audited mock backend — fully alive and inspectable behind the placeholder screens.</pre>
   </div>
 </article>
 

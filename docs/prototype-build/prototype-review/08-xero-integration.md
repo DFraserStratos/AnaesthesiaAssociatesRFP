@@ -85,7 +85,7 @@ adjudicated verdicts after the adversarial pass.
 - **Display-only ACCPAY number.** The `-P` suffixed number satisfying AA's similarity preference is derived at render, not stored on the `XeroAccPay` record. Logged as a simulation convention in the same review-fix entry.
 - **Overpayment / credit notes.** An over-receipt is clamped to the balance due (`paymentActions.ts:97`); credit notes are out of scope per the Phase 10 handoff notes.
 
-Not a gap but worth stating for the record: the simulated `XeroAccPay` carries an `accRecId` back-pointer (`types.ts:776-779`) purely so the payables run can read the paired ACCREC's full payable. That is a fake-backend convenience; every user-facing surface pairs the two records through the Billing Engine case, and the Xero sim copy says so explicitly, so the RFP's "not natively linked within Xero itself" story is intact where the audience can see it.
+Not a gap but worth stating for the record: the simulated `XeroAccPay` carries an `accRecId` back-pointer (`types.ts:776-779`) purely so the payables run can read the paired ACCREC's full payable. That is a mock-backend convenience; every user-facing surface pairs the two records through the Billing Engine case, and the Xero sim copy says so explicitly, so the RFP's "not natively linked within Xero itself" story is intact where the audience can see it.
 
 ## RFP tensions in this section, and the choice made
 

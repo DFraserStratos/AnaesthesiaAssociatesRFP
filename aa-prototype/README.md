@@ -4,7 +4,7 @@ A demo prototype of the Booking & Billing system described in the Anaesthesia As
 (Peritia Ltd, July 2026). AA is a Christchurch, NZ company that handles booking and billing for about
 85 independent anaesthetists.
 
-This is a fully interactive, true-to-life React front end over a **fake in-browser backend** — no real
+This is a fully interactive, true-to-life React front end over a **mock in-browser backend** — no real
 servers, APIs, or data. It exists to demonstrate every major feature of the RFP's candidate
 architecture during vendor presentation workshops. **It is a prototype, not production software:** all
 data is fictional and every external system (Xero, HL7/FHIR, PDF/OCR, email, payments) is simulated.
@@ -33,7 +33,7 @@ advance the clock, jump to a scenario (S1 to S5), and fire simulated integration
 
 - **React 18.3** + **TypeScript 6** (strict, `noUncheckedIndexedAccess`, no `any`)
 - **Vite 8** (`@vitejs/plugin-react`)
-- **Zustand 5** — the single store over the fake backend
+- **Zustand 5** — the single store over the mock backend
 - **React Router 6**
 - **Tailwind CSS v4** (`@tailwindcss/vite`, CSS-first `@theme`) over a TS design-token layer
 - **date-fns 4** for dates, **lucide-react** for icons

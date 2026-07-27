@@ -50,7 +50,7 @@ finished prototype against the whole RFP).
 
 PROGRESS.md's binding conventions (1 to 18) govern. The ones most easily broken:
 
-- **Fake backend only.** No `fetch`, no endpoints. Components never own domain state — they read and
+- **Mock backend only.** No `fetch`, no endpoints. Components never own domain state — they read and
   write through typed store hooks, and every mutation goes through the audited `mutate()` wrapper
   and the lifecycle guards in `src/store/`. Simulated external systems are store actions.
 - **Determinism.** Never `Date.now()`, `new Date()` or `Math.random()`. Time comes from the demo

@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 
 The app lives in `aa-prototype/`; run npm commands there. Under `src/`, `domain/` contains pure
-business rules, `store/` owns the Zustand-backed fake backend,
+business rules, `store/` owns the Zustand-backed mock backend,
 `apps/` contains the mobile, web, admin, and demo surfaces, and `shared/`, `shell/`, and `theme/`
 hold reusable UI, routing, and design tokens. Tests are colocated as `*.test.ts(x)`; Playwright
 specs live in `visual/`. Requirements, decisions, demo scripts, and mockups live under `docs/`.

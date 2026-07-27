@@ -254,7 +254,7 @@ export function DemoData() {
   return (
     <DemoSurface
       title="Data inspector"
-      subtitle="A window into the fake in-browser backend: the seeded canvas, the ready-made scenario states, per-entity audit trails, and a guard console for trying forbidden lifecycle transitions."
+      subtitle="A window into the mock in-browser backend: the seeded canvas, the ready-made scenario states, per-entity audit trails, and a guard console for trying forbidden lifecycle transitions."
     >
       {/* Clock + counts */}
       <Panel

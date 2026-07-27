@@ -6,7 +6,7 @@
 
 ## Goal
 
-The fake backend comes alive: a deterministic seeded dataset over the Phase 01 types, the Zustand
+The mock backend comes alive: a deterministic seeded dataset over the Phase 01 types, the Zustand
 store with lifecycle guards and the append-only audit writer, localStorage persistence with reset,
 the working demo clock, and a data inspector that makes it all demoable before any real screen
 exists.

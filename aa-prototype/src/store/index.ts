@@ -1,5 +1,5 @@
 /**
- * Store layer — the one Zustand store over the seeded fake backend, the
+ * Store layer — the one Zustand store over the seeded mock backend, the
  * audit-writing mutation wrapper, the lifecycle guards, patient intake, the
  * master-data invariants and the live demo clock (Phase 02).
  */
