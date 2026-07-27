@@ -795,3 +795,19 @@ Append one entry per completed session, newest last, using this template:
   build` green (existing single-bundle warning only), `npm run test` green (**544** Vitest tests
   across 44 files), `npm run lint` green, and six focused Playwright checks green across the web
   dashboard, pre-payment Card, billing monitor and both invoice layouts/delivery paths.
+- **Admin day-view right rail widened to align with the List drawer.** The persistent calendar,
+  internal-notes and awaiting-review rail is now 412px instead of 256px. The overlaid List drawer
+  remains 440px: because it is flush to the viewport while the rail ends at the admin content's
+  shared 28px right inset, `440 - 28 = 412` aligns their left edges without leaving a shaded rail
+  strip visible beside the drawer. Browsers that reserve space for the harness scrollbar reduce the
+  rail by that measured gutter as well (397px with Chromium's 15px classic scrollbar); macOS-style
+  overlay scrollbars leave it at 412px. A focused Playwright assertion compares the rendered left
+  edges so this visual relationship cannot silently drift. `npm run build`, `npm run test` (**544**
+  Vitest tests across 44 files), `npm run lint` and the focused admin Phase-06 Playwright walkthrough
+  are green; the refreshed 1440px day-view and drawer screenshots were visually checked.
+- **List-drawer actions kept on one row.** The free-list footer now places Edit list, Book (phone
+  advice) and History in one unwrapped row. The teal Book action flexes to consume the remaining
+  width while the two secondary buttons keep their natural widths. The S2 Playwright flow now pins
+  the shared vertical position and verifies that Book grows wider than Edit list. `npm run build`,
+  `npm run test` (**544** Vitest tests across 44 files), `npm run lint` and the focused S2
+  phone-advice Playwright flow are green; the free-list drawer was visually checked at 1280px.

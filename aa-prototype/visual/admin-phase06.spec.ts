@@ -17,6 +17,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Tuesday 21 July 2026/ })).toBeVisible()
   await expect(page.getByText('Internal notes')).toBeVisible()
   await expect(page.getByText('Awaiting review')).toBeVisible()
+  const rightRailLeft = await page.getByTestId('admin-right-rail').evaluate((element) => element.getBoundingClientRect().left)
   await page.screenshot({ path: 'visual/shots/a-01-day.png', fullPage: true })
 
   // Add an internal note.
@@ -31,6 +32,8 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.getByText("St George's").first().click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
+  const listDrawerLeft = await page.getByTestId('admin-list-drawer').evaluate((element) => element.getBoundingClientRect().left)
+  expect(listDrawerLeft).toBe(rightRailLeft)
   await page.screenshot({ path: 'visual/shots/a-03-drawer.png', fullPage: true })
 
   // Open a card as the office → the billing-setup section.
@@ -105,7 +108,19 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
 
   const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
   await sharmaRow.getByRole('button').nth(1).click()
-  await page.getByRole('button', { name: 'Book (phone advice)' }).click()
+  const editList = page.getByRole('button', { name: 'Edit list', exact: true })
+  const bookPhoneAdvice = page.getByRole('button', { name: 'Book (phone advice)', exact: true })
+  const history = page.getByRole('button', { name: 'History', exact: true })
+  const [editBox, bookBox, historyBox] = await Promise.all([
+    editList.boundingBox(),
+    bookPhoneAdvice.boundingBox(),
+    history.boundingBox(),
+  ])
+  expect(editBox?.y).toBe(bookBox?.y)
+  expect(historyBox?.y).toBe(bookBox?.y)
+  expect(bookBox?.width ?? 0).toBeGreaterThan(editBox?.width ?? 0)
+  await page.screenshot({ path: 'visual/shots/a-11-phone-drawer.png', fullPage: true })
+  await bookPhoneAdvice.click()
   await page.getByLabel('Hospital').selectOption({ label: "St George's" })
   await page.getByLabel('Surgeon').selectOption({ label: 'Mr T. Hale' })
   await page.getByRole('button', { name: 'Continue to add card' }).click()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
@@ -19,6 +19,7 @@ import { type SortMode } from './components/DayNav'
 import { ListDrawer } from './components/ListDrawer'
 import type { AdminOutletContext } from './outlet'
 import { isBooked, surnameOf } from './util'
+import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -69,6 +70,23 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const { pathname } = useLocation()
   const [params] = useSearchParams()
   const [drawerListId, setDrawerListId] = useState<string | null>(null)
+  const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
+  const shellRef = useRef<HTMLDivElement>(null)
+
+  // The harness scrolls inside <main>. Browsers with classic scrollbars reserve
+  // horizontal space there; overlay-scrollbar browsers reserve none. Measuring
+  // the actual gutter keeps the in-flow rail aligned with the fixed drawer in
+  // both cases.
+  useLayoutEffect(() => {
+    const main = shellRef.current?.closest('main')
+    if (!(main instanceof HTMLElement)) return
+
+    const measure = () => setShellScrollbarWidth(main.offsetWidth - main.clientWidth)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(main)
+    return () => observer.disconnect()
+  }, [])
 
   // The day view's day and row order come from the URL. Off a day route (Review,
   // Invoices …) the last-seen pair is remembered so the "Day view" nav item
@@ -192,6 +210,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     summary,
     notes,
     reviewRows,
+    shellScrollbarWidth,
     onSelectList: setDrawerListId,
     onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged),
   }
@@ -207,7 +226,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
+    <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
       <SideNav
         active={sectionForPath(pathname)}
         reviewBadge={reviewLists.length}
@@ -216,7 +235,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 
-      <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ flex: 1, minWidth: 0, padding: `24px ${ADMIN_PAGE_HORIZONTAL_PADDING}px 40px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Outlet context={context} />
       </div>
 

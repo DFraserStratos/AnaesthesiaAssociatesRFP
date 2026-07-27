@@ -82,6 +82,7 @@ export function AdminDayRoute() {
           notes={ctx.notes}
           onAddNote={ctx.onAddNote}
           reviewRows={ctx.reviewRows}
+          shellScrollbarWidth={ctx.shellScrollbarWidth}
           onReviewList={(listId) => navigate(`/admin/review/${listId}`)}
         />
       </div>

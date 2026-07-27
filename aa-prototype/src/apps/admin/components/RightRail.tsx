@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { addMonths, format, getDay, getDaysInMonth, parseISO, startOfMonth } from 'date-fns'
 import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
+import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 
 interface ReviewRow {
   listId: string
@@ -18,12 +19,13 @@ interface RightRailProps {
   notes: DayNote[]
   onAddNote: (text: string, flagged: boolean) => void
   reviewRows: ReviewRow[]
+  shellScrollbarWidth: number
   onReviewList: (listId: string) => void
 }
 
 export function RightRail(props: RightRailProps) {
   return (
-    <div style={{ width: 256, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />

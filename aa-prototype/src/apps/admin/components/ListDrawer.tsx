@@ -11,6 +11,7 @@ import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
 import { MoveCardFlow } from '../flows/MoveCardFlow'
+import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 
 interface ListDrawerProps {
   listId: string
@@ -41,7 +42,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(23,35,32,0.32)', zIndex: 40 }} />
-      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 440, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
+      <div data-testid="admin-list-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
@@ -92,7 +93,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
         </div>
 
         {/* Actions */}
-        <div style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
           <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
           {(isBooked(list.statusKey) || activeCards.length > 0) && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
           {isFreeEmpty && <ActionBtn primary onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
@@ -143,7 +144,7 @@ function ActionBtn({ onClick, children, primary }: { onClick: () => void; childr
     <button
       type="button"
       onClick={onClick}
-      style={{ flex: primary === true ? '1 1 100%' : undefined, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
+      style={{ flex: primary === true ? '1 1 auto' : '0 0 auto', minWidth: 0, minHeight: 40, padding: '0 14px', borderRadius: radius.ctl, border: primary === true ? 'none' : `1px solid ${neutral.line}`, background: primary === true ? accent.base : neutral.surface, color: primary === true ? '#FFFFFF' : neutral.slate, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}
     >
       {children}
     </button>

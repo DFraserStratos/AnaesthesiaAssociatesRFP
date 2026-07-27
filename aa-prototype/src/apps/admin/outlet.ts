@@ -25,6 +25,8 @@ export interface AdminOutletContext {
   summary: string
   notes: DayNote[]
   reviewRows: ReviewRow[]
+  /** Width reserved by the harness' vertical scrollbar, or zero for overlay scrollbars. */
+  shellScrollbarWidth: number
   /** Open the List drawer — a transient overlay, not a route. */
   onSelectList: (listId: string) => void
   onAddNote: (text: string, flagged: boolean) => void
