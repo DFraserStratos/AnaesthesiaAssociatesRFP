@@ -91,7 +91,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v7: Phase 11 — seeded integration feeds (3) in the integrations slice, five
+/** v8: 2026-07-27 — modifier bands (one code per band). The seed's own content
+ *  is unchanged, but a pre-fix persisted Procedure can hold two codes from the
+ *  same band (e.g. A1 + A2); those now resolve to one code and render a
+ *  refusal caption, so the stale selection is discarded rather than carried
+ *  into a demo.
+ *  v7: Phase 11 — seeded integration feeds (3) in the integrations slice, five
  *  integration-origin seed Cards (correlationRef set) with a new SUBMITTED
  *  locked-target List (Beaumont Mon 20), new `Card.correlationRef` usage, and
  *  the `IntegrationMessage` log shape ('duplicate' status + failure/result
@@ -109,7 +114,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 7
+export const PERSIST_VERSION = 8
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }

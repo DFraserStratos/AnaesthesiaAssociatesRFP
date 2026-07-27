@@ -1,6 +1,11 @@
 import { accent, neutral } from '../../theme/tokens'
 import type { CapturedUnits, Procedure, RvgCode } from '../../domain/types'
-import { ASA_SEED_UNITS, getModifierCode, type BtmBreakdown } from '../../domain/billing'
+import {
+  ASA_SEED_UNITS,
+  getModifierCode,
+  type BtmBreakdown,
+  type RefusedModifier,
+} from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor, type ProcedurePatch } from '../../store'
 import { ModifierChips } from './ModifierChips'
 import { MODIFIER_CHIP_LABELS } from './modifierLabels'
@@ -43,7 +48,7 @@ export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAddit
     write({ [field]: undefined })
   }
 
-  const mBreakdown = modifierBreakdown(procedure)
+  const mBreakdown = modifierBreakdown(procedure, btm.refusedModifiers)
 
   return (
     <CaptureSection label="Units" gap={14}>
@@ -85,14 +90,21 @@ export function UnitsCard({ procedure, btm, baseCode, actor, canCapture, isAddit
   )
 }
 
-/** "AS1 +0 · A1 very old +1" — the M row's seeded composition. */
-function modifierBreakdown(procedure: Procedure): string {
+/**
+ * "AS1 +0 · A1 very old +1" — the M row's seeded composition. Codes the
+ * calculator REFUSED (absorbed by the base code, or a sibling in a band it has
+ * already counted) are left out, so the caption can never credit units the M
+ * total excludes.
+ */
+function modifierBreakdown(procedure: Procedure, refused: readonly RefusedModifier[]): string {
+  const isRefused = (code: string) => refused.some((r) => r.code === code)
   const parts: string[] = []
-  if (procedure.asaClass !== undefined) {
+  if (procedure.asaClass !== undefined && !isRefused(procedure.asaClass)) {
     parts.push(`${procedure.asaClass} +${ASA_SEED_UNITS[procedure.asaClass]}`)
   }
   for (const code of procedure.selectedModifierCodes) {
     if (code === procedure.asaClass) continue
+    if (isRefused(code)) continue
     const modifier = getModifierCode(code)
     if (modifier === undefined) continue
     const label = MODIFIER_CHIP_LABELS[code]

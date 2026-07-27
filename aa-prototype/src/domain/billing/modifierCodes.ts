@@ -12,7 +12,7 @@
  * Phase 02's seeder treats this table as the ModifierCode master.
  */
 
-import type { AsaClass, ModifierCode } from '../types'
+import type { AsaClass, ModifierCode, ModifierGroup } from '../types'
 
 export const MODIFIER_CODES: readonly ModifierCode[] = [
   // Pre-assessment (PA) — phone or face-to-face assessment before the
@@ -52,6 +52,80 @@ const BY_CODE: ReadonlyMap<string, ModifierCode> = new Map(MODIFIER_CODES.map((m
 /** Resolve a modifier code from the master table. */
 export function getModifierCode(code: string): ModifierCode | undefined {
   return BY_CODE.get(code)
+}
+
+// ---------------------------------------------------------------------------
+// Modifier bands — one code per band (Decisions log 2026-07-27)
+// ---------------------------------------------------------------------------
+
+/**
+ * Groups whose codes are MUTUALLY EXCLUSIVE: exactly one code applies per
+ * procedure. The RFP never states this, but its own arithmetic requires it —
+ * the modifier table (RFP.md:1061-1105) gives each group an "Example range"
+ * that is only reachable when one code per group applies (stacking would take
+ * OB to 6, A to 3 and PA to 11), and modifiers are described as depending on
+ * "a score or category" (RFP.md:1051), which is single-valued. Recorded as a
+ * picked reading with a question for AA (review 12, question 21).
+ *
+ * A group NOT listed here stacks freely: POSTOP is "separately itemised,
+ * sometimes days later" (RFP.md:1103); ASE / P / AI are singleton flags with
+ * no sibling to collide with.
+ */
+export const EXCLUSIVE_MODIFIER_GROUPS: ReadonlySet<ModifierGroup> = new Set<ModifierGroup>([
+  'PA', // RFP group range 1 to 4 units; PA1-PA4 are alternative assessment types
+  'A', // very old and very young are clinically exclusive
+  'AS', // one ASA class per patient (the RFP itself single-selects it, :1054-1059)
+  'OB', // "body mass index BANDING" (:1092)
+])
+
+/**
+ * Codes exempt from their group's band — they stack on top of it.
+ *
+ * PA5 only. It is a distinct LATER contact ("phone follow-up"), not an
+ * alternative assessment type, so it can accompany any of PA1 to PA4. This is
+ * a deliberate, recorded DEVIATION: PA can then reach 5 units (PA4 + PA5), one
+ * above the RFP's stated 1 to 4 range for the group. Since that range
+ * arithmetic is the whole argument for the band rule, the exception is stated
+ * plainly rather than glossed, and forms part of the question to AA.
+ */
+export const STACKS_WITHIN_GROUP: ReadonlySet<string> = new Set<string>(['PA5'])
+
+/** Human-readable band names, used in the domain's refusal reasons. */
+const BAND_LABELS: Readonly<Record<string, string>> = {
+  PA: 'pre-assessment band',
+  A: 'age-extreme band',
+  AS: 'ASA class band',
+  OB: 'BMI band',
+}
+
+/**
+ * The band a code belongs to, or undefined when it stacks freely. Two codes
+ * collide iff their bands are equal AND defined.
+ */
+export function modifierBandOf(code: string): string | undefined {
+  const modifier = BY_CODE.get(code)
+  if (modifier === undefined) return undefined
+  if (STACKS_WITHIN_GROUP.has(code)) return undefined
+  return EXCLUSIVE_MODIFIER_GROUPS.has(modifier.group) ? modifier.group : undefined
+}
+
+/** The band's display name for a reason string ("BMI band"). */
+export function modifierBandLabel(band: string): string {
+  return BAND_LABELS[band] ?? `${band} band`
+}
+
+/**
+ * The picker's selection rule: turning a code ON drops any other selected code
+ * in the same band first, so one tap SWAPS OB2 for OB3. Turning it off just
+ * removes it. Pure, so it is unit-testable and the chip component stays a
+ * renderer. The domain's `modifierUnits` is the backstop for selections that
+ * never went through here (persisted pre-fix state, a future integration).
+ */
+export function toggleModifierCode(selected: readonly string[], code: string): string[] {
+  if (selected.includes(code)) return selected.filter((c) => c !== code)
+  const band = modifierBandOf(code)
+  const kept = band === undefined ? [...selected] : selected.filter((c) => modifierBandOf(c) !== band)
+  return [...kept, code]
 }
 
 /**

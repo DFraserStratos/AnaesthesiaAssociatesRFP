@@ -245,9 +245,11 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    - 1 unit per 10 minutes after two hours.
 6. She records ASA and any other applicable modifiers.
 7. The system prevents a positioning modifier if the base code already includes it.
-8. The fee updates using Dr Souter's own dollar value per unit.
-9. She may record an allowed fixed or rate-by-time line, or an override with a reason.
-10. She reviews validation messages and marks the Card complete.
+8. Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so tapping
+   a sibling swaps it in rather than adding to it; a pre-assessment follow-up stacks on top.
+9. The fee updates using Dr Souter's own dollar value per unit.
+10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
+11. She reviews validation messages and marks the Card complete.
 
 ### Multiple Procedures
 

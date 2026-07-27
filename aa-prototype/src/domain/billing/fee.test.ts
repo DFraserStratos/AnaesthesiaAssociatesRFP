@@ -56,6 +56,15 @@ describe('resolveBtm', () => {
     const p = mkProcedure({ ...spotCheckProcedure, selectedModifierCodes: ['AS3'] })
     expect(resolveBtm(p, BASE_SINGLE_10).modifiers.units).toBe(3)
   })
+
+  it('resolves a stale AS chip against the captured ASA class to one value', () => {
+    // Band rule backstop (Decisions log 2026-07-27): the chip selection is
+    // seen first, so AS4 wins the ASA band and the appended AS3 is refused.
+    const p = mkProcedure({ ...spotCheckProcedure, selectedModifierCodes: ['AS4'] })
+    const btm = resolveBtm(p, BASE_SINGLE_10)
+    expect(btm.modifiers.units).toBe(4) // not 7
+    expect(btm.refusedModifiers.map((r) => r.code)).toEqual(['AS3'])
+  })
 })
 
 describe('splitBillingUnits', () => {

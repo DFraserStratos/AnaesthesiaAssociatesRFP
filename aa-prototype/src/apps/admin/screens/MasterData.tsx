@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Contract } from '../../../domain/types'
+import { modifierBandOf } from '../../../domain/billing'
 import {
   createHospital,
   eligibleArchiveContactIds,
@@ -433,12 +434,13 @@ function ModifierCodesView() {
   const rows = Object.values(modifierCodes).sort((a, b) => a.code.localeCompare(b.code))
   return (
     <>
-      <Header title="Modifier codes" sub="Modifier-unit reference (view only). Demo-plausible values within the RFP ranges." />
-      <Table heads={['Code', 'Group', 'Units', 'Description']} rightAlign={[2]}>
+      <Header title="Modifier codes" sub="Modifier-unit reference (view only). Demo-plausible values within the RFP ranges. Selection reads the RFP's per-group example ranges as one code per group, which the RFP implies rather than states: a question for AA." />
+      <Table heads={['Code', 'Group', 'Selection', 'Units', 'Description']} rightAlign={[3]}>
         {rows.map((m) => (
           <tr key={m.code}>
             <td className="mono" style={cellStyle}>{m.code}</td>
             <td style={cellStyle}>{m.group}</td>
+            <td style={cellStyle}>{modifierBandOf(m.code) !== undefined ? 'Pick one' : 'Adds on top'}</td>
             <td className="mono" style={{ ...cellStyle, textAlign: 'right' }}>{m.units}</td>
             <td style={cellStyle}>{m.description}</td>
           </tr>

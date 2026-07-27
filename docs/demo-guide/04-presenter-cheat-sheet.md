@@ -264,6 +264,9 @@ Say:
 - The RFP names example modifier ranges, not a certified full NZSA table.
 - The prototype values are demo-plausible and must not be described as authoritative.
 - Partial time-interval rounding is a prototype assumption.
+- Codes in the same band (pre-assessment, age, ASA, BMI) are one-per-procedure, so tapping a sibling
+  swaps it: those per-group ranges only add up if one code applies. The RFP implies the rule rather
+  than stating it, and a pre-assessment follow-up (PA5) stacks on top, which is a question for AA.
 
 ## Likely evaluator questions
 

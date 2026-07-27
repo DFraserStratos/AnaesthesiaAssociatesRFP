@@ -1,6 +1,6 @@
 import { accent, neutral } from '../../theme/tokens'
 import type { Procedure, RvgCode } from '../../domain/types'
-import { MODIFIER_CODES, modifierUnits } from '../../domain/billing'
+import { MODIFIER_CODES, modifierUnits, toggleModifierCode } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor } from '../../store'
 import { MODIFIER_CHIP_LABELS } from './modifierLabels'
 import { Caption } from './ui'
@@ -19,15 +19,17 @@ interface ModifierChipsProps {
  * mockup's 3-chip demo set), EXCEPT group 'AS': the ASA seed stays visually
  * distinct and appears only in the M row's caption. A chip the base code
  * absorbs is disabled with the domain's verbatim refusal reason.
+ *
+ * Codes in the same BAND are mutually exclusive (Decisions log 2026-07-27), so
+ * turning one on SWAPS OUT its sibling in one tap. Siblings are deliberately
+ * not disabled: that would make changing a band a two-tap dead end.
  */
 export function ModifierChips({ procedure, baseCode, actor, disabled, onError }: ModifierChipsProps) {
   const chips = MODIFIER_CODES.filter((m) => m.group !== 'AS')
   const selected = new Set(procedure.selectedModifierCodes)
 
   function toggle(code: string) {
-    const next = selected.has(code)
-      ? procedure.selectedModifierCodes.filter((c) => c !== code)
-      : [...procedure.selectedModifierCodes, code]
+    const next = toggleModifierCode(procedure.selectedModifierCodes, code)
     const outcome = editProcedure(useAppStore, actor, procedure.id, { selectedModifierCodes: next })
     if (!outcome.ok) onError(outcome.message)
   }

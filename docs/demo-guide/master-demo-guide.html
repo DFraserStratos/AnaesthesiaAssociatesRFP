@@ -805,6 +805,8 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     <li>Each anaesthetist has an independent value per unit.</li>
     <li>The anaesthetist selects the RVG code; the system does not infer it. Some codes are ranges.</li>
     <li>Positioning cannot be charged again if the base code already includes it.</li>
+    <li>Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure: tapping a
+      sibling swaps it in. A pre-assessment follow-up stacks on top.</li>
     <li>Partial-interval rounding is a prototype assumption (round up per started interval).</li>
   </ul>
 
@@ -904,7 +906,10 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
       topic, shown via the audit trail and live integration updates.</p></div>
     <div class="card"><h3>10 · Modifier values and time rounding</h3><p style="font-size:14px">The RFP names
       example ranges, not a certified NZSA table. The prototype values are demo-plausible; partial-interval
-      rounding is an assumption. Neither is authoritative.</p></div>
+      rounding is an assumption. Neither is authoritative. Codes in the same band (pre-assessment, age, ASA,
+      BMI) are one per procedure, so tapping a sibling swaps it: those per-group ranges only add up if one
+      code applies. The RFP implies that rather than stating it, and a pre-assessment follow-up (PA5) stacks
+      on top, which is a question for AA.</p></div>
   </div>
 
   <h2>Likely evaluator questions</h2>
