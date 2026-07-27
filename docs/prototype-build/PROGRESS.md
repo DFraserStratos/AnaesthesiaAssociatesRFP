@@ -731,5 +731,16 @@ Append one entry per completed session, newest last, using this template:
 - **Backend terminology standardised.** All repository references to "fake backend," including
   hyphenated and "fake in-browser backend" variants, now use "mock backend" consistently across app
   copy, code comments, repository instructions, requirements, build documents, and review records.
+- **Feed mappings moved out of the primary demo path.** The selected feed's field mappings now sit
+  after the message library under a Feed mapping reference heading, leaving the opening flow focused
+  on the selected message's raw HL7, translated FHIR, and schedule effect.
+- **Integration simulator rebuilt as a desktop workspace.** A wide, sticky inspection rail now holds
+  the hospital source selector, live-feed and reset controls, selected message, full-width stacked raw
+  HL7 and translated FHIR panes, and the schedule effect. The wider right column is the message
+  library, so selection, payloads, outcome, and alternative messages remain visible together at the
+  standard 1440 x 900 demo viewport. The shared `DemoSurface` accepts opt-in content and subtitle
+  widths so this page's shorter one-line introduction aligns with the full workspace; other demo
+  surfaces retain their 1080 / 720 defaults. Feed mappings and the FHIR-first architecture note remain
+  secondary material below the workspace.
 - Verification: `npm run build` green (existing single-bundle size warning only), `npm run lint` green,
   all 543 Vitest tests green, and the two Phase 11 Playwright integration specs green.

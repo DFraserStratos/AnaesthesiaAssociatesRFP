@@ -12,16 +12,27 @@ test('integration simulator replays a message and shows the schedule effect', as
   // The selected-message inspector is part of the opening viewport, not buried
   // beneath the long canned-message library.
   await expect(page.getByText('1 · Raw HL7 v2')).toBeInViewport()
-  await expect(page.getByText('2 · FHIR R4 (translated)')).toBeInViewport()
+  await expect(page.getByText('2 · Translated FHIR R4')).toBeInViewport()
+  await expect(page.getByText('3 · Schedule change')).toBeInViewport()
+
+  // Desktop workspace keeps the inspection rail and library beside each other,
+  // with the library receiving the larger share of the canvas.
+  const inspectorBox = await page.getByTestId('integration-inspector').boundingBox()
+  const libraryBox = await page.getByTestId('integration-library').boundingBox()
+  expect(inspectorBox).not.toBeNull()
+  expect(libraryBox).not.toBeNull()
+  expect(inspectorBox!.x).toBeLessThan(libraryBox!.x)
+  expect(Math.abs(inspectorBox!.y - libraryBox!.y)).toBeLessThanOrEqual(2)
+  expect(inspectorBox!.width).toBeLessThan(libraryBox!.width)
 
   // The default selected message is the headline S12 create; replay it.
-  await page.getByRole('button', { name: 'Replay message' }).click()
+  await page.getByTestId('integration-inspector').getByRole('button', { name: 'Replay', exact: true }).click()
   await expect(page.getByText(/Processed/).first()).toBeVisible()
 
   // Reset is available in-context and restores both the shared mock backend
   // and this simulator's local selection/live-feed state.
   await page.getByRole('button', { name: 'Reset demo data' }).click()
-  await expect(page.getByText('This resets all demo apps to the pristine seed.')).toBeVisible()
+  await expect(page.getByText('Reset all demo apps to the pristine seed?')).toBeVisible()
   await page.getByRole('button', { name: 'Confirm reset' }).click()
   await expect(page.getByText('Not replayed yet. Click Replay to apply this message.')).toBeVisible()
 

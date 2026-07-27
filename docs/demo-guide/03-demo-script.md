@@ -96,9 +96,9 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 
 ### Beat 1: the booking arrives from the hospital
 
-- **Click:** Go to Integrations (the badged simulator). The selected-message inspector opens above the
-  message library. Show raw HL7 v2 on the left, translated FHIR R4 in the middle, and the processed
-  schedule change on the right.
+- **Click:** Go to Integrations (the badged simulator). In the left inspection rail, show raw HL7 v2,
+  translated FHIR R4, and the processed schedule change together. The wider message library remains
+  visible on the right.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
   mapped per hospital, processed near real time, and audited. This booking created a patient Card
   without anyone re-keying it."

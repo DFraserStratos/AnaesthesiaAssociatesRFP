@@ -121,8 +121,197 @@ export function DemoIntegrations() {
   return (
     <DemoSurface
       title="Integration simulator"
-      subtitle="Replay canned hospital messages into the mock backend and watch them translate and land on the schedule. HL7 v2 feeds are translated to FHIR R4; the Southern Cross feed is FHIR-native. All in-browser, no real endpoints."
+      subtitle="Replay hospital messages through the mock integration pipeline, from source payload to schedule change."
+      maxWidth={1440}
+      subtitleMaxWidth={1440}
     >
+      <div
+        data-testid="integration-workspace"
+        style={{
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(480px, 0.85fr) minmax(0, 1.15fr)',
+          gap: 20,
+          alignItems: 'start',
+        }}
+      >
+        <aside
+          data-testid="integration-inspector"
+          style={{
+            position: 'sticky',
+            top: 68,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            minWidth: 0,
+            background: neutral.surface,
+            border: `1px solid ${neutral.line}`,
+            borderRadius: radius.panel,
+            padding: 16,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SectionLabel title="Hospital source" description="Choose the source feed to inspect." />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+              {FEED_ORDER.map((id) => {
+                const meta = FEED_META[id]
+                const activeFeed = id === feedId
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setFeedId(id)
+                      setSelectedId(null)
+                      setLive(false)
+                    }}
+                    style={{
+                      font: 'inherit',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      borderRadius: radius.ctl,
+                      border: `1px solid ${activeFeed ? accent.base : neutral.line}`,
+                      background: activeFeed ? accent.tint : neutral.bg,
+                      padding: '9px 10px',
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
+                    }}
+                  >
+                    <span style={{ fontSize: 12.5, lineHeight: 1.25, fontWeight: 700, color: neutral.ink }}>{meta?.name}</span>
+                    <span style={{ fontSize: 10.5, lineHeight: 1.3, fontWeight: 600, color: neutral.slate }}>
+                      {meta?.transport === 'fhir' ? 'FHIR-native' : 'HL7 v2 · translated'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setLive((v) => !v)}
+                style={{ ...pillButton, background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
+              >
+                <Radio size={14} strokeWidth={2.5} aria-hidden />
+                {live ? 'Streaming live feed...' : 'Start live feed'}
+              </button>
+              {!confirmingReset && (
+                <button type="button" onClick={() => setConfirmingReset(true)} style={pillButton}>
+                  <RotateCcw size={14} strokeWidth={2.5} aria-hidden />
+                  Reset demo data
+                </button>
+              )}
+            </div>
+            {confirmingReset ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: semantic.warning.tint, borderRadius: radius.ctl, padding: 8 }}>
+                <span style={{ flex: 1, minWidth: 180, fontSize: 11.5, color: semantic.warning.onTint }}>
+                  Reset all demo apps to the pristine seed?
+                </span>
+                <button
+                  type="button"
+                  onClick={resetSimulator}
+                  style={{ ...pillButton, padding: '6px 10px', background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}
+                >
+                  Confirm reset
+                </button>
+                <button type="button" onClick={() => setConfirmingReset(false)} style={{ ...pillButton, padding: '6px 10px' }}>
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <span style={{ fontSize: 11.5, color: neutral.mist }}>
+                Live feed processes one message per second.
+              </span>
+            )}
+          </div>
+
+          {selected !== undefined && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
+                    Selected message
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.label}</div>
+                </div>
+                <button type="button" onClick={replay} style={{ ...pillButton, flex: 'none', background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
+                  <RotateCw size={14} strokeWidth={2.5} aria-hidden />
+                  Replay
+                </button>
+              </div>
+              {selected.transport !== 'fhir' && (
+                <Pane title={`1 · Raw HL7 v2 · ${FEED_META[selected.feedId]?.name ?? 'Hospital feed'}`}>
+                  <Hl7View raw={selected.raw ?? ''} />
+                </Pane>
+              )}
+              <Pane title={selected.transport === 'fhir' ? 'FHIR R4 · Native source' : '2 · Translated FHIR R4'}>
+                <pre style={codeBlock}>{fhirJson}</pre>
+              </Pane>
+              <Pane title={selected.transport === 'fhir' ? 'Schedule change' : '3 · Schedule change'}>
+                <EffectView
+                  status={row?.status}
+                  displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}
+                  failureReason={row?.failureReason}
+                  cardLabel={
+                    resultCard !== undefined
+                      ? cardEffectLabel(resultCard.id, resultCard.patientId, resultCard.listId, patients, lists, anaesthetists)
+                      : undefined
+                  }
+                />
+              </Pane>
+            </>
+          )}
+        </aside>
+
+        <section data-testid="integration-library" style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
+            <SectionLabel title="Message library" description="Select a message to inspect it in the rail, or replay it directly." />
+            <span className="mono" style={{ flex: 'none', fontSize: 11, color: neutral.slate, background: neutral.sunken, borderRadius: radius.pill, padding: '3px 9px' }}>
+              {library.length} messages
+            </span>
+          </div>
+          {library.map((m) => (
+            <MessageRow
+              key={m.id}
+              message={m}
+              active={selected?.id === m.id}
+              statusLabel={statusLabelFor(m.id, messages)}
+              onSelect={() => setSelectedId(m.id)}
+              onReplay={() => {
+                setSelectedId(m.id)
+                processMessage(useAppStore, m.id)
+              }}
+            />
+          ))}
+        </section>
+      </div>
+
+      {/* Feed configuration is supporting reference material, so it follows
+          the message demo rather than interrupting the primary story. */}
+      {feed !== undefined && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
+              Feed mapping
+            </div>
+            <div style={{ fontSize: 12, color: neutral.slate }}>
+              Fields used to translate this hospital's source message.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {Object.entries(feed.fieldMapping).map(([k, v]) => (
+              <span key={k} className="mono" style={{ fontSize: 11, background: neutral.sunken, color: neutral.slate, borderRadius: 999, padding: '2px 9px' }}>
+                {k} ← {v}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Callout tone="info" title="Target state: FHIR-first, via the Digital Services Hub">
         Health NZ's direction is FHIR-first. This prototype translates each hospital's HL7 v2 into FHIR
         R4 on the way in (per-hospital field mapping) and treats a FHIR-native feed as the target. Today
@@ -132,159 +321,6 @@ export function DemoIntegrations() {
         would confirm identity against the NHI FHIR API and authenticate to the Hub with Keycloak
         (referenced here, not implemented).
       </Callout>
-
-      {/* Feed picker */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        {FEED_ORDER.map((id) => {
-          const meta = FEED_META[id]
-          const activeFeed = id === feedId
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                setFeedId(id)
-                setSelectedId(null)
-                setLive(false)
-              }}
-              style={{
-                font: 'inherit',
-                textAlign: 'left',
-                cursor: 'pointer',
-                borderRadius: radius.card,
-                border: `1px solid ${activeFeed ? accent.base : neutral.line}`,
-                background: activeFeed ? accent.tint : neutral.surface,
-                padding: '12px 16px',
-                minWidth: 190,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-              }}
-            >
-              <span style={{ fontSize: 14, fontWeight: 700, color: neutral.ink }}>{meta?.name}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: neutral.slate }}>
-                {meta?.transport === 'fhir' ? 'FHIR-native' : 'HL7 v2 · translated'}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Live-feed + reset controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setLive((v) => !v)}
-            style={{ ...pillButton, background: live ? semantic.warning.tint : neutral.surface, borderColor: live ? semantic.warning.solid : neutral.lineStrong, color: live ? semantic.warning.onTint : neutral.ink }}
-          >
-            <Radio size={14} strokeWidth={2.5} aria-hidden />
-            {live ? 'Streaming live feed...' : 'Start live feed'}
-          </button>
-          <span style={{ fontSize: 12, color: neutral.mist }}>
-            Drips this feed's messages one per second into the backend.
-          </span>
-        </div>
-        {confirmingReset ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: semantic.warning.onTint }}>
-              This resets all demo apps to the pristine seed.
-            </span>
-            <button
-              type="button"
-              onClick={resetSimulator}
-              style={{ ...pillButton, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}
-            >
-              Confirm reset
-            </button>
-            <button type="button" onClick={() => setConfirmingReset(false)} style={pillButton}>
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setConfirmingReset(true)} style={pillButton}>
-            <RotateCcw size={14} strokeWidth={2.5} aria-hidden />
-            Reset demo data
-          </button>
-        )}
-      </div>
-
-      {feed !== undefined && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>Mapping</span>
-          {Object.entries(feed.fieldMapping).map(([k, v]) => (
-            <span key={k} className="mono" style={{ fontSize: 11, background: neutral.sunken, color: neutral.slate, borderRadius: 999, padding: '2px 9px' }}>
-              {k} ← {v}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Selected-message inspector stays above the long library so the
-          raw-to-FHIR story is visible as soon as the simulator opens. */}
-      {selected !== undefined && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
-                Selected message
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.label}</div>
-            </div>
-            <button type="button" onClick={replay} style={{ ...pillButton, background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
-              <RotateCw size={14} strokeWidth={2.5} aria-hidden />
-              Replay message
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: selected.transport === 'fhir' ? '1fr 1fr' : '1fr 1fr 1fr', gap: 12 }}>
-            {selected.transport !== 'fhir' && (
-              <Pane title="1 · Raw HL7 v2" subtitle={FEED_META[selected.feedId]?.name}>
-                <Hl7View raw={selected.raw ?? ''} />
-              </Pane>
-            )}
-            <Pane title={selected.transport === 'fhir' ? 'FHIR R4 (native)' : '2 · FHIR R4 (translated)'} subtitle="Appointment · Patient · Practitioner">
-              <pre style={codeBlock}>{fhirJson}</pre>
-            </Pane>
-            <Pane title={selected.transport === 'fhir' ? 'Effect' : '3 · Schedule change'} subtitle="Applied to the mock backend">
-              <EffectView
-                status={row?.status}
-                displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}
-                failureReason={row?.failureReason}
-                cardLabel={
-                  resultCard !== undefined
-                    ? cardEffectLabel(resultCard.id, resultCard.patientId, resultCard.listId, patients, lists, anaesthetists)
-                    : undefined
-                }
-              />
-            </Pane>
-          </div>
-        </div>
-      )}
-
-      {/* Message library */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
-            Message library
-          </div>
-          <div style={{ fontSize: 12, color: neutral.slate }}>
-            Select a message to inspect it above, or replay it directly.
-          </div>
-        </div>
-        {library.map((m) => (
-          <MessageRow
-            key={m.id}
-            message={m}
-            active={selected?.id === m.id}
-            statusLabel={statusLabelFor(m.id, messages)}
-            onSelect={() => setSelectedId(m.id)}
-            onReplay={() => {
-              setSelectedId(m.id)
-              processMessage(useAppStore, m.id)
-            }}
-          />
-        ))}
-      </div>
     </DemoSurface>
   )
 }
@@ -318,8 +354,19 @@ const codeBlock: React.CSSProperties = {
   borderRadius: radius.ctl,
   padding: 12,
   overflowX: 'auto',
-  maxHeight: 320,
+  maxHeight: 120,
   whiteSpace: 'pre',
+}
+
+function SectionLabel({ title, description }: { title: string; description: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>
+        {title}
+      </div>
+      <div style={{ fontSize: 12, color: neutral.slate }}>{description}</div>
+    </div>
+  )
 }
 
 function MessageRow({
@@ -369,7 +416,18 @@ function MessageRow({
 
 function Pane({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        minWidth: 0,
+        background: neutral.bg,
+        border: `1px solid ${neutral.line}`,
+        borderRadius: radius.card,
+        padding: 8,
+      }}
+    >
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: neutral.ink }}>{title}</div>
         {subtitle !== undefined && <div style={{ fontSize: 11, color: neutral.mist }}>{subtitle}</div>}
