@@ -275,6 +275,24 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
     return [cardId, ...procedureIds, ...lineIds, ...removedEntityIds]
   }, [cardId, procedures, billingLinesRecord, removedEntityIds])
 
+  /**
+   * Which procedure each history row belongs to — only on a Card that HAS more
+   * than one, where the merged trail is otherwise ambiguous. A single-procedure
+   * card needs no scope line, and adding one would just be noise.
+   */
+  const historyEntityLabels = useMemo(() => {
+    if (procedures.length < 2) return undefined
+    const labels: Record<string, string> = {}
+    procedures.forEach((procedure, index) => {
+      const scope = `Procedure ${index + 1}`
+      labels[procedure.id] = procedure.description === '' ? scope : `${scope} · ${procedure.description}`
+      for (const line of Object.values(billingLinesRecord)) {
+        if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
+      }
+    })
+    return labels
+  }, [procedures, billingLinesRecord])
+
   if (card === undefined || list === undefined) return null
   const patient = masters.patients[card.patientId]
   // Mirror the store's editRefusal so the UI never offers an action the guard
@@ -663,7 +681,13 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
           onRemoved={() => setError(null)}
         />
       )}
-      <HistorySheet open={historyOpen} entityIds={historyEntityIds} title="Card history" onClose={() => setHistoryOpen(false)} />
+      <HistorySheet
+        open={historyOpen}
+        entityIds={historyEntityIds}
+        {...(historyEntityLabels !== undefined ? { entityLabels: historyEntityLabels } : {})}
+        title="Card history"
+        onClose={() => setHistoryOpen(false)}
+      />
     </>
   )
 }

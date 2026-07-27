@@ -138,6 +138,11 @@ describe('resolveContractForProcedure', () => {
     expect(result).toEqual({ kind: 'resolved', contract: HOSPITAL_DEFAULT })
   })
 
+  it('an informational insurer on the hospital route still resolves the hospital default (03.4)', () => {
+    const result = resolveContractForProcedure(mkProcedure({ insurerId: 'ins-1' }), mkCtx())
+    expect(result).toEqual({ kind: 'resolved', contract: HOSPITAL_DEFAULT })
+  })
+
   it('nothing stored on the hospital route with no list hospital is an exception', () => {
     const ctx = mkCtx()
     delete ctx.listHospitalId
@@ -191,6 +196,12 @@ describe('counterpartyForProcedure + layoutFor', () => {
     expect(
       counterpartyForProcedure(mkProcedure({ billingRoute: 'billableParty', billablePartyId: 'bp-7' }), undefined, 'pat-1'),
     ).toEqual({ kind: 'billableParty', id: 'bp-7' })
+  })
+
+  it('an informational insurer on the hospital route never becomes the counterparty (03.4)', () => {
+    expect(
+      counterpartyForProcedure(mkProcedure({ insurerId: 'ins-1' }), HOSPITAL_DEFAULT, 'pat-1'),
+    ).toEqual({ kind: 'hospital', id: 'hosp-1' })
   })
 
   it('layout: contract-holder kinds vs patient kinds', () => {

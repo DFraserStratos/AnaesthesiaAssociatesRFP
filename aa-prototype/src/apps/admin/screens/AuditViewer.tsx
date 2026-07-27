@@ -1,7 +1,13 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { useAppStore } from '../../../store'
-import { formatAuditChange } from '../../../shared/format'
+import {
+  actionLabel,
+  auditFieldChanges,
+  formatAuditStamp,
+  sortAuditNewestFirst,
+  summariseAuditChanges,
+} from '../../../shared/audit'
 import { cellStyle as cellFactory, headCellStyle as headFactory } from '../tableChrome'
 
 const cellStyle = cellFactory(true)
@@ -19,6 +25,17 @@ const CAP = 500
  * acting Role · Source on every entry — the RBAC "who did what, as which role,
  * from which source" surface (A7). Reconstructs a Card edited + reassigned +
  * authorised as a single mixed-source trail.
+ *
+ * Reads through the shared audit-narrative layer: the human action label leads,
+ * with the machine code beneath it (this is the compliance surface, so the code
+ * stays greppable), and the change cell is a COMPACT one-liner — the leading
+ * field's movement plus a count of the rest. The full field ledger belongs on the
+ * Card history sheet, where someone is reading a single record; a 500-row feed
+ * has to stay scannable.
+ *
+ * Unlike the Card sheet, this surface never collapses `Role · source` and never
+ * coalesces consecutive edits: the compliance view stays explicit and one stored
+ * entry stays one row.
  */
 export function AuditViewer() {
   const audit = useAppStore((s) => s.audit)
@@ -38,7 +55,9 @@ export function AuditViewer() {
       if (toISO !== '' && date > toISO) return false
       return true
     })
-    return rows.slice().reverse() // newest first
+    // Sorted on `atISO` (id as the tiebreak), not insertion order — the same
+    // shared sort the Card history sheet uses, so the two agree (finding 01.3).
+    return sortAuditNewestFirst(rows)
   }, [audit, entityType, source, fromISO, toISO])
 
   const shown = filtered.slice(0, CAP)
@@ -48,7 +67,7 @@ export function AuditViewer() {
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Audit</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
-          Every recorded action, with the acting role and source. Append-only (convention 7).
+          Every recorded action, with the acting role and source. Nothing here is ever edited or deleted.
         </div>
       </div>
 
@@ -80,7 +99,7 @@ export function AuditViewer() {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 900 }}>
           <thead>
             <tr>
-              {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Before to after'].map((h) => (
+              {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Change'].map((h) => (
                 <th key={h} style={headCellStyle}>{h}</th>
               ))}
             </tr>
@@ -92,15 +111,21 @@ export function AuditViewer() {
               </tr>
             )}
             {shown.map((entry) => {
-              const change = formatAuditChange(entry)
+              const change = summariseAuditChanges(auditFieldChanges(entry))
               return (
                 <tr key={entry.id}>
-                  <td className="mono" style={cellStyle}>{entry.atISO.replace('T', ' ')}</td>
-                  <td className="mono" style={{ ...cellStyle, color: accent.pressed }}>{entry.action}</td>
+                  <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{formatAuditStamp(entry.atISO)}</td>
+                  <td style={cellStyle}>
+                    <div style={{ fontWeight: 600, color: accent.pressed }}>{actionLabel(entry.action)}</div>
+                    <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entry.action}</div>
+                  </td>
                   <td style={cellStyle}>{entry.who}</td>
                   <td style={cellStyle}>{entry.role} · {entry.source}</td>
-                  <td className="mono" style={{ ...cellStyle, fontSize: 11.5 }}>{entry.entityType} {entry.entityId}</td>
-                  <td className="mono" style={{ ...cellStyle, fontSize: 11.5, maxWidth: 360, wordBreak: 'break-word' }}>{change}</td>
+                  <td style={cellStyle}>
+                    <div style={{ fontSize: 12 }}>{entry.entityType}</div>
+                    <div className="mono" style={{ fontSize: 11, color: neutral.mist }}>{entry.entityId}</div>
+                  </td>
+                  <td className="mono" style={{ ...cellStyle, fontSize: 11.5, maxWidth: 300, color: neutral.slate }}>{change}</td>
                 </tr>
               )
             })}

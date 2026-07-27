@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { AuditEntry, BillingRoute, List } from '../domain/types'
+import type { BillingRoute, List } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -44,20 +44,9 @@ export function routeLabel(route: BillingRoute | undefined): string {
   return route !== undefined ? ROUTE_LABELS[route] : 'Not set'
 }
 
-/** Render an audit entry's captured value ("" when absent). */
-function auditValue(value: unknown): string {
-  if (value === undefined) return ''
-  if (typeof value === 'string') return value
-  return JSON.stringify(value)
-}
-
-/** The "before to after" change string for an audit entry (history + audit viewer). */
-export function formatAuditChange(entry: AuditEntry): string {
-  const before = auditValue(entry.before)
-  const after = auditValue(entry.after)
-  if (before !== '' && after !== '') return `${before} to ${after}`
-  return after !== '' ? after : before
-}
+// The audit change string used to live here as `formatAuditChange`, rendering
+// `JSON.stringify(patch)` at clinicians. It is replaced by `src/shared/audit/`
+// — field labels, human values and the change ledger, with Vitest coverage.
 
 /** Day-section heading: prefixes "TODAY · " when the date is the demo today. */
 export function dayHeading(dateISO: string, todayISO: string): string {

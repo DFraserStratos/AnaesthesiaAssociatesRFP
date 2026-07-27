@@ -105,7 +105,10 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           The billing engine's office view: every authorised list, its pipeline from authorisation
           to Xero handoff, and any card that needs attention. A failed card blocks only its own
           invoice, never the rest of the list. Where the RFP leaves open whether this surface sits in
-          the Admin app or a separate Billing Engine screen, the prototype puts it here.
+          the Admin app or a separate Billing Engine screen, the prototype puts it here. The "Prior
+          balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
+          from genuinely overdue is held as a discovery question, since invoices carry a raised date
+          but no due date.
         </div>
       </div>
 
@@ -197,7 +200,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
                 <td style={cellStyle}>
                   {cardRow.patientName}
                   {cardRow.outstandingPriorBalance === true && (
-                    <span title="This patient has an unpaid prior episode (intake check)" style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                    <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>
                       Prior balance
                     </span>
                   )}

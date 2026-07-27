@@ -49,7 +49,7 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
   function save() {
     setError(null)
     const patch: ProcedurePatch = { description: description.trim(), billingRoute: route }
-    patch.insurerId = route === 'insurer' && insurerId !== '' ? insurerId : undefined
+    patch.insurerId = (route === 'insurer' || route === 'hospital') && insurerId !== '' ? insurerId : undefined
     patch.patientPaymentCategory = route === 'billableParty' ? category : undefined
     patch.billingReference = route === 'hospital' && billingReference.trim() !== '' ? billingReference.trim() : undefined
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
@@ -67,9 +67,9 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
         <TextField label="Operation" value={description} onChange={setDescription} />
         <Segmented label="Billing route" value={route} options={ROUTE_OPTIONS} onChange={setRoute} />
 
-        {route === 'insurer' && (
+        {(route === 'insurer' || route === 'hospital') && (
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Insurer</FieldLabel>
+            <FieldLabel>{route === 'insurer' ? 'Insurer' : 'Insurer (optional)'}</FieldLabel>
             <select
               value={insurerId}
               onChange={(e) => setInsurerId(e.target.value)}
@@ -83,6 +83,11 @@ export function EditProcedureSheet({ open, procedure, actor, onClose }: EditProc
                 </option>
               ))}
             </select>
+            {route === 'hospital' && (
+              <span style={{ fontSize: 13, color: neutral.slate }}>
+                Informational only: records the patient's insurer for office reference. The hospital is still invoiced.
+              </span>
+            )}
           </label>
         )}
 

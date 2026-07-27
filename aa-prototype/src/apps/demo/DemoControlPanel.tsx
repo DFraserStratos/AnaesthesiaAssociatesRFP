@@ -25,9 +25,13 @@ import {
   advanceClockToNextMorning,
   armHandoffFault,
   authoriseList,
+  completeCard,
+  editCard,
   editContract,
+  editProcedure,
   ingestPdfRow,
   openAccRecs,
+  proceduresForCard,
   processMessage,
   receivePayment,
   resetDemo,
@@ -41,7 +45,7 @@ import {
   type Actor,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
-import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
+import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../../domain/seed'
 import { roundToCents } from '../../domain/billing/money'
 import { formatCurrency } from '../../shared/format'
 import { DemoBadge } from '../../shared'
@@ -49,6 +53,7 @@ import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 /** The S1 booking's procedure day (Dr Souter's seeded Tue 28 Jul St George's List). */
 const S1_PROCEDURE_DAY = '2026-07-28'
@@ -387,12 +392,32 @@ const SCENARIOS: readonly Scenario[] = [
     blurb: 'A hospital HL7 booking lands, fills over days, then captures on procedure day and submits.',
     run: () => {
       resetDemo(useAppStore)
+      // The Tue-28 AM list also hosts three preloaded integration exemplars.
+      // Complete those support Cards so the presenter can capture Sarah live
+      // and then genuinely submit the whole List, as the guided script says.
+      const supportingCards = [
+        { marker: 'integrationS13Time', start: '2026-07-28T08:35:00', finish: '2026-07-28T09:10:00' },
+        { marker: 'integrationS14', start: '2026-07-28T11:05:00', finish: '2026-07-28T12:20:00' },
+        { marker: 'integrationS15', start: '2026-07-28T12:25:00', finish: '2026-07-28T13:00:00' },
+      ] as const
+      for (const support of supportingCards) {
+        const cardId = SEED_MARKERS[support.marker]?.entityId ?? ''
+        const procedure = proceduresForCard(useAppStore.getState(), cardId)[0]
+        if (procedure === undefined) return { ok: false, message: `Reset done, but support Card ${support.marker} was not found.` }
+        const timed = editProcedure(useAppStore, SOUTER, procedure.id, {
+          anaestheticStartISO: support.start,
+          handoverISO: support.finish,
+        })
+        if (!timed.ok) return { ok: false, message: `Reset done, but a support Card could not be staged: ${timed.message}` }
+        const completed = completeCard(useAppStore, SOUTER, cardId)
+        if (!completed.ok) return { ok: false, message: `Reset done, but a support Card could not be completed: ${completed.message}` }
+      }
       const res = processMessage(useAppStore, 'MSG-STG-1001')
       if (!res.ok) return { ok: false, message: `Reset done, but the booking message was refused: ${res.message}` }
       return {
         ok: true,
         message:
-          'Reset, then fired St George\'s S12 booking. A new Card for Sarah Mitchell landed on Dr Souter\'s Tue 28 Jul AM List (DRAFT). Use "Procedure day · 28 Jul" above, then capture and submit on the Mobile app. The Integrations simulator shows the HL7 to FHIR transform.',
+          'Reset, completed the List\'s three support Cards, then fired St George\'s S12 booking. Sarah Mitchell is the only Card left to finish on Dr Souter\'s Tue 28 Jul AM List. Use "Procedure day · 28 Jul", then capture code 20950 and submit on Mobile. The Integrations simulator shows the HL7 to FHIR transform.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },
@@ -409,7 +434,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to the pristine day. In the Admin Day view (Tue 21 Jul): review the roster, phone-book a Free session, step to Wed 22 Jul to reassign a conflicted List, and authorise a submitted List (Morrison, Mon 20 or Whitaker, Fri 17) from the Review queue.',
+          'Reset to the pristine day. In Admin: phone-book Dr Sharma\'s Tue 21 PM Free List; on Wed 22 reassign Dr Rutherford\'s conflicted AM Christchurch Eye Surgery List to Dr Sharma (vacated slot: Unavailable); then authorise Dr Morrison\'s Mon 20 Jul List from the Review queue.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -417,16 +442,17 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S3',
     title: 'S3 · Money end-to-end',
-    blurb: 'Authorise a split-billing List, generate invoices and the Xero pair, take payment, run payables.',
+    blurb: 'Authorise the split-billing and two-funder Lists, generate invoices and the Xero pair, take payment, run payables.',
     run: () => {
       resetDemo(useAppStore)
-      const listId = listIdForSlot(ANAE.souter, '2026-07-20', 'AM')
-      const res = submitList(useAppStore, OFFICE, listId)
-      if (!res.ok) return { ok: false, message: `Reset done, but the split-billing List could not be submitted: ${res.message}` }
+      const am = submitList(useAppStore, OFFICE, listIdForSlot(ANAE.souter, '2026-07-20', 'AM'))
+      if (!am.ok) return { ok: false, message: `Reset done, but the split-billing List could not be submitted: ${am.message}` }
+      const pm = submitList(useAppStore, OFFICE, listIdForSlot(ANAE.souter, '2026-07-20', 'PM'))
+      if (!pm.ok) return { ok: false, message: `Reset done, but the two-funder List could not be submitted: ${pm.message}` }
       return {
         ok: true,
         message:
-          'Reset, then submitted Dr Souter\'s Mon 20 Jul AM List (Forte Health, includes the split-billing Card) into the Review queue. In Admin, authorise it to generate the invoices and the Xero pair, then come back here to fire a payment webhook, advance a day for balances, and run payables.',
+          'Reset, then submitted both of Dr Souter\'s Mon 20 Jul Lists into the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and the Xero pair: the split Card shares one invoice (same funder), the two-funder Card produces two (nib and St George\'s). Then come back here to fire a payment webhook, advance a day for balances, and run payables.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -440,7 +466,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions using the triggers on this panel: (1) open the unpaid pre-payment Card on Mobile (Dr Souter, Fri 24 Jul AM) and see completion blocked until an audited override; (2) Stage post-op addendum below; (3) Trigger billing failure below, then Resolve & retry in the billing monitor; (4) Fire the Christchurch Public dead-letter message (MSG-CPH-2001) below, fix the feed mapping to PID-3 in the Integrations monitor and reprocess; (5) fire a Half (partial) payment below, then run payables.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) Stage post-op, then Sharma Tue 14 AM, Sarah Mitchell; (3) Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) fire MSG-CPH-2001, change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) pay half of AA-2026-0002, run payables, then pay the balance and run again.',
         nav: [{ label: 'Go to Mobile app', path: APP_CONFIG.mobile.path }],
       }
     },
@@ -448,13 +474,25 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S5',
     title: 'S5 · Compliance tour',
-    blurb: 'Audit trail, NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
+    blurb: 'Audit trail (staged edit history), NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
     run: () => {
       resetDemo(useAppStore)
+      const chenCardId = SEED_MARKERS['overriddenTimeUnitsCard']?.entityId ?? ''
+      const chenProcedure = proceduresForCard(useAppStore.getState(), chenCardId)[0]
+      if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Card was not found to stage the audit trail.' }
+      const staged = [
+        editProcedure(useAppStore, SOUTER, chenProcedure.id, { asaClass: 'AS2' }),
+        editCard(useAppStore, OFFICE, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
+        editProcedure(useAppStore, SOUTER, chenProcedure.id, { asaClass: 'AS1' }),
+      ]
+      const refused = staged.find((r) => !r.ok)
+      if (refused !== undefined && !refused.ok) return { ok: false, message: `Reset done, but staging the audit trail was refused: ${refused.message}` }
+      const invoiceStage = authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.whitakerFri17)
+      if (!invoiceStage.ok) return { ok: false, message: `Audit staged, but the contract snapshot invoice could not be raised: ${invoiceStage.message}` }
       return {
         ok: true,
         message:
-          'Reset. Compliance tour from the seed: (1) open David Chen\'s much-edited Card History for the full audit trail; (2) show the NHI dual-format validator (fire the new-format booking MSG-STG-1002 below, or add a Card manually and try both formats); (3) open the Xero simulator and show no NHI ever crosses to Xero; (4) in Admin master data, effective-date a contract and show an already-raised invoice stays unchanged.',
+          'Reset, staged David Chen\'s edit history, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen invoice AA-2026-0002 to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },

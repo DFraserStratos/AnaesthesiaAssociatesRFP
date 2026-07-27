@@ -101,7 +101,14 @@ export function AddBillingLineSheet({ open, procedure, contract, actor, onClose 
         <TextField label="Description" value={description} onChange={setDescription} placeholder="What this line charges" />
 
         {basis === 'fixed' ? (
-          <TextField label="Amount $" value={amount} onChange={setAmount} mono placeholder="85.50" />
+          <>
+            <TextField label="Amount $" value={amount} onChange={setAmount} mono placeholder="85.50" />
+            <Caption color={neutral.slate}>
+              ACC pre-operative assessment uses its own flat-fee code set (CS250, CS260, CS70), separate from
+              the BTM structure. Name the code in the description; the rates are a confirmation item with AA
+              billing.
+            </Caption>
+          </>
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

@@ -144,6 +144,11 @@ describe('validateCardForBilling — routes', () => {
     expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
   })
 
+  it('an informational insurer on the Hospital route passes clean, even without direct claims (03.4)', () => {
+    const p = validProcedure({ insurerId: 'ins-nodirect' })
+    expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
+  })
+
   it('fails the BillableParty route without a patient payment category', () => {
     const p = validProcedure({ billingRoute: 'billableParty' })
     expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('patientPaymentCategory')

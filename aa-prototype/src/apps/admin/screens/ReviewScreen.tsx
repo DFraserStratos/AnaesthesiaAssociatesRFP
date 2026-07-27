@@ -49,7 +49,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
-  const [historyIds, setHistoryIds] = useState<readonly string[] | null>(null)
+  /** The open per-card History: its merged entity ids plus their scope labels. */
+  const [history, setHistory] = useState<{ ids: readonly string[]; labels?: Record<string, string> } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const list = listsRecord[listId]
@@ -77,7 +78,21 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const procIds = new Set(procs.map((p) => p.id))
       const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
       const entityIds = [card.id, ...procs.map((p) => p.id), ...lineIds]
-      return { card, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds }
+      // Which procedure a history row belongs to — only where the merged trail
+      // is ambiguous, i.e. a Card carrying more than one procedure.
+      let entityLabels: Record<string, string> | undefined
+      if (procs.length > 1) {
+        const labels: Record<string, string> = {}
+        procs.forEach((procedure, index) => {
+          const scope = `Procedure ${index + 1}`
+          labels[procedure.id] = procedure.description === '' ? scope : `${scope} · ${procedure.description}`
+          for (const line of Object.values(billingLinesRecord)) {
+            if (line.procedureId === procedure.id) labels[line.id] = `${scope} · fee line`
+          }
+        })
+        entityLabels = labels
+      }
+      return { card, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds, entityLabels }
     })
   }, [list, listId, cardsRecord, proceduresRecord, billingLinesRecord, masters, schedule, billing])
 
@@ -208,7 +223,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ card, primary, primaryView, totals, flags, routeText, procCount, entityIds }) => {
+            {rows.map(({ card, primary, primaryView, totals, flags, routeText, procCount, entityIds, entityLabels }) => {
               const patient = masters.patients[card.patientId]
               const btm = primaryView?.fee.btm
               return (
@@ -231,7 +246,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                         <FlagPill key={i} flag={f} />
                       ))}
                       {authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
-                      <button onClick={() => setHistoryIds(entityIds)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>History</button>
+                      <button onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>History</button>
                     </div>
                   </td>
                 </tr>
@@ -307,8 +322,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         </div>
       </Overlay>
 
-      {historyIds !== null && (
-        <HistorySheet open entityIds={historyIds} title="Card history" onClose={() => setHistoryIds(null)} />
+      {history !== null && (
+        <HistorySheet
+          open
+          entityIds={history.ids}
+          {...(history.labels !== undefined ? { entityLabels: history.labels } : {})}
+          title="Card history"
+          onClose={() => setHistory(null)}
+        />
       )}
     </div>
   )

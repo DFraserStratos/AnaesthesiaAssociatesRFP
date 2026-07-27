@@ -64,6 +64,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
 
       <Row label="Route">{route !== undefined ? ROUTE_LABELS[route] : <Missing>Not set</Missing>}</Row>
       {route === 'insurer' && <Row label="Insurer">{insurer?.name ?? <Missing>Not set</Missing>}</Row>}
+      {route === 'hospital' && insurer !== undefined && <Row label="Insurer">{`${insurer.name} (informational)`}</Row>}
       {route === 'billableParty' && (
         <>
           <Row label="Category">{procedure.patientPaymentCategory !== undefined ? CATEGORY_LABEL[procedure.patientPaymentCategory] : <Missing>Not set</Missing>}</Row>

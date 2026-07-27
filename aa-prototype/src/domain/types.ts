@@ -452,7 +452,11 @@ export interface Procedure {
    */
   billingRoute?: BillingRoute
   governingContractId?: ContractId
-  /** Insurer route only. */
+  /**
+   * The insurer billed on the Insurer route. May also be recorded as
+   * informational context on the Hospital route; the billing engine and
+   * validator read it only when `billingRoute === 'insurer'`.
+   */
   insurerId?: InsurerId
   /**
    * OVERRIDE only — on the Billable Party route the payer defaults to the

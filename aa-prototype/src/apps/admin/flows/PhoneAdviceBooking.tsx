@@ -28,8 +28,10 @@ const selectStyle = {
  * Phone-advice booking on a Free list ("call from the surgeon's rooms"). Step 1
  * sets the list context (hospital / surgeon / times) via `editList`; step 2
  * reuses the shared `AddCardFlow` to capture the patient, procedure and initial
- * billing route. The Free block then renders booked on the grid (Step 3's
- * derived display) and appears in the anaesthetist's own views.
+ * billing route. The Free block then renders booked on the admin grid (Step 3's
+ * derived display); the anaesthetist's own views still show the session as
+ * Free, since booking does not repaint the List status (parked as P5 in
+ * PROGRESS).
  */
 export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: PhoneAdviceBookingProps) {
   const { Overlay } = useSurface()

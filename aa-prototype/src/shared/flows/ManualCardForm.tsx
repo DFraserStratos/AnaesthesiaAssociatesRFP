@@ -102,7 +102,7 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
       ...(rvgBaseCode !== '' ? { rvgBaseCode } : {}),
       ...(scheduledTime.trim() !== '' ? { scheduledTime: scheduledTime.trim() } : {}),
       billingRoute,
-      ...(billingRoute === 'insurer' && insurerId !== '' ? { insurerId } : {}),
+      ...((billingRoute === 'insurer' || billingRoute === 'hospital') && insurerId !== '' ? { insurerId } : {}),
       ...(billingRoute === 'billableParty' && billablePartyId !== '' ? { billablePartyId } : {}),
       ...(billingRoute === 'billableParty' ? { patientPaymentCategory: category } : {}),
       ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
@@ -189,9 +189,9 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
       </div>
       <Segmented value={billingRoute} options={ROUTE_OPTIONS} onChange={setBillingRoute} />
 
-      {billingRoute === 'insurer' && (
+      {(billingRoute === 'insurer' || billingRoute === 'hospital') && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Insurer</FieldLabel>
+          <FieldLabel>{billingRoute === 'insurer' ? 'Insurer' : 'Insurer (optional)'}</FieldLabel>
           <select
             value={insurerId}
             onChange={(e) => setInsurerId(e.target.value)}
@@ -205,6 +205,11 @@ export function ManualCardForm({ listId, actor, initial, attachment, onSaved }: 
               </option>
             ))}
           </select>
+          {billingRoute === 'hospital' && (
+            <span style={{ fontSize: 13, color: neutral.slate }}>
+              Informational only: records the patient's insurer for office reference. The hospital is still invoiced.
+            </span>
+          )}
         </label>
       )}
 
