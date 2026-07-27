@@ -57,8 +57,17 @@ export function ProcedureCodeCard({
         ? `Base ${baseCode.baseUnits.units} units`
         : `Base ${baseCode.baseUnits.min} to ${baseCode.baseUnits.max} units`
 
+  const absorbsP1 = baseCode !== undefined && baseCode.absorbsModifierCodes.includes('P1')
+  const footer =
+    absorbsP1 || failures.length > 0 ? (
+      <>
+        {absorbsP1 && <Caption>Includes positioning; P1 is not added separately.</Caption>}
+        <FailureNotes failures={failures} />
+      </>
+    ) : null
+
   return (
-    <CaptureSection label="Procedure code" gap={10}>
+    <CaptureSection label="Procedure code" gap={10} footer={footer}>
       <button
         type="button"
         onClick={canCapture ? () => setPickerOpen(true) : undefined}
@@ -109,12 +118,6 @@ export function ProcedureCodeCard({
           onSelect={selectRangeUnits}
         />
       )}
-
-      {baseCode !== undefined && baseCode.absorbsModifierCodes.includes('P1') && (
-        <Caption>Includes positioning; P1 is not added separately.</Caption>
-      )}
-
-      <FailureNotes failures={failures} />
 
       <CodePickerSheet
         open={pickerOpen}

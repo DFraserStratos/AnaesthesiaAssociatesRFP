@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, ImagePlus, Minus, Plus, Receipt, ShieldAlert, Stethoscope, XCircle } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { Copy, History, ImagePlus, Minus, Plus, Receipt, ShieldAlert, Stethoscope, X, XCircle } from 'lucide-react'
+import { accent, elevation, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
   validateCardForBilling,
@@ -325,10 +325,27 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
   }
 
   function addPhoto() {
-    const n = card!.attachments.length + 1
+    // One past the highest index ever used on this Card, not the count: after
+    // removing Photo 2 of 3 the count would name the next one Photo 3 as well,
+    // and two attachments sharing an id make Remove take both. Counting up
+    // rather than filling the gap keeps the row in order, so a removal reads
+    // as a missing number instead of a shuffled one.
+    const n =
+      card!.attachments.reduce((highest, a) => {
+        const match = /-A(\d+)$/.exec(a.id)
+        return match === null ? highest : Math.max(highest, Number(match[1]))
+      }, 0) + 1
     run(
       editCard(useAppStore, actor, cardId, {
         attachments: [...card!.attachments, { id: `${cardId}-A${n}`, name: `Photo ${n}`, kind: 'photo', dataUrl: PAPER_CARD_A }],
+      }),
+    )
+  }
+
+  function removePhoto(attachmentId: string) {
+    run(
+      editCard(useAppStore, actor, cardId, {
+        attachments: card!.attachments.filter((a) => a.id !== attachmentId),
       }),
     )
   }
@@ -518,11 +535,25 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
         ) : (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {card.attachments.map((a) => (
-              <div key={a.id} style={{ width: 72, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div key={a.id} style={{ width: 72, display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
                 {a.dataUrl !== undefined ? (
                   <img src={a.dataUrl} alt={a.name} style={{ width: 72, height: 92, objectFit: 'cover', borderRadius: 8, border: `1px solid ${neutral.line}` }} />
                 ) : (
                   <div style={{ width: 72, height: 92, borderRadius: 8, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.mist, fontSize: 11 }}>{a.kind}</div>
+                )}
+                {/* On the thumbnail, not a row of Remove links: the target is
+                    what it deletes. Small and cornered because a scan is
+                    dropped rarely and by mistake never. */}
+                {canEdit && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${a.name}`}
+                    title={`Remove ${a.name}`}
+                    onClick={() => removePhoto(a.id)}
+                    style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: semantic.error.onTint, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: elevation.e1 }}
+                  >
+                    <X size={13} strokeWidth={2.6} aria-hidden />
+                  </button>
                 )}
                 <span style={{ fontSize: 10, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
               </div>

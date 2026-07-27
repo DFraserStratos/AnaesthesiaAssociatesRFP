@@ -4,14 +4,25 @@ import type { ReactNode } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingValidationFailure } from '../../domain/billing'
 
-/** A white capture card with the micro-caps section label. */
+/**
+ * A white capture card with the micro-caps section label.
+ *
+ * `footer` is the card's foot: its caption, its trailing action, its failure
+ * notes. It renders exactly where it would have anyway, except when the card is
+ * stretched to match its `Pair` partner on a desktop, where it sinks to the
+ * bottom edge and the slack opens above it. Without that, the shorter of two
+ * matched cards ends in a pane of empty white, which reads as a fault. On the
+ * phone nothing stretches, so the slot has no effect at all.
+ */
 export function CaptureSection({
   label,
   children,
+  footer,
   gap = 12,
 }: {
   label: string
   children: ReactNode
+  footer?: ReactNode
   gap?: number
 }) {
   return (
@@ -30,6 +41,11 @@ export function CaptureSection({
         {label}
       </div>
       {children}
+      {/* Pass null, not an always-truthy fragment of conditionals: an empty
+          wrapper still costs one `gap` of trailing space in the column. */}
+      {footer !== undefined && footer !== null && (
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap }}>{footer}</div>
+      )}
     </div>
   )
 }

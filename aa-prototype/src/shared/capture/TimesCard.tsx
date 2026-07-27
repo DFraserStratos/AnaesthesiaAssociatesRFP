@@ -28,7 +28,9 @@ interface TimesCardProps {
  * The stamps and the duration strip go through `useSurface().Pair`: stacked on
  * the phone exactly as before, side by side on a desktop. Left full width the
  * two stamp columns would each be about 400px, which turns "Finish now" into a
- * slab and floats the mono times in empty space.
+ * slab and floats the mono times in empty space. It is the one `align="start"`
+ * pair: these halves are content inside this card, not two cards, so matching
+ * their heights would only stretch the grey duration strip around its two lines.
  */
 export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
   const { Pair } = useSurface()
@@ -75,7 +77,7 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
 
   return (
     <CaptureSection label="Times">
-      <Pair>
+      <Pair align="start">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {/* Start column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

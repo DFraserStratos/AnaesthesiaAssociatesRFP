@@ -72,8 +72,14 @@ export interface Surface {
   /**
    * Two related cards: stacked on the phone, side by side on the desktop. Lets a
    * shared capture block use the width a desktop has without knowing it is on one.
+   *
+   * Side by side they match heights, because two peer cards on one row with
+   * different bottom edges read as a fault. `align="start"` opts out, for the
+   * pair whose halves are content blocks INSIDE one card rather than two cards:
+   * there the shorter half has no border to justify the extra height, so it
+   * would just be a stretched box of background colour.
    */
-  Pair: (props: { children: ReactNode }) => ReactNode
+  Pair: (props: { children: ReactNode; align?: 'stretch' | 'start' }) => ReactNode
   /**
    * Where the Card's money is shown. `inline` puts a fee panel under each
    * procedure's capture block — the phone's only option, since it has nowhere

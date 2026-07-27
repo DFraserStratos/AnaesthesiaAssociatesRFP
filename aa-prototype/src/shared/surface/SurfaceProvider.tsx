@@ -137,12 +137,15 @@ function MobilePair({ children }: { children: ReactNode }) {
 }
 
 /**
- * Web pair — two equal columns, each its natural height (`align-items: start`).
- * Stretching them to match would leave the shorter card, usually ASA, with a
- * pane of empty white that reads as a rendering fault rather than breathing room.
+ * Web pair — two equal columns, matched in height by default: two white cards
+ * side by side with different bottom edges read as a fault, however little
+ * content the shorter one has. The cards absorb the slack through
+ * `CaptureSection`'s `footer` slot, which anchors the caption or trailing
+ * action to the card's foot instead of leaving it stranded mid-card.
+ * `align="start"` is for halves that are not cards (see the seam's docblock).
  */
-function WebPair({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>{children}</div>
+function WebPair({ children, align = 'stretch' }: { children: ReactNode; align?: 'stretch' | 'start' }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: align }}>{children}</div>
 }
 
 const MOBILE_SURFACE: Surface = {

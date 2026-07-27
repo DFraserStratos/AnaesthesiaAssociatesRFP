@@ -37,7 +37,19 @@ export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
   }
 
   return (
-    <CaptureSection label="ASA status" gap={10}>
+    <CaptureSection
+      label="ASA status"
+      gap={10}
+      footer={
+        selected !== undefined ? (
+          <Caption color={neutral.slate}>
+            ASA {ROMAN[selected]} seeds +{ASA_SEED_UNITS[selected]} modifier {ASA_SEED_UNITS[selected] === 1 ? 'unit' : 'units'}.
+          </Caption>
+        ) : (
+          <Caption>Select the ASA physical status; it seeds the modifier units.</Caption>
+        )
+      }
+    >
       <div style={{ display: 'flex', background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4, opacity: disabled ? 0.55 : 1 }}>
         {ASA_OPTIONS.map((o) => {
           const active = o.value === selected
@@ -67,13 +79,6 @@ export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
           )
         })}
       </div>
-      {selected !== undefined ? (
-        <Caption color={neutral.slate}>
-          ASA {ROMAN[selected]} seeds +{ASA_SEED_UNITS[selected]} modifier {ASA_SEED_UNITS[selected] === 1 ? 'unit' : 'units'}.
-        </Caption>
-      ) : (
-        <Caption>Select the ASA physical status; it seeds the modifier units.</Caption>
-      )}
     </CaptureSection>
   )
 }

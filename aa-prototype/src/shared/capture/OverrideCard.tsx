@@ -106,7 +106,19 @@ export function OverrideCard({ procedure, actor, canCapture, failures, onError }
   }
 
   return (
-    <CaptureSection label="Adjustment and charge" gap={12}>
+    <CaptureSection
+      label="Adjustment and charge"
+      gap={12}
+      footer={
+        <>
+          <Button variant="secondary" block onClick={save} disabled={!amountValid || !reasonValid || !dirty}>
+            {mode === 'none' ? 'Save (no override)' : 'Save override'}
+          </Button>
+          <Caption>Percentage adjustments are set by the office.</Caption>
+          <FailureNotes failures={failures} />
+        </>
+      }
+    >
       <Segmented<OverrideMode>
         value={mode}
         options={[
@@ -131,11 +143,6 @@ export function OverrideCard({ procedure, actor, canCapture, failures, onError }
           )}
         </>
       )}
-      <Button variant="secondary" block onClick={save} disabled={!amountValid || !reasonValid || !dirty}>
-        {mode === 'none' ? 'Save (no override)' : 'Save override'}
-      </Button>
-      <Caption>Percentage adjustments are set by the office.</Caption>
-      <FailureNotes failures={failures} />
     </CaptureSection>
   )
 }

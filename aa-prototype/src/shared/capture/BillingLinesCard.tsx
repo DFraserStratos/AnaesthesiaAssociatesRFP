@@ -43,8 +43,41 @@ export function BillingLinesCard({
     if (!outcome.ok) setError(outcome.message)
   }
 
+  // The add action is the card's foot, not the tail of the list: matched in
+  // height against a tall Adjustment card it would otherwise float in the
+  // middle of a mostly empty card.
+  const footer =
+    canCapture || failures.length > 0 ? (
+      <>
+        {canCapture && (
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              minHeight: 44,
+              borderRadius: 999,
+              border: 'none',
+              background: accent.tint,
+              color: accent.pressed,
+              fontFamily: 'inherit',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} strokeWidth={2.4} aria-hidden /> Add billing line
+          </button>
+        )}
+        <FailureNotes failures={failures} />
+      </>
+    ) : null
+
   return (
-    <CaptureSection label="Billing lines" gap={10}>
+    <CaptureSection label="Billing lines" gap={10} footer={footer}>
       {nonRvgLines.length === 0 && <Caption>No extra billing lines. The RVG fee bills on its own.</Caption>}
 
       {nonRvgLines.map((line) => {
@@ -95,32 +128,6 @@ export function BillingLinesCard({
           {error}
         </div>
       )}
-
-      {canCapture && (
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            minHeight: 44,
-            borderRadius: 999,
-            border: 'none',
-            background: accent.tint,
-            color: accent.pressed,
-            fontFamily: 'inherit',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} strokeWidth={2.4} aria-hidden /> Add billing line
-        </button>
-      )}
-
-      <FailureNotes failures={failures} />
 
       <AddBillingLineSheet
         open={sheetOpen}
