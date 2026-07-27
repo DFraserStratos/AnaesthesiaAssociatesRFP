@@ -626,6 +626,51 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
     Scenario jumps (S1 to S5); Booking &amp; integration events; Billing, money &amp; exceptions.</p>
   </div>
 
+  <details><summary>Direct URLs · jump straight to a beat</summary><div class="details-body">
+    <p style="font-size:14px">Every screen inside the three apps has its own address, so you can jump
+    straight to a beat instead of clicking in, and a refresh or the browser back button keeps your place.
+    The three app roots still work as entry points: <code>/mobile</code>, <code>/web</code> and
+    <code>/admin</code> open the Lists tab, the dashboard and today's day view respectively.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Anaesthetist Mobile App</th><th>URL</th></tr>
+      <tr><td>Forward Lists</td><td><code>/mobile/lists</code></td></tr>
+      <tr><td>List detail</td><td><code>/mobile/lists/&lt;listId&gt;</code></td></tr>
+      <tr><td>Card detail</td><td><code>/mobile/lists/&lt;listId&gt;/cards/&lt;cardId&gt;</code></td></tr>
+      <tr><td>Availability</td><td><code>/mobile/availability</code></td></tr>
+      <tr><td>Balances</td><td><code>/mobile/balances</code></td></tr>
+      <tr><td>More</td><td><code>/mobile/more</code></td></tr>
+    </table></div>
+    <div class="table-wrap"><table>
+      <tr><th>Anaesthetist Web App</th><th>URL</th></tr>
+      <tr><td>Dashboard</td><td><code>/web</code> (another week: <code>/web?week=2026-07-27</code>)</td></tr>
+      <tr><td>Lists table</td><td><code>/web/lists</code></td></tr>
+      <tr><td>List detail</td><td><code>/web/lists/&lt;listId&gt;</code></td></tr>
+      <tr><td>Card detail</td><td><code>/web/lists/&lt;listId&gt;/cards/&lt;cardId&gt;</code></td></tr>
+      <tr><td>Availability grid</td><td><code>/web/availability</code></td></tr>
+      <tr><td>Accounts, outstanding</td><td><code>/web/accounts/overdue</code></td></tr>
+      <tr><td>Accounts, GST activity</td><td><code>/web/accounts/gst</code></td></tr>
+    </table></div>
+    <div class="table-wrap"><table>
+      <tr><th>Admin Web App</th><th>URL</th></tr>
+      <tr><td>Day view</td><td><code>/admin/day/2026-07-21</code> (A to Z order: add <code>?sort=az</code>)</td></tr>
+      <tr><td>Card detail</td><td><code>/admin/day/2026-07-21/cards/&lt;cardId&gt;</code></td></tr>
+      <tr><td>Review queue</td><td><code>/admin/review</code></td></tr>
+      <tr><td>One List under review</td><td><code>/admin/review/&lt;listId&gt;</code></td></tr>
+      <tr><td>Invoices</td><td><code>/admin/invoices</code></td></tr>
+      <tr><td>One invoice document</td><td><code>/admin/invoices/&lt;invoiceId&gt;</code></td></tr>
+      <tr><td>Billing monitor</td><td><code>/admin/billing</code></td></tr>
+      <tr><td>Integration monitor</td><td><code>/admin/integrations</code></td></tr>
+      <tr><td>Master data</td><td><code>/admin/masters</code></td></tr>
+      <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
+    </table></div>
+    <p style="font-size:14px">The demo surfaces are unchanged: <code>/demo/control</code>,
+    <code>/demo/xero</code>, <code>/demo/integrations</code>, <code>/demo/data</code>. Because the seed is
+    deterministic, the ids in a URL you copied stay valid across a Reset demo data, so you can bookmark a
+    beat and re-open it after every reset; a URL that has gone stale falls back to its parent screen rather
+    than showing a blank page. Sheets and drawers are deliberately not in the URL, so the back button
+    closes a screen rather than a sheet.</p>
+  </div></details>
+
   <details open><summary>S1 · Booking to theatre</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves near-real-time hospital integration, the Card
@@ -789,7 +834,9 @@ Billing Engine &#8594; anaesthetist update balance and GST views</pre>
   the fastest recovery is to re-run the scenario (Scenario jumps &#8594; the same Jump &#8594; Confirm jump), or
   use Clock &amp; reset &#8594; Reset demo data. Reset returns the clock to Tue 21 Jul 2026, 8:00 and restarts
   identifiers, so invoice numbers begin at the same point every time. If Finish now was stamped too early,
-  reset and advance the clock before reopening the Card.</div>
+  reset and advance the clock before reopening the Card. A stray refresh is no longer a problem: it returns
+  you to the same screen, the back button retraces your steps, and you can paste a beat's address from
+  Direct URLs.</div>
 </section>
 
 <!-- ===================== CHEAT SHEET ===================== -->

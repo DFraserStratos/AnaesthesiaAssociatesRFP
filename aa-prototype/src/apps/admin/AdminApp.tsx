@@ -1,26 +1,43 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import type { List } from '../../domain/types'
-import { addDayNote, billingAttentionCount, integrationAttentionCount, prepaymentStatusFor, useAppStore, useToday, type Actor } from '../../store'
+import {
+  addDayNote,
+  billingAttentionCount,
+  integrationAttentionCount,
+  prepaymentStatusFor,
+  useAppStore,
+  useToday,
+  type Actor,
+} from '../../store'
+import { isISODate } from '../../shell/routeParams'
 import { ANAESTHETISTS } from '../../domain/seed'
 import { SideNav, type NavSection } from './components/SideNav'
-import { DayNav, type SortMode } from './components/DayNav'
-import { DayGrid } from './components/DayGrid'
-import { RightRail } from './components/RightRail'
+import { type SortMode } from './components/DayNav'
 import { ListDrawer } from './components/ListDrawer'
-import { AdminCardDetail } from './screens/AdminCardDetail'
-import { ReviewQueue } from './screens/ReviewQueue'
-import { ReviewScreen } from './screens/ReviewScreen'
-import { InvoicesScreen } from './screens/InvoicesScreen'
-import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
-import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
-import { MasterData } from './screens/MasterData'
-import { AuditViewer } from './screens/AuditViewer'
+import type { AdminOutletContext } from './outlet'
 import { isBooked, surnameOf } from './util'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+/** Which side-nav section the current URL is in (`/admin` itself is the day view). */
+function sectionForPath(pathname: string): NavSection {
+  const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
+  switch (head) {
+    case 'review':
+    case 'invoices':
+    case 'billing':
+    case 'integrations':
+    case 'masters':
+    case 'audit':
+      return head
+    default:
+      return 'day'
+  }
+}
 
 export function AdminApp() {
   const todayISO = useToday()
@@ -31,6 +48,14 @@ export function AdminApp() {
   )
 }
 
+/**
+ * The Admin Web App's LAYOUT: the dark side nav with its badge counts, the
+ * day-scoped derivations every day-view child needs, and the List drawer. The
+ * screens are router sub-routes (`/admin/day/:dateISO`, `/admin/review/:listId`,
+ * `/admin/invoices/:invoiceId` …) so a refresh, the back button and a shared URL
+ * all land on the same screen (Decisions log 2026-07-27). `?sort=az` carries the
+ * day grid's row order — a view preference, not a navigation step.
+ */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const cardsRecord = useAppStore((s) => s.schedule.cards)
@@ -39,13 +64,33 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const masters = useAppStore((s) => s.masters)
   const integrations = useAppStore((s) => s.integrations)
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
-  const [section, setSection] = useState<NavSection>('day')
-  const [selectedDate, setSelectedDate] = useState(todayISO)
-  const [sortMode, setSortMode] = useState<SortMode>('roster')
+
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [params] = useSearchParams()
   const [drawerListId, setDrawerListId] = useState<string | null>(null)
-  const [cardDetailId, setCardDetailId] = useState<string | null>(null)
-  const [reviewListId, setReviewListId] = useState<string | null>(null)
-  const [invoiceId, setInvoiceId] = useState<string | null>(null)
+
+  // The day view's day and row order come from the URL. Off a day route (Review,
+  // Invoices …) the last-seen pair is remembered so the "Day view" nav item
+  // returns to it — the one piece of state the URL cannot carry while it is not
+  // showing (it replaces the old `selectedDate` / `sortMode` useState 1:1).
+  const dayMatch = useMatch('/admin/day/:dateISO/*')
+  const urlDate = dayMatch?.params.dateISO
+  const lastDayRef = useRef(todayISO)
+  const lastSortRef = useRef<SortMode>('roster')
+  const selectedDate = isISODate(urlDate) ? urlDate : lastDayRef.current
+  const sortMode: SortMode =
+    dayMatch !== null ? (params.get('sort') === 'az' ? 'az' : 'roster') : lastSortRef.current
+  useEffect(() => {
+    lastDayRef.current = selectedDate
+    lastSortRef.current = sortMode
+  }, [selectedDate, sortMode])
+
+  // Any route change closes the drawer (it belongs to the day the office was
+  // looking at, and every old navigation helper cleared it).
+  useEffect(() => {
+    setDrawerListId(null)
+  }, [pathname])
 
   // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
   // NB: Object.values(record) would sort by registration number (numeric-like
@@ -134,72 +179,54 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   const notes = dayNotesRecord[selectedDate] ?? []
 
-  function navigateDate(dateISO: string) {
-    setSelectedDate(dateISO)
-    setDrawerListId(null)
-    setCardDetailId(null)
+  const context: AdminOutletContext = {
+    actor: OFFICE,
+    todayISO,
+    selectedDate,
+    sortMode,
+    anaesthetists,
+    listsByAnaesthetist,
+    masters,
+    activeCardCounts,
+    prepaymentFlags,
+    summary,
+    notes,
+    reviewRows,
+    onSelectList: setDrawerListId,
+    onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged),
   }
 
-  function openCard(cardId: string) {
-    setCardDetailId(cardId)
-    setDrawerListId(null)
+  const SECTION_PATH: Record<NavSection, string> = {
+    day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
+    review: '/admin/review',
+    invoices: '/admin/invoices',
+    billing: '/admin/billing',
+    integrations: '/admin/integrations',
+    masters: '/admin/masters',
+    audit: '/admin/audit',
   }
-
-  function navigate(next: NavSection) {
-    setSection(next)
-    setCardDetailId(null)
-    setDrawerListId(null)
-    if (next !== 'review') setReviewListId(null)
-    if (next !== 'invoices') setInvoiceId(null)
-  }
-
-  const reviewOpen = reviewListId !== null && listsRecord[reviewListId] !== undefined
 
   return (
     <div style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
-      <SideNav active={section} reviewBadge={reviewLists.length} billingBadge={exceptionCount} integrationBadge={integrationCount} onNavigate={navigate} />
+      <SideNav
+        active={sectionForPath(pathname)}
+        reviewBadge={reviewLists.length}
+        billingBadge={exceptionCount}
+        integrationBadge={integrationCount}
+        onNavigate={(next) => navigate(SECTION_PATH[next])}
+      />
 
       <div style={{ flex: 1, minWidth: 0, padding: '24px 28px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {section === 'review' ? (
-          reviewOpen ? (
-            <ReviewScreen listId={reviewListId!} actor={OFFICE} onBack={() => setReviewListId(null)} onOpen={setReviewListId} onViewInvoices={() => navigate('invoices')} />
-          ) : (
-            <ReviewQueue onOpen={setReviewListId} onViewInvoices={() => navigate('invoices')} />
-          )
-        ) : section === 'invoices' ? (
-          <InvoicesScreen actor={OFFICE} selectedInvoiceId={invoiceId} onSelect={setInvoiceId} />
-        ) : section === 'masters' ? (
-          <MasterData actor={OFFICE} todayISO={todayISO} />
-        ) : section === 'audit' ? (
-          <AuditViewer />
-        ) : section === 'billing' ? (
-          <BillingMonitorScreen actor={OFFICE} />
-        ) : section === 'integrations' ? (
-          <IntegrationMonitorScreen actor={OFFICE} />
-        ) : cardDetailId !== null ? (
-          <AdminCardDetail cardId={cardDetailId} actor={OFFICE} todayISO={todayISO} onBack={() => setCardDetailId(null)} />
-        ) : (
-          <>
-            <DayNav selectedDateISO={selectedDate} summary={summary} sortMode={sortMode} onSort={setSortMode} onNavigateDate={navigateDate} todayISO={todayISO} />
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              <DayGrid anaesthetists={anaesthetists} listsByAnaesthetist={listsByAnaesthetist} masters={masters} activeCardCounts={activeCardCounts} prepaymentFlags={prepaymentFlags} onSelectList={setDrawerListId} />
-              <RightRail
-                monthDateISO={selectedDate}
-                selectedDateISO={selectedDate}
-                todayISO={todayISO}
-                onNavigateDate={navigateDate}
-                notes={notes}
-                onAddNote={(text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged)}
-                reviewRows={reviewRows}
-                onReviewList={(listId) => { setSection('review'); setReviewListId(listId) }}
-              />
-            </div>
-          </>
-        )}
+        <Outlet context={context} />
       </div>
 
       {drawerListId !== null && (
-        <ListDrawer listId={drawerListId} actor={OFFICE} onClose={() => setDrawerListId(null)} onOpenCard={openCard} />
+        <ListDrawer
+          listId={drawerListId}
+          actor={OFFICE}
+          onClose={() => setDrawerListId(null)}
+          onOpenCard={(cardId) => navigate(`/admin/day/${selectedDate}/cards/${cardId}`)}
+        />
       )}
     </div>
   )

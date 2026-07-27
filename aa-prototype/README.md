@@ -48,15 +48,22 @@ advance the clock, jump to a scenario (S1 to S5), and fire simulated integration
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
-- **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps.
+- **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
+  three top-level files: `<App>.tsx` is the app's **layout** route (nav, persona actor, shared
+  derivations, transient overlays) and hands them down through `<Outlet context>`; `outlet.ts` types
+  that context; `routes.tsx` holds one thin wrapper per screen, mapping URL params to props and the
+  screens' `onBack` / `onOpen…` callbacks to `navigate()`. Screens themselves know nothing about
+  routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
 - **`apps/demo/`** — demo-only surfaces: the control panel, the Xero + billing-monitor simulator, the
   integration simulator, and the seed-data inspector.
 - **`shared/`** — cross-app components (the capture suite, `card/CardDetailBody`, schedule rows,
   flows, status chips, `format.ts` for NZ number/currency/date output).
-- **`shell/`** — the app switcher, harness bar, phone frame, and app registry.
+- **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
+  (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
   design mockups, mirrored into `global.css`'s `@theme`.
-- **`assets/`**, **`test/`**, `App.tsx`, `main.tsx`, `router.tsx`.
+- **`assets/`**, **`test/`**, `App.tsx`, `main.tsx`, `router.tsx` — `router.tsx` is the whole URL map:
+  every screen in the three apps has a shareable address that survives a refresh.
 
 ## Docs
 

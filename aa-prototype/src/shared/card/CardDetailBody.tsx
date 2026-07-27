@@ -493,16 +493,19 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
         <Row label="Contact">
           <span>{patient?.phone ?? 'Not recorded'}</span>
         </Row>
-      </Section>
-
-      {/* Scheduled time */}
-      <Section label="Scheduled time">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="mono" style={{ fontSize: 24, fontWeight: 700, flex: 1 }}>{card.scheduledTime ?? 'Not set'}</span>
+        {/* The slot the patient was booked into: reference data, so it sits
+            with the patient rows at their weight. Given a card of its own it
+            read as a second timer beside the Times card, which is the one that
+            records what happened and drives the fee. The ±5 stays here rather
+            than behind an Edit sheet because a slipping list is nudged in
+            passing, and it keeps its 44px target for the phone. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: canEdit ? 44 : undefined }}>
+          <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist }}>Scheduled</span>
+          <span className="mono" style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{card.scheduledTime ?? 'Not set'}</span>
           {canEdit && (
             <>
-              <Stepper icon={<Minus size={18} aria-hidden />} onClick={() => stepTime(-5)} />
-              <Stepper icon={<Plus size={18} aria-hidden />} onClick={() => stepTime(5)} />
+              <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
+              <Stepper label="5 minutes later" icon={<Plus size={16} aria-hidden />} onClick={() => stepTime(5)} />
             </>
           )}
         </div>
@@ -701,11 +704,13 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-function Stepper({ icon, onClick }: { icon: React.ReactNode; onClick: () => void }) {
+function Stepper({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
   return (
     <button
+      type="button"
+      aria-label={label}
       onClick={onClick}
-      style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
     >
       {icon}
     </button>

@@ -34,6 +34,7 @@ export function SlideStack({ layers, depth }: SlideStackProps) {
         return (
           <div
             key={layer.key}
+            data-testid={`slide-${layer.key}`}
             aria-hidden={i !== depth}
             style={{
               // Opaque layers (so a parked layer-behind never shows through the

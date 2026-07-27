@@ -1,27 +1,17 @@
-import { useMemo, useState } from 'react'
-import { format, parseISO } from 'date-fns'
+import { useMemo } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { List as ListIcon, LayoutGrid, CircleDollarSign, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PhoneFrame } from '../../shell/PhoneFrame'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent } from '../../theme/tokens'
-import { useAppStore, type Actor } from '../../store'
-import { SlideStack, type SlideLayer } from './components'
-import {
-  AvailabilityScreen,
-  BalancesScreen,
-  CardDetailScreen,
-  ForwardListsScreen,
-  ListDetailScreen,
-  MoreScreen,
-} from './screens'
+import { type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
-import { AddCardFlow, RequestCoverSheet } from '../../shared/flows'
-
-type Tab = 'lists' | 'availability' | 'balances' | 'more'
+import { listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
+import type { MobileOutletContext } from './outlet'
 
 interface TabDef {
-  key: Tab
+  key: MobileTab
   label: string
   icon: LucideIcon
 }
@@ -33,7 +23,7 @@ const TABS: readonly TabDef[] = [
   { key: 'more', label: 'More', icon: MoreHorizontal },
 ]
 
-function BottomTabBar({ active, onSelect }: { active: Tab; onSelect: (tab: Tab) => void }) {
+function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab: MobileTab) => void }) {
   return (
     <div
       style={{
@@ -79,89 +69,42 @@ function BottomTabBar({ active, onSelect }: { active: Tab; onSelect: (tab: Tab) 
   )
 }
 
-interface OfferTarget {
-  listId: string
-  slotLabel: string
-}
-
 /**
- * Anaesthetist mobile app (Phase 03). Owns the active tab and a local
- * navigation stack for the Lists tab (ForwardLists → ListDetail → CardDetail)
- * driven by translateX depth so both screens stay mounted for the card-advance
- * choreography (Decisions log: local-nav-stack, not router routes). Every read
- * is view-scoped to Dr Souter's own lists (A8); every write goes through the
+ * Anaesthetist mobile app (Phase 03). This is the app's LAYOUT: the phone frame,
+ * the persona actor and the bottom tab bar; each tab is a router sub-route
+ * (`/mobile/lists`, `/mobile/availability`, `/mobile/balances`, `/mobile/more`)
+ * so a refresh and the back button both hold their place (Decisions log
+ * 2026-07-27).
+ *
+ * The Lists tab is a SINGLE route hosting the depth-driven slide stack rather
+ * than sibling routes per layer — see `navigation.ts` and `routes.tsx`. Every
+ * read is view-scoped to Dr Souter's own lists (A8); every write goes through the
  * Phase 02/03 store guards as the Souter actor.
  */
 export function MobileApp() {
   const persona = APP_CONFIG.mobile.persona
-  const actor: Actor = useMemo(
-    () => ({ who: persona.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: persona.anaesthetistId ?? '34821' }),
-    [persona],
-  )
   const anaesthetistId = persona.anaesthetistId ?? '34821'
+  const actor: Actor = useMemo(
+    () => ({ who: persona.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId }),
+    [persona, anaesthetistId],
+  )
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
 
-  const [tab, setTab] = useState<Tab>('lists')
-  const [listId, setListId] = useState<string | null>(null)
-  const [cardId, setCardId] = useState<string | null>(null)
-  const [depth, setDepth] = useState<0 | 1 | 2>(0)
-  const [addOpen, setAddOpen] = useState(false)
-  const [offer, setOffer] = useState<OfferTarget | null>(null)
+  const context: MobileOutletContext = useMemo(
+    () => ({
+      actor,
+      anaesthetistId,
+      personaName: persona.name,
+      personaRole: persona.role,
+      initials: persona.initials,
+    }),
+    [actor, anaesthetistId, persona],
+  )
 
-  function openList(id: string) {
-    setListId(id)
-    setDepth(1)
-  }
-  function openCard(id: string) {
-    setCardId(id)
-    setDepth(2)
-  }
-
-  function offerCover(id: string) {
-    const list = useAppStore.getState().schedule.lists[id]
-    const slotLabel =
-      list !== undefined ? `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${list.session}` : 'Free session'
-    setOffer({ listId: id, slotLabel })
-  }
-
-  const listsLayers: SlideLayer[] = [
-    {
-      key: 'home',
-      mounted: true,
-      node: (
-        <ForwardListsScreen
-          anaesthetistId={anaesthetistId}
-          personaName={persona.name}
-          initials={persona.initials}
-          onOpenList={openList}
-          onOfferCover={offerCover}
-        />
-      ),
-    },
-    {
-      key: 'list',
-      mounted: listId !== null,
-      node:
-        listId !== null ? (
-          <ListDetailScreen
-            listId={listId}
-            actor={actor}
-            onBack={() => setDepth(0)}
-            onOpenCard={openCard}
-            onAddCard={() => setAddOpen(true)}
-          />
-        ) : null,
-    },
-    {
-      key: 'card',
-      mounted: cardId !== null,
-      node:
-        cardId !== null ? (
-          <CardDetailScreen cardId={cardId} actor={actor} onBack={() => setDepth(1)} onCopied={() => setDepth(1)} />
-        ) : null,
-    },
-  ]
-
-  const showTabBar = tab !== 'lists' || depth === 0
+  // The List and Card layers are full-bleed (the mockup): the tab bar only shows
+  // at the base of the Lists stack and on the other three tabs.
+  const showTabBar = listsStackLocation(pathname).depth === 0
 
   return (
     <SurfaceProvider variant="mobile">
@@ -169,34 +112,10 @@ export function MobileApp() {
       {/* Transparent root: the PhoneFrame AtmosphereLayer shows through for
           Availability / Balances / More and the Lists base (Phase 13). */}
       <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}>
-        {tab === 'lists' && <SlideStack layers={listsLayers} depth={depth} />}
-        {tab === 'availability' && <AvailabilityScreen actor={actor} anaesthetistId={anaesthetistId} initials={persona.initials} />}
-        {tab === 'balances' && <BalancesScreen initials={persona.initials} anaesthetistId={anaesthetistId} />}
-        {tab === 'more' && <MoreScreen personaName={persona.name} personaRole={persona.role} initials={persona.initials} />}
+        <Outlet context={context} />
 
-        {showTabBar && <BottomTabBar active={tab} onSelect={setTab} />}
-
-        {listId !== null && (
-          <AddCardFlow
-            open={addOpen}
-            listId={listId}
-            actor={actor}
-            onClose={() => setAddOpen(false)}
-            onCreated={() => undefined}
-          />
-        )}
-
-        {offer !== null && (
-          <RequestCoverSheet
-            open
-            listId={offer.listId}
-            actor={actor}
-            kind="offer"
-            personName={persona.name}
-            slotLabel={offer.slotLabel}
-            onClose={() => setOffer(null)}
-            onSent={() => undefined}
-          />
+        {showTabBar && (
+          <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
         )}
       </div>
       </PhoneFrame>

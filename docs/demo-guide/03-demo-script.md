@@ -29,6 +29,55 @@ The control panel is grouped: **Clock & reset**, **Scenario jumps (S1 to S5)**, 
 events**, and **Billing, money & exceptions**. Each scenario jump confirms first, resets the data,
 stages the scenario, and prints where to go next with one-click navigation.
 
+## Direct URLs
+
+Every screen inside the three apps has its own address, so you can jump straight to a beat instead of
+clicking in, and a refresh or the browser back button keeps your place. The three app roots still
+work as entry points: `/mobile`, `/web` and `/admin` open the Lists tab, the dashboard and today's day
+view respectively.
+
+| Anaesthetist Mobile App | URL |
+|---|---|
+| Forward Lists | `/mobile/lists` |
+| List detail | `/mobile/lists/<listId>` |
+| Card detail | `/mobile/lists/<listId>/cards/<cardId>` |
+| Availability | `/mobile/availability` |
+| Balances | `/mobile/balances` |
+| More | `/mobile/more` |
+
+| Anaesthetist Web App | URL |
+|---|---|
+| Dashboard | `/web` (another week: `/web?week=2026-07-27`) |
+| Lists table | `/web/lists` |
+| List detail | `/web/lists/<listId>` |
+| Card detail | `/web/lists/<listId>/cards/<cardId>` |
+| Availability grid | `/web/availability` |
+| Accounts, outstanding | `/web/accounts/overdue` |
+| Accounts, GST activity | `/web/accounts/gst` |
+
+| Admin Web App | URL |
+|---|---|
+| Day view | `/admin/day/2026-07-21` (A to Z order: add `?sort=az`) |
+| Card detail | `/admin/day/2026-07-21/cards/<cardId>` |
+| Review queue | `/admin/review` |
+| One List under review | `/admin/review/<listId>` |
+| Invoices | `/admin/invoices` |
+| One invoice document | `/admin/invoices/<invoiceId>` |
+| Billing monitor | `/admin/billing` |
+| Integration monitor | `/admin/integrations` |
+| Master data | `/admin/masters` |
+| Audit | `/admin/audit` |
+
+The demo surfaces are unchanged: `/demo/control`, `/demo/xero`, `/demo/integrations`, `/demo/data`.
+
+Two things worth knowing. The seed is deterministic, so the ids in a URL you copied stay valid across
+a **Reset demo data** — you can bookmark a beat and re-open it after every reset. And a URL that has
+gone stale (an id the current data no longer holds) falls back to its parent screen rather than
+showing a blank page.
+
+Sheets and drawers are deliberately **not** in the URL: the capture sheets, the cover request and the
+admin List drawer are overlays, so the back button closes a screen rather than a sheet.
+
 ## How to read the readiness
 
 Everything in S1 to S5 is built (Phases 00 to 12). The only remaining phase, Phase 13, is a subtle
@@ -334,6 +383,9 @@ payables run records disbursement.
   returns the clock to Tuesday 21 July 2026, 8:00 and restarts deterministic identifiers, so invoice
   numbers begin at the same point every time.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Card.
+- A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
+  somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from
+  **Direct URLs** above.
 - Reset leaves the integration auto-retry timers scheduled, but a guard makes any stale timer a safe
   no-op; it will not disturb the fresh state.
 - Keep this document or the master HTML in a second tab, not the Data Inspector.
