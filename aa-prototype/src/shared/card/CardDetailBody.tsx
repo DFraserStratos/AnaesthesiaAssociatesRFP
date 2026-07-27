@@ -498,11 +498,6 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied }: CardDetailBo
       <Section label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
         <Row label="NHI">
           <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
-          {badge.formatLabel !== null && (
-            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: neutral.slate, background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: 999, padding: '2px 8px' }}>
-              {badge.formatLabel}
-            </span>
-          )}
         </Row>
         {patient !== undefined && (
           <Row label="Date of birth">

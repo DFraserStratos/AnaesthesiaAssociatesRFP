@@ -257,10 +257,10 @@ The RFP specifies the calculation. It does not specify what protects the calcula
   (`ZAA0068`, `src/domain/integrations/pdfSamples.ts:111-120`) beside an already-booked row, so read,
   edit, catch-a-bad-NHI and do-not-duplicate are all demonstrable from **one** document. Ingest of the
   bad row is refused (`integrationActions.ts:443-445`).
-- **Format badge on every patient block.** "Current format" / "New format" next to the NHI on the card
-  detail in all three apps (`src/shared/format.ts:100-107`). The RFP asks only that both formats
-  validate; this makes dual-format compliance legible in the ordinary workflow rather than only in a
-  validator screen.
+- **Dual-format validation without a patient-facing badge.** Both NHI formats remain validated in the
+  shared domain logic and demonstrated on the integration validator. The earlier "Current format" /
+  "New format" patient-block badge was removed on 27 July 2026 after user review because the RFP does
+  not require it and it added noise and poor wrapping to ordinary card detail.
 - **Guardian identity treated as a real party.** A BillableParty gets its own hidden internal ID, its
   own Xero contact distinct from the patient's, and archives on the same rules
   (`src/store/xeroHandoff.ts:59-60`, `archiveActions.test.ts`). Appendix 2 discusses patients only.

@@ -108,6 +108,35 @@
     background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
     padding: 14px 16px; overflow-x: auto; color: var(--ink); margin: 12px 0;
   }
+  .journey { display: grid; gap: 0; margin: 18px 0 24px; }
+  .journey-step {
+    position: relative; display: grid; grid-template-columns: 42px minmax(150px, 210px) 1fr;
+    gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 18px;
+  }
+  .journey-step + .journey-step { margin-top: 18px; }
+  .journey-step + .journey-step::before {
+    content: "\2193"; position: absolute; top: -22px; left: 31px; z-index: 1;
+    width: 20px; height: 24px; display: grid; place-items: center;
+    color: var(--accent); background: var(--backdrop); font-weight: 800;
+  }
+  .journey-num {
+    width: 34px; height: 34px; display: grid; place-items: center; border-radius: 999px;
+    color: #fff; background: var(--accent); font-weight: 800; font-family: var(--font-mono);
+  }
+  .journey-who { display: flex; flex-direction: column; gap: 3px; }
+  .journey-who strong { font-size: 14px; }
+  .journey-who span {
+    width: fit-content; color: var(--slate); background: var(--sunken);
+    border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+  }
+  .journey-action { color: var(--slate); font-size: 14px; }
+  .journey-action strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 2px; }
+  @media (max-width: 660px) {
+    .journey-step { grid-template-columns: 38px 1fr; gap: 10px; align-items: start; }
+    .journey-action { grid-column: 2; }
+    .journey-step + .journey-step::before { left: 28px; }
+  }
   code { font-family: var(--font-mono); font-size: 0.92em; background: var(--sunken); border-radius: 5px; padding: 1px 5px; }
 
   table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 12px 0; }
@@ -517,19 +546,48 @@
   <p class="lead">One audited flow from a changing theatre schedule to captured clinical inputs,
   controlled office authorisation, reliable invoicing, and transparent collection and disbursement.</p>
 
-  <pre class="tree">Scheduling engine   maintain rolling AM/PM List canvas
-Surgeon/hospital &#8594; office     standing arrangement, phone, PDF or hospital update
-Office &#8594; schedule             reserve/update List and Cards
-Schedule &#8594; anaesthetist       show assigned List and patient Cards
-Anaesthetist                    capture procedure and BTM data
-Anaesthetist &#8594; office         submit completed List
-Office                          sanity-check and correct Cards
-Office &#8594; Billing Engine       authorise whole List
-Billing Engine                  resolve route, Contract, fee, invoice grouping
-Billing Engine &#8594; Xero         create ACCREC and draft ACCPAY
-Xero &#8594; Billing Engine         payment webhook or reconciliation result
-Billing Engine &#8594; Xero         authorise payable for disbursement
-Billing Engine &#8594; anaesthetist update balance and GST views</pre>
+  <div class="callout">
+    Read this from top to bottom. Each step names <strong>who acts</strong> and
+    <strong>what happens next</strong>.
+  </div>
+
+  <div class="journey" aria-label="Booking and billing journey">
+    <div class="journey-step">
+      <div class="journey-num">1</div>
+      <div class="journey-who"><strong>Scheduling engine</strong><span>Prepares the canvas</span></div>
+      <div class="journey-action"><strong>Creates the rolling schedule</strong>Keeps an AM and PM List ready for every active anaesthetist.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">2</div>
+      <div class="journey-who"><strong>Surgeon or hospital</strong><span>Sends to AA office</span></div>
+      <div class="journey-action"><strong>A booking arrives</strong>It may come from a standing arrangement, phone call, PDF or hospital feed.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">3</div>
+      <div class="journey-who"><strong>AA office</strong><span>Updates the schedule</span></div>
+      <div class="journey-action"><strong>Books the List and patient Cards</strong>The assigned anaesthetist can now see the List and its patients.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">4</div>
+      <div class="journey-who"><strong>Anaesthetist</strong><span>Submits to AA office</span></div>
+      <div class="journey-action"><strong>Completes the clinical billing inputs</strong>Records the procedure and BTM data, completes every Card, then submits the whole List.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">5</div>
+      <div class="journey-who"><strong>AA office</strong><span>Sends to Billing Engine</span></div>
+      <div class="journey-action"><strong>Checks and authorises the List</strong>Corrects any Card details, then approves the whole List for billing.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">6</div>
+      <div class="journey-who"><strong>Billing Engine</strong><span>Sends records to Xero</span></div>
+      <div class="journey-action"><strong>Calculates and creates invoices</strong>Resolves the payer, Contract and fee, then creates the ACCREC and draft ACCPAY in Xero.</div>
+    </div>
+    <div class="journey-step">
+      <div class="journey-num">7</div>
+      <div class="journey-who"><strong>Xero + Billing Engine</strong><span>Reports back</span></div>
+      <div class="journey-action"><strong>Tracks payment and disbursement</strong>Xero reports receipts; the Billing Engine authorises the payable and updates the anaesthetist's balance and GST views.</div>
+    </div>
+  </div>
 
   <div class="callout"><strong>The two kinds of state.</strong> Do not confuse operational List status
   (Private, Public, Pre-op, Holiday, Unavailable, Free, what the session is used for) with the approval

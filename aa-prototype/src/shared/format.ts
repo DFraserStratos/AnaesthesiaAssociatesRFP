@@ -81,18 +81,15 @@ export function sessionStart(list: List): string {
 export interface NhiBadge {
   /** "NHI ABC1234" or "NHI pending". */
   text: string
-  /** Format label for the small chip, or null when pending/unknown. */
-  formatLabel: string | null
 }
 
-/** Render an NHI plus a format badge, or the provisional "NHI pending" state. */
+/** Render a normalised NHI, or the provisional "NHI pending" state. */
 export function nhiBadge(nhi: string | undefined): NhiBadge {
   if (nhi === undefined || nhi.trim() === '') {
-    return { text: 'NHI pending', formatLabel: null }
+    return { text: 'NHI pending' }
   }
   const v = validateNhi(nhi)
-  const formatLabel = v.format === 'current' ? 'Current format' : v.format === 'new' ? 'New format' : null
-  return { text: `NHI ${v.normalised}`, formatLabel }
+  return { text: `NHI ${v.normalised}` }
 }
 
 // ---------------------------------------------------------------------------

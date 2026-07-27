@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AA · Modifier list options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#172320; --slate:#58635F; --mist:#8A9490; --line-strong:#C9D1CE;
+    --line:#E2E7E5; --sunken:#EDF1EF; --bg:#F6F8F7; --surface:#FFFFFF;
+    --brand:#A91E3E; --brand-deep:#8C1533; --brand-tint:#F7E7EC;
+    --accent:#0D6E63; --accent-hover:#0A5A51; --accent-pressed:#084A43; --accent-tint:#E1F0ED;
+    --ok:#1E8E5A; --ok-tint:#E3F4EB; --ok-on:#157A49;
+    --warn:#A16207; --warn-tint:#F9F0DC; --warn-on:#7C4D08;
+    --err:#C2403C; --err-tint:#FAE9E7; --err-on:#9C332F;
+    --info:#2E66E5; --info-tint:#E8EEFC; --info-on:#1F44A3;
+    --scrim:rgba(23,35,32,0.32);
+    --e1:0 1px 2px rgba(23,35,32,0.05), 0 2px 6px rgba(23,35,32,0.05);
+    --e2:0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09);
+    --e3:0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18);
+    --font:'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+    --mono:'Spline Sans Mono', ui-monospace, monospace;
+    --backdrop:#E4E8E6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--backdrop);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:1760px;margin:0 auto;padding:28px 24px 100px}
+  h1{font-size:32px;line-height:38px;font-weight:700;letter-spacing:-0.02em;margin:0 0 8px}
+  .lede{font-size:15px;line-height:22px;color:var(--slate);max-width:820px;margin:0 0 14px}
+  .note{font-size:13px;line-height:19px;color:var(--mist);max-width:820px;margin:0}
+  .note code{font-family:var(--mono);font-size:12px;color:var(--slate)}
+
+  /* Summary table */
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin:22px 0 26px;box-shadow:var(--e1);max-width:820px}
+  .summary h2{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--mist);margin:0 0 10px}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:left;font-size:13px;padding:6px 10px 6px 0;border-bottom:1px solid var(--sunken)}
+  th{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  td.n{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right;padding-right:16px}
+  td.name{font-weight:600}
+  tr.cur td{color:var(--slate)}
+  .tick{color:var(--ok-on);font-weight:600}
+  .cross{color:var(--err-on);font-weight:600}
+  .bar-outer{display:inline-block;width:120px;height:8px;border-radius:99px;background:var(--sunken);vertical-align:middle}
+  .bar-inner{display:block;height:8px;border-radius:99px;background:var(--accent)}
+  .bar-inner.over{background:var(--err)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0 0 26px}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:var(--surface);
+    border:1px solid var(--accent);border-radius:10px;padding:9px 14px;cursor:pointer}
+  .btn:hover{background:var(--accent-tint)}
+  .btn.plain{color:var(--slate);border-color:var(--line)}
+  .btn.plain:hover{background:var(--sunken)}
+
+  /* Option cards */
+  .grid{display:flex;flex-wrap:wrap;gap:34px}
+  .opt{width:390px;display:flex;flex-direction:column;gap:10px}
+  .opt-head{display:flex;align-items:baseline;gap:10px}
+  .num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--surface);
+    background:var(--ink);border-radius:7px;padding:3px 7px;flex:none}
+  .num.cur{background:var(--slate)}
+  .num.rec{background:var(--accent)}
+  .opt h3{font-size:17px;line-height:22px;font-weight:600;margin:0;flex:1}
+  .hbadge{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--slate);
+    background:var(--sunken);border-radius:7px;padding:3px 8px;flex:none;white-space:nowrap}
+  .hbadge.over{background:var(--err-tint);color:var(--err-on)}
+  .hbadge.fits{background:var(--ok-tint);color:var(--ok-on)}
+  .what{font-size:13px;line-height:19px;color:var(--slate);margin:0}
+  .meta{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .meta li{font-size:12px;line-height:17px;color:var(--mist);padding-left:16px;position:relative}
+  .meta li:before{position:absolute;left:0;font-weight:700}
+  .meta li.win:before{content:'+';color:var(--ok-on)}
+  .meta li.risk:before{content:'!';color:var(--warn-on)}
+  .meta li.ref:before{content:'\2192';color:var(--mist)}
+
+  /* Phone */
+  .phone{width:390px;height:812px;position:relative;display:flex;flex-direction:column;
+    background:var(--surface);border:1px solid var(--line-strong);border-radius:30px;
+    overflow:hidden;box-shadow:var(--e3)}
+  .status{height:34px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;font-weight:600;color:var(--ink)}
+  .status .r{font-family:var(--mono);font-size:11px;color:var(--slate)}
+  .hdr{flex:none;background:var(--surface);border-bottom:1px solid var(--line);padding:6px 20px 14px}
+  .back{font-size:15px;font-weight:600;color:var(--accent);margin-bottom:8px}
+  .pname{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.01em}
+  .pnhi{font-family:var(--mono);font-size:12px;color:var(--slate);margin-top:4px}
+  .prow{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .prow .op{font-size:14px}
+  .pill-priv{display:inline-flex;align-items:center;gap:6px;background:var(--info-tint);
+    border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--info-on)}
+  .pill-priv i{width:7px;height:7px;border-radius:99px;background:var(--info)}
+  .fac{font-size:12px;color:var(--mist);margin-top:6px}
+  .scroll{flex:1;overflow:auto;background:var(--bg);padding:14px 20px 20px;
+    display:flex;flex-direction:column;gap:12px}
+  .foot{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:12px 20px 18px}
+  .cta{width:100%;height:54px;border:none;border-radius:14px;background:var(--accent);
+    color:var(--surface);font:inherit;font-size:17px;font-weight:700}
+  .hint{position:absolute;right:10px;bottom:96px;font-size:11px;font-weight:600;
+    background:rgba(23,35,32,0.72);color:#fff;border-radius:999px;padding:4px 10px;pointer-events:none}
+
+  /* In-phone card anatomy (mirrors CaptureSection) */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;
+    display:flex;flex-direction:column}
+  .card > .cap{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mist)}
+  .cap-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .link{font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:none;border:none;padding:0;cursor:pointer}
+  .caption{font-size:12px;line-height:16px;color:var(--mist)}
+  .caption.slate{color:var(--slate)}
+  .srow{display:flex;align-items:center;gap:12px}
+  .srow .lbl{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .srow .lbl b{font-size:15px;font-weight:600}
+  .step{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);font-size:20px;font-weight:600;color:var(--slate);cursor:pointer}
+  .val{width:36px;text-align:center;font-family:var(--mono);font-size:20px;font-weight:700;
+    font-variant-numeric:tabular-nums;flex:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:11px 14px;border-radius:999px;font:inherit;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background 150ms,border-color 150ms;background:var(--surface);
+    color:var(--slate);border:1.5px solid var(--line);text-align:left}
+  .chip.on{background:var(--accent-tint);color:var(--accent-hover);border-color:var(--accent)}
+  .chip .c{font-family:var(--mono);font-size:12px;font-weight:600}
+  .chip.sm{padding:9px 12px;font-size:13px}
+  .seg{display:flex;background:var(--sunken);border-radius:12px;padding:4px;gap:4px}
+  .seg button{flex:1;height:44px;border-radius:9px;border:none;font:inherit;font-size:16px;
+    font-weight:600;cursor:pointer;background:transparent;color:var(--slate)}
+  .seg button.on{background:var(--accent);color:var(--surface);box-shadow:0 1px 3px rgba(23,35,32,0.2)}
+  .seg.compact button{height:38px;font-size:13px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:0;line-height:1.15}
+  .seg.compact button .u{font-family:var(--mono);font-size:10px;font-weight:600;opacity:0.75}
+  .seg.wrap2{display:grid;grid-template-columns:1fr 1fr}
+  .band{display:flex;flex-direction:column;gap:6px}
+  .band > .bl{font-size:12px;font-weight:600;color:var(--slate)}
+  .grouphdr{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--mist);padding-top:4px}
+  .hscroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .hscroll .chip{flex:none}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .g2 .chip{padding:10px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ink{background:var(--ink);border-radius:14px;padding:18px 20px;display:flex;
+    align-items:center;justify-content:space-between}
+  .ink .k{font-size:11px;font-weight:600;letter-spacing:0.06em;color:rgba(255,255,255,0.55)}
+  .ink .v{font-family:var(--mono);font-size:30px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .ink .col{display:flex;flex-direction:column;gap:4px}
+  .ink .col.r{align-items:flex-end}
+  .derived{background:var(--accent-tint);color:var(--accent-pressed);border-radius:10px;
+    padding:10px 12px;font-size:13px;line-height:18px;display:flex;flex-direction:column;gap:6px}
+  .derived .act{align-self:flex-start;font:inherit;font-size:13px;font-weight:600;color:var(--accent-pressed);
+    background:none;border:none;padding:0;text-decoration:underline;cursor:pointer}
+  .agetoggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mist)}
+  .agetoggle .seg{flex:1}
+  .agetoggle .seg button{height:32px;font-size:12px}
+  .addbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;
+    padding:0 16px;border-radius:12px;border:1px dashed var(--line-strong);background:var(--surface);
+    font:inherit;font-size:14px;font-weight:600;color:var(--accent);cursor:pointer}
+  .selrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .selrow .l{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .selrow .l b{font-size:15px;font-weight:600}
+
+  /* Sheet inside the phone */
+  .scrim{position:absolute;inset:0;background:var(--scrim);z-index:8}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--surface);
+    border-radius:24px 24px 0 0;box-shadow:var(--e3);padding:18px 20px 22px;
+    max-height:78%;display:flex;flex-direction:column;gap:10px}
+  .sheet h4{font-size:17px;font-weight:600;margin:0}
+  .search{width:100%;height:48px;border-radius:10px;border:1px solid var(--line);
+    background:var(--bg);padding:0 14px;font:inherit;font-size:15px;color:var(--ink)}
+  .rows{overflow:auto;margin:0 -4px}
+  .prow2{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+    text-align:left;border:none;border-bottom:1px solid var(--sunken);background:transparent;
+    font:inherit;cursor:pointer;padding:13px 10px;border-radius:8px}
+  .prow2.on{background:var(--accent-tint)}
+  .prow2 .l{display:flex;flex-direction:column;gap:2px}
+  .prow2 .code{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)}
+  .prow2 .nm{font-size:15px;font-weight:500;color:var(--ink)}
+  .prow2 .u{font-family:var(--mono);font-size:12px;color:var(--mist);flex:none}
+  .sheetfoot{display:flex;gap:10px}
+  .sheetfoot .done{flex:1;height:48px;border:none;border-radius:12px;background:var(--accent);
+    color:#fff;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+  .empty{padding:18px 4px;font-size:14px;color:var(--mist)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Modifier list · 10 options</h1>
+  <p class="lede">
+    The mobile card's modifier block renders all 16 chips (20 codes in the master table, minus the
+    4 ASA codes the ASA card owns) as one flex-wrap row. Each label is wider than half the card's
+    318px interior, so nearly every chip takes its own line: about 15 rows, taller than the phone
+    viewport. Below: the current build, ten candidate fixes, and the recommended combination, each
+    rendered at true 390 x 812 with the real tokens so you can compare on height and on feel.
+  </p>
+  <p class="note">
+    Decision aid only. Nothing in the app changed. This page is a standalone file
+    (<code>aa-prototype/modifier-options.html</code>) outside the app's router and bundle, following the
+    <code>avatar-options.html</code> precedent. Codes, labels, unit values and the band swap rule are
+    transcribed from <code>src/domain/billing/modifierCodes.ts</code> and
+    <code>src/shared/capture/modifierLabels.ts</code>; the patient is the card in your screenshot
+    (base 3 from RVG 42702, 4 time units, ASA II seeding +1, $26.50 per unit). Every chip, segment,
+    sheet and disclosure below is live, so tap them.
+  </p>
+
+  <div class="summary">
+    <h2>Modifier block height, measured live</h2>
+    <table>
+      <thead><tr><th>Option</th><th style="text-align:right">Height</th><th>Vs viewport</th><th>Fits without scrolling</th></tr></thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn plain" id="reset">Reset every selection</button>
+    <button class="btn plain" id="remeasure">Re-measure heights</button>
+    <span class="note" style="margin:0">Heights are the modifier block only (chips, bands, or entry point), excluding the B / T / M stepper rows and any demo-only control such as the age toggle. Fits means the block alone is shorter than the scroll area, so nothing else on the card has to move.</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Data, transcribed from the app (see note above). AS group excluded: the ASA
+// card owns it, exactly as ModifierChips.tsx:28 filters it out.
+// ---------------------------------------------------------------------------
+const CODES = [
+  { code:'PA1', group:'PA',     units:1, label:'Phone pre-assessment, brief',   short:'Phone, brief' },
+  { code:'PA2', group:'PA',     units:2, label:'Phone pre-assessment, complex', short:'Phone, complex' },
+  { code:'PA3', group:'PA',     units:3, label:'Pre-assessment, standard',      short:'Standard' },
+  { code:'PA4', group:'PA',     units:4, label:'Pre-assessment, complex',       short:'Complex' },
+  { code:'PA5', group:'PA',     units:1, label:'Phone follow-up',               short:'Phone follow-up' },
+  { code:'A1',  group:'A',      units:1, label:'Very old',                      short:'Very old' },
+  { code:'A2',  group:'A',      units:2, label:'Very young',                    short:'Very young' },
+  { code:'ASE', group:'ASE',    units:2, label:'Emergency',                     short:'Emergency' },
+  { code:'OB1', group:'OB',     units:0, label:'BMI under 30',                  short:'Under 30' },
+  { code:'OB2', group:'OB',     units:1, label:'BMI 30 to 35',                  short:'30 to 35' },
+  { code:'OB3', group:'OB',     units:2, label:'BMI 35 to 40',                  short:'35 to 40' },
+  { code:'OB4', group:'OB',     units:3, label:'BMI over 40',                   short:'Over 40' },
+  { code:'P1',  group:'P',      units:2, label:'Positioning',                   short:'Positioning' },
+  { code:'AI1', group:'AI',     units:2, label:'Awake intubation',              short:'Awake intubation' },
+  { code:'PO1', group:'POSTOP', units:1, label:'Post-op ward review',           short:'Ward review' },
+  { code:'PO2', group:'POSTOP', units:2, label:'Post-op pain management',        short:'Pain management' },
+]
+const BY_CODE = new Map(CODES.map(c => [c.code, c]))
+const GROUP_TITLE = {
+  PA:'Pre-assessment', A:'Age extremes', ASE:'Emergency', OB:'BMI band',
+  P:'Positioning', AI:'Awake intubation', POSTOP:'Post-op',
+}
+const EXCLUSIVE = new Set(['PA','A','OB'])   // AS handled by the ASA card
+const STACKS = new Set(['PA5'])              // the logged exception
+
+function bandOf(code){
+  const m = BY_CODE.get(code)
+  if(!m || STACKS.has(code)) return undefined
+  return EXCLUSIVE.has(m.group) ? m.group : undefined
+}
+/** toggleModifierCode, ported: turning one on drops its band sibling. */
+function toggle(sel, code){
+  const next = new Set(sel)
+  if(next.has(code)){ next.delete(code); return next }
+  const band = bandOf(code)
+  if(band !== undefined) for(const c of [...next]) if(bandOf(c) === band) next.delete(c)
+  next.add(code)
+  return next
+}
+function codesOf(sel){ return CODES.filter(c => sel.has(c.code)) }
+function inBand(sel, group){ return CODES.find(c => c.group === group && !STACKS.has(c.code) && sel.has(c.code)) }
+
+// Card context: RVG 42702 base 3, 60 min = 4 time units, ASA II seeds +1.
+const BASE_UNITS = 3, TIME_UNITS = 4, ASA_SEED = 1, RATE = 26.5
+function mUnits(sel){ return ASA_SEED + codesOf(sel).reduce((n,c) => n + c.units, 0) }
+function mCaption(sel){
+  const parts = ['AS2 mild systemic disease +' + ASA_SEED]
+  for(const c of codesOf(sel)) parts.push(c.code + ' ' + c.label.toLowerCase() + ' +' + c.units)
+  return parts.join(' · ')
+}
+function money(n){ return '$' + n.toLocaleString('en-NZ', {minimumFractionDigits:2, maximumFractionDigits:2}) }
+
+// ---------------------------------------------------------------------------
+// Tiny DOM helper
+// ---------------------------------------------------------------------------
+function h(tag, attrs, kids){
+  const n = document.createElement(tag)
+  if(attrs) for(const k in attrs){
+    const v = attrs[k]
+    if(v === undefined || v === null || v === false) continue
+    if(k === 'style') n.style.cssText = v
+    else if(k === 'class') n.className = v
+    else if(k.slice(0,2) === 'on') n.addEventListener(k.slice(2).toLowerCase(), v)
+    else n.setAttribute(k, v)
+  }
+  const list = kids === undefined || kids === null ? [] : (Array.isArray(kids) ? kids : [kids])
+  for(const c of list.flat()){
+    if(c === undefined || c === null || c === false) continue
+    n.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c)
+  }
+  return n
+}
+
+// ---------------------------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------------------------
+/** A chip. `form`: 'full' (code · label · +n), 'short' (label · +n), 'bare'. */
+function chip(m, on, onTap, form, extraClass){
+  const cls = 'chip' + (on ? ' on' : '') + (extraClass ? ' ' + extraClass : '')
+  const kids =
+    form === 'short' ? [m.label + ' · +' + m.units] :
+    form === 'bare'  ? [m.short] :
+    [h('span',{class:'c'}, m.code), ' · ' + m.label + ' · +' + m.units]
+  return h('button', { class:cls, onclick:onTap, type:'button' }, kids)
+}
+
+/** A band as a segmented control: taps swap, tapping the active one clears. */
+function bandSeg(label, group, sel, rr, opts){
+  const items = CODES.filter(c => c.group === group && !STACKS.has(c.code))
+  const active = inBand(sel, group)
+  const seg = h('div', { class:'seg compact' + (opts && opts.two ? ' wrap2' : '') },
+    items.map(m => h('button', {
+      type:'button',
+      class: active && active.code === m.code ? 'on' : '',
+      onclick: () => rr(toggle(sel, m.code)),
+    }, [ h('span',{},m.short), h('span',{class:'u'}, '+' + m.units) ]))
+  )
+  return h('div', {class:'band'}, [ h('div',{class:'bl'}, label), seg ])
+}
+
+/** The picker sheet (CodePickerSheet pattern: search, group headers, mono code). */
+function pickerSheet(st, rr, opts){
+  const q = (st.q || '').trim().toLowerCase()
+  const matches = CODES.filter(c => {
+    if(opts && opts.exclude && opts.exclude(c)) return false
+    return q === '' || c.code.toLowerCase().includes(q) || c.label.toLowerCase().includes(q)
+  })
+  const groups = []
+  for(const m of matches){
+    let g = groups.find(g => g.key === m.group)
+    if(!g){ g = { key:m.group, items:[] }; groups.push(g) }
+    g.items.push(m)
+  }
+  const rows = h('div', {class:'rows'}, groups.length === 0
+    ? h('div',{class:'empty'},'No modifiers match that search.')
+    : groups.map(g => h('div', {}, [
+        h('div',{class:'grouphdr', style:'padding:12px 10px 4px'}, GROUP_TITLE[g.key]),
+        g.items.map(m => h('button', {
+          type:'button',
+          class:'prow2' + (st.sel.has(m.code) ? ' on' : ''),
+          onclick: () => rr({ sel: toggle(st.sel, m.code) }),
+        }, [
+          h('span',{class:'l'}, [ h('span',{class:'code'}, m.code), h('span',{class:'nm'}, m.label) ]),
+          h('span',{class:'u'}, '+' + m.units),
+        ]))
+      ]))
+  )
+  return [
+    h('div', { class:'scrim', onclick: () => rr({ sheet:false, q:'' }) }),
+    h('div', {class:'sheet'}, [
+      h('h4',{}, 'Modifiers'),
+      h('input', { class:'search', placeholder:'Search code or name', value: st.q || '',
+        oninput: (e) => { st.q = e.target.value; rr({ keepFocus:true }) } }),
+      rows,
+      h('div',{class:'sheetfoot'}, h('button',{class:'done', type:'button',
+        onclick: () => rr({ sheet:false, q:'' })}, 'Done')),
+    ]),
+  ]
+}
+
+/** B / T / M stepper rows. `mAction` is an optional node in the M row. */
+function stepperRows(sel, mAction){
+  const row = (title, caption, value, action) => h('div',{class:'srow'}, [
+    h('span',{class:'lbl'}, [
+      h('b',{}, title),
+      h('span',{class:'caption'}, caption),
+    ]),
+    action || false,
+    h('button',{class:'step', type:'button'},'−'),
+    h('span',{class:'val'}, String(value)),
+    h('button',{class:'step', type:'button'},'+'),
+  ])
+  return [
+    row('B · Base', 'From procedure code', BASE_UNITS),
+    row('T · Time', 'From start / finish stamps', TIME_UNITS),
+    row('M · Modifiers', mCaption(sel), mUnits(sel), mAction),
+  ]
+}
+
+const DISCLAIMER = 'Modifier values are demo-plausible within the RFP’s stated ranges, not an authoritative NZSA schedule.'
+
+// ---------------------------------------------------------------------------
+// The options. Each supplies `mods(st, rr)` for the modifier block that sits
+// inside the UNITS card, and optionally `mRow(st, rr)` and `sheet(st, rr)`.
+// ---------------------------------------------------------------------------
+const OPTIONS = [
+{
+  id:'cur', badge:'NOW', kind:'cur',
+  title:'Current build',
+  what:'All 16 chips in one flex-wrap row, each labelled code · label · +units. Bands already swap in one tap, but nothing on screen says so.',
+  meta:[
+    ['risk','About 15 rows. The block alone is taller than the viewport, and the M row above it already states the same selection in prose.'],
+    ['ref','src/shared/capture/ModifierChips.tsx:44'],
+  ],
+  mods: (st, rr) => h('div',{class:'chips'},
+    CODES.map(m => chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full'))),
+},
+{
+  id:'o1', badge:'01',
+  title:'Band controls for PA, A and OB',
+  what:'The three exclusive bands become segmented controls, the same pattern the ASA card above already uses. Chips survive only for the six genuinely multi-select flags.',
+  meta:[
+    ['win','Ten chips absorbed. Exclusivity becomes visible instead of a surprise swap.'],
+    ['win','Uses a pattern the design files already establish, so nothing new is invented.'],
+    ['risk','PA labels have to shorten to fit a 2 x 2 segment grid.'],
+    ['ref','AsaCard.tsx is the existing precedent'],
+  ],
+  mods: (st, rr) => {
+    const flags = CODES.filter(m => !EXCLUSIVE.has(m.group) || STACKS.has(m.code))
+    return h('div',{style:'display:flex;flex-direction:column;gap:12px'}, [
+      bandSeg('Pre-assessment', 'PA', st.sel, (s)=>rr({sel:s}), {two:true}),
+      bandSeg('Age extreme', 'A', st.sel, (s)=>rr({sel:s})),
+      bandSeg('BMI band', 'OB', st.sel, (s)=>rr({sel:s})),
+      h('div',{class:'bl', style:'font-size:12px;font-weight:600;color:var(--slate)'}, 'Also applies'),
+      h('div',{class:'chips'}, flags.map(m =>
+        chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short'))),
+    ])
+  },
+},
+{
+  id:'o2', badge:'02',
+  title:'Selected only, full set in a picker sheet',
+  what:'The card shows just what is applied, plus an Add modifier button. The sheet reuses the procedure-code picker: search, group headers, mono code, units on the right.',
+  meta:[
+    ['win','Smallest possible block. A typical card shows nought to three chips.'],
+    ['win','Bottom sheet is the mobile idiom the surface layer already provides.'],
+    ['risk','One extra tap per modifier, and the RFP breadth is no longer visible on screen, which costs a demo talking point.'],
+    ['ref','CodePickerSheet.tsx supplies the sheet verbatim'],
+  ],
+  mods: (st, rr) => {
+    const on = codesOf(st.sel)
+    return h('div',{class:'chips'}, [
+      on.map(m => chip(m, true, () => rr({sel:toggle(st.sel, m.code)}), 'short')),
+      h('button',{class:'addbtn', type:'button', onclick:()=>rr({sheet:true})},
+        on.length === 0 ? 'Add modifier' : 'Add another'),
+    ])
+  },
+  sheet: (st, rr) => st.sheet ? pickerSheet(st, rr) : null,
+},
+{
+  id:'o3', badge:'03',
+  title:'The M row is the entry point',
+  what:'No inline block at all. The M stepper row grows an Edit link and its existing caption becomes the display. All picking happens in one sheet.',
+  meta:[
+    ['win','Removes today’s duplicate representation entirely. One place for M.'],
+    ['win','Tidiest information architecture of the ten.'],
+    ['risk','The fee-ticks-per-tap beat then happens inside a sheet rather than on the card.'],
+    ['ref','UnitsCard.tsx:97 already renders the breakdown caption'],
+  ],
+  mods: () => null,
+  mRow: (st, rr) => h('button',{class:'link', type:'button', onclick:()=>rr({sheet:true})}, 'Edit'),
+  sheet: (st, rr) => st.sheet ? pickerSheet(st, rr) : null,
+},
+{
+  id:'o4', badge:'04',
+  title:'Collapse behind a disclosure',
+  what:'Everything stays; the block is closed by default behind a summary row. One state variable, no structural change, trivially reversible.',
+  meta:[
+    ['win','Cheapest credible fix. The presenter opens it on cue.'],
+    ['risk','Does not fix the list, only hides it. Open it and you are back to 15 rows.'],
+  ],
+  mods: (st, rr) => {
+    const n = codesOf(st.sel).length
+    const head = h('button',{class:'selrow', type:'button', style:'cursor:pointer',
+      onclick:()=>rr({open:!st.open})}, [
+      h('span',{class:'l'}, [
+        h('b',{}, 'Modifiers'),
+        h('span',{class:'caption'}, n === 0 ? 'None applied' : n + (n === 1 ? ' applied' : ' applied')),
+      ]),
+      h('span',{class:'link'}, st.open ? 'Hide' : 'Show all (16)'),
+    ])
+    return h('div',{style:'display:flex;flex-direction:column;gap:10px'}, [
+      head,
+      st.open ? h('div',{class:'chips'}, CODES.map(m =>
+        chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full'))) : false,
+    ])
+  },
+},
+{
+  id:'o5', badge:'05',
+  title:'Shorten the label',
+  what:'Drop the code prefix, keep the units. Short chips then pair up two and three to a row. Pure typography, no structural change.',
+  meta:[
+    ['win','Cheapest possible change: one template line, no new structure.'],
+    ['risk','Measures about a quarter shorter, not half. Even without the code, the pre-assessment labels are wider than half the card, so only the short chips pair up.'],
+    ['risk','The codes are part of the we-implement-the-real-table story. They survive in the M caption and the audit trail, but not on the chip.'],
+    ['ref','ModifierChips.tsx:73 is the only line that changes'],
+  ],
+  mods: (st, rr) => h('div',{class:'chips'},
+    CODES.map(m => chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short'))),
+},
+{
+  id:'o6', badge:'06',
+  title:'One horizontal row per group',
+  what:'Seven labelled rows, each a swipeable chip carousel. Fixed, predictable height, nothing hidden.',
+  meta:[
+    ['win','Height stops depending on how many codes exist per group.'],
+    ['risk','Off-screen chips in a horizontal scroller are easy to miss on a projector, and horizontal scroll inside a vertical scroll is fiddly with a mouse on the web surface.'],
+  ],
+  mods: (st, rr) => {
+    const groups = []
+    for(const m of CODES){
+      let g = groups.find(g => g.key === m.group)
+      if(!g){ g = {key:m.group, items:[]}; groups.push(g) }
+      g.items.push(m)
+    }
+    return h('div',{style:'display:flex;flex-direction:column;gap:8px'},
+      groups.map(g => h('div',{}, [
+        h('div',{class:'grouphdr'}, GROUP_TITLE[g.key]),
+        h('div',{class:'hscroll'}, g.items.map(m =>
+          chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short'))),
+      ])))
+  },
+},
+{
+  id:'o7', badge:'07',
+  title:'Group headers plus a two column grid',
+  what:'Every chip kept, but the 16 item soup becomes seven small labelled decisions in a fixed two column grid.',
+  meta:[
+    ['win','Reads as seven short questions rather than one long menu.'],
+    ['risk','Middling height win, and the longer pre-assessment labels truncate.'],
+  ],
+  mods: (st, rr) => {
+    const groups = []
+    for(const m of CODES){
+      let g = groups.find(g => g.key === m.group)
+      if(!g){ g = {key:m.group, items:[]}; groups.push(g) }
+      g.items.push(m)
+    }
+    return h('div',{style:'display:flex;flex-direction:column;gap:6px'},
+      groups.map(g => h('div',{}, [
+        h('div',{class:'grouphdr'}, GROUP_TITLE[g.key]),
+        h('div',{class:'g2', style:'margin-top:6px'}, g.items.map(m =>
+          chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'bare'))),
+      ])))
+  },
+},
+{
+  id:'o8', badge:'08',
+  title:'Derive the age band from the patient',
+  what:'The card already knows the date of birth. Where neither age extreme applies the band is stated, not offered; where one does, it is suggested for confirmation. Toggle the age to see both states.',
+  meta:[
+    ['win','Lands as a genuine ease-of-use moment in the workshop: the app already knows the answer, so it should not ask.'],
+    ['risk','Measures TALLER than the current build. A1 and A2 are the one pair short enough to share a row, so the banner costs more than the two chips save. This is a comprehension win, not a height win.'],
+    ['risk','Needs a stated threshold for very old and very young, which is an AA question, so it becomes another logged assumption.'],
+    ['ref','ageYears already exists in shared/format.ts'],
+  ],
+  mods: (st, rr) => {
+    const age = st.age === undefined ? 26 : st.age
+    const suggested = age >= 70 ? BY_CODE.get('A1') : age <= 1 ? BY_CODE.get('A2') : undefined
+    const rest = CODES.filter(m => m.group !== 'A')
+    const banner = suggested === undefined
+      ? h('div',{class:'derived'}, [
+          h('span',{}, 'Age ' + age + 'y. No age-extreme modifier applies.'),
+          h('button',{class:'act', type:'button', onclick:()=>rr({sel:toggle(st.sel,'A1')})}, 'Record one anyway'),
+        ])
+      : h('div',{class:'derived'}, [
+          h('span',{}, 'Age ' + age + 'y suggests ' + suggested.code + ' ' + suggested.label.toLowerCase() + ' +' + suggested.units + '.'),
+          h('button',{class:'act', type:'button', onclick:()=>rr({sel:toggle(st.sel, suggested.code)})},
+            st.sel.has(suggested.code) ? 'Remove it' : 'Apply it'),
+        ])
+    return h('div',{style:'display:flex;flex-direction:column;gap:10px'}, [
+      h('div',{class:'agetoggle','data-demoonly':'1'}, [
+        h('span',{},'Demo age'),
+        h('div',{class:'seg'}, [26,72].map(a => h('button',{type:'button',
+          class: age === a ? 'on' : '', onclick:()=>rr({age:a})}, a + 'y'))),
+      ]),
+      banner,
+      h('div',{class:'chips'}, rest.map(m =>
+        chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full'))),
+    ])
+  },
+},
+{
+  id:'o9', badge:'09',
+  title:'Move the post-op codes to the addendum',
+  what:'The RFP calls post-op care separately itemised, sometimes days later, and the prototype already has that flow. So PO1 and PO2 leave the at-completion set.',
+  meta:[
+    ['win','A semantic correction rather than cosmetics, and it strengthens the addendum story.'],
+    ['risk','Only two rows on its own. Fold it into another option.'],
+    ['ref','addPostOpAddendum, store/cardActions.ts:270'],
+  ],
+  mods: (st, rr) => {
+    const rest = CODES.filter(m => m.group !== 'POSTOP')
+    return h('div',{style:'display:flex;flex-direction:column;gap:10px'}, [
+      h('div',{class:'chips'}, rest.map(m =>
+        chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full'))),
+      h('div',{class:'caption slate'}, 'Post-op review and pain management are added later, as an addendum to the authorised episode.'),
+    ])
+  },
+},
+{
+  id:'o10', badge:'10',
+  title:'Drop the zero unit option',
+  what:'OB1, BMI under 30 at +0 units, adds nothing to M. No BMI chip already means the same thing.',
+  meta:[
+    ['win','One row, and it removes an option that cannot change any number.'],
+    ['risk','Loses the recorded fact that BMI was asked and was under 30. Better kept as the Under 30 segment inside option 01, where it costs no height.'],
+  ],
+  mods: (st, rr) => {
+    const rest = CODES.filter(m => m.code !== 'OB1')
+    return h('div',{class:'chips'}, rest.map(m =>
+      chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'full')))
+  },
+},
+{
+  id:'rec', badge:'01+05', kind:'rec',
+  title:'Recommended combination',
+  what:'Band controls for the three exclusive bands (01) with shortened chip labels for the remaining flags (05), post-op moved to the addendum (09), the zero unit option folded into the BMI band (10), and the age band derived (08).',
+  meta:[
+    ['win','The only option that keeps every code on screen and still fits the viewport. No sheet, no hidden state, nothing to scroll past.'],
+    ['win','Makes the band rule legible instead of something the user discovers by accident.'],
+    ['win','Every pattern used is one the design files already establish.'],
+    ['risk','Largest single diff of the set, and it needs the very old and very young thresholds decided.'],
+  ],
+  mods: (st, rr) => {
+    const age = st.age === undefined ? 26 : st.age
+    const suggested = age >= 70 ? BY_CODE.get('A1') : age <= 1 ? BY_CODE.get('A2') : undefined
+    const flags = CODES.filter(m =>
+      (!EXCLUSIVE.has(m.group) || STACKS.has(m.code)) && m.group !== 'POSTOP')
+    return h('div',{style:'display:flex;flex-direction:column;gap:12px'}, [
+      h('div',{class:'agetoggle','data-demoonly':'1'}, [
+        h('span',{},'Demo age'),
+        h('div',{class:'seg'}, [26,72].map(a => h('button',{type:'button',
+          class: age === a ? 'on' : '', onclick:()=>rr({age:a})}, a + 'y'))),
+      ]),
+      bandSeg('Pre-assessment', 'PA', st.sel, (s)=>rr({sel:s}), {two:true}),
+      bandSeg('BMI band', 'OB', st.sel, (s)=>rr({sel:s}), {two:true}),
+      suggested === undefined
+        ? h('div',{class:'caption slate'}, 'Age ' + age + 'y. No age-extreme modifier applies.')
+        : h('div',{class:'derived'}, [
+            h('span',{}, 'Age ' + age + 'y suggests ' + suggested.code + ' ' + suggested.label.toLowerCase() + ' +' + suggested.units + '.'),
+            h('button',{class:'act', type:'button', onclick:()=>rr({sel:toggle(st.sel, suggested.code)})},
+              st.sel.has(suggested.code) ? 'Remove it' : 'Apply it'),
+          ]),
+      h('div',{class:'chips'}, flags.map(m =>
+        chip(m, st.sel.has(m.code), () => rr({sel:toggle(st.sel, m.code)}), 'short'))),
+      h('div',{class:'caption'}, 'Post-op care is itemised later, as an addendum.'),
+    ])
+  },
+},
+]
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+const INITIAL = () => ({ sel:new Set(['PA3','OB2']), open:false, sheet:false, q:'', age:26 })
+const state = {}
+const nodes = {}
+
+function renderPhone(opt){
+  const st = state[opt.id]
+  const rr = (patch) => {
+    if(patch){
+      if(patch.sel) st.sel = patch.sel
+      for(const k of ['open','sheet','age']) if(k in patch) st[k] = patch[k]
+      if('q' in patch) st.q = patch.q
+    }
+    const keepFocus = patch && patch.keepFocus
+    renderPhone(opt)
+    if(keepFocus){
+      const input = nodes[opt.id].querySelector('.search')
+      if(input){ input.focus(); input.selectionStart = input.selectionEnd = input.value.length }
+    }
+  }
+
+  const modsNode = opt.mods ? opt.mods(st, rr) : null
+  const unitsCard = h('div',{class:'card', style:'gap:14px', 'data-units':'1'}, [
+    h('div',{class:'cap'},'Units'),
+    stepperRows(st.sel, opt.mRow ? opt.mRow(st, rr) : null),
+    modsNode ? h('div',{'data-block':'1', style:'display:flex;flex-direction:column;gap:8px'},
+      [ modsNode, h('div',{class:'caption'}, DISCLAIMER) ]) : h('div',{class:'caption','data-block':'1'}, DISCLAIMER),
+  ])
+
+  const total = BASE_UNITS + TIME_UNITS + mUnits(st.sel)
+  const screen = h('div',{class:'scroll'}, [
+    h('div',{class:'card', style:'gap:10px'}, [
+      h('div',{class:'cap'},'ASA status'),
+      h('div',{class:'seg'}, ['I','II','III','IV'].map((r,i) =>
+        h('button',{type:'button', class: i === 1 ? 'on' : ''}, r))),
+      h('div',{class:'caption slate'},'ASA II seeds +1 modifier unit.'),
+    ]),
+    unitsCard,
+    h('div',{class:'ink'}, [
+      h('span',{class:'col'}, [ h('span',{class:'k'},'TOTAL UNITS'), h('span',{class:'v'}, String(total)) ]),
+      h('span',{class:'col r'}, [ h('span',{class:'k'},'FEE @ $26.50/UNIT'), h('span',{class:'v'}, money(total * RATE)) ]),
+    ]),
+  ])
+
+  const phone = h('div',{class:'phone'}, [
+    h('div',{class:'status'}, [ h('span',{},'8:00'), h('span',{class:'r'},'AA') ]),
+    h('div',{class:'hdr'}, [
+      h('div',{class:'back'},'‹ List'),
+      h('div',{class:'pname'},'Lachlan Robinson'),
+      h('div',{class:'pnhi'},'NHI YZU6056 · DOB 8 AUG 1999 (26y)'),
+      h('div',{class:'prow'}, [
+        h('span',{class:'op'},'Cataract extraction with IOL'),
+        h('span',{class:'pill-priv'}, [ h('i',{}), h('span',{},'Private') ]),
+      ]),
+      h('div',{class:'fac'},'Christchurch Eye Surgery'),
+    ]),
+    screen,
+    h('div',{class:'foot'}, h('button',{class:'cta', type:'button'},'Mark complete')),
+    opt.sheet ? opt.sheet(st, rr) : null,
+  ])
+
+  const host = nodes[opt.id]
+  host.replaceChildren(phone)
+  measure(opt)
+}
+
+/** Measure the modifier block against the space the scroll area actually has. */
+function measure(opt){
+  const host = nodes[opt.id]
+  const block = host.querySelector('[data-block]')
+  const scroll = host.querySelector('.scroll')
+  if(!block || !scroll) return
+  // Demo-only affordances (the age toggle) are not part of the proposal, so
+  // they must not count against its height. Subtract each one plus its gap.
+  let demo = 0
+  for(const d of block.querySelectorAll('[data-demoonly]')) demo += Math.round(d.getBoundingClientRect().height) + 10
+  const blockH = Math.round(block.getBoundingClientRect().height) - demo
+  const viewH = Math.round(scroll.clientHeight)
+  state[opt.id].h = blockH
+  state[opt.id].viewH = viewH
+  const badge = document.getElementById('badge-' + opt.id)
+  if(badge){
+    badge.textContent = blockH + 'px'
+    badge.className = 'hbadge ' + (blockH <= viewH ? 'fits' : 'over')
+  }
+}
+
+function buildOption(opt){
+  const host = h('div',{})
+  nodes[opt.id] = host
+  const kindCls = opt.kind === 'cur' ? ' cur' : opt.kind === 'rec' ? ' rec' : ''
+  return h('section',{class:'opt'}, [
+    h('div',{class:'opt-head'}, [
+      h('span',{class:'num' + kindCls}, opt.badge),
+      h('h3',{}, opt.title),
+      h('span',{class:'hbadge', id:'badge-' + opt.id}, '...'),
+    ]),
+    h('p',{class:'what'}, opt.what),
+    h('ul',{class:'meta'}, opt.meta.map(([k,t]) => h('li',{class:k}, t))),
+    host,
+  ])
+}
+
+function refreshSummary(){
+  const rows = OPTIONS.map(o => ({ o, h:state[o.id].h || 0, viewH:state[o.id].viewH || 1 }))
+  const max = Math.max(...rows.map(r => r.h), 1)
+  rows.sort((a,b) => a.h - b.h)
+  const body = document.getElementById('summary-body')
+  body.replaceChildren(...rows.map(r => h('tr',{class: r.o.kind === 'cur' ? 'cur' : ''}, [
+    h('td',{class:'name'}, r.o.badge + ' · ' + r.o.title),
+    h('td',{class:'n'}, r.h + 'px'),
+    h('td',{}, h('span',{class:'bar-outer'},
+      h('span',{class:'bar-inner' + (r.h > r.viewH ? ' over' : ''),
+        style:'width:' + Math.max(2, Math.round(100 * r.h / max)) + '%'}))),
+    h('td',{class: r.h <= r.viewH ? 'tick' : 'cross'}, r.h <= r.viewH ? 'Yes' : 'No, ' + (r.h - r.viewH) + 'px over'),
+  ])))
+}
+
+const grid = document.getElementById('grid')
+for(const opt of OPTIONS){
+  state[opt.id] = INITIAL()
+  grid.appendChild(buildOption(opt))
+}
+for(const opt of OPTIONS) renderPhone(opt)
+refreshSummary()
+
+// Re-measure once webfonts land, then keep the table in step with any tap.
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => { for(const o of OPTIONS) measure(o); refreshSummary() })
+}
+grid.addEventListener('click', () => setTimeout(() => {
+  for(const o of OPTIONS) measure(o)
+  refreshSummary()
+}, 0))
+window.addEventListener('resize', () => { for(const o of OPTIONS) measure(o); refreshSummary() })
+
+document.getElementById('reset').addEventListener('click', () => {
+  for(const opt of OPTIONS){ state[opt.id] = INITIAL(); renderPhone(opt) }
+  refreshSummary()
+})
+document.getElementById('remeasure').addEventListener('click', () => {
+  for(const o of OPTIONS) measure(o)
+  refreshSummary()
+})
+</script>
+</body>
+</html>

@@ -151,13 +151,10 @@ Both examples are pinned as unit tests (`domain/nhi.test.ts:6, 26`) and both pas
 
 ## Beyond the RFP
 
-- **Format badge on every patient block.** The Card detail body in all three apps renders "Current
-  format" / "New format" next to the NHI (`shared/format.ts:100-107`, used by
-  `shared/card/CardDetailBody.tsx:189`, `apps/mobile/screens/CardDetailScreen.tsx:41`,
-  `apps/web/screens/CardDetailView.tsx:41`, `apps/admin/screens/AdminCardDetail.tsx:39`). Visible in
-  `m-03-card.png` and `a-04-card.png`. The RFP only asks that both formats validate; showing which format
-  a patient carries makes dual-format compliance legible in the ordinary workflow rather than only in a
-  validator screen.
+- **Dual-format validation without a patient-facing badge.** Both formats remain supported by
+  `domain/nhi.ts` and visible in the integration validator. The earlier "Current format" / "New
+  format" patient-block badge was removed on 27 July 2026 after user review because it was beyond the
+  RFP, operationally redundant, and wrapped poorly in the card detail layout.
 - **Deterministic valid-NHI generator.** `generateNhi` (`domain/nhi.ts:133-154`) produces checksum-valid
   fictional NHIs in either format from a seeded RNG, regenerating on the never-assigned remainder-0 case,
   so all ~150 seeded patients carry real-shaped NHIs (`seed.test.ts:148`) and the seed is reproducible.
