@@ -21,6 +21,7 @@ import {
 import * as lifecycleModule from './lifecycle'
 import { auditForEntity, cardsForList, listForSlot, proceduresForCard } from './selectors'
 import { onAppEvent, type AppEvent } from './events'
+import { addHospitalHoliday } from './mastersActions'
 import type { Actor } from './mutate'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
 
@@ -329,6 +330,35 @@ describe('reassignList', () => {
     expect(trail.at(-1)?.action).toBe('list.reassign')
     expect(state.audit.some((a) => a.action === 'list.absorb')).toBe(true)
     expect(state.audit.some((a) => a.action === 'list.regenerate')).toBe(true)
+  })
+
+  it('clears the old anaesthetist availability conflict on the scripted Rutherford to Sharma move', () => {
+    const api = store()
+    const source = listForSlot(api.getState(), ANAE.rutherford, WED22, 'AM')
+    const target = listForSlot(api.getState(), ANAE.sharma, WED22, 'AM')
+    if (source === undefined || target === undefined) throw new Error('scripted S2 slots missing')
+    if (source.hospitalId === undefined) throw new Error('scripted Rutherford List has no hospital')
+
+    expect(source.conflicts.some((conflict) => conflict.kind === 'availability')).toBe(true)
+    expect(target.statusKey).toBe('free')
+    expect(cardsForList(api.getState(), target.id)).toHaveLength(0)
+
+    // A hospital conflict belongs to the booking and must survive the move.
+    expect(addHospitalHoliday(api, OFFICE, source.hospitalId, WED22, 'Test closure').ok).toBe(true)
+
+    const outcome = reassignList(api, OFFICE, source.id, ANAE.sharma)
+    expect(outcome.ok).toBe(true)
+
+    const state = api.getState()
+    const moved = listForSlot(state, ANAE.sharma, WED22, 'AM')
+    const vacated = listForSlot(state, ANAE.rutherford, WED22, 'AM')
+    expect(moved?.id).toBe(source.id)
+    expect(moved?.conflicts.some((conflict) => conflict.kind === 'availability')).toBe(false)
+    expect(moved?.conflicts.some((conflict) => conflict.kind === 'holiday')).toBe(true)
+    expect(vacated?.statusKey).toBe('unavailable')
+    expect(Object.values(state.schedule.lists).filter(
+      (list) => list.anaesthetistId === ANAE.sharma && list.dateISO === WED22 && list.session === 'AM',
+    )).toHaveLength(1)
   })
 
   it('rejects a non-free target and non-office actors', () => {

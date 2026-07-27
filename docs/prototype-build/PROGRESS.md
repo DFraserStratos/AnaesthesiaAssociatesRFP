@@ -805,9 +805,24 @@ Append one entry per completed session, newest last, using this template:
   edges so this visual relationship cannot silently drift. `npm run build`, `npm run test` (**544**
   Vitest tests across 44 files), `npm run lint` and the focused admin Phase-06 Playwright walkthrough
   are green; the refreshed 1440px day-view and drawer screenshots were visually checked.
-- **List-drawer actions kept on one row.** The free-list footer now places Edit list, Book (phone
-  advice) and History in one unwrapped row. The teal Book action flexes to consume the remaining
-  width while the two secondary buttons keep their natural widths. The S2 Playwright flow now pins
-  the shared vertical position and verifies that Book grows wider than Edit list. `npm run build`,
-  `npm run test` (**544** Vitest tests across 44 files), `npm run lint` and the focused S2
-  phone-advice Playwright flow are green; the free-list drawer was visually checked at 1280px.
+- **List-drawer actions kept on one row.** The free-list footer now places its three actions in one
+  unwrapped row. After user review, the order is Edit list, History, then Book (phone advice),
+  putting the growing teal action on the right. The Book action
+  flexes to consume the remaining width while the two secondary buttons keep their natural widths.
+  The S2 Playwright flow pins the shared vertical position, left-to-right order and Book's larger
+  width. `npm run build`, `npm run test` (**545** Vitest tests across 44 files), `npm run lint` and
+  the focused S2 phone-advice Playwright flow are green; the free-list drawer was visually checked
+  at 1280px.
+- **S2 whole-List reassignment no longer carries the previous anaesthetist's availability warning.**
+  `reassignList` now treats availability conflicts as belonging to the anaesthetist-slot pairing:
+  after proving the destination is a genuinely Free draft session, it removes those conflicts from
+  the moved List while retaining booking-level conflicts such as a hospital holiday. The audit
+  entry records the before/after conflict sets. An exact Rutherford Wed 22 AM to Sharma AM
+  regression test also proves the Christchurch Eye Surgery List and Cards move, Rutherford's
+  vacated slot regenerates as Unavailable, Sharma has exactly one AM List, and the stale
+  availability warning is absent while a hospital conflict survives. No seed or
+  `PERSIST_VERSION` change.
+- Verification (this item): `npm run build` green (existing single-bundle size warning only),
+  `npm run test` green (**545** Vitest tests across 44 files), `npm run lint` green, and the focused
+  S2 Beat 3 Playwright flow green. The rendered flow shows Rutherford's warning before reassignment,
+  no Needs attention or unavailable message on Sharma afterwards, and List reassigned in History.

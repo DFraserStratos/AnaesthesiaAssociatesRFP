@@ -65,21 +65,30 @@ test('admin phase 06 walkthrough', async ({ page }) => {
 test('admin phase 06 list reassignment', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(400)
-
-  // Open a booked block and reassign the list to a free colleague.
-  await page.getByText("St George's").first().click()
+  await page.locator('input[type="date"]').fill('2026-07-22')
   await page.waitForTimeout(300)
+
+  // S2 Beat 3: Rutherford's availability warning must not follow the booking
+  // when his List moves into Sharma's genuinely Free AM slot.
+  const rutherfordRow = page.getByText('Rutherford, James', { exact: true }).locator('..')
+  await rutherfordRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
+  await expect(page.getByText('The anaesthetist is now marked unavailable for this session.')).toBeVisible()
   await page.getByRole('button', { name: 'Reassign list', exact: true }).click()
-  await page.waitForTimeout(200)
   await expect(page.getByText(/whose .* session is free/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
-  await page.getByRole('button', { name: /Free (AM|PM) →/ }).first().click()
-  await page.waitForTimeout(200)
+  await page.getByRole('button', { name: /Sharma, Priya.*Free AM/ }).click()
   await expect(page.getByText(/Proposed reading/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
   await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
-  await page.waitForTimeout(300)
+
+  const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
+  await sharmaRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
+  const drawer = page.getByTestId('admin-list-drawer')
+  await expect(drawer.getByText('Sharma, Priya', { exact: true })).toBeVisible()
+  await expect(drawer.getByText('Needs attention', { exact: true })).toHaveCount(0)
+  await expect(drawer.getByText('The anaesthetist is now marked unavailable for this session.')).toHaveCount(0)
+  await drawer.getByRole('button', { name: 'History', exact: true }).click()
+  await expect(page.getByText('List reassigned', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-09-reassigned.png', fullPage: true })
 })
 
@@ -118,6 +127,8 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   ])
   expect(editBox?.y).toBe(bookBox?.y)
   expect(historyBox?.y).toBe(bookBox?.y)
+  expect(editBox?.x ?? 0).toBeLessThan(historyBox?.x ?? 0)
+  expect(historyBox?.x ?? 0).toBeLessThan(bookBox?.x ?? 0)
   expect(bookBox?.width ?? 0).toBeGreaterThan(editBox?.width ?? 0)
   await page.screenshot({ path: 'visual/shots/a-11-phone-drawer.png', fullPage: true })
   await bookPhoneAdvice.click()

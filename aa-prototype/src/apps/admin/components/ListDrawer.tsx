@@ -96,8 +96,8 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
         <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
           <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
           {(isBooked(list.statusKey) || activeCards.length > 0) && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
-          {isFreeEmpty && <ActionBtn primary onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
           <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
+          {isFreeEmpty && <ActionBtn primary onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
         </div>
       </div>
 

@@ -580,13 +580,20 @@ export function reassignList(
     return refuse('targetNotFree', 'The target session must be Free to receive a reassigned List.')
   }
 
+  // Availability conflicts describe the anaesthetist-slot pairing, not the
+  // booking itself. The target is proven genuinely Free above, so a conflict
+  // belonging to the previous anaesthetist must not travel with the List.
+  // Hospital-holiday conflicts still apply because the date and hospital move
+  // intact with the booking.
+  const retainedConflicts = source.conflicts.filter((conflict) => conflict.kind !== 'availability')
+
   const metas: MutationMeta[] = [
     {
       entityType: 'list',
       entityId: source.id,
       action: 'list.reassign',
-      before: { anaesthetistId: source.anaesthetistId },
-      after: { anaesthetistId: toAnaesthetistId },
+      before: { anaesthetistId: source.anaesthetistId, conflicts: source.conflicts },
+      after: { anaesthetistId: toAnaesthetistId, conflicts: retainedConflicts },
     },
     {
       entityType: 'list',
@@ -608,7 +615,7 @@ export function reassignList(
     })
     const lists = { ...s.schedule.lists }
     delete lists[target.id]
-    lists[source.id] = { ...source, anaesthetistId: toAnaesthetistId }
+    lists[source.id] = { ...source, anaesthetistId: toAnaesthetistId, conflicts: retainedConflicts }
     lists[id] = {
       id,
       dateISO: source.dateISO,
