@@ -70,7 +70,9 @@ view respectively.
 | Master data | `/admin/masters` |
 | Audit | `/admin/audit` |
 
-The demo surfaces are unchanged: `/demo/control`, `/demo/xero`, `/demo/integrations`, `/demo/data`.
+The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`. The
+Xero invoice-pair list is `/demo/xero/invoices`; one pair is
+`/demo/xero/invoices/<accRecId>`.
 
 Two things worth knowing. The seed is deterministic, so the ids in a URL you copied stay valid across
 a **Reset demo data** — you can bookmark a beat and re-open it after every reset. And a URL that has
@@ -209,13 +211,14 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 - **Click:** Admin, Review queue, open the Souter/Forte AM List, **Authorise for billing**, then do the
   same for the Souter/St George's PM List, then **View invoices**. Open a contract-holder invoice:
   point to the unique InvoiceNumber, internal CaseReference, payer, line items, units, GST and total,
-  and the "AA as agent for" wording. Back in the full-width table, use **Patient / card**,
+  and the "AA as agent for" wording. In the sticky information rail, show the separately labelled
+  **ACCREC** and **ACCPAY** references, then use **Email invoice** to show the simulated-send state.
+  Back in the full-width table, use **Patient / card**,
   **Anaesthetist**, **List** and **List date** to trace each invoice to its source. Then contrast the
   two grouping outcomes: the split-billing Card (two procedures, same funder) shares one invoice, its
   additional procedure claiming time units only; the two Alan Prentice rows share the same Card and
   produce two invoices, nib and St George's. The List cells reuse the day-view status colour and link
-  back to that date with the matching List drawer open. Use **Email invoice** to show the
-  simulated-send state.
+  back to that date with the matching List drawer open.
 - **Say:** "The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per
   Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
   receivables and banking service."
@@ -226,12 +229,15 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 
 ### Beat 2: the Xero collection and payable pair
 
-- **Click:** switch to **Demo: Billing Monitor & Xero**. Select the **nib** invoice for Alan Prentice
-  and show its ACCREC
-  collection invoice, its draft ACCPAY to the anaesthetist, and the linked identifiers.
+- **Click:** switch to **Demo: Billing Monitor & Xero → Invoices**. Find the **nib** row for the
+  Alan Prentice split (match the InvoiceNumber from Admin), then select **View pair →**. In the
+  drill-down, point to the ACCREC collection invoice, the draft ACCPAY to Dr Melanie Souter,
+  their Xero InvoiceID / BillID pair, the payer and payee ContactIDs, and the separately-labelled
+  Billing Engine case context.
 - **Say:** "AA receives all money into one account. The ACCREC records what the payer owes AA; the
   ACCPAY records what AA owes the anaesthetist. No NHI ever crosses into Xero."
-- **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice.
+- **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice. Alan appears only in the
+  "Linked Billing Engine case" panel, never as a field on nib's Xero contact.
 
 ### Beat 3: payment, balances and disbursement
 

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Printer, Mail, Upload, Clock } from 'lucide-react'
 import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import { counterpartyName, invoiceLinesFor, markInvoiceEmailed, useAppStore } from '../../../store'
-import type { PatientPaymentCategory } from '../../../domain/types'
+import type { BillingCase, Invoice, PatientPaymentCategory } from '../../../domain/types'
 import { GST_RATE } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
 import { dateTimeMicroCap, formatCurrency, hhmm } from '../../../shared/format'
@@ -23,7 +24,7 @@ interface InvoiceDocumentProps {
  * mono for money, crimson only as the masthead identity.
  *
  * The `.aa-invoice-doc` node is what the print stylesheet isolates — the
- * action bar below it never prints. NHI never appears here (D9).
+ * information rail beside it never prints. NHI never appears here (D9).
  */
 export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const billing = useAppStore((s) => s.billing)
@@ -78,11 +79,22 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const metaLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: neutral.mist }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 760 }}>
+    <div
+      data-testid="invoice-detail-workspace"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '760px 264px',
+        alignItems: 'start',
+        gap: 24,
+        width: '100%',
+        maxWidth: 1048,
+        margin: '0 auto',
+      }}
+    >
       {/* ---- the printable document ---- */}
       <div
         className="aa-invoice-doc"
-        style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
+        style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
       >
         {/* Masthead */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
@@ -205,43 +217,179 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         </div>
       </div>
 
-      {error !== null && (
-        <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-      )}
+      <InvoiceInfoRail
+        invoice={invoice}
+        billingCase={theCase}
+        addressee={addressee}
+        isInsurerDirect={isInsurerDirect}
+        error={error}
+        onEmail={doEmail}
+      />
+    </div>
+  )
+}
 
-      {/* ---- action bar (never prints) ---- */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+function InvoiceInfoRail({
+  invoice,
+  billingCase,
+  addressee,
+  isInsurerDirect,
+  error,
+  onEmail,
+}: {
+  invoice: Invoice
+  billingCase: BillingCase | undefined
+  addressee: string
+  isInsurerDirect: boolean
+  error: string | null
+  onEmail: () => void
+}) {
+  const emailedAtISO = invoice.emailedAtISO
+  const showEmailAction = !isInsurerDirect && emailedAtISO === undefined
+  const handoffFailed = billingCase?.handoffFailure !== undefined
+  const handoffComplete = billingCase?.accRecId !== undefined
+
+  return (
+    <aside
+      data-testid="invoice-info-rail"
+      aria-label="Invoice information and actions"
+      style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}
+    >
+      <RailCard title="Delivery">
         {isInsurerDirect ? (
           <>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '6px 12px' }}>
-              <Upload size={14} aria-hidden /> Present via {addressee} upload portal
-            </span>
-            <DemoBadge label="Simulated portal handoff" />
+            <RailStatus tone="warning" icon={<Upload size={16} aria-hidden />}>
+              Present via {addressee} upload portal
+            </RailStatus>
+            <DemoBadge label="Simulated portal handoff" style={{ alignSelf: 'flex-start' }} />
           </>
-        ) : invoice.emailedAtISO !== undefined ? (
+        ) : emailedAtISO !== undefined ? (
           <>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: 999, padding: '6px 12px' }}>
-              <Mail size={14} aria-hidden /> Emailed {hhmm(invoice.emailedAtISO)}
-            </span>
-            <DemoBadge label="Simulated send" />
+            <RailStatus tone="success" icon={<Mail size={16} aria-hidden />}>
+              Emailed {hhmm(emailedAtISO)}
+            </RailStatus>
+            <DemoBadge label="Simulated send" style={{ alignSelf: 'flex-start' }} />
           </>
-        ) : (
-          <Button variant="primary" onClick={doEmail}>
-            <Mail size={15} aria-hidden style={{ marginRight: 6 }} /> Email invoice
+        ) : null}
+
+        <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+          {showEmailAction && (
+            <Button variant="primary" onClick={onEmail} style={compactEmailButtonStyle}>
+              <Mail size={15} aria-hidden /> Email invoice
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => window.print()}
+            style={showEmailAction ? compactPrintButtonStyle : compactFullButtonStyle}
+          >
+            <Printer size={15} aria-hidden /> Print
           </Button>
+        </div>
+
+        {error !== null && (
+          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '9px 10px', fontSize: 12.5 }}>
+            {error}
+          </div>
         )}
-        <Button variant="secondary" onClick={() => window.print()}>
-          <Printer size={15} aria-hidden style={{ marginRight: 6 }} /> Print
-        </Button>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: theCase?.handoffFailure !== undefined ? semantic.warning.onTint : neutral.mist, marginLeft: 'auto' }}>
-          <Clock size={13} aria-hidden />
-          {theCase?.handoffFailure !== undefined
-            ? 'Xero handoff failed · resolve in the billing monitor'
-            : theCase?.accRecId !== undefined
-              ? `Xero: ACCREC ${invoice.invoiceNumber} · ACCPAY ${invoice.invoiceNumber}-P`
-              : 'Xero handoff pending'}
-        </span>
-      </div>
+      </RailCard>
+
+      <RailCard title="Xero handoff" warning={handoffFailed}>
+        <div
+          data-testid="xero-handoff-status"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            color: handoffFailed ? semantic.warning.onTint : handoffComplete ? neutral.ink : neutral.slate,
+          }}
+        >
+          <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
+          <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
+            {handoffFailed ? 'Xero handoff failed' : handoffComplete ? 'ACCREC and ACCPAY created' : 'Xero handoff pending'}
+          </span>
+        </div>
+
+        {handoffFailed ? (
+          <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
+            The invoice remains valid. Resolve and retry in Billing monitor.
+          </div>
+        ) : handoffComplete ? (
+          <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+            <XeroReference label="ACCREC" value={invoice.invoiceNumber} testId="xero-accrec-reference" />
+            <XeroReference label="ACCPAY" value={`${invoice.invoiceNumber}-P`} testId="xero-accpay-reference" />
+          </dl>
+        ) : null}
+      </RailCard>
+    </aside>
+  )
+}
+
+function RailCard({
+  title,
+  warning = false,
+  children,
+}: {
+  title: string
+  warning?: boolean
+  children: ReactNode
+}) {
+  return (
+    <section
+      style={{
+        ...railCardStyle,
+        ...(warning
+          ? {
+              background: semantic.warning.tint,
+              borderColor: `${semantic.warning.solid}55`,
+            }
+          : {}),
+      }}
+    >
+      <h2 style={{ margin: 0, fontSize: 13, lineHeight: '18px', fontWeight: 700 }}>{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+function RailStatus({
+  tone,
+  icon,
+  children,
+}: {
+  tone: 'success' | 'warning'
+  icon: ReactNode
+  children: ReactNode
+}) {
+  const colours = tone === 'success' ? semantic.success : semantic.warning
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: '9px 10px',
+        borderRadius: radius.ctl,
+        background: colours.tint,
+        color: colours.onTint,
+        fontSize: 12.5,
+        lineHeight: '18px',
+        fontWeight: 600,
+      }}
+    >
+      <span style={{ display: 'inline-flex', marginTop: 1, flex: 'none' }}>{icon}</span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function XeroReference({ label, value, testId }: { label: string; value: string; testId: string }) {
+  return (
+    <div>
+      <dt style={railMetaLabel}>{label}</dt>
+      <dd data-testid={testId} className="mono" style={{ margin: '3px 0 0', fontSize: 12, lineHeight: '17px', color: neutral.ink, overflowWrap: 'anywhere' }}>
+        {value}
+      </dd>
     </div>
   )
 }
@@ -266,6 +414,51 @@ function StateChip({ on, label }: { on: boolean; label: string }) {
       {label}
     </span>
   )
+}
+
+const railCardStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  padding: 16,
+  background: neutral.surface,
+  border: `1px solid ${neutral.line}`,
+  borderRadius: radius.card,
+}
+
+const compactButtonStyle: CSSProperties = {
+  minHeight: 40,
+  height: 40,
+  padding: '0 12px',
+  borderRadius: radius.ctl,
+  fontSize: 13,
+  lineHeight: '16px',
+  whiteSpace: 'nowrap',
+}
+
+const compactEmailButtonStyle: CSSProperties = {
+  ...compactButtonStyle,
+  flex: '1 1 auto',
+  minWidth: 0,
+}
+
+const compactPrintButtonStyle: CSSProperties = {
+  ...compactButtonStyle,
+  flex: '0 0 84px',
+}
+
+const compactFullButtonStyle: CSSProperties = {
+  ...compactButtonStyle,
+  width: '100%',
+}
+
+const railMetaLabel: CSSProperties = {
+  fontSize: 10,
+  lineHeight: '14px',
+  fontWeight: 700,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: neutral.mist,
 }
 
 const docCell = {

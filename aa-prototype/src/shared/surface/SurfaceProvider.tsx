@@ -115,9 +115,9 @@ function MobileCardLayout({ header, history, banners, context, capture, actions,
  *
  *   span 12  history + card-wide banners (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
- *   span 4   commit rail: the Card total with the complete/amend bar inside it,
- *            pinned; then the patient / time / attachments / notes context and
- *            the quiet secondary actions.
+ *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
+ *            pins the Card total with the complete/amend bar inside it; patient
+ *            / time / attachments / notes and the quiet secondary actions follow.
  *
  * The commit block is `sticky`, so the fee ticks in place while the capture
  * column scrolls under it — the one thing a desktop can do that the phone
@@ -145,7 +145,19 @@ function WebCardLayout({ header, history, banners, context, capture, actions, su
           {capture}
         </div>
 
-        <aside style={{ gridColumn: 'span 4', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <aside
+          style={{
+            gridColumn: 'span 4',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            // The capture column opens with its procedure title and billing
+            // context. Offset the rail by that standard two-row lead-in so its
+            // black total panel starts level with the first capture-card pair.
+            paddingTop: 74,
+          }}
+        >
           {commit !== null && (
             <div
               style={{

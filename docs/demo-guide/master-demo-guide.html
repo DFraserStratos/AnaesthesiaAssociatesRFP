@@ -723,8 +723,10 @@
       <tr><td>Master data</td><td><code>/admin/masters</code></td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
     </table></div>
-    <p style="font-size:14px">The demo surfaces are unchanged: <code>/demo/control</code>,
-    <code>/demo/xero</code>, <code>/demo/integrations</code>, <code>/demo/data</code>. Because the seed is
+    <p style="font-size:14px">The demo surfaces are <code>/demo/control</code>,
+    <code>/demo/xero</code>, <code>/demo/integrations</code> and <code>/demo/data</code>. The Xero
+    invoice-pair list is <code>/demo/xero/invoices</code>; one pair is
+    <code>/demo/xero/invoices/&lt;accRecId&gt;</code>. Because the seed is
     deterministic, the ids in a URL you copied stay valid across a Reset demo data, so you can bookmark a
     beat and re-open it after every reset; a URL that has gone stale falls back to its parent screen rather
     than showing a blank page. Sheets and drawers are deliberately not in the URL, so the back button
@@ -800,15 +802,15 @@
     </div>
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
-      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List, then the Souter/St George's PM List &#8594; View invoices. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". Back in the full-width table, use Patient / card, Anaesthetist, List and List date to trace each invoice to its source. Contrast one invoice (split Card, same funder) with the two Alan Prentice rows for one Card (nib and St George's). The List links reuse the day-view status colour and open the matching List on its day. Email invoice.</span></div>
+      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List, then the Souter/St George's PM List &#8594; View invoices. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". In the sticky information rail, show the separately labelled ACCREC and ACCPAY references, then Email invoice to show the simulated-send state. Back in the full-width table, use Patient / card, Anaesthetist, List and List date to trace each invoice to its source. Contrast one invoice (split Card, same funder) with the two Alan Prentice rows for one Card (nib and St George's). The List links reuse the day-view status colour and open the matching List on its day.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
       <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Card, two for the two-funder Card.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; select the nib invoice for Alan Prentice &#8594; show its ACCREC, draft ACCPAY and linked identifiers.</span></div>
+      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; Invoices &#8594; find the nib row for the Alan Prentice split by matching its InvoiceNumber from Admin &#8594; View pair. Show the ACCREC collection invoice, draft ACCPAY to Dr Melanie Souter, Xero InvoiceID / BillID pair, payer and payee ContactIDs, and the separately-labelled Billing Engine case context.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"AA receives all money into one account. The ACCREC records what the payer owes AA; the ACCPAY what AA owes the anaesthetist. No NHI ever crosses to Xero."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>

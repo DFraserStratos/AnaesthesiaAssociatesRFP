@@ -66,15 +66,17 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
     const invoice = billing.invoices[selectedInvoiceId]
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 13, color: neutral.mist }}>
-          <button onClick={() => onSelect(null)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
-          <span style={{ color: neutral.lineStrong }}> / </span>
-          <span className="mono">{invoice?.invoiceNumber}</span>
+      <div data-testid="invoice-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
+          <div style={{ fontSize: 13, color: neutral.mist }}>
+            <button onClick={() => onSelect(null)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
+            <span style={{ color: neutral.lineStrong }}> / </span>
+            <span className="mono">{invoice.invoiceNumber}</span>
+          </div>
+          <button onClick={() => onSelect(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> All invoices
+          </button>
         </div>
-        <button onClick={() => onSelect(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-          <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> All invoices
-        </button>
         <InvoiceDocument invoiceId={selectedInvoiceId} actor={actor} />
       </div>
     )

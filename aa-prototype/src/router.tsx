@@ -118,7 +118,13 @@ export function AppRouter() {
           </Route>
 
           <Route path="demo/control" element={<DemoControlPanel />} />
-          <Route path="demo/xero" element={<DemoXero />} />
+          <Route path="demo/xero">
+            <Route index element={<DemoXero />} />
+            <Route path="invoices">
+              <Route index element={<DemoXero />} />
+              <Route path=":accRecId" element={<DemoXero />} />
+            </Route>
+          </Route>
           <Route path="demo/integrations" element={<DemoIntegrations />} />
           <Route path="demo/data" element={<DemoData />} />
           <Route path="*" element={<RootRedirect />} />

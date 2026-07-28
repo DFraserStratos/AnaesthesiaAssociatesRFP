@@ -61,9 +61,51 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByText('Attn: Accounts')).toBeVisible()
   await expect(page.getByText(/Billed by Anaesthesia Associates as agent for/)).toBeVisible()
   await expect(page.getByText('GST (15%)')).toBeVisible()
-  // Phase 10: authorising now hands the invoice off to Xero, so the document
-  // shows its ACCREC / ACCPAY pair (was "Xero handoff pending · Phase 10").
-  await expect(page.getByText(/Xero: ACCREC AA-2026-/)).toBeVisible()
+
+  // Desktop composition: a centred 760px document + 24px gap + 264px sticky rail.
+  const detailLayout = await page.getByTestId('invoice-detail-workspace').evaluate((workspace) => {
+    const document = workspace.querySelector('.aa-invoice-doc')
+    const rail = workspace.querySelector('[data-testid="invoice-info-rail"]')
+    const screen = workspace.closest('[data-testid="invoice-detail-screen"]')
+    if (!(document instanceof HTMLElement) || !(rail instanceof HTMLElement) || !(screen instanceof HTMLElement)) {
+      throw new Error('Invoice detail layout nodes are missing')
+    }
+    const workspaceBox = workspace.getBoundingClientRect()
+    const documentBox = document.getBoundingClientRect()
+    const railBox = rail.getBoundingClientRect()
+    const screenBox = screen.getBoundingClientRect()
+    return {
+      workspaceWidth: workspaceBox.width,
+      documentWidth: documentBox.width,
+      railWidth: railBox.width,
+      gap: railBox.left - documentBox.right,
+      leftInset: workspaceBox.left - screenBox.left,
+      rightInset: screenBox.right - workspaceBox.right,
+      railPosition: getComputedStyle(rail).position,
+      railTop: getComputedStyle(rail).top,
+    }
+  })
+  expect(detailLayout.workspaceWidth).toBeCloseTo(1048, 0)
+  expect(detailLayout.documentWidth).toBeCloseTo(760, 0)
+  expect(detailLayout.railWidth).toBeCloseTo(264, 0)
+  expect(detailLayout.gap).toBeCloseTo(24, 0)
+  expect(detailLayout.leftInset).toBeCloseTo(detailLayout.rightInset, 0)
+  expect(detailLayout.railPosition).toBe('sticky')
+  expect(detailLayout.railTop).toBe('24px')
+
+  const emailBox = await page.getByRole('button', { name: 'Email invoice' }).boundingBox()
+  const printBox = await page.getByRole('button', { name: 'Print' }).boundingBox()
+  if (emailBox === null || printBox === null) throw new Error('Invoice action buttons are missing')
+  expect(emailBox.height).toBeCloseTo(40, 0)
+  expect(printBox.height).toBeCloseTo(40, 0)
+  expect(emailBox.y).toBeCloseTo(printBox.y, 0)
+  expect(emailBox.width).toBeGreaterThan(printBox.width)
+
+  // Phase 10: authorising now hands the invoice off to Xero. The rail keeps
+  // the two references separately labelled instead of one long footer string.
+  await expect(page.getByTestId('xero-handoff-status')).toHaveText('ACCREC and ACCPAY created')
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveText(/AA-2026-\d{4}/)
+  await expect(page.getByTestId('xero-accpay-reference')).toHaveText(/AA-2026-\d{4}-P/)
   await page.screenshot({ path: 'visual/shots/a8-03-contract-holder-doc.png', fullPage: true })
 
   // Email = mark emailed-at, demo-badged as a simulated send.
@@ -75,8 +117,42 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
 
   // Print isolation: in print media only the document is visible.
   await page.emulateMedia({ media: 'print' })
+  await expect(page.locator('.aa-invoice-doc')).toBeVisible()
+  await expect(page.getByTestId('invoice-info-rail')).toBeHidden()
   await page.screenshot({ path: 'visual/shots/a8-05-print-preview.png', fullPage: true })
   await page.emulateMedia({ media: 'screen' })
+
+  // Handoff is synchronous in the prototype, so pending is an instantaneous
+  // view state. Inject that one view fixture after the real flow to pin the
+  // rail's defensive pending branch without changing application behaviour.
+  await page.evaluate(() => {
+    const raw = localStorage.getItem('aa-demo')
+    if (raw === null) throw new Error('Persisted demo state is missing')
+    const persisted = JSON.parse(raw) as {
+      state: {
+        billing: {
+          cases: Record<string, {
+            invoiceId?: string
+            accRecId?: string
+            accPayId?: string
+            handoffFailure?: unknown
+          }>
+        }
+      }
+    }
+    const invoiceId = window.location.pathname.split('/').at(-1)
+    const billingCase = Object.values(persisted.state.billing.cases).find((candidate) => candidate.invoiceId === invoiceId)
+    if (billingCase === undefined) throw new Error('Current invoice case is missing')
+    delete billingCase.accRecId
+    delete billingCase.accPayId
+    delete billingCase.handoffFailure
+    localStorage.setItem('aa-demo', JSON.stringify(persisted))
+  })
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByTestId('xero-handoff-status')).toHaveText('Xero handoff pending')
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
+  await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
 })
 
 test('M10 view effect: the billed design-day list vanishes from the mobile app', async ({ page }) => {
@@ -131,6 +207,52 @@ test('M10 view effect: the billed design-day list vanishes from the mobile app',
   await page.waitForTimeout(300)
   await expect(page.getByText('Southern Cross')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/a8-09-done-after-billing.png', fullPage: true })
+})
+
+test('invoice rail keeps a failed Xero handoff visible and actionable', async ({ page }) => {
+  // Arm the real one-shot fault, then authorise through the normal office flow.
+  await page.goto('/demo/control')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Arm handoff failure' }).click()
+  await expect(page.getByText('Armed', { exact: true })).toBeVisible()
+
+  await page.goto('/admin/review')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
+  await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
+  await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
+  await expect(page.getByText(/6 invoices raised by the billing run/)).toBeVisible()
+
+  // Resolve the invoice id from the persisted result of that real mechanism,
+  // then open the ordinary routed invoice page.
+  const failedInvoiceId = await page.evaluate(() => {
+    const raw = localStorage.getItem('aa-demo')
+    if (raw === null) throw new Error('Persisted demo state is missing')
+    const persisted = JSON.parse(raw) as {
+      state: {
+        billing: {
+          cases: Record<string, {
+            invoiceId?: string
+            handoffFailure?: unknown
+          }>
+        }
+      }
+    }
+    const failedCase = Object.values(persisted.state.billing.cases).find(
+      (candidate) => candidate.invoiceId !== undefined && candidate.handoffFailure !== undefined,
+    )
+    if (failedCase?.invoiceId === undefined) throw new Error('Expected one failed Xero handoff')
+    return failedCase.invoiceId
+  })
+
+  await page.goto(`/admin/invoices/${failedInvoiceId}`)
+  await page.waitForLoadState('networkidle')
+  const status = page.getByTestId('xero-handoff-status')
+  await expect(status).toHaveText('Xero handoff failed')
+  await expect(page.getByText('The invoice remains valid. Resolve and retry in Billing monitor.')).toBeVisible()
+  await expect(page.getByTestId('xero-accrec-reference')).toHaveCount(0)
+  await expect(page.getByTestId('xero-accpay-reference')).toHaveCount(0)
+  await expect(status.locator('xpath=ancestor::section')).toHaveCSS('background-color', 'rgb(249, 240, 220)')
 })
 
 test('exemplar staging via the guard console: patient layout + nib upload portal', async ({ page }) => {
@@ -189,4 +311,23 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   await expect(page.getByText('Insured reimbursement')).toBeVisible()
   await expect(page.getByText(/claim this invoice from your insurer/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
+
+  // Direct-claim insurer invoices keep the upload handoff honest: status and
+  // demo badge in the rail, Print available, and no invented portal action.
+  await page.getByRole('button', { name: 'All invoices' }).click()
+  const nibRow = page
+    .getByTestId('invoice-list-table-shell')
+    .locator('tbody tr')
+    .filter({ hasText: 'Alan Prentice' })
+    .filter({ hasText: 'nib' })
+    .first()
+  await nibRow.getByRole('button', { name: 'View →' }).click()
+  const insurerRail = page.getByTestId('invoice-info-rail')
+  await expect(insurerRail.getByText('Present via nib upload portal')).toBeVisible()
+  await expect(insurerRail.getByText('Simulated portal handoff')).toBeVisible()
+  await expect(insurerRail.getByRole('button', { name: 'Email invoice' })).toHaveCount(0)
+  const insurerPrintBox = await insurerRail.getByRole('button', { name: 'Print' }).boundingBox()
+  if (insurerPrintBox === null) throw new Error('Insurer Print action is missing')
+  expect(insurerPrintBox.height).toBeCloseTo(40, 0)
+  await page.screenshot({ path: 'visual/shots/a8-10-insurer-doc.png', fullPage: true })
 })

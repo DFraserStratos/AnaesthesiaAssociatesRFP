@@ -161,6 +161,7 @@ test('admin: an invoice document is a URL that survives a refresh', async ({ pag
   await page.waitForLoadState('networkidle')
   expect(page.url()).toBe(invoiceURL)
   await expect(page.locator('.aa-invoice-doc')).toBeVisible()
+  await expect(page.getByTestId('invoice-info-rail')).toBeVisible()
 })
 
 test('admin: a card opened from the day drawer is a URL under its day', async ({ page }) => {

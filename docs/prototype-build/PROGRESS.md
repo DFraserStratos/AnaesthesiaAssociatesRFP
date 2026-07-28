@@ -56,6 +56,8 @@ Record every deviation from a phase doc, every resolved ambiguity, and every kil
 one-line why. Later sessions must not re-litigate entries here.
 
 - **2026-07-21 · Design run adopted as visual starting point** (user decision). Outputs in `docs/design/`; convention 17 added. Entries below capture its rulings.
+- **2026-07-28 · Xero invoice pairs are routed, read-only drill-downs** (user decision). S3 Beat 2 no longer relies on a presenter pointing at an inert table row: `/demo/xero/invoices` lists each ACCREC/ACCPAY pair and `/demo/xero/invoices/:accRecId` shows the simulated collection invoice, payable bill, Xero InvoiceID/BillID and contact identifiers, line/totals and two-state money figures. Patient identity appears only in an explicitly separated "Linked Billing Engine case, not stored on the Xero contact" panel; no NHI enters the derived view. Invoice numbers and `View pair` are real links, Back/refresh work, stale ids fall back to the collection, and incomplete pair/contact data renders a diagnostic instead of blanking. Contacts remain a read-only reference and payment/payables mutations remain in the established control-panel/Admin flows. No domain/store schema or `PERSIST_VERSION` change. The S3 script and master guide now name the exact click path. Verified with `npm run build`, `npm run test` (**547** Vitest tests across 45 files), `npm run lint`, and the new focused Playwright S3 drill-down (including refresh, Back, stale-id recovery and no displayed NHI).
+- **2026-07-28 · Invoice preview centred with a sticky information rail** (user decision). The 760px printable invoice now sits in a centred 1,048px desktop workspace with a 24px gap and a 264px rail. The rail stays 24px from the top, holds local 40px Email/Print controls, keeps insurer presentation as status rather than an invented portal action, and separates the Xero ACCREC and ACCPAY references into labelled rows. Emailed, pending and failed-handoff states remain visible there; failure stays amber and points to Billing monitor. Breadcrumbs align to the same workspace, while browser printing still isolates only the invoice document. No domain/store schema, shared button default or `PERSIST_VERSION` change.
 - **2026-07-28 · Build-phase scaffolding removed from rendered app copy** (user decision). Completed capabilities no longer describe themselves by prototype phase, and non-functional placeholder controls are not shown as real actions. Removed the no-op Request Leave button; rewrote billing-exception, pre-payment and ineffective-contract messages in product terms; renamed the insurer portal badge as a simulated handoff; and removed phase labels from inspector scenario descriptions and historical List notes. Honest simulation boundaries such as "referenced, not implemented" remain where they explain deliberately excluded external integrations. Historical seed-copy changed, so `PERSIST_VERSION` advances 8 → 9.
 - **2026-07-28 · S2 phone-advice lookup fills the complete scripted booking** (user decision). The blank NHI lookup is enabled only for Dr Priya Sharma's Tue 21 PM phone-advice path after St George's and Mr T. Hale are selected. One click returns a unique valid fictional NHI and fills the patient, phone, operation/code, scheduled time, Hospital route, informational insurer and billing reference, with every value still editable. The shared mobile/web manual flow, photo-review flow and every other phone booking retain the original NHI-required patient-only lookup; no seed or `PERSIST_VERSION` change.
 - **2026-07-28 · Demo clock promoted into the global harness** (user decision). The presenter no longer leaves the screen being demonstrated just to advance time: a compact clock icon + live `h:mm` control now sits immediately to the right of the app switcher on every app and demo surface. Its popover carries all six established shortcuts (`+15 min`, `+1 hour`, `Next day`, `Next morning`, `+7 days`, `Procedure day · 28 Jul`), remains open for consecutive jumps, updates live through the existing persisted Zustand clock, and never navigates or reloads the current screen. The original control-panel clock and reset remain as the explanatory/recovery surface. Both clock UIs read one shared shortcut registry, while all arithmetic, canvas rolling and `dayAdvanced` jobs remain in `clockActions.ts`; no seed or `PERSIST_VERSION` change.
@@ -873,3 +875,36 @@ Append one entry per completed session, newest last, using this template:
   focused Phase-08 Playwright checks green and all 13 routing checks green. The browser test pins
   the Private tint/foreground, target day URL, open matching List drawer and Back navigation; the
   refreshed invoice-table screenshot was visually checked.
+- **Invoice row content vertically centred.** The taller status-coloured List link now establishes
+  the row height without leaving invoice number, patient, anaesthetist, dates, counterparty, totals,
+  delivery status and View aligned to its top edge. The override is local to invoice body cells, so
+  the shared admin table chrome and other tables keep their existing alignment.
+- Verification (this item): `npm run build`, `npm run test` (**545** Vitest tests across 44 files)
+  and `npm run lint` are green; all three focused Phase-08 Playwright checks pass, including a
+  computed-style assertion that invoice body cells remain vertically centred.
+- **Invoice detail rebuilt as a centred desktop workspace.** The printable document keeps its
+  established 760px paper width and now sits beside a 264px sticky information rail with a 24px
+  gutter; the resulting 1,048px composition and its breadcrumb are centred in the admin content.
+  Delivery moved from the oversized footer row into a bordered rail card: Email and Print are
+  matching 40px desktop controls on one row, while emailed and direct-insurer states keep their
+  existing simulated-send/upload treatment and Print remains available. A second card separates the
+  Xero ACCREC and ACCPAY references, with explicit created, pending and amber failure treatments.
+  The failure path continues to leave the invoice valid and points to Billing monitor. Print media
+  still isolates `.aa-invoice-doc`; the rail never prints. No billing, Xero, store, route, shared
+  button, seed or `PERSIST_VERSION` change. The S3 Markdown and HTML guides now point presenters at
+  the rail.
+- Verification (this item): `npm run build` green (existing single-bundle size warning only),
+  `npm run test` green (**547** Vitest tests across 45 files), `npm run lint` green, and all **17**
+  focused Phase-08 plus routing Playwright checks green. Browser coverage pins the exact
+  760 / 24 / 264 geometry, centred 1,048px workspace, sticky offset, 40px button alignment, created
+  / pending / failed Xero treatments, insurer-only presentation, direct-route refresh and print
+  isolation. Contract-holder, emailed, patient, insurer and print screenshots were refreshed and
+  visually checked at 1440 × 900.
+- **Anaesthetist web Card total aligned with the first capture cards.** The desktop right rail now
+  clears the procedure title and billing-context lead-in, putting the black Card total panel level
+  with the ASA status and Procedure code cards. The panel remains sticky and the mobile Card layout
+  is unchanged. No domain, store, seed, demo-script or `PERSIST_VERSION` change.
+- Verification (this item): the live browser measured a 0px difference between the Card total and
+  ASA card top edges; the focused desktop Card-detail Playwright suite is green (**3** checks,
+  including the new alignment regression). `npm run build`, `npm run test` (**547** Vitest tests
+  across 45 files) and `npm run lint` are green.
