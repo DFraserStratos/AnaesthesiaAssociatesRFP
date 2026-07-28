@@ -64,7 +64,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
                 fontFamily: 'inherit',
                 fontSize: 13.5,
                 fontWeight: activeItem ? 600 : 500,
-                color: activeItem ? '#FFFFFF' : 'rgba(255,255,255,0.65)',
+                color: activeItem ? '#FFFFFF' : 'rgba(255,255,255,0.9)',
                 background: activeItem ? 'rgba(255,255,255,0.08)' : 'transparent',
                 boxShadow: activeItem ? `inset 3px 0 0 ${brand.base}` : 'none',
                 cursor: 'pointer',
