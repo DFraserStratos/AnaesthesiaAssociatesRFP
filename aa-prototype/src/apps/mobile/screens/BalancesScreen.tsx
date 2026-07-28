@@ -11,6 +11,7 @@ import {
   useToday,
 } from '../../../store'
 import { formatCurrency } from '../../../shared/format'
+import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { MobileHeader } from '../components'
 
 type Section = 'outstanding' | 'gst'
@@ -61,18 +62,19 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
       </div>
 
       {/* Section toggle */}
-      <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-        {(['outstanding', 'gst'] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setSection(s)}
-            style={{ flex: 1, padding: '9px 0', borderRadius: 999, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: section === s ? neutral.ink : neutral.sunken, color: section === s ? neutral.surface : neutral.slate }}
-          >
-            {s === 'outstanding' ? 'Outstanding' : 'GST this month'}
-          </button>
-        ))}
-      </div>
+      <SlidingSegmentedControl
+        value={section}
+        options={[
+          { value: 'outstanding', label: 'Outstanding' },
+          { value: 'gst', label: 'GST this month' },
+        ]}
+        onSelect={setSection}
+        variant="ink"
+        ariaLabel="Balance section"
+        trackStyle={{ marginTop: 16, borderRadius: 999 }}
+        indicatorStyle={{ borderRadius: 999 }}
+        buttonStyle={{ minHeight: 36, borderRadius: 999, padding: '0 10px', fontSize: 13 }}
+      />
 
       {section === 'outstanding' ? (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>

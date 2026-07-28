@@ -179,6 +179,15 @@ body {
   }
 }
 
+@keyframes aa-sheet-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(103%);
+  }
+}
+
 @keyframes aa-card-in {
   from {
     transform: translateX(103%);
@@ -216,6 +225,38 @@ body {
   to {
     opacity: 1;
   }
+}
+
+@keyframes aa-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/*
+ * Mobile product controls: one native-feeling press response for every enabled
+ * button inside the phone. The mobile root owns the data attribute, so the
+ * desktop apps, demo tools and presenter zoom controls remain untouched.
+ *
+ * The longhands are important because several legacy buttons carry an inline
+ * transition shorthand. Keep the first two durations aligned with
+ * motion.controlPress; the remaining properties preserve their existing fades.
+ */
+[data-aa-mobile-product] button:not(:disabled) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transform-origin: center;
+  transition-property: transform, filter, background-color, border-color, color, opacity !important;
+  transition-duration: 90ms, 90ms, 150ms, 150ms, 150ms, 150ms !important;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+[data-aa-mobile-product] button:not(:disabled):active {
+  transform: translateY(1px) scale(0.985);
+  filter: brightness(0.97);
 }
 
 /* Completion overlay's success circle (Phase 04). */
@@ -259,6 +300,14 @@ body {
     animation-delay: 0ms !important;
     transition-duration: 80ms !important;
     scroll-behavior: auto !important;
+  }
+
+  [data-aa-mobile-product] button:not(:disabled):active {
+    transform: none;
+  }
+
+  .aa-sliding-segment-indicator {
+    transition-property: opacity !important;
   }
 }
 

@@ -4,6 +4,7 @@ import type { ModifierCode, Procedure, RvgCode } from '../../domain/types'
 import { MODIFIER_CODES, modifierBandOf, modifierUnits, toggleModifierCode } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
+import { SlidingSegmentedControl } from '../ui/SlidingSegmentedControl'
 import { MODIFIER_BAND_TITLES, MODIFIER_CHIP_LABELS, MODIFIER_SEGMENT_LABELS } from './modifierLabels'
 import { Caption } from './ui'
 
@@ -98,29 +99,65 @@ export function ModifierChips({ procedure, baseCode, actor, disabled, onError }:
 
       {BANDS.map(({ band, codes }) => (
         <Row key={band} web={web} label={MODIFIER_BAND_TITLES[band] ?? band}>
-          <div style={trackStyle(web)}>
-            {codes.map((m) => {
-              const on = selected.has(m.code)
-              const isAbsorbed = absorbs(m.code)
-              const inert = disabled || isAbsorbed
-              return (
-                <button
-                  key={m.code}
-                  type="button"
-                  disabled={inert}
-                  aria-pressed={on}
-                  title={MODIFIER_CHIP_LABELS[m.code] ?? m.description}
-                  onClick={inert ? undefined : () => toggle(m.code)}
-                  style={segmentStyle(web, on, isAbsorbed)}
-                >
-                  <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
-                  <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
-                    +{m.units}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          {web ? (
+            <div style={trackStyle(true)}>
+              {codes.map((m) => {
+                const on = selected.has(m.code)
+                const isAbsorbed = absorbs(m.code)
+                const inert = disabled || isAbsorbed
+                return (
+                  <button
+                    key={m.code}
+                    type="button"
+                    disabled={inert}
+                    aria-pressed={on}
+                    title={MODIFIER_CHIP_LABELS[m.code] ?? m.description}
+                    onClick={inert ? undefined : () => toggle(m.code)}
+                    style={segmentStyle(true, on, isAbsorbed)}
+                  >
+                    <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
+                    <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
+                      +{m.units}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <SlidingSegmentedControl
+              value={codes.find((m) => selected.has(m.code))?.code}
+              options={codes.map((m) => ({
+                value: m.code,
+                disabled: absorbs(m.code),
+                title: MODIFIER_CHIP_LABELS[m.code] ?? m.description,
+                label: (
+                  <>
+                    <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
+                    <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
+                      +{m.units}
+                    </span>
+                  </>
+                ),
+              }))}
+              onSelect={toggle}
+              layout="two-column"
+              disabled={disabled}
+              ariaLabel={MODIFIER_BAND_TITLES[band] ?? band}
+              buttonStyle={(option) => ({
+                height: 44,
+                padding: '0 8px',
+                fontSize: 13,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0,
+                lineHeight: 1.15,
+                whiteSpace: 'nowrap',
+                textDecoration: option.disabled === true ? 'line-through' : 'none',
+              })}
+            />
+          )}
         </Row>
       ))}
 

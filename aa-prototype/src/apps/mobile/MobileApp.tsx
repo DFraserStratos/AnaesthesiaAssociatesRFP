@@ -111,7 +111,10 @@ export function MobileApp() {
       <PhoneFrame>
       {/* Transparent root: the PhoneFrame AtmosphereLayer shows through for
           Availability / Balances / More and the Lists base (Phase 13). */}
-      <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}>
+      <div
+        data-aa-mobile-product
+        style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}
+      >
         <Outlet context={context} />
 
         {showTabBar && (

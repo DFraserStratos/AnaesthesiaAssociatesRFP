@@ -21,6 +21,8 @@ a{color:#0D6E63}a:hover{color:#084A43}
 @keyframes dlTickDraw{0%,15%{stroke-dashoffset:34;opacity:1}32%,78%{stroke-dashoffset:0;opacity:1}90%,100%{stroke-dashoffset:34;opacity:0}}
 @keyframes dlTickPulse{0%,15%{transform:scale(1)}25%{transform:scale(1.07)}36%,100%{transform:scale(1)}}
 @keyframes dlTickFill{0%,14%{background:#EDF1EF}28%,80%{background:#E3F4EB}94%,100%{background:#EDF1EF}}
+@keyframes dlControlPress{0%,12%,32%,100%{transform:translateY(0) scale(1);filter:brightness(1)}18%,26%{transform:translateY(1px) scale(0.985);filter:brightness(0.97)}}
+@keyframes dlSelectionSlide{0%,12%{transform:translateX(0)}24%,62%{transform:translateX(100%)}74%,100%{transform:translateX(0)}}
 </style>
 </helmet>
 <div data-screen-label="Design Language" style="min-height:100vh;background:#F6F8F7;font-family:'Schibsted Grotesk',system-ui,sans-serif;color:#172320;padding:56px 24px 80px">
@@ -28,14 +30,14 @@ a{color:#0D6E63}a:hover{color:#084A43}
 
   <!-- Header -->
   <header style="display:flex;flex-direction:column;gap:14px">
-    <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:0.08em;color:#A91E3E">ANAESTHESIA ASSOCIATES · DESIGN LANGUAGE V1.1 · JUL 2026</div>
+    <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:0.08em;color:#A91E3E">ANAESTHESIA ASSOCIATES · DESIGN LANGUAGE V1.2 · JUL 2026</div>
     <h1 style="margin:0;font-size:40px;line-height:46px;font-weight:700;letter-spacing:-0.02em">Calm clinical confidence</h1>
     <p style="margin:0;max-width:720px;font-size:15px;line-height:23px;color:#58635F;text-wrap:pretty">AA's crimson carries the identity, a deep-teal accent does the work, quiet neutrals and six status colours do the semantic lifting. Chrome stays calm; delight lives in the actions — completing a card, watching the fee tick, submitting a list. Reference for all three apps: mobile, anaesthetist web, admin.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Neutrals + one accent</span>
       <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Labels over icons</span>
       <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Six colours carry meaning</span>
-      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Motion 150–320 ms, never blocking</span>
+      <span style="padding:6px 12px;border:1px solid #E2E7E5;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:600;color:#58635F">Motion 90–420 ms, never blocking</span>
     </div>
   </header>
 
@@ -248,10 +250,34 @@ a{color:#0D6E63}a:hover{color:#084A43}
   <section style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
       <span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#8A9490">05</span>
-      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Motion — four named patterns</h2>
+      <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.01em">Motion — six named patterns</h2>
       <span style="font-size:13px;color:#8A9490">Delight in the actions, not the chrome. Reduced-motion: everything collapses to 80 ms fades.</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;display:flex;align-items:center;justify-content:center">
+          <div style="height:54px;padding:0 24px;border-radius:14px;background:#0D6E63;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 2px 4px rgba(23,35,32,0.06),0 8px 20px rgba(23,35,32,0.09);animation:dlControlPress 3s cubic-bezier(0.2,0.8,0.2,1) infinite;animation-play-state:{{ playState }}">Mark complete</div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/control-press</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">90 ms · 1 px dip · 0.985 scale<br><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px">cubic-bezier(0.2, 0.8, 0.2, 1)</span><br>Enabled controls inside the phone only.</div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:190px;border-radius:10px;background:#EDF1EF;display:flex;align-items:center;justify-content:center">
+          <div style="width:220px;background:#E2E7E5;border-radius:12px;padding:4px;display:grid;grid-template-columns:1fr 1fr;position:relative">
+            <div style="position:absolute;left:4px;top:4px;width:106px;height:44px;border-radius:9px;background:#0D6E63;box-shadow:0 1px 3px rgba(23,35,32,0.2);animation:dlSelectionSlide 3s cubic-bezier(0.2,0.8,0.2,1) infinite;animation-play-state:{{ playState }}"></div>
+            <div style="height:44px;position:relative;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-weight:600">Everyone</div>
+            <div style="height:44px;position:relative;display:flex;align-items:center;justify-content:center;color:#58635F;font-weight:600">Free only</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#0D6E63">motion/selection-slide</div>
+          <div style="margin-top:6px;font-size:12px;line-height:18px;color:#58635F">180 ms<br><span style="font-family:'Spline Sans Mono',ui-monospace,monospace;font-size:11px">cubic-bezier(0.2, 0.8, 0.2, 1)</span><br>One highlight travels between contiguous segments.</div>
+        </div>
+      </div>
 
       <div style="background:#FFFFFF;border:1px solid #E2E7E5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
         <div style="height:190px;border-radius:10px;background:#EDF1EF;position:relative;overflow:hidden">

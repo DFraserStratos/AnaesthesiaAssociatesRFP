@@ -21,6 +21,21 @@ export const easing = {
 } as const
 
 export const motion = {
+  /**
+   * Enabled product controls compress very slightly while held. This is scoped
+   * to the phone UI; desktop and presenter controls do not inherit it.
+   */
+  controlPress: {
+    duration: 90,
+    easing: easing.card,
+    scale: 0.985,
+    translateY: 1,
+  },
+  /** A segmented control's single selection highlight travels to its new cell. */
+  selectionSlide: {
+    duration: 180,
+    easing: easing.card,
+  },
   /** Bottom sheets, pickers. In 320 ms · out 260 ms; scrim fades 240 ms. */
   sheetIn: {
     in: 320,

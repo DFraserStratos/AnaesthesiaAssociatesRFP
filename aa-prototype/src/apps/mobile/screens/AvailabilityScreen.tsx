@@ -6,6 +6,7 @@ import type { List, Session } from '../../../domain/types'
 import { setAvailability, useAppStore, useToday, type Actor } from '../../../store'
 import { MobileHeader } from '../components'
 import { Avatar } from '../../../shared'
+import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { RequestCoverSheet } from '../../../shared/flows'
 import { initialsOf } from '../../../shared/format'
 
@@ -154,20 +155,17 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
 
       {/* Segmented */}
       <div style={{ padding: '12px 20px 6px', flex: 'none' }}>
-        <div style={{ display: 'flex', background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4 }}>
-          {(['everyone', 'free'] as const).map((m) => {
-            const active = m === mode
-            return (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                style={{ flex: 1, height: 40, borderRadius: 9, border: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: active ? neutral.surface : 'transparent', color: active ? accent.base : neutral.slate, boxShadow: active ? '0 1px 3px rgba(23,35,32,0.15)' : 'none' }}
-              >
-                {m === 'everyone' ? 'Everyone' : 'Free only'}
-              </button>
-            )
-          })}
-        </div>
+        <SlidingSegmentedControl
+          value={mode}
+          options={[
+            { value: 'everyone', label: 'Everyone' },
+            { value: 'free', label: 'Free only' },
+          ]}
+          onSelect={setMode}
+          variant="surface"
+          ariaLabel="Availability view"
+          buttonStyle={{ height: 40 }}
+        />
       </div>
 
       {/* Summary */}
