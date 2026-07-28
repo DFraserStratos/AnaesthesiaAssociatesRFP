@@ -4,6 +4,7 @@ import { useAppStore } from '../store'
 import { APP_CONFIG, appIdForPath, type AppId } from './appConfig'
 import { AppSwitcher } from './AppSwitcher'
 import { DemoClockMenu } from './DemoClockMenu'
+import { DemoResetButton } from './DemoResetButton'
 import { CardCalculationControl } from './CardCalculationControl'
 import { neutral, brand } from '../theme/tokens'
 
@@ -100,6 +101,7 @@ export function AppShell() {
           <CardCalculationControl />
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
           <DemoClockMenu />
+          <DemoResetButton />
         </div>
       </header>
 

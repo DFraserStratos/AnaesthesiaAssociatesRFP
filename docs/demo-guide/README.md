@@ -109,7 +109,9 @@ The global top bar also carries an **Off | Units | Fee** control for the anaesth
 calculation. **Fee** is the default and keeps the full interactive total, **Units** keeps only the
 running unit count, and **Off** leaves only the completion action pinned. The choice applies to the
 Mobile and Anaesthetist Web Cards, persists across app switches and reloads, and is deliberately
-preserved by Demo reset. Admin Card details always keep the full billing view.
+preserved by Demo reset. Admin Card details always keep the full billing view. The top bar's
+**Reset → Confirm reset** control restores the pristine data and clock from any app while preserving
+the current app and Card calculation display.
 
 ## Best demo shape
 

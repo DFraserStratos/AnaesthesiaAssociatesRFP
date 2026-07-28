@@ -353,7 +353,7 @@
       <p class="muted">Reading is a third of it. Run scenario S1 in the app and tick these off. Start it
       with <code>npm run dev</code>, then:</p>
       <div id="drive">
-        <div class="task"><input type="checkbox" id="t0"><label for="t0">App switcher &#8594; <strong>Demo: Control Panel</strong> &#8594; Reset demo data &#8594; Confirm</label></div>
+        <div class="task"><input type="checkbox" id="t0"><label for="t0">Shared top bar &#8594; <strong>Reset</strong> &#8594; Confirm reset &#8594; app switcher &#8594; <strong>Demo: Control Panel</strong></label></div>
         <div class="task"><input type="checkbox" id="t1"><label for="t1">Scenario jumps &#8594; <strong>S1</strong> &#8594; Jump &#8594; Confirm jump</label></div>
         <div class="task"><input type="checkbox" id="t2"><label for="t2">Open the live clock beside the app switcher &#8594; <strong>Procedure day · 28 Jul</strong> &#8594; <strong>+1 hour</strong></label></div>
         <div class="task"><input type="checkbox" id="t3"><label for="t3">Go to Mobile app &#8594; set the Card calculation to <strong>Fee</strong> &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
@@ -676,7 +676,7 @@
     <ol class="tight">
       <li>Open the prototype wide enough for the web and admin layouts.</li>
       <li>App switcher &#8594; <strong>Demo: Control Panel</strong>.</li>
-      <li>Clock &amp; reset &#8594; <strong>Reset demo data</strong> &#8594; <strong>Confirm reset</strong>.</li>
+      <li>Shared top bar &#8594; <strong>Reset</strong> &#8594; <strong>Confirm reset</strong>.</li>
       <li>Confirm the clock reads Tuesday 21 July 2026, 8:00.</li>
       <li>Keep this guide open in a second tab, not the Data Inspector.</li>
     </ol>
@@ -895,9 +895,9 @@
 
   <div class="callout"><strong>Recovery from demo accidents.</strong> Every scenario jump resets first, so
   the fastest recovery is to re-run the scenario (Scenario jumps &#8594; the same Jump &#8594; Confirm jump), or
-  use Clock &amp; reset &#8594; Reset demo data. The Integration simulator also exposes the same whole-demo
-  reset beside Start live feed. Reset returns the clock to Tue 21 Jul 2026, 8:00 and restarts identifiers,
-  so invoice numbers begin at the same point every time. If Finish now was stamped too early,
+  use Reset &#8594; Confirm reset in the shared top bar from any app. The control panel and Integration
+  simulator also expose the same whole-demo reset. Reset returns the clock to Tue 21 Jul 2026, 8:00 and
+  restarts identifiers, so invoice numbers begin at the same point every time. If Finish now was stamped too early,
   reset and advance the clock before reopening the Card. A stray refresh is no longer a problem: it returns
   you to the same screen, the back button retraces your steps, and you can paste a beat's address from
   Direct URLs.</div>
@@ -916,6 +916,8 @@
       calculation. Fee shows the full interactive total, Units hides money, and Off leaves only the
       completion action. The completion animation follows the same mode. The choice survives app
       switches, reloads and Demo reset; Admin Cards keep the full billing view.</li>
+    <li><strong>Reset &#8594; Confirm reset</strong> in the shared top bar restores the pristine data and
+      clock from any app while keeping the current app and Card calculation display.</li>
     <li>Time: 1 unit per 15 min for the first two hours, then 1 unit per 10 min.</li>
     <li>Each anaesthetist has an independent value per unit.</li>
     <li>The anaesthetist selects the RVG code; the system does not infer it. Some codes are ranges.</li>

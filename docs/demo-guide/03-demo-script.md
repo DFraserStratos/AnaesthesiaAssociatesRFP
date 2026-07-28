@@ -404,9 +404,9 @@ payables run records disbursement.
 
 - Every scenario jump resets first, so the fastest recovery is to re-run the scenario you are on: control
   panel, Scenario jumps, the same **Jump → Confirm jump**.
-- Or use **Clock & reset → Reset demo data → Confirm reset** to return to the pristine seed. Reset
-  returns the clock to Tuesday 21 July 2026, 8:00 and restarts deterministic identifiers, so invoice
-  numbers begin at the same point every time.
+- Or use **Reset → Confirm reset** in the shared top bar from any app. The same control remains under
+  **Clock & reset** in the control panel. Reset returns the clock to Tuesday 21 July 2026, 8:00 and
+  restarts deterministic identifiers, so invoice numbers begin at the same point every time.
 - The Integration simulator also has **Reset demo data → Confirm reset** beside Start live feed. It
   performs the same whole-demo reset without making you return to the control panel.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Card.
