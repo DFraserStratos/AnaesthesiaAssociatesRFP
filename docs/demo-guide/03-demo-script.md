@@ -131,7 +131,9 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 - **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
   modifier and time nudge ticks the units and the dollar figure while your thumb is still on the
   control. Scroll down once and the masthead folds to a nav row to make the room for it. On a Card with
-  more than one procedure the dock also carries a chip per procedure, so its height never grows.
+  more than one procedure the dock also carries a chip per procedure, so its height never grows. If
+  Mark complete finds missing data, the Card moves directly to the first incomplete control and
+  focuses it.
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
 interval); the RFP defines the tiers but not the rounding.

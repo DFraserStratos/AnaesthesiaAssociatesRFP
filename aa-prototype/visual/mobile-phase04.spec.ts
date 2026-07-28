@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 /** Phase 04 BTM capture walkthrough screenshots (working artifacts, not assertions). */
 
@@ -87,6 +87,17 @@ test('capture: blockers sheet names the offenders', async ({ page }) => {
   await page.getByRole('button', { name: 'Mark list completed', exact: false }).click()
   await page.waitForTimeout(500)
   await page.screenshot({ path: 'visual/shots/m4-09-blockers-sheet.png', fullPage: true })
+})
+
+test('capture: refused completion focuses the first missing field', async ({ page }) => {
+  await openEllison(page)
+
+  await page.getByRole('button', { name: 'Mark complete' }).click()
+
+  const finish = page.getByRole('button', { name: 'Finish now' })
+  await expect(finish).toBeFocused()
+  await expect(finish).toBeInViewport()
+  await expect(page.getByText('Record the handover time.')).toBeVisible()
 })
 
 test('capture: copied card renders time-only', async ({ page }) => {

@@ -19,14 +19,22 @@ export function CaptureSection({
   children,
   footer,
   gap = 12,
+  validationTarget,
 }: {
   label: string
   children: ReactNode
   footer?: ReactNode
   gap?: number
+  validationTarget?: {
+    procedureId: string
+    fields: readonly string[]
+  }
 }) {
   return (
     <div
+      tabIndex={validationTarget === undefined ? undefined : -1}
+      data-validation-procedure-id={validationTarget?.procedureId}
+      data-validation-fields={validationTarget?.fields.join(' ')}
       style={{
         background: neutral.surface,
         border: `1px solid ${neutral.line}`,

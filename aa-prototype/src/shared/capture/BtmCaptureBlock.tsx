@@ -139,6 +139,8 @@ export function BtmCaptureBlock({
           <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 14, flex: 'none' }}>
             <button
               type="button"
+              data-validation-procedure-id={procedure.id}
+              data-validation-fields={CONTEXT_FIELDS.join(' ')}
               onClick={onEdit}
               onMouseEnter={() => setSheetHint(true)}
               onMouseLeave={() => setSheetHint(false)}

@@ -76,7 +76,13 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
   const minutes = start !== undefined && finish !== undefined ? minutesBetweenIso(start, finish) : null
 
   return (
-    <CaptureSection label="Times">
+    <CaptureSection
+      label="Times"
+      validationTarget={{
+        procedureId: procedure.id,
+        fields: ['anaestheticStartISO', 'handoverISO'],
+      }}
+    >
       <Pair align="start">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {/* Start column */}
@@ -94,7 +100,12 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
                 {stamped.start && <Caption>Stamped from the demo clock</Caption>}
               </>
             ) : canCapture ? (
-              <StampButton label="Start now" onClick={stampStart} />
+              <StampButton
+                label="Start now"
+                procedureId={procedure.id}
+                field="anaestheticStartISO"
+                onClick={stampStart}
+              />
             ) : (
               <>
                 <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
@@ -119,7 +130,12 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
                   {stamped.finish && <Caption>Stamped from the demo clock</Caption>}
                 </>
               ) : canCapture ? (
-                <StampButton label="Finish now" onClick={stampFinish} />
+                <StampButton
+                  label="Finish now"
+                  procedureId={procedure.id}
+                  field="handoverISO"
+                  onClick={stampFinish}
+                />
               ) : (
                 <>
                   <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
@@ -152,10 +168,22 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
 }
 
 /** The full-height teal stamp button (mockup's "Finish now"). */
-function StampButton({ label, onClick }: { label: string; onClick: () => void }) {
+function StampButton({
+  label,
+  procedureId,
+  field,
+  onClick,
+}: {
+  label: string
+  procedureId: string
+  field: 'anaestheticStartISO' | 'handoverISO'
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
+      data-validation-procedure-id={procedureId}
+      data-validation-fields={field}
       onClick={onClick}
       style={{
         border: 'none',

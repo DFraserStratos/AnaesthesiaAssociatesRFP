@@ -80,7 +80,11 @@ export function OverrideCard({ procedure, actor, canCapture, failures, onError }
 
   if (officePercent) {
     return (
-      <CaptureSection label="Adjustment and charge" gap={10}>
+      <CaptureSection
+        label="Adjustment and charge"
+        gap={10}
+        validationTarget={{ procedureId: procedure.id, fields: ['priceOverride'] }}
+      >
         <Caption color={neutral.slate}>
           A percentage adjustment set by the office applies ({override.percent > 0 ? '+' : ''}
           {override.percent}%): {override.reason}
@@ -92,7 +96,11 @@ export function OverrideCard({ procedure, actor, canCapture, failures, onError }
 
   if (!canCapture) {
     return (
-      <CaptureSection label="Adjustment and charge" gap={10}>
+      <CaptureSection
+        label="Adjustment and charge"
+        gap={10}
+        validationTarget={{ procedureId: procedure.id, fields: ['priceOverride'] }}
+      >
         {override === undefined ? (
           <Caption>No price override.</Caption>
         ) : (
@@ -109,6 +117,7 @@ export function OverrideCard({ procedure, actor, canCapture, failures, onError }
     <CaptureSection
       label="Adjustment and charge"
       gap={12}
+      validationTarget={{ procedureId: procedure.id, fields: ['priceOverride'] }}
       footer={
         <>
           <Button variant="secondary" block onClick={save} disabled={!amountValid || !reasonValid || !dirty}>

@@ -38,7 +38,7 @@ const EXPAND_AT = 6
  * is MEASURED. A constant was safe while the dock was only ever a 56px button;
  * it would now either strand content under the dock or leave a gap below it.
  */
-function MobileCardLayout({ header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
+function MobileCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
   const dockRef = useRef<HTMLDivElement | null>(null)
   const [dockHeight, setDockHeight] = useState(0)
@@ -69,6 +69,7 @@ function MobileCardLayout({ header, history, banners, context, capture, actions,
     <>
       {header !== null && header(collapsed, null)}
       <div
+        ref={contentRef}
         onScroll={onScroll}
         style={{
           flex: 1,
@@ -126,7 +127,7 @@ function MobileCardLayout({ header, history, banners, context, capture, actions,
  * than through it. The grid deliberately does NOT set `align-items: start`: the
  * rail must stretch to the row height or the sticky block has nowhere to travel.
  */
-function WebCardLayout({ header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
+function WebCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
 
   return (
@@ -135,7 +136,7 @@ function WebCardLayout({ header, history, banners, context, capture, actions, su
           Admin owns its header outside this seam and therefore keeps the
           standalone History row below. */}
       {header !== null && header(false, history)}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
+      <div ref={contentRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
         {(header === null || banners !== null) && (
           <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {header === null && history}

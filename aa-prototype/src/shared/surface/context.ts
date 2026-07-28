@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, type ReactNode, type RefObject } from 'react'
 
 /**
  * SurfaceContext — the seam that lets ONE shared implementation of every
@@ -74,6 +74,12 @@ export interface CardTotalProps {
  * pieces ARE.
  */
 export interface CardLayoutSlots {
+  /**
+   * The rendered content region. Card validation uses this scope to find the
+   * first incomplete control without reaching into another mounted Card in the
+   * mobile slide stack.
+   */
+  contentRef: RefObject<HTMLDivElement>
   /**
    * The platform masthead, as a function of whether the scroll region has moved
    * off the top. Mobile hands one in so it can fold to a nav row as you work

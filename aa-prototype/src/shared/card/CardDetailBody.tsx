@@ -153,6 +153,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const [overlay, setOverlay] = useState(false)
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setNotes(card?.notes ?? '')
@@ -379,6 +380,36 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
       // validation on (it live-clears as fields are fixed).
       setShowValidation(true)
       setCompleteError(outcome.message)
+      const firstFailure = failures[0]
+      if (firstFailure !== undefined) {
+        window.requestAnimationFrame(() => {
+          const root = contentRef.current
+          if (root === null) return
+          const candidates = Array.from(
+            root.querySelectorAll<HTMLElement>('[data-validation-fields]'),
+          ).filter((candidate) => {
+            const fields = candidate.dataset.validationFields?.split(' ') ?? []
+            return (
+              candidate.dataset.validationProcedureId === firstFailure.procedureId &&
+              fields.includes(firstFailure.field)
+            )
+          })
+          const target =
+            candidates.find(
+              (candidate) =>
+                candidate.matches('button, input, select, textarea') &&
+                !candidate.matches(':disabled'),
+            ) ?? candidates[0]
+          if (target === undefined) return
+          target.focus({ preventScroll: true })
+          target.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              ? 'auto'
+              : 'smooth',
+            block: 'center',
+          })
+        })
+      }
       return
     }
     setCompleteError(null)
@@ -680,6 +711,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   return (
     <>
       <CardLayout
+        contentRef={contentRef}
         header={header ?? null}
         history={history}
         banners={banners}

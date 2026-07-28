@@ -67,9 +67,16 @@ export function ProcedureCodeCard({
     ) : null
 
   return (
-    <CaptureSection label="Procedure code" gap={10} footer={footer}>
+    <CaptureSection
+      label="Procedure code"
+      gap={10}
+      footer={footer}
+      validationTarget={{ procedureId: procedure.id, fields: ['rvgBaseCode', 'baseUnitsSelected'] }}
+    >
       <button
         type="button"
+        data-validation-procedure-id={procedure.id}
+        data-validation-fields="rvgBaseCode baseUnitsSelected"
         onClick={canCapture ? () => setPickerOpen(true) : undefined}
         disabled={!canCapture}
         style={{

@@ -147,6 +147,11 @@ body {
   box-shadow: var(--shadow-calendar-focus);
 }
 
+[data-validation-fields]:focus {
+  outline: 3px solid var(--color-error);
+  outline-offset: 3px;
+}
+
 /* ── Motion keyframes (named to match motion.ts) ─────────── */
 @keyframes aa-sheet-in {
   from {

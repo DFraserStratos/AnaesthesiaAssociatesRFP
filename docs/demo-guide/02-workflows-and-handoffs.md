@@ -252,7 +252,9 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    "Also applies", so the shape of the control tells you the rule before you touch it.
 9. The fee updates using Dr Souter's own dollar value per unit.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
-11. She reviews validation messages and marks the Card complete.
+11. She selects Mark complete. If anything required is missing, the Card scrolls to and focuses the
+    first incomplete control while showing its inline validation message. She resolves each item and
+    marks the Card complete.
 
 ### Multiple Procedures
 

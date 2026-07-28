@@ -52,6 +52,8 @@ export function BillingLinesCard({
         {canCapture && (
           <button
             type="button"
+            data-validation-procedure-id={procedure.id}
+            data-validation-fields="billingLines"
             onClick={() => setSheetOpen(true)}
             style={{
               display: 'inline-flex',
@@ -77,7 +79,12 @@ export function BillingLinesCard({
     ) : null
 
   return (
-    <CaptureSection label="Billing lines" gap={10} footer={footer}>
+    <CaptureSection
+      label="Billing lines"
+      gap={10}
+      footer={footer}
+      validationTarget={{ procedureId: procedure.id, fields: ['billingLines'] }}
+    >
       {nonRvgLines.length === 0 && <Caption>No extra billing lines. The RVG fee bills on its own.</Caption>}
 
       {nonRvgLines.map((line) => {
