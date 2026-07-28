@@ -120,7 +120,8 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 ### Beat 3: capture BTM on mobile and submit
 
 - **Click:** switch to the **Anaesthetist Mobile App**, open the Tue 28 Jul St George's List, then Sarah
-  Mitchell. Under Procedure code choose **20950 — Appendicectomy, laparoscopic**, then **Start now**.
+  Mitchell. In the global **Off | Units | Fee** control select **Fee**. Under Procedure code choose
+  **20950 — Appendicectomy, laparoscopic**, then **Start now**.
   Without leaving Sarah, open the live clock beside the app switcher and select **+1 hour**. Close the
   popup, then select **Finish now → Mark complete → Mark list completed → Submit to office**.
 - **Say:** "The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
@@ -129,11 +130,12 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
 - **Expected:** Sarah changes the List from **3 of 4 complete** to **4 of 4 complete**; the fee updates,
   and the List moves to `SUBMITTED` and into the office Review queue.
 - **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
-  modifier and time nudge ticks the units and the dollar figure while your thumb is still on the
-  control. Scroll down once and the masthead folds to a nav row to make the room for it. On a Card with
-  more than one procedure the dock also carries a chip per procedure, so its height never grows. If
-  Mark complete finds missing data, the Card moves directly to the first incomplete control and
-  focuses it.
+  modifier and time nudge ticks while your thumb is still on the control. The top-bar choice lets the
+  audience compare **Fee** (units and dollars), **Units** (units only) and **Off** (Mark complete
+  only); the Card-complete animation follows the same choice. Scroll down once and the masthead folds
+  to a nav row to make room. On a multi-procedure Card the Fee dock carries a chip per procedure, so
+  its height never grows. If Mark complete finds missing data, the Card moves directly to the first
+  incomplete control and focuses it. Demo reset preserves the chosen display.
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
 interval); the RFP defines the tiers but not the rounding.

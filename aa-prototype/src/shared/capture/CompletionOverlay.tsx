@@ -5,16 +5,26 @@ interface CompletionOverlayProps {
   /** CARD totals (all procedures summed), not a single procedure's. */
   units: number
   fee: number
+  mode: 'off' | 'units' | 'fee'
 }
 
 /**
  * The completion moment (mockup screen 3): white blur flood, the success
- * circle pops (`aa-circle-pop`), the tick draws (dasharray 34), the CARD's
- * units and fee confirm in mono. The screen owns the ~1050 ms auto-dismiss.
+ * circle pops (`aa-circle-pop`) and the tick draws (dasharray 34). Its
+ * calculation line follows the global anaesthetist display: none, units, or
+ * units plus fee. The screen owns the ~1050 ms auto-dismiss.
  */
-export function CompletionOverlay({ units, fee }: CompletionOverlayProps) {
+export function CompletionOverlay({ units, fee, mode }: CompletionOverlayProps) {
+  const calculation =
+    mode === 'off'
+      ? null
+      : mode === 'units'
+        ? `${units} ${units === 1 ? 'unit' : 'units'}`
+        : `${units} ${units === 1 ? 'unit' : 'units'} · $${fee.toFixed(2)}`
+
   return (
     <div
+      data-testid="completion-overlay"
       style={{
         position: 'absolute',
         inset: 0,
@@ -58,9 +68,11 @@ export function CompletionOverlay({ units, fee }: CompletionOverlayProps) {
         </svg>
       </div>
       <div style={{ fontSize: 17, fontWeight: 700, color: semantic.success.onTint }}>Card complete</div>
-      <div className="mono" style={{ fontSize: 14, color: neutral.slate }}>
-        {units} {units === 1 ? 'unit' : 'units'} · ${fee.toFixed(2)}
-      </div>
+      {calculation !== null ? (
+        <div className="mono" style={{ fontSize: 14, color: neutral.slate }}>
+          {calculation}
+        </div>
+      ) : null}
     </div>
   )
 }

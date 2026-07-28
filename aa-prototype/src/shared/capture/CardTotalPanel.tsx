@@ -8,11 +8,11 @@ import { useTickingValue } from './useTickingValue'
  * `WebCardLayout` pins it above a separate, matching-width completion control,
  * mirroring the phone dock's visual separation.
  *
- * This is the ONLY place money appears on the desktop, so it carries the applied
- * rate (or FIXED CONTRACT PRICE on a Type 3 match), the line breakdown, and the
- * override note. A per-procedure panel as well would simply print the same
- * dollar figure twice on the common one-procedure Card (user finding,
- * 2026-07-27). `CardTotalStrip` is the phone's compact shape of the same total.
+ * In Fee mode this is the only money summary on the desktop, so it carries the
+ * applied rate, line breakdown and override note. Units mode reduces the same
+ * ink object to one compact ticking count. A per-procedure panel here would
+ * duplicate the common one-procedure total. `CardTotalStrip` is the phone's
+ * compact shape of the same display.
  *
  * The rail has room to stack a row per line, so it uses `lines` whichever kind
  * they are and ignores `linesArePerProcedure` — the label carries the meaning
@@ -22,22 +22,25 @@ import { useTickingValue } from './useTickingValue'
  * one movement on either surface. Figures come from the Phase 01 calculator via
  * `cardFee` / `procedureFee` — this only formats.
  */
-export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: CardTotalProps) {
+export function CardTotalPanel({ displayMode, units, fee, lines, rateLabel, overrideNote, action }: CardTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
+  const showFee = displayMode === 'fee'
 
   return (
     <div
+      data-testid="card-calculation"
+      data-calculation-mode={displayMode}
       style={{
         background: neutral.ink,
         borderRadius: radius.card,
-        padding: 16,
+        padding: showFee ? 16 : '10px 16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: showFee ? 12 : 0,
       }}
     >
-      {lines.length > 0 && (
+      {showFee && lines.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {lines.map((line, i) => (
             <div
@@ -65,10 +68,18 @@ export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, act
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: showFee ? 'flex-end' : 'center', justifyContent: 'space-between', gap: 12 }}>
+        <span
+          style={{
+            display: 'flex',
+            flexDirection: showFee ? 'column' : 'row',
+            alignItems: showFee ? 'stretch' : 'baseline',
+            gap: showFee ? 4 : 12,
+            minWidth: 0,
+          }}
+        >
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.55)' }}>
-            CARD TOTAL
+            {showFee ? 'CARD TOTAL' : 'CARD UNITS'}
           </span>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
@@ -78,39 +89,41 @@ export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, act
           </span>
         </span>
 
-        <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', minWidth: 0 }}>
-          {rateLabel !== null && (
+        {showFee ? (
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', minWidth: 0 }}>
+            {rateLabel !== null && (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.06em',
+                  color: 'rgba(255,255,255,0.55)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {rateLabel}
+              </span>
+            )}
             <span
               style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                color: 'rgba(255,255,255,0.55)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                borderRadius: 8,
+                padding: '2px 8px',
+                marginRight: -8,
+                transition: `background ${motion.valueTick.tintDecay}ms ${motion.valueTick.easing}`,
+                background: f.flashing ? 'rgba(31,164,99,0.45)' : 'rgba(31,164,99,0)',
               }}
             >
-              {rateLabel}
-            </span>
-          )}
-          <span
-            style={{
-              borderRadius: 8,
-              padding: '2px 8px',
-              marginRight: -8,
-              transition: `background ${motion.valueTick.tintDecay}ms ${motion.valueTick.easing}`,
-              background: f.flashing ? 'rgba(31,164,99,0.45)' : 'rgba(31,164,99,0)',
-            }}
-          >
-            <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
-              ${f.display.toFixed(2)}
+              <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>
+                ${f.display.toFixed(2)}
+              </span>
             </span>
           </span>
-        </span>
+        ) : null}
       </div>
 
-      {overrideNote !== null && (
+      {showFee && overrideNote !== null && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'right', marginTop: -4 }}>
           {overrideNote}
         </div>

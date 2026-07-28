@@ -130,6 +130,9 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, cardId))
   const audit = useAppStore((s) => s.audit)
+  const calculationMode = useAppStore((s) =>
+    actor.role === 'anaesthetist' ? s.shell.cardCalculationMode : 'fee',
+  )
   const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
@@ -719,10 +722,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         capture={capture}
         actions={actions}
         summary={
-          cancelled || procedures.length === 0
+          cancelled || procedures.length === 0 || calculationMode === 'off'
             ? null
             : (action) => (
                 <CardTotal
+                  displayMode={calculationMode}
                   units={cardTotals.units}
                   fee={cardTotals.total}
                   lines={cardBreakdown.lines}
@@ -743,7 +747,15 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             />
           ) : null
         }
-        overlay={overlay ? <CompletionOverlay units={cardTotals.units} fee={cardTotals.total} /> : null}
+        overlay={
+          overlay ? (
+            <CompletionOverlay
+              units={cardTotals.units}
+              fee={cardTotals.total}
+              mode={calculationMode}
+            />
+          ) : null
+        }
       />
 
       <CancelCardSheet open={sheet === 'cancel'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />

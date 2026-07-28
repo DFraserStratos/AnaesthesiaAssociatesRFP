@@ -105,6 +105,12 @@ Demo-only surfaces stay honestly labelled. The Xero simulator, integration simul
 panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
 product screens. The billing monitor is proposed product UI; only its simulation triggers are badged.
 
+The global top bar also carries an **Off | Units | Fee** control for the anaesthetist Card
+calculation. **Fee** is the default and keeps the full interactive total, **Units** keeps only the
+running unit count, and **Off** leaves only the completion action pinned. The choice applies to the
+Mobile and Anaesthetist Web Cards, persists across app switches and reloads, and is deliberately
+preserved by Demo reset. Admin Card details always keep the full billing view.
+
 ## Best demo shape
 
 Use one continuous business object rather than touring unrelated screens:

@@ -24,20 +24,18 @@ const WEB_COMMIT_HALO = 12
 /**
  * Mobile card layout — the phone-frame `flex:1; overflow:auto` scroll region,
  * every slot in one column in capture order, between a masthead that folds as
- * you work and the pinned money dock.
+ * you work and the pinned calculation / completion dock.
  *
  * The dock is the `CompleteBar` container Phase 04 shipped (absolute to the
  * phone-frame content region, blurred translucent bar, `14 / 20 / 32` so the
- * bottom padding clears the home indicator) now carrying the Card total as well,
- * so a modifier tap ticks a fee the thumb can see (user finding, 2026-07-28).
+ * bottom padding clears the home indicator) and optionally carrying the Card
+ * calculation above it.
  * Keeping these styles here rather than in `CompleteBar` / `CardTotalStrip` is
  * what "splits positioning into the surface" means.
  *
- * Its height is content-dependent — the procedure chips appear on a
- * multi-procedure Card, the override note on an overridden one, and the bar
- * itself swaps for the shorter success state — so the column's bottom clearance
- * is MEASURED. A constant was safe while the dock was only ever a 56px button;
- * it would now either strand content under the dock or leave a gap below it.
+ * Its height is content-dependent: Off carries only the action, Units adds a
+ * compact count, and Fee may add procedure chips or an override note. The bar
+ * also swaps for the shorter success state, so bottom clearance is MEASURED.
  */
 function MobileCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
@@ -90,6 +88,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
       {commit !== null && (
         <div
           ref={dockRef}
+          data-testid="mobile-card-commit"
           style={{
             position: 'absolute',
             left: 0,
@@ -118,13 +117,13 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
  *   span 12  card-wide banners when present (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
- *            pins the Card total with a separate, matching-width complete/amend
- *            bar below it; patient / time / attachments / notes and the quiet
- *            secondary actions follow.
+ *            pins the chosen Card calculation with a separate, matching-width
+ *            complete/amend bar below it, or the bar alone in Off mode; patient
+ *            / time / attachments / notes and quiet actions follow.
  *
- * The commit block is `sticky`, so the fee ticks in place while the capture
- * column scrolls under it — the one thing a desktop can do that the phone
- * cannot. It carries the canvas colour as its own background (with the padding
+ * The commit block is `sticky`, so the selected calculation or completion
+ * action stays in place while the capture column scrolls under it. It carries
+ * the canvas colour as its own background (with the padding
  * cancelled by equal negative margins) so rail content passes behind it rather
  * than through it. The 8px separation and equal widths mirror the phone dock,
  * while keeping the two controls visually independent. Its background extends

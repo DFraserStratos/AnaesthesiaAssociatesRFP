@@ -33,17 +33,21 @@ export interface CardTotalLine {
   note?: string
 }
 
+export type CardTotalDisplayMode = 'units' | 'fee'
+
 /**
- * The Card's money. Both surfaces are handed the same figures and each renders
- * what its shape can hold: the desktop rail has room for the full breakdown as
- * stacked rows, the phone's dock has one line, so it turns the procedures into
- * chips and leaves fee-line detail to the `BillingLinesCard` in the column.
+ * The Card calculation. Both surfaces are handed the same figures and each
+ * renders either units alone or the full fee presentation in its own shape.
+ * The desktop has room for a stacked breakdown; the phone turns procedures
+ * into chips and leaves fee-line detail to the capture column.
  *
  * `action` is the complete / amend bar. The phone total embeds it in the dock's
  * stack; the web layout passes null and renders the control as a separate,
  * matching-width sibling below the total.
  */
 export interface CardTotalProps {
+  /** Units-only privacy view, or the full units-and-fee presentation. */
+  displayMode: CardTotalDisplayMode
   /** Summed billable units across the Card's procedures (`cardFee`). */
   units: number
   /** Summed fee across the Card's procedures (`cardFee`). */
@@ -101,13 +105,11 @@ export interface CardLayoutSlots {
   /** Copy for an additional procedure, cancel card, post-op addendum. */
   actions: ReactNode
   /**
-   * The Card's running units + fee, as a function of the action to embed in it.
-   * Both surfaces pin it so the figure stays on screen while the capture column
-   * scrolls under it: desktop beside the column, mobile above the home
-   * indicator. Mobile passes `completeBar` into the total's dock stack; web
-   * passes null and renders `completeBar` as a separate sibling. Null on a
-   * cancelled or procedure-less Card, where the layout falls back to
-   * `completeBar` alone.
+   * The Card's visible calculation, as a function of the action to embed in it.
+   * Fee and Units modes pin it while the capture column scrolls; Off passes null
+   * and leaves only the completion control. Mobile passes `completeBar` into the
+   * calculation stack; web passes null and renders it as a separate sibling.
+   * Cancelled and procedure-less Cards also pass null.
    */
   summary: ((action: ReactNode) => ReactNode) | null
   /**
@@ -129,10 +131,9 @@ export interface Surface {
   /** Card-detail arranger — one scroll column (mobile) / two-column grid (web). */
   CardLayout: (props: CardLayoutSlots) => ReactNode
   /**
-   * The Card's money object — the desktop rail's full ink panel, or the phone
-   * dock's one-line strip. Same figures, same tick, different shape: the panel
-   * stacks a row per procedure, the strip turns them into fixed-height chips so
-   * the dock is the same height for one procedure or five.
+   * The Card's calculation object — the desktop rail's ink panel, or the phone
+   * dock's compact strip. Fee mode stacks or chips procedures; Units mode
+   * suppresses every monetary field.
    */
   CardTotal: (props: CardTotalProps) => ReactNode
   /**

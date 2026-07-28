@@ -34,6 +34,7 @@ const MAX_CHIPS = 3
  * calculator via `cardFee`; this only formats.
  */
 export function CardTotalStrip({
+  displayMode,
   units,
   fee,
   lines,
@@ -44,11 +45,14 @@ export function CardTotalStrip({
 }: CardTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
-  const procedures = linesArePerProcedure ? lines : []
+  const showFee = displayMode === 'fee'
+  const procedures = showFee && linesArePerProcedure ? lines : []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div
+        data-testid="card-calculation"
+        data-calculation-mode={displayMode}
         style={{
           background: neutral.ink,
           borderRadius: radius.card,
@@ -77,60 +81,90 @@ export function CardTotalStrip({
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: showFee ? 'space-between' : 'center',
+            gap: 10,
+          }}
+        >
           {/* line-height 1 throughout: the dock's height is the budget this
               whole change is spending, and the inherited 1.5 would add ~30px. */}
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 5, flex: 'none', lineHeight: 1 }}>
-            <span className="mono" style={{ fontSize: 22, lineHeight: 1, fontWeight: 700, color: neutral.surface }}>
-              {Math.round(u.display)}
-            </span>
-            <span
-              style={{ fontSize: 11, lineHeight: 1, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.55)' }}
-            >
-              UNITS
-            </span>
-          </span>
-
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, minWidth: 0 }}>
-            {rateLabel !== null && (
+          <span
+            style={{
+              display: 'flex',
+              flexDirection: showFee ? 'row' : 'column',
+              alignItems: showFee ? 'baseline' : 'center',
+              gap: showFee ? 5 : 4,
+              flex: 'none',
+              lineHeight: 1,
+            }}
+          >
+            {!showFee ? (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 10.5,
                   lineHeight: 1,
                   fontWeight: 600,
                   letterSpacing: '0.06em',
-                  color: 'rgba(255,255,255,0.45)',
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  color: 'rgba(255,255,255,0.55)',
                 }}
               >
-                {rateLabel}
+                CARD UNITS
               </span>
-            )}
-            <span
-              style={{
-                // `display:block` + `lineHeight:1`: as an inline box this would
-                // inherit the 24px strut from the surrounding body line-height
-                // and quietly add 6px to the dock, which is the budget.
-                display: 'block',
-                lineHeight: 1,
-                borderRadius: 8,
-                padding: '2px 8px',
-                marginRight: -8,
-                transition: `background ${motion.valueTick.tintDecay}ms ${motion.valueTick.easing}`,
-                background: f.flashing ? 'rgba(31,164,99,0.45)' : 'rgba(31,164,99,0)',
-              }}
-            >
-              <span className="mono" style={{ fontSize: 24, lineHeight: 1, fontWeight: 700, color: neutral.surface }}>
-                ${f.display.toFixed(2)}
+            ) : null}
+            <span className="mono" style={{ fontSize: 22, lineHeight: 1, fontWeight: 700, color: neutral.surface }}>
+              {Math.round(u.display)}
+            </span>
+            {showFee ? (
+              <span
+                style={{ fontSize: 11, lineHeight: 1, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.55)' }}
+              >
+                UNITS
+              </span>
+            ) : null}
+          </span>
+
+          {showFee ? (
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, minWidth: 0 }}>
+              {rateLabel !== null && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    lineHeight: 1,
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    color: 'rgba(255,255,255,0.45)',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {rateLabel}
+                </span>
+              )}
+              <span
+                style={{
+                  display: 'block',
+                  lineHeight: 1,
+                  borderRadius: 8,
+                  padding: '2px 8px',
+                  marginRight: -8,
+                  transition: `background ${motion.valueTick.tintDecay}ms ${motion.valueTick.easing}`,
+                  background: f.flashing ? 'rgba(31,164,99,0.45)' : 'rgba(31,164,99,0)',
+                }}
+              >
+                <span className="mono" style={{ fontSize: 24, lineHeight: 1, fontWeight: 700, color: neutral.surface }}>
+                  ${f.display.toFixed(2)}
+                </span>
               </span>
             </span>
-          </span>
+          ) : null}
         </div>
 
-        {overrideNote !== null && (
+        {showFee && overrideNote !== null && (
           <div style={{ marginTop: 8, fontSize: 11.5, lineHeight: '15px', color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
             {overrideNote}
           </div>

@@ -20,6 +20,13 @@ describe('persisted store versioning', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => localStorage.clear())
 
+  it('defaults to the full fee display and updates through the typed shell action', () => {
+    const store = createAppStore()
+    expect(store.getState().shell.cardCalculationMode).toBe('fee')
+    store.getState().setCardCalculationMode('units')
+    expect(store.getState().shell.cardCalculationMode).toBe('units')
+  })
+
   it('discards a stale older-version persisted store and reseeds the current shape', () => {
     // A pre-Phase-10 (v5) store: settings without volumeStory, no receipts slice.
     localStorage.setItem(
@@ -43,7 +50,11 @@ describe('persisted store versioning', () => {
     localStorage.setItem(
       PERSIST_KEY,
       JSON.stringify({
-        state: { settings: { contactArchiveInactivityDays: 42 }, billing: { invoices: {}, cases: {} } },
+        state: {
+          settings: { contactArchiveInactivityDays: 42 },
+          billing: { invoices: {}, cases: {} },
+          shell: { currentApp: 'admin' },
+        },
         version: PERSIST_VERSION,
       }),
     )
@@ -55,6 +66,8 @@ describe('persisted store versioning', () => {
     expect(s.settings.volumeStory.softLimit).toBe(10000)
     expect(s.billing.receipts).toBeDefined()
     expect(s.billing.contactIdCache).toBeDefined()
+    expect(s.shell.currentApp).toBe('admin')
+    expect(s.shell.cardCalculationMode).toBe('fee')
     // ... while the persisted (live) value that WAS present still wins.
     expect(s.settings.contactArchiveInactivityDays).toBe(42)
   })
@@ -62,9 +75,11 @@ describe('persisted store versioning', () => {
   it('preserves a persisted store at the current version (round-trips)', () => {
     const a = createAppStore({ persisted: true })
     a.setState({ settings: { ...a.getState().settings, contactArchiveInactivityDays: 42 } })
+    a.getState().setCardCalculationMode('units')
     // A second store at the same version rehydrates the persisted value.
     const b = createAppStore({ persisted: true })
     expect(b.getState().settings.contactArchiveInactivityDays).toBe(42)
+    expect(b.getState().shell.cardCalculationMode).toBe('units')
   })
 })
 

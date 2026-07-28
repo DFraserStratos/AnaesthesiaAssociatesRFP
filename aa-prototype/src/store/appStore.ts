@@ -14,7 +14,7 @@
  * the seed shape or content changes.
  */
 
-import { create, type StoreApi, type UseBoundStore } from 'zustand'
+import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
@@ -66,8 +66,11 @@ export interface IntegrationsSlice {
   messages: Record<string, IntegrationMessage>
 }
 
+export type CardCalculationMode = 'off' | 'units' | 'fee'
+
 export interface ShellSlice {
   currentApp: AppId
+  cardCalculationMode: CardCalculationMode
 }
 
 export interface AppState extends SeedState {
@@ -80,6 +83,7 @@ export interface AppState extends SeedState {
 
 export interface AppActions {
   setCurrentApp: (app: AppId) => void
+  setCardCalculationMode: (mode: CardCalculationMode) => void
 }
 
 export type AppStore = AppState & AppActions
@@ -157,7 +161,7 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    shell: { currentApp: 'mobile' },
+    shell: { currentApp: 'mobile', cardCalculationMode: 'fee' },
   }
 }
 
@@ -193,9 +197,12 @@ export interface CreateAppStoreOptions {
 }
 
 export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppStore {
-  const initializer = (set: (partial: Partial<AppStore>) => void): AppStore => ({
+  const initializer: StateCreator<AppStore> = (set) => ({
     ...freshAppState(),
-    setCurrentApp: (app: AppId) => set({ shell: { currentApp: app } }),
+    setCurrentApp: (app: AppId) =>
+      set((state) => ({ shell: { ...state.shell, currentApp: app } })),
+    setCardCalculationMode: (mode: CardCalculationMode) =>
+      set((state) => ({ shell: { ...state.shell, cardCalculationMode: mode } })),
   })
 
   if (options.persisted === true) {

@@ -250,7 +250,10 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
    the live segment again clears the band). The codes that genuinely stack — a pre-assessment
    follow-up, emergency, positioning, awake intubation, post-op care — stay as chips under
    "Also applies", so the shape of the control tells you the rule before you touch it.
-9. The fee updates using Dr Souter's own dollar value per unit.
+9. The Card calculation follows the presenter's global **Off | Units | Fee** choice. **Fee** shows
+   the live unit and dollar total, **Units** shows only the live unit count, and **Off** hides the
+   calculation while keeping Mark complete pinned. The choice survives app switching, reload and
+   Demo reset; Admin still sees the full billing total.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
 11. She selects Mark complete. If anything required is missing, the Card scrolls to and focuses the
     first incomplete control while showing its inline validation message. She resolves each item and

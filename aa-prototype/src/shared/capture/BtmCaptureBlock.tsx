@@ -54,10 +54,10 @@ interface BtmCaptureBlockProps {
  * Phase 01 calculator = the maths). Composition: context header → ASA →
  * procedure code → times → B/T/M + chips → override → billing lines → notes.
  *
- * No money object of its own: every surface now PINS the Card total (the desktop
- * rail, the phone dock), and a per-procedure panel here as well would print the
- * same dollar figure twice on the common one-procedure Card. Where a Card has
- * several procedures, the pinned total names each one's contribution.
+ * No money object of its own: Fee mode pins the Card total in the desktop rail
+ * or phone dock, and a per-procedure panel here would duplicate it. Units and
+ * Off are presentation choices over the same calculator. Where a Card has
+ * several procedures, the full pinned total names each one's contribution.
  *
  * Write strategy (the logged capture-UX decision):
  * write-through per tap for steppers / chips / ASA / nudges / stamps — each
