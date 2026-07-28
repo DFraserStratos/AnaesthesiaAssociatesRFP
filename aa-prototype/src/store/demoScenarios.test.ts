@@ -147,18 +147,26 @@ describe('S5 · compliance tour', () => {
     const chenCardId = SEED_MARKERS['overriddenTimeUnitsCard']?.entityId ?? ''
     const procedure = proceduresForCard(api.getState(), chenCardId)[0]
     if (procedure === undefined) throw new Error('expected Chen\'s seeded procedure')
+    const seededCardRows = auditForEntity(api.getState(), chenCardId).length
+    const seededProcedureRows = auditForEntity(api.getState(), procedure.id).length
 
     expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS2' }).ok).toBe(true)
     expect(editCard(api, OFFICE, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }).ok).toBe(true)
     expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS1' }).ok).toBe(true)
 
-    // The Card History merges the card + procedure trails (append order).
-    expect(auditForEntity(api.getState(), chenCardId).map((a) => a.action)).toEqual(['card.complete', 'card.update'])
+    // The Card History starts rich, then merges these staged Card + Procedure
+    // rows after the pristine trail in append order.
+    expect(
+      auditForEntity(api.getState(), chenCardId)
+        .slice(seededCardRows)
+        .map((a) => a.action),
+    ).toEqual(['card.update'])
     const procedureRows = auditForEntity(api.getState(), procedure.id)
-    expect(procedureRows.map((a) => a.action)).toEqual(['procedure.update', 'procedure.update'])
-    expect(procedureRows[0]?.role).toBe('anaesthetist')
-    expect(procedureRows[0]?.before).toEqual({ asaClass: 'AS1' })
-    expect(procedureRows[0]?.after).toEqual({ asaClass: 'AS2' })
+    const stagedProcedureRows = procedureRows.slice(seededProcedureRows)
+    expect(stagedProcedureRows.map((a) => a.action)).toEqual(['procedure.update', 'procedure.update'])
+    expect(stagedProcedureRows[0]?.role).toBe('anaesthetist')
+    expect(stagedProcedureRows[0]?.before).toEqual({ asaClass: 'AS1' })
+    expect(stagedProcedureRows[0]?.after).toEqual({ asaClass: 'AS2' })
 
     // Staging is state-neutral where it matters: ASA back to AS1, override provenance intact.
     expect(api.getState().schedule.procedures[procedure.id]?.asaClass).toBe('AS1')

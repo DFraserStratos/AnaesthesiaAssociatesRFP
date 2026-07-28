@@ -20,7 +20,9 @@
  *
  * All ids use an `H`-prefixed namespace disjoint from the runtime counters, so
  * the pre-payment seed (INV0001/BC0001) and the first runtime run (INV0002…) are
- * untouched. Deterministic; no seed audit (seeding is state, not mutation).
+ * untouched. Deterministic; the schedule rows receive their demo Card history
+ * centrally in `seed/audit.ts`, while billing and Xero rows remain initial
+ * state rather than simulated runtime mutations.
  */
 
 import type {

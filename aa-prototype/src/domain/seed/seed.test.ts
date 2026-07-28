@@ -50,6 +50,84 @@ describe('seed determinism', () => {
   })
 })
 
+describe('rich seeded Card history', () => {
+  it('gives every Card a booking-to-clinical trail, including historical billing Cards', () => {
+    const auditByEntity = new Map<string, typeof seed.audit>()
+    for (const entry of seed.audit) {
+      const rows = auditByEntity.get(entry.entityId) ?? []
+      rows.push(entry)
+      auditByEntity.set(entry.entityId, rows)
+    }
+
+    for (const card of Object.values(seed.schedule.cards)) {
+      const cardRows = auditByEntity.get(card.id) ?? []
+      expect(
+        cardRows.filter((entry) => entry.action === 'card.create'),
+        `${card.id} card.create`,
+      ).toHaveLength(1)
+
+      const procedures = proceduresForCard(seed, card.id)
+      expect(procedures.length, `${card.id} has a Procedure`).toBeGreaterThan(0)
+      const mergedRows = [...cardRows]
+      for (const procedure of procedures) {
+        const procedureRows = auditByEntity.get(procedure.id) ?? []
+        expect(
+          procedureRows.filter((entry) => entry.action === 'procedure.create'),
+          `${procedure.id} procedure.create`,
+        ).toHaveLength(1)
+        expect(
+          procedureRows.some((entry) => entry.action === 'procedure.update'),
+          `${procedure.id} procedure.update`,
+        ).toBe(true)
+        mergedRows.push(...procedureRows)
+
+        const lines = Object.values(seed.schedule.billingLines).filter(
+          (line) => line.procedureId === procedure.id,
+        )
+        for (const line of lines) {
+          const lineRows = auditByEntity.get(line.id) ?? []
+          expect(
+            lineRows.filter((entry) => entry.action === 'billingLine.add'),
+            `${line.id} billingLine.add`,
+          ).toHaveLength(1)
+          mergedRows.push(...lineRows)
+        }
+      }
+
+      expect(mergedRows.length, `${card.id} merged History rows`).toBeGreaterThanOrEqual(3)
+      if (card.completed) {
+        expect(
+          cardRows.filter((entry) => entry.action === 'card.complete'),
+          `${card.id} card.complete`,
+        ).toHaveLength(1)
+      }
+      if (card.cancellation !== undefined) {
+        expect(
+          cardRows.filter((entry) => entry.action === 'card.cancel'),
+          `${card.id} card.cancel`,
+        ).toHaveLength(1)
+      }
+    }
+
+    expect(auditByEntity.get('HC01')?.map((entry) => entry.action)).toContain('card.complete')
+  })
+
+  it('allocates the seed trail chronologically and leaves the next audit id free', () => {
+    for (let index = 0; index < seed.audit.length; index += 1) {
+      const entry = seed.audit[index]!
+      expect(entry.id).toBe(`A${String(index + 1).padStart(4, '0')}`)
+      if (index > 0) expect(entry.atISO >= seed.audit[index - 1]!.atISO).toBe(true)
+    }
+    expect(seed.counters.audit).toBe(seed.audit.length + 1)
+    for (const entry of seed.audit.filter((row) => row.action === 'card.create')) {
+      expect(
+        entry.atISO < `${DEMO_TODAY}T08:00:00`,
+        `${entry.entityId} is booked by the reset clock`,
+      ).toBe(true)
+    }
+  })
+})
+
 describe('the canvas', () => {
   const horizon = horizonFor(DEMO_TODAY)
   const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)

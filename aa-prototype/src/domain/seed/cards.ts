@@ -3,10 +3,10 @@
  * ready-made scenario states later phases rely on, and generic filler (past
  * two weeks rich, thinning about ten days out).
  *
- * Audit is minimal by decision: seeding is initial state, not mutation — only
- * the staged lifecycle facts are audited (the two SUBMITTED lists' submits,
- * the cancelled card's cancel, completes on staged/pinned cards). Generic
- * filler history is state-only.
+ * This builder records authoritative staged lifecycle facts (submitted Lists,
+ * the cancelled Card, and pinned completions). `seed/audit.ts` then composes
+ * those with deterministic booking, Procedure, fee-line and missing completion
+ * history for every Card, including generic and historical rows.
  */
 
 import type {

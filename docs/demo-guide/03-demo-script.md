@@ -331,8 +331,9 @@ List are parked for manual intervention.
 evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
-resets, stages a short edit history on David Chen's Card, and authorises Dr Whitaker's Fri 17 Jul List
-to raise the Health NZ contract snapshot invoices. Use **Go to Admin app** and **Go to Xero sim**.
+resets to rich booking-to-clinical histories on every Card, adds three live edits to David Chen's
+trail, and authorises Dr Whitaker's Fri 17 Jul List to raise the Health NZ contract snapshot
+invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
 ### Beat 1: the audit trail of a much-edited Card
 
@@ -340,9 +341,10 @@ to raise the Health NZ contract snapshot invoices. Use **Go to Admin app** and *
 - **Say:** "Every Card and Procedure change, including automated ones, writes an append-only audit entry
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
-- **Expected:** a multi-entry trail: the completion sign-off plus the staged anaesthetist and office
-  edits, each with who, role, source and before/after, and the manual time-unit adjustment shown as
-  overridden provenance.
+- **Expected:** a multi-entry trail from booking and Procedure setup through capture and completion,
+  followed by the staged anaesthetist and office edits. Every row shows who, role, source and
+  before/after, and the manual time-unit adjustment retains overridden provenance. Any other Card
+  can also be opened to demonstrate its seeded history without staging first.
 
 ### Beat 2: NHI dual-format validator
 

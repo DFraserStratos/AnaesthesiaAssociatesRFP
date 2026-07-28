@@ -91,7 +91,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v9: 2026-07-28 — removed a build-phase label from historical List notes.
+/** v10: 2026-07-29 — rich deterministic booking, Procedure, capture, fee-line
+ *  and lifecycle history for every seeded Card, including historical billing
+ *  Cards. Returning demos must reseed so the new audit graph and counter land.
+ *  v9: 2026-07-28 — removed a build-phase label from historical List notes.
  *  v8: 2026-07-27 — modifier bands (one code per band). The seed's own content
  *  is unchanged, but a pre-fix persisted Procedure can hold two codes from the
  *  same band (e.g. A1 + A2); those now resolve to one code and render a
@@ -115,7 +118,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 9
+export const PERSIST_VERSION = 10
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }

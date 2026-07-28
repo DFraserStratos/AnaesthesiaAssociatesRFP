@@ -355,7 +355,7 @@ interface Scenario {
   run: () => ScenarioResult
 }
 
-/** The five guided-script scenarios. Each resets first, then stages minimally. */
+/** The five guided-script scenarios. Each resets first, then adds only its scenario-specific live deltas. */
 const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S1',
@@ -445,7 +445,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S5',
     title: 'S5 · Compliance tour',
-    blurb: 'Audit trail (staged edit history), NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
+    blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
     run: () => {
       resetDemo(useAppStore)
       const chenCardId = SEED_MARKERS['overriddenTimeUnitsCard']?.entityId ?? ''
@@ -463,7 +463,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset, staged David Chen\'s edit history, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen invoice AA-2026-0002 to show its snapshot is unchanged.',
+          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen invoice AA-2026-0002 to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },

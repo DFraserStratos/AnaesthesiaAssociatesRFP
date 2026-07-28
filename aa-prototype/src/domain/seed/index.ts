@@ -6,7 +6,7 @@
  * Composition: masters + the canvas generator over the full horizon + fixups
  * that paint the design mockups' content (Tue 21 Jul design day, Souter's week
  * Mon 20 to Sun 26, the Thu 23 availability grid) + the card tableau and
- * scenario states + minimal staged audit + demo settings.
+ * scenario states + rich per-Card demo history + demo settings.
  */
 
 import type {
@@ -60,6 +60,7 @@ import { RVG_CODES } from './rvgCodes'
 import { buildCards, type CardScenarioIds } from './cards'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory } from './history'
+import { buildSeedAudit } from './audit'
 
 export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
 export { slotRng, hashStringToSeed } from './slotHash'
@@ -381,9 +382,18 @@ function buildSeedInternal(): SeedBuild {
   })
   const cardsRec = byId(cardsBuild.cards, (c) => c.id)
   const proceduresRec = byId(cardsBuild.procedures, (p) => p.id)
+  const billingLinesRec = byId(cardsBuild.billingLines, (l) => l.id)
   for (const [id, l] of Object.entries(history.lists)) lists[id] = l
   for (const [id, c] of Object.entries(history.cards)) cardsRec[id] = c
   for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
+  const audit = buildSeedAudit({
+    existing: cardsBuild.audit,
+    anaesthetists: anaesthetistsRec,
+    lists,
+    cards: cardsRec,
+    procedures: proceduresRec,
+    billingLines: billingLinesRec,
+  })
 
   const state: SeedState = {
     masters: {
@@ -407,9 +417,9 @@ function buildSeedInternal(): SeedBuild {
       lists,
       cards: cardsRec,
       procedures: proceduresRec,
-      billingLines: byId(cardsBuild.billingLines, (l) => l.id),
+      billingLines: billingLinesRec,
     },
-    audit: cardsBuild.audit,
+    audit,
     settings: {
       contactArchiveInactivityDays: 90,
       // Narrated scale (N4): counters near Xero's ~10k soft contact limit, the
@@ -419,7 +429,7 @@ function buildSeedInternal(): SeedBuild {
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     counters: {
-      audit: cardsBuild.next.audit,
+      audit: audit.length + 1,
       card: cardsBuild.next.card,
       procedure: cardsBuild.next.procedure,
       billingLine: cardsBuild.next.billingLine,

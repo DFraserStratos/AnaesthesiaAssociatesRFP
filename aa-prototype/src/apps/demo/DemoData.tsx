@@ -437,8 +437,8 @@ export function DemoData() {
                 {auditTrail.length === 0 && (
                   <tr>
                     <td style={cellStyle} colSpan={5}>
-                      No audit entries for {auditEntityId}. Seed history is minimal by design; runtime
-                      mutations always audit.
+                      No audit entries for {auditEntityId}. Seeded Cards include booking and clinical
+                      history; other records begin auditing when they change.
                     </td>
                   </tr>
                 )}

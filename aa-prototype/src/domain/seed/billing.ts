@@ -11,8 +11,9 @@
  * Ids are formatted to MIRROR `store/mutate.ts`'s ID_FORMATS for the four
  * billing counter kinds (invoice / invoiceLine / billingCase / invoiceNumber),
  * and the returned counters are bumped past what this slice consumes so the
- * first runtime billing run continues the sequence with no collision. There is
- * deliberately NO seed audit entry (seeding is initial state, not a mutation).
+ * first runtime billing run continues the sequence with no collision. Billing
+ * and Xero records deliberately receive no simulated runtime audit entries;
+ * their linked schedule Cards receive rich history centrally in `seed/audit.ts`.
  */
 
 import type {
