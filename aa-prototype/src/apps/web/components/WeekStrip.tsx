@@ -24,7 +24,7 @@ interface WeekStripProps {
  * Booked blocks show hospital / surgeon and the List's ACTUAL start/end times
  * (via `sessionTimeRange`, so office overrides show — D2 / reviewer steer); the
  * Free block is dashed; a full-day holiday merges AM+PM into one tall block;
- * today's column is outlined crimson. Blocks click through to List detail.
+ * today's AM/PM block pair is outlined crimson. Blocks click through to List detail.
  */
 export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek, onNextWeek, onOpenList }: WeekStripProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
@@ -74,9 +74,6 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
-                padding: isToday ? '3px 5px 5px' : 5,
-                border: isToday ? `2px solid ${brand.base}` : '2px solid transparent',
-                borderRadius: 12,
               }}
             >
               <div
@@ -90,14 +87,25 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
               >
                 {format(parseISO(dateISO), 'EEE d').toUpperCase()}
               </div>
-              {mergedHoliday && am !== undefined ? (
-                <Block list={am} labels={labels(am)} onOpenList={onOpenList} tall />
-              ) : (
-                <>
-                  <Block list={am} labels={am !== undefined ? labels(am) : undefined} onOpenList={onOpenList} />
-                  <Block list={pm} labels={pm !== undefined ? labels(pm) : undefined} onOpenList={onOpenList} />
-                </>
-              )}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  padding: 5,
+                  border: isToday ? `2px solid ${brand.base}` : '2px solid transparent',
+                  borderRadius: 12,
+                }}
+              >
+                {mergedHoliday && am !== undefined ? (
+                  <Block list={am} labels={labels(am)} onOpenList={onOpenList} tall />
+                ) : (
+                  <>
+                    <Block list={am} labels={am !== undefined ? labels(am) : undefined} onOpenList={onOpenList} />
+                    <Block list={pm} labels={pm !== undefined ? labels(pm) : undefined} onOpenList={onOpenList} />
+                  </>
+                )}
+              </div>
             </div>
           )
         })}
