@@ -49,12 +49,21 @@ test('desktop completion action is separate and matches the Card total width', a
   await openEllison(page)
   const total = await page.getByText('CARD TOTAL', { exact: true }).locator('../../..').boundingBox()
   const complete = await page.getByRole('button', { name: 'Mark complete' }).boundingBox()
+  const stickyBackdrop = page.getByTestId('web-card-commit')
+  const backdrop = await stickyBackdrop.boundingBox()
 
   expect(total).not.toBeNull()
   expect(complete).not.toBeNull()
+  expect(backdrop).not.toBeNull()
   expect(Math.abs(total!.x - complete!.x)).toBeLessThan(1)
   expect(Math.abs(total!.width - complete!.width)).toBeLessThan(1)
   expect(complete!.y - (total!.y + total!.height)).toBeCloseTo(8, 0)
+  expect(total!.x - backdrop!.x).toBeCloseTo(12, 0)
+  expect(backdrop!.width - total!.width).toBeCloseTo(24, 0)
+  await expect(stickyBackdrop).toHaveCSS('border-top-left-radius', '0px')
+  await expect(stickyBackdrop).toHaveCSS('border-top-right-radius', '0px')
+  await expect(stickyBackdrop).toHaveCSS('border-bottom-left-radius', '26px')
+  await expect(stickyBackdrop).toHaveCSS('border-bottom-right-radius', '26px')
 })
 
 test('desktop header actions are grouped with the records they act on', async ({ page }) => {

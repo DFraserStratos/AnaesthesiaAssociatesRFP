@@ -19,6 +19,7 @@ import { SurfaceCtx, type CardLayoutSlots, type Surface, type SurfaceVariant } f
  *  threshold can then hand back a scrollTop that immediately unfolds it. */
 const COLLAPSE_AT = 24
 const EXPAND_AT = 6
+const WEB_COMMIT_HALO = 12
 
 /**
  * Mobile card layout — the phone-frame `flex:1; overflow:auto` scroll region,
@@ -126,9 +127,13 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
  * cannot. It carries the canvas colour as its own background (with the padding
  * cancelled by equal negative margins) so rail content passes behind it rather
  * than through it. The 8px separation and equal widths mirror the phone dock,
- * while keeping the two controls visually independent. The grid deliberately
- * does NOT set `align-items: start`: the rail must stretch to the row height or
- * the sticky block has nowhere to travel.
+ * while keeping the two controls visually independent. Its background extends
+ * 12px around both sides and the bottom without narrowing either control. The
+ * lower corners continue the button's curve through that halo: the outer radius
+ * is the button radius plus the halo. The top stays square so no scrolling
+ * content peeks through beside the pinned panel. The grid deliberately does NOT
+ * set `align-items: start`: the rail must stretch to the row height or the sticky
+ * block has nowhere to travel.
  */
 function WebCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
   const commit =
@@ -174,13 +179,15 @@ function WebCardLayout({ contentRef, header, history, banners, context, capture,
         >
           {commit !== null && (
             <div
+              data-testid="web-card-commit"
               style={{
                 position: 'sticky',
                 top: 0,
                 zIndex: 5,
                 background: neutral.bg,
-                padding: '16px 0 12px',
-                margin: '-16px 0 -12px',
+                padding: `16px ${WEB_COMMIT_HALO}px ${WEB_COMMIT_HALO}px`,
+                margin: `-16px -${WEB_COMMIT_HALO}px -${WEB_COMMIT_HALO}px`,
+                borderRadius: `0 0 ${radius.card + WEB_COMMIT_HALO}px ${radius.card + WEB_COMMIT_HALO}px`,
               }}
             >
               {commit}
