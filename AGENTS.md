@@ -8,10 +8,12 @@ business rules, `store/` owns the Zustand-backed mock backend,
 hold reusable UI, routing, and design tokens. Tests are colocated as `*.test.ts(x)`; Playwright
 specs live in `visual/`. Requirements, decisions, demo scripts, and mockups live under `docs/`.
 
-Before changing anything, read `docs/prototype-build/PROGRESS.md` (including its open-items handoff) and
-`docs/prototype-build/prototype-review/00-SUMMARY.md`. Update `PROGRESS.md` after substantive work,
-and mirror changes to scripted demo behavior in `docs/demo-guide/`. Check the decisions log before
-revisiting a defect.
+The prototype build is complete. For routine fixes and polish, do not read or update
+`docs/prototype-build/PROGRESS.md` by default. Consult it when a task depends on build history, an
+open review item, or a settled decision, and consult
+`docs/prototype-build/prototype-review/00-SUMMARY.md` for RFP-wide conformance work. Mirror changes
+to scripted demo behavior in `docs/demo-guide/`, and check the decisions log before revisiting a
+previously reviewed defect.
 
 ## Build, Test, and Development Commands
 

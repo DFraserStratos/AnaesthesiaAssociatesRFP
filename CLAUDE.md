@@ -21,18 +21,19 @@ integrations, a demo control panel).
 Vitest + Playwright suites are green. Work from here is fixes, polish and demo preparation for the
 vendor workshops — not new phases.
 
-Before changing anything, read two things so you don't re-find a known item or reopen a settled one:
-PROGRESS.md's **Discovered for later** handoff list (open items P1 to P9) and
-`docs/prototype-build/prototype-review/00-SUMMARY.md` (the 2026-07-27 conformance review of the
-finished prototype against the whole RFP).
+Routine fixes and polish do not require reading or updating `PROGRESS.md`. Consult its build history,
+open-items handoff and Decisions log only when they are relevant to the task. Consult
+`docs/prototype-build/prototype-review/00-SUMMARY.md` for RFP-wide conformance work or related review
+findings.
 
 ## Where things live
 
 - **The app** — `aa-prototype/` at the repo root. Never create a second app folder. Its `README.md`
   is the developer entry point: scripts, stack versions and a `src/` folder map.
 - **Build record** — `docs/prototype-build/`
-  - `PROGRESS.md` — the living record: binding conventions, phase status, decisions log, per-phase
-    entries, open-items handoff. **Read it first and update it last, every session.**
+  - `PROGRESS.md` — the historical build record: binding conventions, phase status, decisions log,
+    per-phase entries and open-items handoff. Reference it selectively; routine tweak sessions do
+    not need to read or update it.
   - `REQUIREMENTS.md` — the numbered requirements catalogue (P/D/M/W/A/B/X/I/N).
   - `prototype-review/` — the 2026-07-27 whole-RFP conformance review; start at `00-SUMMARY.md`.
   - `ROADMAP.md`, `phases/phase-00…13.md`, `index.html` — the build plan (historical, but the phase
@@ -48,7 +49,7 @@ finished prototype against the whole RFP).
 
 ## Working in the app
 
-PROGRESS.md's binding conventions (1 to 18) govern. The ones most easily broken:
+These core conventions govern routine changes. `PROGRESS.md` contains the fuller historical set:
 
 - **Mock backend only.** No `fetch`, no endpoints. Components never own domain state — they read and
   write through typed store hooks, and every mutation goes through the audited `mutate()` wrapper
@@ -60,8 +61,7 @@ PROGRESS.md's binding conventions (1 to 18) govern. The ones most easily broken:
   content changes, or stale persisted state survives the reload.
 - **Billing maths is pure** — all fee/unit/route/split logic lives in `src/domain/billing/` with
   Vitest tests; UI only formats results.
-- **Finish green:** `npm run build` and `npx vitest run` both pass before handing work back, then
-  update PROGRESS.md.
+- **Finish green:** `npm run build` and `npx vitest run` both pass before handing work back.
 - **Don't re-litigate.** The Decisions log records the readings we picked and why, across eight
   review rounds. Several plausible-looking "bugs" are settled rulings — check there first.
 
