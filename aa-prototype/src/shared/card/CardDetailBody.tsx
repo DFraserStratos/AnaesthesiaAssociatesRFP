@@ -45,9 +45,9 @@ interface CardDetailBodyProps {
   /**
    * The platform masthead, handed to the layout rather than rendered above the
    * body, for chrome that wants it to react to the scroll it does not own.
-   * Mobile folds its masthead to a nav row as you work; web can also use the
-   * supplied History action in its patient header. Admin renders its own page
-   * header above the body and passes nothing.
+   * Mobile and web use the supplied History action in their patient headers;
+   * mobile also folds its masthead to a nav row as you work. Admin renders its
+   * own page header above the body and passes nothing.
    */
   header?: (collapsed: boolean, history: React.ReactNode) => React.ReactNode
 }
@@ -455,8 +455,9 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const history = (
     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
       <button
+        type="button"
         onClick={() => setHistoryOpen(true)}
-        style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        style={{ minHeight: 44, border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '0 2px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
       >
         <History size={15} aria-hidden /> History
       </button>

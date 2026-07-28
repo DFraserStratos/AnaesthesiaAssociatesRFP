@@ -89,9 +89,9 @@ export interface CardLayoutSlots {
    * off the top. Mobile hands one in so it can fold to a nav row as you work
    * (the room that pays for the pinned total); web and admin render their own
    * page header above the body and pass null. The second argument lets desktop
-   * chrome group the History action with that header instead of stranding it in
-   * a separate row; mobile leaves it null and keeps History in the scroll
-   * column. Only a surface that OWNS the scroll region can honour `collapsed`.
+   * and mobile chrome group the History action with that header instead of
+   * stranding it in a separate row. Only a surface that OWNS the scroll region
+   * can honour `collapsed`.
    */
   header: ((collapsed: boolean, history: ReactNode) => ReactNode) | null
   /** The History affordance (right-aligned; a page action on desktop). */

@@ -276,8 +276,9 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
 
         <StatusBar time={time ?? clockTime} />
 
-        {/* scrollable content region — the mobile app renders here */}
-        <div style={{ height: '100%', overflow: 'auto', position: 'relative' }}>{children}</div>
+        {/* Scrollable content region. The class scopes native-style, hidden
+            scrollbars to the phone and every nested mobile scroll surface. */}
+        <div className="aa-mobile-canvas" style={{ height: '100%', overflow: 'auto', position: 'relative' }}>{children}</div>
 
         {/* home indicator — always on top */}
         <div

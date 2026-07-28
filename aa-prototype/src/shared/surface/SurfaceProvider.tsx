@@ -66,10 +66,11 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
 
   return (
     <>
-      {header !== null && header(collapsed, null)}
+      {header !== null && header(collapsed, history)}
       <div
         ref={contentRef}
         onScroll={onScroll}
+        data-testid="mobile-card-scroll"
         style={{
           flex: 1,
           overflow: 'auto',
@@ -79,7 +80,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
           gap: 12,
         }}
       >
-        {history}
+        {header === null && history}
         {banners}
         {context}
         {capture}

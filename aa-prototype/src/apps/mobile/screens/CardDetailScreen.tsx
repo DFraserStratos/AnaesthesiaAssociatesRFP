@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
@@ -30,12 +30,11 @@ const REVEAL = `max-width ${motion.cardAdvance.return}ms ${motion.cardAdvance.ea
  * web card view behave identically; only this masthead and the surrounding
  * `position:relative` phone-frame column are mobile-specific.
  *
- * The masthead FOLDS. At rest it is the patient's name over a status chip and the
- * operation; past 24px of scroll it becomes a 44px nav row carrying the name
- * inline beside the back link, iOS large-title fashion. That reclaims ~64px, and
- * it is what pays for the Card total now pinned in the dock: the phone ends up
- * with more working room than it had when the total sat inline (user finding,
- * 2026-07-28).
+ * The masthead FOLDS. At rest it is the patient's name over a status / History
+ * action row and the operation; past 24px of scroll it becomes a 44px nav row
+ * carrying the name inline beside the back link, iOS large-title fashion.
+ * History folds away with the expanded row so the compact title cannot crowd.
+ * The fold reclaims the room that pays for the Card total pinned in the dock.
  *
  * It is handed to the layout as a function of `collapsed` rather than rendered
  * here, because the scroll region it reacts to belongs to `MobileCardLayout`.
@@ -64,8 +63,11 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
   const patientName = patient?.name ?? 'Unknown patient'
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
-  const header = (collapsed: boolean) => (
-    <div style={{ flex: 'none', padding: '60px 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}>
+  const header = (collapsed: boolean, history: ReactNode) => (
+    <div
+      data-testid="mobile-card-header"
+      style={{ flex: 'none', padding: '60px 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <button
           onClick={onBack}
@@ -93,10 +95,16 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         {patientName}
       </div>
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: collapsed ? 0 : 8, maxHeight: collapsed ? 0 : 54, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: collapsed ? 0 : 8, maxHeight: collapsed ? 0 : 64, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}
         aria-hidden={collapsed}
       >
-        <StatusChip status={list.statusKey} />
+        <div
+          data-testid="mobile-card-header-actions"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+        >
+          <StatusChip status={list.statusKey} />
+          {!collapsed ? history : null}
+        </div>
         <span style={{ minWidth: 0, fontSize: 12, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {primary?.description || 'Operation to capture'} · {hospitalName}
         </span>

@@ -140,6 +140,23 @@ body {
   font-feature-settings: 'tnum';
 }
 
+/*
+ * Mobile scroll surfaces keep touch, wheel and keyboard scrolling, but native
+ * apps do not reserve space for or continuously display browser scrollbars.
+ * Scope this to the phone canvas so desktop tables, dialogs and the prototype
+ * harness retain their normal scrollbar affordances.
+ */
+.aa-mobile-canvas,
+.aa-mobile-canvas * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.aa-mobile-canvas::-webkit-scrollbar,
+.aa-mobile-canvas *::-webkit-scrollbar {
+  display: none;
+}
+
 .aa-admin-calendar-day:focus-visible {
   position: relative;
   z-index: 1;

@@ -22,6 +22,47 @@ async function advanceClockTo1715(page: Page): Promise<void> {
   await page.waitForTimeout(200)
 }
 
+test('mobile Card header groups status and History above the Patient card', async ({ page }) => {
+  await openEllison(page)
+
+  const header = page.getByTestId('mobile-card-header')
+  const actions = page.getByTestId('mobile-card-header-actions')
+  const status = actions.getByText('Private', { exact: true }).locator('..')
+  const history = actions.getByRole('button', { name: 'History', exact: true })
+  const patient = page.getByText('Patient', { exact: true }).locator('../..')
+
+  await expect(history).toBeVisible()
+  const headerBox = await header.boundingBox()
+  const statusBox = await status.boundingBox()
+  const historyBox = await history.boundingBox()
+  const patientBox = await patient.boundingBox()
+
+  expect(headerBox).not.toBeNull()
+  expect(statusBox).not.toBeNull()
+  expect(historyBox).not.toBeNull()
+  expect(patientBox).not.toBeNull()
+  expect(historyBox!.x).toBeGreaterThan(statusBox!.x + statusBox!.width)
+  expect(Math.abs(
+    statusBox!.y + statusBox!.height / 2 - (historyBox!.y + historyBox!.height / 2),
+  )).toBeLessThan(2)
+  expect(patientBox!.y - (headerBox!.y + headerBox!.height)).toBeLessThan(20)
+  await expect(page.getByRole('button', { name: 'History', exact: true })).toHaveCount(1)
+
+  await history.click()
+  await expect(page.getByRole('dialog').getByText('Card history', { exact: true })).toBeVisible()
+})
+
+test('mobile Card header folds History out of the compact navigation row', async ({ page }) => {
+  await openEllison(page)
+
+  const header = page.getByTestId('mobile-card-header')
+  await expect(header.getByRole('button', { name: 'History', exact: true })).toBeVisible()
+
+  await page.getByTestId('mobile-card-scroll').evaluate((el) => el.scrollTo({ top: 40 }))
+
+  await expect(header.getByRole('button', { name: 'History', exact: true })).toHaveCount(0)
+})
+
 test('capture: Ellison BTM block', async ({ page }) => {
   await openEllison(page)
   await page.screenshot({ path: 'visual/shots/m4-01-card-top.png', fullPage: true })
