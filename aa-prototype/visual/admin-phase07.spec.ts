@@ -19,13 +19,27 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
   // Phase 08 replaced the "Handed to billing" placeholder with the live panel.
   await expect(page.getByText('Recently billed')).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Cards' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Submitted' })).toBeVisible()
+  const queueWidth = await page.getByTestId('review-queue-screen').evaluate((element) => element.getBoundingClientRect().width)
+  const tableWidth = await page.getByTestId('review-queue-table-shell').evaluate((element) => element.getBoundingClientRect().width)
+  const recentlyBilledWidth = await page.getByTestId('review-queue-recently-billed').evaluate((element) => element.getBoundingClientRect().width)
+  expect(queueWidth).toBeGreaterThan(1080)
+  expect(Math.abs(tableWidth - recentlyBilledWidth)).toBeLessThanOrEqual(1)
   await page.screenshot({ path: 'visual/shots/a7-01-queue.png', fullPage: true })
 
   // Open Morrison's submitted list → the sanity-check review screen.
-  await page.getByRole('button', { name: /Morrison/ }).first().click()
+  await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('Total units')).toBeVisible()
   await expect(page.getByText(/to check before authorising/)).toBeVisible()
+  const detailWidth = await page.getByTestId('review-detail-screen').evaluate((element) => element.getBoundingClientRect().width)
+  expect(detailWidth).toBeGreaterThan(1080)
+  await expect(page.getByRole('columnheader', { name: 'B · T · M' })).toHaveCSS('white-space', 'nowrap')
+  await expect(page.getByTestId('review-btm-value').first()).toHaveCSS('white-space', 'nowrap')
   await page.screenshot({ path: 'visual/shots/a7-02-review.png', fullPage: true })
 
   // Per-card History reconstructs the trail (card + its procedures/lines).

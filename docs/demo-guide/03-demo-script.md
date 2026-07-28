@@ -209,10 +209,13 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 - **Click:** Admin, Review queue, open the Souter/Forte AM List, **Authorise for billing**, then do the
   same for the Souter/St George's PM List, then **View invoices**. Open a contract-holder invoice:
   point to the unique InvoiceNumber, internal CaseReference, payer, line items, units, GST and total,
-  and the "AA as agent for" wording. Then contrast the two grouping outcomes: the split-billing Card
-  (two procedures, same funder) shares one invoice, its additional procedure claiming time units only;
-  the two-funder Card (one procedure, per-funder lines) produces two invoices, nib and St George's. Use
-  **Email invoice** to show the simulated-send state.
+  and the "AA as agent for" wording. Back in the full-width table, use **Patient / card**,
+  **Anaesthetist**, **List** and **List date** to trace each invoice to its source. Then contrast the
+  two grouping outcomes: the split-billing Card (two procedures, same funder) shares one invoice, its
+  additional procedure claiming time units only; the two Alan Prentice rows share the same Card and
+  produce two invoices, nib and St George's. The List cells reuse the day-view status colour and link
+  back to that date with the matching List drawer open. Use **Email invoice** to show the
+  simulated-send state.
 - **Say:** "The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per
   Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
   receivables and banking service."

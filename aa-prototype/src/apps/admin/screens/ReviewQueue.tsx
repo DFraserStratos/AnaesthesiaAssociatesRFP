@@ -2,12 +2,16 @@ import { useMemo } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { billedLists, invoiceCountsByList, useAppStore } from '../../../store'
 import { dayMicroCap, hhmm } from '../../../shared/format'
-import { listShortLabel } from '../util'
+import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { listShortLabel, listSourceLabels } from '../util'
 
 interface ReviewQueueProps {
   onOpen: (listId: string) => void
   onViewInvoices: () => void
 }
+
+const cellStyle = adminCell()
+const headCellStyle = adminHead()
 
 /**
  * The authorisation review queue (Phase 07): every SUBMITTED list awaiting
@@ -52,7 +56,7 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 860 }}>
+    <div data-testid="review-queue-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Review queue</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>
@@ -60,29 +64,71 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {submitted.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>Nothing awaiting review.</div>}
-        {submitted.map((l) => (
-          <button
-            key={l.id}
-            type="button"
-            onClick={() => onOpen(l.id)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 16px', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
-          >
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: neutral.ink }}>{listShortLabel(l, masters)}</span>
-              <span style={{ fontSize: 12, color: neutral.slate }}>
-                {dayMicroCap(l.dateISO)} · {cardCount[l.id] ?? 0} card{(cardCount[l.id] ?? 0) === 1 ? '' : 's'}
-                {submitTimes[l.id] !== undefined ? ` · submitted ${hhmm(submitTimes[l.id])}` : ' · submitted'}
-              </span>
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: neutral.mist }}>Review →</span>
-          </button>
-        ))}
-      </div>
+      {submitted.length === 0 ? (
+        <div style={{ fontSize: 13, color: neutral.mist }}>Nothing awaiting review.</div>
+      ) : (
+        <div
+          data-testid="review-queue-table-shell"
+          style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}
+        >
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 980 }}>
+            <thead>
+              <tr>
+                {['Anaesthetist', 'List', 'List date', 'Cards', 'Submitted', ''].map((heading, index) => (
+                  <th
+                    key={heading === '' ? 'review' : heading}
+                    style={{
+                      ...headCellStyle,
+                      textAlign: index === 3 ? 'right' : 'left',
+                      whiteSpace: index >= 2 ? 'nowrap' : undefined,
+                    }}
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {submitted.map((list) => {
+                const anaesthetist = masters.anaesthetists[list.anaesthetistId]
+                const source = listSourceLabels(list, masters)
+                return (
+                  <tr key={list.id}>
+                    <td style={{ ...cellStyle, fontWeight: 600 }}>
+                      {anaesthetist?.name ?? 'Anaesthetist unavailable'}
+                    </td>
+                    <td style={cellStyle}>
+                      <div style={{ fontWeight: 600 }}>{source.primary}</div>
+                      {source.secondary !== undefined && (
+                        <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</div>
+                      )}
+                    </td>
+                    <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dayMicroCap(list.dateISO)}</td>
+                    <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {cardCount[list.id] ?? 0}
+                    </td>
+                    <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                      {submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}
+                    </td>
+                    <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => onOpen(list.id)}
+                        style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Review →
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Where authorised lists went — the billing run raises invoices immediately. */}
-      <div style={{ background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div data-testid="review-queue-recently-billed" style={{ background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 700 }}>Recently billed</span>
           <button onClick={onViewInvoices} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>

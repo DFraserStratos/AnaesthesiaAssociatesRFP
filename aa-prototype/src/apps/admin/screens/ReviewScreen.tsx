@@ -22,7 +22,9 @@ interface ReviewScreenProps {
 
 const cellStyle = adminCell()
 const headCellStyle = adminHead()
-const numCell = { ...cellStyle, textAlign: 'right' as const }
+const nowrapCell = { ...cellStyle, whiteSpace: 'nowrap' as const }
+const numCell = { ...nowrapCell, textAlign: 'right' as const }
+const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Code', 'Times', 'B · T · M', 'Units', 'Fee'])
 
 /**
  * The sanity-check authorisation review (Phase 07). The mockup's anatomy
@@ -139,7 +141,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
+    <div data-testid="review-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
       {/* Breadcrumb */}
       <div style={{ fontSize: 13, color: neutral.mist }}>
         <button onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
@@ -213,12 +215,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       )}
 
       {/* Review table */}
-      <div style={{ overflowX: 'auto', opacity: authorised ? 0.72 : 1, transition: 'opacity 300ms', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 960 }}>
+      <div data-testid="review-detail-table-shell" style={{ overflowX: 'auto', opacity: authorised ? 0.72 : 1, transition: 'opacity 300ms', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1120 }}>
           <thead>
             <tr>
               {['Time', 'Patient', 'Route', 'Contract', 'Code', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
-                <th key={h} style={{ ...headCellStyle, textAlign: i === 7 || i === 8 ? 'right' : 'left' }}>{h}</th>
+                <th key={h} style={{ ...headCellStyle, textAlign: i === 7 || i === 8 ? 'right' : 'left', whiteSpace: REVIEW_NOWRAP_HEADINGS.has(h) ? 'nowrap' : undefined }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -228,16 +230,16 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
               const btm = primaryView?.fee.btm
               return (
                 <tr key={card.id}>
-                  <td className="mono" style={cellStyle}>{card.scheduledTime ?? '·'}</td>
+                  <td className="mono" style={nowrapCell}>{card.scheduledTime ?? '·'}</td>
                   <td style={cellStyle}>
                     <div style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
                   </td>
                   <td style={cellStyle}>{routeText}</td>
                   <td style={cellStyle}>{primaryView?.contract?.name ?? 'None'}</td>
-                  <td className="mono" style={{ ...cellStyle, color: accent.base }}>{primary?.rvgBaseCode ?? '·'}</td>
-                  <td className="mono" style={cellStyle}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
-                  <td className="mono" style={{ ...cellStyle, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
+                  <td className="mono" style={{ ...nowrapCell, color: accent.base }}>{primary?.rvgBaseCode ?? '·'}</td>
+                  <td className="mono" style={nowrapCell}>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</td>
+                  <td className="mono" data-testid="review-btm-value" style={{ ...nowrapCell, color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 700 }}>{totals.units}</td>
                   <td className="mono" style={{ ...numCell, fontWeight: 600 }}>{formatCurrency(totals.total)}</td>
                   <td style={cellStyle}>

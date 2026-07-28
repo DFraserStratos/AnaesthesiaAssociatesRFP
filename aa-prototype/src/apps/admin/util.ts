@@ -4,7 +4,7 @@
  * and the day-grid block geometry (the mockup's left=(start-7)/11 formula).
  */
 
-import type { Anaesthetist, Hospital, List, Session } from '../../domain/types'
+import type { Anaesthetist, Hospital, List, ListStatusKey, Session, Surgeon } from '../../domain/types'
 import { nameWithoutTitle, surnameOf } from '../../shared/format'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
@@ -65,6 +65,34 @@ export function listShortLabel(
   const hospital =
     list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'Unassigned'
   return `${who} · ${hospital} ${list.session}`
+}
+
+/**
+ * The List provenance shown in full-width office tables. The anaesthetist and
+ * date have their own columns there, so this label stays focused on the
+ * hospital/session identity and carries the surgeon as optional supporting
+ * context.
+ */
+export function listSourceLabels(
+  list: List,
+  masters: { hospitals: Record<string, Hospital>; surgeons: Record<string, Surgeon> },
+): { primary: string; secondary?: string } {
+  const hospital =
+    list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital unavailable') : 'Unassigned'
+  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : undefined
+  return {
+    primary: `${hospital} · ${list.session}`,
+    ...(surgeon !== undefined ? { secondary: surgeon } : {}),
+  }
+}
+
+/**
+ * The status treatment a List uses on the office day grid and on links back to
+ * that grid. A Free slot that has gained booking context is presented as
+ * Private even though the underlying status remains reconciliation-owned.
+ */
+export function displayStatusKeyForList(list: List, hasCards: boolean): ListStatusKey {
+  return list.statusKey === 'free' && (hasCards || list.hospitalId !== undefined) ? 'private' : list.statusKey
 }
 
 const BOOKED = new Set(['private', 'public', 'preop'])

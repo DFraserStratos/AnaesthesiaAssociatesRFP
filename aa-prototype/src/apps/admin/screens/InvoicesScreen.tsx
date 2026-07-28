@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import { ChevronLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../theme/statusColours'
 import type { Actor } from '../../../store'
 import { billedLists, counterpartyName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
-import { listShortLabel } from '../util'
+import { displayStatusKeyForList, listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 
 interface InvoicesScreenProps {
@@ -14,7 +16,7 @@ interface InvoicesScreenProps {
   onSelect: (invoiceId: string | null) => void
 }
 
-const cellStyle = adminCell()
+const cellStyle = { ...adminCell(), verticalAlign: 'middle' as const }
 const headCellStyle = adminHead()
 
 /**
@@ -34,6 +36,22 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
     // views, not this office pipeline table — exclude it (the billing monitor does too).
     () => Object.values(billing.invoices).filter((i) => !isBackdropInvoice(i)).sort((a, b) => b.id.localeCompare(a.id)),
     [billing.invoices],
+  )
+
+  const rows = useMemo(
+    () =>
+      invoices.map((invoice) => {
+        const card = schedule.cards[invoice.cardId]
+        const list = card !== undefined ? schedule.lists[card.listId] : undefined
+        const patient = card !== undefined ? masters.patients[card.patientId] : undefined
+        const anaesthetist =
+          list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+        const source = list !== undefined ? listSourceLabels(list, masters) : undefined
+        const displayStatusKey =
+          list !== undefined ? displayStatusKeyForList(list, card !== undefined) : undefined
+        return { invoice, card, list, patient, anaesthetist, source, displayStatusKey }
+      }),
+    [invoices, schedule.cards, schedule.lists, masters],
   )
 
   const billed = useMemo(() => billedLists({ schedule }), [schedule])
@@ -63,7 +81,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
+    <div data-testid="invoice-list-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Invoices</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 720 }}>
@@ -108,39 +126,88 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.
         </div>
       ) : (
-        <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 860 }}>
+        <div data-testid="invoice-list-table-shell" style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1380 }}>
             <thead>
               <tr>
-                {['Number', 'Raised', 'Counterparty', 'Layout', 'Total', 'Status', ''].map((h, i) => (
-                  <th key={h === '' ? 'view' : h} style={{ ...headCellStyle, textAlign: i === 4 ? 'right' : 'left' }}>{h}</th>
+                {['Number', 'Patient / card', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Status', ''].map((h, i) => (
+                  <th
+                    key={h === '' ? 'view' : h}
+                    style={{
+                      ...headCellStyle,
+                      textAlign: i === 8 ? 'right' : 'left',
+                      whiteSpace: i === 0 || i >= 4 ? 'nowrap' : undefined,
+                    }}
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="mono" style={{ ...cellStyle, fontWeight: 600 }}>{inv.invoiceNumber}</td>
-                  <td className="mono" style={cellStyle}>{dateTimeMicroCap(inv.raisedAtISO)}</td>
-                  <td style={cellStyle}>{counterpartyName({ masters }, inv.counterparty)}</td>
-                  <td style={cellStyle}>{inv.layout === 'patient' ? 'Patient' : 'Contract holder'}</td>
-                  <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600 }}>{formatCurrency(inv.total)}</td>
+              {rows.map(({ invoice, card, list, patient, anaesthetist, source, displayStatusKey }) => {
+                const statusColour = displayStatusKey !== undefined ? statusColours[displayStatusKey] : undefined
+                return (
+                  <tr key={invoice.id}>
+                  <td className="mono" style={{ ...cellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{invoice.invoiceNumber}</td>
                   <td style={cellStyle}>
-                    {inv.counterparty.kind === 'insurer' ? (
+                    <div style={{ fontWeight: 600 }}>{card === undefined ? 'Card unavailable' : (patient?.name ?? 'Unknown patient')}</div>
+                    <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>
+                      {card === undefined ? invoice.cardId : card.scheduledTime !== undefined ? `Card ${card.scheduledTime}` : 'Card time not set'}
+                    </div>
+                  </td>
+                  <td style={{ ...cellStyle, fontWeight: 600 }}>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</td>
+                  <td style={cellStyle}>
+                    {list !== undefined && source !== undefined && statusColour !== undefined ? (
+                      <Link
+                        to={`/admin/day/${list.dateISO}`}
+                        state={{ openListId: list.id }}
+                        style={{
+                          display: 'block',
+                          minWidth: 150,
+                          padding: '7px 9px 7px 11px',
+                          borderRadius: radius.ctl,
+                          border: displayStatusKey === 'free' ? freeDashedBorder : `1px solid ${statusColour.solid}22`,
+                          background: displayStatusKey === 'unavailable' ? unavailableHatchTint : statusColour.tint,
+                          boxShadow: `inset 3px 0 0 ${statusColour.solid}`,
+                          color: statusColour.onTint,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, fontWeight: 700 }}>
+                          <span>{source.primary}</span>
+                          <span aria-hidden>→</span>
+                        </span>
+                        {source.secondary !== undefined && (
+                          <span style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: statusColour.onTint, opacity: 0.72 }}>{source.secondary}</span>
+                        )}
+                      </Link>
+                    ) : (
+                      <div style={{ fontWeight: 600 }}>List unavailable</div>
+                    )}
+                  </td>
+                  <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{list !== undefined ? dayMicroCap(list.dateISO) : '·'}</td>
+                  <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dateTimeMicroCap(invoice.raisedAtISO)}</td>
+                  <td style={cellStyle}>{counterpartyName({ masters }, invoice.counterparty)}</td>
+                  <td style={cellStyle}>{invoice.layout === 'patient' ? 'Patient' : 'Contract holder'}</td>
+                  <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatCurrency(invoice.total)}</td>
+                  <td style={cellStyle}>
+                    {invoice.counterparty.kind === 'insurer' ? (
                       <StatusPill tone="warn" text="Upload portal" />
-                    ) : inv.emailedAtISO !== undefined ? (
-                      <StatusPill tone="ok" text={`Emailed ${hhmm(inv.emailedAtISO)}`} />
+                    ) : invoice.emailedAtISO !== undefined ? (
+                      <StatusPill tone="ok" text={`Emailed ${hhmm(invoice.emailedAtISO)}`} />
                     ) : (
                       <StatusPill text="Not emailed" />
                     )}
                   </td>
-                  <td style={cellStyle}>
-                    <button onClick={() => onSelect(inv.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                    <button onClick={() => onSelect(invoice.id)} style={{ border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       View →
                     </button>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -67,7 +67,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
 
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, state: navigationState } = useLocation()
   const [params] = useSearchParams()
   const [drawerListId, setDrawerListId] = useState<string | null>(null)
   const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
@@ -104,11 +104,19 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     lastSortRef.current = sortMode
   }, [selectedDate, sortMode])
 
-  // Any route change closes the drawer (it belongs to the day the office was
-  // looking at, and every old navigation helper cleared it).
+  // Any route change closes the old drawer. A List link may carry a transient
+  // target in navigation state: it opens the matching day first, then the
+  // existing drawer, without encoding the overlay in the URL.
   useEffect(() => {
-    setDrawerListId(null)
-  }, [pathname])
+    const openListId =
+      typeof navigationState === 'object' &&
+      navigationState !== null &&
+      'openListId' in navigationState &&
+      typeof navigationState.openListId === 'string'
+        ? navigationState.openListId
+        : null
+    setDrawerListId(openListId)
+  }, [pathname, navigationState])
 
   // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
   // NB: Object.values(record) would sort by registration number (numeric-like

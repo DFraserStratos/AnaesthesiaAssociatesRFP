@@ -843,3 +843,33 @@ Append one entry per completed session, newest last, using this template:
   focused admin Phase-06 Playwright checks green. The new browser check covers roving Tab state,
   arrows, Home/End, month-boundary focus, Enter, Page Up, Shift+Page Down and Space; the 1440px
   selected-day/focused-day screenshot was visually checked.
+- **The review-to-invoice workflow now uses the full desktop content width.** The Review queue is a
+  semantic six-column table (Anaesthetist, List, List date, Cards, Submitted, Review) rather than a
+  narrow card stack; its recently-billed panel aligns to the same width. The review detail's header,
+  summary, table and action bar fill the content region, while Time, Code, Times, B · T · M, Units
+  and Fee remain on one line. The invoice list now traces every row through its existing
+  Invoice-to-Card-to-List relationship, adding Patient / card, Anaesthetist, hospital/session/surgeon
+  List context and List date while retaining the separate Raised timestamp. The two Alan Prentice
+  funder rows therefore visibly share one source Card. Narrower desktops keep horizontal table
+  overflow; the printable invoice document retains its own page width. Shared List-source labels
+  keep the queue and invoice table consistent. No domain, store, seed or `PERSIST_VERSION` change.
+  Scenario 3's Markdown and HTML guides now point the presenter at the provenance columns.
+- Verification (this item): `npm run build` green (existing single-bundle size warning only),
+  `npm run test` green (**545** Vitest tests across 44 files), and `npm run lint` green. All six
+  focused Phase-07/08 Playwright checks and all 13 routing checks are green. Browser coverage pins
+  full-width alignment, non-wrapping BTM values, semantic queue navigation, invoice provenance and
+  the nib/St George's two-row Card relationship; refreshed queue, review and invoice screenshots
+  were visually checked at the standard 1440px desktop viewport.
+- **Invoice List provenance now links back to the operational day view.** Each available List cell
+  is a real link to `/admin/day/{list date}` carrying transient navigation state that opens the
+  existing List drawer on arrival; the drawer remains absent from the URL, and Back returns to the
+  invoice list. The link uses the same effective display status and shared colour source as the day
+  grid: tint, on-tint text and solid left accent for ordinary statuses, the Unavailable hatch and
+  the Free dashed treatment, including the existing rule that a Free List with booking context
+  displays as Private. Missing source Lists retain the defensive neutral fallback rather than a
+  broken link. Scenario 3's Markdown and HTML guides now describe the coloured jump-back.
+- Verification (this item): `npm run build` green (existing single-bundle size warning only),
+  `npm run test` green (**545** Vitest tests across 44 files), `npm run lint` green, all three
+  focused Phase-08 Playwright checks green and all 13 routing checks green. The browser test pins
+  the Private tint/foreground, target day URL, open matching List drawer and Back navigation; the
+  refreshed invoice-table screenshot was visually checked.

@@ -135,7 +135,7 @@ test('admin: review queue → review screen is a URL; refresh holds it, Back ret
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await expect(page).toHaveURL(/\/admin\/review$/)
 
-  await page.getByRole('button', { name: /Morrison/ }).first().click()
+  await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await expect(page).toHaveURL(/\/admin\/review\/[^/]+$/)
   const reviewURL = page.url()
 

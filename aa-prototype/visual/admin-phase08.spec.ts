@@ -15,7 +15,7 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   // Review queue → Morrison → authorise.
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await page.waitForTimeout(300)
-  await page.getByRole('button', { name: /Morrison/ }).first().click()
+  await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.waitForTimeout(200)
@@ -33,7 +33,26 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
   await expect(page.getByText('Recently billed')).toBeVisible()
   await expect(page.getByText(/AA-2026-\d{4}/).first()).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Patient / card' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
+  const invoiceWidth = await page.getByTestId('invoice-list-screen').evaluate((element) => element.getBoundingClientRect().width)
+  expect(invoiceWidth).toBeGreaterThan(1080)
   await page.screenshot({ path: 'visual/shots/a8-02-invoices-table.png', fullPage: true })
+
+  // The source List is a real link carrying the day-view status treatment. It
+  // lands on the List date and opens the existing transient drawer.
+  const sourceListLink = page.getByTestId('invoice-list-table-shell').getByRole('link').first()
+  await expect(sourceListLink.locator('xpath=ancestor::tr/td').first()).toHaveCSS('vertical-align', 'middle')
+  await expect(sourceListLink).toHaveCSS('background-color', 'rgb(232, 238, 252)')
+  await expect(sourceListLink).toHaveCSS('color', 'rgb(31, 68, 163)')
+  await sourceListLink.click()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-07-20$/)
+  await expect(page.getByTestId('admin-list-drawer')).toBeVisible()
+  await expect(page.getByTestId('admin-list-drawer')).toContainText("St George's")
+  await page.goBack()
+  await expect(page).toHaveURL(/\/admin\/invoices$/)
 
   // Open a document: contract-holder layout.
   await page.getByRole('button', { name: 'View →' }).first().click()
@@ -97,7 +116,7 @@ test('M10 view effect: the billed design-day list vanishes from the mobile app',
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await page.waitForTimeout(300)
-  await page.getByRole('button', { name: /Souter/ }).first().click()
+  await page.getByRole('row').filter({ hasText: /Souter/ }).getByRole('button', { name: /Review/ }).first().click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.waitForTimeout(200)
@@ -151,6 +170,15 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
 
   // The nib line-split invoice presents via the upload portal, never email.
   await expect(page.getByText('Upload portal').first()).toBeVisible()
+  const alanRows = page.getByTestId('invoice-list-table-shell').locator('tbody tr').filter({ hasText: 'Alan Prentice' })
+  await expect(alanRows).toHaveCount(2)
+  await expect(alanRows.locator('td:nth-child(3)')).toHaveText(['Dr Melanie Souter', 'Dr Melanie Souter'])
+  await expect(alanRows.locator('td:nth-child(4)')).toHaveText([
+    /St George's · PM.*Ms G\. Lim/,
+    /St George's · PM.*Ms G\. Lim/,
+  ])
+  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
+  expect((await alanRows.locator('td:nth-child(7)').allTextContents()).sort()).toEqual(["St George's", 'nib'])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })
 
   // Open the patient-layout invoice: insured-reimbursement wording.

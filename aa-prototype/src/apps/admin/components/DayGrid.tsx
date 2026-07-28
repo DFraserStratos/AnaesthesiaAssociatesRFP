@@ -4,7 +4,7 @@ import { statusColours, unavailableHatchTint, freeDashedBorder } from '../../../
 import type { Anaesthetist, List } from '../../../domain/types'
 import type { AppState } from '../../../store'
 import { StatusLegend } from '../../../shared'
-import { attentionReasons, blockGeometry, isBooked, listSpan, surnameFirst } from '../util'
+import { attentionReasons, blockGeometry, displayStatusKeyForList, isBooked, listSpan, surnameFirst } from '../util'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -107,8 +107,7 @@ function GridBlock({ seg, masters, hasCards, prepaymentFlag, onClick }: { seg: S
   // A Free list booked via the phone-advice path (cards added or a hospital
   // assigned) renders as a booked block, even though its statusKey stays free
   // (status is reassign/reconcile-owned, not office-editable).
-  const bookedFree = list.statusKey === 'free' && (hasCards || list.hospitalId !== undefined)
-  const displayKey = bookedFree ? 'private' : list.statusKey
+  const displayKey = displayStatusKeyForList(list, hasCards)
   const colour = statusColours[displayKey]
   const reasons = attentionReasons(list)
   const needsAttention = reasons.length > 0
