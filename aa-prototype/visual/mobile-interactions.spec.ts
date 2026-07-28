@@ -109,6 +109,7 @@ test('reduced motion removes geometric press and selection travel', async ({ pag
   await asa.scrollIntoViewIfNeeded()
   const asaIndicator = asa.locator('[data-sliding-segment-indicator]')
   await expect(asaIndicator).toHaveCSS('transition-property', 'opacity')
+  await expect(page.getByTestId('mobile-time-action-slider')).toHaveCSS('transition-property', 'opacity')
 
   const option = asa.getByRole('button', { name: 'IV', exact: true })
   const pressedTransform = await holdAtCentre(page, option)
@@ -146,4 +147,58 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   const formSegment = page.locator('[role="dialog"] [data-sliding-segmented-control]').first()
   await expectHighlightAligned(formSegment)
   await page.screenshot({ path: 'visual/shots/mobile-native-sheet-segment.png', fullPage: true })
+})
+
+test('Start now becomes the travelling Finish action without a validation-focus flash', async ({ page }) => {
+  await page.goto('/mobile')
+  await page.waitForLoadState('networkidle')
+  await page.getByText('Southern Cross', { exact: false }).first().click()
+  await page.waitForTimeout(300)
+  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Enter manually', { exact: false }).first().click()
+
+  await page.getByLabel('Name').fill('Timer Motion Test')
+  await page.getByLabel('Date of birth').fill('1980-01-01')
+  await page.getByLabel('Operation').fill('Timer interaction review')
+  await page.getByRole('button', { name: 'Save card' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByText('Timer Motion Test', { exact: true }).click()
+
+  const start = page.getByRole('button', { name: 'Start now' })
+  await start.scrollIntoViewIfNeeded()
+  const slider = page.getByTestId('mobile-time-action-slider')
+  await expect(slider).toHaveAttribute('data-position', 'left')
+  await start.evaluate((element) => {
+    const retained = element as HTMLElement & { retainedAcrossSlide?: boolean }
+    retained.retainedAcrossSlide = true
+  })
+
+  const startBox = await start.boundingBox()
+  expect(startBox).not.toBeNull()
+  await page.mouse.move(startBox!.x + startBox!.width / 2, startBox!.y + startBox!.height / 2)
+  await page.mouse.down()
+  await page.waitForTimeout(45)
+  expect(await start.evaluate((element) => getComputedStyle(element).outlineColor)).not.toBe('rgb(194, 64, 60)')
+  await page.mouse.up()
+
+  const finish = page.getByRole('button', { name: 'Finish now' })
+  await expect(slider).toHaveAttribute('data-position', 'right')
+  expect(
+    await finish.evaluate(
+      (element) =>
+        (element as HTMLElement & { retainedAcrossSlide?: boolean }).retainedAcrossSlide,
+    ),
+  ).toBe(true)
+  expect(await finish.evaluate((element) => getComputedStyle(element).outlineColor)).not.toBe('rgb(194, 64, 60)')
+  expect(await slider.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0)
+  await expect(page.getByText('Start', { exact: true })).toBeVisible()
+  await expect(page.getByText('08:00', { exact: true })).toBeVisible()
+  await expect(page.getByText('Stamped from the demo clock')).toHaveCount(0)
+  await page.waitForTimeout(90)
+  await page.screenshot({ path: 'visual/shots/mobile-time-action-slide.png', fullPage: true })
+
+  await page.getByRole('button', { name: 'Mark complete' }).click()
+  const validationFocus = page.locator('[data-validation-focus="true"]')
+  await expect(validationFocus).toBeFocused()
+  await expect(validationFocus).toHaveCSS('outline-color', 'rgb(194, 64, 60)')
 })

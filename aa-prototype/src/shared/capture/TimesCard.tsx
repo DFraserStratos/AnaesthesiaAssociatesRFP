@@ -1,11 +1,11 @@
-import { useState } from 'react'
 import { accent, neutral } from '../../theme/tokens'
+import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import { timeUnitsFromMinutes, type BillingValidationFailure } from '../../domain/billing'
 import { clockISO, editProcedure, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
 import { durationLabel, isoTimeLabel, minutesBetweenIso, shiftIsoMinutes } from './timeIso'
-import { CaptureSection, Caption, FailureNotes, NudgeButton } from './ui'
+import { CaptureSection, FailureNotes, NudgeButton } from './ui'
 
 interface TimesCardProps {
   procedure: Procedure
@@ -26,15 +26,13 @@ interface TimesCardProps {
  * (Decisions log 2026-07-22: the RFP is silent on partial intervals).
  *
  * The stamps and the duration strip go through `useSurface().Pair`: stacked on
- * the phone exactly as before, side by side on a desktop. Left full width the
- * two stamp columns would each be about 400px, which turns "Finish now" into a
- * slab and floats the mono times in empty space. It is the one `align="start"`
- * pair: these halves are content inside this card, not two cards, so matching
- * their heights would only stretch the grey duration strip around its two lines.
+ * the phone and side by side on a desktop. On the phone one action travels
+ * between the two time cells; desktop retains its static two-column treatment.
+ * It is the one `align="start"` pair because these halves are content inside
+ * this card, not peer cards that should stretch to matching heights.
  */
 export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
-  const { Pair } = useSurface()
-  const [stamped, setStamped] = useState<{ start: boolean; finish: boolean }>({ start: false, finish: false })
+  const { Pair, variant } = useSurface()
 
   const start = procedure.anaestheticStartISO
   const finish = procedure.handoverISO
@@ -42,18 +40,13 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
   function write(patch: Parameters<typeof editProcedure>[3]) {
     const outcome = editProcedure(useAppStore, actor, procedure.id, patch)
     if (!outcome.ok) onError(outcome.message)
-    return outcome.ok
   }
 
   function stampStart() {
-    if (write({ anaestheticStartISO: clockISO(useAppStore.getState().clock) })) {
-      setStamped((s) => ({ ...s, start: true }))
-    }
+    write({ anaestheticStartISO: clockISO(useAppStore.getState().clock) })
   }
   function stampFinish() {
-    if (write({ handoverISO: clockISO(useAppStore.getState().clock) })) {
-      setStamped((s) => ({ ...s, finish: true }))
-    }
+    write({ handoverISO: clockISO(useAppStore.getState().clock) })
   }
 
   function nudgeStart(delta: number) {
@@ -84,67 +77,52 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
       }}
     >
       <Pair align="start">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {/* Start column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {start !== undefined ? (
-              <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
-                <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(start)}</div>
-                {canCapture && (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <NudgeButton label="−5" onClick={() => nudgeStart(-5)} />
-                    <NudgeButton label="+5" onClick={() => nudgeStart(5)} />
-                  </div>
-                )}
-                {stamped.start && <Caption>Stamped from the demo clock</Caption>}
-              </>
-            ) : canCapture ? (
-              <StampButton
-                label="Start now"
-                procedureId={procedure.id}
-                field="anaestheticStartISO"
-                onClick={stampStart}
-              />
-            ) : (
-              <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Start</div>
-                <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
-              </>
-            )}
-          </div>
-
-          {/* Finish column appears once a start exists */}
-          {start !== undefined && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {finish !== undefined ? (
-                <>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
-                  <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(finish)}</div>
-                  {canCapture && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <NudgeButton label="−5" onClick={() => nudgeFinish(-5)} />
-                      <NudgeButton label="+5" onClick={() => nudgeFinish(5)} />
-                    </div>
-                  )}
-                  {stamped.finish && <Caption>Stamped from the demo clock</Caption>}
-                </>
+        {variant === 'mobile' ? (
+          <MobileTimeCapture
+            procedureId={procedure.id}
+            start={start}
+            finish={finish}
+            canCapture={canCapture}
+            onStampStart={stampStart}
+            onStampFinish={stampFinish}
+            onNudgeStart={nudgeStart}
+            onNudgeFinish={nudgeFinish}
+          />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              {start !== undefined ? (
+                <RecordedTime label="Start" iso={start} canCapture={canCapture} onNudge={nudgeStart} />
               ) : canCapture ? (
                 <StampButton
-                  label="Finish now"
+                  label="Start now"
                   procedureId={procedure.id}
-                  field="handoverISO"
-                  onClick={stampFinish}
+                  field="anaestheticStartISO"
+                  onClick={stampStart}
                 />
               ) : (
-                <>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>Finish</div>
-                  <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
-                </>
+                <MissingTime label="Start" />
               )}
             </div>
-          )}
-        </div>
+
+            {start !== undefined && (
+              <div>
+                {finish !== undefined ? (
+                  <RecordedTime label="Finish" iso={finish} canCapture={canCapture} onNudge={nudgeFinish} />
+                ) : canCapture ? (
+                  <StampButton
+                    label="Finish now"
+                    procedureId={procedure.id}
+                    field="handoverISO"
+                    onClick={stampFinish}
+                  />
+                ) : (
+                  <MissingTime label="Finish" />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {minutes !== null && minutes > 0 && (
           <div style={{ fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -164,6 +142,144 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
 
       <FailureNotes failures={[...startFailures, ...finishFailures]} />
     </CaptureSection>
+  )
+}
+
+interface MobileTimeCaptureProps {
+  procedureId: string
+  start: string | undefined
+  finish: string | undefined
+  canCapture: boolean
+  onStampStart: () => void
+  onStampFinish: () => void
+  onNudgeStart: (delta: number) => void
+  onNudgeFinish: (delta: number) => void
+}
+
+/**
+ * The phone presents Start and Finish as one travelling action. The recorded
+ * time controls stay in their grid cells underneath it, so stamping the start
+ * reveals the left controls as the same teal action moves to the right.
+ */
+function MobileTimeCapture({
+  procedureId,
+  start,
+  finish,
+  canCapture,
+  onStampStart,
+  onStampFinish,
+  onNudgeStart,
+  onNudgeFinish,
+}: MobileTimeCaptureProps) {
+  const hasStart = start !== undefined
+  const showStartDetails = hasStart || !canCapture
+  const showFinishDetails = hasStart && (finish !== undefined || !canCapture)
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 12,
+        minHeight: 96,
+        alignItems: 'start',
+      }}
+    >
+      <div
+        className="aa-time-details-reveal"
+        aria-hidden={!showStartDetails}
+        style={{
+          minWidth: 0,
+          opacity: showStartDetails ? 1 : 0,
+          transform: showStartDetails ? 'translateY(0)' : 'translateY(4px)',
+          transition: `opacity ${motion.valueTick.stepDuration}ms ease-out 50ms, transform ${motion.valueTick.stepDuration}ms ease-out 50ms`,
+          pointerEvents: showStartDetails ? 'auto' : 'none',
+        }}
+      >
+        {start !== undefined ? (
+          <RecordedTime label="Start" iso={start} canCapture={canCapture} onNudge={onNudgeStart} />
+        ) : !canCapture ? (
+          <MissingTime label="Start" />
+        ) : null}
+      </div>
+
+      <div
+        className="aa-time-details-reveal"
+        aria-hidden={!showFinishDetails}
+        style={{
+          minWidth: 0,
+          opacity: showFinishDetails ? 1 : 0,
+          transform: showFinishDetails ? 'translateY(0)' : 'translateY(4px)',
+          transition: `opacity ${motion.valueTick.stepDuration}ms ease-out 50ms, transform ${motion.valueTick.stepDuration}ms ease-out 50ms`,
+          pointerEvents: showFinishDetails ? 'auto' : 'none',
+        }}
+      >
+        {finish !== undefined ? (
+          <RecordedTime label="Finish" iso={finish} canCapture={canCapture} onNudge={onNudgeFinish} />
+        ) : hasStart && !canCapture ? (
+          <MissingTime label="Finish" />
+        ) : null}
+      </div>
+
+      {canCapture && finish === undefined && (
+        <div
+          className="aa-time-action-slider"
+          data-testid="mobile-time-action-slider"
+          data-position={hasStart ? 'right' : 'left'}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: 'calc((100% - 12px) / 2)',
+            transform: hasStart ? 'translateX(calc(100% + 12px))' : 'translateX(0)',
+            transition: `transform ${motion.cardAdvance.in}ms ${motion.cardAdvance.easing}`,
+            willChange: 'transform',
+          }}
+        >
+          <StampButton
+            label={hasStart ? 'Finish now' : 'Start now'}
+            procedureId={procedureId}
+            field={hasStart ? 'handoverISO' : 'anaestheticStartISO'}
+            onClick={hasStart ? onStampFinish : onStampStart}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecordedTime({
+  label,
+  iso,
+  canCapture,
+  onNudge,
+}: {
+  label: 'Start' | 'Finish'
+  iso: string
+  canCapture: boolean
+  onNudge: (delta: number) => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{label}</div>
+      <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(iso)}</div>
+      {canCapture && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <NudgeButton label="−5" onClick={() => onNudge(-5)} />
+          <NudgeButton label="+5" onClick={() => onNudge(5)} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MissingTime({ label }: { label: 'Start' | 'Finish' }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{label}</div>
+      <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
+    </div>
   )
 }
 

@@ -164,7 +164,12 @@ body {
   box-shadow: var(--shadow-calendar-focus);
 }
 
-[data-validation-fields]:focus {
+[data-validation-fields]:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+[data-validation-focus='true']:focus {
   outline: 3px solid var(--color-error);
   outline-offset: 3px;
 }
@@ -307,6 +312,11 @@ body {
   }
 
   .aa-sliding-segment-indicator {
+    transition-property: opacity !important;
+  }
+
+  .aa-time-action-slider,
+  .aa-time-details-reveal {
     transition-property: opacity !important;
   }
 }

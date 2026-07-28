@@ -404,6 +404,17 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
                 !candidate.matches(':disabled'),
             ) ?? candidates[0]
           if (target === undefined) return
+          root.querySelectorAll<HTMLElement>('[data-validation-focus]').forEach((candidate) => {
+            delete candidate.dataset.validationFocus
+          })
+          target.dataset.validationFocus = 'true'
+          target.addEventListener(
+            'blur',
+            () => {
+              delete target.dataset.validationFocus
+            },
+            { once: true },
+          )
           target.focus({ preventScroll: true })
           target.scrollIntoView({
             behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
