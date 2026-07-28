@@ -84,6 +84,7 @@
   --shadow-e1: 0 1px 2px rgba(23, 35, 32, 0.05), 0 2px 6px rgba(23, 35, 32, 0.05);
   --shadow-e2: 0 2px 4px rgba(23, 35, 32, 0.06), 0 8px 20px rgba(23, 35, 32, 0.09);
   --shadow-e3: 0 8px 16px rgba(23, 35, 32, 0.1), 0 24px 56px rgba(23, 35, 32, 0.18);
+  --shadow-calendar-focus: 0 0 0 2px var(--color-surface), 0 0 0 5px var(--color-brand);
 
   /* ── Type scale (size / line-height / weight / tracking) ─ */
   --text-display: 32px;
@@ -137,6 +138,13 @@ body {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
+}
+
+.aa-admin-calendar-day:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: none;
+  box-shadow: var(--shadow-calendar-focus);
 }
 
 /* ── Motion keyframes (named to match motion.ts) ─────────── */

@@ -62,6 +62,51 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a-06-wed.png', fullPage: true })
 })
 
+test('admin mini calendar supports keyboard date navigation', async ({ page }) => {
+  await page.goto('/admin')
+  await page.waitForLoadState('networkidle')
+
+  const calendar = page.getByTestId('admin-right-rail')
+  const selectedDay = calendar.getByRole('button', { name: 'Tuesday 21 July 2026', exact: true })
+  await expect(selectedDay).toHaveAttribute('aria-current', 'date')
+  await expect(selectedDay).toHaveAttribute('aria-pressed', 'true')
+  await expect(selectedDay).toHaveAttribute('tabindex', '0')
+
+  await selectedDay.focus()
+  expect(await selectedDay.evaluate((element) => getComputedStyle(element).boxShadow)).toContain('rgb(169, 30, 62)')
+  await page.screenshot({ path: 'visual/shots/a-12-calendar-keyboard.png', fullPage: true })
+  await page.keyboard.press('ArrowRight')
+  const nextDay = calendar.getByRole('button', { name: 'Wednesday 22 July 2026', exact: true })
+  await expect(nextDay).toBeFocused()
+  await expect(nextDay).toHaveAttribute('aria-pressed', 'false')
+  expect(await nextDay.evaluate((element) => getComputedStyle(element).boxShadow)).toContain('rgb(169, 30, 62)')
+  await expect(page.getByRole('heading', { name: /Tuesday 21 July 2026/ })).toBeVisible()
+
+  await page.keyboard.press('ArrowDown')
+  await expect(calendar.getByRole('button', { name: 'Wednesday 29 July 2026', exact: true })).toBeFocused()
+  await page.keyboard.press('Home')
+  await expect(calendar.getByRole('button', { name: 'Monday 27 July 2026', exact: true })).toBeFocused()
+  await page.keyboard.press('End')
+  const nextMonthDay = calendar.getByRole('button', { name: 'Sunday 2 August 2026', exact: true })
+  await expect(nextMonthDay).toBeFocused()
+  await expect(page.getByRole('group', { name: /^August 2026 calendar/ })).toBeVisible()
+
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/admin\/day\/2026-08-02$/)
+  await expect(page.getByRole('heading', { name: /Sunday 2 August 2026/ })).toBeVisible()
+  await expect(nextMonthDay).toHaveAttribute('aria-pressed', 'true')
+  await expect(nextMonthDay).toHaveCSS('border-color', 'rgb(169, 30, 62)')
+
+  await page.keyboard.press('PageUp')
+  await expect(calendar.getByRole('button', { name: 'Thursday 2 July 2026', exact: true })).toBeFocused()
+  await page.keyboard.press('Shift+PageDown')
+  const nextYearDay = calendar.getByRole('button', { name: 'Friday 2 July 2027', exact: true })
+  await expect(nextYearDay).toBeFocused()
+  await page.keyboard.press('Space')
+  await expect(page).toHaveURL(/\/admin\/day\/2027-07-02$/)
+  await expect(page.getByRole('heading', { name: /Friday 2 July 2027/ })).toBeVisible()
+})
+
 test('admin phase 06 list reassignment', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')

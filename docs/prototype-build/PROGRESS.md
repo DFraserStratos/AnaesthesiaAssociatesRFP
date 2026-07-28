@@ -826,3 +826,20 @@ Append one entry per completed session, newest last, using this template:
   `npm run test` green (**545** Vitest tests across 44 files), `npm run lint` green, and the focused
   S2 Beat 3 Playwright flow green. The rendered flow shows Rutherford's warning before reassignment,
   no Needs attention or unavailable message on Sharma afterwards, and List reassigned in History.
+- **Admin mini calendar made keyboard-navigable.** The day-view calendar now uses one roving Tab
+  stop, initially on the selected day. Left/Right move one day, Up/Down move one week, Home/End move
+  to the Monday/Sunday of the current week, Page Up/Page Down move one month, and Shift plus those
+  keys moves one year. The focus cursor can cross a month boundary without changing the selected
+  day or the admin route; Enter or Space commits the focused date. Today remains the crimson
+  identity marker and selection remains distinct. All three visible states now share AA crimson:
+  solid fill for today, a thin border for the selected date, and a solid outer ring for keyboard
+  focus with a slim white separation so it stays clear around the crimson today cell (user visual
+  pick, superseding the initial teal/grey treatments). Full spoken date labels, selected/today state,
+  shortcut metadata, labelled month
+  controls and concise screen-reader instructions were added with the interaction. No store, seed,
+  routing, demo-script or `PERSIST_VERSION` change.
+- Verification (this item): `npm run build` green (existing single-bundle size warning only),
+  `npm run test` green (**545** Vitest tests across 44 files), `npm run lint` green, and all six
+  focused admin Phase-06 Playwright checks green. The new browser check covers roving Tab state,
+  arrows, Home/End, month-boundary focus, Enter, Page Up, Shift+Page Down and Space; the 1440px
+  selected-day/focused-day screenshot was visually checked.

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { addMonths, format, getDay, getDaysInMonth, parseISO, startOfMonth } from 'date-fns'
+import { useEffect, useRef, useState } from 'react'
+import { addDays, addMonths, addYears, format, getDay, getDaysInMonth, parseISO, startOfMonth } from 'date-fns'
 import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
@@ -46,7 +46,11 @@ function Card({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 
 function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate }: { monthDateISO: string; selectedDateISO: string; todayISO: string; onNavigateDate: (d: string) => void }) {
-  const month = startOfMonth(parseISO(monthDateISO))
+  const [visibleMonthISO, setVisibleMonthISO] = useState(() => format(startOfMonth(parseISO(monthDateISO)), 'yyyy-MM-dd'))
+  const [focusedDateISO, setFocusedDateISO] = useState(selectedDateISO)
+  const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const shouldRestoreFocus = useRef(false)
+  const month = startOfMonth(parseISO(visibleMonthISO))
   const daysInMonth = getDaysInMonth(month)
   // Monday-first: convert Sun(0)..Sat(6) to leading blanks.
   const leading = (getDay(month) + 6) % 7
@@ -55,19 +59,81 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
   const monthPrefix = format(month, 'yyyy-MM')
   const weekNumber = format(parseISO(selectedDateISO), 'II')
 
+  useEffect(() => {
+    setVisibleMonthISO(format(startOfMonth(parseISO(monthDateISO)), 'yyyy-MM-dd'))
+    setFocusedDateISO(selectedDateISO)
+  }, [monthDateISO, selectedDateISO])
+
+  useEffect(() => {
+    if (!shouldRestoreFocus.current) return
+    const day = dayRefs.current[focusedDateISO]
+    if (day === undefined || day === null) return
+    day.focus()
+    shouldRestoreFocus.current = false
+  }, [focusedDateISO, visibleMonthISO])
+
+  function moveFocus(dateISO: string) {
+    if (dateISO === focusedDateISO) return
+    shouldRestoreFocus.current = true
+    setFocusedDateISO(dateISO)
+    setVisibleMonthISO(format(startOfMonth(parseISO(dateISO)), 'yyyy-MM-dd'))
+  }
+
+  function handleDayKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, dateISO: string) {
+    const date = parseISO(dateISO)
+    const mondayIndex = (getDay(date) + 6) % 7
+    let next: Date | undefined
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        next = addDays(date, -1)
+        break
+      case 'ArrowRight':
+        next = addDays(date, 1)
+        break
+      case 'ArrowUp':
+        next = addDays(date, -7)
+        break
+      case 'ArrowDown':
+        next = addDays(date, 7)
+        break
+      case 'Home':
+        next = addDays(date, -mondayIndex)
+        break
+      case 'End':
+        next = addDays(date, 6 - mondayIndex)
+        break
+      case 'PageUp':
+        next = event.shiftKey ? addYears(date, -1) : addMonths(date, -1)
+        break
+      case 'PageDown':
+        next = event.shiftKey ? addYears(date, 1) : addMonths(date, 1)
+        break
+      default:
+        return
+    }
+
+    event.preventDefault()
+    moveFocus(format(next, 'yyyy-MM-dd'))
+  }
+
   return (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <NavArrow glyph="‹" onClick={() => onNavigateDate(format(addMonths(month, -1), 'yyyy-MM-dd'))} />
+          <NavArrow label="Previous month" glyph="‹" onClick={() => onNavigateDate(format(addMonths(month, -1), 'yyyy-MM-dd'))} />
           <span style={{ fontSize: 14, fontWeight: 600 }}>{format(month, 'MMMM yyyy')}</span>
-          <NavArrow glyph="›" onClick={() => onNavigateDate(format(addMonths(month, 1), 'yyyy-MM-dd'))} />
+          <NavArrow label="Next month" glyph="›" onClick={() => onNavigateDate(format(addMonths(month, 1), 'yyyy-MM-dd'))} />
         </div>
         <span style={{ fontSize: 11, color: neutral.mist }}>week {weekNumber}</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, textAlign: 'center' }}>
+      <div
+        role="group"
+        aria-label={`${format(month, 'MMMM yyyy')} calendar. Use arrow keys to move by day or week, Home and End to move within a week, and Page Up and Page Down to move by month. Hold Shift with Page Up or Page Down to move by year. Press Enter or Space to select a date.`}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, textAlign: 'center' }}
+      >
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <span key={i} style={{ fontSize: 9.5, fontWeight: 600, color: neutral.mist, padding: '3px 0' }}>{d}</span>
+          <span key={i} aria-hidden="true" style={{ fontSize: 9.5, fontWeight: 600, color: neutral.mist, padding: '3px 0' }}>{d}</span>
         ))}
         {cells.map((d, i) => {
           if (d === null) return <span key={`b${i}`} />
@@ -77,14 +143,25 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
           return (
             <button
               key={iso}
+              ref={(element) => {
+                dayRefs.current[iso] = element
+              }}
               type="button"
+              className="aa-admin-calendar-day"
+              aria-current={isToday ? 'date' : undefined}
+              aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End PageUp PageDown Shift+PageUp Shift+PageDown"
+              aria-label={format(parseISO(iso), 'EEEE d MMMM yyyy')}
+              aria-pressed={isSelected}
+              tabIndex={iso === focusedDateISO ? 0 : -1}
               onClick={() => onNavigateDate(iso)}
+              onFocus={() => setFocusedDateISO(iso)}
+              onKeyDown={(event) => handleDayKeyDown(event, iso)}
               style={{
                 fontSize: 11,
                 lineHeight: '24px',
                 height: 24,
                 borderRadius: 6,
-                border: isSelected && !isToday ? `1px solid ${accent.base}` : '1px solid transparent',
+                border: isSelected && !isToday ? `1px solid ${brand.base}` : '1px solid transparent',
                 fontWeight: isToday ? 700 : 400,
                 color: isToday ? '#FFFFFF' : neutral.ink,
                 background: isToday ? brand.base : 'transparent',
@@ -101,9 +178,9 @@ function MiniCalendar({ monthDateISO, selectedDateISO, todayISO, onNavigateDate 
   )
 }
 
-function NavArrow({ glyph, onClick }: { glyph: string; onClick: () => void }) {
+function NavArrow({ label, glyph, onClick }: { label: string; glyph: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 13, lineHeight: '20px', padding: 0 }}>
+    <button type="button" aria-label={label} onClick={onClick} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', fontSize: 13, lineHeight: '20px', padding: 0 }}>
       {glyph}
     </button>
   )
