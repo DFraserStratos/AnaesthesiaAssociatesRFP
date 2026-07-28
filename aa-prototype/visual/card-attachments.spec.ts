@@ -45,6 +45,18 @@ test('desktop Card total starts level with the first capture-card pair', async (
   expect(Math.abs(asa!.y - total!.y)).toBeLessThan(1)
 })
 
+test('desktop completion action is separate and matches the Card total width', async ({ page }) => {
+  await openEllison(page)
+  const total = await page.getByText('CARD TOTAL', { exact: true }).locator('../../..').boundingBox()
+  const complete = await page.getByRole('button', { name: 'Mark complete' }).boundingBox()
+
+  expect(total).not.toBeNull()
+  expect(complete).not.toBeNull()
+  expect(Math.abs(total!.x - complete!.x)).toBeLessThan(1)
+  expect(Math.abs(total!.width - complete!.width)).toBeLessThan(1)
+  expect(complete!.y - (total!.y + total!.height)).toBeCloseTo(8, 0)
+})
+
 test('desktop header actions are grouped with the records they act on', async ({ page }) => {
   await openEllison(page)
   const pageHeader = page.getByTestId('web-card-header')

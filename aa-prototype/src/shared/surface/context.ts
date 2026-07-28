@@ -39,9 +39,9 @@ export interface CardTotalLine {
  * stacked rows, the phone's dock has one line, so it turns the procedures into
  * chips and leaves fee-line detail to the `BillingLinesCard` in the column.
  *
- * `action` is the complete / amend bar, which every surface embeds so the figure
- * and the button that commits it are one object. Where it sits inside that
- * object is the surface's business.
+ * `action` is the complete / amend bar. The phone total embeds it in the dock's
+ * stack; the web layout passes null and renders the control as a separate,
+ * matching-width sibling below the total.
  */
 export interface CardTotalProps {
   /** Summed billable units across the Card's procedures (`cardFee`). */
@@ -102,17 +102,18 @@ export interface CardLayoutSlots {
   actions: ReactNode
   /**
    * The Card's running units + fee, as a function of the action to embed in it.
-   * BOTH surfaces pin it and pass `completeBar` in, so the figure and the button
-   * that commits it are one block that stays on screen while the capture column
+   * Both surfaces pin it so the figure stays on screen while the capture column
    * scrolls under it: desktop beside the column, mobile above the home
-   * indicator. That is the whole point of the object — a modifier tap has to
-   * tick a fee the thumb can see. Null on a cancelled or procedure-less Card,
-   * where the layout falls back to `completeBar` alone.
+   * indicator. Mobile passes `completeBar` into the total's dock stack; web
+   * passes null and renders `completeBar` as a separate sibling. Null on a
+   * cancelled or procedure-less Card, where the layout falls back to
+   * `completeBar` alone.
    */
   summary: ((action: ReactNode) => ReactNode) | null
   /**
    * The complete / amend bar, or null when the Card offers neither. Handed to
-   * `summary` wherever there is one, so exactly one thing renders it.
+   * `summary` on mobile and rendered beside it by the web layout, so exactly one
+   * thing renders it.
    */
   completeBar: ReactNode
   /** The completion flood, or null. Each surface positions it. */

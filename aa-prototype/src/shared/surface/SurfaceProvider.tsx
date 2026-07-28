@@ -117,18 +117,29 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
  *   span 12  card-wide banners when present (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
- *            pins the Card total with the complete/amend bar inside it; patient
- *            / time / attachments / notes and the quiet secondary actions follow.
+ *            pins the Card total with a separate, matching-width complete/amend
+ *            bar below it; patient / time / attachments / notes and the quiet
+ *            secondary actions follow.
  *
  * The commit block is `sticky`, so the fee ticks in place while the capture
  * column scrolls under it — the one thing a desktop can do that the phone
  * cannot. It carries the canvas colour as its own background (with the padding
  * cancelled by equal negative margins) so rail content passes behind it rather
- * than through it. The grid deliberately does NOT set `align-items: start`: the
- * rail must stretch to the row height or the sticky block has nowhere to travel.
+ * than through it. The 8px separation and equal widths mirror the phone dock,
+ * while keeping the two controls visually independent. The grid deliberately
+ * does NOT set `align-items: start`: the rail must stretch to the row height or
+ * the sticky block has nowhere to travel.
  */
 function WebCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
-  const commit = summary !== null ? summary(completeBar) : completeBar
+  const commit =
+    summary !== null ? (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {summary(null)}
+        {completeBar}
+      </div>
+    ) : (
+      completeBar
+    )
 
   return (
     <>

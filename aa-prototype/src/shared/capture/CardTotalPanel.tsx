@@ -4,14 +4,15 @@ import type { CardTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
 
 /**
- * The desktop commit block: everything about what the Card comes to, and the
- * button that commits it, in one pinned object.
+ * The desktop Card-total panel: everything about what the Card comes to.
+ * `WebCardLayout` pins it above a separate, matching-width completion control,
+ * mirroring the phone dock's visual separation.
  *
  * This is the ONLY place money appears on the desktop, so it carries the applied
  * rate (or FIXED CONTRACT PRICE on a Type 3 match), the line breakdown, and the
  * override note. A per-procedure panel as well would simply print the same
  * dollar figure twice on the common one-procedure Card (user finding,
- * 2026-07-27). `CardTotalStrip` is the phone's shape of the same object.
+ * 2026-07-27). `CardTotalStrip` is the phone's compact shape of the same total.
  *
  * The rail has room to stack a row per line, so it uses `lines` whichever kind
  * they are and ignores `linesArePerProcedure` — the label carries the meaning
