@@ -121,8 +121,11 @@ export function BtmCaptureBlock({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Header: PROCEDURE n · description · Edit */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: procedureCount > 1 && ordinal > 1 ? 8 : 0 }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div
+        data-testid="procedure-header"
+        style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: procedureCount > 1 && ordinal > 1 ? 8 : 0 }}
+      >
+        <div style={{ flex: '0 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {procedureCount > 1 && (
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist }}>
               PROCEDURE {ordinal}

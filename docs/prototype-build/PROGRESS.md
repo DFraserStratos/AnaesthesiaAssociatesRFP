@@ -908,3 +908,14 @@ Append one entry per completed session, newest last, using this template:
   ASA card top edges; the focused desktop Card-detail Playwright suite is green (**3** checks,
   including the new alignment regression). `npm run build`, `npm run test` (**547** Vitest tests
   across 45 files) and `npm run lint` are green.
+- **Anaesthetist web Card header actions compacted.** Status and History now form one action group
+  beside the patient identity instead of occupying separate header rows; the procedure Edit action
+  sits directly beside its procedure title. Ordinary Cards no longer pay for an empty full-width
+  banner/history row, moving the capture workspace roughly 90px upward at the standard desktop
+  viewport. Banner-bearing Cards retain their full-width notice row, admin keeps its existing
+  standalone History placement, and the mobile header/scroll placement is unchanged. No domain,
+  store, seed, demo-script or `PERSIST_VERSION` change.
+- Verification (this item): the live browser visually confirmed the compact hierarchy, a 10px
+  title-to-Edit gap and the retained Card-total/ASA alignment. The focused desktop and mobile
+  Playwright suites are green (**11** checks, including the new action-group regression).
+  `npm run build`, `npm run test` (**547** Vitest tests across 45 files) and `npm run lint` are green.

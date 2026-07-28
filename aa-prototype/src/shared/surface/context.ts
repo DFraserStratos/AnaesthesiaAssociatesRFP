@@ -78,11 +78,12 @@ export interface CardLayoutSlots {
    * The platform masthead, as a function of whether the scroll region has moved
    * off the top. Mobile hands one in so it can fold to a nav row as you work
    * (the room that pays for the pinned total); web and admin render their own
-   * page header above the body and pass null. Only a surface that OWNS the
-   * scroll region can honour the argument, so a surface that does not simply
-   * calls it with false.
+   * page header above the body and pass null. The second argument lets desktop
+   * chrome group the History action with that header instead of stranding it in
+   * a separate row; mobile leaves it null and keeps History in the scroll
+   * column. Only a surface that OWNS the scroll region can honour `collapsed`.
    */
-  header: ((collapsed: boolean) => ReactNode) | null
+  header: ((collapsed: boolean, history: ReactNode) => ReactNode) | null
   /** The History affordance (right-aligned; a page action on desktop). */
   history: ReactNode
   /** Card-wide notices: cancelled, copied, post-op, pre-payment gate, refusals. */

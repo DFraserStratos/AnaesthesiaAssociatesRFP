@@ -48,6 +48,38 @@ export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: Ca
   const badge = nhiBadge(patient?.nhi)
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
+  const header = (_collapsed: boolean, history: React.ReactNode) => (
+    <div
+      data-testid="web-card-header"
+      style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 20,
+        flexWrap: 'wrap',
+        marginBottom: 16,
+      }}
+    >
+      <div>
+        <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
+          {patient?.name ?? 'Unknown patient'}
+        </h1>
+        <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
+          {badge.text}
+          {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
+        </div>
+        <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
+          {primary?.description || 'Operation to capture'} · {hospitalName}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 2 }}>
+        <StatusChip status={list.statusKey} />
+        {history}
+      </div>
+    </div>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <button
@@ -57,23 +89,7 @@ export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: Ca
         <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-            {patient?.name ?? 'Unknown patient'}
-          </h1>
-          <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
-            {badge.text}
-            {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
-          </div>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
-            {primary?.description || 'Operation to capture'} · {hospitalName}
-          </div>
-        </div>
-        <StatusChip status={list.statusKey} />
-      </div>
-
-      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} />
+      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
     </div>
   )
 }

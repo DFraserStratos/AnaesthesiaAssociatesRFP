@@ -45,6 +45,22 @@ test('desktop Card total starts level with the first capture-card pair', async (
   expect(Math.abs(asa!.y - total!.y)).toBeLessThan(1)
 })
 
+test('desktop header actions are grouped with the records they act on', async ({ page }) => {
+  await openEllison(page)
+  const pageHeader = page.getByTestId('web-card-header')
+  await expect(pageHeader.getByRole('button', { name: 'History' })).toBeVisible()
+
+  const procedureHeader = page.getByTestId('procedure-header')
+  const procedureTitle = procedureHeader.getByText('Left total hip replacement', { exact: true })
+  const edit = procedureHeader.getByRole('button', { name: 'Edit' })
+  const titleBox = await procedureTitle.boundingBox()
+  const editBox = await edit.boundingBox()
+
+  expect(titleBox).not.toBeNull()
+  expect(editBox).not.toBeNull()
+  expect(editBox!.x - (titleBox!.x + titleBox!.width)).toBeLessThanOrEqual(12)
+})
+
 test('attachments add and remove, and indexes never collide', async ({ page }) => {
   await openEllison(page)
   for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Add photo' }).click()

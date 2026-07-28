@@ -44,11 +44,12 @@ interface CardDetailBodyProps {
   onCopied: () => void
   /**
    * The platform masthead, handed to the layout rather than rendered above the
-   * body, for chrome that wants it to react to the scroll it does not own —
-   * mobile folds its masthead to a nav row as you work. Web and admin render
-   * their own page header above the body and pass nothing.
+   * body, for chrome that wants it to react to the scroll it does not own.
+   * Mobile folds its masthead to a nav row as you work; web can also use the
+   * supplied History action in its patient header. Admin renders its own page
+   * header above the body and passes nothing.
    */
-  header?: (collapsed: boolean) => React.ReactNode
+  header?: (collapsed: boolean, history: React.ReactNode) => React.ReactNode
 }
 
 type SheetState =
@@ -428,7 +429,15 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     </div>
   )
 
-  const banners = (
+  const hasBanners =
+    cancelled ||
+    card.copiedFromCardId !== undefined ||
+    card.cardType === 'postOpAddendum' ||
+    prepaymentStatus !== 'none' ||
+    error !== null ||
+    (completeError !== null && showValidation)
+
+  const banners = hasBanners ? (
     <>
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
@@ -496,7 +505,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         </div>
       )}
     </>
-  )
+  ) : null
 
   const context = (
     <>

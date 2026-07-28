@@ -67,7 +67,7 @@ function MobileCardLayout({ header, history, banners, context, capture, actions,
 
   return (
     <>
-      {header !== null && header(collapsed)}
+      {header !== null && header(collapsed, null)}
       <div
         onScroll={onScroll}
         style={{
@@ -113,7 +113,7 @@ function MobileCardLayout({ header, history, banners, context, capture, actions,
  * dashboard (`repeat(12, 1fr)`, 16px gutters, panels on the grey canvas rather
  * than nested inside one big white panel).
  *
- *   span 12  history + card-wide banners (a pre-payment gate governs everything)
+ *   span 12  card-wide banners when present (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
  *            pins the Card total with the complete/amend bar inside it; patient
@@ -131,15 +131,17 @@ function WebCardLayout({ header, history, banners, context, capture, actions, su
 
   return (
     <>
-      {/* Web chrome renders its own page header above the body, so this is
-          normally null; a surface that does not own the scroll region has no
-          collapse signal to give, hence the constant `false`. */}
-      {header !== null && header(false)}
+      {/* A supplied web header absorbs History into its patient/action group.
+          Admin owns its header outside this seam and therefore keeps the
+          standalone History row below. */}
+      {header !== null && header(false, history)}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
-        <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {history}
-          {banners}
-        </div>
+        {(header === null || banners !== null) && (
+          <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {header === null && history}
+            {banners}
+          </div>
+        )}
 
         <div style={{ gridColumn: 'span 8', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {capture}
