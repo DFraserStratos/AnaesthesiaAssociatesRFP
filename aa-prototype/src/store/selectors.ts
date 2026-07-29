@@ -224,6 +224,7 @@ export interface PaymentCandidate {
   accRecId: string
   invoiceId: string
   invoiceNumber: string
+  patientName: string
   counterpartyLabel: string
   amountDue: number
   amountReceived: number
@@ -236,7 +237,7 @@ export interface PaymentCandidate {
  * simulation control, not an anaesthetist money view (convention 9 exempts the
  * demo surfaces).
  */
-export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'>): PaymentCandidate[] {
+export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters' | 'schedule'>): PaymentCandidate[] {
   return Object.values(state.xero.accRecs)
     .filter((r) => toCents(r.amountReceived) < toCents(r.amountDue))
     // Exclude the seeded historical backdrop (its aged receivables are the
@@ -251,6 +252,10 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
         accRecId: r.id,
         invoiceId: r.invoiceId,
         invoiceNumber: invoice?.invoiceNumber ?? r.invoiceId,
+        patientName:
+          invoice !== undefined
+            ? patientNameFor(state, state.schedule.cards[invoice.cardId]?.patientId ?? '')
+            : 'Patient unavailable',
         counterpartyLabel: invoice !== undefined ? counterpartyName(state, invoice.counterparty) : r.contactId,
         amountDue: r.amountDue,
         amountReceived: r.amountReceived,

@@ -123,6 +123,7 @@ export interface CannedMessage {
 
 // Souter forward DRAFT Lists the creates land on (hospital-coherent with the feed).
 const STG_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'AM' } as const // St George's / Mr Hale
+const STG_MODIFY_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-08-04', session: 'AM' } as const // St George's / Mr Hale
 const SX_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'PM' } as const // Southern Cross / Ms Patel
 const CPH_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-30', session: 'AM' } as const // Christchurch Public acute
 
@@ -270,7 +271,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       controlId: 'MSG-STG-1010',
       sendingFacility: 'STG',
       appointmentId: APPT.s13Time,
-      scheduled: { dateISO: STG_LIST.dateISO, time: '11:30' },
+      scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '11:30' },
       operation: { code: '49558', description: 'Knee arthroscopy' },
       patient: { nhi: 'ZAF4434', nhiField: 'PID-2', localId: 'SG-880201', name: { family: 'Holt', given: 'Brian' }, dobISO: '1971-12-18', ethnicity: '61118' },
     }),
@@ -288,7 +289,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       controlId: 'MSG-STG-1011',
       sendingFacility: 'STG',
       appointmentId: APPT.s13Move,
-      scheduled: { dateISO: STG_LIST.dateISO, time: '09:00' },
+      scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '09:00' },
       operation: { code: '46360', description: 'Wrist ORIF, distal radius' },
       patient: { nhi: 'ZAH6659', nhiField: 'PID-2', localId: 'SG-880233', name: { family: 'Webb', given: 'Marcus' }, dobISO: '1977-10-11', ethnicity: '53111' },
     }),
@@ -306,7 +307,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       controlId: 'MSG-STG-1012',
       sendingFacility: 'STG',
       appointmentId: APPT.s14,
-      scheduled: { dateISO: STG_LIST.dateISO, time: '12:15' },
+      scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '12:15' },
       note: 'Bumped 15 min at surgeon request',
       operation: { code: '47516', description: 'Total hip replacement' },
       patient: { nhi: 'ZAK8873', nhiField: 'PID-2', localId: 'SG-880260', name: { family: 'Foster', given: 'Diane' }, dobISO: '1958-09-19', ethnicity: '11111' },

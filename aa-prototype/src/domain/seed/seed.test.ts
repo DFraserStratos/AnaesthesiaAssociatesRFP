@@ -377,12 +377,17 @@ describe('scenario states', () => {
     expect(lines.length).toBe(2)
   })
 
-  it("both SUBMITTED lists' non-cancelled cards are completed and valid", () => {
-    for (const listId of [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17]) {
+  it("the seeded review Lists' non-cancelled cards are completed and valid", () => {
+    for (const listId of [
+      SEED_LIST_IDS.morrisonMon20,
+      SEED_LIST_IDS.whitakerFri17,
+      SEED_LIST_IDS.souterMon20Am,
+      SEED_LIST_IDS.souterMon20Pm,
+    ]) {
       const list = seed.schedule.lists[listId]
       expect(list?.state).toBe('SUBMITTED')
       const cards = Object.values(seed.schedule.cards).filter((c) => c.listId === listId)
-      expect(cards.length).toBeGreaterThanOrEqual(5)
+      expect(cards.length).toBeGreaterThan(0)
       for (const card of cards) {
         if (card.cancellation !== undefined) continue
         expect(card.completed, `${card.id} completed`).toBe(true)
@@ -416,7 +421,13 @@ describe('scenario states', () => {
   it('seeds the staged submit audit entries', () => {
     const submits = seed.audit.filter((a) => a.action === 'list.submit')
     expect(submits.map((s) => s.entityId).sort()).toEqual(
-      [SEED_LIST_IDS.morrisonMon20, SEED_LIST_IDS.whitakerFri17, SEED_LIST_IDS.billingFailure].sort(),
+      [
+        SEED_LIST_IDS.morrisonMon20,
+        SEED_LIST_IDS.whitakerFri17,
+        SEED_LIST_IDS.souterMon20Am,
+        SEED_LIST_IDS.souterMon20Pm,
+        SEED_LIST_IDS.billingFailure,
+      ].sort(),
     )
   })
 })

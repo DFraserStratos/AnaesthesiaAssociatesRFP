@@ -193,6 +193,33 @@ body {
   }
 }
 
+.aa-table-entity-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  border-radius: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.aa-table-entity-link-title {
+  font-weight: 600;
+}
+
+.aa-table-entity-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .aa-table-entity-link:hover .aa-table-entity-link-title {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+}
+
 /* ── Motion keyframes (named to match motion.ts) ─────────── */
 @keyframes aa-sheet-in {
   from {

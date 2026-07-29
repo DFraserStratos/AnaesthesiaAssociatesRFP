@@ -15,7 +15,7 @@ import {
   advanceClockToNextMorning,
   resetDemo,
 } from './clockActions'
-import { authoriseList, cancelCard, editCard, submitList } from './lifecycle'
+import { authoriseList, cancelCard, editCard } from './lifecycle'
 import { processMessage } from './integrationActions'
 import { addDayNote } from './dayNoteActions'
 import { wireBillingRun } from './billingRun'
@@ -168,7 +168,7 @@ describe('reset determinism', () => {
       expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
       expect(addDayNote(api, OFFICE, '2026-07-21', 'reset-test note').ok).toBe(true)
       const splitList = listIdForSlot(ANAE.souter, '2026-07-20', 'AM')
-      expect(submitList(api, OFFICE, splitList).ok).toBe(true)
+      expect(api.getState().schedule.lists[splitList]?.state).toBe('SUBMITTED')
       expect(authoriseList(api, OFFICE, splitList).ok).toBe(true)
       // Sanity: those slices are genuinely dirty before we reset.
       expect(Object.keys(api.getState().integrations.messages).length).toBeGreaterThan(0)

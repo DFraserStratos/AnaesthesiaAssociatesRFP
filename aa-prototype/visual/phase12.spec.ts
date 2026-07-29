@@ -26,10 +26,10 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: /Procedure day/ }).click()
   await expect(page.getByText(/28 July 2026/)).toBeVisible()
 
-  // S1 scenario jump: Jump -> Confirm -> result message + onward nav.
+  // S1 scenario jump now resets to the clean live-arrival state.
   await page.getByRole('button', { name: 'Jump', exact: true }).first().click()
   await page.getByRole('button', { name: 'Confirm jump' }).click()
-  await expect(page.getByText(/Sarah Mitchell/)).toBeVisible()
+  await expect(page.getByText(/clean S1 state/)).toBeVisible()
   await page.getByRole('button', { name: 'Go to Mobile app' }).click()
   await expect(page).toHaveURL(/\/mobile/)
 

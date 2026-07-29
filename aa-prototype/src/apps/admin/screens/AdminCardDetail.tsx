@@ -12,6 +12,7 @@ interface AdminCardDetailProps {
   actor: Actor
   todayISO: string
   onBack: () => void
+  backLabel?: string
 }
 
 /**
@@ -22,7 +23,7 @@ interface AdminCardDetailProps {
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
-export function AdminCardDetail({ cardId, actor, todayISO, onBack }: AdminCardDetailProps) {
+export function AdminCardDetail({ cardId, actor, todayISO, onBack, backLabel = 'Day view' }: AdminCardDetailProps) {
   const card = useAppStore((s) => s.schedule.cards[cardId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -47,7 +48,7 @@ export function AdminCardDetail({ cardId, actor, todayISO, onBack }: AdminCardDe
         onClick={onBack}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
       >
-        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> Day view
+        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> {backLabel}
       </button>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>

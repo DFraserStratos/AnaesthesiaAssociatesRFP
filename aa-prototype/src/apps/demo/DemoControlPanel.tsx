@@ -19,7 +19,6 @@ import { DemoSurface } from './DemoSurface'
 import {
   armHandoffFault,
   authoriseList,
-  completeCard,
   editCard,
   editContract,
   editProcedure,
@@ -263,7 +262,7 @@ export function DemoControlPanel() {
       {/* ── Scenario jumps (the guided-script entry points) ───── */}
       <SectionHeading
         label="Scenario jumps · S1 to S5"
-        hint="Each jump resets to the pristine seed, stages one scenario, and tells you where to go next. Reset-first keeps every jump deterministic and doubles as accident recovery."
+        hint="Each jump resets to the pristine seed, applies any extra preparation the scenario needs, and tells you where to go next. Reset-first keeps every jump deterministic and doubles as accident recovery."
       />
       <ScenarioJumps />
 
@@ -363,32 +362,10 @@ const SCENARIOS: readonly Scenario[] = [
     blurb: 'A hospital HL7 booking lands, fills over days, then captures on procedure day and submits.',
     run: () => {
       resetDemo(useAppStore)
-      // The Tue-28 AM list also hosts three preloaded integration exemplars.
-      // Complete those support Cards so the presenter can capture Sarah live
-      // and then genuinely submit the whole List, as the guided script says.
-      const supportingCards = [
-        { marker: 'integrationS13Time', start: '2026-07-28T08:35:00', finish: '2026-07-28T09:10:00' },
-        { marker: 'integrationS14', start: '2026-07-28T11:05:00', finish: '2026-07-28T12:20:00' },
-        { marker: 'integrationS15', start: '2026-07-28T12:25:00', finish: '2026-07-28T13:00:00' },
-      ] as const
-      for (const support of supportingCards) {
-        const cardId = SEED_MARKERS[support.marker]?.entityId ?? ''
-        const procedure = proceduresForCard(useAppStore.getState(), cardId)[0]
-        if (procedure === undefined) return { ok: false, message: `Reset done, but support Card ${support.marker} was not found.` }
-        const timed = editProcedure(useAppStore, SOUTER, procedure.id, {
-          anaestheticStartISO: support.start,
-          handoverISO: support.finish,
-        })
-        if (!timed.ok) return { ok: false, message: `Reset done, but a support Card could not be staged: ${timed.message}` }
-        const completed = completeCard(useAppStore, SOUTER, cardId)
-        if (!completed.ok) return { ok: false, message: `Reset done, but a support Card could not be completed: ${completed.message}` }
-      }
-      const res = processMessage(useAppStore, 'MSG-STG-1001')
-      if (!res.ok) return { ok: false, message: `Reset done, but the booking message was refused: ${res.message}` }
       return {
         ok: true,
         message:
-          'Reset, completed the List\'s three support Cards, then fired St George\'s S12 booking. Sarah Mitchell is the only Card left to finish on Dr Souter\'s Tue 28 Jul AM List. Use "Procedure day · 28 Jul", then capture code 20950 and submit on Mobile. The Integrations simulator shows the HL7 to FHIR transform.',
+          'Reset to a clean S1 state. Start in Mobile to introduce the AM and PM Lists, then fire or replay MSG-STG-1001 in Integrations. Sarah Mitchell will appear as the only Card on Dr Souter\'s Tue 28 Jul AM List. Use "Procedure day · 28 Jul", capture code 20950, complete the Card and submit the List.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },
@@ -416,14 +393,16 @@ const SCENARIOS: readonly Scenario[] = [
     blurb: 'Authorise the split-billing and two-funder Lists, generate invoices and the Xero pair, take payment, run payables.',
     run: () => {
       resetDemo(useAppStore)
-      const am = submitList(useAppStore, OFFICE, listIdForSlot(ANAE.souter, '2026-07-20', 'AM'))
-      if (!am.ok) return { ok: false, message: `Reset done, but the split-billing List could not be submitted: ${am.message}` }
-      const pm = submitList(useAppStore, OFFICE, listIdForSlot(ANAE.souter, '2026-07-20', 'PM'))
-      if (!pm.ok) return { ok: false, message: `Reset done, but the two-funder List could not be submitted: ${pm.message}` }
+      const state = useAppStore.getState()
+      const am = state.schedule.lists[SEED_LIST_IDS.souterMon20Am]
+      const pm = state.schedule.lists[SEED_LIST_IDS.souterMon20Pm]
+      if (am?.state !== 'SUBMITTED' || pm?.state !== 'SUBMITTED') {
+        return { ok: false, message: 'Reset done, but the two S3 Lists were not present in the Review queue.' }
+      }
       return {
         ok: true,
         message:
-          'Reset, then submitted both of Dr Souter\'s Mon 20 Jul Lists into the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and the Xero pair: the split Card shares one invoice (same funder), the two-funder Card produces two (nib and St George\'s). Then come back here to fire a payment webhook, advance a day for balances, and run payables.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and Xero pairs live. Then come back here to fire a payment webhook, advance a day for balances, and run payables.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -437,7 +416,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) Stage post-op, then Sharma Tue 14 AM, Sarah Mitchell; (3) Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) fire MSG-CPH-2001, change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) pay half of AA-2026-0002, run payables, then pay the balance and run again.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) Stage post-op, then Sharma Tue 14 AM, Sarah Mitchell; (3) Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) fire MSG-CPH-2001, change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) pay half of the St George\'s clean-sibling invoice for Hemi Walker, run payables, then pay the balance and run again.',
         nav: [{ label: 'Go to Mobile app', path: APP_CONFIG.mobile.path }],
       }
     },
@@ -463,7 +442,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen invoice AA-2026-0002 to show its snapshot is unchanged.',
+          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },
@@ -483,8 +462,8 @@ function ScenarioJumps() {
     <ControlCard icon={Route} eyebrow="Guided script" title="Jump to a scenario">
       <div><DemoBadge label="Resets data" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Pick a scenario to stage it cleanly from a fresh reset. Each jump confirms first, because it
-        replaces all current demo data.
+        Pick a scenario to reset it cleanly and apply only the preparation that scenario needs. Each
+        jump confirms first because it replaces all current demo data.
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
         {SCENARIOS.map((s) => (
@@ -557,7 +536,8 @@ function PaymentReceivedCard() {
   const xero = useAppStore((s) => s.xero)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
-  const candidates = useMemo(() => openAccRecs({ xero, billing, masters }), [xero, billing, masters])
+  const schedule = useAppStore((s) => s.schedule)
+  const candidates = useMemo(() => openAccRecs({ xero, billing, masters, schedule }), [xero, billing, masters, schedule])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mode, setMode] = useState<'full' | 'partial'>('full')
@@ -615,7 +595,7 @@ function PaymentReceivedCard() {
           >
             {candidates.map((c) => (
               <option key={c.accRecId} value={c.accRecId}>
-                {c.invoiceNumber} · {c.counterpartyLabel} · {formatCurrency(c.remaining)} due
+                {c.invoiceNumber} · {c.patientName} · {c.counterpartyLabel} · {formatCurrency(c.remaining)} due
               </option>
             ))}
           </select>

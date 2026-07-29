@@ -1,4 +1,4 @@
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { useAppStore, useToday } from '../../store'
@@ -94,7 +94,20 @@ export function AdminCardDetailRoute() {
   const { dateISO = '', cardId = '' } = useParams()
   const { actor, todayISO } = useAdminOutlet()
   const navigate = useNavigate()
+  const { state: navigationState } = useLocation()
   const exists = useAppStore((s) => s.schedule.cards[cardId] !== undefined)
+  const fromInvoiceId =
+    typeof navigationState === 'object' &&
+    navigationState !== null &&
+    'fromInvoiceId' in navigationState &&
+    typeof navigationState.fromInvoiceId === 'string'
+      ? navigationState.fromInvoiceId
+      : null
+  const returnInvoice = useAppStore((s) => {
+    if (fromInvoiceId === null) return undefined
+    const invoice = s.billing.invoices[fromInvoiceId]
+    return invoice?.cardId === cardId ? invoice : undefined
+  })
 
   return (
     <RequireEntity exists={exists}>
@@ -102,7 +115,18 @@ export function AdminCardDetailRoute() {
         cardId={cardId}
         actor={actor}
         todayISO={todayISO}
-        onBack={() => navigate(`/admin/day/${dateISO}`)}
+        onBack={() =>
+          navigate(
+            returnInvoice === undefined
+              ? `/admin/day/${dateISO}`
+              : `/admin/invoices/${returnInvoice.id}`,
+          )
+        }
+        backLabel={
+          returnInvoice === undefined
+            ? 'Day view'
+            : `Invoice ${returnInvoice.invoiceNumber}`
+        }
       />
     </RequireEntity>
   )

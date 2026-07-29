@@ -259,7 +259,7 @@ describe('removeBillingLine', () => {
     expect(state.schedule.cards[ELLISON_CARD]?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
-  it('the anaesthetist may not remove a funder-override line; the office may', () => {
+  it('the anaesthetist may not remove a line from the submitted S3 List; the office may', () => {
     const api = store()
     const state = api.getState()
     const procedureIds = proceduresForCard(state, TWO_FUNDER_CARD).map((p) => p.id)
@@ -270,7 +270,7 @@ describe('removeBillingLine', () => {
 
     const refused = removeBillingLine(api, SOUTER, funderLine.id)
     expect(refused.ok).toBe(false)
-    if (!refused.ok) expect(refused.code).toBe('funderAllocationOfficeOnly')
+    if (!refused.ok) expect(refused.code).toBe('listSubmitted')
     expect(api.getState().schedule.billingLines[funderLine.id]).toBeDefined()
 
     const office = removeBillingLine(api, OFFICE, funderLine.id)

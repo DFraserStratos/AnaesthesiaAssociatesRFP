@@ -81,6 +81,8 @@ const WED22 = '2026-07-22'
 const THU23 = '2026-07-23'
 const FRI24 = '2026-07-24'
 const MON27 = '2026-07-27'
+const MON03_AUG = '2026-08-03'
+const TUE04_AUG = '2026-08-04'
 const THU09 = '2026-07-09'
 const TUE14 = '2026-07-14'
 const WED15 = '2026-07-15'
@@ -577,6 +579,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.forteDefault,
     billingReference: 'FH-2026-2103',
   })
+  addListAudit(souterMon20Am, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '12:20'))
 
   // -------------------------------------------------------------------------
   // Souter Mon 20 PM St George's / Ms Lim — the two-funder card
@@ -652,6 +655,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.stgDefault,
     billingReference: 'SG-2026-0793',
   })
+  addListAudit(souterMon20Pm, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '17:40'))
 
   // -------------------------------------------------------------------------
   // Scenario cards on past lists
@@ -945,13 +949,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Integration-origin cards (Phase 11) — bookings that arrived via the St
   // George's feed, each carrying `{sourceFeedId, externalAppointmentId}` so the
   // S13/S14/S15 messages locate them by appointment id (never patient
-  // guesswork). Four sit on Souter's forward DRAFT St George's Lists (reachable
-  // in the mobile app); the fifth is on a SUBMITTED (office-locked) List for the
-  // manual-intervention demo.
+  // guesswork). Their forward DRAFT St George's Lists are deliberately separate
+  // from Tue 28 AM, which stays empty until S1's headline S12 creates Sarah.
+  // The fifth is on a SUBMITTED (office-locked) List for manual intervention.
   // -------------------------------------------------------------------------
 
   const souterTue28Am = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
-  const souterMon27Pm = listIdForSlot(ANAE.souter, '2026-07-27', 'PM')
+  const souterTue04AugAm = listIdForSlot(ANAE.souter, TUE04_AUG, 'AM')
+  const souterMon03AugPm = listIdForSlot(ANAE.souter, MON03_AUG, 'PM')
   // Delaney Fri 17 AM (St George's / Mr Doyle) — a real past operating list (Delaney
   // is not on leave then; Beaumont/Morrison/Whitaker were unsuitable). Marked
   // SUBMITTED in index.ts to host the locked-target Card.
@@ -959,16 +964,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
 
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
-  const s13TimeCard = addCard({ listId: souterTue28Am, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
+  const s13TimeCard = addCard({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
   addProcedure(s13TimeCard, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0901' })
 
-  const s13MoveCard = addCard({ listId: souterMon27Pm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
+  const s13MoveCard = addCard({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
   addProcedure(s13MoveCard, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0902' })
 
-  const s14Card = addCard({ listId: souterTue28Am, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
+  const s14Card = addCard({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
   addProcedure(s14Card, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0903' })
 
-  const s15Card = addCard({ listId: souterTue28Am, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
+  const s15Card = addCard({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
   addProcedure(s15Card, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0904' })
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
@@ -1057,9 +1062,9 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     souterAm21, souterPm21, morrisonMon20, whitakerFri17, souterMon20Am, souterMon20Pm,
     fitzTue14, fitzWed15, ruthThu16, ruthThu09, sharmaTue14, chenFri24,
     souterMon27, souterFri24Am, souterFri24Pm, ropataThu16, wed22Ces, thu23Cph, thu23Preop,
-    // Phase 11 integration demo lists: the seeded correlated Cards + the
-    // Souter forward Lists the creates land on (kept clear of generic filler).
-    souterTue28Am, souterMon27Pm, delaneyFri17Am,
+    // Phase 11 integration demo lists: S1's empty S12 destination, the separate
+    // seeded modify targets, and the other create destinations.
+    souterTue28Am, souterTue04AugAm, souterMon03AugPm, delaneyFri17Am,
     listIdForSlot(ANAE.souter, '2026-07-28', 'PM'), listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
   ])
 

@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { wireBillingRun } from './billingRun'
-import { authoriseList, completeCard, editCard, editProcedure, submitList } from './lifecycle'
+import { authoriseList, editCard, editProcedure } from './lifecycle'
 import { ingestPdfRow, processMessage } from './integrationActions'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
@@ -30,13 +30,14 @@ describe('S1 · booking to theatre', () => {
     const api = createAppStore()
     const listId = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
     const before = cardsForList(api.getState(), listId).length
+    expect(before).toBe(0)
 
     const res = processMessage(api, 'MSG-STG-1001')
     expect(res.ok).toBe(true)
 
     const list = api.getState().schedule.lists[listId]
     expect(list?.state).toBe('DRAFT')
-    expect(cardsForList(api.getState(), listId).length).toBe(before + 1)
+    expect(cardsForList(api.getState(), listId)).toHaveLength(1)
   })
 
   it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {
@@ -46,29 +47,6 @@ describe('S1 · booking to theatre', () => {
     expect(api.getState().clock.minutesSinceMidnight).toBe(8 * 60)
   })
 
-  it('stages the three support Cards complete so Sarah is the only Card left', () => {
-    const api = createAppStore()
-    const support = [
-      { marker: 'integrationS13Time', start: '2026-07-28T08:35:00', finish: '2026-07-28T09:10:00' },
-      { marker: 'integrationS14', start: '2026-07-28T11:05:00', finish: '2026-07-28T12:20:00' },
-      { marker: 'integrationS15', start: '2026-07-28T12:25:00', finish: '2026-07-28T13:00:00' },
-    ] as const
-
-    for (const item of support) {
-      const cardId = SEED_MARKERS[item.marker]?.entityId ?? ''
-      const procedure = proceduresForCard(api.getState(), cardId)[0]
-      if (procedure === undefined) throw new Error(`expected support Card ${item.marker}`)
-      expect(editProcedure(api, SOUTER, procedure.id, {
-        anaestheticStartISO: item.start,
-        handoverISO: item.finish,
-      }).ok).toBe(true)
-      expect(completeCard(api, SOUTER, cardId).ok).toBe(true)
-    }
-
-    expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
-    const cards = cardsForList(api.getState(), SEED_LIST_IDS.integrationStgList)
-    expect(cards.filter((card) => !card.completed)).toHaveLength(1)
-  })
 })
 
 describe('S2 · office day', () => {
@@ -76,20 +54,20 @@ describe('S2 · office day', () => {
     const s = createAppStore().getState()
     expect(s.schedule.lists[SEED_LIST_IDS.morrisonMon20]?.state).toBe('SUBMITTED')
     expect(s.schedule.lists[SEED_LIST_IDS.whitakerFri17]?.state).toBe('SUBMITTED')
+    expect(s.schedule.lists[SEED_LIST_IDS.souterMon20Am]?.state).toBe('SUBMITTED')
+    expect(s.schedule.lists[SEED_LIST_IDS.souterMon20Pm]?.state).toBe('SUBMITTED')
   })
 })
 
 describe('S3 · money end-to-end', () => {
-  it('submit + authorise both Mon 20 Lists runs billing, the Xero pair, a payment and payables', () => {
+  it('authorising both seeded Mon 20 Lists runs billing, the Xero pair, a payment and payables', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
       const amListId = listIdForSlot(ANAE.souter, '2026-07-20', 'AM')
       const pmListId = listIdForSlot(ANAE.souter, '2026-07-20', 'PM')
 
-      expect(submitList(api, OFFICE, amListId).ok).toBe(true)
       expect(api.getState().schedule.lists[amListId]?.state).toBe('SUBMITTED')
-      expect(submitList(api, OFFICE, pmListId).ok).toBe(true)
       expect(api.getState().schedule.lists[pmListId]?.state).toBe('SUBMITTED')
 
       expect(authoriseList(api, OFFICE, amListId).ok).toBe(true)
@@ -103,11 +81,25 @@ describe('S3 · money end-to-end', () => {
       const invoicesFor = (cardId: string): Invoice[] =>
         Object.values(api.getState().billing.invoices).filter((i) => i.cardId === cardId)
       // The beat's contrast: same funder shares ONE invoice; two funders produce TWO.
-      expect(invoicesFor(SEED_MARKERS['splitBillingCard']?.entityId ?? '')).toHaveLength(1)
+      const split = invoicesFor(SEED_MARKERS['splitBillingCard']?.entityId ?? '')
+      expect(split).toHaveLength(1)
+      expect(split[0]).toMatchObject({
+        invoiceNumber: 'AA-2026-0002',
+        counterparty: { kind: 'hospital', id: HOSP.forte },
+        total: 396.18,
+      })
       const pair = invoicesFor(SEED_MARKERS['twoFunderCard']?.entityId ?? '')
       expect(pair).toHaveLength(2)
-      expect(pair.find((i) => i.counterparty.kind === 'insurer')?.counterparty).toEqual({ kind: 'insurer', id: INS.nib })
-      expect(pair.find((i) => i.counterparty.kind === 'hospital')?.counterparty).toEqual({ kind: 'hospital', id: HOSP.stg })
+      expect(pair.find((i) => i.counterparty.kind === 'insurer')).toMatchObject({
+        invoiceNumber: 'AA-2026-0005',
+        counterparty: { kind: 'insurer', id: INS.nib },
+        total: 152.38,
+      })
+      expect(pair.find((i) => i.counterparty.kind === 'hospital')).toMatchObject({
+        invoiceNumber: 'AA-2026-0006',
+        counterparty: { kind: 'hospital', id: HOSP.stg },
+        total: 91.43,
+      })
 
       // Pay the first open ACCREC in full via a webhook.
       const target = openAccRecs(api.getState())[0]

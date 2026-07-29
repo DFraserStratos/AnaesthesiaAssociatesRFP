@@ -95,7 +95,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v10: 2026-07-29 — rich deterministic booking, Procedure, capture, fee-line
+/** v11: 2026-07-29 — S1's Tue 28 AM List starts empty for the live S12 arrival;
+ *  its S13/S14/S15 exemplars moved to Aug 3/4, and S3's two Mon 20 Souter
+ *  Lists now seed SUBMITTED in the Review queue.
+ *  v10: 2026-07-29 — rich deterministic booking, Procedure, capture, fee-line
  *  and lifecycle history for every seeded Card, including historical billing
  *  Cards. Returning demos must reseed so the new audit graph and counter land.
  *  v9: 2026-07-28 — removed a build-phase label from historical List notes.
@@ -122,7 +125,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 10
+export const PERSIST_VERSION = 11
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }

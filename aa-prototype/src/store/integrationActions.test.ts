@@ -36,9 +36,10 @@ function store(): BoundAppStore {
 }
 
 const STG_LIST = SEED_LIST_IDS.integrationStgList
+const STG_MODIFY_LIST = SEED_LIST_IDS.integrationModifyStgList
 const SX_LIST = SEED_LIST_IDS.integrationSxList
 const CPH_LIST = SEED_LIST_IDS.integrationCphList
-const S13_MOVE_SOURCE = listIdForSlot(ANAE.souter, '2026-07-27', 'PM')
+const S13_MOVE_SOURCE = SEED_LIST_IDS.integrationMoveSourceStgList
 
 function rowFor(api: BoundAppStore, controlId: string) {
   return Object.values(api.getState().integrations.messages).find((m) => m.messageControlId === controlId)
@@ -122,24 +123,25 @@ describe('modify events located by correlation ref', () => {
     expect(processMessage(api, 'MSG-STG-1010').ok).toBe(true)
     const card = api.getState().schedule.cards[target]!
     expect(card.listId).toBe(before)
+    expect(card.listId).toBe(STG_MODIFY_LIST)
     expect(card.scheduledTime).toBe('11:30')
   })
 
   it('cross-List S13 reassigns the correlated Card, leaving both Lists\' other cards untouched', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS13Move']!.entityId
-    const stgOthersBefore = cardsForList(api.getState(), STG_LIST).map((c) => c.id).sort()
+    const stgOthersBefore = cardsForList(api.getState(), STG_MODIFY_LIST).map((c) => c.id).sort()
     expect(api.getState().schedule.cards[target]!.listId).toBe(S13_MOVE_SOURCE)
 
     expect(processMessage(api, 'MSG-STG-1011').ok).toBe(true)
 
     const card = api.getState().schedule.cards[target]!
-    expect(card.listId).toBe(STG_LIST)
+    expect(card.listId).toBe(STG_MODIFY_LIST)
     expect(card.scheduledTime).toBe('09:00')
     // The source list no longer holds it; the STG list's prior cards are all still present.
     expect(cardsForList(api.getState(), S13_MOVE_SOURCE).some((c) => c.id === target)).toBe(false)
     for (const id of stgOthersBefore) {
-      expect(api.getState().schedule.cards[id]!.listId).toBe(STG_LIST)
+      expect(api.getState().schedule.cards[id]!.listId).toBe(STG_MODIFY_LIST)
     }
   })
 

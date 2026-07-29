@@ -1,13 +1,12 @@
 import { useMemo } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../theme/statusColours'
 import type { Actor } from '../../../store'
 import { billedLists, counterpartyName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
-import { displayStatusKeyForList, listShortLabel, listSourceLabels } from '../util'
+import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 
 interface InvoicesScreenProps {
@@ -47,9 +46,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         const anaesthetist =
           list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
         const source = list !== undefined ? listSourceLabels(list, masters) : undefined
-        const displayStatusKey =
-          list !== undefined ? displayStatusKeyForList(list, card !== undefined) : undefined
-        return { invoice, card, list, patient, anaesthetist, source, displayStatusKey }
+        return { invoice, card, list, patient, anaesthetist, source }
       }),
     [invoices, schedule.cards, schedule.lists, masters],
   )
@@ -147,8 +144,14 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ invoice, card, list, patient, anaesthetist, source, displayStatusKey }) => {
-                const statusColour = displayStatusKey !== undefined ? statusColours[displayStatusKey] : undefined
+              {rows.map(({ invoice, card, list, patient, anaesthetist, source }) => {
+                const patientName = card === undefined ? 'Card unavailable' : (patient?.name ?? 'Unknown patient')
+                const cardLabel =
+                  card === undefined
+                    ? invoice.cardId
+                    : card.scheduledTime !== undefined
+                      ? `Card ${card.scheduledTime}`
+                      : 'Card time not set'
                 return (
                   <tr
                     key={invoice.id}
@@ -159,36 +162,44 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   >
                   <td className="mono" style={{ ...cellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{invoice.invoiceNumber}</td>
                   <td style={cellStyle}>
-                    <div style={{ fontWeight: 600 }}>{card === undefined ? 'Card unavailable' : (patient?.name ?? 'Unknown patient')}</div>
-                    <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>
-                      {card === undefined ? invoice.cardId : card.scheduledTime !== undefined ? `Card ${card.scheduledTime}` : 'Card time not set'}
-                    </div>
+                    {card !== undefined && list !== undefined ? (
+                      <Link
+                        aria-label={`View card for ${patientName}, ${cardLabel}`}
+                        className="aa-table-entity-link"
+                        to={`/admin/day/${list.dateISO}/cards/${card.id}`}
+                        state={{ fromInvoiceId: invoice.id }}
+                      >
+                        <span>
+                          <span className="aa-table-entity-link-title">{patientName}</span>
+                          <span className="mono" style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>
+                            {cardLabel}
+                          </span>
+                        </span>
+                        <ChevronRight size={14} strokeWidth={2.2} color={neutral.mist} aria-hidden />
+                      </Link>
+                    ) : (
+                      <>
+                        <div style={{ fontWeight: 600 }}>{patientName}</div>
+                        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{cardLabel}</div>
+                      </>
+                    )}
                   </td>
                   <td style={{ ...cellStyle, fontWeight: 600 }}>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</td>
                   <td style={cellStyle}>
-                    {list !== undefined && source !== undefined && statusColour !== undefined ? (
+                    {list !== undefined && source !== undefined ? (
                       <Link
+                        aria-label={`Open ${listShortLabel(list, masters)} in day view`}
+                        className="aa-table-entity-link"
                         to={`/admin/day/${list.dateISO}`}
                         state={{ openListId: list.id }}
-                        style={{
-                          display: 'block',
-                          minWidth: 150,
-                          padding: '7px 9px 7px 11px',
-                          borderRadius: radius.ctl,
-                          border: displayStatusKey === 'free' ? freeDashedBorder : `1px solid ${statusColour.solid}22`,
-                          background: displayStatusKey === 'unavailable' ? unavailableHatchTint : statusColour.tint,
-                          boxShadow: `inset 3px 0 0 ${statusColour.solid}`,
-                          color: statusColour.onTint,
-                          textDecoration: 'none',
-                        }}
                       >
-                        <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, fontWeight: 700 }}>
-                          <span>{source.primary}</span>
-                          <span aria-hidden>→</span>
+                        <span>
+                          <span className="aa-table-entity-link-title">{source.primary}</span>
+                          {source.secondary !== undefined && (
+                            <span style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</span>
+                          )}
                         </span>
-                        {source.secondary !== undefined && (
-                          <span style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: statusColour.onTint, opacity: 0.72 }}>{source.secondary}</span>
-                        )}
+                        <ChevronRight size={14} strokeWidth={2.2} color={neutral.mist} aria-hidden />
                       </Link>
                     ) : (
                       <div style={{ fontWeight: 600 }}>List unavailable</div>
