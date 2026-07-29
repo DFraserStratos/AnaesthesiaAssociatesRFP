@@ -169,6 +169,10 @@
   .beat .row { display: grid; grid-template-columns: 92px 1fr; gap: 10px; font-size: 14px; margin: 5px 0; }
   .beat .k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); padding-top: 2px; }
   .beat .say { color: var(--ink); font-style: italic; }
+  .beat .action-list { margin: 0; padding-left: 19px; display: grid; gap: 4px; line-height: 1.45; }
+  .beat .action-list li { padding-left: 2px; }
+  .beat .action-list li::marker { color: var(--accent); }
+  .beat .action-list ul { margin: 4px 0 1px; padding-left: 21px; display: grid; gap: 3px; }
   .scenario-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
   .stage { font-size: 13px; color: var(--accent); font-weight: 600; }
   ul.tight { margin: 8px 0; padding-left: 20px; }
@@ -200,6 +204,18 @@
   .btn { appearance: none; font: inherit; font-size: 14px; font-weight: 600; border-radius: var(--ctl); padding: 9px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .print-toolbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+    background: var(--accent-tint); border: 1px solid rgba(13,110,99,0.2);
+    border-radius: var(--radius); padding: 14px 16px; margin: 0 0 20px;
+  }
+  .print-toolbar strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .print-toolbar span { display: block; color: var(--slate); font-size: 13px; }
+  .print-toolbar .btn { flex: none; }
+  @media (max-width: 560px) {
+    .print-toolbar { align-items: stretch; flex-direction: column; }
+    .print-toolbar .btn { width: 100%; }
+  }
 
   .layer { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 14px; margin: 6px 0; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); }
   .layer:hover { border-color: var(--accent); }
@@ -243,6 +259,64 @@
   .confetti { position: fixed; top: -14px; width: 9px; height: 14px; opacity: 0.9; z-index: 50; pointer-events: none; border-radius: 2px; animation: fall linear forwards; }
   @keyframes fall { to { transform: translateY(106vh) rotate(560deg); opacity: 0.6; } }
   @media (prefers-reduced-motion: reduce) { .confetti { display: none; } .flip-inner, .progress-fill { transition: none; } .celebrate .tick { animation: none; } }
+
+  /* The Print S1-S5 button adds this class just for the browser's print dialog. */
+  @media print {
+    @page { size: A4 portrait; margin: 12mm 13mm 14mm; }
+
+    body.print-scripts {
+      background: #fff; color: #111; font-size: 10pt; line-height: 1.35;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    body.print-scripts .masthead,
+    body.print-scripts nav.tabs,
+    body.print-scripts .footer,
+    body.print-scripts .panel:not(#script),
+    body.print-scripts #script > :not(.demo-scenario) {
+      display: none !important;
+    }
+    body.print-scripts .page { max-width: none; margin: 0; padding: 0; }
+    body.print-scripts main { padding: 0; }
+    body.print-scripts #script { display: block !important; }
+    body.print-scripts .demo-scenario {
+      display: block; break-before: page; page-break-before: always;
+      border: 0; border-radius: 0; box-shadow: none; margin: 0; overflow: visible;
+    }
+    body.print-scripts .demo-scenario.print-first {
+      break-before: auto; page-break-before: auto;
+    }
+    body.print-scripts .demo-scenario summary {
+      display: block; cursor: default; padding: 0 0 3mm;
+      border-bottom: 2px solid var(--accent); color: var(--ink);
+      font-size: 17pt; letter-spacing: -0.01em;
+    }
+    body.print-scripts .demo-scenario summary::before { display: none; }
+    body.print-scripts .demo-scenario > .details-body {
+      display: block !important; padding: 0;
+    }
+    body.print-scripts .scenario-head {
+      gap: 2mm; margin: 3mm 0 2mm; break-inside: avoid; page-break-inside: avoid;
+    }
+    body.print-scripts .scenario-head > span { font-size: 9.5pt !important; }
+    body.print-scripts .stage {
+      border-left: 2px solid var(--accent); padding: 1.5mm 0 1.5mm 3mm;
+    }
+    body.print-scripts .beat {
+      padding: 3mm 0; break-inside: avoid; page-break-inside: avoid;
+    }
+    body.print-scripts .beat h4 { margin: 0 0 1.5mm; font-size: 10.5pt; }
+    body.print-scripts .beat .row {
+      grid-template-columns: 18mm 1fr; gap: 2mm; margin: 1mm 0; font-size: 9.5pt;
+    }
+    body.print-scripts .beat .k { font-size: 7.5pt; }
+    body.print-scripts .beat .action-list {
+      gap: 1mm; line-height: 1.3; padding-left: 5mm;
+    }
+    body.print-scripts .callout {
+      margin: 3mm 0 0; padding: 2.5mm 3mm; border-radius: 2mm;
+      font-size: 9pt; break-inside: avoid; page-break-inside: avoid;
+    }
+  }
 </style>
 </head>
 <body>
@@ -353,10 +427,10 @@
       <p class="muted">Reading is a third of it. Run scenario S1 in the app and tick these off. Start it
       with <code>npm run dev</code>, then:</p>
       <div id="drive">
-        <div class="task"><input type="checkbox" id="t0"><label for="t0">Shared top bar &#8594; <strong>Reset</strong> &#8594; Confirm reset &#8594; app switcher &#8594; <strong>Demo: Control Panel</strong></label></div>
-        <div class="task"><input type="checkbox" id="t1"><label for="t1">Scenario jumps &#8594; <strong>S1</strong> &#8594; Jump &#8594; Confirm jump</label></div>
+        <div class="task"><input type="checkbox" id="t0"><label for="t0">Shared top bar &#8594; <strong>Reset</strong> &#8594; Confirm reset &#8594; app switcher &#8594; <strong>Anaesthetist Mobile App</strong></label></div>
+        <div class="task"><input type="checkbox" id="t1"><label for="t1">Show the empty Tue 28 AM List &#8594; <strong>Demo: Integrations</strong> &#8594; S12 New booking &#8594; Replay &#8594; return to Mobile</label></div>
         <div class="task"><input type="checkbox" id="t2"><label for="t2">Open the live clock beside the app switcher &#8594; <strong>Procedure day · 28 Jul</strong> &#8594; <strong>+1 hour</strong></label></div>
-        <div class="task"><input type="checkbox" id="t3"><label for="t3">Go to Mobile app &#8594; set the Card calculation to <strong>Fee</strong> &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
+        <div class="task"><input type="checkbox" id="t3"><label for="t3">Set the Card calculation to <strong>Fee</strong> &#8594; open the St George's list &#8594; open Sarah Mitchell</label></div>
         <div class="task"><input type="checkbox" id="t4"><label for="t4">Choose code <strong>20950</strong> &#8594; Start now &#8594; live clock +1 hour &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit</label></div>
       </div>
       <div class="celebrate" id="celebrate" style="display:none">
@@ -667,9 +741,17 @@
 <!-- ===================== DEMO SCRIPT ===================== -->
 <section class="panel" id="script" role="tabpanel">
   <h1 class="pt">Demo script · S1 to S5</h1>
-  <p class="lead">Each scenario has a one-click stage-it step on the demo control panel, then beats with
-  where to click, the one line to say, and the expected result. Every scenario resets first, so you can
-  start any of them cold and recover from any mistake by re-staging.</p>
+  <p class="lead">S1 to S4 start from the common Reset seed; S5 has a one-click preparation step on
+  the demo control panel. Click lists are presenter choreography only: navigation, selections, button
+  presses and useful pauses. Say and Expect carry the explanation.</p>
+
+  <div class="print-toolbar">
+    <div>
+      <strong>Presenter handout</strong>
+      <span id="print-scripts-help">Prints S1 to S5 only, with every scenario starting on a fresh page.</span>
+    </div>
+    <button class="btn primary" id="print-scripts" type="button" aria-describedby="print-scripts-help">Print S1 to S5</button>
+  </div>
 
   <div class="card">
     <span class="eyebrow">Pre-demo setup</span>
@@ -733,151 +815,151 @@
     closes a screen rather than a sheet.</p>
   </div></details>
 
-  <details open><summary>S1 · Booking to theatre</summary><div class="details-body">
+  <details class="demo-scenario print-first" open><summary>S1 · Booking to theatre</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves near-real-time hospital integration, the Card
       as the billing anchor, and BTM capture. 5 to 6 minutes.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S1 &#8594; Jump &#8594; Confirm jump (resets, completes the three support Cards, then fires the St George's S12 booking; Sarah is the only Card left).</span>
+      <span class="stage">Stage it: Reset &#8594; Confirm reset. Start in Mobile; the Tue 28 Jul St George's AM List is empty so the booking can arrive visibly.</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · the booking arrives</h4>
-      <div class="row"><span class="k">Click</span><span>Go to Integrations. In the left inspection rail, show raw HL7 v2, translated FHIR R4, and the processed schedule change together; the wider message library remains visible on the right.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>In Mobile Lists, open the empty Tue 28 Jul St George's AM session.</li><li>Go to Integrations &#8594; S12 · New booking &#8594; Replay.</li><li>Pause on the processed message.</li><li>Return to Mobile and reopen the Tue 28 AM List.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Hospitals may still send HL7 v2, but the target is FHIR-native. Messages are mapped per hospital, processed near real time and audited. This booking created a Card without re-keying."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A new Card for Sarah Mitchell on Dr Souter's Tue 28 Jul AM List; her NHI matched an existing record, so intake reused it.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The previously empty List now contains one Card for Sarah Mitchell; her NHI matched an existing record, so intake reused it.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Card fills over the days</h4>
-      <div class="row"><span class="k">Click</span><span>Stay on the Integration simulator. Open the live clock beside the app switcher &#8594; Procedure day &#183; 28 Jul &#8594; +1 hour in the same popup.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open the live clock beside the app switcher.</li><li>Select Procedure day &#183; 28 Jul &#8594; +1 hour.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Patient and booking data can change right up to the day. The canvas rolls forward deterministically as the clock advances."</span></div>
       <div class="row"><span class="k">Expect</span><span>The clock reads Tuesday 28 July 2026, 9:00.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · capture on mobile and submit</h4>
-      <div class="row"><span class="k">Click</span><span>Mobile app &#8594; Tue 28 St George's List &#8594; Sarah Mitchell &#8594; set the global Card calculation to <strong>Fee</strong> &#8594; choose <strong>20950 · Appendicectomy, laparoscopic</strong> &#8594; Start now. Without leaving Sarah, open the live clock beside the app switcher &#8594; +1 hour &#8594; close the popup &#8594; Finish now &#8594; Mark complete &#8594; Mark list completed &#8594; Submit to office.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Tue 28 St George's List &#8594; Sarah Mitchell.</li><li>Set Card calculation to <strong>Fee</strong>.</li><li>Choose <strong>20950 · Appendicectomy, laparoscopic</strong> &#8594; Start now.</li><li>Without leaving Sarah: live clock &#8594; +1 hour &#8594; close the popup &#8594; Finish now.</li><li>Mark complete &#8594; Mark list completed &#8594; Submit to office.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"She captures the billing inputs, not just a dollar figure: Base plus tiered Time plus Modifiers at her own value per unit. Once every Card is complete she submits the whole List; it is now read-only to her."</span></div>
-      <div class="row"><span class="k">Expect</span><span>Sarah changes the List from 3 of 4 complete to 4 of 4; the fee updates and the List moves to SUBMITTED and into the Review queue.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Sarah changes the List from 0 of 1 complete to 1 of 1; the fee updates and the List moves to SUBMITTED and into the Review queue.</span></div>
       <div class="row"><span class="k">Point at</span><span>The Card total is <strong>pinned to the bottom of the phone</strong>, so every ASA tap, modifier and time nudge ticks while your thumb is still on the control. The top-bar choice compares <strong>Fee</strong> (units and dollars), <strong>Units</strong> (units only) and <strong>Off</strong> (Mark complete only); the Card-complete animation follows it too. Scroll once and the masthead folds to make room. On a multi-procedure Card the Fee dock carries a chip per procedure, so its height never grows. If Mark complete finds missing data, the Card moves directly to the first incomplete control and focuses it. Demo reset preserves the display choice.</span></div>
     </div>
     <div class="callout warn">Discovery: partial-interval time rounding is a prototype assumption (round up per started interval); the RFP defines the tiers but not the rounding.</div>
   </div></details>
 
-  <details><summary>S2 · Office day</summary><div class="details-body">
+  <details class="demo-scenario"><summary>S2 · Office day</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves the office control tower, exception handling and
       the no-Returned-state model. 6 to 8 minutes.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S2 &#8594; Jump &#8594; Confirm jump (reset only). Go to Admin app.</span>
+      <span class="stage">Stage it: Reset &#8594; Confirm reset. Go directly to Admin; the seed already holds every prerequisite.</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · read the day</h4>
-      <div class="row"><span class="k">Click</span><span>Admin &#8594; Day view, Tue 21 Jul. Point to the AM/PM rhythm, the status legend, and the full-day booking (two adjacent Lists).</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Day view &#8594; Tue 21 Jul.</li><li>Pause on the day grid.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A rolling four-month canvas: every active anaesthetist has exactly two half-day Lists a day. The office manages the day and handles exceptions rather than inventing every session."</span></div>
       <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
-      <div class="row"><span class="k">Click</span><span>Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice). Choose St George's Hospital, Mr T. Hale and keep 13:00–17:00. Continue &#8594; Enter manually &#8594; Look up. The blank form fills NHI DEM1239, Demo Patient, DOB 1 Jan 1990, phone, code 20950, Appendicectomy, laparoscopic, time 15:00, Hospital route, informational nib and the St George's billing reference. Review &#8594; Save card &#8594; Done.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep 13:00–17:00.</li><li>Continue &#8594; Enter manually &#8594; Look up.</li><li>Pause on the populated card.</li><li>Review &#8594; Save card &#8594; Done.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
       <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The Free block repaints as booked on the admin grid; the Card is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><span>Wed 22 Jul &#8594; Dr James Rutherford AM, Christchurch Eye Surgery (availability conflict) &#8594; Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm. Watch the brief List reassigned success moment, then re-open Sharma AM and History.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Cards and audit trail, different from moving one Card. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
       <div class="row"><span class="k">Expect</span><span>A brief List reassigned success moment appears before the modal closes. The List and Cards move; the vacated slot regenerates; the change is audited.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 4 · authorise a submitted List</h4>
-      <div class="row"><span class="k">Click</span><span>Review queue &#8594; Dr Kate Morrison, Mon 20 Jul &#8594; review &#8594; Authorise for billing &#8594; confirm.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Review queue &#8594; Dr Kate Morrison, Mon 20 Jul &#8594; Review.</li><li>Pause on the submitted List, then Authorise for billing &#8594; Confirm.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Card and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
     </div>
     <div class="callout warn">Discovery: hard vs advisory availability/holiday conflicts (prototype uses advisory flags); the exact reassignment mechanics; and monitoring location (prototype places it in Admin Web).</div>
   </div></details>
 
-  <details><summary>S3 · Money end-to-end</summary><div class="details-body">
+  <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves the Billing Engine at the centre, split billing,
       the Xero pair and the two money states. 6 to 8 minutes. Authorise live.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S3 &#8594; Jump &#8594; Confirm jump (resets, submits both Mon 20 Lists: AM split-billing, PM two-funder). Go to Admin app.</span>
+      <span class="stage">Stage it: Reset &#8594; Confirm reset. Go directly to Admin; both Mon 20 Souter Lists are already in the Review queue, but their invoices do not exist until you authorise them live.</span>
     </div>
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
-      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List &#8594; use Next in queue to open and authorise the Souter/St George's PM List &#8594; View invoices. The Previous in queue, Next in queue and View invoices controls remain in the top-right throughout review. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". In the sticky information rail, show the separately labelled ACCREC and ACCPAY references, then Email invoice to show the simulated-send state. Back in the full-width table, use Patient / card, Anaesthetist, List and List date to trace each invoice to its source. Contrast one invoice (split Card, same funder) with the two Alan Prentice rows for one Card (nib and St George's). The List links reuse the day-view status colour and open the matching List on its day.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Review queue.</li><li>Process the two Melanie Lists: authorise Forte AM, then use Next in queue to authorise St George's PM.</li><li>View invoices &#8594; <strong>AA-2026-0002 · Brian Holt</strong> &#8594; View.</li><li>Pause on the invoice, then Email invoice &#8594; All invoices.</li><li>Locate the fixed comparison rows and pause:<ul><li><strong>AA-2026-0002 · Brian Holt · Forte Health · $396.18</strong> is the one-invoice, same-funder split Card.</li><li><strong>AA-2026-0005 · Alan Prentice · nib · $152.38</strong> and <strong>AA-2026-0006 · Alan Prentice · St George's · $91.43</strong> are the two invoices from the same Card at 14:00.</li></ul></li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
       <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Card, two for the two-funder Card.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; Invoices &#8594; find the nib row for the Alan Prentice split by matching its InvoiceNumber from Admin &#8594; select the invoice row. Show the ACCREC collection invoice, draft ACCPAY to Dr Melanie Souter, Xero InvoiceID / BillID pair, payer and payee ContactIDs, and the separately-labelled Billing Engine case context.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices.</li><li>Open <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Pause on the ACCREC and ACCPAY pair.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"AA receives all money into one account. The ACCREC records what the payer owes AA; the ACCPAY what AA owes the anaesthetist. No NHI ever crosses to Xero."</span></div>
       <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; choose the nib invoice &#8594; Full payment &#8594; Record payment &#8594; Replay last event (idempotency). Live clock beside the app switcher &#8594; Next day (poll catches a missed webhook). Run payables. Then Web app &#8594; Accounts.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Payment received &#8594; choose <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Full payment &#8594; Record payment &#8594; Replay last event.</li><li>Live clock &#8594; Next day.</li><li>Run payables.</li><li>Web app &#8594; Accounts.</li><li>Pause on the updated balances.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment authorises the payable proportionally. The apps read the Billing Engine's mirror, never Xero directly."</span></div>
       <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY authorised, duplicate webhook ignored, payables disburses, balances reflect it.</span></div>
     </div>
     <div class="callout warn">Discovery: the exact List-disappearance trigger (prototype uses billing-run completion); split-billing invoice count (group by counterparty, two invoices when funders differ).</div>
   </div></details>
 
-  <details><summary>S4 · Exceptions</summary><div class="details-body">
+  <details class="demo-scenario"><summary>S4 · Exceptions</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves resilience and the RFP's hard cases with audited
       overrides. 8 to 10 minutes. Every sub-trigger is on the panel.</span>
-      <span class="stage">Stage it: Scenario jumps &#8594; S4 &#8594; Jump &#8594; Confirm jump (reset). Work top to bottom.</span>
+      <span class="stage">Stage it: Reset &#8594; Confirm reset. Work top to bottom.</span>
     </div>
     <div class="beat"><h4>Beat 1 · pre-payment gate</h4>
-      <div class="row"><span class="k">Click</span><span>Mobile &#8594; Dr Souter Fri 24 Jul AM &#8594; Annette Riley &#8594; try Mark complete. Then Admin Day, Fri 24, Souter AM, Annette &#8594; Override pre-payment gate &#8594; reason “Manager approved theatre exception” &#8594; save. Return to Mobile and complete.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Dr Souter Fri 24 Jul AM &#8594; Annette Riley &#8594; Mark complete.</li><li>Pause on the pre-payment block.</li><li>Admin Day &#8594; Fri 24 &#8594; Souter AM &#8594; Annette.</li><li>Override pre-payment gate &#8594; reason “Manager approved theatre exception” &#8594; Save.</li><li>Return to Mobile and complete the Card.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A browser prototype cannot gate a theatre list, so completion is blocked until the pre-invoice is paid or the office records a reasoned, audited override."</span></div>
       <div class="row"><span class="k">Expect</span><span>Completion blocked; the office override lifts it and is audited.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · post-op addendum</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Stage post-op scenario &#8594; Stage scenario. Admin Day &#8594; Tue 14 Jul &#8594; Dr Priya Sharma AM &#8594; Sarah Mitchell &#8594; Add post-op event.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Stage post-op scenario &#8594; Stage scenario.</li><li>Admin Day &#8594; Tue 14 Jul &#8594; Dr Priya Sharma AM &#8594; Sarah Mitchell.</li><li>Select Add post-op event.</li><li>Pause on the new addendum Card.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A later charge does not reopen the original. The addendum is a new linked Card with its own submit, authorise and bill cycle; the original stays immutable."</span></div>
       <div class="row"><span class="k">Expect</span><span>A new addendum Card; the original stays locked.</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · billing failure and retry</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Trigger billing failure &#8594; Trigger failure. Admin billing monitor &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Trigger billing failure &#8594; Trigger failure.</li><li>Admin Billing monitor &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A group-held contract with no default fallback was dated out. The prototype isolates the failed Card, still invoices its clean sibling, then corrects and retries."</span></div>
       <div class="row"><span class="k">Expect</span><span>The failed Card shows the rating failure while the sibling bills; retry clears it.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · integration dead-letter and fix</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Fire integration message &#8594; MSG-CPH-2001. Admin Integrations &#8594; Feed config &#8594; Christchurch Public patientNhi: PID-2 to PID-3 &#8594; Save. Message log &#8594; Reprocess MSG-CPH-2001.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Fire integration message &#8594; MSG-CPH-2001.</li><li>Admin Integrations &#8594; Feed config &#8594; Christchurch Public.</li><li>Change patientNhi from PID-2 to PID-3 &#8594; Save.</li><li>Message log &#8594; Reprocess MSG-CPH-2001.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Christchurch Public sends the NHI in PID-3 but the feed was onboarded reading PID-2. The bad NHI dead-letters after retries; fixing the mapping and reprocessing recovers it, without a duplicate."</span></div>
       <div class="row"><span class="k">Expect</span><span>Dead-letter, then a clean reprocess after the mapping fix.</span></div>
     </div>
     <div class="beat"><h4>Beat 5 · partial payment</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Payment received &#8594; AA-2026-0002 (St George's, clean sibling Hemi Walker) &#8594; Half (partial) &#8594; Record payment &#8594; Run payables. Select Full payment for the remaining balance, record, then run payables again.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Payment received &#8594; choose the Hemi Walker · St George's clean-sibling invoice.</li><li>Half (partial) &#8594; Record payment &#8594; Run payables.</li><li>Select Full payment for the remaining balance &#8594; Record payment &#8594; Run payables again.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A partial payment authorises only its proportional payable share. Two runs across a part-then-balance payment prove there is no double payment."</span></div>
       <div class="row"><span class="k">Expect</span><span>The payable authorises pro-rata; payables pays only the increment each run.</span></div>
     </div>
     <div class="callout warn">Discovery: billing-failure isolation (a prototype choice); the pre-payment gate/override placement; and how inbound messages targeting a SUBMITTED/AUTHORISED List are parked.</div>
   </div></details>
 
-  <details><summary>S5 · Compliance tour</summary><div class="details-body">
+  <details class="demo-scenario"><summary>S5 · Compliance tour</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves audit, identity, data minimisation and contract
       effective-dating. 5 to 6 minutes.</span>
       <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (resets to rich booking-to-clinical histories on every Card, adds three live edits to David Chen's trail and raises Health NZ contract snapshot invoices from Whitaker's Fri 17 List). Go to Admin app / Xero sim.</span>
     </div>
     <div class="beat"><h4>Beat 1 · audit trail of a much-edited Card</h4>
-      <div class="row"><span class="k">Click</span><span>Admin Day, Tue 21 Jul &#8594; Dr Souter PM &#8594; David Chen &#8594; History.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 21 Jul &#8594; Dr Souter PM.</li><li>David Chen &#8594; History.</li><li>Pause on the audit trail.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every change, including automated ones, writes an append-only entry with who, role, source and before/after. The captured inputs stay reproducible, not just the total."</span></div>
       <div class="row"><span class="k">Expect</span><span>A multi-entry trail from booking and Procedure setup through capture and completion, followed by the staged edits. Every row shows who, role, source and before/after, and the time-unit adjustment retains overridden provenance. Any other Card can also demonstrate seeded history without staging first.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · NHI dual-format validator</h4>
-      <div class="row"><span class="k">Click</span><span>Control panel &#8594; Fire an integration message &#8594; MSG-STG-1002 (new-format NHI), or add a Card manually and try both formats.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Fire an integration message &#8594; MSG-STG-1002 (new-format NHI).</li><li>Optional: add a Card manually and try both NHI formats.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Both NHI formats validate using the official check-digit algorithms. A new-format NHI with a mod-23 check letter validates and processes end to end."</span></div>
       <div class="row"><span class="k">Expect</span><span>The new-format NHI validates; an invalid one is rejected with a reason.</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · no NHI in Xero</h4>
-      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; show contact and invoice data.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero.</li><li>Pause on the contact and invoice data.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"The prototype takes the stricter data-minimisation reading: no NHI ever crosses to Xero, only a hidden internal ID. Appendix 1 and Appendix 2 contradict each other, so we flag it to confirm with AA."</span></div>
       <div class="row"><span class="k">Expect</span><span>The Xero surface shows the internal ID and a visible callout of the contradiction.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · contract effective-dating</h4>
-      <div class="row"><span class="k">Click</span><span>Admin Master data &#8594; Contracts &#8594; Health NZ agreed rate (Type 2) &#8594; Effective to: 16 Jul 2026 &#8594; save. Invoices &#8594; AA-2026-0002.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Master data &#8594; Contracts &#8594; Health NZ agreed rate (Type 2).</li><li>Set Effective to: 16 Jul 2026 &#8594; Save.</li><li>Invoices &#8594; open Hemi Walker's Health NZ invoice from Dr Whitaker's Fri 17 Jul List.</li><li>Pause on the unchanged invoice.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Contracts are effective-dated. Changing one does not rewrite invoices already raised under the old terms; the invoice reproduces against what was true when it billed."</span></div>
       <div class="row"><span class="k">Expect</span><span>The contract change is recorded; the earlier invoice is unchanged.</span></div>
     </div>
@@ -893,9 +975,9 @@
     <tr><td>Full deep-dive</td><td>S1 through S5</td><td>30 to 35 min</td></tr>
   </table></div>
 
-  <div class="callout"><strong>Recovery from demo accidents.</strong> Every scenario jump resets first, so
-  the fastest recovery is to re-run the scenario (Scenario jumps &#8594; the same Jump &#8594; Confirm jump), or
-  use Reset &#8594; Confirm reset in the shared top bar from any app. The control panel and Integration
+  <div class="callout"><strong>Recovery from demo accidents.</strong> S1 to S4 recover through
+  Reset &#8594; Confirm reset in the shared top bar from any app. S5 still uses its scenario-specific
+  Jump &#8594; Confirm jump preparation. The control panel and Integration
   simulator also expose the same whole-demo reset. Reset returns the clock to Tue 21 Jul 2026, 8:00 and
   restarts identifiers, so invoice numbers begin at the same point every time. If Finish now was stamped too early,
   reset and advance the clock before reopening the Card. A stray refresh is no longer a problem: it returns
@@ -1087,6 +1169,28 @@ simulated integrations · not production software.</div>
     tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.panel); }); });
     var initial = (location.hash || '').replace('#', '');
     if (initial && document.getElementById(initial)) show(initial);
+
+    var printScripts = document.getElementById('print-scripts');
+    var printScenarioStates = [];
+    function preparePrintMode() {
+      var scenarios = Array.prototype.slice.call(document.querySelectorAll('.demo-scenario'));
+      printScenarioStates = scenarios.map(function (scenario) { return scenario.open; });
+      scenarios.forEach(function (scenario) { scenario.open = true; });
+      document.body.classList.add('print-scripts');
+    }
+    function clearPrintMode() {
+      var scenarios = Array.prototype.slice.call(document.querySelectorAll('.demo-scenario'));
+      scenarios.forEach(function (scenario, index) { scenario.open = printScenarioStates[index]; });
+      printScenarioStates = [];
+      document.body.classList.remove('print-scripts');
+    }
+    if (printScripts) {
+      printScripts.addEventListener('click', function () {
+        preparePrintMode();
+        window.print();
+      });
+      window.addEventListener('afterprint', clearPrintMode);
+    }
   })();
 </script>
 

@@ -1,9 +1,9 @@
 # Demo Script — S1 to S5
 
-The canonical presenter run-sheet. Each scenario has a one-click **stage it** step on the demo control
-panel, then beats with **Click** (where to go), **Say** (one line tying the moment to the RFP need it
-demonstrates) and **Expected** (what you should see). Every scenario resets first, so you can start any
-scenario cold and recover from any mistake by re-staging.
+The canonical presenter run-sheet. Each scenario has a **stage it** step, then beats with **Click**
+(presenter choreography only), **Say** (the story to tell between actions), and **Expected** (what you
+should see). The Click lists deliberately contain only navigation, selections, button presses, and
+useful pauses. Every scenario resets first, so you can start cold and recover from a mistake.
 
 The whole flow is clickable. Nothing below is narrate-only.
 
@@ -27,9 +27,9 @@ unfinished Margaret Ellison Card designed for live capture.
 
 The control panel is grouped: **Clock & reset**, **Scenario jumps (S1 to S5)**, **Booking & integration
 events**, and **Billing, money & exceptions**. Each scenario jump confirms first, resets the data,
-stages the scenario, and prints where to go next with one-click navigation. After staging, use the
-live clock immediately to the right of the app switcher to advance time without leaving the screen
-you are presenting.
+applies any extra preparation needed, and prints where to go next with one-click navigation. S1 to
+S4 can instead begin from the ordinary Reset control. Use the live clock immediately to the right of
+the app switcher to advance time without leaving the screen you are presenting.
 
 ## Direct URLs
 
@@ -94,40 +94,44 @@ mobile background and changes nothing here.
 **Serves:** the RFP's near-real-time hospital integration, the Card as the billing anchor, and BTM
 capture. **Time:** 5 to 6 minutes.
 
-**Stage it:** control panel, Scenario jumps, **S1 · Booking to theatre → Jump → Confirm jump**. This
-resets, completes the three support Cards already on the List, then fires St George's S12 new-booking
-message. Sarah is the only Card left to finish. Use **Go to Integrations** and **Go to Mobile app**.
+**Stage it:** use **Reset → Confirm reset**, then open the Anaesthetist Mobile App. The Tue 28 Jul
+St George's AM List starts empty so the hospital booking can arrive visibly during the demo.
 
 ### Beat 1: the booking arrives from the hospital
 
-- **Click:** Go to Integrations (the badged simulator). In the left inspection rail, show raw HL7 v2,
-  translated FHIR R4, and the processed schedule change together. The wider message library remains
-  visible on the right.
+- **Click:**
+  - In Mobile Lists, open the empty Tue 28 Jul St George's AM session.
+  - Go to **Demo: Integrations → S12 · New booking → Replay**.
+  - Pause on the processed message.
+  - Return to Mobile and reopen the Tue 28 Jul AM List.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
   mapped per hospital, processed near real time, and audited. This booking created a patient Card
   without anyone re-keying it."
-- **Expected:** the message shows as processed; a new Card for Sarah Mitchell now belongs to Dr
-  Souter's Tue 28 Jul AM List. Her NHI matched an existing record, so intake reused it, no duplicate.
+- **Expected:** the message shows as processed; the previously empty List now contains one Card for
+  Sarah Mitchell. Her NHI matched an existing record, so intake reused it, no duplicate.
 
 ### Beat 2: the Card fills over the days before theatre
 
-- **Click:** stay on the Integration simulator. Open the live clock beside the app switcher, select
-  **Procedure day · 28 Jul**, then **+1 hour** in the same popup so live capture starts at 09:00.
+- **Click:**
+  - Open the live clock beside the app switcher.
+  - Select **Procedure day · 28 Jul → +1 hour** so live capture starts at 09:00.
 - **Say:** "Between booking and theatre, patient and booking data can change right up to the day. The
   canvas rolls forward deterministically as the clock advances."
 - **Expected:** the clock reads Tuesday 28 July 2026, 9:00.
 
 ### Beat 3: capture BTM on mobile and submit
 
-- **Click:** switch to the **Anaesthetist Mobile App**, open the Tue 28 Jul St George's List, then Sarah
-  Mitchell. In the global **Off | Units | Fee** control select **Fee**. Under Procedure code choose
-  **20950 — Appendicectomy, laparoscopic**, then **Start now**.
-  Without leaving Sarah, open the live clock beside the app switcher and select **+1 hour**. Close the
-  popup, then select **Finish now → Mark complete → Mark list completed → Submit to office**.
+- **Click:**
+  - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
+  - Set the global **Off | Units | Fee** control to **Fee**.
+  - Choose procedure **20950 — Appendicectomy, laparoscopic → Start now**.
+  - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
+    **Finish now**.
+  - Select **Mark complete → Mark list completed → Submit to office**.
 - **Say:** "The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
   tiered Time plus Modifiers at her own value per unit. Once every active Card is complete she submits
   the whole List; it is now read-only to her and editable only by the office."
-- **Expected:** Sarah changes the List from **3 of 4 complete** to **4 of 4 complete**; the fee updates,
+- **Expected:** Sarah changes the List from **0 of 1 complete** to **1 of 1 complete**; the fee updates,
   a brief **List submitted** success moment confirms the handoff, and the List moves to `SUBMITTED`
   and into the office Review queue.
 - **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
@@ -148,13 +152,14 @@ interval); the RFP defines the tiers but not the rounding.
 **Serves:** the office as the operational control tower, exception handling, and the no-Returned-state
 authorisation model. **Time:** 6 to 8 minutes.
 
-**Stage it:** control panel, Scenario jumps, **S2 · Office day → Jump → Confirm jump** (reset only; the
-day's data is already seeded). Use **Go to Admin app**.
+**Stage it:** use **Reset → Confirm reset**, then go directly to the Admin app. The day's data is
+already seeded.
 
 ### Beat 1: read the day
 
-- **Click:** Admin Web App, Day view, Tuesday 21 July. Point to the AM/PM rhythm, the status legend, and
-  the seeded full-day booking (two adjacent Lists for one anaesthetist).
+- **Click:**
+  - Go to **Admin Web App → Day view → Tuesday 21 July**.
+  - Pause on the day grid.
 - **Say:** "The schedule is a rolling four-month canvas. Every active anaesthetist has exactly two
   half-day Lists a day. The office manages the whole day and handles the exceptions rather than
   inventing every session."
@@ -162,12 +167,12 @@ day's data is already seeded). Use **Go to Admin app**.
 
 ### Beat 2: a phone-advice booking
 
-- **Click:** open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**. Choose **St George's
-  Hospital** and **Mr T. Hale**, keep 13:00 to 17:00, then **Continue to add card → Enter manually**.
-  Select **Look up** on the blank form. It fills NHI **DEM1239**, **Demo Patient**, DOB **1 Jan
-  1990**, phone, code **20950**, **Appendicectomy, laparoscopic**, scheduled time **15:00**,
-  **Hospital**, the informational nib record and the St George's billing reference. Review the
-  result, then **Save card → Done**.
+- **Click:**
+  - Open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**.
+  - Choose **St George's Hospital** and **Mr T. Hale**; keep 13:00 to 17:00.
+  - Select **Continue to add card → Enter manually → Look up**.
+  - Pause on the populated card.
+  - Select **Review → Save card → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
 - **Expected:** the lookup fills the complete booking and leaves every field editable. The Free block
@@ -177,9 +182,10 @@ day's data is already seeded). Use **Go to Admin app**.
 
 ### Beat 3: illness cover, reassign a whole List
 
-- **Click:** step to Wednesday 22 July. Open **Dr James Rutherford's AM Christchurch Eye Surgery**
-  List, which has the availability conflict, then **Reassign list → Dr Priya Sharma → Unavailable →
-  Confirm reassignment**. Re-open Sharma's AM block, then open History.
+- **Click:**
+  - Go to Wednesday 22 July and open **Dr James Rutherford's AM Christchurch Eye Surgery List**.
+  - Select **Reassign list → Dr Priya Sharma → Unavailable → Confirm reassignment**.
+  - Pause on the confirmation, then reopen **Sharma AM → History**.
 - **Say:** "A whole-List reassignment preserves the Cards and audit trail. It is different from moving
   one patient Card. The free-target, absorb and regenerate mechanics are the prototype's proposal for
   keeping the fixed canvas intact."
@@ -188,9 +194,9 @@ day's data is already seeded). Use **Go to Admin app**.
 
 ### Beat 4: authorise a submitted List
 
-- **Click:** open the **Review queue**, open **Dr Kate Morrison's Mon 20 Jul** submitted List,
-  review Cards, units, fee, route, Contract, reference and any flags, then **Authorise for billing** and
-  confirm.
+- **Click:**
+  - Go to **Review queue → Dr Kate Morrison, Mon 20 Jul → Review**.
+  - Pause on the submitted List, then select **Authorise for billing → Confirm**.
 - **Say:** "The office reviews the Cards as a set, a human sanity check, not an automatic gate. If
   something needs clarification the office phones and corrects it here. The List is never returned.
   Authorisation locks every Card and hands the whole List to the Billing Engine."
@@ -207,24 +213,24 @@ in Admin Web or a separate surface (the prototype places it in Admin Web).
 **Serves:** the Billing Engine at the centre, split billing, the Xero pair, and the two separate money
 states. **Time:** 6 to 8 minutes. This is the money story's payoff, so authorise live.
 
-**Stage it:** control panel, Scenario jumps, **S3 · Money end-to-end → Jump → Confirm jump**. This
-resets and submits both of Dr Souter's Mon 20 Jul Lists into the Review queue: AM (Forte Health, the
-split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin app**.
+**Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
+Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM
+(St George's, the two-funder Card). Their invoices do not exist until you authorise the Lists live.
 
 ### Beat 1: authorise and generate invoices
 
-- **Click:** Admin, Review queue, open the Souter/Forte AM List, **Authorise for billing**, use
-  **Next in queue** to open and authorise the Souter/St George's PM List, then **View invoices**.
-  These queue and invoice controls remain available in the top-right throughout review. Open a contract-holder invoice:
-  point to the unique InvoiceNumber, internal CaseReference, payer, line items, units, GST and total,
-  and the "AA as agent for" wording. In the sticky information rail, show the separately labelled
-  **ACCREC** and **ACCPAY** references, then use **Email invoice** to show the simulated-send state.
-  Back in the full-width table, use **Patient / card**,
-  **Anaesthetist**, **List** and **List date** to trace each invoice to its source. Then contrast the
-  two grouping outcomes: the split-billing Card (two procedures, same funder) shares one invoice, its
-  additional procedure claiming time units only; the two Alan Prentice rows share the same Card and
-  produce two invoices, nib and St George's. The List cells reuse the day-view status colour and link
-  back to that date with the matching List drawer open.
+- **Click:**
+  - Go to **Admin → Review queue**.
+  - Process the two Melanie Lists: authorise Forte AM, then use **Next in queue** to authorise
+    St George's PM.
+  - Select **View invoices → AA-2026-0002 · Brian Holt → View**.
+  - Pause on the invoice, then select **Email invoice → All invoices**.
+  - Locate the fixed comparison rows and pause:
+    - **AA-2026-0002 · Brian Holt · Forte Health · $396.18** is the one-invoice,
+      same-funder split Card.
+    - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
+      **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
+      Card at 14:00.
 - **Say:** "The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per
   Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
   receivables and banking service."
@@ -235,11 +241,10 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 
 ### Beat 2: the Xero collection and payable pair
 
-- **Click:** switch to **Demo: Billing Monitor & Xero → Invoices**. Find the **nib** row for the
-  Alan Prentice split (match the InvoiceNumber from Admin), then select its invoice row. In the
-  drill-down, point to the ACCREC collection invoice, the draft ACCPAY to Dr Melanie Souter,
-  their Xero InvoiceID / BillID pair, the payer and payee ContactIDs, and the separately-labelled
-  Billing Engine case context.
+- **Click:**
+  - Go to **Demo: Billing Monitor & Xero → Invoices**.
+  - Open **AA-2026-0005 · Alan Prentice · nib**.
+  - Pause on the ACCREC and ACCPAY pair.
 - **Say:** "AA receives all money into one account. The ACCREC records what the payer owes AA; the
   ACCPAY records what AA owes the anaesthetist. No NHI ever crosses into Xero."
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice. Alan appears only in the
@@ -247,11 +252,14 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 
 ### Beat 3: payment, balances and disbursement
 
-- **Click:** control panel, Billing, money & exceptions, **Payment received (webhook)**: pick the
-  **nib** invoice, **Full payment**, **Record payment**. Then **Replay last event** to show idempotency.
-  Use the live clock beside the app switcher and select **Next day** to show the reconciliation poll
-  catch a missed webhook. Then **Run payables** (or run it from the Admin app). Finally switch to the
-  **Anaesthetist Web App**, Accounts, to show the flat balances and GST activity update.
+- **Click:**
+  - Go to **Control panel → Billing, money & exceptions → Payment received (webhook)** and choose
+    **AA-2026-0005 · Alan Prentice · nib**.
+  - Select **Full payment → Record payment → Replay last event**.
+  - Select **live clock → Next day**.
+  - Select **Run payables**.
+  - Go to **Anaesthetist Web App → Accounts**.
+  - Pause on the updated balances.
 - **Say:** "Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment
   authorises the payable proportionally. The anaesthetist apps read the Billing Engine's mirror; they
   never query Xero directly."
@@ -269,15 +277,17 @@ differ).
 **Serves:** resilience, the RFP's hard cases, and the audited overrides that keep them honest.
 **Time:** 8 to 10 minutes. Use this for a technical audience; every sub-trigger is on the panel.
 
-**Stage it:** control panel, Scenario jumps, **S4 · Exceptions → Jump → Confirm jump** (reset). Work
-top to bottom through the triggers named below.
+**Stage it:** use **Reset → Confirm reset**. Work top to bottom through the triggers named below.
 
 ### Beat 1: pre-payment gate
 
-- **Click:** Anaesthetist Mobile App, open Dr Souter's Fri 24 Jul AM List, open **Annette Riley** and
-  try **Mark complete**. Then Admin Day view, Fri 24 Jul, Souter AM, Annette Riley, **Override
-  pre-payment gate**; enter **Manager approved theatre exception** and save. Return to Mobile and mark
-  the Card complete.
+- **Click:**
+  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley → Mark
+    complete**.
+  - Pause on the pre-payment block.
+  - Go to **Admin Day view → Fri 24 Jul → Souter AM → Annette Riley**.
+  - Select **Override pre-payment gate**, enter **Manager approved theatre exception**, and save.
+  - Return to Mobile and complete the Card.
 - **Say:** "A patient-funded pre-payment must be paid before the procedure. A browser prototype cannot
   gate a theatre list, so completion is blocked until the pre-invoice is paid or the office records a
   reasoned, audited override."
@@ -286,18 +296,20 @@ top to bottom through the triggers named below.
 
 ### Beat 2: post-op addendum
 
-- **Click:** control panel, the **Stage post-op scenario** card, **Stage scenario**. Then in the Admin
-  Day view jump to Tue 14 Jul, open **Dr Priya Sharma's AM List → Sarah Mitchell**, and use **Add
-  post-op event**; it lands on the
-  anaesthetist's free Tue 21 PM session and runs its own capture to invoice.
+- **Click:**
+  - Go to **Control panel → Stage post-op scenario → Stage scenario**.
+  - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List → Sarah Mitchell**.
+  - Select **Add post-op event**.
+  - Pause on the new addendum Card.
 - **Say:** "A later pain consult or ward review can create another charge. The original authorised Card
   stays immutable; the addendum is a new linked Card with its own submit, authorise and bill cycle."
 - **Expected:** a new addendum Card; the original stays locked.
 
 ### Beat 3: billing failure and retry
 
-- **Click:** control panel, the **Trigger billing failure** card, **Trigger failure**. Then open the
-  Admin billing monitor and use **Resolve & retry** on **Losa Tuilagi**.
+- **Click:**
+  - Go to **Control panel → Trigger billing failure → Trigger failure**.
+  - Go to **Admin billing monitor → Losa Tuilagi → Resolve & retry**.
 - **Say:** "A Card can fail rating after the List is authorised, here because a group-held contract with
   no default fallback was dated out. The prototype isolates that Card, still invoices its clean sibling,
   then lets the office correct and retry."
@@ -305,10 +317,12 @@ top to bottom through the triggers named below.
 
 ### Beat 4: integration dead-letter and manual fix
 
-- **Click:** control panel, Booking & integration events, **Fire an integration message**, choose
-  **MSG-CPH-2001** (Christchurch Public dead-letter). In Admin Integrations, open **Feed config**,
-  change Christchurch Public's **patientNhi** mapping from **PID-2** to **PID-3**, then **Save**. Return
-  to **Message log** and select **Reprocess** on MSG-CPH-2001.
+- **Click:**
+  - Go to **Control panel → Booking & integration events → Fire an integration message →
+    MSG-CPH-2001**.
+  - Go to **Admin Integrations → Feed config → Christchurch Public**.
+  - Change **patientNhi** from **PID-2** to **PID-3**, then select **Save**.
+  - Go to **Message log → MSG-CPH-2001 → Reprocess**.
 - **Say:** "Christchurch Public sends the NHI in PID-3, but the feed was onboarded reading PID-2. The
   bad NHI fails validation and the message dead-letters after its retries. Fixing the mapping and
   reprocessing recovers it, without creating a duplicate."
@@ -316,9 +330,11 @@ top to bottom through the triggers named below.
 
 ### Beat 5: partial payment
 
-- **Click:** control panel, **Payment received (webhook)**, choose **AA-2026-0002** (the St George's
-  invoice for clean sibling Hemi Walker), **Half (partial) → Record payment → Run payables**. Select
-  **Full payment** to pay the remaining balance, record it, then run payables again.
+- **Click:**
+  - Go to **Control panel → Payment received (webhook)** and choose the
+    **Hemi Walker · St George's** clean-sibling invoice.
+  - Select **Half (partial) → Record payment → Run payables**.
+  - Select **Full payment → Record payment → Run payables** for the remaining balance.
 - **Say:** "A partial payment authorises only its proportional payable share. Two payables runs across a
   part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises pro-rata; payables pays only the increment each run.
@@ -341,7 +357,10 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
 ### Beat 1: the audit trail of a much-edited Card
 
-- **Click:** Admin Day view, Tue 21 Jul, **Dr Souter PM → David Chen → History**.
+- **Click:**
+  - Go to **Admin Day view → Tue 21 Jul → Dr Souter PM**.
+  - Open **David Chen → History**.
+  - Pause on the audit trail.
 - **Say:** "Every Card and Procedure change, including automated ones, writes an append-only audit entry
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
@@ -352,15 +371,18 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
 ### Beat 2: NHI dual-format validator
 
-- **Click:** control panel, **Fire an integration message**, choose **MSG-STG-1002** (new-format NHI),
-  or add a Card manually and try both an old-format and new-format NHI.
+- **Click:**
+  - Go to **Control panel → Fire an integration message → MSG-STG-1002 (new-format NHI)**.
+  - Optional: add a Card manually and try both NHI formats.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
   new-format NHI with a mod-23 check letter validates and processes end to end."
 - **Expected:** the new-format NHI validates; an invalid one is rejected with a reason.
 
 ### Beat 3: no NHI in Xero
 
-- **Click:** open the **Demo: Billing Monitor & Xero** surface and show the contact and invoice data.
+- **Click:**
+  - Open **Demo: Billing Monitor & Xero**.
+  - Pause on the contact and invoice data.
 - **Say:** "The prototype takes the stricter data-minimisation reading: no NHI ever crosses to Xero.
   Contacts carry a hidden internal ID only. The RFP's Appendix 1 and Appendix 2 contradict each other
   here, so we flag it as a decision to confirm with AA."
@@ -368,8 +390,11 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
 ### Beat 4: contract effective-dating
 
-- **Click:** Admin **Master data → Contracts → Health NZ agreed rate (Type 2)**. Set **Effective to**
-  to **16 Jul 2026** and save. Then open **Invoices → AA-2026-0002**, which was raised before the edit.
+- **Click:**
+  - Go to **Admin → Master data → Contracts → Health NZ agreed rate (Type 2)**.
+  - Set **Effective to** to **16 Jul 2026**, then save.
+  - Open the **Hemi Walker** Health NZ invoice from Dr Whitaker's Fri 17 Jul List.
+  - Pause on the unchanged invoice.
 - **Say:** "Contracts are effective-dated. Changing a contract does not rewrite invoices already raised
   under the old terms; the invoice reproduces against what was true when it billed."
 - **Expected:** the contract change is recorded; the earlier invoice is unchanged.
@@ -404,8 +429,8 @@ payables run records disbursement.
 
 ## Recovery from demo accidents
 
-- Every scenario jump resets first, so the fastest recovery is to re-run the scenario you are on: control
-  panel, Scenario jumps, the same **Jump → Confirm jump**.
+- S1 to S4 start from the common reset seed, so the fastest recovery is **Reset → Confirm reset**.
+  S5 still has scenario-specific preparation, so recover it through its **Jump → Confirm jump**.
 - Or use **Reset → Confirm reset** in the shared top bar from any app. The same control remains under
   **Clock & reset** in the control panel. Reset returns the clock to Tuesday 21 July 2026, 8:00 and
   restarts deterministic identifiers, so invoice numbers begin at the same point every time.
