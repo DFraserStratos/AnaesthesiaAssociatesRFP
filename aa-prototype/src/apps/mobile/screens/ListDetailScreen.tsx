@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Plus } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Card } from '../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
+import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
 import { sessionTimeRange } from '../../../shared/format'
@@ -34,6 +35,13 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
   const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
+  const [showSubmitted, setShowSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (!showSubmitted) return undefined
+    const timer = window.setTimeout(() => setShowSubmitted(false), 1050)
+    return () => window.clearTimeout(timer)
+  }, [showSubmitted])
 
   // Tick choreography: rows completed AFTER this screen last showed the list
   // animate their tick in (the mockup's tick-pop); rows already done render
@@ -96,7 +104,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <div style={{ padding: '60px 20px 14px', flex: 'none' }}>
         <button
           onClick={onBack}
@@ -339,9 +347,18 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
           actor={actor}
           mode={sheet}
           onClose={() => setSheet('none')}
-          onSubmitted={() => setSheet('none')}
+          onSubmitted={() => {
+            setSheet('none')
+            setShowSubmitted(true)
+          }}
         />
       )}
+
+      {showSubmitted ? (
+        <SuccessOverlay title="List submitted" testId="list-submission-overlay">
+          <div style={{ fontSize: 14, color: neutral.slate }}>Sent to the office for review</div>
+        </SuccessOverlay>
+      ) : null}
     </div>
   )
 }

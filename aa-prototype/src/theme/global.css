@@ -164,6 +164,11 @@ body {
   box-shadow: var(--shadow-calendar-focus);
 }
 
+.aa-filter-toggle:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 [data-validation-fields]:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;
@@ -172,6 +177,20 @@ body {
 [data-validation-focus='true']:focus {
   outline: 3px solid var(--color-error);
   outline-offset: 3px;
+}
+
+.aa-clickable-table-row {
+  cursor: pointer;
+}
+
+.aa-clickable-table-row > td {
+  transition: background-color 120ms ease-out;
+}
+
+@media (hover: hover) {
+  .aa-clickable-table-row:hover > td {
+    background: var(--color-sunken);
+  }
 }
 
 /* ── Motion keyframes (named to match motion.ts) ─────────── */

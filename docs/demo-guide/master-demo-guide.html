@@ -781,9 +781,9 @@
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><span>Wed 22 Jul &#8594; Dr James Rutherford AM, Christchurch Eye Surgery (availability conflict) &#8594; Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm. Re-open Sharma AM and History.</span></div>
+      <div class="row"><span class="k">Click</span><span>Wed 22 Jul &#8594; Dr James Rutherford AM, Christchurch Eye Surgery (availability conflict) &#8594; Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm. Watch the brief List reassigned success moment, then re-open Sharma AM and History.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Cards and audit trail, different from moving one Card. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The List and Cards move; the vacated slot regenerates; the change is audited.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A brief List reassigned success moment appears before the modal closes. The List and Cards move; the vacated slot regenerates; the change is audited.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 4 · authorise a submitted List</h4>
@@ -802,13 +802,13 @@
     </div>
     <div class="beat">
       <h4>Beat 1 · authorise and generate invoices</h4>
-      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List, then the Souter/St George's PM List &#8594; View invoices. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". In the sticky information rail, show the separately labelled ACCREC and ACCPAY references, then Email invoice to show the simulated-send state. Back in the full-width table, use Patient / card, Anaesthetist, List and List date to trace each invoice to its source. Contrast one invoice (split Card, same funder) with the two Alan Prentice rows for one Card (nib and St George's). The List links reuse the day-view status colour and open the matching List on its day.</span></div>
+      <div class="row"><span class="k">Click</span><span>Admin &#8594; Review queue &#8594; authorise the Souter/Forte AM List &#8594; use Next in queue to open and authorise the Souter/St George's PM List &#8594; View invoices. The Previous in queue, Next in queue and View invoices controls remain in the top-right throughout review. Open a contract-holder invoice; show InvoiceNumber, CaseReference, payer, lines, units, GST, total, "AA as agent for". In the sticky information rail, show the separately labelled ACCREC and ACCPAY references, then Email invoice to show the simulated-send state. Back in the full-width table, use Patient / card, Anaesthetist, List and List date to trace each invoice to its source. Contrast one invoice (split Card, same funder) with the two Alan Prentice rows for one Card (nib and St George's). The List links reuse the day-view status colour and open the matching List on its day.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per Procedure, applies the Contract, and groups by counterparty. Xero follows as receivables and banking."</span></div>
       <div class="row"><span class="k">Expect</span><span>Invoice rows for both Lists from the same captured data; one invoice for the split Card, two for the two-funder Card.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; Invoices &#8594; find the nib row for the Alan Prentice split by matching its InvoiceNumber from Admin &#8594; View pair. Show the ACCREC collection invoice, draft ACCPAY to Dr Melanie Souter, Xero InvoiceID / BillID pair, payer and payee ContactIDs, and the separately-labelled Billing Engine case context.</span></div>
+      <div class="row"><span class="k">Click</span><span>Demo: Billing Monitor &amp; Xero &#8594; Invoices &#8594; find the nib row for the Alan Prentice split by matching its InvoiceNumber from Admin &#8594; select the invoice row. Show the ACCREC collection invoice, draft ACCPAY to Dr Melanie Souter, Xero InvoiceID / BillID pair, payer and payee ContactIDs, and the separately-labelled Billing Engine case context.</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"AA receives all money into one account. The ACCREC records what the payer owes AA; the ACCPAY what AA owes the anaesthetist. No NHI ever crosses to Xero."</span></div>
       <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact.</span></div>
     </div>

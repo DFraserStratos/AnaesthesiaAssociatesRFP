@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, Check, Lock } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { BillingRoute, Card, Procedure } from '../../../domain/types'
 import { authoriseList, logListNote, prepaymentStatusFor, useAppStore, type Actor } from '../../../store'
@@ -14,9 +14,9 @@ interface ReviewScreenProps {
   listId: string
   actor: Actor
   onBack: () => void
-  /** Open another list (the "Next in queue" jump). */
+  /** Open another list using the persistent queue navigation. */
   onOpen: (listId: string) => void
-  /** Jump to the Invoices section (post-authorise, Phase 08). */
+  /** Jump to the Invoices section. */
   onViewInvoices: () => void
 }
 
@@ -118,9 +118,14 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   // Only standard (run) invoices — a pre-payment pre-invoice is not run output (Phase 09).
   const raisedCount = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listCardIds.has(i.cardId)).length
 
-  const nextListId = Object.values(listsRecord)
-    .filter((l) => l.state === 'SUBMITTED' && l.id !== listId)
-    .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))[0]?.id
+  // Keep the open list in its former queue position after authorisation so the
+  // permanent previous/next controls remain stable while its state changes.
+  const queueLists = Object.values(listsRecord)
+    .filter((candidate) => candidate.state === 'SUBMITTED' || candidate.id === listId)
+    .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))
+  const queueIndex = queueLists.findIndex((candidate) => candidate.id === listId)
+  const previousListId = queueIndex > 0 ? queueLists[queueIndex - 1]?.id : undefined
+  const nextListId = queueIndex >= 0 ? queueLists[queueIndex + 1]?.id : undefined
 
   function doAuthorise() {
     const outcome = authoriseList(useAppStore, actor, listId)
@@ -164,19 +169,46 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
             {` · ${dayLabel} · ${sessionTimeRange(list)}`}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <StatusChip status={list.statusKey} />
-          {submitAt !== undefined && !authorised && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '4px 10px' }}>
-              Submitted {hhmm(submitAt)}
-            </span>
-          )}
+        <div style={{ display: 'flex', flex: '0 0 auto', flexDirection: 'column', alignItems: 'flex-end', gap: 10, marginLeft: 'auto', maxWidth: '100%' }}>
+          <div data-testid="review-queue-navigation" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+            <Button
+              variant="secondary"
+              disabled={previousListId === undefined}
+              onClick={() => previousListId !== undefined && onOpen(previousListId)}
+              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
+            >
+              <ArrowLeft size={15} strokeWidth={2.2} aria-hidden /> Previous in queue
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={nextListId === undefined}
+              onClick={() => nextListId !== undefined && onOpen(nextListId)}
+              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
+            >
+              Next in queue <ArrowRight size={15} strokeWidth={2.2} aria-hidden />
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={onViewInvoices}
+              style={{ minHeight: 40, padding: '0 12px', fontSize: 13 }}
+            >
+              <Receipt size={15} strokeWidth={2.2} aria-hidden /> View invoices
+            </Button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+            <StatusChip status={list.statusKey} />
+            {submitAt !== undefined && !authorised && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '4px 10px' }}>
+                Submitted {hhmm(submitAt)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Authorised banner (choreography) */}
       {authorised && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: semantic.success.solid, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', animation: 'aa-circle-pop 320ms ease' }}>
               <Check size={18} strokeWidth={3} aria-hidden />
@@ -188,16 +220,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                 {raisedCount > 0 ? `${raisedCount} invoice${raisedCount === 1 ? '' : 's'} raised by the billing run` : 'Handed to the billing run'}
               </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {raisedCount > 0 && (
-              <button onClick={onViewInvoices} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                View invoices →
-              </button>
-            )}
-            <button onClick={() => (nextListId !== undefined ? onOpen(nextListId) : onBack())} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-              {nextListId !== undefined ? 'Next in queue →' : 'Back to queue →'}
-            </button>
           </div>
         </div>
       )}

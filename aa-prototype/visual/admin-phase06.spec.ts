@@ -125,6 +125,10 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await expect(page.getByText(/Proposed reading/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
   await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
+  await expect(page.getByTestId('list-reassignment-overlay')).toContainText('List reassigned')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: 'visual/shots/a-09-reassign-success.png', fullPage: true })
+  await expect(page.getByTestId('list-reassignment-overlay')).toHaveCount(0)
 
   const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
   await sharmaRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
@@ -134,7 +138,7 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await expect(drawer.getByText('The anaesthetist is now marked unavailable for this session.')).toHaveCount(0)
   await drawer.getByRole('button', { name: 'History', exact: true }).click()
   await expect(page.getByText('List reassigned', { exact: true })).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/a-09-reassigned.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })
 })
 
 test('admin phase 06 office edits a SUBMITTED card', async ({ page }) => {

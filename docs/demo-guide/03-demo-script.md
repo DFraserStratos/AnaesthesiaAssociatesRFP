@@ -128,7 +128,8 @@ message. Sarah is the only Card left to finish. Use **Go to Integrations** and *
   tiered Time plus Modifiers at her own value per unit. Once every active Card is complete she submits
   the whole List; it is now read-only to her and editable only by the office."
 - **Expected:** Sarah changes the List from **3 of 4 complete** to **4 of 4 complete**; the fee updates,
-  and the List moves to `SUBMITTED` and into the office Review queue.
+  a brief **List submitted** success moment confirms the handoff, and the List moves to `SUBMITTED`
+  and into the office Review queue.
 - **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
   modifier and time nudge ticks while your thumb is still on the control. The top-bar choice lets the
   audience compare **Fee** (units and dollars), **Units** (units only) and **Off** (Mark complete
@@ -182,8 +183,8 @@ day's data is already seeded). Use **Go to Admin app**.
 - **Say:** "A whole-List reassignment preserves the Cards and audit trail. It is different from moving
   one patient Card. The free-target, absorb and regenerate mechanics are the prototype's proposal for
   keeping the fixed canvas intact."
-- **Expected:** the List and its Cards move to the replacement; the vacated slot regenerates; the change
-  is audited.
+- **Expected:** a brief **List reassigned** success moment confirms the move before the modal closes.
+  The List and its Cards move to Sharma, the vacated slot regenerates, and History records the reassignment.
 
 ### Beat 4: authorise a submitted List
 
@@ -212,8 +213,9 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 
 ### Beat 1: authorise and generate invoices
 
-- **Click:** Admin, Review queue, open the Souter/Forte AM List, **Authorise for billing**, then do the
-  same for the Souter/St George's PM List, then **View invoices**. Open a contract-holder invoice:
+- **Click:** Admin, Review queue, open the Souter/Forte AM List, **Authorise for billing**, use
+  **Next in queue** to open and authorise the Souter/St George's PM List, then **View invoices**.
+  These queue and invoice controls remain available in the top-right throughout review. Open a contract-holder invoice:
   point to the unique InvoiceNumber, internal CaseReference, payer, line items, units, GST and total,
   and the "AA as agent for" wording. In the sticky information rail, show the separately labelled
   **ACCREC** and **ACCPAY** references, then use **Email invoice** to show the simulated-send state.
@@ -234,7 +236,7 @@ split-billing Card) and PM (St George's, the two-funder Card). Use **Go to Admin
 ### Beat 2: the Xero collection and payable pair
 
 - **Click:** switch to **Demo: Billing Monitor & Xero → Invoices**. Find the **nib** row for the
-  Alan Prentice split (match the InvoiceNumber from Admin), then select **View pair →**. In the
+  Alan Prentice split (match the InvoiceNumber from Admin), then select its invoice row. In the
   drill-down, point to the ACCREC collection invoice, the draft ACCPAY to Dr Melanie Souter,
   their Xero InvoiceID / BillID pair, the payer and payee ContactIDs, and the separately-labelled
   Billing Engine case context.

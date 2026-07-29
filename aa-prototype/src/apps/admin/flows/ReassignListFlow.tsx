@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { List, ListStatusKey } from '../../../domain/types'
 import { cardsForList, listForSlot, reassignList, useAppStore, type Actor } from '../../../store'
 import { Button } from '../../../shared/ui'
+import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
 
@@ -20,6 +21,8 @@ const VACATED_OPTIONS: { value: ListStatusKey; label: string }[] = [
   { value: 'holiday', label: 'Holiday' },
 ]
 
+const SUCCESS_DURATION_MS = 1050
+
 /**
  * List reassignment (illness cover). Surfaces only anaesthetists whose same-slot
  * session is genuinely Free (the store guard rejects non-free targets), then a
@@ -36,6 +39,13 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   const [targetId, setTargetId] = useState<string | null>(null)
   const [vacatedStatus, setVacatedStatus] = useState<ListStatusKey>('unavailable')
   const [error, setError] = useState<string | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  useEffect(() => {
+    if (!showSuccess) return undefined
+    const timer = window.setTimeout(onReassigned, SUCCESS_DURATION_MS)
+    return () => window.clearTimeout(timer)
+  }, [onReassigned, showSuccess])
 
   const freeTargets = useMemo(() => {
     return Object.values(anaesthetists)
@@ -55,12 +65,12 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
       setError(outcome.message)
       return
     }
-    onReassigned()
+    setShowSuccess(true)
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <Overlay open={open} onClose={showSuccess ? () => {} : onClose}>
+      <div aria-hidden={showSuccess} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Reassign list (cover)</div>
 
         {targetId === null ? (
@@ -111,6 +121,13 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
           </>
         )}
       </div>
+      {showSuccess ? (
+        <SuccessOverlay title="List reassigned" testId="list-reassignment-overlay">
+          <div style={{ fontSize: 14, color: neutral.slate }}>
+            Moved to {surnameFirst(target?.name ?? '')}
+          </div>
+        </SuccessOverlay>
+      ) : null}
     </Overlay>
   )
 }

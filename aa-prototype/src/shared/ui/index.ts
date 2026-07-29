@@ -8,3 +8,4 @@ export {
   type SlidingSegmentVariant,
 } from './SlidingSegmentedControl'
 export { TickBadge } from './TickBadge'
+export { SuccessOverlay } from './SuccessOverlay'

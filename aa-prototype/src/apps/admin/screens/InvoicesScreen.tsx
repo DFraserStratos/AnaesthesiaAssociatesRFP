@@ -6,7 +6,7 @@ import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../
 import type { Actor } from '../../../store'
 import { billedLists, counterpartyName, invoiceCountsByList, isBackdropInvoice, useAppStore } from '../../../store'
 import { dateTimeMicroCap, dayMicroCap, formatCurrency, hhmm } from '../../../shared/format'
-import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { displayStatusKeyForList, listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 
@@ -150,7 +150,13 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               {rows.map(({ invoice, card, list, patient, anaesthetist, source, displayStatusKey }) => {
                 const statusColour = displayStatusKey !== undefined ? statusColours[displayStatusKey] : undefined
                 return (
-                  <tr key={invoice.id}>
+                  <tr
+                    key={invoice.id}
+                    className="aa-clickable-table-row"
+                    onClick={(event) => {
+                      if (!isInteractiveRowTarget(event.target)) onSelect(invoice.id)
+                    }}
+                  >
                   <td className="mono" style={{ ...cellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{invoice.invoiceNumber}</td>
                   <td style={cellStyle}>
                     <div style={{ fontWeight: 600 }}>{card === undefined ? 'Card unavailable' : (patient?.name ?? 'Unknown patient')}</div>

@@ -29,3 +29,8 @@ export function headCellStyle(compact = false): CSSProperties {
     background: neutral.bg,
   }
 }
+
+/** Keep links and buttons inside a clickable table row in charge of their own action. */
+export function isInteractiveRowTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest('a, button, input, select, textarea') !== null
+}

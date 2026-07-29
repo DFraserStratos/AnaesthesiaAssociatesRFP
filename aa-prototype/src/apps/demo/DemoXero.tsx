@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { AlertTriangle, ChevronLeft, Info } from 'lucide-react'
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
 import { useAppStore } from '../../store'
 import { dateTimeMicroCap, formatCurrency } from '../../shared/format'
@@ -49,7 +49,8 @@ export function DemoXero() {
     <DemoSurface
       title="Xero simulation"
       subtitle="The simulated Xero organisation the Billing Engine hands off to: contacts, the ACCREC / ACCPAY invoice pairs and their payment state. All fake and in-browser; the apps never read this, only the Billing Engine's own mirror."
-      maxWidth={1180}
+      maxWidth={1440}
+      subtitleMaxWidth={820}
     >
       <Callout tone="warn" title="NHI never resides in Xero (Appendix 2 vs Appendix 1)">
         The prototype implements RFP Appendix 2 (data minimisation): only the hidden internal ID
@@ -126,54 +127,85 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
 }
 
 function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
+  const navigate = useNavigate()
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
         Each row is one Billing Engine case: an ACCREC (money in, to the payer) paired with a DRAFT
         then AUTHORISED ACCPAY (owed to the anaesthetist). The pair is linked by the case, not
         natively in Xero, and carries visibly similar numbers (the ACCPAY suffixed <span className="mono">-P</span>).
-        Select <strong>View pair</strong> to inspect both records and their linked identifiers.
+        Select any row to inspect both records and their linked identifiers.
       </div>
       {pairs.length === 0 ? (
         <EmptyNote>No invoices handed off yet.</EmptyNote>
       ) : (
-        <TableShell minWidth={1040}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1040 }}>
+        <TableShell testId="xero-invoice-table-shell">
+          <table data-testid="xero-invoice-table" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '17%' }} />
+              <col style={{ width: '17%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '17%' }} />
+              <col style={{ width: '14%' }} />
+            </colgroup>
             <thead>
               <tr>
-                {['ACCREC / ACCPAY', 'Payer', 'Payee', 'Amount due', 'Received', 'ACCPAY authorised', 'Disbursed', 'Status', ''].map((h, i) => (
-                  <Th key={h === '' ? 'action' : h} right={i >= 3 && i <= 6}>{h}</Th>
-                ))}
+                <Th compact wrap>ACCREC / ACCPAY</Th>
+                <Th compact wrap>Payer</Th>
+                <Th compact wrap>Payee</Th>
+                <Th compact wrap right>ACCREC<br />Due / received</Th>
+                <Th compact wrap right>ACCPAY<br />Authorised / disbursed</Th>
+                <Th compact wrap>Status</Th>
               </tr>
             </thead>
             <tbody>
               {pairs.map((pair) => (
-                <tr key={pair.accRec.id} data-testid={`xero-invoice-row-${pair.accRec.id}`}>
-                  <Td mono>
+                <tr
+                  key={pair.accRec.id}
+                  className="aa-clickable-table-row"
+                  data-testid={`xero-invoice-row-${pair.accRec.id}`}
+                  onClick={() => navigate(`/demo/xero/invoices/${pair.accRec.id}`)}
+                >
+                  <Td compact mono clip>
                     <Link
                       to={`/demo/xero/invoices/${pair.accRec.id}`}
+                      aria-label={`View pair ${pair.accRec.invoiceNumber}`}
+                      onClick={(event) => event.stopPropagation()}
                       style={recordLinkStyle}
                     >
                       {pair.accRec.invoiceNumber}
                     </Link>
-                    <span style={{ color: neutral.mist }}> · {pair.accPay?.billNumber ?? `${pair.accRec.invoiceNumber}-P`}</span>
-                  </Td>
-                  <Td>{pair.accRec.contact?.name ?? pair.accRec.contactId}</Td>
-                  <Td>{pair.accPay?.contact?.name ?? pair.accPay?.contactId ?? '·'}</Td>
-                  <Td mono right>{formatCurrency(pair.accRec.amountDue)}</Td>
-                  <Td mono right>{formatCurrency(pair.accRec.amountReceived)}</Td>
-                  <Td mono right>{pair.accPay !== undefined ? formatCurrency(pair.accPay.amountAuthorised) : '·'}</Td>
-                  <Td mono right>{pair.accPay !== undefined ? formatCurrency(pair.accPay.amountDisbursed) : '·'}</Td>
-                  <Td><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} /></Td>
-                  <Td>
-                    <Link
-                      to={`/demo/xero/invoices/${pair.accRec.id}`}
-                      aria-label={`View pair ${pair.accRec.invoiceNumber}`}
-                      style={recordLinkStyle}
+                    <span
+                      title="ACCPAY bill number"
+                      style={{ display: 'block', marginTop: 2, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis' }}
                     >
-                      View pair →
-                    </Link>
+                      {pair.accPay?.billNumber ?? `${pair.accRec.invoiceNumber}-P`}
+                    </span>
                   </Td>
+                  <Td compact clip>
+                    <TruncatedText value={pair.accRec.contact?.name ?? pair.accRec.contactId} />
+                  </Td>
+                  <Td compact clip>
+                    <TruncatedText value={pair.accPay?.contact?.name ?? pair.accPay?.contactId ?? '·'} />
+                  </Td>
+                  <Td compact mono right>
+                    <StackedAmount label="Amount due" value={formatCurrency(pair.accRec.amountDue)} />
+                    <StackedAmount label="Received" value={formatCurrency(pair.accRec.amountReceived)} secondary />
+                  </Td>
+                  <Td compact mono right>
+                    <StackedAmount
+                      label="ACCPAY authorised"
+                      value={pair.accPay !== undefined ? formatCurrency(pair.accPay.amountAuthorised) : '·'}
+                    />
+                    <StackedAmount
+                      label="Disbursed"
+                      value={pair.accPay !== undefined ? formatCurrency(pair.accPay.amountDisbursed) : '·'}
+                      secondary
+                    />
+                  </Td>
+                  <Td compact clip><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} /></Td>
                 </tr>
               ))}
             </tbody>
@@ -457,31 +489,46 @@ function StatusChip({ recStatus, payStatus }: { recStatus: string; payStatus?: s
   const label = disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
   const on = paid || disbursed
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: on ? semantic.success.tint : neutral.sunken, color: on ? semantic.success.onTint : neutral.slate }}>
+    <span title={label} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: on ? semantic.success.tint : neutral.sunken, color: on ? semantic.success.onTint : neutral.slate }}>
       {label}
     </span>
   )
 }
 
-function TableShell({ minWidth, children }: { minWidth: number; children: React.ReactNode }) {
+function TruncatedText({ value }: { value: string }) {
+  return <span title={value} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</span>
+}
+
+function StackedAmount({ label, value, secondary }: { label: string; value: string; secondary?: boolean }) {
   return (
-    <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, minWidth: 0 }}>
+    <span
+      title={`${label}: ${value}`}
+      style={{ display: 'block', marginTop: secondary === true ? 2 : 0, color: secondary === true ? neutral.mist : neutral.ink }}
+    >
+      {value}
+    </span>
+  )
+}
+
+function TableShell({ minWidth = 0, testId, children }: { minWidth?: number; testId?: string; children: React.ReactNode }) {
+  return (
+    <div data-testid={testId} style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, minWidth: 0 }}>
       <div style={{ minWidth }}>{children}</div>
     </div>
   )
 }
 
-function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+function Th({ children, right, compact, wrap }: { children: React.ReactNode; right?: boolean; compact?: boolean; wrap?: boolean }) {
   return (
-    <th style={{ textAlign: right === true ? 'right' : 'left', padding: '11px 14px', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', whiteSpace: 'nowrap', borderBottom: `1px solid ${neutral.line}` }}>
+    <th style={{ textAlign: right === true ? 'right' : 'left', padding: compact === true ? '10px 8px' : '11px 14px', fontSize: 10.5, lineHeight: 1.25, fontWeight: 700, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase', whiteSpace: wrap === true ? 'normal' : 'nowrap', borderBottom: `1px solid ${neutral.line}` }}>
       {children}
     </th>
   )
 }
 
-function Td({ children, mono, right }: { children: React.ReactNode; mono?: boolean; right?: boolean }) {
+function Td({ children, mono, right, compact, clip }: { children: React.ReactNode; mono?: boolean; right?: boolean; compact?: boolean; clip?: boolean }) {
   return (
-    <td className={mono === true ? 'mono' : undefined} style={{ padding: '10px 14px', fontSize: 13, color: neutral.ink, textAlign: right === true ? 'right' : 'left', whiteSpace: 'nowrap', borderBottom: `1px solid ${neutral.sunken}` }}>
+    <td className={mono === true ? 'mono' : undefined} style={{ padding: compact === true ? '9px 8px' : '10px 14px', fontSize: 13, color: neutral.ink, textAlign: right === true ? 'right' : 'left', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: clip === true ? 'hidden' : undefined, textOverflow: clip === true ? 'ellipsis' : undefined, borderBottom: `1px solid ${neutral.sunken}` }}>
       {children}
     </td>
   )

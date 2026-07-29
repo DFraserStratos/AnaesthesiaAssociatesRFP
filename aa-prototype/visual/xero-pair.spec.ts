@@ -36,7 +36,14 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
   await page.waitForLoadState('networkidle')
   const nibRow = page.getByRole('row').filter({ hasText: 'nib' }).filter({ hasText: '$152.38' })
   await expect(nibRow).toHaveCount(1)
-  await nibRow.getByRole('link', { name: /View pair/ }).click()
+  const tableWidths = await page.getByTestId('xero-invoice-table-shell').evaluate((element) => ({
+    client: element.clientWidth,
+    scroll: element.scrollWidth,
+  }))
+  expect(tableWidths.scroll).toBe(tableWidths.client)
+  await nibRow.hover()
+  await expect(nibRow.locator('td').first()).toHaveCSS('background-color', 'rgb(237, 241, 239)')
+  await nibRow.click()
   await expect(page).toHaveURL(/\/demo\/xero\/invoices\/XR\d+$/)
 
   await expect(page.getByRole('heading', { name: 'AA-2026-0005', exact: true, level: 2 })).toBeVisible()

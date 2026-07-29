@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { billedLists, invoiceCountsByList, useAppStore } from '../../../store'
 import { dayMicroCap, hhmm } from '../../../shared/format'
-import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
+import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
 
 interface ReviewQueueProps {
@@ -10,7 +10,7 @@ interface ReviewQueueProps {
   onViewInvoices: () => void
 }
 
-const cellStyle = adminCell()
+const cellStyle = { ...adminCell(), verticalAlign: 'middle' as const }
 const headCellStyle = adminHead()
 
 /**
@@ -93,7 +93,13 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
                 const anaesthetist = masters.anaesthetists[list.anaesthetistId]
                 const source = listSourceLabels(list, masters)
                 return (
-                  <tr key={list.id}>
+                  <tr
+                    key={list.id}
+                    className="aa-clickable-table-row"
+                    onClick={(event) => {
+                      if (!isInteractiveRowTarget(event.target)) onOpen(list.id)
+                    }}
+                  >
                     <td style={{ ...cellStyle, fontWeight: 600 }}>
                       {anaesthetist?.name ?? 'Anaesthetist unavailable'}
                     </td>

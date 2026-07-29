@@ -1,6 +1,12 @@
-import { useMemo } from 'react'
-import { neutral, semantic } from '../../../theme/tokens'
-import { statusColours, unavailableHatchTint, freeDashedBorder } from '../../../theme/statusColours'
+import { useMemo, useState } from 'react'
+import { accent, neutral, semantic } from '../../../theme/tokens'
+import {
+  STATUS_ORDER,
+  statusColours,
+  unavailableHatchTint,
+  freeDashedBorder,
+  type StatusKey,
+} from '../../../theme/statusColours'
 import type { Anaesthetist, List } from '../../../domain/types'
 import type { AppState } from '../../../store'
 import { StatusLegend } from '../../../shared'
@@ -31,6 +37,15 @@ interface Segment {
   end: number
 }
 
+type FocusFilter = 'attention' | 'note' | 'prepayment'
+
+interface DisplaySegment extends Segment {
+  displayKey: StatusKey
+  needsAttention: boolean
+  hasNote: boolean
+  prepaymentFlag?: 'outstanding' | 'overridden'
+}
+
 /** Merge a both-sessions holiday/unavailable pair into one full-day block. */
 function segmentsFor(lists: List[]): Segment[] {
   const am = lists.find((l) => l.session === 'AM')
@@ -48,11 +63,95 @@ function segmentsFor(lists: List[]): Segment[] {
   return lists.map((l) => ({ list: l, ...listSpan(l) }))
 }
 
+/** A note signal is an annotation beyond the subtitle already visible in a block. */
+function hasNoteSignal(list: List, displayKey: StatusKey): boolean {
+  const hasText = list.notes !== undefined && list.notes.trim() !== ''
+  return hasText && isBooked(displayKey) && list.surgeonId !== undefined
+}
+
 export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCardCounts, prepaymentFlags, onSelectList }: DayGridProps) {
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<StatusKey>>(() => new Set())
+  const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
+
   const rows = useMemo(
-    () => anaesthetists.map((a) => ({ anaesthetist: a, segments: segmentsFor(listsByAnaesthetist[a.registrationNumber] ?? []) })),
-    [anaesthetists, listsByAnaesthetist],
+    () =>
+      anaesthetists.map((anaesthetist) => ({
+        anaesthetist,
+        segments: segmentsFor(listsByAnaesthetist[anaesthetist.registrationNumber] ?? []).map(
+          (segment): DisplaySegment => {
+            const hasCards = (activeCardCounts[segment.list.id] ?? 0) > 0
+            const displayKey = displayStatusKeyForList(segment.list, hasCards)
+            return {
+              ...segment,
+              displayKey,
+              needsAttention: attentionReasons(segment.list).length > 0,
+              hasNote: hasNoteSignal(segment.list, displayKey),
+              prepaymentFlag: prepaymentFlags.get(segment.list.id),
+            }
+          },
+        ),
+      })),
+    [activeCardCounts, anaesthetists, listsByAnaesthetist, prepaymentFlags],
   )
+
+  const filteredRows = useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        segments: row.segments.filter((segment) => {
+          if (hiddenStatuses.has(segment.displayKey)) return false
+          if (focusFilters.size === 0) return true
+          return (
+            (focusFilters.has('attention') && segment.needsAttention) ||
+            (focusFilters.has('note') && segment.hasNote) ||
+            (focusFilters.has('prepayment') && segment.prepaymentFlag !== undefined)
+          )
+        }),
+      })),
+    [focusFilters, hiddenStatuses, rows],
+  )
+
+  const activeStatuses = useMemo(
+    () => new Set(STATUS_ORDER.filter((status) => !hiddenStatuses.has(status))),
+    [hiddenStatuses],
+  )
+  const totalBlocks = rows.reduce((total, row) => total + row.segments.length, 0)
+  const matchingAnaesthetists = filteredRows.filter((row) => row.segments.length > 0).length
+  const visibleBlocks = filteredRows.reduce((total, row) => total + row.segments.length, 0)
+  const filtered = hiddenStatuses.size > 0 || focusFilters.size > 0
+  const displayedRows = useMemo(() => {
+    if (!filtered) return filteredRows
+    const matching = []
+    const inactive = []
+    for (const row of filteredRows) {
+      if (row.segments.length > 0) matching.push(row)
+      else inactive.push(row)
+    }
+    return [...matching, ...inactive]
+  }, [filtered, filteredRows])
+
+  function toggleStatus(status: StatusKey) {
+    setHiddenStatuses((current) => {
+      const next = new Set(current)
+      if (next.has(status)) next.delete(status)
+      else next.add(status)
+      return next
+    })
+  }
+
+  function toggleFocus(filter: FocusFilter) {
+    setFocusFilters((current) => {
+      const next = new Set(current)
+      if (next.has(filter)) next.delete(filter)
+      else next.add(filter)
+      return next
+    })
+  }
+
+  function resetFilters() {
+    setHiddenStatuses(new Set())
+    setFocusFilters(new Set())
+  }
 
   return (
     <div style={{ flex: 1, minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)' }}>
@@ -66,51 +165,124 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
         </span>
       </div>
 
-      {rows.map(({ anaesthetist, segments }) => (
-        <div key={anaesthetist.registrationNumber} style={{ display: 'flex', alignItems: 'stretch', borderBottom: '1px solid #F1F4F2' }}>
-          <span style={{ width: 148, flex: 'none', display: 'flex', alignItems: 'center', paddingLeft: 16, fontSize: 12.5, fontWeight: 600, boxSizing: 'border-box', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      {displayedRows.map(({ anaesthetist, segments }, index) => {
+        const inactive = filtered && segments.length === 0
+        const startsInactiveGroup = inactive && index === matchingAnaesthetists && matchingAnaesthetists > 0
+        return (
+        <div
+          key={anaesthetist.registrationNumber}
+          data-day-grid-row={anaesthetist.registrationNumber}
+          data-filter-match={inactive ? 'false' : 'true'}
+          data-filter-divider={startsInactiveGroup ? 'true' : undefined}
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            borderBottom: '1px solid #F1F4F2',
+            background: inactive ? neutral.bg : neutral.surface,
+            boxShadow: startsInactiveGroup ? `inset 0 3px 0 ${neutral.lineStrong}` : undefined,
+          }}
+        >
+          <span style={{ width: 148, flex: 'none', display: 'flex', alignItems: 'center', paddingLeft: 16, fontSize: 12.5, fontWeight: 600, boxSizing: 'border-box', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: inactive ? neutral.mist : neutral.ink }}>
             {surnameFirst(anaesthetist.name)}
           </span>
           <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: 'repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)' }}>
             {segments.map((seg) => (
-              <GridBlock key={seg.list.id} seg={seg} masters={masters} hasCards={(activeCardCounts[seg.list.id] ?? 0) > 0} prepaymentFlag={prepaymentFlags.get(seg.list.id)} onClick={() => onSelectList(seg.list.id)} />
+              <GridBlock key={seg.list.id} seg={seg} masters={masters} onClick={() => onSelectList(seg.list.id)} />
             ))}
           </span>
         </div>
-      ))}
+        )
+      })}
 
-      {/* Legend strip + adornments */}
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', padding: '10px 16px', background: neutral.bg }}>
-        <StatusLegend variant="chips" />
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
-          <span style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
-          Needs attention
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
-          <span style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
-          Has note
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: neutral.slate }}>
-          <span style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
-          Pre-payment flagged
-        </span>
+      {/* Interactive legend strip + focus filters */}
+      <div
+        data-filter-footer-divider={filtered && matchingAnaesthetists < rows.length ? 'true' : undefined}
+        style={{
+          display: 'flex',
+          gap: 14,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          padding: '10px 16px',
+          background: neutral.bg,
+          boxShadow:
+            filtered && matchingAnaesthetists < rows.length
+              ? `inset 0 3px 0 ${neutral.lineStrong}`
+              : undefined,
+        }}
+      >
+        <StatusLegend variant="chips" activeStatuses={activeStatuses} onToggleStatus={toggleStatus} />
+        <div role="group" aria-label="List focus filters" style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
+          <SignalFilterButton
+            label="Needs attention"
+            active={focusFilters.has('attention')}
+            icon="!"
+            onClick={() => toggleFocus('attention')}
+          />
+          <SignalFilterButton
+            label="Has note"
+            active={focusFilters.has('note')}
+            icon="note"
+            onClick={() => toggleFocus('note')}
+          />
+          <SignalFilterButton
+            label="Pre-payment flagged"
+            active={focusFilters.has('prepayment')}
+            icon="$"
+            onClick={() => toggleFocus('prepayment')}
+          />
+        </div>
+        {filtered && (
+          <button type="button" className="aa-filter-toggle" onClick={resetFilters} style={{ border: 0, padding: '4px 2px', background: 'transparent', color: accent.base, font: 'inherit', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>
+            Reset filters
+          </button>
+        )}
       </div>
       <div style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
-        Showing the demo's 14 anaesthetists. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
+        {matchingAnaesthetists} of {rows.length} anaesthetists {matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing {visibleBlocks} of {totalBlocks} blocks. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
       </div>
     </div>
   )
 }
 
-function GridBlock({ seg, masters, hasCards, prepaymentFlag, onClick }: { seg: Segment; masters: AppState['masters']; hasCards: boolean; prepaymentFlag?: 'outstanding' | 'overridden'; onClick: () => void }) {
+function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | '$' | 'note'; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="aa-filter-toggle"
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '3px 8px',
+        border: `1px solid ${active ? ATTENTION : neutral.line}`,
+        borderRadius: 999,
+        background: active ? semantic.warning.tint : neutral.surface,
+        color: active ? semantic.warning.onTint : neutral.slate,
+        font: 'inherit',
+        fontSize: 11.5,
+        cursor: 'pointer',
+      }}
+    >
+      {icon === 'note' ? (
+        <span aria-hidden style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
+      ) : (
+        <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+      )}
+      {label}
+    </button>
+  )
+}
+
+function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: AppState['masters']; onClick: () => void }) {
   const { list } = seg
   // A Free list booked via the phone-advice path (cards added or a hospital
   // assigned) renders as a booked block, even though its statusKey stays free
   // (status is reassign/reconcile-owned, not office-editable).
-  const displayKey = displayStatusKeyForList(list, hasCards)
+  const { displayKey, needsAttention, hasNote: hasNoteSignal, prepaymentFlag } = seg
   const colour = statusColours[displayKey]
   const reasons = attentionReasons(list)
-  const needsAttention = reasons.length > 0
   const geo = blockGeometry(seg.start, seg.end)
 
   const bg = displayKey === 'unavailable' ? unavailableHatchTint : colour.tint
@@ -138,7 +310,7 @@ function GridBlock({ seg, masters, hasCards, prepaymentFlag, onClick }: { seg: S
   // as the block's subtitle (template labels, free-cover text).
   const hasNote = list.notes !== undefined && list.notes.trim() !== ''
   const noteIsSubtitle = hasNote && l2 === list.notes
-  const showNoteDot = hasNote && !noteIsSubtitle && !needsAttention && displayKey !== 'free'
+  const showNoteDot = hasNoteSignal && !needsAttention
   const tooltip = [...reasons, hasNote && !noteIsSubtitle ? `Note: ${list.notes}` : ''].filter(Boolean).join(' · ')
 
   return (

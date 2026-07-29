@@ -295,20 +295,21 @@ Every active Card in the List has been marked complete.
 1. Dr Souter chooses **Mark list completed**.
 2. The app confirms that every Card is complete and valid.
 3. She selects **Submit to office**.
-4. The List becomes `SUBMITTED`.
-5. Dr Souter can still see it as completed/unbilled but cannot edit it.
-6. Kirsty opens the Review queue.
-7. She checks the full set of Cards, including:
+4. A brief **List submitted** success moment confirms that it was sent to the office for review.
+5. The List becomes `SUBMITTED`.
+6. Dr Souter can still see it as completed/unbilled but cannot edit it.
+7. Kirsty opens the Review queue.
+8. She checks the full set of Cards, including:
    - billing route;
    - governing Contract;
    - Insurer;
    - billing reference;
    - calculated BTM and fee;
    - manual adjustment or ACC advisory flags.
-8. If something is wrong, Kirsty phones for clarification and corrects it in the office.
-9. She may log a phone note.
-10. She selects **Authorise for billing**.
-11. The List becomes `AUTHORISED`; every Card is immutable.
+9. If something is wrong, Kirsty phones for clarification and corrects it in the office.
+10. She may log a phone note.
+11. She selects **Authorise for billing**.
+12. The List becomes `AUTHORISED`; every Card is immutable.
 
 ### Handoff
 

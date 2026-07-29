@@ -114,9 +114,15 @@ test('capture: finish now, complete, submit walk', async ({ page }) => {
   await page.waitForTimeout(500)
   await page.screenshot({ path: 'visual/shots/m4-07-confirm-sheet.png', fullPage: true })
 
-  // Submitted to office.
+  // Successful submission gets the same full-screen fanfare as Card completion,
+  // then settles on the read-only submitted List.
   await page.getByRole('button', { name: 'Submit to office' }).click()
-  await page.waitForTimeout(600)
+  await expect(page.getByTestId('list-submission-overlay')).toContainText('List submitted')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: 'visual/shots/m4-08-submission-overlay.png', fullPage: true })
+  await page.waitForTimeout(900)
+  await expect(page.getByTestId('list-submission-overlay')).toHaveCount(0)
+  await expect(page.getByText('Submitted to office', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/m4-08-submitted.png', fullPage: true })
 })
 

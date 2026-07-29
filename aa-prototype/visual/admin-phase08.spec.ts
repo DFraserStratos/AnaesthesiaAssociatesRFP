@@ -28,7 +28,7 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await page.screenshot({ path: 'visual/shots/a8-01-authorised-banner.png', fullPage: true })
 
   // Jump to the Invoices section.
-  await page.getByRole('button', { name: 'View invoices →' }).click()
+  await page.getByRole('button', { name: 'View invoices' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
   await expect(page.getByText('Recently billed')).toBeVisible()
