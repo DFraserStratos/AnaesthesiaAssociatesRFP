@@ -46,6 +46,7 @@ import type {
 } from '../types'
 import { roundToCents } from '../billing/money'
 import { GST_RATE } from '../billing/invoiceBuild'
+import { aaServiceFeeFor } from '../billing/agencyFee'
 import { ANAE, HOSP, ORG, SURG } from './cast'
 import { BP, PAT } from './patients'
 
@@ -261,7 +262,8 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     const accPayId = `XPH${n}`
     const paid = acc.paidState === 'paid'
     const received = paid ? acc.total : 0
-    const disbursed = paid ? acc.total : 0
+    const payable = aaServiceFeeFor(acc.total)
+    const disbursed = paid ? payable.amountPayable : 0
 
     build.accRecs[accRecId] = {
       id: accRecId,
@@ -275,7 +277,8 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       id: accPayId,
       accRecId,
       contactId: payeeContactId,
-      amountAuthorised: paid ? acc.total : 0,
+      ...payable,
+      amountAuthorised: paid ? payable.amountPayable : 0,
       amountDisbursed: disbursed,
       status: paid ? 'paid' : 'draft',
     }
@@ -288,7 +291,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       accPayId,
       status: paid ? 'disbursed' : 'handedOff',
       receivedAmount: received,
-      authorisedAmount: paid ? acc.total : 0,
+      authorisedAmount: paid ? payable.amountPayable : 0,
       disbursedAmount: disbursed,
     }
     if (paid && acc.paidAtISO !== undefined) theCase.paidInAtISO = acc.paidAtISO
@@ -311,7 +314,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
         source: 'webhook',
       }
       if (acc.disbursedAtISO !== undefined) {
-        build.disbursements[`DSBH${n}`] = { id: `DSBH${n}`, accPayId, amount: acc.total, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
+        build.disbursements[`DSBH${n}`] = { id: `DSBH${n}`, accPayId, amount: payable.amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
       }
     } else if (acc.paidState === 'missedWebhook') {
       // An unmirrored PaymentIn: Xero recorded it but no receipt exists, so the

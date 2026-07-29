@@ -7,7 +7,7 @@
  * the INCREMENT since the last run and can never double-pay (7th review A16).
  *
  * A payable is fully paid out only when its cumulative disbursement reaches the
- * full payable (the paired ACCREC's `amountDue`); a partial payment authorises
+ * full net payable (`XeroAccPay.amountPayable`); a partial payment authorises
  * (and this run disburses) only its proportional share, and the balance follows
  * on later payments + runs. Audited `source:'system'` (`xero.disbursed`).
  */
@@ -52,17 +52,19 @@ export function payablesDue(state: Pick<AppState, 'xero'>): PayablesDue {
  * the BillingCase. Returns `disbursedCount:0` (no run id, no mutation) when there
  * is nothing to pay.
  */
-export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRunResult> {
+function disbursePayables(
+  api: AppStoreApi,
+  eligibleIds: ReadonlySet<string>,
+): Outcome<PayablesRunResult> {
   const state = api.getState()
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can run payables.')
-
   const eligible = Object.values(state.xero.accPays).filter(
-    (p) => toCents(p.amountAuthorised - p.amountDisbursed) > 0,
+    (p) => eligibleIds.has(p.id) && toCents(p.amountAuthorised - p.amountDisbursed) > 0,
   )
   if (eligible.length === 0) {
     return ok({ disbursedCount: 0, totalDisbursed: 0, accPayIds: [] })
   }
 
+  const eligibleIdSet = new Set(eligible.map((payable) => payable.id))
   const metas: MutationMeta[] = []
   const result: PayablesRunResult = { disbursedCount: 0, totalDisbursed: 0, accPayIds: [] }
 
@@ -82,6 +84,7 @@ export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRun
     for (const c of Object.values(cases)) if (c.accPayId !== undefined) caseByAccPay.set(c.accPayId, c)
 
     for (const original of Object.values(s.xero.accPays)) {
+      if (!eligibleIdSet.has(original.id)) continue
       const increment = roundToCents(original.amountAuthorised - original.amountDisbursed)
       if (toCents(increment) <= 0) continue
 
@@ -96,10 +99,9 @@ export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRun
       } satisfies Disbursement
 
       const newDisbursed = roundToCents(original.amountDisbursed + increment)
-      // Fully paid out = cumulative disbursement reaches the FULL payable (the
-      // paired ACCREC's amountDue), not merely the currently-authorised slice.
-      const accRec = s.xero.accRecs[original.accRecId]
-      const fullPayable = accRec?.amountDue ?? original.amountAuthorised
+      // Fully paid out = cumulative disbursement reaches the FULL net payable,
+      // not merely the currently-authorised slice.
+      const fullPayable = original.amountPayable
       const fullyPaidOut = toCents(newDisbursed) >= toCents(fullPayable)
       accPays[original.id] = {
         ...original,
@@ -139,4 +141,29 @@ export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRun
   })
 
   return ok(result)
+}
+
+export function runPayables(api: AppStoreApi, actor: Actor): Outcome<PayablesRunResult> {
+  const state = api.getState()
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can run payables.')
+
+  const eligibleIds = new Set(Object.values(state.xero.accPays).filter(
+    (p) => toCents(p.amountAuthorised - p.amountDisbursed) > 0,
+  ).map((payable) => payable.id))
+  return disbursePayables(api, eligibleIds)
+}
+
+/**
+ * Disburse one selected payable. This is used by the invoice-detail demo
+ * shortcut; the normal office payables run remains available for batch work.
+ */
+export function disbursePayable(
+  api: AppStoreApi,
+  actor: Actor,
+  accPayId: string,
+): Outcome<PayablesRunResult> {
+  const state = api.getState()
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can disburse a payable.')
+  if (state.xero.accPays[accPayId] === undefined) return refuse('notFound', 'ACCPAY not found.')
+  return disbursePayables(api, new Set([accPayId]))
 }

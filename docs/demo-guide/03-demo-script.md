@@ -244,27 +244,30 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Card)
 - **Click:**
   - Go to **Demo: Billing Monitor & Xero → Invoices**.
   - Open **AA-2026-0005 · Alan Prentice · nib**.
-  - Pause on the ACCREC and ACCPAY pair.
-- **Say:** "AA receives all money into one account. The ACCREC records what the payer owes AA; the
-  ACCPAY records what AA owes the anaesthetist. No NHI ever crosses into Xero."
+  - Pause on the two money-flow cards, then the ACCREC and ACCPAY pair beneath them.
+- **Say:** "Read the flow from left to right. The ACCREC tracks money coming from nib into AA. The
+  ACCPAY tracks the net money going from AA to Dr Souter. This prototype illustrates a 5% AA service
+  fee; the actual rate and GST treatment need confirmation because the RFP does not specify them. No
+  NHI ever crosses into Xero."
 - **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice. Alan appears only in the
-  "Linked Billing Engine case" panel, never as a field on nib's Xero contact.
+  "Linked Billing Engine case" panel, never as a field on nib's Xero contact. On this pair, nib owes
+  $152.38, the illustrative AA fee is $7.62 and the net payable to Dr Souter is $144.76.
 
 ### Beat 3: payment, balances and disbursement
 
 - **Click:**
-  - Go to **Control panel → Billing, money & exceptions → Payment received (webhook)** and choose
-    **AA-2026-0005 · Alan Prentice · nib**.
-  - Select **Full payment → Record payment → Replay last event**.
-  - Select **live clock → Next day**.
-  - Select **Run payables**.
-  - Go to **Anaesthetist Web App → Accounts**.
-  - Pause on the updated balances.
-- **Say:** "Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment
-  authorises the payable proportionally. The anaesthetist apps read the Billing Engine's mirror; they
-  never query Xero directly."
-- **Expected:** the ACCREC shows paid, the ACCPAY becomes authorised, a duplicate webhook is ignored,
-  payables records the disbursement, and the balances view reflects it.
+  - On the open **AA-2026-0005** pair, select **Simulate payment and payout**.
+  - Pause on the updated ACCREC and ACCPAY states.
+  - Select **View in Dr Souter's account**.
+  - Pause on the highlighted **AA-2026-0005** row under **Accounts → Payments**.
+- **Say:** "One demo action is standing in for two real money events: nib pays $152.38 into AA, then
+  AA keeps the illustrative $7.62 service fee and pays the $144.76 net amount to Dr Souter. In a real
+  operation those outgoing payments may be grouped into a payables run. We keep the paid-in and
+  paid-out states separate underneath, even though this guided path advances both together. The
+  anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."
+- **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
+  with $152.38 customer paid, $7.62 AA fee, $144.76 net to Dr Souter and **Paid to you**. It does not
+  remain under Overdue because it is no longer outstanding.
 
 **Discovery points:** the exact List-disappearance trigger (the prototype uses billing-run completion);
 and the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
@@ -424,8 +427,8 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
 
 The most persuasive clicks are the state changes: a message or manual booking creates a Card; Finish
 now changes Time units and fee; Card completion enables submission; submission changes who may edit;
-authorisation locks the List; the billing run generates invoices; payment changes the payable; the
-payables run records disbursement.
+authorisation locks the List; the billing run generates invoices; the invoice-detail shortcut records
+payment and payout; the Web Payments history keeps the settled invoice visible.
 
 ## Recovery from demo accidents
 

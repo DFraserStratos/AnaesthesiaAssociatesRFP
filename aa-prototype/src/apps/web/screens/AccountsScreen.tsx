@@ -1,24 +1,28 @@
 import { useMemo, useState } from 'react'
 import { format, parseISO, startOfMonth, subMonths } from 'date-fns'
-import { neutral } from '../../../theme/tokens'
+import { neutral, radius, semantic } from '../../../theme/tokens'
 import { type AgingBucketKey } from '../../../domain/seed'
 import {
   gstActivityFor,
+  paymentHistoryFor,
   receivablesAgingFor,
   useAppStore,
   useToday,
   type AccpayInvoiceRow,
+  type PaymentHistoryRow,
+  type PaymentHistoryStatus,
 } from '../../../store'
 import { Segmented } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
 import { Panel } from '../components'
 
-export type AccountsSubTab = 'overdue' | 'gst'
+export type AccountsSubTab = 'overdue' | 'payments' | 'gst'
 
 interface AccountsScreenProps {
   anaesthetistId: string
   subTab: AccountsSubTab
   onSubTab: (tab: AccountsSubTab) => void
+  focusInvoiceNumber?: string
 }
 
 const AGING_COLS: { key: AgingBucketKey; label: string }[] = [
@@ -38,20 +42,37 @@ type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
  * convention 9 — never `state.xero`): outstanding ACCPAY invoices and the
  * receipts ledger.
  */
-export function AccountsScreen({ anaesthetistId, subTab, onSubTab }: AccountsScreenProps) {
+export function AccountsScreen({
+  anaesthetistId,
+  subTab,
+  onSubTab,
+  focusInvoiceNumber,
+}: AccountsScreenProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Accounts</h1>
-        <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Outstanding accounts and your GST activity.</div>
+        <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>
+          Outstanding accounts, payments and your GST activity.
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>
         <SubTabButton active={subTab === 'overdue'} onClick={() => onSubTab('overdue')}>Overdue</SubTabButton>
+        <SubTabButton active={subTab === 'payments'} onClick={() => onSubTab('payments')}>Payments</SubTabButton>
         <SubTabButton active={subTab === 'gst'} onClick={() => onSubTab('gst')}>GST activity</SubTabButton>
       </div>
 
-      {subTab === 'overdue' ? <OverdueTable anaesthetistId={anaesthetistId} /> : <GstReport anaesthetistId={anaesthetistId} />}
+      {subTab === 'overdue' ? (
+        <OverdueTable anaesthetistId={anaesthetistId} />
+      ) : subTab === 'payments' ? (
+        <PaymentsTable
+          anaesthetistId={anaesthetistId}
+          focusInvoiceNumber={focusInvoiceNumber}
+        />
+      ) : (
+        <GstReport anaesthetistId={anaesthetistId} />
+      )}
     </div>
   )
 }
@@ -137,6 +158,104 @@ function OverdueTable({ anaesthetistId }: { anaesthetistId: string }) {
               <Td center>{''}</Td>
             </tr>
           </tfoot>
+        </table>
+      </div>
+    </Panel>
+  )
+}
+
+const PAYMENT_STATUS_LABEL: Record<PaymentHistoryStatus, string> = {
+  partPayment: 'Part payment received',
+  customerPaid: 'Customer paid',
+  partPaidOut: 'Part paid to you',
+  paidOut: 'Paid to you',
+}
+
+function PaymentsTable({
+  anaesthetistId,
+  focusInvoiceNumber,
+}: {
+  anaesthetistId: string
+  focusInvoiceNumber?: string
+}) {
+  const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const rows = useMemo(
+    () => paymentHistoryFor({ billing, schedule, masters }, anaesthetistId),
+    [billing, schedule, masters, anaesthetistId],
+  )
+
+  return (
+    <Panel flush>
+      <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist }}>
+        Received invoices remain here after they leave Overdue. The illustrative AA service fee is
+        deducted from the customer payment to show the net amount payable to you.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 1050 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
+              <Th>Date received</Th>
+              <Th>Invoice</Th>
+              <Th>Patient</Th>
+              <Th>Payer</Th>
+              <Th right>Customer paid</Th>
+              <Th right>AA fee</Th>
+              <Th right>Net to you</Th>
+              <Th right>Paid to you</Th>
+              <Th>Status</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={9} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
+                  No payments received yet.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row: PaymentHistoryRow) => {
+                const focused = row.invoiceNumber === focusInvoiceNumber
+                return (
+                  <tr
+                    key={row.caseId}
+                    data-testid={`payment-history-row-${row.invoiceNumber}`}
+                    style={{
+                      borderBottom: `1px solid ${neutral.sunken}`,
+                      background: focused ? semantic.success.tint : undefined,
+                      boxShadow: focused ? `inset 3px 0 0 ${semantic.success.solid}` : undefined,
+                    }}
+                  >
+                    <Td mono>{format(parseISO(row.receivedAtISO.slice(0, 10)), 'd MMM yyyy')}</Td>
+                    <Td mono bold={focused}>{row.invoiceNumber}</Td>
+                    <Td>{row.patientName}</Td>
+                    <Td>{row.payerLabel}</Td>
+                    <Td mono right>{formatCurrency(row.grossReceived)}</Td>
+                    <Td mono right>−{formatCurrency(row.serviceFeeAmount)}</Td>
+                    <Td mono right bold>{formatCurrency(row.netPayable)}</Td>
+                    <Td mono right>{formatCurrency(row.disbursedAmount)}</Td>
+                    <Td>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          padding: '4px 8px',
+                          borderRadius: radius.pill,
+                          whiteSpace: 'nowrap',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          color: row.status === 'paidOut' ? semantic.success.onTint : neutral.slate,
+                          background: row.status === 'paidOut' ? semantic.success.tint : neutral.sunken,
+                        }}
+                      >
+                        {PAYMENT_STATUS_LABEL[row.status]}
+                      </span>
+                    </Td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
         </table>
       </div>
     </Panel>

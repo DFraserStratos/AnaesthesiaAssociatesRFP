@@ -13,7 +13,7 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeCard, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { raisePreProcedureInvoice } from './prepaymentActions'
-import { receivePayment, gstComponentOf } from './paymentActions'
+import { receivePayment, gstComponentOf, proRataAuthorised } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { casesForList, casesForCard, prepaymentStatusFor } from './selectors'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -37,7 +37,7 @@ function listOf(api: BoundAppStore, cardId: string): string {
   return card.listId
 }
 /** Bill + hand off the single-invoice COS list, returning its case + ACCREC. */
-function billCosAndHandoff(api: BoundAppStore): { caseId: string; accRecId: string; amountDue: number } {
+function billCosAndHandoff(api: BoundAppStore): { caseId: string; accRecId: string; amountDue: number; amountPayable: number } {
   const listId = listOf(api, marker('cosAccContractCard'))
   expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
@@ -45,13 +45,14 @@ function billCosAndHandoff(api: BoundAppStore): { caseId: string; accRecId: stri
   handoffListCases(api, listId)
   const c = casesForList(api.getState(), listId).find((x) => x.status !== 'failed')!
   const accRec = api.getState().xero.accRecs[c.accRecId!]!
-  return { caseId: c.id, accRecId: c.accRecId!, amountDue: accRec.amountDue }
+  const accPay = api.getState().xero.accPays[c.accPayId!]!
+  return { caseId: c.id, accRecId: c.accRecId!, amountDue: accRec.amountDue, amountPayable: accPay.amountPayable }
 }
 
 describe('webhook payment detection', () => {
   it('a full payment marks the ACCREC paid, authorises the ACCPAY, and mirrors the case', () => {
     const api = store()
-    const { caseId, accRecId, amountDue } = billCosAndHandoff(api)
+    const { caseId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
     const res = receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'K-full', source: 'webhook' })
     expect(res).toMatchObject({ ok: true, value: { applied: true } })
 
@@ -61,10 +62,10 @@ describe('webhook payment detection', () => {
     expect(accRec.status).toBe('paid')
     const c = s.billing.cases[caseId]!
     const accPay = s.xero.accPays[c.accPayId!]!
-    expect(accPay.amountAuthorised).toBe(amountDue)
+    expect(accPay.amountAuthorised).toBe(amountPayable)
     expect(accPay.status).toBe('authorised')
     expect(c.receivedAmount).toBe(amountDue)
-    expect(c.authorisedAmount).toBe(amountDue)
+    expect(c.authorisedAmount).toBe(amountPayable)
     expect(c.status).toBe('paid')
     expect(c.paidInAtISO).toBeDefined()
     // One receipt for THIS case (the seed ships historical receipts too), GST = 3/23 of the gross.
@@ -89,20 +90,21 @@ describe('webhook payment detection', () => {
 
   it('two distinct partials both apply and accumulate; the ACCPAY authorises pro-rata', () => {
     const api = store()
-    const { caseId, accRecId, amountDue } = billCosAndHandoff(api)
+    const { caseId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
     const p1 = roundToCents(amountDue * 0.4)
     const p2 = roundToCents(amountDue - p1)
 
     expect(receivePayment(api, { accRecId, amount: p1, idempotencyKey: 'P1', source: 'webhook' }).ok).toBe(true)
     let c = api.getState().billing.cases[caseId]!
     expect(c.receivedAmount).toBe(p1)
-    expect(c.authorisedAmount).toBe(p1) // pro-rata == received (accPay total == accRec due)
+    expect(c.authorisedAmount).toBe(proRataAuthorised(p1, amountDue, amountPayable))
     expect(c.status).toBe('partPaid')
     expect(api.getState().xero.accRecs[accRecId]!.status).toBe('awaitingPayment')
 
     expect(receivePayment(api, { accRecId, amount: p2, idempotencyKey: 'P2', source: 'webhook' }).ok).toBe(true)
     c = api.getState().billing.cases[caseId]!
     expect(c.receivedAmount).toBe(amountDue)
+    expect(c.authorisedAmount).toBe(amountPayable)
     expect(c.status).toBe('paid')
     expect(Object.values(api.getState().billing.receipts).filter((r) => r.caseId === caseId)).toHaveLength(2)
   })

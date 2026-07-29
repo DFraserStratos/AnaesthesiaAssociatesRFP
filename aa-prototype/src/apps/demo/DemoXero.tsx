@@ -1,12 +1,15 @@
-import { useMemo } from 'react'
-import { AlertTriangle, ChevronLeft, Info } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'lucide-react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
-import { useAppStore } from '../../store'
+import { disbursePayable, receivePayment, useAppStore, type Actor } from '../../store'
 import { dateTimeMicroCap, formatCurrency } from '../../shared/format'
-import { neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
+import { APP_CONFIG } from '../../shell/appConfig'
 import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
+
+const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -218,6 +221,44 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
 
 function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const accPayId = pair.accPay?.id ?? pair.engine.accPayId
+  const [settlementMessage, setSettlementMessage] = useState<string | null>(null)
+  const fullySettled = pair.accRec.status === 'paid' && pair.accPay?.status === 'paid'
+  const canOpenWebAccount =
+    pair.accRec.amountReceived > 0 &&
+    pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+
+  function settleInvoice() {
+    if (pair.accPay === undefined) {
+      setSettlementMessage('This record has no linked payable to disburse.')
+      return
+    }
+
+    if (pair.accRec.balance > 0) {
+      const payment = receivePayment(useAppStore, {
+        accRecId: pair.accRec.id,
+        amount: pair.accRec.balance,
+        idempotencyKey: `DEMO-INVOICE-SETTLEMENT-${pair.accRec.id}`,
+        source: 'webhook',
+      })
+      if (!payment.ok) {
+        setSettlementMessage(`Payment could not be applied: ${payment.message}`)
+        return
+      }
+    }
+
+    const payout = disbursePayable(useAppStore, OFFICE, pair.accPay.id)
+    if (!payout.ok) {
+      setSettlementMessage(`The anaesthetist payout could not be completed: ${payout.message}`)
+      return
+    }
+
+    setSettlementMessage(
+      payout.value.disbursedCount > 0
+        ? `Done. The customer payment is recorded and ${formatCurrency(payout.value.totalDisbursed)} has been paid to ${pair.accPay.contact?.name ?? 'the anaesthetist'}.`
+        : 'Done. This customer payment and anaesthetist payout were already complete.',
+    )
+  }
+
   return (
     <div data-testid="xero-pair-detail" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Link to="/demo/xero/invoices" style={{ ...recordLinkStyle, display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}>
@@ -233,7 +274,68 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             {pair.accRec.invoiceNumber}
           </h2>
         </div>
-        <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9 }}>
+          <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={settleInvoice}
+              disabled={pair.accPay === undefined || fullySettled}
+              style={{
+                font: 'inherit',
+                fontSize: 13,
+                fontWeight: 700,
+                padding: '9px 14px',
+                borderRadius: radius.ctl,
+                border: `1px solid ${fullySettled ? neutral.lineStrong : accent.base}`,
+                background: fullySettled ? neutral.sunken : accent.base,
+                color: fullySettled ? neutral.mist : '#FFFFFF',
+                cursor: fullySettled ? 'default' : 'pointer',
+              }}
+            >
+              {fullySettled
+                ? 'Payment and payout complete'
+                : pair.accRec.status === 'paid'
+                  ? `Pay ${pair.accPay?.contact?.name ?? 'anaesthetist'} now`
+                  : 'Simulate payment and payout'}
+            </button>
+            {canOpenWebAccount && (
+              <Link
+                to={`/web/accounts/payments?invoice=${encodeURIComponent(pair.accRec.invoiceNumber)}`}
+                style={{
+                  ...recordLinkStyle,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 12px',
+                  border: `1px solid ${neutral.lineStrong}`,
+                  borderRadius: radius.ctl,
+                  background: neutral.surface,
+                }}
+              >
+                View in Dr Souter's account
+                <ExternalLink size={15} strokeWidth={2} aria-hidden />
+              </Link>
+            )}
+          </div>
+          {settlementMessage !== null && (
+            <div
+              role="status"
+              style={{
+                maxWidth: 520,
+                padding: '8px 11px',
+                borderRadius: radius.ctl,
+                background: semantic.success.tint,
+                color: semantic.success.onTint,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+                textAlign: 'right',
+              }}
+            >
+              {settlementMessage}
+            </div>
+          )}
+        </div>
       </div>
 
       {pair.incomplete && (
@@ -263,9 +365,30 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
         </div>
       </Callout>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'start' }}>
-        <AccRecCard pair={pair} />
-        <AccPayCard pair={pair} />
+      <div
+        data-testid="xero-money-flow-grid"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'start' }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <MoneyFlowCard
+            eyebrow="ACCREC · MONEY INTO AA"
+            from={pair.accRec.contact?.name ?? 'Payer'}
+            to="Anaesthesia Associates"
+          >
+            Simulated customer invoice and collection. This record tracks what the payer owes AA.
+          </MoneyFlowCard>
+          <AccRecCard pair={pair} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <MoneyFlowCard
+            eyebrow="ACCPAY · MONEY OUT OF AA"
+            from="Anaesthesia Associates"
+            to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
+          >
+            Simulated payable to the anaesthetist. This record tracks the net amount AA will disburse.
+          </MoneyFlowCard>
+          <AccPayCard pair={pair} />
+        </div>
       </div>
     </div>
   )
@@ -358,18 +481,85 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MetaItem label="Pair reference" value={pair.engine.caseReference ?? pair.engine.caseId ?? 'Unavailable'} mono />
       </MetaGrid>
 
-      <Callout tone="info" title="Undiscounted payable">
-        The simulated ACCPAY total matches the ACCREC collection total. How AA's agency fee is deducted
-        is outside the RFP's Billing Engine scope and remains a discovery item.
-      </Callout>
+      <div
+        data-testid="aa-service-fee"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          padding: 14,
+          background: neutral.sunken,
+          border: `1px solid ${neutral.line}`,
+          borderRadius: radius.ctl,
+        }}
+      >
+        <div>
+          <SectionLabel>Illustrative AA service fee</SectionLabel>
+          <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.45, color: neutral.slate }}>
+            {(pay.serviceFeeRate * 100).toFixed(0)}% prototype assumption. The RFP does not specify
+            AA's fee rate or GST treatment.
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: `1px solid ${neutral.line}`, paddingTop: 9 }}>
+          <TotalLine label="Gross customer payment" value={pay.grossAmount} wide />
+          <TotalLine label={`AA service fee (${(pay.serviceFeeRate * 100).toFixed(0)}%)`} value={-pay.serviceFeeAmount} wide />
+          <TotalLine label="Net payable to anaesthetist" value={pay.totalPayable} strong wide />
+        </div>
+      </div>
 
       <MoneyGrid>
-        <MoneyStat label="Total payable" value={pay.totalPayable} />
+        <MoneyStat label="Net payable" value={pay.totalPayable} />
         <MoneyStat label="Authorised" value={pay.amountAuthorised} />
         <MoneyStat label="Disbursed" value={pay.amountDisbursed} />
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
       </MoneyGrid>
     </RecordCard>
+  )
+}
+
+function MoneyFlowCard({
+  eyebrow,
+  from,
+  to,
+  children,
+}: {
+  eyebrow: string
+  from: string
+  to: string
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 9,
+        minHeight: 118,
+        padding: '15px 18px',
+        background: neutral.sunken,
+        border: `1px solid ${neutral.line}`,
+        borderRadius: radius.card,
+      }}
+    >
+      <SectionLabel>{eyebrow}</SectionLabel>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+          alignItems: 'center',
+          gap: 12,
+          fontSize: 19,
+          lineHeight: 1.2,
+          fontWeight: 700,
+          color: neutral.ink,
+        }}
+      >
+        <span style={{ overflowWrap: 'anywhere' }}>{from}</span>
+        <ArrowRight size={24} strokeWidth={2.2} color={neutral.ink} aria-hidden />
+        <span style={{ overflowWrap: 'anywhere' }}>{to}</span>
+      </div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.45, color: neutral.slate }}>{children}</div>
+    </section>
   )
 }
 
@@ -418,11 +608,27 @@ function MoneyStat({ label, value }: { label: string; value: number }) {
   )
 }
 
-function TotalLine({ label, value, strong }: { label: string; value: number | undefined; strong?: boolean }) {
+function TotalLine({
+  label,
+  value,
+  strong,
+  wide,
+}: {
+  label: string
+  value: number | undefined
+  strong?: boolean
+  wide?: boolean
+}) {
+  const formatted =
+    value === undefined
+      ? 'Unavailable'
+      : value < 0
+        ? `−${formatCurrency(Math.abs(value))}`
+        : formatCurrency(value)
   return (
-    <div style={{ display: 'flex', gap: 20, justifyContent: 'space-between', width: 230, fontSize: strong === true ? 14 : 12.5, fontWeight: strong === true ? 700 : 500 }}>
+    <div style={{ display: 'flex', gap: 20, justifyContent: 'space-between', width: wide === true ? '100%' : 230, fontSize: strong === true ? 14 : 12.5, fontWeight: strong === true ? 700 : 500 }}>
       <span>{label}</span>
-      <span className="mono">{value !== undefined ? formatCurrency(value) : 'Unavailable'}</span>
+      <span className="mono">{formatted}</span>
     </div>
   )
 }

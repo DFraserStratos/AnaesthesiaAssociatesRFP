@@ -1,12 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { freshAppState, useAppStore } from '../../store'
+import {
+  authoriseList,
+  freshAppState,
+  useAppStore,
+  wireBillingRun,
+  type Actor,
+} from '../../store'
+import { SEED_LIST_IDS } from '../../domain/seed'
 import { DemoXero } from './DemoXero'
+import { xeroInvoicePairViews } from './xeroPairView'
 
-function renderInvoices() {
+const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+function renderInvoices(initialEntry = '/demo/xero/invoices') {
   render(
-    <MemoryRouter initialEntries={['/demo/xero/invoices']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/demo/xero/invoices" element={<DemoXero />} />
         <Route path="/demo/xero/invoices/:accRecId" element={<DemoXero />} />
@@ -29,6 +39,11 @@ describe('DemoXero invoice table', () => {
     fireEvent.click(row)
 
     expect(screen.getByTestId('xero-pair-detail')).toBeInTheDocument()
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('Anaesthesia Associates')
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('MONEY INTO AA')
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('MONEY OUT OF AA')
+    expect(screen.getByTestId('aa-service-fee')).toHaveTextContent('Illustrative AA service fee')
+    expect(screen.getByTestId('aa-service-fee')).toHaveTextContent('Net payable to anaesthetist')
   })
 
   it('uses a fixed six-column table without a forced minimum width', () => {
@@ -42,5 +57,34 @@ describe('DemoXero invoice table', () => {
     expect(screen.getByTestId('xero-invoice-table-shell').firstElementChild).toHaveStyle({
       minWidth: '0',
     })
+  })
+
+  it('settles one invoice and links to its persistent Web payment history row', () => {
+    const unwire = wireBillingRun(useAppStore)
+    try {
+      expect(authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.souterMon20Am).ok).toBe(true)
+      expect(authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.souterMon20Pm).ok).toBe(true)
+      const state = useAppStore.getState()
+      const target = xeroInvoicePairViews(state).find(
+        (pair) => pair.accRec.invoiceNumber === 'AA-2026-0005',
+      )
+      if (target === undefined || target.accPay === undefined) {
+        throw new Error('expected the S3 nib invoice pair')
+      }
+
+      renderInvoices(`/demo/xero/invoices/${target.accRec.id}`)
+      fireEvent.click(screen.getByRole('button', { name: 'Simulate payment and payout' }))
+
+      expect(useAppStore.getState().xero.accRecs[target.accRec.id]?.status).toBe('paid')
+      expect(useAppStore.getState().xero.accPays[target.accPay.id]?.status).toBe('paid')
+      expect(screen.getByRole('button', { name: 'Payment and payout complete' })).toBeDisabled()
+      expect(screen.getByRole('link', { name: /View in Dr Souter's account/ })).toHaveAttribute(
+        'href',
+        '/web/accounts/payments?invoice=AA-2026-0005',
+      )
+      expect(screen.getByRole('status')).toHaveTextContent('$144.76')
+    } finally {
+      unwire()
+    }
   })
 })

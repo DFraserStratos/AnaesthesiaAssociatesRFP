@@ -383,15 +383,16 @@ An invoice has been generated.
 
 1. The Billing Engine creates a matched Xero pair:
    - `ACCREC`: what the hospital, insurer or patient owes AA;
-   - `ACCPAY`: what AA owes the anaesthetist.
+   - `ACCPAY`: the net amount AA owes the anaesthetist after an illustrative 5% AA service fee.
+   The fee is a prototype assumption; the RFP does not state the rate or GST treatment.
 2. `ACCPAY` begins in `DRAFT`.
 3. Payment lands in the AA account.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
-5. The matching payable becomes `AUTHORISED`, proportionally for a partial payment.
+5. The matching net payable becomes `AUTHORISED`, proportionally for a partial payment.
 6. AA runs payables and disburses the authorised amount to the anaesthetist.
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
-8. The anaesthetist's flat balance view and GST activity update from the Billing Engine's mirror, not
-   from direct Xero queries.
+8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
+   Billing Engine's mirror, not from direct Xero queries.
 9. Eligible individual Xero contacts may later be archived to manage active-contact volume.
 
 ### Handoff
@@ -400,8 +401,10 @@ The financial episode closes when the receipt and disbursement states are both c
 
 ### Demo point
 
-Use one payment, then show the payable changing state. For a technical audience, use a partial
-payment followed by two payables runs to prove no double payment.
+For S3, use the selected invoice's combined **Simulate payment and payout** shortcut, then follow its
+direct link to the highlighted Web Payments row. Explain that the shortcut combines the two demo
+events while the underlying receipt and disbursement states remain separate. For a technical
+audience, use a partial payment followed by two payables runs to prove no double payment.
 
 ### Source
 

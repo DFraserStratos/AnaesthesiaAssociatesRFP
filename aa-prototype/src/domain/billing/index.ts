@@ -4,6 +4,7 @@
  */
 
 export * from './money'
+export * from './agencyFee'
 export * from './timeUnits'
 export * from './modifierCodes'
 export * from './modifierUnits'

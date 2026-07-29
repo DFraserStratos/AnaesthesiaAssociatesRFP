@@ -12,12 +12,14 @@ import {
   dashboardFiguresFor,
   gstActivityFor,
   outstandingAccpayInvoicesFor,
+  paymentHistoryFor,
   receivablesAgingFor,
 } from './selectors'
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { advanceClockDays } from './clockActions'
 import { deriveDashboardFigures, ANAESTHETIST_DASHBOARD, ANAE, SEED_LIST_IDS } from '../domain/seed'
+import { toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
 
 const SOUTER = ANAE.souter
@@ -108,6 +110,17 @@ describe('GST activity report', () => {
     const july = gstActivityFor(api.getState(), SOUTER, '2026-07-01', '2026-07-21').rows.length
     const sixMonths = gstActivityFor(api.getState(), SOUTER, '2026-02-01', '2026-07-21').rows.length
     expect(sixMonths).toBeGreaterThan(july)
+  })
+})
+
+describe('payment history', () => {
+  it('keeps received invoices visible with their gross, AA fee, net and payout state', () => {
+    const rows = paymentHistoryFor(mirror(store()), SOUTER)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((row) => row.grossReceived > 0)).toBe(true)
+    expect(rows.every((row) => row.serviceFeeAmount >= 0)).toBe(true)
+    expect(rows.every((row) => toCents(row.grossReceived - row.serviceFeeAmount) === toCents(row.netPayable))).toBe(true)
+    expect(rows.some((row) => row.status === 'paidOut')).toBe(true)
   })
 })
 

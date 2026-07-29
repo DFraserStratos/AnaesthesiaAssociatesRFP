@@ -735,6 +735,86 @@ export function gstActivityFor(
   return { rows, totalGross, totalGst }
 }
 
+export type PaymentHistoryStatus =
+  | 'partPayment'
+  | 'customerPaid'
+  | 'partPaidOut'
+  | 'paidOut'
+
+export interface PaymentHistoryRow {
+  caseId: string
+  invoiceNumber: string
+  patientName: string
+  payerLabel: string
+  receivedAtISO: string
+  grossReceived: number
+  serviceFeeAmount: number
+  netPayable: number
+  disbursedAmount: number
+  status: PaymentHistoryStatus
+}
+
+/**
+ * Payment history for the anaesthetist account. Unlike the outstanding balance
+ * handover, this is an immediate transaction history: a received payment
+ * remains visible after it leaves Overdue and shows the net payable and payout.
+ * It reads only the Billing Engine mirror, never Xero.
+ */
+export function paymentHistoryFor(
+  state: MirrorState,
+  anaesthetistId: string,
+): PaymentHistoryRow[] {
+  const latestReceiptByCase = new Map<string, string>()
+  for (const receipt of Object.values(state.billing.receipts)) {
+    if (receipt.anaesthetistId !== anaesthetistId) continue
+    const prior = latestReceiptByCase.get(receipt.caseId)
+    if (prior === undefined || receipt.atISO > prior) latestReceiptByCase.set(receipt.caseId, receipt.atISO)
+  }
+
+  const rows: PaymentHistoryRow[] = []
+  for (const c of Object.values(state.billing.cases)) {
+    if (anaesthetistIdForCase(state, c) !== anaesthetistId) continue
+    if (toCents(c.receivedAmount) <= 0 || c.invoiceId === undefined) continue
+    const invoice = state.billing.invoices[c.invoiceId]
+    const card = state.schedule.cards[c.cardId]
+    const receivedAtISO = latestReceiptByCase.get(c.id) ?? c.paidInAtISO
+    if (invoice === undefined || card === undefined || receivedAtISO === undefined) continue
+
+    const fullyReceived = toCents(c.receivedAmount) >= toCents(invoice.total)
+    const anyDisbursed = toCents(c.disbursedAmount) > 0
+    const fullyDisbursed =
+      toCents(c.authorisedAmount) > 0 &&
+      toCents(c.disbursedAmount) >= toCents(c.authorisedAmount)
+    const status: PaymentHistoryStatus =
+      fullyDisbursed && fullyReceived
+        ? 'paidOut'
+        : anyDisbursed
+          ? 'partPaidOut'
+          : fullyReceived
+            ? 'customerPaid'
+            : 'partPayment'
+
+    rows.push({
+      caseId: c.id,
+      invoiceNumber: invoice.invoiceNumber,
+      patientName: patientNameFor(state, card.patientId),
+      payerLabel: counterpartyName(state, invoice.counterparty),
+      receivedAtISO,
+      grossReceived: c.receivedAmount,
+      serviceFeeAmount: roundToCents(c.receivedAmount - c.authorisedAmount),
+      netPayable: c.authorisedAmount,
+      disbursedAmount: c.disbursedAmount,
+      status,
+    })
+  }
+
+  return rows.sort(
+    (a, b) =>
+      b.receivedAtISO.localeCompare(a.receivedAtISO) ||
+      b.invoiceNumber.localeCompare(a.invoiceNumber),
+  )
+}
+
 /** Display name for a billing counterparty (any kind), falling back to its id. */
 export function counterpartyName(state: Pick<AppState, 'masters'>, ref: CounterpartyRef): string {
   switch (ref.kind) {

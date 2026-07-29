@@ -390,7 +390,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S3',
     title: 'S3 · Money end-to-end',
-    blurb: 'Authorise the split-billing and two-funder Lists, generate invoices and the Xero pair, take payment, run payables.',
+    blurb: 'Authorise the split-billing and two-funder Lists, then follow one Xero pair from payment to the anaesthetist account.',
     run: () => {
       resetDemo(useAppStore)
       const state = useAppStore.getState()
@@ -402,7 +402,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and Xero pairs live. Then come back here to fire a payment webhook, advance a day for balances, and run payables.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button, then follow the direct link to Dr Souter\'s payment history.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },

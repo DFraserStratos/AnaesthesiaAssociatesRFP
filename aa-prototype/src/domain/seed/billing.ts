@@ -28,6 +28,7 @@ import type {
   XeroContact,
 } from '../types'
 import { buildPrePaymentInvoiceForCard, type InvoiceBuildContext } from '../billing/invoiceBuild'
+import { aaServiceFeeFor } from '../billing/agencyFee'
 import { buildHistory } from './history'
 import type { SeedState } from './index'
 
@@ -188,7 +189,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
       invoiceLines[lineId] = stored
     }
 
-    // Seeded PAID pre-payment: fully received + authorised, NOT yet disbursed.
+    // Seeded PAID pre-payment: fully received, authorised and disbursed.
     // Give it a Xero pair + receipt so it reads consistently (D-pre-invoice-pair).
     const cp = draft.counterparty
     const payerKey = `${cp.kind}:${cp.id}`
@@ -200,12 +201,21 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
     }
     const accRecId = `XRB${index}`
     const accPayId = `XPB${index}`
+    const payable = aaServiceFeeFor(draft.total)
     accRecs[accRecId] = { id: accRecId, invoiceId, contactId: payerContactId, amountDue: draft.total, amountReceived: draft.total, status: 'paid' }
     if (payeeContactId !== undefined) {
       // Received Jul 14, disbursed Jul 16 (both before today) so a fresh store
       // starts with nothing pending — the demo creates the first payable live.
-      accPays[accPayId] = { id: accPayId, accRecId, contactId: payeeContactId, amountAuthorised: draft.total, amountDisbursed: draft.total, status: 'paid' }
-      disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: draft.total, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
+      accPays[accPayId] = {
+        id: accPayId,
+        accRecId,
+        contactId: payeeContactId,
+        ...payable,
+        amountAuthorised: payable.amountPayable,
+        amountDisbursed: payable.amountPayable,
+        status: 'paid',
+      }
+      disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: payable.amountPayable, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
     }
     payments[`PMTB${index}`] = { id: `PMTB${index}`, accRecId, amount: draft.total, atISO: SEED_PREPAYMENT_RAISED_ISO, idempotencyKey: `${SEED_PREPAYMENT_KEY}-${index}`, source: 'webhook' }
     if (anaesthetistId !== undefined) {
@@ -229,8 +239,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
       ...(payeeContactId !== undefined ? { accPayId } : {}),
       status: payeeContactId !== undefined ? 'disbursed' : 'paid',
       receivedAmount: draft.total,
-      authorisedAmount: draft.total,
-      disbursedAmount: payeeContactId !== undefined ? draft.total : 0,
+      authorisedAmount: payeeContactId !== undefined ? payable.amountPayable : 0,
+      disbursedAmount: payeeContactId !== undefined ? payable.amountPayable : 0,
       paidInAtISO: SEED_PREPAYMENT_RAISED_ISO,
       ...(payeeContactId !== undefined ? { disbursedAtISO: SEED_PREPAYMENT_DISBURSED_ISO } : {}),
     }

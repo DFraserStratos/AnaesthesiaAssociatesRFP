@@ -115,11 +115,12 @@ Do not treat these as the same workflow.
 ## The money model
 
 ```text
-Payer -> ACCREC -> AA account -> ACCPAY -> Anaesthetist
+Payer -> ACCREC -> AA account -> illustrative AA fee -> ACCPAY net -> Anaesthetist
 ```
 
 - `ACCREC`: money AA is collecting.
-- `ACCPAY`: money AA owes the anaesthetist.
+- `ACCPAY`: net money AA owes the anaesthetist.
+- The 5% AA service fee is a prototype assumption. The RFP does not specify the rate or GST treatment.
 - Paid into AA and disbursed to the anaesthetist are separate states.
 - Partial payments authorise proportional disbursement.
 - The mobile/web app reads the Billing Engine's mirror, never Xero directly.

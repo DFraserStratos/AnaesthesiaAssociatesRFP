@@ -720,10 +720,11 @@
   </div></details>
 
   <details><summary>7 · Collect money and disburse to the anaesthetist</summary><div class="details-body">
-    <p>The Billing Engine creates a Xero pair: ACCREC (what the payer owes AA) and a DRAFT ACCPAY (what AA
-    owes the anaesthetist). A webhook (with a daily reconciliation poll as safety net) marks payment; the
-    payable authorises, proportionally for a partial; the payables run disburses. Paid into AA and disbursed
+    <p>The Billing Engine creates a Xero pair: ACCREC (what the payer owes AA) and a DRAFT ACCPAY (the net
+    amount AA owes the anaesthetist after an illustrative 5% AA service fee). A webhook (with a daily reconciliation
+    poll as safety net) marks payment; the net payable authorises, proportionally for a partial; the payables run disburses. Paid into AA and disbursed
     to the anaesthetist are separate states. The apps read the Billing Engine's mirror, never Xero directly.
+    The fee rate and its GST treatment are prototype assumptions to confirm with AA.
     <span class="chip ready">Ready</span></p>
   </div></details>
 
@@ -890,15 +891,15 @@
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices.</li><li>Open <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Pause on the ACCREC and ACCPAY pair.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"AA receives all money into one account. The ACCREC records what the payer owes AA; the ACCPAY what AA owes the anaesthetist. No NHI ever crosses to Xero."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices.</li><li>Open <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Pause on the two money-flow cards, then the ACCREC and ACCPAY pair beneath them.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Read the flow from left to right. The ACCREC tracks money coming from nib into AA. The ACCPAY tracks the net money going from AA to Dr Souter. This prototype illustrates a 5% AA service fee; the actual rate and GST treatment need confirmation because the RFP does not specify them. No NHI ever crosses into Xero."</span></div>
+      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact. On this pair, nib owes $152.38, the illustrative AA fee is $7.62 and the net payable to Dr Souter is $144.76.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Control panel &#8594; Payment received &#8594; choose <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Full payment &#8594; Record payment &#8594; Replay last event.</li><li>Live clock &#8594; Next day.</li><li>Run payables.</li><li>Web app &#8594; Accounts.</li><li>Pause on the updated balances.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Paid into AA and disbursed to the anaesthetist are two separate states. A partial payment authorises the payable proportionally. The apps read the Billing Engine's mirror, never Xero directly."</span></div>
-      <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY authorised, duplicate webhook ignored, payables disburses, balances reflect it.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the open <strong>AA-2026-0005</strong> pair, select <strong>Simulate payment and payout</strong>.</li><li>Pause on the updated ACCREC and ACCPAY states.</li><li>Select <strong>View in Dr Souter's account</strong>.</li><li>Pause on the highlighted <strong>AA-2026-0005</strong> row under Accounts &#8594; Payments.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"One demo action is standing in for two real money events: nib pays $152.38 into AA, then AA keeps the illustrative $7.62 service fee and pays the $144.76 net amount to Dr Souter. In a real operation those outgoing payments may be grouped into a payables run. We keep the paid-in and paid-out states separate underneath, even though this guided path advances both together. The anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."</span></div>
+      <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY disbursed, and the Web Payments row remains visible with $152.38 customer paid, $7.62 AA fee, $144.76 net to Dr Souter and <strong>Paid to you</strong>. It is no longer under Overdue because it is no longer outstanding.</span></div>
     </div>
     <div class="callout warn">Discovery: the exact List-disappearance trigger (prototype uses billing-run completion); split-billing invoice count (group by counterparty, two invoices when funders differ).</div>
   </div></details>
@@ -1038,9 +1039,10 @@
   </div>
 
   <h2>The money model</h2>
-  <pre class="tree">Payer &#8594; ACCREC &#8594; AA account &#8594; ACCPAY &#8594; Anaesthetist</pre>
+  <pre class="tree">Payer &#8594; ACCREC &#8594; AA account &#8594; illustrative AA fee &#8594; ACCPAY net &#8594; Anaesthetist</pre>
   <ul class="tight">
-    <li>ACCREC is money AA is collecting; ACCPAY is money AA owes the anaesthetist.</li>
+    <li>ACCREC is money AA is collecting; ACCPAY is the net money AA owes the anaesthetist.</li>
+    <li>The 5% AA service fee is a prototype assumption. The RFP does not specify the rate or GST treatment.</li>
     <li>Paid into AA and disbursed to the anaesthetist are separate states.</li>
     <li>Partial payments authorise proportional disbursement.</li>
     <li>The apps read the Billing Engine's mirror, never Xero directly.</li>

@@ -93,7 +93,7 @@ Snapshot date: **24 July 2026**
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
 | Pre-payment gate, post-op addendum and billing monitor | Ready | Phase 09 |
-| Xero pairs, payments, payables, live balances and GST activity | Ready | Phase 10 |
+| Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
 | HL7/FHIR/PDF ingestion and integration monitoring | Ready | Phase 11 |
 | Demo control panel with S1 to S5 scenario jumps | Ready | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |

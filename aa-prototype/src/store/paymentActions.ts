@@ -17,10 +17,9 @@
  *     key-set), GST = gross × 0.15 / 1.15.
  *
  * All automated money events audit `source:'system'` (convention 7). The
- * anaesthetist ACCPAY payable equals the ACCREC collection total in the
- * prototype (D-payee-amount: "undiscounted" = before AA's fee, which is out of
- * RFP scope) — the pro-rata `× accPayTotal` scaling is kept so the accounting
- * stays correct if a future build sets a distinct undiscounted payable.
+ * The anaesthetist ACCPAY is the gross collection less the prototype's
+ * illustrative AA service fee. The RFP does not state that fee model, so the
+ * assumption is labelled wherever the pair is presented.
  */
 
 import type { BillingCase, PaymentIn, XeroAccPay, XeroAccRec } from '../domain/types'
@@ -99,7 +98,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
 
   const newReceived = roundToCents(accRec.amountReceived + added)
   const accPay = theCase.accPayId !== undefined ? state.xero.accPays[theCase.accPayId] : undefined
-  const accPayTotal = accRec.amountDue // D-payee-amount: undiscounted payable == collection total
+  const accPayTotal = accPay?.amountPayable ?? accRec.amountDue
   const priorAuthorised = accPay?.amountAuthorised ?? 0
   const authorisedCumulative = proRataAuthorised(newReceived, accRec.amountDue, accPayTotal)
   const fullyPaid = toCents(newReceived) >= toCents(accRec.amountDue)

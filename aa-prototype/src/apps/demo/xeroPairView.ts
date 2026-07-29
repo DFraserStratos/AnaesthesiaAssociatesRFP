@@ -32,6 +32,9 @@ export interface XeroInvoicePairView {
     billNumber: string
     contactId: string
     contact?: XeroContactView
+    grossAmount: number
+    serviceFeeRate: number
+    serviceFeeAmount: number
     totalPayable: number
     amountAuthorised: number
     amountDisbursed: number
@@ -45,6 +48,7 @@ export interface XeroInvoicePairView {
     billingInvoiceId: string
     cardId?: string
     patientName?: string
+    anaesthetistId?: string
   }
   incomplete: boolean
 }
@@ -93,6 +97,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
           : accPaysByAccRecId.get(rec.id)
       const cardId = linkedCase?.cardId ?? invoice?.cardId
       const card = cardId !== undefined ? state.schedule.cards[cardId] : undefined
+      const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
       const patientName =
         card !== undefined ? state.masters.patients[card.patientId]?.name : undefined
       const invoiceNumber = invoice?.invoiceNumber ?? rec.invoiceId
@@ -128,7 +133,10 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
                 billNumber: `${invoiceNumber}-P`,
                 contactId: accPay.contactId,
                 ...(payee !== undefined ? { contact: payee } : {}),
-                totalPayable: rec.amountDue,
+                grossAmount: accPay.grossAmount,
+                serviceFeeRate: accPay.serviceFeeRate,
+                serviceFeeAmount: accPay.serviceFeeAmount,
+                totalPayable: accPay.amountPayable,
                 amountAuthorised: accPay.amountAuthorised,
                 amountDisbursed: accPay.amountDisbursed,
                 remainingAuthorised: roundToCents(
@@ -149,6 +157,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
           ...(linkedCase?.accPayId !== undefined ? { accPayId: linkedCase.accPayId } : {}),
           ...(cardId !== undefined ? { cardId } : {}),
           ...(patientName !== undefined ? { patientName } : {}),
+          ...(list?.anaesthetistId !== undefined ? { anaesthetistId: list.anaesthetistId } : {}),
         },
         incomplete:
           linkedCase === undefined ||

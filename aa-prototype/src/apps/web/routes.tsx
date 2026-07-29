@@ -25,7 +25,7 @@ import { useWebOutlet } from './outlet'
 // Dashboard — `/web` (?week=<ISO>)
 // ---------------------------------------------------------------------------
 
-const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'gst']
+const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'payments', 'gst']
 
 export function WebDashboardRoute() {
   const { anaesthetistId, personaName, todayISO, onCover } = useWebOutlet()
@@ -127,14 +127,16 @@ export function WebAvailabilityRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts — `/web/accounts/:subTab` (overdue | gst)
+// Accounts — `/web/accounts/:subTab` (overdue | payments | gst)
 // ---------------------------------------------------------------------------
 
 export function WebAccountsRoute() {
   const { subTab } = useParams()
   const { anaesthetistId } = useWebOutlet()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const valid = ACCOUNTS_SUB_TABS.includes(subTab as AccountsSubTab)
+  const focusInvoiceNumber = params.get('invoice') ?? undefined
 
   return (
     <RequireEntity exists={valid}>
@@ -142,6 +144,7 @@ export function WebAccountsRoute() {
         anaesthetistId={anaesthetistId}
         subTab={subTab as AccountsSubTab}
         onSubTab={(next) => navigate(`/web/accounts/${next}`)}
+        {...(focusInvoiceNumber !== undefined ? { focusInvoiceNumber } : {})}
       />
     </RequireEntity>
   )

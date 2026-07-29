@@ -66,6 +66,10 @@ describe('Xero handoff — the atomic pair', () => {
       // ACCPAY DRAFT, paired to the ACCREC, nothing authorised yet.
       expect(accPay.accRecId).toBe(accRec.id)
       expect(accPay.status).toBe('draft')
+      expect(accPay.grossAmount).toBe(accRec.amountDue)
+      expect(accPay.serviceFeeRate).toBe(0.05)
+      expect(accPay.serviceFeeAmount).toBeGreaterThan(0)
+      expect(accPay.amountPayable).toBe(accPay.grossAmount - accPay.serviceFeeAmount)
       expect(accPay.amountAuthorised).toBe(0)
       expect(accPay.amountDisbursed).toBe(0)
     }

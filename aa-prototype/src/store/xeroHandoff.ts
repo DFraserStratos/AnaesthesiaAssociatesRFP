@@ -26,6 +26,7 @@
  */
 
 import type { CounterpartyRef, XeroContact } from '../domain/types'
+import { aaServiceFeeFor } from '../domain/billing/agencyFee'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { casesForCard, counterpartyName } from './selectors'
@@ -230,6 +231,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
     counters = xr.counters
     const xp = allocateId(counters, 'xeroAccPay')
     counters = xp.counters
+    const payable = aaServiceFeeFor(invoice.total)
 
     accRecs[xr.id] = {
       id: xr.id,
@@ -243,6 +245,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
       id: xp.id,
       accRecId: xr.id,
       contactId: payee.contactId,
+      ...payable,
       amountAuthorised: 0,
       amountDisbursed: 0,
       status: 'draft',
@@ -264,6 +267,8 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
         payerContactId: payer.contactId,
         payeeContactId: payee.contactId,
         amountDue: invoice.total,
+        serviceFeeAmount: payable.serviceFeeAmount,
+        amountPayable: payable.amountPayable,
       },
     })
 

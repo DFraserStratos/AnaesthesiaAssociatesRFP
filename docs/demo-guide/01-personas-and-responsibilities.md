@@ -110,9 +110,10 @@ functionality.
 
 ### Current prototype caveats
 
-- Balances and GST activity are now live: the anaesthetist money views read the Billing Engine's
-  mirror (outstanding payables, receivables aging, GST transaction list), over seeded historical rows
-  plus anything a demo payment adds. They never query Xero directly.
+- Balances, payment history and GST activity are now live: the anaesthetist money views read the
+  Billing Engine's mirror (outstanding payables, received and paid-out invoices, receivables aging,
+  GST transaction list), over seeded historical rows plus anything a demo payment adds. They never
+  query Xero directly.
 - The Leave panel is read-only planning context; submitting leave requests is outside this prototype.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator

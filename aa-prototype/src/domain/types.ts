@@ -783,6 +783,13 @@ export interface XeroAccPay {
   /** The paired ACCREC (handoff is pair-atomic; 7th review B8). */
   accRecId: string
   contactId: string
+  /** Gross customer collection before the illustrative AA service fee. */
+  grossAmount: number
+  /** Prototype assumption only; the RFP does not state AA's fee model. */
+  serviceFeeRate: number
+  serviceFeeAmount: number
+  /** Net amount AA owes the anaesthetist after the illustrative fee. */
+  amountPayable: number
   /** CUMULATIVE (7th review A16): payables runs pay authorised minus disbursed. */
   amountAuthorised: number
   amountDisbursed: number

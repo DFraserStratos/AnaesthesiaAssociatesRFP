@@ -114,7 +114,13 @@ export { handoffCase, handoffCasesForCard, type HandoffResult } from './xeroHand
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
 export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
-export { runPayables, payablesDue, type PayablesRunResult, type PayablesDue } from './payablesActions'
+export {
+  runPayables,
+  disbursePayable,
+  payablesDue,
+  type PayablesRunResult,
+  type PayablesDue,
+} from './payablesActions'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, type ArchiveJobResult } from './archiveActions'
 export {
   advanceClockMinutes,
