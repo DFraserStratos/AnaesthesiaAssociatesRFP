@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { accent, neutral, radius } from '../../theme/tokens'
-import { useSurface } from '../surface'
+import { neutral, radius } from '../../theme/tokens'
 import { SlidingSegmentedControl } from './SlidingSegmentedControl'
 
 export function FieldLabel({ children }: { children: ReactNode }) {
@@ -84,48 +83,16 @@ interface SegmentedProps<T extends string> {
 /** A segmented control (convention 16: prefer over a dropdown). Teal selection. */
 export function Segmented<T extends string>({ label, value, options, onChange, disabled }: SegmentedProps<T>) {
   const isDisabled = disabled === true
-  const mobile = useSurface().variant === 'mobile'
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, opacity: isDisabled ? 0.55 : 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {label !== undefined && <FieldLabel>{label}</FieldLabel>}
-      {mobile ? (
-        <SlidingSegmentedControl
-          value={value}
-          options={options}
-          onSelect={onChange}
-          disabled={isDisabled}
-          ariaLabel={label}
-        />
-      ) : (
-        <div style={{ display: 'flex', background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4 }}>
-          {options.map((o) => {
-            const active = o.value === value
-            return (
-              <button
-                key={o.value}
-                type="button"
-                disabled={isDisabled}
-                onClick={isDisabled ? undefined : () => onChange(o.value)}
-                style={{
-                  flex: 1,
-                  minHeight: 40,
-                  borderRadius: 9,
-                  border: 'none',
-                  fontFamily: 'inherit',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: isDisabled ? 'default' : 'pointer',
-                  transition: 'background 150ms, color 150ms',
-                  background: active ? accent.base : 'transparent',
-                  color: active ? neutral.surface : neutral.slate,
-                }}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      <SlidingSegmentedControl
+        value={value}
+        options={options}
+        onSelect={onChange}
+        disabled={isDisabled}
+        ariaLabel={label}
+      />
     </div>
   )
 }

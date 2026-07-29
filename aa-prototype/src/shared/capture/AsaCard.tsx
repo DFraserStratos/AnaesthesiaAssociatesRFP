@@ -1,8 +1,7 @@
-import { accent, neutral } from '../../theme/tokens'
+import { neutral } from '../../theme/tokens'
 import type { AsaClass, Procedure } from '../../domain/types'
 import { ASA_SEED_UNITS } from '../../domain/billing'
 import { editProcedure, useAppStore, type Actor } from '../../store'
-import { useSurface } from '../surface'
 import { SlidingSegmentedControl } from '../ui/SlidingSegmentedControl'
 import { CaptureSection, Caption } from './ui'
 
@@ -32,7 +31,6 @@ interface AsaCardProps {
  */
 export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
   const selected = procedure.asaClass
-  const mobile = useSurface().variant === 'mobile'
 
   function pick(value: AsaClass) {
     const outcome = editProcedure(useAppStore, actor, procedure.id, { asaClass: value })
@@ -53,46 +51,14 @@ export function AsaCard({ procedure, actor, disabled, onError }: AsaCardProps) {
         )
       }
     >
-      {mobile ? (
-        <SlidingSegmentedControl
-          value={selected}
-          options={ASA_OPTIONS}
-          onSelect={pick}
-          disabled={disabled}
-          ariaLabel="ASA physical status"
-          buttonStyle={{ height: 44, fontSize: 16 }}
-        />
-      ) : (
-        <div style={{ display: 'flex', background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4, opacity: disabled ? 0.55 : 1 }}>
-          {ASA_OPTIONS.map((o) => {
-            const active = o.value === selected
-            return (
-              <button
-                key={o.value}
-                type="button"
-                disabled={disabled}
-                onClick={disabled ? undefined : () => pick(o.value)}
-                style={{
-                  flex: 1,
-                  height: 44,
-                  borderRadius: 9,
-                  border: 'none',
-                  fontFamily: 'inherit',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  cursor: disabled ? 'default' : 'pointer',
-                  transition: 'background 150ms, color 150ms',
-                  background: active ? accent.base : 'transparent',
-                  color: active ? neutral.surface : neutral.slate,
-                  boxShadow: active ? '0 1px 3px rgba(23,35,32,0.2)' : 'none',
-                }}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      <SlidingSegmentedControl
+        value={selected}
+        options={ASA_OPTIONS}
+        onSelect={pick}
+        disabled={disabled}
+        ariaLabel="ASA physical status"
+        buttonStyle={{ height: 44, fontSize: 16 }}
+      />
     </CaptureSection>
   )
 }

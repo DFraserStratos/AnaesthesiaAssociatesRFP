@@ -1,10 +1,10 @@
 import { accent, neutral } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
-import { timeUnitsFromMinutes, type BillingValidationFailure } from '../../domain/billing'
+import type { BillingValidationFailure } from '../../domain/billing'
 import { clockISO, editProcedure, useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
-import { durationLabel, isoTimeLabel, minutesBetweenIso, shiftIsoMinutes } from './timeIso'
+import { isoTimeLabel, minutesBetweenIso, shiftIsoMinutes } from './timeIso'
 import { CaptureSection, FailureNotes, NudgeButton } from './ui'
 
 interface TimesCardProps {
@@ -20,20 +20,18 @@ interface TimesCardProps {
  * Start / Finish capture (mockup screen 3's Times card): big mono stamps with
  * −5/+5 nudges, "Start now" / "Finish now" stamping the demo clock (the demo
  * clock is the time authority — Start now works before the scheduled time;
- * the validator only requires handover after start). ISO shifts are string
- * maths on the local-naive shape (`timeIso.ts`), never Date → toISOString.
- * The duration strip repeats the tiered rule and the ROUNDING ASSUMPTION
- * (Decisions log 2026-07-22: the RFP is silent on partial intervals).
+ * Finish now falls back to five minutes after start when that clock is earlier).
+ * ISO shifts are string maths on the local-naive shape (`timeIso.ts`), never
+ * Date → toISOString.
  *
- * The stamps and the duration strip go through `useSurface().Pair`: stacked on
- * the phone and side by side on a desktop. On the phone one action travels
- * between the two time cells; desktop retains its static two-column treatment.
- * It is the one `align="start"` pair because these halves are content inside
- * this card, not peer cards that should stretch to matching heights.
+ * Both surfaces use one action that travels between two equal time cells.
+ * Stamping the start reveals its controls as the same teal action moves to the
+ * finish position. The phone keeps the tall, touch-first treatment; desktop
+ * lays each label, time and nudge pair into one compact horizontal row. The
+ * full-width track avoids nesting the cells inside another pair of columns.
  */
 export function TimesCard({ procedure, actor, canCapture, failures, onError }: TimesCardProps) {
-  const { Pair, variant } = useSurface()
-
+  const { variant } = useSurface()
   const start = procedure.anaestheticStartISO
   const finish = procedure.handoverISO
 
@@ -46,7 +44,12 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
     write({ anaestheticStartISO: clockISO(useAppStore.getState().clock) })
   }
   function stampFinish() {
-    write({ handoverISO: clockISO(useAppStore.getState().clock) })
+    const stamped = clockISO(useAppStore.getState().clock)
+    const earliest = start === undefined ? stamped : shiftIsoMinutes(start, 5)
+    write({
+      handoverISO:
+        start !== undefined && minutesBetweenIso(start, stamped) < 5 ? earliest : stamped,
+    })
   }
 
   function nudgeStart(delta: number) {
@@ -66,7 +69,6 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
 
   const startFailures = failures.filter((f) => f.field === 'anaestheticStartISO')
   const finishFailures = failures.filter((f) => f.field === 'handoverISO')
-  const minutes = start !== undefined && finish !== undefined ? minutesBetweenIso(start, finish) : null
 
   return (
     <CaptureSection
@@ -76,76 +78,24 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
         fields: ['anaestheticStartISO', 'handoverISO'],
       }}
     >
-      <Pair align="start">
-        {variant === 'mobile' ? (
-          <MobileTimeCapture
-            procedureId={procedure.id}
-            start={start}
-            finish={finish}
-            canCapture={canCapture}
-            onStampStart={stampStart}
-            onStampFinish={stampFinish}
-            onNudgeStart={nudgeStart}
-            onNudgeFinish={nudgeFinish}
-          />
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              {start !== undefined ? (
-                <RecordedTime label="Start" iso={start} canCapture={canCapture} onNudge={nudgeStart} />
-              ) : canCapture ? (
-                <StampButton
-                  label="Start now"
-                  procedureId={procedure.id}
-                  field="anaestheticStartISO"
-                  onClick={stampStart}
-                />
-              ) : (
-                <MissingTime label="Start" />
-              )}
-            </div>
-
-            {start !== undefined && (
-              <div>
-                {finish !== undefined ? (
-                  <RecordedTime label="Finish" iso={finish} canCapture={canCapture} onNudge={nudgeFinish} />
-                ) : canCapture ? (
-                  <StampButton
-                    label="Finish now"
-                    procedureId={procedure.id}
-                    field="handoverISO"
-                    onClick={stampFinish}
-                  />
-                ) : (
-                  <MissingTime label="Finish" />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {minutes !== null && minutes > 0 && (
-          <div style={{ fontSize: 12, color: neutral.slate, background: neutral.bg, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span>
-              Duration {durationLabel(minutes)} →{' '}
-              <strong style={{ color: neutral.ink }}>
-                {timeUnitsFromMinutes(minutes)} time {timeUnitsFromMinutes(minutes) === 1 ? 'unit' : 'units'}
-              </strong>
-            </span>
-            <span style={{ color: neutral.mist }}>
-              1 unit per 15 min for the first 2 hours, then 1 per 10 min. Part intervals round up
-              (assumption to confirm with AA).
-            </span>
-          </div>
-        )}
-      </Pair>
+      <TimeCapture
+        procedureId={procedure.id}
+        start={start}
+        finish={finish}
+        canCapture={canCapture}
+        onStampStart={stampStart}
+        onStampFinish={stampFinish}
+        onNudgeStart={nudgeStart}
+        onNudgeFinish={nudgeFinish}
+        compact={variant === 'web'}
+      />
 
       <FailureNotes failures={[...startFailures, ...finishFailures]} />
     </CaptureSection>
   )
 }
 
-interface MobileTimeCaptureProps {
+interface TimeCaptureProps {
   procedureId: string
   start: string | undefined
   finish: string | undefined
@@ -154,14 +104,15 @@ interface MobileTimeCaptureProps {
   onStampFinish: () => void
   onNudgeStart: (delta: number) => void
   onNudgeFinish: (delta: number) => void
+  compact: boolean
 }
 
 /**
- * The phone presents Start and Finish as one travelling action. The recorded
- * time controls stay in their grid cells underneath it, so stamping the start
- * reveals the left controls as the same teal action moves to the right.
+ * Start and Finish are one travelling action. The recorded time controls stay
+ * in their grid cells underneath it, so stamping the start reveals the left
+ * controls as the same teal action moves to the right.
  */
-function MobileTimeCapture({
+function TimeCapture({
   procedureId,
   start,
   finish,
@@ -170,20 +121,24 @@ function MobileTimeCapture({
   onStampFinish,
   onNudgeStart,
   onNudgeFinish,
-}: MobileTimeCaptureProps) {
+  compact,
+}: TimeCaptureProps) {
   const hasStart = start !== undefined
   const showStartDetails = hasStart || !canCapture
   const showFinishDetails = hasStart && (finish !== undefined || !canCapture)
 
   return (
     <div
+      data-testid="time-capture-track"
+      data-layout={compact ? 'compact' : 'touch'}
       style={{
         position: 'relative',
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 12,
-        minHeight: 96,
-        alignItems: 'start',
+        minHeight: compact ? 56 : 96,
+        width: '100%',
+        alignItems: compact ? 'center' : 'start',
       }}
     >
       <div
@@ -198,9 +153,15 @@ function MobileTimeCapture({
         }}
       >
         {start !== undefined ? (
-          <RecordedTime label="Start" iso={start} canCapture={canCapture} onNudge={onNudgeStart} />
+          <RecordedTime
+            label="Start"
+            iso={start}
+            canCapture={canCapture}
+            onNudge={onNudgeStart}
+            compact={compact}
+          />
         ) : !canCapture ? (
-          <MissingTime label="Start" />
+          <MissingTime label="Start" compact={compact} />
         ) : null}
       </div>
 
@@ -216,16 +177,22 @@ function MobileTimeCapture({
         }}
       >
         {finish !== undefined ? (
-          <RecordedTime label="Finish" iso={finish} canCapture={canCapture} onNudge={onNudgeFinish} />
+          <RecordedTime
+            label="Finish"
+            iso={finish}
+            canCapture={canCapture}
+            onNudge={onNudgeFinish}
+            compact={compact}
+          />
         ) : hasStart && !canCapture ? (
-          <MissingTime label="Finish" />
+          <MissingTime label="Finish" compact={compact} />
         ) : null}
       </div>
 
       {canCapture && finish === undefined && (
         <div
           className="aa-time-action-slider"
-          data-testid="mobile-time-action-slider"
+          data-testid="time-action-slider"
           data-position={hasStart ? 'right' : 'left'}
           style={{
             position: 'absolute',
@@ -242,6 +209,7 @@ function MobileTimeCapture({
             procedureId={procedureId}
             field={hasStart ? 'handoverISO' : 'anaestheticStartISO'}
             onClick={hasStart ? onStampFinish : onStampStart}
+            compact={compact}
           />
         </div>
       )}
@@ -254,14 +222,24 @@ function RecordedTime({
   iso,
   canCapture,
   onNudge,
+  compact,
 }: {
   label: 'Start' | 'Finish'
   iso: string
   canCapture: boolean
   onNudge: (delta: number) => void
+  compact: boolean
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: compact ? 'row' : 'column',
+        alignItems: compact ? 'center' : 'stretch',
+        gap: compact ? 12 : 6,
+        minHeight: compact ? 56 : undefined,
+      }}
+    >
       <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{label}</div>
       <div className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{isoTimeLabel(iso)}</div>
       {canCapture && (
@@ -274,9 +252,17 @@ function RecordedTime({
   )
 }
 
-function MissingTime({ label }: { label: 'Start' | 'Finish' }) {
+function MissingTime({ label, compact }: { label: 'Start' | 'Finish'; compact: boolean }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: compact ? 'row' : 'column',
+        alignItems: compact ? 'center' : 'stretch',
+        gap: compact ? 12 : 6,
+        minHeight: compact ? 56 : undefined,
+      }}
+    >
       <div style={{ fontSize: 12, fontWeight: 600, color: neutral.slate }}>{label}</div>
       <div style={{ fontSize: 14, color: neutral.mist }}>Not recorded</div>
     </div>
@@ -289,11 +275,13 @@ function StampButton({
   procedureId,
   field,
   onClick,
+  compact,
 }: {
   label: string
   procedureId: string
   field: 'anaestheticStartISO' | 'handoverISO'
   onClick: () => void
+  compact: boolean
 }) {
   return (
     <button
@@ -313,7 +301,7 @@ function StampButton({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 96,
+        minHeight: compact ? 56 : 96,
         width: '100%',
       }}
     >

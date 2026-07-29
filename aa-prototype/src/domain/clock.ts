@@ -8,9 +8,10 @@
  * The clock is PURE over an explicit state value: every function takes a
  * `DemoClockState` and returns a value or a new state. Phase 02's Zustand store
  * owns the state and drives the control-panel "advance" controls; Phase 04's
- * Start Now / Finish Now buttons stamp `now(state)` (7th review A13/B20 — the
- * tiered time-unit maths needs real elapsed minutes, so the clock supplies
- * times, not just dates).
+ * Start Now stamps `now(state)`. Finish Now uses it when it is at least five
+ * minutes after the recorded start, otherwise the capture control defaults to
+ * five minutes after start (7th review A13/B20). The tiered time-unit maths
+ * needs real elapsed minutes, so the clock supplies times, not just dates.
  */
 
 import { addDays, addMonths, format, parseISO } from 'date-fns'

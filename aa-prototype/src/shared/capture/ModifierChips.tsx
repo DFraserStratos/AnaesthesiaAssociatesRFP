@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { accent, neutral } from '../../theme/tokens'
 import type { ModifierCode, Procedure, RvgCode } from '../../domain/types'
 import { MODIFIER_CODES, modifierBandOf, modifierUnits, toggleModifierCode } from '../../domain/billing'
@@ -99,65 +99,39 @@ export function ModifierChips({ procedure, baseCode, actor, disabled, onError }:
 
       {BANDS.map(({ band, codes }) => (
         <Row key={band} web={web} label={MODIFIER_BAND_TITLES[band] ?? band}>
-          {web ? (
-            <div style={trackStyle(true)}>
-              {codes.map((m) => {
-                const on = selected.has(m.code)
-                const isAbsorbed = absorbs(m.code)
-                const inert = disabled || isAbsorbed
-                return (
-                  <button
-                    key={m.code}
-                    type="button"
-                    disabled={inert}
-                    aria-pressed={on}
-                    title={MODIFIER_CHIP_LABELS[m.code] ?? m.description}
-                    onClick={inert ? undefined : () => toggle(m.code)}
-                    style={segmentStyle(true, on, isAbsorbed)}
-                  >
-                    <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
-                    <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
-                      +{m.units}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <SlidingSegmentedControl
-              value={codes.find((m) => selected.has(m.code))?.code}
-              options={codes.map((m) => ({
-                value: m.code,
-                disabled: absorbs(m.code),
-                title: MODIFIER_CHIP_LABELS[m.code] ?? m.description,
-                label: (
-                  <>
-                    <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
-                    <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
-                      +{m.units}
-                    </span>
-                  </>
-                ),
-              }))}
-              onSelect={toggle}
-              layout="two-column"
-              disabled={disabled}
-              ariaLabel={MODIFIER_BAND_TITLES[band] ?? band}
-              buttonStyle={(option) => ({
-                height: 44,
-                padding: '0 8px',
-                fontSize: 13,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0,
-                lineHeight: 1.15,
-                whiteSpace: 'nowrap',
-                textDecoration: option.disabled === true ? 'line-through' : 'none',
-              })}
-            />
-          )}
+          <SlidingSegmentedControl
+            value={codes.find((m) => selected.has(m.code))?.code}
+            options={codes.map((m) => ({
+              value: m.code,
+              disabled: absorbs(m.code),
+              title: MODIFIER_CHIP_LABELS[m.code] ?? m.description,
+              label: (
+                <>
+                  <span>{MODIFIER_SEGMENT_LABELS[m.code] ?? m.description}</span>
+                  <span className="mono" style={{ fontSize: 11, fontWeight: 600, opacity: 0.72 }}>
+                    +{m.units}
+                  </span>
+                </>
+              ),
+            }))}
+            onSelect={toggle}
+            layout={web ? 'wrap' : 'two-column'}
+            disabled={disabled}
+            ariaLabel={MODIFIER_BAND_TITLES[band] ?? band}
+            buttonStyle={(option) => ({
+              height: web ? 40 : 44,
+              padding: web ? '0 14px' : '0 8px',
+              fontSize: 13,
+              display: 'flex',
+              flexDirection: web ? 'row' : 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: web ? 6 : 0,
+              lineHeight: web ? undefined : 1.15,
+              whiteSpace: 'nowrap',
+              textDecoration: option.disabled === true ? 'line-through' : 'none',
+            })}
+          />
         </Row>
       ))}
 
@@ -249,50 +223,4 @@ function Row({
       <span style={{ flex: 1, minWidth: 0, display: 'flex' }}>{children}</span>
     </div>
   )
-}
-
-/**
- * The sunken track a band's segments sit in. `inline-flex` + `wrap` is what
- * keeps the desktop honest without measuring anything: the track is as wide as
- * its segments need and no wider, and a segment that cannot fit the row wraps
- * to a second line inside the track instead of shrinking below its own words.
- */
-function trackStyle(web: boolean): CSSProperties {
-  const shell = { background: neutral.sunken, borderRadius: 12, padding: 4, gap: 4 } as const
-  return web
-    ? { ...shell, display: 'inline-flex', flexWrap: 'wrap', maxWidth: '100%' }
-    : { ...shell, display: 'grid', gridTemplateColumns: '1fr 1fr' }
-}
-
-/**
- * A band segment. `AsaCard`'s active treatment verbatim (solid teal, the 9px
- * radius inside the track, the 1px lift), so all four exclusive bands read as
- * one family. Desktop segments hold the unit inline; phone segments share the
- * grid and stack it under the label.
- */
-function segmentStyle(web: boolean, on: boolean, absorbed: boolean): CSSProperties {
-  return {
-    flex: web ? '0 0 auto' : undefined,
-    minWidth: 0,
-    height: web ? 40 : 44,
-    padding: web ? '0 14px' : '0 8px',
-    borderRadius: 9,
-    border: 'none',
-    fontFamily: 'inherit',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: absorbed ? 'default' : 'pointer',
-    transition: 'background 150ms, color 150ms',
-    background: on ? accent.base : 'transparent',
-    color: absorbed ? neutral.lineStrong : on ? neutral.surface : neutral.slate,
-    boxShadow: on ? '0 1px 3px rgba(23,35,32,0.2)' : 'none',
-    textDecoration: absorbed ? 'line-through' : 'none',
-    display: 'flex',
-    flexDirection: web ? 'row' : 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: web ? 6 : 0,
-    lineHeight: web ? undefined : 1.15,
-    whiteSpace: 'nowrap',
-  }
 }

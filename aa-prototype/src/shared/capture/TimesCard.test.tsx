@@ -9,6 +9,7 @@ import {
   type Actor,
 } from '../../store'
 import { SurfaceProvider } from '../surface/SurfaceProvider'
+import type { SurfaceVariant } from '../surface'
 import { TimesCard } from './TimesCard'
 
 const SOUTER: Actor = {
@@ -26,11 +27,17 @@ function pendingProcedureId(): string {
   return procedure.id
 }
 
-function Harness({ procedureId }: { procedureId: string }) {
+function Harness({
+  procedureId,
+  variant = 'mobile',
+}: {
+  procedureId: string
+  variant?: SurfaceVariant
+}) {
   const procedure = useAppStore((state) => state.schedule.procedures[procedureId])
   if (procedure === undefined) return null
   return (
-    <SurfaceProvider variant="mobile">
+    <SurfaceProvider variant={variant}>
       <TimesCard
         procedure={procedure}
         actor={SOUTER}
@@ -42,7 +49,7 @@ function Harness({ procedureId }: { procedureId: string }) {
   )
 }
 
-describe('mobile Times card action', () => {
+describe('Times card action', () => {
   beforeEach(() => {
     resetDemo(useAppStore)
     const procedureId = pendingProcedureId()
@@ -61,7 +68,7 @@ describe('mobile Times card action', () => {
     const procedureId = pendingProcedureId()
     render(<Harness procedureId={procedureId} />)
 
-    const slider = screen.getByTestId('mobile-time-action-slider')
+    const slider = screen.getByTestId('time-action-slider')
     const startButton = screen.getByRole('button', { name: 'Start now' })
     expect(slider).toHaveAttribute('data-position', 'left')
     expect(slider).toHaveStyle({ transform: 'translateX(0)' })
@@ -78,4 +85,52 @@ describe('mobile Times card action', () => {
     expect(screen.getByRole('button', { name: '+5' })).toBeVisible()
     expect(screen.queryByText('Stamped from the demo clock')).not.toBeInTheDocument()
   })
+
+  it('uses the same full-width two-position track on the web', () => {
+    const procedureId = pendingProcedureId()
+    render(<Harness procedureId={procedureId} variant="web" />)
+
+    const track = screen.getByTestId('time-capture-track')
+    const slider = screen.getByTestId('time-action-slider')
+    const startButton = screen.getByRole('button', { name: 'Start now' })
+
+    expect(track).toHaveStyle({
+      gridTemplateColumns: '1fr 1fr',
+      minHeight: '56px',
+      width: '100%',
+    })
+    expect(track).toHaveAttribute('data-layout', 'compact')
+    expect(slider).toHaveStyle({
+      width: 'calc((100% - 12px) / 2)',
+      transform: 'translateX(0)',
+    })
+    expect(startButton).toHaveStyle({ minHeight: '56px' })
+
+    fireEvent.click(startButton)
+
+    expect(screen.getByRole('button', { name: 'Finish now' })).toBe(startButton)
+    expect(slider).toHaveAttribute('data-position', 'right')
+    expect(screen.getByText('Start', { exact: true })).toBeVisible()
+  })
+
+  it.each(['mobile', 'web'] as const)(
+    'defaults a future appointment finish to five minutes after its start on %s',
+    (variant) => {
+      const procedureId = pendingProcedureId()
+      const outcome = editProcedure(useAppStore, SOUTER, procedureId, {
+        anaestheticStartISO: '2026-07-21T16:05:00',
+      })
+      if (!outcome.ok) throw new Error(outcome.message)
+
+      render(<Harness procedureId={procedureId} variant={variant} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Finish now' }))
+
+      expect(screen.getByText('16:10', { exact: true })).toBeVisible()
+      expect(useAppStore.getState().schedule.procedures[procedureId]?.handoverISO).toBe(
+        '2026-07-21T16:10:00',
+      )
+      expect(screen.queryByText(/^Duration /)).not.toBeInTheDocument()
+      expect(screen.queryByText(/1 unit per 15 min/)).not.toBeInTheDocument()
+    },
+  )
 })

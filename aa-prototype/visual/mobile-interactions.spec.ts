@@ -109,7 +109,7 @@ test('reduced motion removes geometric press and selection travel', async ({ pag
   await asa.scrollIntoViewIfNeeded()
   const asaIndicator = asa.locator('[data-sliding-segment-indicator]')
   await expect(asaIndicator).toHaveCSS('transition-property', 'opacity')
-  await expect(page.getByTestId('mobile-time-action-slider')).toHaveCSS('transition-property', 'opacity')
+  await expect(page.getByTestId('time-action-slider')).toHaveCSS('transition-property', 'opacity')
 
   const option = asa.getByRole('button', { name: 'IV', exact: true })
   const pressedTransform = await holdAtCentre(page, option)
@@ -166,7 +166,7 @@ test('Start now becomes the travelling Finish action without a validation-focus 
 
   const start = page.getByRole('button', { name: 'Start now' })
   await start.scrollIntoViewIfNeeded()
-  const slider = page.getByTestId('mobile-time-action-slider')
+  const slider = page.getByTestId('time-action-slider')
   await expect(slider).toHaveAttribute('data-position', 'left')
   await start.evaluate((element) => {
     const retained = element as HTMLElement & { retainedAcrossSlide?: boolean }

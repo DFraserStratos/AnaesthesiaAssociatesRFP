@@ -77,10 +77,10 @@ const VARIANT_STYLE: Record<
 }
 
 /**
- * A mobile segmented control whose single selection highlight moves between
- * real buttons. Measuring the active button rather than deriving a percentage
- * lets the same primitive handle equal rows, two-column grids and wrapped,
- * variable-width segments without changing their interaction semantics.
+ * A segmented control whose single selection highlight moves between real
+ * buttons. Measuring the active button rather than deriving a percentage lets
+ * the same primitive handle equal rows, two-column grids and wrapped,
+ * variable-width segments on both product surfaces.
  */
 export function SlidingSegmentedControl<T extends string>({
   value,
