@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { scheduleCompletionHaptic } from '../../theme/haptics'
 import { motion } from '../../theme/motion'
 import { semantic } from '../../theme/tokens'
@@ -30,9 +30,33 @@ interface SuccessOverlayProps {
  * focusable button rather than a click handler on the flood, and it sits
  * OUTSIDE the `role="status"` region so the announcement stays exactly the
  * title and its supporting line.
+ *
+ * The valve arms late rather than on the first frame. Full-bleed at `inset: 0`
+ * and above the mobile commit dock, it would otherwise land directly under the
+ * finger that just tapped "Mark complete" (or the mouse that double-clicked
+ * "Confirm reassignment"), so a second impatient tap would run the dismissal at
+ * ~150ms and swallow the tick draw and the 200ms haptic. It therefore appears
+ * only once the complete-tick has finished drawing, which still leaves ~600ms
+ * of escape hatch before every owner's 1050ms timer.
  */
 export function SuccessOverlay({ title, children, testId, onDismiss }: SuccessOverlayProps) {
   useEffect(scheduleCompletionHaptic, [])
+
+  // Depend on the presence of a handler, never on its identity: owners pass
+  // inline arrows, and re-arming on every parent render would keep pushing the
+  // valve out of reach.
+  const dismissable = onDismiss !== undefined
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!dismissable) return undefined
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    const armAfter = reducedMotion
+      ? motion.reducedMotionFade
+      : motion.completeTick.drawDelay + motion.completeTick.drawDuration
+    const timer = window.setTimeout(() => setReady(true), armAfter)
+    return () => window.clearTimeout(timer)
+  }, [dismissable])
 
   return (
     <div
@@ -88,8 +112,10 @@ export function SuccessOverlay({ title, children, testId, onDismiss }: SuccessOv
 
       {/* Transparent and full-bleed, so the escape hatch is the whole surface
           without any visible chrome joining the choreography. Last in the DOM
-          so it paints over the (non-interactive) success content. */}
-      {onDismiss !== undefined && (
+          so it paints over the (non-interactive) success content. Not in the
+          tree at all until `ready` — absent rather than merely unclickable, so
+          keyboards and assistive tech cannot reach it early either. */}
+      {onDismiss !== undefined && ready && (
         <button
           type="button"
           onClick={onDismiss}

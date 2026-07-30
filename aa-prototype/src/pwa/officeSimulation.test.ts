@@ -8,10 +8,11 @@
  * "the office got to it" looks like from a test.
  *
  * Covered: the trigger fires when enabled and not when disabled; the toggle is
- * read at fire time; the resulting List reaches AUTHORISED + billed with its
- * invoices, cases and Xero mirror; the run is idempotent; teardown cancels a
- * pending run; and every illegitimate state (reset, already authorised, seeded
- * review queue) is a silent no-op.
+ * read at fire time, in both directions, including a List that has been waiting
+ * across several delays with the toggle off; the resulting List reaches
+ * AUTHORISED + billed with its invoices, cases and Xero mirror; the run is
+ * idempotent; teardown cancels a pending run; and every illegitimate state
+ * (reset, already authorised, seeded review queue) is a silent no-op.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -257,6 +258,40 @@ describe('the toggle governs the run', () => {
       vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
       expect(listState(api, SOUTER_PM)).toBe('AUTHORISED')
       expect(isListBilled(api.getState().schedule.lists[SOUTER_PM]!)).toBe(true)
+    } finally {
+      unwire()
+      unwireBilling()
+    }
+  })
+
+  // The presenter beat this protects: toggle off, submit, show that the List
+  // waits, answer the question, toggle back on and carry the story forward. The
+  // office visit re-arms while the toggle is off, so the List is still owed one.
+  it('picks up a List that waited several delays with the toggle off, once it is switched back on', () => {
+    const api = store()
+    setOfficeSimulationEnabled(false)
+    const unwireBilling = wireBillingRun(api)
+    const unwire = wireOfficeSimulation(api)
+    try {
+      submitAsSouter(api)
+      // Two full delays pass with nobody in the office.
+      vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS * 2)
+      expect(listState(api, SOUTER_PM)).toBe('SUBMITTED')
+      expect(authorisersOf(api, SOUTER_PM)).toEqual([])
+
+      setOfficeSimulationEnabled(true)
+      vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)
+      const state = api.getState()
+      expect(listState(api, SOUTER_PM)).toBe('AUTHORISED')
+      expect(isListBilled(state.schedule.lists[SOUTER_PM]!)).toBe(true)
+      expect(invoicesForList(state, SOUTER_PM)).toHaveLength(4)
+      // Still the simulated office, and still ONLY the live submit: a re-arm must
+      // never read as a sweep of every SUBMITTED List, or the seeded review queue
+      // the Admin app needs would empty itself behind the presenter's back.
+      expect(authorisersOf(api, SOUTER_PM)).toEqual([SIMULATED_OFFICE])
+      expect(listState(api, SEEDED_QUEUE_LIST)).toBe('SUBMITTED')
+      expect(isListBilled(state.schedule.lists[SEEDED_QUEUE_LIST]!)).toBe(false)
+      expect(invoicesForList(state, SEEDED_QUEUE_LIST)).toHaveLength(0)
     } finally {
       unwire()
       unwireBilling()

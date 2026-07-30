@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import '../src/theme/global.css'
@@ -13,6 +13,11 @@ import { MobileViewport } from '../src/pwa/MobileViewport'
 import { PwaDemoPanel } from '../src/pwa/PwaDemoPanel'
 import { wireOfficeSimulation } from '../src/pwa/officeSimulation'
 import { markBootStart, markFirstRender } from '../src/pwa/bootMetrics'
+// Side-effect import: attaches the `beforeinstallprompt` listener at module
+// evaluation. It has to be this early. Chrome fires the event once, seconds
+// after load, and the card that replays it (`InstallCoach`, behind the More tab)
+// does not exist yet — see `src/pwa/installPrompt.ts`.
+import '../src/pwa/installPrompt'
 import {
   useAppStore,
   wireArchiveJob,
@@ -25,10 +30,13 @@ import {
  * The installable PWA's entry — the Anaesthetist Mobile App on its own, at the
  * device's full size.
  *
- * It shares 100% of `src/` with the prototype and differs in exactly three
- * ways: the host is `MobileViewport` rather than `PhoneFrame`, there is no
- * `AppShell`, and the More tab gets the presenter controls the harness bar
- * would otherwise have carried.
+ * It shares 100% of `src/` with the prototype and differs in four ways: the host
+ * is `MobileViewport` rather than `PhoneFrame`, there is no `AppShell`, the More
+ * tab gets the presenter controls the harness bar would otherwise have carried,
+ * and it wires `wireOfficeSimulation`, which `src/main.tsx` deliberately does not
+ * (see `src/pwa/officeSimulation.ts`). The rest of what this file does is
+ * device-only plumbing that changes no app behaviour: the cold-launch marks, and
+ * the `beforeinstallprompt` capture the Android install button depends on.
  *
  * NO `AppShell` is the load-bearing omission. It is what drops the harness bar,
  * the two web apps, the admin app and the four demo surfaces from this bundle:
@@ -59,6 +67,30 @@ wireOfficeSimulation(useAppStore)
 
 markBootStart()
 
+/**
+ * Stamps the cold-launch figure, and renders nothing.
+ *
+ * It has to be inside the tree. `createRoot(...).render(...)` schedules the
+ * initial mount at DefaultLane, which time-slices, so a bare
+ * `requestAnimationFrame` alongside the `render()` call is not ordered after
+ * React's first commit at all: on a slow phone the browser can take a rendering
+ * opportunity between slices and stamp a flattering number with nothing
+ * committed. An effect only runs after a real commit.
+ *
+ * The double frame is what gets past the paint: an animation-frame callback runs
+ * in the frame's rendering step, BEFORE style, layout and paint, so the second
+ * callback is the first moment the pixels are known to be on screen.
+ *
+ * StrictMode's double-invoked effect is harmless: `markFirstRender` keeps only
+ * the first value.
+ */
+function BootMark() {
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(markFirstRender))
+  }, [])
+  return null
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -77,9 +109,9 @@ createRoot(document.getElementById('root')!).render(
         <Route path="*" element={<Navigate to="/mobile/lists" replace />} />
       </Routes>
     </BrowserRouter>
+    {/* Last, so its effect runs after the app's own: the number in the More tab
+        then covers parse, module evaluation (the seed builds eagerly), React's
+        first commit and the paint that follows it. */}
+    <BootMark />
   </StrictMode>,
 )
-
-// One frame after the first commit, so the number in the More tab covers parse,
-// module evaluation (the seed builds eagerly) and the first paint.
-requestAnimationFrame(markFirstRender)

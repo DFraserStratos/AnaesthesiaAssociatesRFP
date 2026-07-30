@@ -58,8 +58,23 @@ export function MobileViewport({ children }: { children: ReactNode }) {
    * host, and pans the whole page instead. The guarded `scrollTo` undoes that
    * pan; it cannot loop, because once `scrollY` is 0 the branch is skipped.
    *
+   * KEYBOARD OCCLUSION ONLY — the name is the contract, and both consumers read
+   * it that way. `innerHeight - vv.height` is equally non-zero under pinch zoom,
+   * because the visual viewport shrinks with `vv.scale` while the layout
+   * viewport does not, and pinch zoom is deliberately available here (no
+   * `maximum-scale`, no `user-scalable=no`: WCAG 2.1 SC 1.4.4). So a scale past
+   * 1.01 publishes 0 rather than half a screen of imaginary keyboard.
+   *
+   * The trade, stated plainly: while the user is deliberately zoomed a GENUINE
+   * keyboard inset is suppressed too. That is acceptable because `global.css`
+   * forces every focused control to 16px, so iOS never auto-zooms a field —
+   * scale > 1 is always the user's own pinch, never a side effect of focus.
+   * The dock and any open sheet then stay put in the page while zoomed, panning
+   * out of the visible band like the content they belong to, rather than gluing
+   * themselves to the bottom of that band and covering what is being read.
+   *
    * `interactive-widget=resizes-content` in the viewport meta is the
-   * complementary zero-JS path for Chrome 109+. Safari ignores it, which is why
+   * complementary zero-JS path for Chrome 108+. Safari ignores it, which is why
    * this listener exists.
    */
   useEffect(() => {
@@ -67,7 +82,7 @@ export function MobileViewport({ children }: { children: ReactNode }) {
     const el = rootRef.current
     if (vv === null || vv === undefined || el === null) return
     const apply = () => {
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      const inset = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
       el.style.setProperty('--aa-keyboard-inset', `${Math.round(inset)}px`)
       if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0)
     }
@@ -114,7 +129,9 @@ export function MobileViewport({ children }: { children: ReactNode }) {
       {/* Host chrome, in the same seat `PhoneFrame` keeps its zoom control and
           Gradient Lab. Rendering it here rather than at the router root is what
           lets the pill inherit `--aa-inset-bottom` and sit correctly above the
-          tab bar on every device. */}
+          tab bar on every device. Its other input, `--aa-dock-height`, does not
+          depend on this seat: `MobileCardLayout` publishes it on
+          `documentElement`, so it inherits wherever the pill is mounted. */}
       <UpdatePrompt />
     </div>
   )

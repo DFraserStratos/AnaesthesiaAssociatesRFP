@@ -1,5 +1,6 @@
 /**
- * A module-level handle on the service-worker registration.
+ * A module-level handle on the service-worker registration, plus a latch for a
+ * registration that failed.
  *
  * `useRegisterSW` hands the registration to its `onRegisteredSW` callback and
  * nowhere else, but the More tab's manual "Check for updates" row needs it too,
@@ -14,29 +15,65 @@
 
 let registration: ServiceWorkerRegistration | undefined
 
+/**
+ * Latched by `rememberRegistrationError`, and read only when no registration
+ * can be resolved at all, so a live worker can never be reported as a failure.
+ */
+let registerFailed = false
+
 /** Called from `UpdatePrompt`'s `onRegisteredSW`. */
 export function rememberRegistration(r: ServiceWorkerRegistration | undefined): void {
   registration = r
 }
 
 /**
- * Whether a worker actually registered (a secure context, and this build has
- * one). Asynchronous because `onRegisteredSW` fires some way after first paint,
- * so a synchronous read taken while the More tab renders would report "no" for
- * a perfectly healthy install. Asking the browser directly also back-fills the
- * handle, which makes "Check for updates" work even if that callback is missed.
+ * Called from `UpdatePrompt`'s `onRegisterError`. Without it a failed
+ * `register()` is entirely silent: `onRegisteredSW` never fires, so the More
+ * tab's "Check for updates" row would say "nothing to check" and give the
+ * presenter no way to tell "this build has no worker" from "this one could not
+ * install". One warn, in the same swallow-and-log shape `persistStorage` uses,
+ * because a phone has no console anyone can read mid-workshop.
  */
-export async function serviceWorkerReady(): Promise<boolean> {
-  if (registration !== undefined) return true
-  if (!('serviceWorker' in navigator)) return false
+export function rememberRegistrationError(error: unknown): void {
+  registerFailed = true
+  console.warn('service worker registration failed', error)
+}
+
+/**
+ * Resolve the handle, asking the browser and back-filling when `onRegisteredSW`
+ * was never seen. `undefined` means there is genuinely no worker: the framed
+ * prototype, a Vitest run, or plain http on a LAN IP.
+ */
+async function resolveRegistration(): Promise<ServiceWorkerRegistration | undefined> {
+  if (registration !== undefined) return registration
+  if (!('serviceWorker' in navigator)) return undefined
   try {
     const found = await navigator.serviceWorker.getRegistration()
-    if (found === undefined) return false
+    if (found === undefined) return undefined
     registration = found
-    return true
+    return found
   } catch {
-    return false
+    return undefined
   }
+}
+
+/**
+ * Whether a worker is ACTIVE, which is the only state that means the precache
+ * finished and the app would actually survive airplane mode. Existence is not
+ * enough, and that is the trap the More tab's "Offline ready" row fell into:
+ * `onRegisteredSW` fires the moment `register()` resolves, while the new worker
+ * is still installing a 700-odd KiB precache, and an install that fails
+ * outright leaves that handle in place for the rest of the session with nothing
+ * cached. Gating on `active` covers both, because both paths go through
+ * `resolveRegistration` rather than answering "yes" from the bare handle.
+ *
+ * Asynchronous because `onRegisteredSW` fires some way after first paint, so a
+ * synchronous read taken while the More tab renders would report "no" for a
+ * perfectly healthy install.
+ */
+export async function serviceWorkerReady(): Promise<boolean> {
+  const found = await resolveRegistration()
+  return found !== undefined && found.active !== null
 }
 
 export type UpdateCheck = 'unavailable' | 'checked' | 'failed'
@@ -46,15 +83,22 @@ export type UpdateCheck = 'unavailable' | 'checked' | 'failed'
  * what makes the update pill appear; the pill's own 60-second poll does the
  * same thing unattended.
  *
+ * Deliberately NOT gated on `serviceWorkerReady()`: a worker that is still
+ * installing, or one whose precache install failed, can still be asked to
+ * re-check, and answering "nothing to check" for it would be wrong.
+ *
  * Worth knowing before a workshop: once a service worker is installed,
  * pull-to-refresh does NOT get you the new build. The old worker answers from
  * its own precache. This, the poll, and the visible build id are the three
  * things that make a deploy observable on the phone.
  */
 export async function checkForUpdate(): Promise<UpdateCheck> {
-  if (!(await serviceWorkerReady()) || registration === undefined) return 'unavailable'
+  const found = await resolveRegistration()
+  // A latched registration error reports as "failed" rather than
+  // "unavailable": there IS a worker on this origin, it just could not install.
+  if (found === undefined) return registerFailed ? 'failed' : 'unavailable'
   try {
-    await registration.update()
+    await found.update()
     return 'checked'
   } catch {
     return 'failed'

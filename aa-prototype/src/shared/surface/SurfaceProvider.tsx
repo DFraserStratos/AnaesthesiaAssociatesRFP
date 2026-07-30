@@ -67,6 +67,36 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
     return () => observer.disconnect()
   }, [commit])
 
+  /**
+   * Republish the measured height as `--aa-dock-height` so host chrome that has
+   * to clear the dock can, without measuring it a second time. The installed
+   * PWA's update pill is the consumer: it was tuned to clear the bottom tab
+   * bar, but the tab bar is hidden at Lists depth 1 and 2 — exactly where this
+   * dock stands in its place and is twice as tall.
+   *
+   * Written on `documentElement`, not on the dock or the scroller, because the
+   * property has to INHERIT to the reader and the pill is a sibling of the
+   * whole product tree rather than a descendant of the card layer. Cleared
+   * whenever there is no dock and on unmount, because a value left behind
+   * would keep the pill floating high on Lists, Availability and More.
+   *
+   * What ships is the untransformed `offsetHeight` measured above, which is the
+   * right number for this reader: the device host applies no presenter zoom.
+   */
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (commit === null) {
+      root.style.removeProperty('--aa-dock-height')
+      return
+    }
+    root.style.setProperty('--aa-dock-height', `${dockHeight}px`)
+    // Block body, not a concise one: `removeProperty` returns the old value, and
+    // a cleanup function that returns a string is not a valid `Destructor`.
+    return () => {
+      root.style.removeProperty('--aa-dock-height')
+    }
+  }, [commit, dockHeight])
+
   const onScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
     const y = e.currentTarget.scrollTop
     setCollapsed((was) => (was ? y > EXPAND_AT : y > COLLAPSE_AT))
@@ -86,11 +116,20 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
           paddingLeft: 20,
           paddingRight: 20,
           // With a dock this auto-tracks the measured dock height (which now
-          // itself tracks the inset). Without one, clear the host's bottom
-          // inset plus 6px of air, floored at 24 so a zero-inset device still
-          // gets a sensible tail. Resolves to today's 40 at the simulated 34.
+          // itself tracks the inset) PLUS whatever the keyboard is covering:
+          // the dock itself rides up by `--aa-keyboard-inset` (see below), so
+          // the clearance it reserves has to move with it or the card's tail
+          // (the last BTM block, "Add another procedure", the quiet actions)
+          // has no scroll extent left to clear either the dock or the keys.
+          // Only the device host sets that var, so in the frame the expression
+          // is `calc(<measured>px + 0px)` and the computed padding is
+          // unchanged. Without a dock, clear the host's bottom inset plus 6px
+          // of air, floored at 24 so a zero-inset device still gets a sensible
+          // tail. Resolves to today's 40 at the simulated 34.
           paddingBottom:
-            commit !== null ? dockHeight + 16 : 'max(calc(var(--aa-inset-bottom, 34px) + 6px), 24px)',
+            commit !== null
+              ? `calc(${dockHeight + 16}px + var(--aa-keyboard-inset, 0px))`
+              : 'max(calc(var(--aa-inset-bottom, 34px) + 6px), 24px)',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,

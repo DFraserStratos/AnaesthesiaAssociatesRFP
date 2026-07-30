@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Share, SquarePlus, X } from 'lucide-react'
 import { accent, neutral, radius } from '../theme/tokens'
+import { getInstallEvent, promptInstall, subscribeInstallEvent, wasInstalled } from './installPrompt'
 
 /**
  * Add-to-Home-Screen coaching, shown only while the app is running in a browser
@@ -13,17 +14,14 @@ import { accent, neutral, radius } from '../theme/tokens'
  * each time.
  *
  * iOS gives no programmatic install path at all, so there the coaching IS the
- * mechanism. Android fires `beforeinstallprompt`, which can be captured and
- * replayed from a real button, so there it is a genuine one-tap install.
+ * mechanism. Android fires `beforeinstallprompt`, which `installPrompt.ts`
+ * captures from the entry (far earlier than this card mounts) and this card
+ * replays from a real button, so there it is a genuine one-tap install. The
+ * written fallback stays for every case where no event ever arrives: iOS, an
+ * in-app WebView, or a Chrome that has not judged the app installable.
  */
 
 const DISMISS_KEY = 'aa-install-coach-dismissed'
-
-/** The captured Android install event. Not in lib.dom, so it is described here. */
-interface InstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
 
 function isStandalone(): boolean {
   if (window.matchMedia?.('(display-mode: standalone)').matches === true) return true
@@ -54,21 +52,39 @@ function rememberDismissed(): void {
   }
 }
 
+/**
+ * Forget the dismissal, so the card comes back. Exported for "Reset demo data":
+ * the phone is shared, the X is one tap, and without this a stray tap would hide
+ * the install coaching for the rest of that handset's life.
+ */
+export function clearInstallCoachDismissal(): void {
+  try {
+    window.localStorage.removeItem(DISMISS_KEY)
+  } catch {
+    /* ignore storage failures (private mode etc.) */
+  }
+}
+
 export function InstallCoach() {
   const [dismissed, setDismissed] = useState(wasDismissed)
-  const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null)
+  // Both read out of `installPrompt`'s module-level holder rather than owning
+  // the listener, so a captured event survives this card unmounting when the
+  // presenter leaves the More tab.
+  const [canInstall, setCanInstall] = useState(() => getInstallEvent() !== null)
+  const [installed, setInstalled] = useState(wasInstalled)
 
-  useEffect(() => {
-    const capture = (e: Event) => {
-      // Suppress Chrome's own mini-infobar so the install happens from our card.
-      e.preventDefault()
-      setInstallEvent(e as InstallPromptEvent)
-    }
-    window.addEventListener('beforeinstallprompt', capture)
-    return () => window.removeEventListener('beforeinstallprompt', capture)
-  }, [])
+  useEffect(
+    () =>
+      subscribeInstallEvent(() => {
+        setCanInstall(getInstallEvent() !== null)
+        setInstalled(wasInstalled())
+      }),
+    [],
+  )
 
-  if (dismissed || isStandalone()) return null
+  // `installed` is the Android case `isStandalone()` cannot see: the install
+  // succeeded, but this tab is still a tab.
+  if (dismissed || installed || isStandalone()) return null
 
   const ios = isIos()
 
@@ -78,10 +94,11 @@ export function InstallCoach() {
   }
 
   async function install() {
-    if (installEvent === null) return
-    await installEvent.prompt()
-    await installEvent.userChoice
-    setInstallEvent(null)
+    const outcome = await promptInstall()
+    // Accepted: hide the card for good rather than leave it advertising an
+    // install that has already happened. A refusal (or nothing to replay) falls
+    // through to the written instructions, which are still true.
+    if (outcome === 'accepted') dismiss()
   }
 
   return (
@@ -105,9 +122,13 @@ export function InstallCoach() {
           onClick={dismiss}
           style={{
             flex: 'none',
-            width: 32,
-            height: 32,
-            margin: -6,
+            // A 44px target around an 18px glyph. The negative margin is what
+            // keeps it looking identical to a 32px box: pulling 12px back on
+            // every side leaves the icon exactly where it was and contributes
+            // the same 20px to the row's height, so only the hit box grows.
+            width: 44,
+            height: 44,
+            margin: -12,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -125,7 +146,10 @@ export function InstallCoach() {
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Share size={16} strokeWidth={2} aria-hidden style={{ flex: 'none', color: accent.base }} />
-            Tap Share in the Safari toolbar
+            {/* Not "the Safari toolbar": the same two steps are right in Chrome
+                and Edge on iOS, and a link opened from Teams or Outlook is in a
+                WebView with no Safari toolbar on screen at all. */}
+            Tap Share in the browser toolbar
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <SquarePlus size={16} strokeWidth={2} aria-hidden style={{ flex: 'none', color: accent.base }} />
@@ -140,7 +164,7 @@ export function InstallCoach() {
           <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
             Install it and it opens full screen, with no browser bars, and works with no connection.
           </div>
-          {installEvent !== null ? (
+          {canInstall ? (
             <button
               type="button"
               onClick={() => void install()}
@@ -159,8 +183,11 @@ export function InstallCoach() {
               Install
             </button>
           ) : (
+            // Reached two ways: no event ever arrived, or the user closed
+            // Chrome's own dialog. Phrased so it is true in both, rather than as
+            // the primary instruction.
             <div style={{ fontSize: 13, color: neutral.mist }}>
-              Open the browser menu and choose Install app, or Add to Home screen.
+              You can install it from the browser menu: choose Install app, or Add to Home screen.
             </div>
           )}
         </>

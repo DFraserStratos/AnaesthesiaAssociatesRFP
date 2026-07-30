@@ -5,7 +5,11 @@ import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { BottomSheet } from '../shared/surface'
 import { SlidingSegmentedControl } from '../shared/ui/SlidingSegmentedControl'
 import {
+  PERSIST_KEY,
+  persistStatus,
+  persistedBytes,
   resetDemo,
+  resilientLocalStorage,
   useAppStore,
   useClockTimeLabel,
   useToday,
@@ -19,7 +23,7 @@ import {
 } from './officeSimulation'
 import { bootMs } from './bootMetrics'
 import { checkForUpdate, serviceWorkerReady } from './swRegistration'
-import { InstallCoach } from './InstallCoach'
+import { InstallCoach, clearInstallCoachDismissal } from './InstallCoach'
 
 /**
  * The presenter controls the installed PWA has no harness bar for.
@@ -68,7 +72,9 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-/** A borderless label / value row, 44px tall so it stays a comfortable target. */
+/** A borderless label / value row. Static, not a target, so its 32px min-height
+ *  is row rhythm rather than the phone's 44px touch minimum: the four of them
+ *  read as one block. */
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 32 }}>
@@ -132,36 +138,58 @@ function DemoClockCard() {
   )
 }
 
-/** A plain switch. No such control exists in the design language yet, so this
- *  borrows the pill radius, the accent fill and the 44px target from the rest
- *  of the phone rather than inventing a new visual idiom. */
-function Toggle({ on, onChange, label }: { on: boolean; onChange: (next: boolean) => void; label: string }) {
+/** A label plus a switch. No such control exists in the design language yet, so
+ *  the track borrows the pill radius and the accent fill from the rest of the
+ *  phone rather than inventing a new visual idiom, and sizes to the platform
+ *  switch (52x32).
+ *
+ *  THE WHOLE ROW is the control, not the track. A bare 52x32 track is under the
+ *  44px minimum the rest of the phone honours (convention 16, N1), and a thumb
+ *  landing a few pixels high or low would have missed it entirely; making the
+ *  row the button gives a 44px-tall, full-width target and turns the label from
+ *  decoration into part of it, the way the iOS Settings rows behave. */
+function ToggleRow({ on, onChange, label }: { on: boolean; onChange: (next: boolean) => void; label: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      aria-label={label}
       onClick={() => onChange(!on)}
       style={{
-        flex: 'none',
-        width: 52,
-        height: 32,
-        padding: 3,
-        borderRadius: radius.pill,
-        border: 'none',
-        background: on ? accent.base : neutral.lineStrong,
-        cursor: 'pointer',
         display: 'flex',
-        justifyContent: on ? 'flex-end' : 'flex-start',
         alignItems: 'center',
-        transition: 'background 150ms cubic-bezier(0.2,0.8,0.2,1)',
+        gap: 12,
+        width: '100%',
+        minHeight: 44,
+        padding: 0,
+        border: 'none',
+        background: 'none',
+        color: 'inherit',
+        font: 'inherit',
+        textAlign: 'left',
+        cursor: 'pointer',
       }}
     >
+      <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{label}</span>
       <span
         aria-hidden
-        style={{ display: 'block', width: 26, height: 26, borderRadius: 99, background: neutral.surface }}
-      />
+        style={{
+          flex: 'none',
+          width: 52,
+          height: 32,
+          padding: 3,
+          borderRadius: radius.pill,
+          background: on ? accent.base : neutral.lineStrong,
+          display: 'flex',
+          justifyContent: on ? 'flex-end' : 'flex-start',
+          alignItems: 'center',
+          transition: 'background 150ms cubic-bezier(0.2,0.8,0.2,1)',
+        }}
+      >
+        <span
+          style={{ display: 'block', width: 26, height: 26, borderRadius: radius.pill, background: neutral.surface }}
+        />
+      </span>
     </button>
   )
 }
@@ -171,21 +199,19 @@ function OfficeSimulationCard() {
 
   return (
     <Card title="Office simulation">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Play the office</span>
-        <Toggle
-          on={on}
-          label="Play the office"
-          onChange={(next) => {
-            setOfficeSimulationEnabled(next)
-            setOn(next)
-          }}
-        />
-      </div>
+      <ToggleRow
+        on={on}
+        label="Play the office"
+        onChange={(next) => {
+          setOfficeSimulationEnabled(next)
+          setOn(next)
+        }}
+      />
       <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>{OFFICE_SIM_COPY}</div>
       <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
         Off, and a submitted list simply waits, as it really would until the office reviews it. There is no
-        Admin app on the phone, so nothing else would move it on.
+        Admin app on the phone, so nothing else would move it on. Switch it back on and the office picks
+        that same list up a few seconds later.
       </div>
     </Card>
   )
@@ -240,9 +266,14 @@ function ResetCard() {
           <RotateCcw size={17} strokeWidth={2.2} aria-hidden />
           Reset demo data
         </button>
+        {/* Hedged deliberately, matching README "The origin trap": an installed
+            iOS app MAY have storage of its own for the same origin (the
+            behaviour has moved across versions), and on Android Chrome it
+            shares the browser profile's. Either way this control is the
+            reliable way in, which is the sentence the presenter needs. */}
         <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
-          An installed app keeps its own copy of the data, separate from the browser's. This is how you
-          start a fresh run on the phone.
+          An installed app may keep its own copy of the data, separate from the browser's, so clearing it
+          in the browser is not a reliable way to start a fresh run. Use this.
         </div>
       </Card>
 
@@ -259,7 +290,23 @@ function ResetCard() {
           <button
             type="button"
             onClick={() => {
+              // Clear the persisted key FIRST. `resetDemo` is a `setState`, so
+              // its write goes through the persist middleware — and if a storage
+              // error has latched writes off (persistStorage.ts) that write is
+              // dropped, leaving the pre-failure mid-demo payload in storage for
+              // the next launch to rehydrate. A `removeItem` is let past the
+              // latch precisely so a hard reset can recover, and an installed
+              // app has no browser UI to clear site data from. Same call
+              // zustand's `persist.clearStorage()` would make, minus the cast:
+              // `BoundAppStore` is typed without the persist mutator.
+              resilientLocalStorage.removeItem(PERSIST_KEY)
               resetDemo(useAppStore)
+              // The install coaching is per-handset presenter chrome, not demo
+              // data, but the X that hides it is one tap on a phone that gets
+              // passed around a room, and nothing else can bring it back. It
+              // reappears on the next visit to More, because `InstallCoach`
+              // reads the key when it mounts.
+              clearInstallCoachDismissal()
               setConfirming(false)
             }}
             style={{
@@ -299,12 +346,24 @@ function ResetCard() {
   )
 }
 
+const BYTES_PER_MB = 1024 * 1024
+
 /** Without a visible build id you cannot tell whether the phone picked up a
  *  deploy, and that burns workshop-prep time. */
 function BuildCard() {
   const [state, setState] = useState<'idle' | 'checking' | 'checked' | 'unavailable' | 'failed'>('idle')
   const [offlineReady, setOfflineReady] = useState<boolean | null>(null)
   const boot = bootMs()
+
+  // Read at render, which for this card means once per visit to the More tab
+  // (`MoreScreen` unmounts when you leave it) — enough for a diagnostic, and the
+  // latch is sticky, so a failure cannot be missed by looking a moment late.
+  // Worth the row only on this surface: `/demo/data` carries the same readout for
+  // the framed prototype, but the PWA bundle deliberately excludes it, so
+  // without this a phone whose writes have latched off says nothing at all and
+  // the presenter demos a session that will not survive the next launch.
+  const storage = persistStatus()
+  const storageBytes = persistedBytes()
 
   // Asked after mount, not read synchronously: registration completes well
   // after first paint, so a render-time read reports "no" on a healthy install.
@@ -330,8 +389,12 @@ function BuildCard() {
         ? 'Up to date, or the reload pill is about to appear'
         : state === 'unavailable'
           ? 'No service worker on this origin, so nothing to check'
-          : state === 'failed'
-            ? 'Could not reach the server'
+          : // Two causes now land on 'failed': the re-check itself threw, or
+            // `register()` failed earlier and `swRegistration` latched it. The
+            // wording has to cover both, or a worker that could not install
+            // reads as a flaky venue wifi.
+            state === 'failed'
+            ? 'Could not reach the server, or the worker could not install'
             : null
 
   return (
@@ -339,6 +402,16 @@ function BuildCard() {
       <Row label="Version" value={__BUILD_ID__} />
       <Row label="Cold launch" value={boot === null ? 'measuring' : `${boot} ms`} />
       <Row label="Offline ready" value={offlineReady === null ? 'checking' : offlineReady ? 'yes' : 'no'} />
+      <Row
+        label="Saved data"
+        value={
+          storage.disabled
+            ? 'paused after a storage error'
+            : storageBytes === 0
+              ? 'not written yet'
+              : `${(storageBytes / BYTES_PER_MB).toFixed(2)} MB`
+        }
+      />
       <button
         type="button"
         onClick={() => void check()}

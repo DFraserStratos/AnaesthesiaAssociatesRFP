@@ -28,8 +28,11 @@ export function markBootStart(): void {
 }
 
 /**
- * Call once the first frame has been committed. Safe to call more than once;
- * only the first value is kept, so a StrictMode double-invoke cannot skew it.
+ * Call once the first commit has PAINTED, which in practice means from a
+ * committed effect and then two animation frames: see `BootMark` in
+ * `pwa/main.tsx` for why neither half of that is optional. Safe to call more than
+ * once; only the first value is kept, so a StrictMode double-invoke cannot skew
+ * it.
  *
  * Measured from `performance.timeOrigin`, which in a document is navigation
  * start, NOT from this module's own evaluation. The distinction matters: this

@@ -30,6 +30,10 @@ findings.
 
 - **The app** — `aa-prototype/` at the repo root. Never create a second app folder. Its `README.md`
   is the developer entry point: scripts, stack versions and a `src/` folder map.
+- **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
+  `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
+  from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`
+  ships to both. The README's "Second build target" section is the full account.
 - **Build record** — `docs/prototype-build/`
   - `PROGRESS.md` — the historical build record: binding conventions, phase status, decisions log,
     per-phase entries and open-items handoff. Reference it selectively; routine tweak sessions do
@@ -61,7 +65,8 @@ These core conventions govern routine changes. `PROGRESS.md` contains the fuller
   content changes, or stale persisted state survives the reload.
 - **Billing maths is pure** — all fee/unit/route/split logic lives in `src/domain/billing/` with
   Vitest tests; UI only formats results.
-- **Finish green:** `npm run build` and `npx vitest run` both pass before handing work back.
+- **Finish green:** `npm run build`, `npm run build:pwa` and `npx vitest run` all pass before handing
+  work back.
 - **Don't re-litigate.** The Decisions log records the readings we picked and why, across eight
   review rounds. Several plausible-looking "bugs" are settled rulings — check there first.
 

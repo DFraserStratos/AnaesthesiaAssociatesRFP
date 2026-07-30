@@ -1,4 +1,10 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import {
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
 import { motion } from '../../../theme/motion'
 
 export interface SlideLayer {
@@ -24,6 +30,8 @@ interface SlideStackProps {
 
 /** A touch must start within this many px of the layer's left edge to arm. */
 const EDGE_ZONE_PX = 28
+/** Horizontal travel that decides the gesture is a swipe and not a scroll. */
+const AXIS_LOCK_PX = 10
 /** Releasing past this fraction of the layer's width commits the pop. */
 const COMMIT_FRACTION = 0.35
 /** ...as does releasing above this trailing speed, in px per millisecond. */
@@ -35,7 +43,14 @@ interface DragState {
   pointerId: number
   /** Where the finger went down, and how wide the layer it grabbed is. */
   startX: number
+  startY: number
   width: number
+  /**
+   * False until the finger has cleared `AXIS_LOCK_PX` horizontally AND won the
+   * axis comparison (rule 4). Nothing moves while it is false, so a vertical
+   * scroll that happens to start in the edge zone never shears the screen.
+   */
+  engaged: boolean
   /**
    * The trailing speed sample. `recent` is the newest point seen; `older` is
    * held roughly `VELOCITY_WINDOW_MS` behind it. Two slots are enough, and they
@@ -51,7 +66,12 @@ interface DragState {
 }
 
 interface EdgeSwipe {
-  /** Live drag distance in client px while a swipe is in flight, else null. */
+  /**
+   * How far to hold the layer, in client px, while a swipe is in flight; null
+   * whenever it should sit where the stack puts it. Not the raw finger distance:
+   * `AXIS_LOCK_PX` is already deducted (rule 4), so it stays 0 until the gesture
+   * has claimed the axis.
+   */
   offset: number | null
   handlers: {
     onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => void
@@ -63,17 +83,34 @@ interface EdgeSwipe {
 
 const clamp = (n: number, min: number, max: number): number => Math.min(max, Math.max(min, n))
 
+/**
+ * Parked layers are inert as well as `aria-hidden`. `pointerEvents: 'none'` stops
+ * taps but not the keyboard: focus could stay in, or Tab into, a layer sitting
+ * off-screen, and the browser then scrolls the `overflow: hidden` stack container
+ * to reveal it, shunting the whole app sideways with no way to scroll it back.
+ * `inert` also drops focus out of a layer at the moment it parks, which is what
+ * makes a pop leave focus somewhere real. Installed as a PWA there is no browser
+ * chrome to escape to if it goes wrong.
+ *
+ * The cast is React 18: `inert` is neither in its DOM types nor in its boolean
+ * attribute list (a `true` would render as the string "true" and warn), so the
+ * attribute's present form, the empty string, is spread in through one cast here.
+ */
+const PARKED_ATTRS = { inert: '' } as unknown as HTMLAttributes<HTMLDivElement>
+
 /** Read at the moment the gesture starts, in the `BottomSheet` idiom. */
 const prefersReducedMotion = (): boolean =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 /**
  * Edge-swipe-back: drag the active layer off to the right from its left edge to
- * pop it, the way every native iOS stack behaves. Installed as a PWA there is
- * no browser back button and no dependable OS edge swipe, and the Lists tab is
- * three layers deep, so this gesture is the only always-available way back.
+ * pop it, the way every native iOS stack behaves. Installed as a PWA there is no
+ * browser back button and no dependable OS edge swipe (Android's system Back
+ * walks history, and its own gesture zone often claims a left-edge swipe first),
+ * and the Lists tab is three layers deep, so this gesture is the app's own
+ * always-available way back.
  *
- * Three rules keep it honest:
+ * Five rules keep it honest:
  *
  * 1. **Touch only.** A `pointerType` of `'mouse'` never arms. That keeps the
  *    framed desktop prototype byte-identical (nothing inside `PhoneFrame` is
@@ -88,16 +125,31 @@ const prefersReducedMotion = (): boolean =>
  *    the px/ms speed would not, which is the part the guard retires.)
  * 2. **Start at the edge.** Only the leftmost `EDGE_ZONE_PX` arms, so the
  *    screen's own content, sliders and horizontal scrollers keep their swipes.
- * 3. **Commit on intent.** Past `COMMIT_FRACTION` of the layer's width, or
+ * 3. **Never under an open sheet.** Most of the app's mobile sheets are rendered
+ *    by the screen itself, which makes them DESCENDANTS of this layer: their
+ *    `pointerdown` bubbles straight into these handlers, and `zIndex: 70`
+ *    changes paint order, not propagation. (Only the two the Lists route renders
+ *    as siblings of the stack, `AddCardFlow` and `RequestCoverSheet`, are
+ *    genuinely outside it.) Unguarded, a drag on a sheet or its scrim took the
+ *    whole layer with it and popped, and because a screen does not reset its own
+ *    `sheet` state on the way out, re-entering showed the stale sheet still
+ *    open. So an open modal dialog anywhere inside the layer refuses the arm.
+ * 4. **Claim the axis before moving.** Nothing translates until the finger has
+ *    travelled `AXIS_LOCK_PX` horizontally, and at that first qualifying move a
+ *    vertical-dominant gesture is handed back rather than taken over. The
+ *    subtree keeps `pan-y` (see the inline note below), so both motions can run
+ *    at once: without the gate, an ordinary scroll started inside the 28px edge
+ *    applied its own sideways drift as `translateX` and sheared the screen away
+ *    from the fixed atmosphere. The threshold comes off the RENDERED offset
+ *    only, never the commit maths, so the layer neither jumps by `AXIS_LOCK_PX`
+ *    when the gesture wins nor moves the 35% and speed thresholds.
+ * 5. **Commit on intent.** Past `COMMIT_FRACTION` of the layer's width, or
  *    released faster than `COMMIT_VELOCITY_PX_PER_MS`, pops; anything else
  *    eases back. Both outcomes animate on `motion.cardAdvance`, because the
  *    transition is restored in the same commit that clears the drag offset:
  *    the browser then transitions from wherever the finger left the layer, to
  *    `translateX(0)` on a cancel or to `translateX(100%)` once `onPop` moves
  *    depth. Neither ending snaps.
- *
- * No sheet guard is needed: `BottomSheet` renders at `zIndex: 70` over the
- * stack and shadows the layer's pointer events while it is open.
  */
 function useEdgeSwipeBack(onPop: (() => void) | undefined): EdgeSwipe {
   const drag = useRef<DragState | null>(null)
@@ -130,6 +182,9 @@ function useEdgeSwipeBack(onPop: (() => void) | undefined): EdgeSwipe {
         if (rect.width <= 0) return
         // Rule 2: the gesture belongs to the left edge, not to the content.
         if (e.clientX - rect.left > EDGE_ZONE_PX) return
+        // Rule 3: a sheet open inside this layer owns the screen. Deliberately
+        // last, so the DOM query only runs for a touch that reached the edge zone.
+        if (e.currentTarget.querySelector('[role="dialog"][aria-modal]') !== null) return
 
         // Capture so a finger that wanders off the layer (or off the viewport)
         // still delivers move and up here. The browser drops the capture again
@@ -138,7 +193,9 @@ function useEdgeSwipeBack(onPop: (() => void) | undefined): EdgeSwipe {
         drag.current = {
           pointerId: e.pointerId,
           startX: e.clientX,
+          startY: e.clientY,
           width: rect.width,
+          engaged: false,
           olderX: e.clientX,
           olderT: e.timeStamp,
           recentX: e.clientX,
@@ -158,15 +215,34 @@ function useEdgeSwipeBack(onPop: (() => void) | undefined): EdgeSwipe {
         }
         state.recentX = e.clientX
         state.recentT = e.timeStamp
+        const dx = e.clientX - state.startX
+        if (!state.engaged) {
+          // Rule 4: hold the layer still until the finger has said which way it
+          // meant to go...
+          if (Math.abs(dx) < AXIS_LOCK_PX) return
+          // ...and if that first honest move was mostly vertical, the touch
+          // belongs to the scroller underneath. Dropping the drag is enough:
+          // later moves and the pointerup find nothing of ours and are ignored,
+          // and there is no offset to settle because nothing has moved yet.
+          if (Math.abs(e.clientY - state.startY) > Math.abs(dx)) {
+            release(false)
+            return
+          }
+          state.engaged = true
+        }
         // Reduced motion: the layer does not track the finger, but the gesture
         // is still measured so it can commit on release.
         if (state.reduced) return
-        setOffset(clamp(e.clientX - state.startX, 0, state.width))
+        // `AXIS_LOCK_PX` off the rendered offset only (rule 4): the layer picks
+        // up from where the finger already is rather than jumping to meet it.
+        setOffset(clamp(dx - AXIS_LOCK_PX, 0, state.width))
       },
 
       onPointerUp(e) {
         const state = active(e)
         if (state === null) return
+        // Raw travel, NOT the rendered offset: subtracting `AXIS_LOCK_PX` here
+        // too would quietly move 35% and the flick threshold (rule 4).
         const travelled = clamp(e.clientX - state.startX, 0, state.width)
         const elapsed = e.timeStamp - state.olderT
         // Unsigned on purpose: a flick back toward the edge is negative and
@@ -192,8 +268,9 @@ function useEdgeSwipeBack(onPop: (() => void) | undefined): EdgeSwipe {
  * screens stay mounted for the slide.
  *
  * Given an `onPop`, the active layer also answers an edge swipe back (see
- * `useEdgeSwipeBack`). Only that layer carries the pointer handlers; the rest
- * render exactly as they always have.
+ * `useEdgeSwipeBack`). Only that layer carries the pointer handlers. Every other
+ * layer is out of reach three ways over: unhittable (`pointerEvents: 'none'`),
+ * unspoken (`aria-hidden`) and unfocusable (`inert`, see `PARKED_ATTRS`).
  */
 export function SlideStack({ layers, depth, onPop }: SlideStackProps) {
   const swipe = useEdgeSwipeBack(onPop)
@@ -218,6 +295,7 @@ export function SlideStack({ layers, depth, onPop }: SlideStackProps) {
             // covers only this element, and a touch never lands on it.
             data-aa-swipe-back={draggable ? 'armed' : undefined}
             aria-hidden={i !== depth}
+            {...(i !== depth ? PARKED_ATTRS : {})}
             onPointerDown={draggable ? swipe.handlers.onPointerDown : undefined}
             onPointerMove={draggable ? swipe.handlers.onPointerMove : undefined}
             onPointerUp={draggable ? swipe.handlers.onPointerUp : undefined}

@@ -22,7 +22,9 @@
  * the Admin Review screen is where the prototype demonstrates it. What this job
  * simulates is only the PASSAGE OF TIME and the presence of that person. It is
  * off-switchable from the PWA demo panel precisely so a presenter can show the
- * honest behaviour (a submitted List that waits) whenever the question comes up.
+ * honest behaviour (a submitted List that waits) whenever the question comes up,
+ * and switching it back on hands that same waiting List to the office rather
+ * than orphaning it, so the story can carry on from where the question left it.
  *
  * It is PWA-ONLY. `src/main.tsx` never wires it: in the prototype the Admin app
  * is right there behind the app switcher, and auto-authorising would sabotage
@@ -106,8 +108,10 @@ export function isOfficeSimulationEnabled(): boolean {
 }
 
 /**
- * Persist the setting. Read at fire time, so it takes effect on the next submit
- * with no reload.
+ * Persist the setting. Read when the office timer fires rather than when the job
+ * was wired, so a flip takes effect with no reload and in both directions: OFF
+ * leaves a submitted List waiting, and ON hands over any List that has been
+ * waiting within one more delay (the timer re-arms while the toggle is off).
  */
 export function setOfficeSimulationEnabled(on: boolean): void {
   try {
@@ -126,11 +130,12 @@ export function setOfficeSimulationEnabled(on: boolean): void {
  * from a timer with no user waiting on it, and a refusal here is a legitimate
  * outcome (the presenter reset the demo, or an Admin session elsewhere already
  * authorised the List) rather than an error to report.
+ *
+ * WHEN is not this function's business: the caller below owns the toggle, so
+ * there is one place that decides whether the office is playing, and reaching
+ * here means it is.
  */
 function playTheOffice(api: BoundAppStore, listId: string): void {
-  // Re-read the toggle NOW, not when the job was wired, so flipping it in the
-  // demo panel takes effect immediately.
-  if (!isOfficeSimulationEnabled()) return
   try {
     const list = api.getState().schedule.lists[listId]
     // Gone (a demo reset reseeded the schedule) or already moved on.
@@ -179,7 +184,7 @@ export function wireOfficeSimulation(api: BoundAppStore): () => void {
   const already = WIRED.get(api)
   if (already !== undefined) return already
 
-  /** listId -> the pending timer handle, so teardown can cancel it. */
+  /** listId -> the armed timer handle (replaced on each re-arm), so teardown can cancel it. */
   const pending = new Map<string, number>()
 
   const unsubscribe = api.subscribe((state, previous) => {
@@ -193,11 +198,25 @@ export function wireOfficeSimulation(api: BoundAppStore): () => void {
       // the previous state to be DRAFT is the transition, exactly.
       if (list.state !== 'SUBMITTED' || before[listId]?.state !== 'DRAFT') continue
       if (pending.has(listId)) continue
-      const handle = window.setTimeout(() => {
+      // The visit RE-ARMS rather than gives up when the toggle is off, and that
+      // is the whole reason it is a named function. Getting into `pending` needs
+      // a live DRAFT -> SUBMITTED transition, which happens exactly once (a
+      // SUBMITTED List only ever flows forward), so dropping the entry here
+      // would strand that List for the rest of the session: the presenter who
+      // switched the toggle off to answer "what really happens?" could never
+      // switch it back on and carry the story forward. Waiting instead costs one
+      // idle timer per List and keeps the seeded review queue untouched, because
+      // nothing but a live submit ever enters the map. `teardown` cancels
+      // whatever is armed, re-arm included.
+      const visit = () => {
+        if (!isOfficeSimulationEnabled()) {
+          pending.set(listId, window.setTimeout(visit, OFFICE_SIM_DELAY_MS))
+          return
+        }
         pending.delete(listId)
         playTheOffice(api, listId)
-      }, OFFICE_SIM_DELAY_MS)
-      pending.set(listId, handle)
+      }
+      pending.set(listId, window.setTimeout(visit, OFFICE_SIM_DELAY_MS))
     }
   })
 

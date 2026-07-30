@@ -167,9 +167,11 @@ test('read-only Card scroller: 40 when the completion dock is absent', async ({ 
   await openCard(page)
 
   // With a dock the scroller's bottom padding is the MEASURED dock height plus
-  // 16, which is not an inset expression at all. The `calc()` only shows on a
-  // card with no dock, so make one: a cancelled card is read-only, drops its
-  // dock (`showBar` false AND `summary` null) and stays on screen. Every card
+  // 16, plus `--aa-keyboard-inset` so the reserved space grows with the software
+  // keyboard. Neither term is a safe-area inset, and the keyboard one is unset
+  // outside the PWA host, so THIS spec's inset expression only shows on a card
+  // with no dock. Make one: a cancelled card is read-only, drops its dock
+  // (`showBar` false AND `summary` null) and stays on screen. Every card
   // the seed puts in front of the anaesthetist is either capturable or
   // completed, so both keep their dock; cancelling in-test is the reliable
   // route to the dockless branch.

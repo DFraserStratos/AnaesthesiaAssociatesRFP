@@ -57,8 +57,17 @@ export function MobileListsRoute() {
 
   const listId = urlListId ?? seen.current.listId
   const cardId = urlCardId ?? seen.current.cardId
-  const backToLists = () => navigate('/mobile/lists')
-  const backToList = () => navigate(listId !== null ? `/mobile/lists/${listId}` : '/mobile/lists')
+  // Both pops REPLACE the current entry. Drill-ins stay pushes, so history
+  // still records the way in, but a pop that PUSHED left the screen just exited
+  // sitting FORWARD of us: installed as a PWA the OS back gesture is history,
+  // and one press after a chevron tap re-drilled into the card instead of
+  // unwinding. Replace is not free either — it leaves the destination twice in a
+  // row ([lists, list, list] after popping a card), so the first system back
+  // press after a pop lands on an identical URL and nothing visibly moves. One
+  // dead press beats a surprise re-entry.
+  const backToLists = () => navigate('/mobile/lists', { replace: true })
+  const backToList = () =>
+    navigate(listId !== null ? `/mobile/lists/${listId}` : '/mobile/lists', { replace: true })
 
   // Edge-swipe-back on the drilled-in layer, wired per depth to the SAME two
   // handlers the on-screen back affordances use. Deliberately not a history
@@ -66,7 +75,10 @@ export function MobileListsRoute() {
   // entries that are not part of this stack (a tab switch, or a deep link
   // landed on directly), so stepping back would sometimes leave the Lists tab
   // altogether. Installed as a PWA there is no browser chrome to fall back on,
-  // which is exactly why the gesture exists.
+  // which is exactly why the gesture exists. The alternative that would spend
+  // the duplicate entry — counting how many entries behind us this stack pushed
+  // and calling `go(-1)` only then — needs bookkeeping that a refresh or a deep
+  // link wipes, which is the same unreliability, just hidden.
   const popLayer = depth === 2 ? backToList : depth === 1 ? backToLists : undefined
 
   function offerCover(id: string) {
