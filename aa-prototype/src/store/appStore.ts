@@ -95,7 +95,9 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v12: 2026-07-29 — ACCPAY records now snapshot an illustrative 5% AA service
+/** v13: 2026-07-30 — S1's Tue 28 AM List seeds three booked, uncaptured Cards
+ *  again (Mr Hale, St George's), so the S12 arrival lands on a populated List.
+ *  v12: 2026-07-29 — ACCPAY records now snapshot an illustrative 5% AA service
  *  fee and the net amount payable to the anaesthetist.
  *  v11: 2026-07-29 — S1's Tue 28 AM List starts empty for the live S12 arrival;
  *  its S13/S14/S15 exemplars moved to Aug 3/4, and S3's two Mon 20 Souter
@@ -127,7 +129,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 12
+export const PERSIST_VERSION = 13
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }

@@ -950,8 +950,9 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // George's feed, each carrying `{sourceFeedId, externalAppointmentId}` so the
   // S13/S14/S15 messages locate them by appointment id (never patient
   // guesswork). Their forward DRAFT St George's Lists are deliberately separate
-  // from Tue 28 AM, which stays empty until S1's headline S12 creates Sarah.
-  // The fifth is on a SUBMITTED (office-locked) List for manual intervention.
+  // from Tue 28 AM, so a modify message can never be confused with S1's own
+  // create. The fifth is on a SUBMITTED (office-locked) List for manual
+  // intervention.
   // -------------------------------------------------------------------------
 
   const souterTue28Am = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
@@ -1055,6 +1056,38 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   }
 
   // -------------------------------------------------------------------------
+  // Souter Tue 28 AM St George's / Mr Hale — S1's booked-but-not-captured list
+  //
+  // The S1 headline still turns on the S12 message arriving visibly, so these
+  // three stay uncaptured and Sarah Mitchell lands among them at 08:30 as the
+  // fourth row. Deliberately no completions: a List a week out has none, and
+  // the demo's interest is the arrival and the capture, not the submit (three
+  // incomplete Cards keep the List's completion gate closed, by design).
+  // -------------------------------------------------------------------------
+
+  const tue28AmSpecs = [
+    { sched: '07:45', code: '49558', ref: 'SG-2026-0911' },
+    { sched: '09:45', code: '48939', ref: 'SG-2026-0912' },
+    { sched: '11:15', code: '46360', ref: 'SG-2026-0913' },
+  ]
+  tue28AmSpecs.forEach((s) => {
+    const patient = takePatient()
+    if (patient === null) return
+    const card = addCard({
+      listId: souterTue28Am,
+      patientId: patient,
+      scheduledTime: s.sched,
+    })
+    addProcedure(card, {
+      description: RVG_BY_CODE.get(s.code)?.description ?? 'Orthopaedic procedure',
+      rvgBaseCode: s.code,
+      billingRoute: 'hospital',
+      governingContractId: CONTRACT.stgDefault,
+      billingReference: s.ref,
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // Generic filler — past two weeks rich, today mid-capture, thinning to +10d
   // -------------------------------------------------------------------------
 
@@ -1062,8 +1095,8 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     souterAm21, souterPm21, morrisonMon20, whitakerFri17, souterMon20Am, souterMon20Pm,
     fitzTue14, fitzWed15, ruthThu16, ruthThu09, sharmaTue14, chenFri24,
     souterMon27, souterFri24Am, souterFri24Pm, ropataThu16, wed22Ces, thu23Cph, thu23Preop,
-    // Phase 11 integration demo lists: S1's empty S12 destination, the separate
-    // seeded modify targets, and the other create destinations.
+    // Phase 11 integration demo lists: S1's S12 destination (hand-authored
+    // above), the separate seeded modify targets, and the create destinations.
     souterTue28Am, souterTue04AugAm, souterMon03AugPm, delaneyFri17Am,
     listIdForSlot(ANAE.souter, '2026-07-28', 'PM'), listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
   ])

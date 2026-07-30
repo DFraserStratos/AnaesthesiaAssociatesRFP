@@ -359,13 +359,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S1',
     title: 'S1 · Booking to theatre',
-    blurb: 'A hospital HL7 booking lands, fills over days, then captures on procedure day and submits.',
+    blurb: 'A hospital HL7 booking lands on a booked list, then captures live on procedure day.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Start in Mobile to introduce the AM and PM Lists, then fire or replay MSG-STG-1001 in Integrations. Sarah Mitchell will appear as the only Card on Dr Souter\'s Tue 28 Jul AM List. Use "Procedure day · 28 Jul", capture code 20950, complete the Card and submit the List.',
+          'Reset to a clean S1 state. Start in Mobile to introduce the AM and PM Lists, then fire or replay MSG-STG-1001 in Integrations. Sarah Mitchell arrives as a fourth Card on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Card. The List itself stays DRAFT, because its other three Cards are still to be captured.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },

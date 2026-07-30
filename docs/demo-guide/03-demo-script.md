@@ -95,20 +95,23 @@ mobile background and changes nothing here.
 capture. **Time:** 5 to 6 minutes.
 
 **Stage it:** use **Reset → Confirm reset**, then open the Anaesthetist Mobile App. The Tue 28 Jul
-St George's AM List starts empty so the hospital booking can arrive visibly during the demo.
+St George's AM List holds three booked, not-yet-captured cases, so the hospital booking arrives into a
+working List rather than an empty one.
 
 ### Beat 1: the booking arrives from the hospital
 
 - **Click:**
-  - In Mobile Lists, open the empty Tue 28 Jul St George's AM session.
+  - In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases
+    (07:45 knee arthroscopy, 09:45 shoulder arthroscopy, 11:15 wrist ORIF).
   - Go to **Demo: Integrations → S12 · New booking → Replay**.
   - Pause on the processed message.
   - Return to Mobile and reopen the Tue 28 Jul AM List.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
   mapped per hospital, processed near real time, and audited. This booking created a patient Card
   without anyone re-keying it."
-- **Expected:** the message shows as processed; the previously empty List now contains one Card for
-  Sarah Mitchell. Her NHI matched an existing record, so intake reused it, no duplicate.
+- **Expected:** the message shows as processed; the List now carries a fourth Card for Sarah Mitchell,
+  slotted into her 08:30 place between the first two cases. Her NHI matched an existing record, so
+  intake reused it, no duplicate.
 
 ### Beat 2: the Card fills over the days before theatre
 
@@ -119,7 +122,7 @@ St George's AM List starts empty so the hospital booking can arrive visibly duri
   canvas rolls forward deterministically as the clock advances."
 - **Expected:** the clock reads Tuesday 28 July 2026, 9:00.
 
-### Beat 3: capture BTM on mobile and submit
+### Beat 3: capture BTM on mobile
 
 - **Click:**
   - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
@@ -127,13 +130,18 @@ St George's AM List starts empty so the hospital booking can arrive visibly duri
   - Choose procedure **20950 — Appendicectomy, laparoscopic → Start now**.
   - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
     **Finish now**.
-  - Select **Mark complete → Mark list completed → Submit to office**.
+  - Select **Mark complete**.
+  - Optional, to show the completion gate: back on the List, select
+    **Mark list completed · 3 to finish**.
 - **Say:** "The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
-  tiered Time plus Modifiers at her own value per unit. Once every active Card is complete she submits
-  the whole List; it is now read-only to her and editable only by the office."
-- **Expected:** Sarah changes the List from **0 of 1 complete** to **1 of 1 complete**; the fee updates,
-  a brief **List submitted** success moment confirms the handoff, and the List moves to `SUBMITTED`
-  and into the office Review queue.
+  tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
+  active Card is complete, so one captured Card out of four submits nothing yet. That gate is the
+  reason the List is the unit of approval, not the Card."
+- **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete** and the fee
+  updates. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
+  **Cards still to finish** sheet, which names each remaining Card by time and patient with what it
+  needs. The List stays `DRAFT`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
+  the seeded Review queue.
 - **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
   modifier and time nudge ticks while your thumb is still on the control. The top-bar choice lets the
   audience compare **Fee** (units and dollars), **Units** (units only) and **Off** (Mark complete

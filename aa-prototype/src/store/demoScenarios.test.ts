@@ -29,15 +29,17 @@ describe('S1 · booking to theatre', () => {
   it('the St George\'s S12 booking lands a new DRAFT Card on Souter\'s Tue 28 Jul AM List', () => {
     const api = createAppStore()
     const listId = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
-    const before = cardsForList(api.getState(), listId).length
-    expect(before).toBe(0)
+    const before = cardsForList(api.getState(), listId)
+    // Three seeded, booked, uncaptured Cards: Sarah arrives as the fourth row.
+    expect(before).toHaveLength(3)
+    expect(before.every((c) => !c.completed)).toBe(true)
 
     const res = processMessage(api, 'MSG-STG-1001')
     expect(res.ok).toBe(true)
 
     const list = api.getState().schedule.lists[listId]
     expect(list?.state).toBe('DRAFT')
-    expect(cardsForList(api.getState(), listId)).toHaveLength(1)
+    expect(cardsForList(api.getState(), listId)).toHaveLength(4)
   })
 
   it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {
