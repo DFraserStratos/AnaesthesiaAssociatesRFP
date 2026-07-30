@@ -30,10 +30,13 @@ test('integration simulator replays a message and shows the schedule effect', as
   await expect(page.getByText(/Processed/).first()).toBeVisible()
 
   // Reset is available in-context and restores both the shared mock backend
-  // and this simulator's local selection/live-feed state.
-  await page.getByRole('button', { name: 'Reset demo data' }).click()
+  // and this simulator's local selection/live-feed state. Scoped to the
+  // inspector, because the harness bar carries its own global reset with the
+  // same accessible name.
+  const inspector = page.getByTestId('integration-inspector')
+  await inspector.getByRole('button', { name: 'Reset demo data' }).click()
   await expect(page.getByText('Reset all demo apps to the pristine seed?')).toBeVisible()
-  await page.getByRole('button', { name: 'Confirm reset' }).click()
+  await inspector.getByRole('button', { name: 'Confirm reset' }).click()
   await expect(page.getByText('Not replayed yet. Click Replay to apply this message.')).toBeVisible()
 
   await page.screenshot({ path: 'visual/shots/phase11-simulator.png', fullPage: true })

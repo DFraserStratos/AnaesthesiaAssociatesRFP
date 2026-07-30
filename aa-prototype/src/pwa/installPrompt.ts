@@ -128,3 +128,47 @@ export async function promptInstall(): Promise<'accepted' | 'dismissed' | null> 
     return null
   }
 }
+
+/**
+ * Whether the coaching card has been dismissed, kept out of `InstallCoach` so
+ * that file exports only its component (React Fast Refresh needs that, and it is
+ * what oxlint's `only-export-components` is asking for).
+ *
+ * "Coach" rather than "dismissed" in every name here on purpose: this module also
+ * deals in `promptInstall`'s `'dismissed'` OUTCOME, which is a different event
+ * entirely — the user declining Chrome's dialog, not closing our card.
+ *
+ * The three are deliberately separate from the event holder above. This one
+ * outlives the page: it is a `localStorage` key, so a dismissal is remembered
+ * across launches, which is the whole point of a card the presenter can put away.
+ */
+const COACH_DISMISS_KEY = 'aa-install-coach-dismissed'
+
+export function wasCoachDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(COACH_DISMISS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function rememberCoachDismissed(): void {
+  try {
+    window.localStorage.setItem(COACH_DISMISS_KEY, '1')
+  } catch {
+    /* ignore storage failures (private mode etc.) */
+  }
+}
+
+/**
+ * Forget the dismissal, so the card comes back. Called by "Reset demo data": the
+ * phone is shared, the X is one tap, and without this a stray tap would hide the
+ * install coaching for the rest of that handset's life.
+ */
+export function clearInstallCoachDismissal(): void {
+  try {
+    window.localStorage.removeItem(COACH_DISMISS_KEY)
+  } catch {
+    /* ignore storage failures (private mode etc.) */
+  }
+}

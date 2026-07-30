@@ -145,8 +145,13 @@ test('completion animation follows units and off privacy modes', async ({ page }
   await expect(unitsOverlay.getByText(/\$/)).toHaveCount(0)
 
   await page.goto('/demo/control')
-  await page.getByRole('button', { name: 'Reset demo data', exact: true }).click()
-  await page.getByRole('button', { name: 'Confirm reset', exact: true }).click()
+  // Two legitimately different controls share the name "Reset demo data": the
+  // harness bar's icon button (in the <header> banner, on every screen) and the
+  // control panel's own explanatory card. `exact` cannot separate them because
+  // both accessible names are that exact string, so scope to the routed app.
+  const controlPanel = page.getByRole('main')
+  await controlPanel.getByRole('button', { name: 'Reset demo data', exact: true }).click()
+  await controlPanel.getByRole('button', { name: 'Confirm reset', exact: true }).click()
   await advanceClockTo1715(page)
   await openMobileEllison(page)
   await page.getByRole('button', { name: OFF }).click()

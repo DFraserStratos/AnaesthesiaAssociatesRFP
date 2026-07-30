@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import '../src/theme/global.css'
@@ -12,7 +12,8 @@ import {
 import { MobileViewport } from '../src/pwa/MobileViewport'
 import { PwaDemoPanel } from '../src/pwa/PwaDemoPanel'
 import { wireOfficeSimulation } from '../src/pwa/officeSimulation'
-import { markBootStart, markFirstRender } from '../src/pwa/bootMetrics'
+import { markBootStart } from '../src/pwa/bootMetrics'
+import { BootMark } from '../src/pwa/BootMark'
 // Side-effect import: attaches the `beforeinstallprompt` listener at module
 // evaluation. It has to be this early. Chrome fires the event once, seconds
 // after load, and the card that replays it (`InstallCoach`, behind the More tab)
@@ -66,30 +67,6 @@ wireIntegrationRetry(useAppStore)
 wireOfficeSimulation(useAppStore)
 
 markBootStart()
-
-/**
- * Stamps the cold-launch figure, and renders nothing.
- *
- * It has to be inside the tree. `createRoot(...).render(...)` schedules the
- * initial mount at DefaultLane, which time-slices, so a bare
- * `requestAnimationFrame` alongside the `render()` call is not ordered after
- * React's first commit at all: on a slow phone the browser can take a rendering
- * opportunity between slices and stamp a flattering number with nothing
- * committed. An effect only runs after a real commit.
- *
- * The double frame is what gets past the paint: an animation-frame callback runs
- * in the frame's rendering step, BEFORE style, layout and paint, so the second
- * callback is the first moment the pixels are known to be on screen.
- *
- * StrictMode's double-invoked effect is harmless: `markFirstRender` keeps only
- * the first value.
- */
-function BootMark() {
-  useEffect(() => {
-    requestAnimationFrame(() => requestAnimationFrame(markFirstRender))
-  }, [])
-  return null
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

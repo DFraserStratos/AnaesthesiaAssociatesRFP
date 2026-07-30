@@ -76,9 +76,10 @@ jump to a scenario (S1 to S5), and fire simulated integration and money events.
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
   design mockups, mirrored into `global.css`'s `@theme`.
-- **`pwa/`** — the eight modules that exist only for the second build target: the `MobileViewport`
+- **`pwa/`** — the nine modules that exist only for the second build target: the `MobileViewport`
   host, the update pill and its registration handle, the More-tab presenter panel, the install coach
-  and the entry-time `beforeinstallprompt` capture it replays, the office simulation and boot metrics
+  and the entry-time `beforeinstallprompt` capture it replays, the office simulation, and the boot
+  metrics with the `BootMark` component that stamps them
   — plus their tests, one of which (`pwaPurity.test.ts`) is
   what keeps the target's bundle honest. Nothing here reaches the prototype bundle. See
   [the PWA section](#second-build-target--the-installable-pwa).
@@ -96,10 +97,10 @@ entry (`pwa/main.tsx`), and the `vite-plugin-pwa` plugin. `root: 'pwa'` brings f
 `outDir` outside it, and the `server.fs.allow` that deliberately needs no change. Each is commented
 where it sits in that file.
 
-Of the 162 modules `pwa/main.tsx` pulls in, **139 are shared** with the prototype — the whole store,
+Of the 163 modules `pwa/main.tsx` pulls in, **139 are shared** with the prototype — the whole store,
 the whole domain, the BTM capture suite, `CardDetailBody`, the sheets, the theme — **14 are the
-mobile app itself** (`src/apps/mobile/`), and **9 exist only for this target** (`pwa/main.tsx` plus
-the eight files in `src/pwa/`). One omission carries the entire difference: the PWA entry never
+mobile app itself** (`src/apps/mobile/`), and **10 exist only for this target** (`pwa/main.tsx` plus
+the nine files in `src/pwa/`). One omission carries the entire difference: the PWA entry never
 renders `AppShell`, and with it go the app switcher, the two web apps, the admin app, the four demo
 surfaces, `PhoneFrame` and the Gradient Lab.
 

@@ -115,12 +115,18 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   expect(invoiceWidth).toBeGreaterThan(1080)
   await page.screenshot({ path: 'visual/shots/a8-02-invoices-table.png', fullPage: true })
 
-  // The source List is a real link carrying the day-view status treatment. It
-  // lands on the List date and opens the existing transient drawer.
-  const sourceListLink = page.getByTestId('invoice-list-table-shell').getByRole('link').first()
-  await expect(sourceListLink.locator('xpath=ancestor::tr/td').first()).toHaveCSS('vertical-align', 'middle')
-  await expect(sourceListLink).toHaveCSS('background-color', 'rgb(232, 238, 252)')
-  await expect(sourceListLink).toHaveCSS('color', 'rgb(31, 68, 163)')
+  // The source List is a real link. Since the Patient / card cell became a link
+  // too, both cells share ONE compact neutral chrome (`.aa-table-entity-link`:
+  // inline-flex row + chevron, no underline, colour inherited from the cell)
+  // rather than the List cell alone wearing a status-tinted pill — so this
+  // asserts that shared treatment, not the retired tint. The link lands on the
+  // List date and opens the existing transient drawer.
+  const firstInvoiceRow = page.getByTestId('invoice-list-table-shell').locator('tbody tr').first()
+  await expect(firstInvoiceRow.locator('td').first()).toHaveCSS('vertical-align', 'middle')
+  const sourceListLink = firstInvoiceRow.getByRole('link', { name: /in day view$/ })
+  await expect(sourceListLink).toHaveAttribute('href', '/admin/day/2026-07-20')
+  await expect(sourceListLink).toHaveCSS('display', 'inline-flex')
+  await expect(sourceListLink).toHaveCSS('text-decoration-line', 'none')
   await sourceListLink.click()
   await expect(page).toHaveURL(/\/admin\/day\/2026-07-20$/)
   await expect(page.getByTestId('admin-list-drawer')).toBeVisible()
@@ -271,7 +277,16 @@ test('M10 view effect: the billed design-day list vanishes from the mobile app',
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await page.waitForTimeout(300)
-  await page.getByRole('row').filter({ hasText: /Souter/ }).getByRole('button', { name: /Review/ }).first().click()
+  // Name the list, don't take the first Souter row: the seed also ships her two
+  // Mon 20 money-story lists SUBMITTED, and both sort ahead of this Tue 21 one.
+  // No `.first()` anywhere here, so an ambiguous queue fails loudly instead of
+  // quietly authorising a different list.
+  await page
+    .getByRole('row')
+    .filter({ hasText: /Souter/ })
+    .filter({ hasText: 'Southern Cross' })
+    .getByRole('button', { name: /Review/ })
+    .click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.waitForTimeout(200)

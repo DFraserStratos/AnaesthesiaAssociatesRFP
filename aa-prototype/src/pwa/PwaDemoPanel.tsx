@@ -23,7 +23,8 @@ import {
 } from './officeSimulation'
 import { bootMs } from './bootMetrics'
 import { checkForUpdate, serviceWorkerReady } from './swRegistration'
-import { InstallCoach, clearInstallCoachDismissal } from './InstallCoach'
+import { InstallCoach } from './InstallCoach'
+import { clearInstallCoachDismissal } from './installPrompt'
 
 /**
  * The presenter controls the installed PWA has no harness bar for.

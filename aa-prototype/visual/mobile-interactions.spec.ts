@@ -173,9 +173,14 @@ test('Start now becomes the travelling Finish action without a validation-focus 
     retained.retainedAcrossSlide = true
   })
 
-  const startBox = await start.boundingBox()
-  expect(startBox).not.toBeNull()
-  await page.mouse.move(startBox!.x + startBox!.width / 2, startBox!.y + startBox!.height / 2)
+  // Press and release by hand, because the point is to observe the held state
+  // BETWEEN the two. `hover()` rather than a measured box + `mouse.move`: the
+  // freshly opened Card is still settling (the slide-in, then the reveal +
+  // scroll), so a box measured here was ~60px stale by `mouse.up` and the
+  // release landed off the button — the press never registered and the slider
+  // never travelled. `hover()` runs the stability check, so the cursor lands
+  // only once the button has stopped moving.
+  await start.hover()
   await page.mouse.down()
   await page.waitForTimeout(45)
   expect(await start.evaluate((element) => getComputedStyle(element).outlineColor)).not.toBe('rgb(194, 64, 60)')

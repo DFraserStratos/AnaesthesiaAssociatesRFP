@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Share, SquarePlus, X } from 'lucide-react'
 import { accent, neutral, radius } from '../theme/tokens'
-import { getInstallEvent, promptInstall, subscribeInstallEvent, wasInstalled } from './installPrompt'
+import {
+  getInstallEvent,
+  promptInstall,
+  rememberCoachDismissed,
+  subscribeInstallEvent,
+  wasCoachDismissed,
+  wasInstalled,
+} from './installPrompt'
 
 /**
  * Add-to-Home-Screen coaching, shown only while the app is running in a browser
@@ -21,8 +28,6 @@ import { getInstallEvent, promptInstall, subscribeInstallEvent, wasInstalled } f
  * in-app WebView, or a Chrome that has not judged the app installable.
  */
 
-const DISMISS_KEY = 'aa-install-coach-dismissed'
-
 function isStandalone(): boolean {
   if (window.matchMedia?.('(display-mode: standalone)').matches === true) return true
   // iOS Safari predates `display-mode` and reports standalone on the navigator.
@@ -36,37 +41,8 @@ function isIos(): boolean {
   return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1
 }
 
-function wasDismissed(): boolean {
-  try {
-    return window.localStorage.getItem(DISMISS_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function rememberDismissed(): void {
-  try {
-    window.localStorage.setItem(DISMISS_KEY, '1')
-  } catch {
-    /* ignore storage failures (private mode etc.) */
-  }
-}
-
-/**
- * Forget the dismissal, so the card comes back. Exported for "Reset demo data":
- * the phone is shared, the X is one tap, and without this a stray tap would hide
- * the install coaching for the rest of that handset's life.
- */
-export function clearInstallCoachDismissal(): void {
-  try {
-    window.localStorage.removeItem(DISMISS_KEY)
-  } catch {
-    /* ignore storage failures (private mode etc.) */
-  }
-}
-
 export function InstallCoach() {
-  const [dismissed, setDismissed] = useState(wasDismissed)
+  const [dismissed, setDismissed] = useState(wasCoachDismissed)
   // Both read out of `installPrompt`'s module-level holder rather than owning
   // the listener, so a captured event survives this card unmounting when the
   // presenter leaves the More tab.
@@ -89,7 +65,7 @@ export function InstallCoach() {
   const ios = isIos()
 
   function dismiss() {
-    rememberDismissed()
+    rememberCoachDismissed()
     setDismissed(true)
   }
 

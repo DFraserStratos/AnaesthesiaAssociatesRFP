@@ -167,12 +167,23 @@ describe("the coach's dismissal flag", () => {
   /** Asserted by hand, so renaming the key breaks here first. */
   const DISMISS_KEY = 'aa-install-coach-dismissed'
 
+  it('round-trips through the key the card reads on mount', async () => {
+    const { rememberCoachDismissed, wasCoachDismissed } = await import('./installPrompt')
+
+    expect(wasCoachDismissed()).toBe(false)
+    rememberCoachDismissed()
+
+    expect(window.localStorage.getItem(DISMISS_KEY)).toBe('1')
+    expect(wasCoachDismissed()).toBe(true)
+  })
+
   it('is cleared by `clearInstallCoachDismissal`, so a stray tap on the X is not a one way door', async () => {
     window.localStorage.setItem(DISMISS_KEY, '1')
-    const { clearInstallCoachDismissal } = await import('./InstallCoach')
+    const { clearInstallCoachDismissal, wasCoachDismissed } = await import('./installPrompt')
 
     clearInstallCoachDismissal()
 
     expect(window.localStorage.getItem(DISMISS_KEY)).toBeNull()
+    expect(wasCoachDismissed()).toBe(false)
   })
 })

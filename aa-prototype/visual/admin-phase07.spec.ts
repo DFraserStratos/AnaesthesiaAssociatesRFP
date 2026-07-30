@@ -116,6 +116,9 @@ test('admin phase 07 audit viewer', async ({ page }) => {
   await page.getByRole('button', { name: 'Audit', exact: true }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Audit' })).toBeVisible()
-  await expect(page.getByText(/entries/)).toBeVisible()
+  // The count chip beside the filters, anchored. The seeded audit graph is now
+  // larger than the viewer's 500-row cap, so the cap notice under the table also
+  // ends in "entries" and a bare /entries/ matches both.
+  await expect(page.getByText(/^\d+ entries$/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-07-audit.png', fullPage: true })
 })
