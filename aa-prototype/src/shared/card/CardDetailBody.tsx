@@ -429,12 +429,25 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     setCompleteError(null)
     setShowValidation(false)
     setOverlay(true)
-    overlayTimer.current = window.setTimeout(() => {
-      // Dismiss the overlay BEFORE navigating back — on mobile the screen stays
-      // mounted in the SlideStack, so a lingering overlay would sit over the stack.
-      setOverlay(false)
-      onBack()
-    }, 1050)
+    overlayTimer.current = window.setTimeout(dismissOverlay, 1050)
+  }
+
+  /**
+   * End the completion moment. The 1050 ms timer above runs this, and so does a
+   * tap on the overlay itself: the flood is an `inset: 0` blocker, and in the
+   * installable PWA a timer lost to an unmount race would leave no back button,
+   * no URL bar and no reload to escape with.
+   *
+   * Dismiss the overlay BEFORE navigating back — on mobile the screen stays
+   * mounted in the SlideStack, so a lingering overlay would sit over the stack.
+   */
+  function dismissOverlay() {
+    if (overlayTimer.current !== null) {
+      clearTimeout(overlayTimer.current)
+      overlayTimer.current = null
+    }
+    setOverlay(false)
+    onBack()
   }
 
   function amend() {
@@ -560,13 +573,19 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         <Row label="NHI">
           <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
         </Row>
+        {/* `data-aa-selectable` re-enables text selection and the iOS
+            magnifier on clinical reference data. The mobile hosts switch
+            selection off across the whole subtree so a resting thumb does not
+            summon the magnifier on chrome; these are the values someone
+            genuinely needs to copy at the bedside. NHI, times and money are
+            already covered by `.mono`. */}
         {patient !== undefined && (
           <Row label="Date of birth">
-            <span>{formatDob(patient.dobISO)} · {ageYears(patient.dobISO, todayISO)} years</span>
+            <span data-aa-selectable>{formatDob(patient.dobISO)} · {ageYears(patient.dobISO, todayISO)} years</span>
           </Row>
         )}
         <Row label="Contact">
-          <span>{patient?.phone ?? 'Not recorded'}</span>
+          <span data-aa-selectable>{patient?.phone ?? 'Not recorded'}</span>
         </Row>
         {/* The slot the patient was booked into: reference data, so it sits
             with the patient rows at their weight. Given a card of its own it
@@ -765,6 +784,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
               units={cardTotals.units}
               fee={cardTotals.total}
               mode={calculationMode}
+              onDismiss={dismissOverlay}
             />
           ) : null
         }

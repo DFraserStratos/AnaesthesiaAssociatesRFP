@@ -10,6 +10,9 @@ import {
   completeCard,
   editCard,
   entityCounts,
+  persistedBytes,
+  persistStatus,
+  STORAGE_BUDGET_BYTES,
   submitList,
   useAppStore,
   useClockTimeLabel,
@@ -66,6 +69,13 @@ const headCellStyle: React.CSSProperties = {
   borderBottom: `1px solid ${neutral.lineStrong}`,
 }
 
+const BYTES_PER_MB = 1024 * 1024
+
+/** Two decimals for the live payload, whole megabytes for the browser's budget. */
+function megabytes(n: number, decimals: number): string {
+  return `${(n / BYTES_PER_MB).toFixed(decimals)} MB`
+}
+
 const selectStyle: React.CSSProperties = {
   font: 'inherit',
   fontSize: 13,
@@ -118,6 +128,12 @@ export function DemoData() {
   const [guardResult, setGuardResult] = useState<{ action: string; outcome: Outcome<unknown> } | null>(null)
 
   const counts = useMemo(() => entityCounts(state), [state])
+
+  // Read straight through on each render rather than memoised: this component
+  // subscribes to the whole store, so it re-renders on every mutation, and the
+  // persist middleware has already recorded that mutation's payload by then.
+  const persistedSize = persistedBytes()
+  const persistence = persistStatus()
 
   const todaysLists = useMemo(
     () =>
@@ -259,7 +275,7 @@ export function DemoData() {
       {/* Clock + counts */}
       <Panel
         title={`Demo clock: ${format(parseISO(todayISO), 'EEEE d MMMM yyyy')} · ${timeLabel}`}
-        subtitle="Entity counts refresh live as the store changes."
+        subtitle="Entity counts and the persisted payload refresh live as the store changes."
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
           {Object.entries(counts).map(([key, value]) => (
@@ -278,6 +294,20 @@ export function DemoData() {
               <span style={{ fontSize: 11, color: neutral.mist }}>{key}</span>
             </div>
           ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 6, fontSize: 12 }}>
+          <span style={{ color: neutral.mist }}>persisted state:</span>
+          <span className="mono" style={{ color: neutral.slate }}>
+            {persistedSize === 0
+              ? 'not written yet'
+              : `${megabytes(persistedSize, 2)} of ~${megabytes(STORAGE_BUDGET_BYTES, 0)}`}
+          </span>
+          {persistence.disabled && (
+            <span style={{ color: semantic.error.onTint }}>
+              · persistence paused after a storage error
+              {persistence.reason !== null ? ` · ${persistence.reason}` : ''}
+            </span>
+          )}
         </div>
       </Panel>
 

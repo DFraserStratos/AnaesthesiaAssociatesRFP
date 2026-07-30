@@ -46,7 +46,13 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
   )
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', padding: '64px 20px 116px' }}>
+    <div
+      style={{
+        height: '100%',
+        overflow: 'auto',
+        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px calc(var(--aa-inset-bottom, 34px) + 82px)',
+      }}
+    >
       <MobileHeader eyebrow="Your account" title="Balances" initials={initials} />
 
       {/* Outstanding total */}

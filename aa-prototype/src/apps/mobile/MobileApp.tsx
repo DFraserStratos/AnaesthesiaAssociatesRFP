@@ -1,8 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, type ComponentType, type ReactNode } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { List as ListIcon, LayoutGrid, CircleDollarSign, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { PhoneFrame } from '../../shell/PhoneFrame'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent } from '../../theme/tokens'
 import { type Actor } from '../../store'
@@ -26,6 +25,7 @@ const TABS: readonly TabDef[] = [
 function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab: MobileTab) => void }) {
   return (
     <div
+      data-testid="mobile-tab-bar"
       style={{
         position: 'absolute',
         left: 0,
@@ -34,7 +34,15 @@ function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab:
         zIndex: 30,
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        padding: '10px 8px 26px',
+        paddingTop: 10,
+        paddingLeft: 8,
+        paddingRight: 8,
+        // 26 = 34 - 8: the deliberate overlap that reuses the home indicator's
+        // own 8px bottom padding, so the 11px labels sit exactly above the
+        // pill rather than a row clear of it. The 10px floor is the bar's own
+        // TOP pad, so a zero-inset device (Android gesture nav off, desktop)
+        // gets a symmetric box instead of a negative collapse.
+        paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 8px), 10px)',
         background: 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(14px)',
         borderTop: `1px solid ${neutral.line}`,
@@ -80,8 +88,24 @@ function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab:
  * than sibling routes per layer — see `navigation.ts` and `routes.tsx`. Every
  * read is view-scoped to Dr Souter's own lists (A8); every write goes through the
  * Phase 02/03 store guards as the Souter actor.
+ *
+ * `host` is the mounting surface, and it is REQUIRED rather than defaulted to
+ * `PhoneFrame`. That is what lets the installable PWA target tree-shake the
+ * frame — and through it the 497-line Gradient Lab and the presenter zoom
+ * control — out of its bundle entirely. The prototype router passes
+ * `PhoneFrame`; the PWA entry passes `MobileViewport`. Whichever it is, the
+ * host owes this app two things: a `position: relative` box for the absolutely
+ * positioned sheets and docks, and the four `--aa-inset-*` custom properties
+ * (see the inset contract in `theme/global.css`).
  */
-export function MobileApp() {
+export function MobileApp({
+  host: Host,
+  moreExtra,
+}: {
+  host: ComponentType<{ children: ReactNode }>
+  /** Host-supplied presenter controls for the More tab (the PWA's; see `outlet.ts`). */
+  moreExtra?: ReactNode
+}) {
   const persona = APP_CONFIG.mobile.persona
   const anaesthetistId = persona.anaesthetistId ?? '34821'
   const actor: Actor = useMemo(
@@ -98,8 +122,9 @@ export function MobileApp() {
       personaName: persona.name,
       personaRole: persona.role,
       initials: persona.initials,
+      moreExtra,
     }),
-    [actor, anaesthetistId, persona],
+    [actor, anaesthetistId, persona, moreExtra],
   )
 
   // The List and Card layers are full-bleed (the mockup): the tab bar only shows
@@ -108,8 +133,8 @@ export function MobileApp() {
 
   return (
     <SurfaceProvider variant="mobile">
-      <PhoneFrame>
-      {/* Transparent root: the PhoneFrame AtmosphereLayer shows through for
+      <Host>
+      {/* Transparent root: the host's AtmosphereLayer shows through for
           Availability / Balances / More and the Lists base (Phase 13). */}
       <div
         data-aa-mobile-product
@@ -121,7 +146,7 @@ export function MobileApp() {
           <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
         )}
       </div>
-      </PhoneFrame>
+      </Host>
     </SurfaceProvider>
   )
 }

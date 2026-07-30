@@ -17,6 +17,15 @@ export {
   type CardCalculationMode,
 } from './appStore'
 export {
+  resilientLocalStorage,
+  flushPersist,
+  persistStatus,
+  STORAGE_BUDGET_BYTES,
+  // `bytes` is unambiguous inside its own module; the barrel gives it a name
+  // that still reads clearly at a call site in a component.
+  bytes as persistedBytes,
+} from './persistStorage'
+export {
   mutate,
   resetDomainState,
   allocateId,

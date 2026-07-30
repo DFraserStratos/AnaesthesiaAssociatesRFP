@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { CompletionOverlay } from './CompletionOverlay'
 
 describe('CompletionOverlay calculation display', () => {
@@ -15,5 +15,22 @@ describe('CompletionOverlay calculation display', () => {
     expect(screen.getByText('Card complete')).toBeInTheDocument()
     expect(screen.queryByText(/3 units/)).not.toBeInTheDocument()
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
+  })
+})
+
+describe('CompletionOverlay dismissal', () => {
+  it('is inert while the screen owns the timing alone', () => {
+    render(<CompletionOverlay units={3} fee={79.5} mode="fee" />)
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('runs the screen dismissal when the flood is tapped', () => {
+    const onDismiss = vi.fn()
+    render(<CompletionOverlay units={3} fee={79.5} mode="fee" onDismiss={onDismiss} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+
+    expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 })

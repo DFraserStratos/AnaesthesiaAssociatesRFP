@@ -57,7 +57,7 @@ These core conventions govern routine changes. `PROGRESS.md` contains the fuller
 - **Determinism.** Never `Date.now()`, `new Date()` or `Math.random()`. Time comes from the demo
   clock (`src/domain/clock.ts`; `DEMO_TODAY` = 2026-07-21), randomness from the seeded RNG. Same
   seed → identical data.
-- **Bump `PERSIST_VERSION`** (`src/store/appStore.ts`, currently 7) whenever the seed's shape or
+- **Bump `PERSIST_VERSION`** (`src/store/appStore.ts`, currently 13) whenever the seed's shape or
   content changes, or stale persisted state survives the reload.
 - **Billing maths is pure** — all fee/unit/route/split logic lives in `src/domain/billing/` with
   Vitest tests; UI only formats results.

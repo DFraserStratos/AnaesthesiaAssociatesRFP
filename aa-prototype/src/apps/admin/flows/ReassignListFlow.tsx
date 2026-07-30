@@ -122,7 +122,9 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         )}
       </div>
       {showSuccess ? (
-        <SuccessOverlay title="List reassigned" testId="list-reassignment-overlay">
+        // `onDismiss` runs exactly what the SUCCESS_DURATION_MS timer runs, so a
+        // tap closes the flood if that timer is ever lost to an unmount race.
+        <SuccessOverlay title="List reassigned" testId="list-reassignment-overlay" onDismiss={onReassigned}>
           <div style={{ fontSize: 14, color: neutral.slate }}>
             Moved to {surnameFirst(target?.name ?? '')}
           </div>

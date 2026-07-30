@@ -15,9 +15,17 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { backfillMerge, createAppStore, freshAppState, PERSIST_KEY, PERSIST_VERSION } from './appStore'
+import { flushPersist } from './persistStorage'
 
 describe('persisted store versioning', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    // Writes are coalesced on a trailing timer (persistStorage.ts), and a
+    // still-queued value is served back ahead of storage so a read-after-write
+    // stays consistent. Flush before clearing, or the previous test's queued
+    // payload is what this test's store rehydrates from.
+    flushPersist()
+    localStorage.clear()
+  })
   afterEach(() => localStorage.clear())
 
   it('defaults to the full fee display and updates through the typed shell action', () => {

@@ -24,8 +24,8 @@ const FOLD = `max-height ${motion.cardAdvance.return}ms ${motion.cardAdvance.eas
 const REVEAL = `max-width ${motion.cardAdvance.return}ms ${motion.cardAdvance.easing}, opacity 200ms ease-out`
 
 /**
- * Mobile card detail — phone chrome (60px status-bar inset, back link, patient
- * masthead) around the shared `CardDetailBody` (Phase 05). All the capture,
+ * Mobile card detail — phone chrome (the host's top inset plus 6px, back link,
+ * patient masthead) around the shared `CardDetailBody` (Phase 05). All the capture,
  * validation and lifecycle behaviour lives in the shared body, so mobile and the
  * web card view behave identically; only this masthead and the surrounding
  * `position:relative` phone-frame column are mobile-specific.
@@ -66,7 +66,7 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
   const header = (collapsed: boolean, history: ReactNode) => (
     <div
       data-testid="mobile-card-header"
-      style={{ flex: 'none', padding: '60px 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}
+      style={{ flex: 'none', padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <button
@@ -82,7 +82,7 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
           aria-hidden={!collapsed}
           style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, opacity: collapsed ? 1 : 0, maxWidth: collapsed ? '100%' : 0, overflow: 'hidden', transition: REVEAL }}
         >
-          <span style={{ fontSize: 17, lineHeight: '24px', fontWeight: 600, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span data-aa-selectable style={{ fontSize: 17, lineHeight: '24px', fontWeight: 600, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {patientName}
           </span>
           <StatusChip status={list.statusKey} style={{ flex: 'none', padding: '3px 8px' }} />
@@ -91,7 +91,9 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
 
       {/* max-height allows two lines: a long name should wrap at rest, never
           truncate. Overshooting the real height is harmless — it is a max. */}
-      <div style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em', maxHeight: collapsed ? 0 : 62, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}>
+      {/* The patient name stays selectable under the hosts' blanket
+          `user-select: none` — see the touch-polish block in `global.css`. */}
+      <div data-aa-selectable style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em', maxHeight: collapsed ? 0 : 62, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}>
         {patientName}
       </div>
       <div

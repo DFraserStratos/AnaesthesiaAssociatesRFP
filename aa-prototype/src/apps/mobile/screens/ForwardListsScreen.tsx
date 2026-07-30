@@ -169,7 +169,9 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '64px 20px 0', flex: 'none' }}>
+      {/* Host inset + 10px: a 26px large title needs air below the status bar.
+          See the inset contract in `theme/global.css`. */}
+      <div data-testid="mobile-lists-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0', flex: 'none' }}>
         <MobileHeader eyebrow={dayHeading(todayISO, todayISO)} title={`Kia ora, ${greetingName}`} initials={initials} />
       </div>
 
@@ -199,7 +201,9 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         })}
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 116px' }}>
+      {/* Scroll clearance for the tab bar, which itself tracks the inset 1:1,
+          so the optical gap above the bar stays a constant 32px. */}
+      <div data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px calc(var(--aa-inset-bottom, 34px) + 82px)' }}>
         {sections.length === 0 && (
           <div style={{ marginTop: 28, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>
             {filter === 'done'

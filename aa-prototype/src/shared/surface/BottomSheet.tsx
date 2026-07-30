@@ -65,13 +65,29 @@ export function BottomSheet({ open, onClose, children, hideHandle }: BottomSheet
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: 0,
-          maxHeight: '90%',
+          // The two keyboard lines. On iOS the software keyboard shrinks only
+          // the VISUAL viewport, so WebKit tries to scroll the layout viewport
+          // to reveal the focused field, finds nothing scrollable inside a
+          // host that is exactly viewport-height with `overflow: hidden`, and
+          // pans the whole page instead — the classic "content pushed off the
+          // top and won't come back", with Save stranded behind the keys.
+          // `MobileViewport` publishes the keyboard height; the sheet rides
+          // above it and gives back the same height from its cap so it cannot
+          // grow off the top. The frame never sets the var, so both resolve to
+          // today's values there.
+          bottom: 'var(--aa-keyboard-inset, 0px)',
+          maxHeight: 'calc(90% - var(--aa-keyboard-inset, 0px))',
           overflow: 'auto',
           background: neutral.surface,
           borderRadius: `${radius.sheet}px ${radius.sheet}px 0 0`,
           boxShadow: elevation.e3,
-          padding: '8px 20px 36px',
+          paddingTop: 8,
+          paddingLeft: 20,
+          paddingRight: 20,
+          // 36 = 34 + 2 at the simulated inset. The 20px floor is the sheet's
+          // own resting bottom gutter, so a zero-inset device keeps a sheet
+          // that does not look shrink-wrapped to its last control.
+          paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) + 2px), 20px)',
           animation: closing
             ? `aa-sheet-out ${motion.sheetIn.out}ms ${motion.sheetIn.easing} forwards`
             : `aa-sheet-in ${motion.sheetIn.in}ms ${motion.sheetIn.easing}`,

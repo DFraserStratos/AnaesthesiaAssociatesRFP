@@ -57,7 +57,17 @@ export function MobileListsRoute() {
 
   const listId = urlListId ?? seen.current.listId
   const cardId = urlCardId ?? seen.current.cardId
+  const backToLists = () => navigate('/mobile/lists')
   const backToList = () => navigate(listId !== null ? `/mobile/lists/${listId}` : '/mobile/lists')
+
+  // Edge-swipe-back on the drilled-in layer, wired per depth to the SAME two
+  // handlers the on-screen back affordances use. Deliberately not a history
+  // `go(-1)`: the stack's depth lives in the URL, but history can also hold
+  // entries that are not part of this stack (a tab switch, or a deep link
+  // landed on directly), so stepping back would sometimes leave the Lists tab
+  // altogether. Installed as a PWA there is no browser chrome to fall back on,
+  // which is exactly why the gesture exists.
+  const popLayer = depth === 2 ? backToList : depth === 1 ? backToLists : undefined
 
   function offerCover(id: string) {
     const list = useAppStore.getState().schedule.lists[id]
@@ -88,7 +98,7 @@ export function MobileListsRoute() {
           <ListDetailScreen
             listId={listId}
             actor={actor}
-            onBack={() => navigate('/mobile/lists')}
+            onBack={backToLists}
             onOpenCard={(id) => navigate(`/mobile/lists/${listId}/cards/${id}`)}
             onAddCard={() => setAddOpen(true)}
           />
@@ -106,7 +116,7 @@ export function MobileListsRoute() {
 
   return (
     <>
-      <SlideStack layers={listsLayers} depth={depth} />
+      <SlideStack layers={listsLayers} depth={depth} onPop={popLayer} />
 
       {listId !== null && (
         <AddCardFlow
@@ -149,6 +159,6 @@ export function MobileBalancesRoute() {
 }
 
 export function MobileMoreRoute() {
-  const { personaName, personaRole, initials } = useMobileOutlet()
-  return <MoreScreen personaName={personaName} personaRole={personaRole} initials={initials} />
+  const { personaName, personaRole, initials, moreExtra } = useMobileOutlet()
+  return <MoreScreen personaName={personaName} personaRole={personaRole} initials={initials} extra={moreExtra} />
 }

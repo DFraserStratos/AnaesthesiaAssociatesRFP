@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!--
+      `viewport-fit=cover` is MANDATORY, not cosmetic: without it every
+      `env(safe-area-inset-*)` resolves to 0 and the whole inset contract in
+      `src/theme/global.css` silently collapses to its floors.
+
+      `interactive-widget=resizes-content` is the zero-JS Android path for the
+      software keyboard (Chrome 109+). Safari ignores it, which is why
+      `MobileViewport` also watches `visualViewport`. Complementary, not
+      redundant.
+
+      No `maximum-scale` and no `user-scalable=no`: that is a WCAG 2.1 SC 1.4.4
+      failure, iOS Safari has ignored it since iOS 10 anyway, and both real
+      causes of accidental zoom (double-tap and sub-16px inputs) are fixed
+      properly in the stylesheet.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+
+    <title>AA Booking &amp; Billing</title>
+
+    <!-- The manifest's `theme_color` covers the INSTALLED app; this meta covers
+         the browser tab before install, and iOS reads only the meta. The plugin
+         injects the manifest link but not this, so it is written by hand. Keep
+         the two in step: the value is measured, not chosen — see the comment on
+         `theme_color` in `vite.pwa.config.ts`. -->
+    <meta name="theme-color" content="#F3EAEC" />
+
+    <!-- Standalone display. `default` keeps the status bar outside the web view
+         with reliably dark glyphs; `black-translucent` would let the atmosphere
+         flow under it, as it does under the frame's fake bar, but the glyph
+         colour is the uncertain part across iOS versions. Ship `default`, then
+         try the alternative on the actual device. The inset contract's 12px
+         floor means the layout is correct either way, so this stays a one-line
+         cosmetic decision. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AA Booking" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <!-- iOS composites alpha onto black and applies its own squircle, so this
+         one is opaque and un-rounded. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
+
+    <!-- Self-hosted, so these are preloadable and precacheable. Only the latin
+         subsets: latin-ext is real but rare, and waiting on it would delay
+         first paint for a handful of macrons. `crossorigin` is required even
+         same-origin, because fonts are always fetched in CORS mode. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/schibsted-grotesk-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/spline-sans-mono-latin.woff2" crossorigin />
+
+    <!-- First paint is the canvas colour, not white. Android additionally gets
+         a generated splash from the manifest's `background_color`; iOS ignores
+         that, which is why this inline rule matters more than it looks.
+         `overflow: hidden` makes "there is no document scroll" literally true,
+         which is what lets `position: fixed` and `100dvh` behave under the iOS
+         keyboard. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #f6f8f7;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

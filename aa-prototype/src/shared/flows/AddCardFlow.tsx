@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Camera, PencilLine } from 'lucide-react'
+import { Camera, ChevronLeft, PencilLine } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import { Button, TickBadge } from '../ui'
@@ -18,6 +18,19 @@ interface AddCardFlowProps {
 
 type Mode = 'choose' | 'manual' | 'photo' | 'done'
 
+/**
+ * Add a card: the chooser forks to the manual form or the simulated photo
+ * capture, then a shared success state.
+ *
+ * The fork carries its own back affordance. Picking the wrong prong is easy on
+ * a phone, and until it existed the only way out of the six-field manual form
+ * was to close the whole sheet and start again — a dead end in the installable
+ * PWA, where there is no browser back button, no URL bar and no reload. The
+ * chevron follows the mobile screens' back treatment (borderless, `accent.base`,
+ * 44px target) and sits below the `BottomSheet` drag handle, which is a centred
+ * block of its own; on web the surface seam swaps in `Dialog`, which has no
+ * handle, and the same row reads as the dialog's top-left back link.
+ */
 export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onClose, onCreated }: AddCardFlowProps) {
   const { Overlay } = useSurface()
   const [mode, setMode] = useState<Mode>('choose')
@@ -36,8 +49,47 @@ export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onC
     setMode('done')
   }
 
+  /**
+   * Back to the fork. Only the two capture prongs offer it: `done` is past the
+   * point of no return (the card exists, and its own Done button is the exit),
+   * and `choose` is the destination.
+   */
+  const canGoBack = mode === 'manual' || mode === 'photo'
+
+  function goBack() {
+    // The prong components unmount, which discards their draft state; `result`
+    // is the only transient this component owns.
+    setResult(null)
+    setMode('choose')
+  }
+
   return (
     <Overlay open={open} onClose={onClose}>
+      {canGoBack && (
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label="Back to Add a card"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            minHeight: 44,
+            border: 'none',
+            background: 'none',
+            padding: 0,
+            color: accent.base,
+            fontFamily: 'inherit',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
+          Add a card
+        </button>
+      )}
+
       {mode === 'choose' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>Add a card</div>

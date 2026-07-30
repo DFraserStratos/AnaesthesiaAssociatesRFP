@@ -29,7 +29,10 @@ const WEB_COMMIT_HALO = 12
  * The dock is the `CompleteBar` container Phase 04 shipped (absolute to the
  * phone-frame content region, blurred translucent bar, `14 / 20 / 32` so the
  * bottom padding clears the home indicator) and optionally carrying the Card
- * calculation above it.
+ * calculation above it. That 32 is now derived rather than literal: it reads
+ * the host's `--aa-inset-bottom` so the same dock clears a real iPhone's home
+ * bar, a gesture-nav Android bar, or nothing at all. See the inset contract in
+ * `theme/global.css`.
  * Keeping these styles here rather than in `CompleteBar` / `CardTotalStrip` is
  * what "splits positioning into the surface" means.
  *
@@ -49,7 +52,12 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
       setDockHeight(0)
       return
     }
-    const measure = () => setDockHeight(el.getBoundingClientRect().height)
+    // `offsetHeight`, NOT `getBoundingClientRect().height`: the rect is the
+    // POST-transform box, and PhoneFrame scales the whole device. At 0.7 zoom
+    // the rect reads ~30% short, so the scroll pad below leaves the tail of the
+    // card hidden behind the dock. `SlidingSegmentedControl` documents the same
+    // trap for the same reason.
+    const measure = () => setDockHeight(el.offsetHeight)
     measure()
     // jsdom has no ResizeObserver, and the observer only REFINES a value the
     // one-shot measurement already set, so there is nothing to shim.
@@ -74,7 +82,15 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
         style={{
           flex: 1,
           overflow: 'auto',
-          padding: `14px 20px ${commit !== null ? dockHeight + 16 : 40}px`,
+          paddingTop: 14,
+          paddingLeft: 20,
+          paddingRight: 20,
+          // With a dock this auto-tracks the measured dock height (which now
+          // itself tracks the inset). Without one, clear the host's bottom
+          // inset plus 6px of air, floored at 24 so a zero-inset device still
+          // gets a sensible tail. Resolves to today's 40 at the simulated 34.
+          paddingBottom:
+            commit !== null ? dockHeight + 16 : 'max(calc(var(--aa-inset-bottom, 34px) + 6px), 24px)',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -94,8 +110,17 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
             position: 'absolute',
             left: 0,
             right: 0,
-            bottom: 0,
-            padding: '14px 20px 32px',
+            // Ride above the software keyboard when one is up. The var is set
+            // only by the device host, so in the frame this resolves to 0 and
+            // the dock is pixel-identical.
+            bottom: 'var(--aa-keyboard-inset, 0px)',
+            paddingTop: 14,
+            paddingLeft: 20,
+            paddingRight: 20,
+            // 32 = 34 - 2, reusing the home indicator's own lower margin. The
+            // 14px floor is the dock's own top pad, so a zero-inset device
+            // (Android, desktop) gets a symmetric box rather than a collapse.
+            paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
             background: 'rgba(246,248,247,0.92)',
             backdropFilter: 'blur(14px)',
             borderTop: `1px solid ${neutral.line}`,

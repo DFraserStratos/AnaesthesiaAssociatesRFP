@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
 /**
  * Phase 08 walkthrough — authorise → the synchronous billing run raises
@@ -6,6 +6,80 @@ import { test, expect } from '@playwright/test'
  * patient layouts, agency wording, GST, delivery stubs) → print isolation.
  * A working artifact for eyeballing plus light assertions.
  */
+
+/**
+ * Two tests below reach past the UI into the persisted payload. Since
+ * `src/store/persistStorage.ts` landed, that payload is written on a ~250ms
+ * trailing timer rather than synchronously inside `setState`, so localStorage
+ * is deliberately NOT in step with the store within the same tick. A read taken
+ * straight after a mutation sees the PREVIOUS payload, and a raw `setItem` can
+ * be clobbered by the pending write landing on top of it a moment later.
+ *
+ * So wait for the write to settle first. Polling rather than a fixed sleep,
+ * because the point is to observe the payload actually containing what the flow
+ * just produced, not to guess at a duration.
+ */
+interface PersistedBillingCase {
+  invoiceId?: string
+  accRecId?: string
+  accPayId?: string
+  handoffFailure?: unknown
+}
+
+/**
+ * Wait for the persisted payload to contain a billing case matching `want`, and
+ * return its `invoiceId`. Polling on the thing the test actually needs, rather
+ * than on a case count or a fixed sleep: the seed already ships a PAID
+ * pre-payment case, so a count would be satisfied by a stale payload.
+ */
+async function persistedInvoiceIdWhere(
+  page: Page,
+  want: 'handoff failed',
+): Promise<string> {
+  let found: string | null = null
+  await expect
+    .poll(
+      async () => {
+        found = await page.evaluate(() => {
+          const raw = localStorage.getItem('aa-demo')
+          if (raw === null) return null
+          const persisted = JSON.parse(raw) as {
+            state?: { billing?: { cases?: Record<string, PersistedBillingCase> } }
+          }
+          const hit = Object.values(persisted.state?.billing?.cases ?? {}).find(
+            (candidate) => candidate.invoiceId !== undefined && candidate.handoffFailure !== undefined,
+          )
+          return hit?.invoiceId ?? null
+        })
+        return found
+      },
+      { message: `the coalesced persist write should land a case where ${want}`, timeout: 5_000 },
+    )
+    .not.toBeNull()
+  if (found === null) throw new Error(`Expected one billing case where ${want}`)
+  return found
+}
+
+/** As above, for the invoice currently open in the address bar. */
+async function waitForPersistedCaseOfOpenInvoice(page: Page): Promise<void> {
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const raw = localStorage.getItem('aa-demo')
+          if (raw === null) return false
+          const persisted = JSON.parse(raw) as {
+            state?: { billing?: { cases?: Record<string, PersistedBillingCase> } }
+          }
+          const invoiceId = window.location.pathname.split('/').at(-1)
+          return Object.values(persisted.state?.billing?.cases ?? {}).some(
+            (candidate) => candidate.invoiceId === invoiceId,
+          )
+        }),
+      { message: 'the open invoice should be in the persisted payload before it is rewritten', timeout: 5_000 },
+    )
+    .toBe(true)
+}
 
 test('authorise raises invoices; contract-holder document + email + print', async ({ page }) => {
   await page.goto('/admin')
@@ -125,6 +199,11 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   // Handoff is synchronous in the prototype, so pending is an instantaneous
   // view state. Inject that one view fixture after the real flow to pin the
   // rail's defensive pending branch without changing application behaviour.
+  // Settle the coalesced write FIRST: this is a read-modify-write of the
+  // payload, so a stale read would rewrite the wrong thing, and a write still
+  // pending when `page.reload()` fires `pagehide` would flush straight over the
+  // top of the fixture.
+  await waitForPersistedCaseOfOpenInvoice(page)
   await page.evaluate(() => {
     const raw = localStorage.getItem('aa-demo')
     if (raw === null) throw new Error('Persisted demo state is missing')
@@ -224,26 +303,9 @@ test('invoice rail keeps a failed Xero handoff visible and actionable', async ({
   await expect(page.getByText(/6 invoices raised by the billing run/)).toBeVisible()
 
   // Resolve the invoice id from the persisted result of that real mechanism,
-  // then open the ordinary routed invoice page.
-  const failedInvoiceId = await page.evaluate(() => {
-    const raw = localStorage.getItem('aa-demo')
-    if (raw === null) throw new Error('Persisted demo state is missing')
-    const persisted = JSON.parse(raw) as {
-      state: {
-        billing: {
-          cases: Record<string, {
-            invoiceId?: string
-            handoffFailure?: unknown
-          }>
-        }
-      }
-    }
-    const failedCase = Object.values(persisted.state.billing.cases).find(
-      (candidate) => candidate.invoiceId !== undefined && candidate.handoffFailure !== undefined,
-    )
-    if (failedCase?.invoiceId === undefined) throw new Error('Expected one failed Xero handoff')
-    return failedCase.invoiceId
-  })
+  // then open the ordinary routed invoice page. Polled, because the persist
+  // write is coalesced (see the helper's docblock).
+  const failedInvoiceId = await persistedInvoiceIdWhere(page, 'handoff failed')
 
   await page.goto(`/admin/invoices/${failedInvoiceId}`)
   await page.waitForLoadState('networkidle')

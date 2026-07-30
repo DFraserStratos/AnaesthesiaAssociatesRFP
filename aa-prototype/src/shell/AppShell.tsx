@@ -38,7 +38,11 @@ export function AppShell() {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    // `100dvh`, not `100vh`: `vh` is the LARGE viewport, so in a mobile browser
+    // tab the shell is 60 to 100px taller than what is visible and the mobile
+    // tab bar sits below the fold. Harmless on desktop; this is the pre-install
+    // case, for anyone who opens the framed prototype on a phone.
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* ── Harness bar ─────────────────────────────────────── */}
       <header
         style={{

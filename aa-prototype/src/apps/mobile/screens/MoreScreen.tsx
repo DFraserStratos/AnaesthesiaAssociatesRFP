@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { neutral } from '../../../theme/tokens'
 import { Avatar, DemoBadge } from '../../../shared'
 import { MobileHeader } from '../components'
@@ -6,12 +7,24 @@ interface MoreScreenProps {
   personaName: string
   personaRole: string
   initials: string
+  /**
+   * Host-supplied presenter controls, appended below the demo note. The
+   * installed PWA has no harness bar, so it passes its clock, Reset and office
+   * simulation here; the framed prototype passes nothing and is unchanged.
+   */
+  extra?: ReactNode
 }
 
 /** More tab — persona + a demo note; deeper settings are out of prototype scope. */
-export function MoreScreen({ personaName, personaRole, initials }: MoreScreenProps) {
+export function MoreScreen({ personaName, personaRole, initials, extra }: MoreScreenProps) {
   return (
-    <div style={{ height: '100%', overflow: 'auto', padding: '64px 20px 116px' }}>
+    <div
+      style={{
+        height: '100%',
+        overflow: 'auto',
+        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px calc(var(--aa-inset-bottom, 34px) + 82px)',
+      }}
+    >
       <MobileHeader eyebrow="Settings" title="More" initials={initials} />
 
       <div
@@ -48,9 +61,14 @@ export function MoreScreen({ personaName, personaRole, initials }: MoreScreenPro
         <DemoBadge label="Demo prototype" />
         <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
           This is a demonstration of the Anaesthesia Associates mobile app. All patients, lists and
-          figures are fictional. Use the demo control panel to advance the clock or reset the data.
+          figures are fictional.{' '}
+          {extra === undefined
+            ? 'Use the demo control panel to advance the clock or reset the data.'
+            : 'The controls below stand in for the presenter harness.'}
         </div>
       </div>
+
+      {extra}
     </div>
   )
 }

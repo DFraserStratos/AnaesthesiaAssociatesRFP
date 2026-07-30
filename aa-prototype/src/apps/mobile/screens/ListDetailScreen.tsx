@@ -105,7 +105,9 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <div style={{ padding: '60px 20px 14px', flex: 'none' }}>
+      {/* Host inset + 6px: a drill-in screen leads with a 44px back button, so
+          it needs less air than a tab screen's large title. */}
+      <div data-testid="mobile-list-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', flex: 'none' }}>
         <button
           onClick={onBack}
           style={{
@@ -155,7 +157,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
         </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 130px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Clears the submit footer below, which tracks the inset 1:1. */}
+      <div data-testid="mobile-list-scroll" style={{ flex: 1, overflow: 'auto', padding: '12px 20px calc(var(--aa-inset-bottom, 34px) + 96px)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {model.rows.map((r) => {
           const cancelled = r.card.cancellation !== undefined
           return (
@@ -182,6 +185,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
               </span>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span
+                  data-aa-selectable
                   style={{
                     fontSize: 16,
                     fontWeight: 600,
@@ -249,12 +253,17 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
           walk. Completion-gated at the store; the greyed bar stays TAPPABLE
           and opens the explanatory sheet naming the offenders. */}
       <div
+        data-testid="mobile-list-footer"
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
-          padding: '14px 20px 32px',
+          paddingTop: 14,
+          paddingLeft: 20,
+          paddingRight: 20,
+          // Matches the card dock: inset - 2, floored at the footer's own top pad.
+          paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
           background: 'rgba(246,248,247,0.92)',
           backdropFilter: 'blur(14px)',
           borderTop: `1px solid ${neutral.line}`,
@@ -355,7 +364,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
       )}
 
       {showSubmitted ? (
-        <SuccessOverlay title="List submitted" testId="list-submission-overlay">
+        <SuccessOverlay
+          title="List submitted"
+          testId="list-submission-overlay"
+          // The same thing the 1050ms timer does. A full-surface blocker with
+          // no dismiss is unrecoverable in a standalone PWA, where there is no
+          // reload affordance, if the timer is ever lost to an unmount race.
+          onDismiss={() => setShowSubmitted(false)}
+        >
           <div style={{ fontSize: 14, color: neutral.slate }}>Sent to the office for review</div>
         </SuccessOverlay>
       ) : null}

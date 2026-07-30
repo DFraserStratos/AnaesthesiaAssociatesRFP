@@ -9,13 +9,15 @@
  * `clockActions.ts` are the only writes outside it, and neither touches a
  * domain slice.
  *
- * Persistence: versioned localStorage key. A version bump discards stale
- * persisted state, so the next load reseeds — bump PERSIST_VERSION whenever
- * the seed shape or content changes.
+ * Persistence: versioned localStorage key, written through the coalescing,
+ * failure-latching wrapper in `persistStorage.ts`. A version bump discards
+ * stale persisted state, so the next load reseeds — bump PERSIST_VERSION
+ * whenever the seed shape or content changes.
  */
 
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { resilientLocalStorage } from './persistStorage'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
@@ -217,6 +219,13 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
       persist(initializer, {
         name: PERSIST_KEY,
         version: PERSIST_VERSION,
+        // Coalesced + guarded writes (persistStorage.ts). zustand's own write
+        // path has no try/catch and runs inside setState, so a full-quota
+        // localStorage throws out of mutate() into a click handler, where no
+        // error boundary can catch it. This is storage MECHANICS only — same
+        // key, same JSON shape, same version — so there is deliberately NO
+        // PERSIST_VERSION bump: an existing persisted store rehydrates as-is.
+        storage: createJSONStorage(() => resilientLocalStorage),
         // A PERSIST_VERSION bump means the seed shape/content CHANGED, so a
         // different-version persisted store must be DISCARDED and reseeded. zustand
         // does NOT auto-discard on a version mismatch, so migrate returns the

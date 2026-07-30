@@ -117,7 +117,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '64px 20px 0', flex: 'none' }}>
+      <div style={{ padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0', flex: 'none' }}>
         <MobileHeader eyebrow="Find cover" title="Availability" initials={initials} />
       </div>
 
@@ -176,7 +176,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
         </span>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 116px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px calc(var(--aa-inset-bottom, 34px) + 82px)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* My availability */}
         <div style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

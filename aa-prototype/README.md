@@ -25,6 +25,16 @@ npm run lint      # oxlint
 npm run preview   # preview the production build
 ```
 
+The second build target — the Anaesthetist Mobile App on its own, as an installable PWA — has its
+own three scripts plus the icon generator. See [the PWA section](#second-build-target--the-installable-pwa).
+
+```bash
+npm run dev:pwa      # PWA dev server (http://localhost:5174)
+npm run build:pwa    # type-check and production build into dist-pwa/
+npm run preview:pwa  # preview that build (also 5174)
+npm run icons        # re-rasterise the app icons into public/ (run by hand, output committed)
+```
+
 Requires Node 20. Once running, use the app-switcher (top right) to move between the three apps and
 the demo surfaces. The demo control panel (`Demo: Control Panel`) is the presenter's cockpit: reset,
 advance the clock, jump to a scenario (S1 to S5), and fire simulated integration and money events.
@@ -62,8 +72,240 @@ advance the clock, jump to a scenario (S1 to S5), and fire simulated integration
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
   design mockups, mirrored into `global.css`'s `@theme`.
+- **`pwa/`** — the seven modules that exist only for the second build target: the `MobileViewport`
+  host, the update pill and its registration handle, the More-tab presenter panel, the install coach,
+  the office simulation and boot metrics — plus their tests, one of which (`pwaPurity.test.ts`) is
+  what keeps the target's bundle honest. Nothing here reaches the prototype bundle. See
+  [the PWA section](#second-build-target--the-installable-pwa).
 - **`assets/`**, **`test/`**, `App.tsx`, `main.tsx`, `router.tsx` — `router.tsx` is the whole URL map:
   every screen in the three apps has a shareable address that survives a refresh.
+
+## Second build target — the installable PWA
+
+The Anaesthetist Mobile App also builds on its own as an installable PWA: full screen on a real
+handset, no simulated phone frame, no app-switcher, no harness bar, its own home-screen icon, and it
+runs with no connection. It is a **second Vite config over the same `src/`, not a fork**.
+`vite.pwa.config.ts` differs from `vite.config.ts` in three things only — its `root` (`pwa/`), its
+entry (`pwa/main.tsx`), and the `vite-plugin-pwa` plugin. `root: 'pwa'` brings four gotchas: the
+`publicDir` and `cacheDir` redirects back out of the root, the `emptyOutDir` that is mandatory for an
+`outDir` outside it, and the `server.fs.allow` that deliberately needs no change. Each is commented
+where it sits in that file.
+
+Of the 161 modules `pwa/main.tsx` pulls in, **139 are shared** with the prototype — the whole store,
+the whole domain, the BTM capture suite, `CardDetailBody`, the sheets, the theme — **14 are the
+mobile app itself** (`src/apps/mobile/`), and **8 exist only for this target** (`pwa/main.tsx` plus
+the seven files in `src/pwa/`). One omission carries the entire difference: the PWA entry never
+renders `AppShell`, and with it go the app switcher, the two web apps, the admin app, the four demo
+surfaces, `PhoneFrame` and the Gradient Lab.
+
+| Target | Build | Output | Entry chunk |
+| --- | --- | --- | --- |
+| All three apps, framed | `npm run build` | `dist/` | 888.27 kB raw · 235.33 kB gzip |
+| Mobile app only, installable | `npm run build:pwa` | `dist-pwa/` | 549.03 kB raw · 157.59 kB gzip |
+
+Those are `vite build`'s own figures for the single entry chunk on the tree as it stands — measure
+again rather than trusting them, they drift. The 17.08 kB stylesheet is byte-identical in both; the
+PWA adds a 5.65 kB Workbox shim and a service worker precaching 22 entries (726 KiB), which is what
+makes it work offline.
+
+The saving is invisible and easy to lose: nothing about adding `import { x } from '../../shared'` to
+a mobile screen warns you that a barrel just dragged the admin app back in. **`src/pwa/pwaPurity.test.ts`
+is what stops it eroding** — it walks the real import graph from `pwa/main.tsx` and fails if the
+closure ever reaches `apps/web`, `apps/admin`, `apps/demo`, `AppShell`, `router.tsx`, `PhoneFrame` or
+the Gradient Lab. It runs with `npm run test`.
+
+### Ports and shared assets
+
+The PWA dev server is on **5174** with `strictPort`, because Playwright's `webServer` owns 5173 and a
+silent fallback port would leave `npm run shots` pointing at the wrong app. `publicDir` points back at
+the shared `public/`, so one copy of the self-hosted fonts (see [Fonts](#fonts)) and one copy of the
+icon set serve both targets.
+
+`npm run icons` rasterises `src/assets/pwa/icon.svg` and `icon-maskable.svg` into the six PNGs and the
+`favicon.svg` copy that `public/` ships. It uses the Chromium that Playwright already installs rather
+than adding a dependency for a job that runs approximately never; the outputs are committed, so no
+build depends on it.
+
+### Why the URLs stay `/mobile/*`
+
+They are not cosmetic leftovers. `MOBILE_TAB_PATH`, `listsStackLocation`'s
+`matchPath('/mobile/lists/:listId/cards/:cardId', …)` and every `navigate('/mobile/…')` call hard-code
+the prefix — and `BrowserRouter basename="/mobile"` does **not** fix that: under a basename,
+`navigate('/mobile/lists')` resolves to `/mobile/mobile/lists`. Rebasing would mean parameterising a
+shared pure module for cosmetic gain on URLs nobody sees in an installed app. So the manifest ships
+`start_url: '/mobile/lists'` and `scope: '/'`, and `pwa/main.tsx` redirects `/` (and anything
+unrecognised) to the Lists tab.
+
+### The inset contract
+
+The mobile app runs under two hosts and one layout serves both. `PhoneFrame` sets
+`.aa-inset-simulated` (the frame's fake 54px status bar and 34px home indicator); `MobileViewport`
+sets `.aa-inset-device` (the real `env(safe-area-inset-*)`, with a 12px floor on the top). Every
+mobile element that used to hardcode a pixel inset now reads the four `--aa-inset-*` custom
+properties through a `calc()`. The framed values are chosen so each expression resolves to exactly
+the integer it used before, which is how the desktop prototype provably did not move. The full
+reasoning — why a class rather than `:root`, why CSS rather than inline style, why only the top
+carries a floor — is in the `── The inset contract ──` block in `src/theme/global.css`.
+
+**`viewport-fit=cover` in `pwa/index.html` is mandatory, not cosmetic.** Without it every `env()`
+resolves to 0 and the whole contract silently collapses to its floors.
+
+`visual/mobile-insets.spec.ts` is the lock. It reads `getComputedStyle` on every anchor in the
+framed prototype and asserts the resolved pixels are exactly what they were before the contract
+existed: 64 / 116 / 26 / 60 / 130 / 32 / 60 / 32 / 36 / 40, plus `--aa-inset-top: 54px` and
+`--aa-inset-bottom: 34px` on the host itself. Playwright resolves `calc()` and `max()` in computed
+styles, so this is a true pixel lock rather than a string comparison, and it is what makes the
+refactor safe to repeat.
+
+### Testing on a real device
+
+Service workers require a **secure context**. `localhost`, `127.0.0.1` and `*.localhost` qualify;
+`http://192.168.x.x:5174` does **not**, so on a LAN IP `navigator.serviceWorker` is undefined and
+nothing registers. That single fact shapes the whole loop, and the More tab's `Offline ready` row
+tells you which side of it you are on.
+
+| What you are testing | How |
+| --- | --- |
+| Layout, safe areas, tab bar, gestures, press response, icon, standalone chrome | LAN IP over plain http (`npm run dev:pwa`, then `http://<your-ip>:5174`). **iOS installs without a service worker** — it keys standalone off `display: standalone` and fetches the manifest over http — so this covers most of the fiddly work. |
+| Service worker, offline, precache, update prompt (Android) | Chrome `chrome://inspect` → Port forwarding, mapping `localhost:5174` *on the phone* to your machine. The phone genuinely sees `localhost`, which **is** a secure context, so you get a full service worker against a live dev server with HMR. |
+| Service worker, install and update (iOS) | Needs real HTTPS: a hosted preview, or `cloudflared tunnel` / `ngrok` pointed at the dev server. |
+
+The service worker is off in dev by default (`devOptions.enabled: false` in `vite.pwa.config.ts`) —
+a worker in dev caches aggressively and makes HMR confusing. Flip it to `true` to exercise the update
+flow against the dev server.
+
+### The origin trap
+
+localStorage, service-worker registration and installed-PWA identity are **all keyed by origin**, and
+every preview deployment gets its own hostname — therefore its own everything. Install to a home
+screen from a preview URL and that icon points at the preview **forever**; it will never see
+production, and it carries its own separate copy of the demo data.
+
+**Install only from a stable production alias.** Use preview URLs for browser smoke-testing and
+nothing else.
+
+Related, and the reason the More tab's Reset control has to exist at all: on iOS the home-screen app's
+storage may be separate from Safari's for the same origin (the behaviour has changed across versions),
+so "clear it in the browser" is not a reliable way to start a clean run on the phone.
+
+### Updates, and why pull-to-refresh will not save you
+
+This is the main operational risk the target carries. **Once a service worker is installed,
+pull-to-refresh does not get you the new build** — the old worker answers every navigation from its
+own precache, so a phone can sit two deploys behind with no outward sign. Three layers guard against
+it:
+
+1. **The update pill** (`src/pwa/UpdatePrompt.tsx`) — `registerType: 'prompt'`, never `'autoUpdate'`,
+   because auto-update reloads the page by itself and mid-demo that drops the slide-stack position and
+   any open sheet. It polls every 60 seconds (only while visible and online) and re-checks the moment
+   the app returns to the foreground, then offers a tap to reload.
+2. **A visible build id** in the More tab — `__BUILD_ID__`, defined from `VERCEL_GIT_COMMIT_SHA` and
+   falling back to `local-dev`. Without it you cannot tell whether the phone actually picked up a
+   deploy, and that burns workshop-prep time.
+3. **A manual "Check for updates" row**, next to it, which forces a `registration.update()`.
+
+The kill switch, if a worker ever needs to be removed from a device you cannot physically reach: ship
+one deploy with `selfDestroying: true` in the `VitePWA` options. That build unregisters the worker,
+clears its caches and re-navigates every client.
+
+### Deployment
+
+**This ships as configuration plus documentation, not as a live project.** Hosting is yours to wire
+up. What is in the repo is `vercel.json`, which is read from the Root Directory — `aa-prototype` for
+both targets:
+
+- The SPA rewrite (`/(.*)` → `/index.html`) is evaluated **after** the filesystem check, so real files
+  still win and `sw.js`, `manifest.webmanifest`, `/fonts/*` and `/assets/*` are served as themselves.
+  Both output directories contain an `index.html`, so the same file works for either target.
+- `Cache-Control: max-age=0, must-revalidate` on `sw.js` and `registerSW.js`, so a new worker is
+  always noticed. (The current config does not emit `registerSW.js` — registration is bundled through
+  the virtual module — so that rule is belt and braces.)
+- The correct `application/manifest+json` content type on `manifest.webmanifest`.
+- `immutable`, one year, on `/fonts/*` and `/assets/*`, which are content-hashed or versioned.
+
+Deploying the second target therefore means pointing a **second Vercel project** (or a second output
+directory) at `npm run build:pwa` / `dist-pwa`. And the two targets **must not share an origin** if
+both are to be installed and used independently — see [the origin trap](#the-origin-trap).
+
+### Office simulation
+
+The installed PWA has no Admin app, so **nobody plays the office**. In the framed prototype the
+presenter submits a List on the phone, switches to the Admin Web App, authorises it and watches the
+billing run; on a real phone a submitted List would sit in Done forever and Balances would never move.
+
+`src/pwa/officeSimulation.ts` closes that loop. It is **on by default** and PWA-only (`src/main.tsx`
+never wires it — auto-authorising would sabotage the scripted S3 review beat). A few seconds after a
+List goes DRAFT → SUBMITTED it authorises and bills that List through the ordinary audited store
+actions, with an actor named `AA office (simulated)`, so the invoices, the Balances movement and the
+Xero mirror all follow.
+
+**It is explicitly a simulation and explicitly not the RFP flow.** Nothing in the RFP authorises a List
+off the back of the anaesthetist's own submit; a real submission goes to the office review queue and a
+person authorises it deliberately, which is the entire point of the SUBMITTED state. It is toggleable
+from the More tab precisely so a presenter can show the honest behaviour (a submitted List that simply
+waits) whenever the question comes up.
+
+### What it deliberately does not do
+
+- **No shared state between devices.** Two installs and the desktop prototype are three independent
+  demo worlds, each with its own localStorage. Closing that needs a real backend.
+- **No real camera.** `PhotoCaptureFlow` picks between two bundled SVG "paper cards"
+  (`src/assets/samplePaperCards.ts`); there is no `<input type="file">`, no `FileReader` and no
+  `getUserMedia` anywhere in `src/`.
+- **No push notifications.** iOS 16.4+ supports them for installed PWAs, so "a new list was assigned
+  to you" is a strong future demo beat, but it needs a real push service.
+- **It is not pixel-identical to the frame at the top edge, and that is correct.** The frame's 54px is
+  a stylisation; an iPhone 14 Pro really reserves 59px and an iPhone 13 really reserves 47px. Expect
+  ±5 to 7px of difference in the header band and do not chase it.
+
+### One open decision: the iOS status bar
+
+`pwa/index.html` ships `apple-mobile-web-app-status-bar-style: default`, which keeps the status bar
+outside the web view with reliably dark glyphs. The alternative, `black-translucent`, starts the web
+view at y=0 so the atmosphere flows under the status bar exactly as it does under the frame's fake
+one. That is nicer, but the glyph colour is genuinely uncertain across iOS versions, which is why it
+is not already shipped. Try it on the actual device and keep whichever reads better. The inset
+contract's 12px top floor means the layout is correct either way, so this stays a one-line cosmetic
+change.
+
+## Fonts
+
+The two design fonts are **self-hosted** from `public/fonts/` — nothing is fetched from
+`fonts.googleapis.com` or `fonts.gstatic.com` at runtime. The `@font-face` declarations live in
+`src/theme/global.css`; `public/` is shared by both build targets, so `/fonts/*` resolves for the
+prototype and the PWA alike.
+
+| Family | Role | Faces shipped | Licence |
+| --- | --- | --- | --- |
+| Schibsted Grotesk | UI (`--font-ui`) | Roman variable, `font-weight: 400 900` | OFL 1.1 — [`public/fonts/Schibsted-Grotesk-OFL.txt`](public/fonts/Schibsted-Grotesk-OFL.txt) |
+| Spline Sans Mono | Data (`--font-mono`) | Roman variable, `font-weight: 400 700` | OFL 1.1 — [`public/fonts/Spline-Sans-Mono-OFL.txt`](public/fonts/Spline-Sans-Mono-OFL.txt) |
+
+### Provenance
+
+Fetched from Google Fonts' gstatic CDN on **2026-07-30**. Both licence files are the canonical
+upstream `OFL.txt` from [google/fonts](https://github.com/google/fonts). Four subset files, about
+122 KiB in total:
+
+- **Schibsted Grotesk** — gstatic version segment **`v7`**
+  - `schibsted-grotesk-latin.woff2` (46,864 B) —
+    `https://fonts.gstatic.com/s/schibstedgrotesk/v7/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9GayojdSFO.woff2`
+  - `schibsted-grotesk-latin-ext.woff2` (20,844 B) —
+    `https://fonts.gstatic.com/s/schibstedgrotesk/v7/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9IayojdSFOd1I.woff2`
+- **Spline Sans Mono** — gstatic version segment **`v13`**
+  - `spline-sans-mono-latin.woff2` (36,528 B) —
+    `https://fonts.gstatic.com/s/splinesansmono/v13/R70BjzAei_CDNLfgZxrW6wrZOF2WX5KZmE-Z-lw.woff2`
+  - `spline-sans-mono-latin-ext.woff2` (20,748 B) —
+    `https://fonts.gstatic.com/s/splinesansmono/v13/R70BjzAei_CDNLfgZxrW6wrZOF2WX5yZmE-Z-lxguQ.woff2`
+
+The `unicode-range` values in `global.css` are copied verbatim from the Google CSS for the same
+version segments. To refresh a family, re-fetch that CSS with a modern desktop browser UA (gstatic
+serves woff2 only to modern UAs), re-download the files it names, and update the version segment and
+fetch date above.
+
+**Only the roman faces are shipped — the italic is deliberately omitted.** Its one use in the app is
+a desktop-only caption on the admin invoice document
+(`src/apps/admin/screens/InvoiceDocument.tsx`), where the browser's synthetic oblique is acceptable
+and not worth roughly doubling the font payload.
 
 ## Docs
 

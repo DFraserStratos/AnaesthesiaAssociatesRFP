@@ -239,6 +239,12 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
       {/* Wrapper reserves the SCALED footprint so flex-centring and scrollbars stay correct. */}
       <div style={{ flex: 'none', width: DEVICE_WIDTH * scale, height: DEVICE_HEIGHT * scale }}>
         <div
+          // Publishes the SIMULATED insets (54px fake status bar / 34px fake
+          // home indicator) to everything inside the device, so the mobile
+          // app's `calc(var(--aa-inset-*))` paddings resolve to exactly the
+          // integers they were hardcoded to before the contract existed. The
+          // PWA host sets the same four properties from `env(safe-area-*)`.
+          className="aa-inset-simulated"
           style={{
             width: DEVICE_WIDTH,
             height: DEVICE_HEIGHT,
@@ -276,9 +282,13 @@ export function PhoneFrame({ children, time }: PhoneFrameProps) {
 
         <StatusBar time={time ?? clockTime} />
 
-        {/* Scrollable content region. The class scopes native-style, hidden
-            scrollbars to the phone and every nested mobile scroll surface. */}
-        <div className="aa-mobile-canvas" style={{ height: '100%', overflow: 'auto', position: 'relative' }}>{children}</div>
+        {/* Content region. The class scopes native-style, hidden scrollbars to
+            the phone and every nested mobile scroll surface.
+            `overflow: hidden`, matching the PWA host, so the two hosts cannot
+            diverge: the inner screens own all scrolling. A no-op today, since
+            the only child is already `height: 100%; overflow: hidden` and so
+            has no scrollable extent. */}
+        <div className="aa-mobile-canvas" style={{ height: '100%', overflow: 'hidden', position: 'relative' }}>{children}</div>
 
         {/* home indicator — always on top */}
         <div

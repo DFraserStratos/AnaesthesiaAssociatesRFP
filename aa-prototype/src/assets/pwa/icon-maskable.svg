@@ -1,0 +1,12 @@
+<!-- AA app icon, "maskable" purpose: Android adaptive icons.
+     Same artwork as icon.svg but the monogram drops to 33% cap height so every serif tip
+     stays inside the 80% safe circle Android may crop to (furthest ink sits at r=193 of
+     the 204.8 safe radius). Type is fontFamily.serif from src/theme/tokens.ts.
+     Regenerate the PNGs with `npm run icons` after any change here. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Anaesthesia Associates">
+  <title>Anaesthesia Associates</title>
+  <rect width="512" height="512" fill="#A91E3E"/>
+  <text x="266.5" y="334" fill="#FFFFFF" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="240" letter-spacing="21.6">AA</text>
+</svg>

@@ -7,9 +7,70 @@
  * read; this file feeds the utility layer. Keep the hexes identical in both.
  */
 
-/* Fonts first (all @import rules must precede other statements). */
-@import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Spline+Sans+Mono:wght@400..700&display=swap');
-@import 'tailwindcss';
+/*
+ * `source('..')` resolves against THIS file's directory, so the class-detection
+ * base is pinned to `src/` for both build targets. Tailwind v4 otherwise
+ * auto-detects from `config.root`, which is `pwa/` for the PWA target. Inert
+ * today (there are zero Tailwind utilities in the codebase, only hand-written
+ * `aa-*` classes and `.mono`), but it stops the second root being a trap for
+ * whoever next writes `class="flex"`.
+ */
+@import 'tailwindcss' source('..');
+
+/*
+ * Self-hosted type. Previously an `@import url(fonts.googleapis.com/…)`: a
+ * render-blocking, serially-discovered request to a second origin that cannot
+ * be preloaded and cannot be precached by the PWA's service worker. Four woff2
+ * files in `public/fonts/` instead (~122 KiB), preloaded from both HTML entries.
+ *
+ * Roman faces only. The italic (50 KB) is used in exactly one place,
+ * `src/apps/admin/screens/InvoiceDocument.tsx`, a desktop-only caption where
+ * synthetic oblique is fine.
+ *
+ * latin-ext is REQUIRED, not optional: `ā` (U+0101, Māori macron) appears in
+ * source, as do `ʟ ᴛ ᴰ`. All fall in latin-ext, not latin. The `unicode-range`
+ * values below are verbatim from the Google CSS, so the browser still fetches
+ * only the subset a page actually needs. Provenance is recorded in README.md.
+ */
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/schibsted-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/spline-sans-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/spline-sans-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @theme {
   /* ── Fonts ─────────────────────────────────────────────── */
@@ -122,6 +183,19 @@ body,
   height: 100%;
 }
 
+/*
+ * Kills Chrome-Android pull-to-refresh, which would RELOAD the SPA and lose
+ * transient sheet state (the add-card flow's `addOpen`, a screen's open sheet;
+ * slide-stack depth survives, it is in the URL). Has to sit on the root
+ * scroller, not on a host element, or the gesture is already claimed. Verified
+ * harmless for `/web` and `/admin`, where it also stops the desktop backdrop
+ * bouncing under a trackpad.
+ */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
@@ -130,6 +204,65 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * ── The inset contract ───────────────────────────────────────────────────
+ *
+ * The mobile app runs under two hosts: `PhoneFrame` (the simulated 390x844
+ * device the desktop prototype floats on) and `MobileViewport` (the installed
+ * PWA, on a real handset). Both set these four custom properties; every mobile
+ * element that used to hardcode a pixel inset now reads them through a
+ * `calc()`, so ONE layout serves both.
+ *
+ * The simulated values are the frame's own fake chrome, so every expression
+ * resolves to exactly the integer it used before. `visual/mobile-insets.spec.ts`
+ * locks those pixels.
+ *
+ * A class, not `:root`: `SurfaceProvider` and `BottomSheet` are SHARED with the
+ * two desktop apps, so a `:root` declaration would quietly hand a 34px phone
+ * inset to the next bottom-pinned desktop element. CSS, not inline style, so
+ * `env()` needs no `as CSSProperties` cast and a `@media (display-mode:
+ * standalone)` refinement stays available.
+ *
+ * Custom properties inherit, so they pass through SlideStack's layer divs
+ * untouched — the same mechanism that already carries `--aa-atmos-*`.
+ */
+
+/* Simulated (PhoneFrame): 54px fake status bar / 34px fake home indicator. */
+.aa-inset-simulated {
+  --aa-inset-top: 54px;
+  --aa-inset-bottom: 34px;
+  --aa-inset-left: 0px;
+  --aa-inset-right: 0px;
+}
+
+/*
+ * Real device. REQUIRES `viewport-fit=cover` in the viewport meta, or every
+ * env() resolves to 0 and the whole contract silently collapses to its floors.
+ * Only the top carries a floor here, because "don't crowd the top edge" is one
+ * semantic shared by every top call site; each BOTTOM call site carries its own
+ * floor instead, since that floor is the element's own opposing padding and
+ * differs per element.
+ */
+.aa-inset-device {
+  --aa-inset-top: max(env(safe-area-inset-top, 0px), 12px);
+  --aa-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --aa-inset-left: env(safe-area-inset-left, 0px);
+  --aa-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/*
+ * The PWA host's own height. Two declarations, which a React style object
+ * cannot express: `100vh` is the pre-Safari-15.4 fallback, `100dvh` wins
+ * everywhere it is understood. `dvh` rather than `svh` because in standalone
+ * they are identical (there is no URL bar to collapse), while in a browser tab
+ * before install `dvh` fills the visible area instead of leaving a permanent
+ * dead band at the foot.
+ */
+.aa-mobile-viewport {
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* Data / numeric text: monospace with tabular figures so values tick without
@@ -150,6 +283,12 @@ body {
 .aa-mobile-canvas * {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* One line covers every inner mobile scroller, sheets included: a scroller
+     that reaches its end stops there instead of chaining the remaining delta
+     out to an ancestor. Deliberately NOT `-webkit-overflow-scrolling: touch`,
+     which is a no-op on iOS 13+ and on older WebKit breaks the `position:
+     sticky` the mobile card layout depends on. */
+  overscroll-behavior: contain;
 }
 
 .aa-mobile-canvas::-webkit-scrollbar,
@@ -288,6 +427,70 @@ body {
 }
 
 /*
+ * ── Touch polish ─────────────────────────────────────────────────────────
+ *
+ * `touch-action` is NOT inherited, so widening it needs the descendant `*`:
+ * setting it on the root alone leaves the 300ms double-tap-zoom delay on every
+ * tap that lands on text or a card rather than on a button. Both hosts are
+ * listed — `[data-aa-mobile-product]` is the mobile app's own root under either
+ * one, `.aa-inset-device` additionally covers the PWA host's own chrome (the
+ * update pill) which sits outside the product root.
+ *
+ * `user-select: none` is what stops the iOS magnifier appearing when a thumb
+ * rests on a label. It is deliberately reversed below for clinical data.
+ */
+[data-aa-mobile-product],
+[data-aa-mobile-product] *,
+.aa-inset-device,
+.aa-inset-device * {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * Edge-swipe-back needs the horizontal axis, and the blanket `manipulation`
+ * above actively breaks it: `manipulation` permits `pan-x`, so Chrome claims a
+ * horizontal drag as a pan and fires `pointercancel` after the very first
+ * `pointermove`. Measured, not theorised.
+ *
+ * `touch-action` resolves from the HIT-TESTED element, so setting it inline on
+ * the SlideStack layer is not enough on its own: a touch always lands on a
+ * descendant (an inner scroller, a card row), and that descendant's own
+ * `manipulation` is what Chrome reads. Hence the `*`.
+ *
+ * `pan-y pinch-zoom` rather than a bare `pan-y`: vertical scrolling still
+ * belongs to the browser, and dropping pinch-zoom inside a drilled-in screen
+ * would take away magnification the rest of the app allows.
+ *
+ * Two levels deep (0,2,0) so it outranks `[data-aa-mobile-product] *` (0,1,0)
+ * whatever order these blocks end up in. Only the ARMED layer carries the
+ * attribute, so the desktop prototype and every parked layer are untouched.
+ */
+[data-aa-mobile-product] [data-aa-swipe-back='armed'],
+[data-aa-mobile-product] [data-aa-swipe-back='armed'] * {
+  touch-action: pan-y pinch-zoom;
+}
+
+/*
+ * Restore selection and the iOS magnifier where the content is worth copying.
+ * `.mono` already covers NHI, times, money and invoice numbers; `data-aa-
+ * selectable` is added to the patient-name nodes. `input` / `textarea` are
+ * MANDATORY, not a nicety: without them, typing breaks on iOS.
+ */
+[data-aa-mobile-product] input,
+[data-aa-mobile-product] textarea,
+[data-aa-mobile-product] .mono,
+[data-aa-mobile-product] [data-aa-selectable],
+[data-aa-mobile-product] [data-aa-selectable] * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/*
  * Mobile product controls: one native-feeling press response for every enabled
  * button inside the phone. The mobile root owns the data attribute, so the
  * desktop apps, demo tools and presenter zoom controls remain untouched.
@@ -308,6 +511,40 @@ body {
 [data-aa-mobile-product] button:not(:disabled):active {
   transform: translateY(1px) scale(0.985);
   filter: brightness(0.97);
+}
+
+/* A disabled button still flashes grey on iOS across every sheet without this. */
+[data-aa-mobile-product] button:disabled {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Finger scale. At arm's length under a mouse 0.985 reads correctly; under a
+ * thumb, with the finger covering the control, it is imperceptible. Deepen it
+ * on the real device only, so the framed prototype keeps its tuned value.
+ *
+ * The companion half of this lives in `MobileViewport`: iOS Safari does not
+ * fire `:active` AT ALL unless a touch handler is attached somewhere, so
+ * without that listener this rule would silently do nothing and every tap on a
+ * real iPhone would feel dead.
+ */
+.aa-inset-device [data-aa-mobile-product] button:not(:disabled):active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/*
+ * iOS zooms the page whenever a focused control's font-size is under 16px. Ten
+ * declarations across the shared field components feed roughly 35 rendered
+ * controls and not one of them is >= 16px. Fixing this host-side rather than in
+ * those sources is deliberate: they are shared with the two desktop apps, where
+ * editing them would break pixel-identity. The 1 to 2px of growth is absorbed
+ * by the existing `minHeight: 48` on the shared control and the 44/48 minimums
+ * on every select, so nothing reflows. `!important` has precedent above.
+ */
+.aa-inset-device input,
+.aa-inset-device textarea,
+.aa-inset-device select {
+  font-size: 16px !important;
 }
 
 /* Completion overlay's success circle (Phase 04). */
@@ -353,7 +590,10 @@ body {
     scroll-behavior: auto !important;
   }
 
-  [data-aa-mobile-product] button:not(:disabled):active {
+  /* Both press variants, because the device-scoped one outranks the plain
+     selector and would otherwise survive the reduced-motion sweep. */
+  [data-aa-mobile-product] button:not(:disabled):active,
+  .aa-inset-device [data-aa-mobile-product] button:not(:disabled):active {
     transform: none;
   }
 

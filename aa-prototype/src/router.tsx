@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './shell/AppShell'
+import { PhoneFrame } from './shell/PhoneFrame'
 import { MobileApp } from './apps/mobile/MobileApp'
 import { WebApp } from './apps/web/WebApp'
 import { AdminApp } from './apps/admin/AdminApp'
@@ -106,7 +107,9 @@ export function AppRouter() {
           </Route>
 
           {/* ── Anaesthetist Mobile App ────────────────────────── */}
-          <Route path="mobile" element={<MobileApp />}>
+          {/* The simulated device is the prototype's host; the PWA target
+              mounts the same app inside `MobileViewport` instead. */}
+          <Route path="mobile" element={<MobileApp host={PhoneFrame} />}>
             <Route index element={<Navigate to="lists" replace />} />
             {/* One splat route, not sibling routes per layer: the slide stack
                 keeps every layer mounted so push AND pop animate. */}
