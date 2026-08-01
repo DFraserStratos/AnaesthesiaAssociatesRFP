@@ -1,0 +1,8 @@
+# Cloudflare Pages SPA fallback for the installable PWA target.
+# Pages serves an existing static asset first and only falls through to this
+# rule when no file matches, so sw.js, manifest.webmanifest, /fonts/* and
+# /assets/* still serve as themselves. This is the equivalent of the Vercel
+# rewrite in vercel.json (which Cloudflare does not read).
+# Needed on first load (before the service worker installs) and whenever the
+# manifest start_url /mobile/lists is fetched by the browser/OS.
+/*    /index.html    200

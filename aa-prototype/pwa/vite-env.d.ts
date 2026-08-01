@@ -25,3 +25,10 @@
  * target it is; read it only from there.
  */
 declare const __BUILD_ID__: string
+
+/**
+ * The build timestamp, injected by `define` in `vite.pwa.config.ts`: an ISO
+ * 8601 string stamped when the bundle was built, for the More tab's "Deployed"
+ * row. Same injection mechanism and same confinement rules as `__BUILD_ID__`.
+ */
+declare const __BUILD_DATE__: string

@@ -169,6 +169,10 @@ export default defineConfig({
     // whether the phone actually picked up a deploy, and that burns
     // workshop-prep time.
     __BUILD_ID__: JSON.stringify(buildId),
+    // Stamped at build time alongside the build id, for the More tab's
+    // "Release Date" row. Build time, not render time: a render-time `new Date()`
+    // would report when the user opened the tab, not when the build shipped.
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
   },
   build: {
     outDir: '../dist-pwa',

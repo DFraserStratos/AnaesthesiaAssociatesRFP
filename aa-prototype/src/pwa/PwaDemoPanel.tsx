@@ -401,6 +401,7 @@ function BuildCard() {
   return (
     <Card title="Build">
       <Row label="Version" value={__BUILD_ID__} />
+      <Row label="Release Date" value={format(parseISO(__BUILD_DATE__), 'd MMM yyyy, HH:mm')} />
       <Row label="Cold launch" value={boot === null ? 'measuring' : `${boot} ms`} />
       <Row label="Offline ready" value={offlineReady === null ? 'checking' : offlineReady ? 'yes' : 'no'} />
       <Row

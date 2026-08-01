@@ -24,6 +24,7 @@ pnpm-debug.log*
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+.vs/
 
 # Planning scratch (PDF page extractions, etc.)
 tmp/
