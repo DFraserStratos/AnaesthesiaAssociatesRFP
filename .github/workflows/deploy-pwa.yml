@@ -1,0 +1,51 @@
+name: Deploy PWA to Cloudflare Pages
+# Builds the installable Anaesthetist Mobile App (the PWA target) and
+# direct-uploads dist-pwa/ to Cloudflare Pages. The full three-app prototype
+# (dist/) is a separate output and is deliberately not deployed here.
+on:
+  push:
+    branches: [master]
+    # Only rebuild when the app (or this workflow) changes, not on docs edits.
+    paths:
+      - 'aa-prototype/**'
+      - '.github/workflows/deploy-pwa.yml'
+  workflow_dispatch: {}
+# A newer push supersedes an in-flight deploy rather than racing it.
+concurrency:
+  group: deploy-pwa
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    defaults:
+      run:
+        working-directory: aa-prototype
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: aa-prototype/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      # Quality gate. Includes pwaPurity.test.ts, which fails the build if the
+      # PWA bundle ever regains the web/admin/demo apps. Remove if you want
+      # deploys to skip tests.
+      - name: Test
+        run: npm run test
+      # Runs tsc -b then vite build --config vite.pwa.config.ts into dist-pwa/.
+      # GITHUB_SHA is present in the runner, so the More-tab build id is the
+      # real 7-char commit.
+      - name: Build PWA
+        run: npm run build:pwa
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: aa-prototype
+          command: pages deploy dist-pwa --project-name=aa-pwa --branch=${{ github.ref_name }}
