@@ -1,5 +1,10 @@
 # Repository Guidelines
 
+## Communication
+
+When reporting information to me, be extremely concise and sacrifice grammar for the sake of
+concision.
+
 ## Project Structure & Module Organization
 
 The app lives in `aa-prototype/`; run npm commands there. Under `src/`, `domain/` contains pure

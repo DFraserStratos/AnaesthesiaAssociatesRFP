@@ -362,15 +362,25 @@ seconds later, rather than orphaning it, so the story can carry on from where th
   a stylisation; an iPhone 14 Pro really reserves 59px and an iPhone 13 really reserves 47px. Expect
   ±5 to 7px of difference in the header band and do not chase it.
 
-### One open decision: the iOS status bar
+### Settled on device: the iOS status bar
 
-`pwa/index.html` ships `apple-mobile-web-app-status-bar-style: default`, which keeps the status bar
-outside the web view with reliably dark glyphs. The alternative, `black-translucent`, starts the web
-view at y=0 so the atmosphere flows under the status bar exactly as it does under the frame's fake
-one. That is nicer, but the glyph colour is genuinely uncertain across iOS versions, which is why it
-is not already shipped. Try it on the actual device and keep whichever reads better. The inset
-contract's 12px top floor means the layout is correct either way, so this stays a one-line cosmetic
-change.
+`pwa/index.html` ships `apple-mobile-web-app-status-bar-style: black-translucent`. This was an open
+decision until the first real-handset test (2026-08-03), which settled it.
+
+Under the previous `default`, iOS kept the status bar **outside** the web view: it started the view
+below the bar and painted the reserved band with the document background colour, so the band rendered
+a flat `#F6F8F7` while the atmosphere began underneath it — a visible horizontal seam across the top
+of every screen. A reserved band is also not a safe area, so `env(safe-area-inset-top)` reported `0`,
+`--aa-inset-top` collapsed to its 12px floor, and the canvas lost a full status-bar height off the
+bottom.
+
+`black-translucent` starts the web view at y=0, so the atmosphere flows under the status bar exactly
+as it does under the frame's fake one, and `env(safe-area-inset-top)` reports the device's real
+reserve (59px on a 14 Pro, 47px on a 13) for the inset contract to consume. Glyph colour follows the
+system appearance on modern iOS, so a light-mode handset gets the dark glyphs this light canvas
+needs. If that ever regresses to forced-white glyphs, revert to `default` and set the inline
+`background` in `pwa/index.html` to `#F3EAEC` (the measured top-of-atmosphere colour, the same value
+as the manifest's `theme_color`) so the reserved band at least matches the wash.
 
 ## Fonts
 
