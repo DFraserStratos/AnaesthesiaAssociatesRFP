@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Check, RefreshCw, RotateCcw } from 'lucide-react'
+import { Check, ClipboardCopy, RefreshCw, RotateCcw } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { BottomSheet } from '../shared/surface'
 import { SlidingSegmentedControl } from '../shared/ui/SlidingSegmentedControl'
@@ -16,6 +16,7 @@ import {
   type CardCalculationMode,
 } from '../store'
 import { demoClockShortcuts } from '../shared/demoClockShortcuts'
+import { readViewportMetrics, viewportShortfall, type ViewportMetrics } from './viewportMetrics'
 import {
   OFFICE_SIM_COPY,
   isOfficeSimulationEnabled,
@@ -347,57 +348,124 @@ function ResetCard() {
   )
 }
 
+/** The class `global.css` hangs the shortfall band off; toggled on documentElement. */
+const PROBE_CLASS = 'aa-viewport-probe'
+
 /**
- * Raw viewport read-out, and the reason it earns a place in a presenter panel:
- * iOS standalone reports these numbers inconsistently once the status bar is
- * translucent, and which of them is honest decides how `.aa-mobile-viewport`
- * sizes itself (the full account is on that rule in `src/theme/global.css`).
- * When a handset shows the tab bar floating off the foot of the screen, this is
- * the one screenshot that says why, with no cable and no remote inspector.
+ * Viewport diagnostics, and the reason a presenter panel carries them: iOS
+ * standalone reports the height of the space it has given the app
+ * inconsistently once the status bar is translucent, and the app has no other
+ * way to find out. Two rounds of this were debugged by measuring pixels off
+ * screenshots, which is slow and got the device model wrong; this card answers
+ * it directly.
  *
- * `box` is what the host element actually rendered at, so it is the number that
- * decides whether the layout is right; the rest are the candidates it could
- * have been sized from. On a correct device all four heights agree. Safe to
- * delete once the sizing has held across a few iOS releases.
+ * Read it as one question: does `box` reach `screen`? Everything else is the
+ * evidence for why it does or does not. `src/pwa/viewportMetrics.ts` holds the
+ * measurements, the rule and the full account of the bug.
  *
- * The `env()` values cannot be read back off the host: custom properties
- * compute to an unevaluated token stream, so `--aa-inset-top` would come back
- * as the literal `max(env(...), 12px)`. A throwaway probe whose padding is the
- * raw `env()` resolves them to real pixels instead.
+ * THE PROBE is the part numbers cannot settle. When the correction is applied
+ * the host is deliberately TALLER than the viewport iOS admits to, and whether
+ * anything actually paints in that reclaimed strip depends on where WebKit puts
+ * its clip. The band draws exactly that strip, with a solid rule along its top
+ * edge at the reported viewport bottom:
+ *
+ *   band visible all the way down    the strip paints, the correction works
+ *   rule visible, no band below it   the strip is clipped, and the only fix is
+ *                                    to go back to a `default` status bar
+ *
+ * Safe to delete this whole card once the sizing has held across a few iOS
+ * releases; nothing else imports it.
  */
-function ViewportRows() {
-  const [lines, setLines] = useState<[string, string] | null>(null)
+function ViewportCard() {
+  const [m, setM] = useState<ViewportMetrics | null>(null)
+  const [probe, setProbe] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    const probe = document.createElement('div')
-    probe.style.cssText =
-      'position:absolute;top:0;left:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)'
-    document.body.appendChild(probe)
-
-    const read = () => {
-      const px = (v: string): number => Math.round(Number.parseFloat(v) || 0)
-      const cs = getComputedStyle(probe)
-      const host = document.querySelector('.aa-mobile-viewport')
-      const box = host === null ? 0 : Math.round(host.getBoundingClientRect().height)
-      setLines([
-        `box ${box} · icb ${document.documentElement.clientHeight}`,
-        `${window.screen.height} · vis ${Math.round(window.visualViewport?.height ?? 0)} · safe ${px(cs.paddingTop)}/${px(cs.paddingBottom)}`,
-      ])
-    }
-
+    const read = () => setM(readViewportMetrics())
     read()
     window.addEventListener('resize', read)
+    window.addEventListener('orientationchange', read)
     return () => {
       window.removeEventListener('resize', read)
-      probe.remove()
+      window.removeEventListener('orientationchange', read)
     }
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.toggle(PROBE_CLASS, probe)
+    return () => document.documentElement.classList.remove(PROBE_CLASS)
+  }, [probe])
+
+  if (m === null) {
+    return (
+      <Card title="Viewport">
+        <Row label="Reading" value="measuring" />
+      </Card>
+    )
+  }
+
+  const shortfall = viewportShortfall(m)
+  const report = { build: __BUILD_ID__, ...m, shortfall, userAgent: navigator.userAgent }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2))
+      setCopied(true)
+    } catch {
+      // A denied or absent clipboard is not worth an error state on a demo
+      // panel: the numbers are all on screen above, so a screenshot still works.
+      setCopied(false)
+    }
+  }
+
   return (
-    <>
-      <Row label="Viewport" value={lines === null ? 'measuring' : lines[0]} />
-      <Row label="Screen" value={lines === null ? 'measuring' : lines[1]} />
-    </>
+    <Card title="Viewport">
+      <Row label="Host box" value={`${m.box}`} />
+      <Row label="Layout viewport" value={`${m.icb}`} />
+      <Row label="Window inner" value={`${m.inner}`} />
+      <Row label="Visual viewport" value={`${m.visual}`} />
+      <Row label="Screen" value={`${m.screenWidth} x ${m.screenHeight}`} />
+      <Row label="Safe T/B/L/R" value={`${m.insetTop}/${m.insetBottom}/${m.insetLeft}/${m.insetRight}`} />
+      <Row label="Mode" value={`${m.standalone ? 'standalone' : 'browser'} · ${m.webkit ? 'webkit' : 'other'} · dpr ${m.devicePixelRatio}`} />
+      <Row
+        label="Correction"
+        value={shortfall === 0 ? 'none needed' : `+${shortfall} px`}
+      />
+      <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
+        {m.box >= m.screenHeight
+          ? 'The host reaches the foot of the screen.'
+          : `The host stops ${m.screenHeight - m.box} px short of the screen. Turn the probe on and look at the very bottom edge.`}
+      </div>
+      <ToggleRow on={probe} onChange={setProbe} label="Show shortfall band" />
+      <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
+        The band fills the strip the correction reclaims, with a solid rule along its top edge. Band
+        visible to the bottom edge means the strip paints. Rule alone, with nothing under it, means it
+        is clipped.
+      </div>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          minHeight: 44,
+          borderRadius: radius.ctl,
+          border: `1px solid ${neutral.lineStrong}`,
+          background: neutral.surface,
+          color: neutral.ink,
+          fontFamily: 'inherit',
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        {copied ? <Check size={16} strokeWidth={2.4} aria-hidden /> : <ClipboardCopy size={16} strokeWidth={2.2} aria-hidden />}
+        {copied ? 'Copied' : 'Copy diagnostics'}
+      </button>
+    </Card>
   )
 }
 
@@ -457,7 +525,6 @@ function BuildCard() {
       <Row label="Version" value={__BUILD_ID__} />
       <Row label="Release Date" value={format(parseISO(__BUILD_DATE__), 'd MMM yyyy, HH:mm')} />
       <Row label="Cold launch" value={boot === null ? 'measuring' : `${boot} ms`} />
-      <ViewportRows />
       <Row label="Offline ready" value={offlineReady === null ? 'checking' : offlineReady ? 'yes' : 'no'} />
       <Row
         label="Saved data"
@@ -525,6 +592,7 @@ export function PwaDemoPanel() {
       <CardCalculationCard />
       <ResetCard />
       <BuildCard />
+      <ViewportCard />
     </>
   )
 }

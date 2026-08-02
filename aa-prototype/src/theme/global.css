@@ -266,32 +266,72 @@ body {
 }
 
 /*
- * ...and the standalone correction, measured on an installed iPhone (393x852pt)
- * on 2026-08-03.
+ * ...and the standalone correction, measured on an installed iPhone 16 Pro
+ * (402x874pt) on 2026-08-03.
  *
  * Under `apple-mobile-web-app-status-bar-style: black-translucent` the web view
- * is genuinely full screen: the atmosphere reaches y=0 and
- * `env(safe-area-inset-top)` reports the real 59px. But the viewport UNITS keep
- * reporting the old status-bar-excluded height, so `100dvh` resolved to 793px
- * inside an 852px window. The host box, the `height: 100%` product div inside
- * it and the `bottom: 0` tab bar therefore all finished exactly 59px short, and
- * the nav floated off the foot of the screen with a dead band beneath it.
+ * is genuinely full screen, but every route to the viewport height reports one
+ * status bar less than the screen: 812 inside an 874 window, with
+ * `env(safe-area-inset-top)` reporting the missing 62. The host box, the
+ * `height: 100%` product div inside it and the `bottom: 0` tab bar therefore
+ * all finished 62px short, and the nav floated above a dead band.
  *
- * `height: 100%` resolves against the initial containing block rather than the
- * unit, so it sidesteps the bug without an iOS sniff and without a magic
- * number: nothing here can overshoot if WebKit later fixes `dvh`, because
- * `100%` is simply correct either way.
+ * `100dvh`, `100vh`, `height: 100%` and `position: fixed` are all equally wrong
+ * here, because the initial containing block ITSELF is the short number. That
+ * is why this is not a unit choice: the missing height is added back from
+ * `--aa-viewport-shortfall`, which `MobileViewport` measures against
+ * `screen.height` (the only source the bug does not touch) and publishes before
+ * paint. `src/pwa/viewportMetrics.ts` holds the reading, the rule and the
+ * evidence; the fallback of 0 keeps this rule inert if the property is ever
+ * absent.
  *
  * Scoped to standalone for the reason the comment above gives. In a browser tab
  * before install there IS a collapsing URL bar, and `100%` would fill the large
  * viewport and hide the tab bar behind it, which is the exact failure `dvh` is
- * here to prevent. It also needs an unbroken height chain, which is why
- * `pwa/index.html` sets `html, body, #root { height: 100% }`.
+ * here to prevent. The percentage also needs an unbroken height chain, which is
+ * why `pwa/index.html` sets `html, body, #root { height: 100% }`.
  */
 @media (display-mode: standalone) {
   .aa-mobile-viewport {
-    height: 100%;
+    height: calc(100% + var(--aa-viewport-shortfall, 0px));
   }
+}
+
+/*
+ * The shortfall probe, driven by the More tab's Viewport card (PWA only). It
+ * answers the one question the numbers cannot: the correction above makes the
+ * host TALLER than the viewport iOS admits to, and whether anything paints in
+ * that reclaimed strip depends on where WebKit puts its clip rect.
+ *
+ * The band IS the strip, and the `border-top` sits on the reported viewport
+ * bottom, which is inside the clip either way. So band visible to the bottom
+ * edge of the screen means the strip paints and the correction lands; rule
+ * visible with nothing under it means it is clipped, and the only remaining fix
+ * is to go back to a `default` status bar and accept a flat band at the top.
+ *
+ * Ink and surface only, no new colours: the diagonal hatch is what makes it
+ * unmistakably a debug overlay rather than a piece of the app.
+ */
+html.aa-viewport-probe .aa-mobile-viewport::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--aa-viewport-shortfall, 0px);
+  z-index: 90;
+  pointer-events: none;
+  /* `neutral.ink`, literal: this rule is CSS-only, and there is no `--aa-ink`
+     custom property to read (the tokens live in TS and reach components as
+     style objects). */
+  border-top: 3px solid #172320;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(23, 35, 32, 0.55) 0,
+    rgba(23, 35, 32, 0.55) 6px,
+    rgba(23, 35, 32, 0.12) 6px,
+    rgba(23, 35, 32, 0.12) 12px
+  );
 }
 
 /* Data / numeric text: monospace with tabular figures so values tick without

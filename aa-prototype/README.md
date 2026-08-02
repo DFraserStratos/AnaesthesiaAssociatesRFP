@@ -384,15 +384,38 @@ instead, revert to `default` and set the inline `background` in `pwa/index.html`
 measured top-of-atmosphere colour, the same value as the manifest's `theme_color`) so the reserved
 band at least matches the wash.
 
-`black-translucent` carries one further cost, already paid: iOS keeps reporting the *old*
-status-bar-excluded height through the viewport units, so `100dvh` came back as 793px inside an
-852px window and the host box, the product div and the `bottom: 0` tab bar all finished 59px short,
-leaving the nav floating above a dead band. `.aa-mobile-viewport` therefore sizes itself with
-`height: 100%` under `@media (display-mode: standalone)`, which resolves against the initial
-containing block instead of the unit. That is why `pwa/index.html` sets
-`html, body, #root { height: 100% }` — a percentage height needs an unbroken chain, and a missing
-link collapses the host to zero. The More tab's Build card carries a `Viewport` / `Screen` read-out
-so the next handset that disagrees can be diagnosed from a screenshot.
+### The short viewport that comes with it
+
+`black-translucent` carries a second defect, and it is not a unit choice. Measured on an installed
+iPhone 16 Pro (402x874pt):
+
+| source | reports |
+| --- | --- |
+| `screen.height` | **874** |
+| `documentElement.clientHeight` | 812 |
+| `window.innerHeight` | 812 |
+| `visualViewport.height` | 812 |
+| `env(safe-area-inset-top)` | 62 |
+
+The web view is genuinely full screen, but every CSS and DOM route to its height reports
+`874 - 62 = 812` for a box anchored at y=0. So the host, the `height: 100%` product div inside it and
+the `bottom: 0` tab bar all finish one status bar short, and the nav floats above a dead band.
+`100dvh`, `100vh`, `height: 100%` and `position: fixed` are equally wrong, because the initial
+containing block itself is the short number.
+
+`.aa-mobile-viewport` therefore adds `--aa-viewport-shortfall` to its height under
+`@media (display-mode: standalone)`. `MobileViewport` measures it against `screen.height` in a
+`useLayoutEffect` (before paint, so the corrected height is the first frame) and
+`src/pwa/viewportMetrics.ts` holds the rule, the evidence and its unit tests. It is derived rather
+than hardcoded to `env(safe-area-inset-top)` so it cancels itself the day WebKit reports honestly,
+and it is clamped to the top inset so it can never do more damage than the bug. `pwa/index.html`
+keeps `overflow: hidden` on `html` alone for the same reason: a clipping `body` would cut the
+reclaimed strip off before it could paint.
+
+The More tab's **Viewport card** is the instrument for all of this: every measurement, the derived
+correction, a copy-diagnostics button, and a probe that paints the reclaimed strip so you can see
+whether it survives WebKit's clip. Delete the card once the sizing has held across a few iOS
+releases.
 
 **Changing this needs an app relaunch, not a reload — budget for it when prepping presenter
 handsets.** iOS builds the standalone window, geometry and status-bar style included, when the web

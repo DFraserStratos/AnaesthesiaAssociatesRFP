@@ -101,12 +101,23 @@
          unbroken chain to the initial containing block, so a missing height on
          any of html / body / #root collapses the host to zero. -->
     <style>
-      html,
+      html {
+        height: 100%;
+        background: #f6f8f7;
+        overflow: hidden;
+      }
+
+      /* `overflow` lives on `html` ALONE, deliberately. It still makes "there is
+         no document scroll" literally true, because the viewport takes its
+         overflow from `html` whenever `html` sets one. But in standalone the
+         host is taller than the viewport on purpose (see
+         `.aa-mobile-viewport`), and a `body` that also clipped would cut the
+         reclaimed strip off before it could ever paint, silently undoing the
+         correction. */
       body {
         margin: 0;
         height: 100%;
         background: #f6f8f7;
-        overflow: hidden;
       }
 
       #root {

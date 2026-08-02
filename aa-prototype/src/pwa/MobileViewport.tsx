@@ -1,9 +1,10 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { neutral } from '../theme/tokens'
 import { gradientCssVars } from '../theme/mobileGradient'
 import { AtmosphereLayer } from '../shell/gradientLab/AtmosphereLayer'
 import { useMobileGradient } from '../shell/gradientLab/useGradientLab'
 import { UpdatePrompt } from './UpdatePrompt'
+import { readViewportMetrics, viewportShortfall, SHORTFALL_VAR } from './viewportMetrics'
 
 /**
  * The installed PWA's mounting host — `PhoneFrame`'s opposite number, and the
@@ -32,6 +33,37 @@ import { UpdatePrompt } from './UpdatePrompt'
 export function MobileViewport({ children }: { children: ReactNode }) {
   const { config: gradient } = useMobileGradient()
   const rootRef = useRef<HTMLDivElement | null>(null)
+
+  /**
+   * Publish `--aa-viewport-shortfall`, the height iOS withholds from every
+   * viewport API but not from the screen. `.aa-mobile-viewport` adds it back in
+   * `global.css`; `viewportMetrics.ts` carries the measurements and the rule.
+   *
+   * `useLayoutEffect`, NOT `useEffect`, and that is the whole point of the
+   * choice: it runs after the host is in the DOM but before the browser paints,
+   * so the corrected height is the FIRST thing on screen. Under `useEffect` the
+   * cold launch would show one frame of tab bar floating above a dead band,
+   * which is precisely the defect this is fixing, just briefly.
+   *
+   * The listener is `resize` rather than `visualViewport` on purpose: this is a
+   * property of the window the app was given, so it changes on rotation and on
+   * an iPad's split view, and NOT when the software keyboard opens (that is
+   * `--aa-keyboard-inset`, below, and conflating the two would fight it).
+   */
+  useLayoutEffect(() => {
+    const el = rootRef.current
+    if (el === null) return
+    const apply = () => {
+      el.style.setProperty(SHORTFALL_VAR, `${viewportShortfall(readViewportMetrics())}px`)
+    }
+    apply()
+    window.addEventListener('resize', apply)
+    window.addEventListener('orientationchange', apply)
+    return () => {
+      window.removeEventListener('resize', apply)
+      window.removeEventListener('orientationchange', apply)
+    }
+  }, [])
 
   /**
    * The iOS `:active` unlock. WebKit does not fire `:active` at all unless a
