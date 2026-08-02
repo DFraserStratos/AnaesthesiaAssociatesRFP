@@ -30,6 +30,14 @@ describe('viewportShortfall', () => {
     expect(viewportShortfall(IPHONE_16_PRO_BUGGED)).toBe(62)
   })
 
+  it('holds the same correction once applied, so it cannot oscillate', () => {
+    // The post-fix reading off the same handset: `inner` and `visual` catch up
+    // to the screen, `icb` does not. Keying off `icb` is what makes the
+    // corrected state a fixed point instead of a flip-flop. A rewrite against
+    // `inner` would return 0 here, collapse the host, and start the loop.
+    expect(viewportShortfall(at({ box: 874, inner: 874, visual: 874 }))).toBe(62)
+  })
+
   it('is zero once WebKit reports the viewport honestly, with no code change', () => {
     // The whole point of measuring rather than hardcoding `env(safe-area-inset-top)`:
     // the day the bug is fixed, this must stop adding anything by itself.

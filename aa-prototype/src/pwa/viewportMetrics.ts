@@ -21,6 +21,21 @@
  * is why the first two attempts at this changed nothing. Only `screen.height`
  * knows better.
  *
+ * AND THE READING CHANGES ONCE THE CORRECTION IS IN, which is the trap for
+ * whoever touches this next. The same handset, same iOS, with the fix applied:
+ *
+ *     screen.height                    874
+ *     documentElement.clientHeight     812    <- still short
+ *     window.innerHeight               874    <- now agrees
+ *     visualViewport.height            874    <- now agrees
+ *
+ * So the rule below keys off `documentElement.clientHeight` and nothing else.
+ * It is the box percentage heights actually resolve against, and it is the only
+ * source that stays honest about the shortfall after the correction lands.
+ * Rewriting the rule against `innerHeight` would read 874, compute a shortfall
+ * of 0, collapse the host back to 812, and then read 812 again on the next
+ * resize: a loop, not a fix.
+ *
  * The insets are internally inconsistent with that box, which is what marks it
  * as a WebKit bug rather than a contract we have misread: a 34px bottom inset
  * measured up from y=812 protects y=778..812, while the home indicator is
@@ -79,6 +94,8 @@ export interface ViewportMetrics {
  */
 export function viewportShortfall(m: ViewportMetrics): number {
   if (!m.standalone || !m.webkit) return 0
+  // `icb`, never `inner` or `visual`: those two catch up to the screen once the
+  // correction is applied, and keying off them oscillates. See the header.
   const gap = Math.round(m.screenHeight - m.icb)
   return Math.max(0, Math.min(gap, Math.round(m.insetTop)))
 }

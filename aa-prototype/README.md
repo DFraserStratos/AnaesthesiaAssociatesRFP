@@ -403,6 +403,11 @@ the `bottom: 0` tab bar all finish one status bar short, and the nav floats abov
 `100dvh`, `100vh`, `height: 100%` and `position: fixed` are equally wrong, because the initial
 containing block itself is the short number.
 
+Confirmed on iOS 18.7. Note that the reading *changes* once the correction is applied:
+`innerHeight` and `visualViewport.height` catch up to 874 while `clientHeight` stays 812. That is why
+the rule keys off `clientHeight` alone. Against `innerHeight` it would compute a shortfall of zero,
+collapse the host, and loop.
+
 `.aa-mobile-viewport` therefore adds `--aa-viewport-shortfall` to its height under
 `@media (display-mode: standalone)`. `MobileViewport` measures it against `screen.height` in a
 `useLayoutEffect` (before paint, so the corrected height is the first frame) and
