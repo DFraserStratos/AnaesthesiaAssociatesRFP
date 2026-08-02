@@ -384,6 +384,16 @@ instead, revert to `default` and set the inline `background` in `pwa/index.html`
 measured top-of-atmosphere colour, the same value as the manifest's `theme_color`) so the reserved
 band at least matches the wash.
 
+`black-translucent` carries one further cost, already paid: iOS keeps reporting the *old*
+status-bar-excluded height through the viewport units, so `100dvh` came back as 793px inside an
+852px window and the host box, the product div and the `bottom: 0` tab bar all finished 59px short,
+leaving the nav floating above a dead band. `.aa-mobile-viewport` therefore sizes itself with
+`height: 100%` under `@media (display-mode: standalone)`, which resolves against the initial
+containing block instead of the unit. That is why `pwa/index.html` sets
+`html, body, #root { height: 100% }` — a percentage height needs an unbroken chain, and a missing
+link collapses the host to zero. The More tab's Build card carries a `Viewport` / `Screen` read-out
+so the next handset that disagrees can be diagnosed from a screenshot.
+
 **Changing this needs an app relaunch, not a reload — budget for it when prepping presenter
 handsets.** iOS builds the standalone window, geometry and status-bar style included, when the web
 view is created at launch, from the HTML it loads then. A service-worker update swaps the content of

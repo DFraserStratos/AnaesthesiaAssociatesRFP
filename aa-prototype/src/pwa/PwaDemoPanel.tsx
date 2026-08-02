@@ -347,6 +347,60 @@ function ResetCard() {
   )
 }
 
+/**
+ * Raw viewport read-out, and the reason it earns a place in a presenter panel:
+ * iOS standalone reports these numbers inconsistently once the status bar is
+ * translucent, and which of them is honest decides how `.aa-mobile-viewport`
+ * sizes itself (the full account is on that rule in `src/theme/global.css`).
+ * When a handset shows the tab bar floating off the foot of the screen, this is
+ * the one screenshot that says why, with no cable and no remote inspector.
+ *
+ * `box` is what the host element actually rendered at, so it is the number that
+ * decides whether the layout is right; the rest are the candidates it could
+ * have been sized from. On a correct device all four heights agree. Safe to
+ * delete once the sizing has held across a few iOS releases.
+ *
+ * The `env()` values cannot be read back off the host: custom properties
+ * compute to an unevaluated token stream, so `--aa-inset-top` would come back
+ * as the literal `max(env(...), 12px)`. A throwaway probe whose padding is the
+ * raw `env()` resolves them to real pixels instead.
+ */
+function ViewportRows() {
+  const [lines, setLines] = useState<[string, string] | null>(null)
+
+  useEffect(() => {
+    const probe = document.createElement('div')
+    probe.style.cssText =
+      'position:absolute;top:0;left:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)'
+    document.body.appendChild(probe)
+
+    const read = () => {
+      const px = (v: string): number => Math.round(Number.parseFloat(v) || 0)
+      const cs = getComputedStyle(probe)
+      const host = document.querySelector('.aa-mobile-viewport')
+      const box = host === null ? 0 : Math.round(host.getBoundingClientRect().height)
+      setLines([
+        `box ${box} · icb ${document.documentElement.clientHeight}`,
+        `${window.screen.height} · vis ${Math.round(window.visualViewport?.height ?? 0)} · safe ${px(cs.paddingTop)}/${px(cs.paddingBottom)}`,
+      ])
+    }
+
+    read()
+    window.addEventListener('resize', read)
+    return () => {
+      window.removeEventListener('resize', read)
+      probe.remove()
+    }
+  }, [])
+
+  return (
+    <>
+      <Row label="Viewport" value={lines === null ? 'measuring' : lines[0]} />
+      <Row label="Screen" value={lines === null ? 'measuring' : lines[1]} />
+    </>
+  )
+}
+
 const BYTES_PER_MB = 1024 * 1024
 
 /** Without a visible build id you cannot tell whether the phone picked up a
@@ -403,6 +457,7 @@ function BuildCard() {
       <Row label="Version" value={__BUILD_ID__} />
       <Row label="Release Date" value={format(parseISO(__BUILD_DATE__), 'd MMM yyyy, HH:mm')} />
       <Row label="Cold launch" value={boot === null ? 'measuring' : `${boot} ms`} />
+      <ViewportRows />
       <Row label="Offline ready" value={offlineReady === null ? 'checking' : offlineReady ? 'yes' : 'no'} />
       <Row
         label="Saved data"

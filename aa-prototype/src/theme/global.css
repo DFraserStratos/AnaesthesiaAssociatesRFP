@@ -265,6 +265,35 @@ body {
   height: 100dvh;
 }
 
+/*
+ * ...and the standalone correction, measured on an installed iPhone (393x852pt)
+ * on 2026-08-03.
+ *
+ * Under `apple-mobile-web-app-status-bar-style: black-translucent` the web view
+ * is genuinely full screen: the atmosphere reaches y=0 and
+ * `env(safe-area-inset-top)` reports the real 59px. But the viewport UNITS keep
+ * reporting the old status-bar-excluded height, so `100dvh` resolved to 793px
+ * inside an 852px window. The host box, the `height: 100%` product div inside
+ * it and the `bottom: 0` tab bar therefore all finished exactly 59px short, and
+ * the nav floated off the foot of the screen with a dead band beneath it.
+ *
+ * `height: 100%` resolves against the initial containing block rather than the
+ * unit, so it sidesteps the bug without an iOS sniff and without a magic
+ * number: nothing here can overshoot if WebKit later fixes `dvh`, because
+ * `100%` is simply correct either way.
+ *
+ * Scoped to standalone for the reason the comment above gives. In a browser tab
+ * before install there IS a collapsing URL bar, and `100%` would fill the large
+ * viewport and hide the tab bar behind it, which is the exact failure `dvh` is
+ * here to prevent. It also needs an unbroken height chain, which is why
+ * `pwa/index.html` sets `html, body, #root { height: 100% }`.
+ */
+@media (display-mode: standalone) {
+  .aa-mobile-viewport {
+    height: 100%;
+  }
+}
+
 /* Data / numeric text: monospace with tabular figures so values tick without
    jitter (Design Language §03). */
 .mono {

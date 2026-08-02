@@ -93,12 +93,24 @@
          `overflow: hidden` makes "there is no document scroll" literally true,
          which is what lets `position: fixed` and `100dvh` behave under the iOS
          keyboard. -->
+    <!-- `height: 100%` on all three is LOAD-BEARING, not tidiness. In standalone
+         `.aa-mobile-viewport` sizes itself with `height: 100%` rather than
+         `100dvh`, because iOS under-reports the viewport units by the status
+         bar height once the status bar is translucent (the full account is on
+         that rule in `src/theme/global.css`). A percentage height needs an
+         unbroken chain to the initial containing block, so a missing height on
+         any of html / body / #root collapses the host to zero. -->
     <style>
       html,
       body {
         margin: 0;
+        height: 100%;
         background: #f6f8f7;
         overflow: hidden;
+      }
+
+      #root {
+        height: 100%;
       }
     </style>
   </head>
