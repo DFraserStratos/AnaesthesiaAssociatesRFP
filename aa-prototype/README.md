@@ -376,11 +376,22 @@ bottom.
 
 `black-translucent` starts the web view at y=0, so the atmosphere flows under the status bar exactly
 as it does under the frame's fake one, and `env(safe-area-inset-top)` reports the device's real
-reserve (59px on a 14 Pro, 47px on a 13) for the inset contract to consume. Glyph colour follows the
-system appearance on modern iOS, so a light-mode handset gets the dark glyphs this light canvas
-needs. If that ever regresses to forced-white glyphs, revert to `default` and set the inline
-`background` in `pwa/index.html` to `#F3EAEC` (the measured top-of-atmosphere colour, the same value
-as the manifest's `theme_color`) so the reserved band at least matches the wash.
+reserve (59px on a 14 Pro, 47px on a 13) for the inset contract to consume. Glyph colour was the one
+real risk and is now observed rather than assumed: the test handset renders dark glyphs over the
+wash, and they stay legible with a sheet open (`scrim` is `rgba(23,35,32,0.32)`, which composites the
+wash to about `#ACABAA` and leaves dark glyphs near 9:1). If some future iOS forces white glyphs
+instead, revert to `default` and set the inline `background` in `pwa/index.html` to `#F3EAEC` (the
+measured top-of-atmosphere colour, the same value as the manifest's `theme_color`) so the reserved
+band at least matches the wash.
+
+**Changing this needs an app relaunch, not a reload — budget for it when prepping presenter
+handsets.** iOS builds the standalone window, geometry and status-bar style included, when the web
+view is created at launch, from the HTML it loads then. A service-worker update swaps the content of
+a running app, so the More tab's Build card will happily report the new build while the window is
+still laid out to the old chrome, and the change reads as a silent failure. This bit us on the first
+device test: the phone was verifiably on the new build and still showing the old reserved band.
+Force-quit from the app switcher and reopen. If that does not take, remove the home-screen icon and
+re-add it, which also clears the app's storage and reseeds the demo world.
 
 ## Fonts
 

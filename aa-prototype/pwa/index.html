@@ -50,13 +50,25 @@
          consumes at every top call site. No seam, full-bleed canvas, headers
          still clear of the glyphs.
 
-         The one thing to re-check if iOS ever changes it: glyph colour. Modern
-         iOS follows the system appearance here, so a light-mode handset gets
-         dark glyphs, which is what this light canvas needs. If a future version
-         forces white glyphs, they would land on the white card header — revert
-         to `default` and change the inline `background` below to `#F3EAEC` (the
-         measured top-of-atmosphere colour, same value as `theme_color`) so the
-         reserved band at least matches. -->
+         Glyph colour was the one real risk, and it is now OBSERVED, not
+         assumed: on the test handset iOS renders DARK glyphs over the wash,
+         which is what this light canvas needs. They stay legible with a sheet
+         open too — `scrim` is `rgba(23,35,32,0.32)`, which composites the wash
+         to roughly `#ACABAA` and leaves dark glyphs around 9:1. If some future
+         iOS forces white glyphs instead, they would land on the white card
+         header: revert this line to `default` and change the inline
+         `background` below to `#F3EAEC` (the measured top-of-atmosphere colour,
+         the same value as `theme_color`) so the reserved band at least matches.
+
+         DEPLOYING A CHANGE TO THIS LINE NEEDS AN APP RELAUNCH, NOT A RELOAD.
+         iOS builds the standalone window — its geometry and its status-bar
+         style — when the web view is created at launch, from the HTML it loads
+         at that moment. A service-worker update swaps the CONTENT of a running
+         app, so the More tab's Build card will report the new build while the
+         window is still laid out to the old chrome, and the change looks like
+         it silently failed. Force-quit from the app switcher and reopen; if
+         that does not take, remove the home-screen icon and re-add it (which
+         also clears the app's storage, so the demo world reseeds). -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
