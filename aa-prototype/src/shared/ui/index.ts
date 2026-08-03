@@ -9,3 +9,4 @@ export {
 } from './SlidingSegmentedControl'
 export { TickBadge } from './TickBadge'
 export { SuccessOverlay } from './SuccessOverlay'
+export { DockSpacer } from './DockSpacer'

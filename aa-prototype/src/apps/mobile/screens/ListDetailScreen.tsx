@@ -4,7 +4,7 @@ import { accent, elevation, neutral, radius, semantic } from '../../../theme/tok
 import { motion } from '../../../theme/motion'
 import type { Card } from '../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../store'
-import { StatusChip } from '../../../shared'
+import { DockSpacer, StatusChip } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
@@ -157,8 +157,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
         </div>
       </div>
 
-      {/* Clears the submit footer below, which tracks the inset 1:1. */}
-      <div data-testid="mobile-list-scroll" style={{ flex: 1, overflow: 'auto', padding: '12px 20px calc(var(--aa-inset-bottom, 34px) + 96px)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Clearance for the submit footer below (which tracks the inset 1:1) is
+          a `DockSpacer` at the tail, NOT padding here. See that component: this
+          screen is where trailing padding was found to create no scroll extent
+          on WebKit, stranding "Add a card" under the dock. */}
+      <div data-testid="mobile-list-scroll" style={{ flex: 1, overflow: 'auto', padding: '12px 20px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {model.rows.map((r) => {
           const cancelled = r.card.cancellation !== undefined
           return (
@@ -247,6 +250,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
             Add a card
           </button>
         )}
+        {/* 96 - 10 for the column gap, so the reserved space is unchanged. */}
+        <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 86px)" />
       </div>
 
       {/* Sticky submit footer — the mockup's disabled → enabled → submitted

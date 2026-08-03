@@ -38,6 +38,25 @@ async function computed(locator: Locator, property: string): Promise<string> {
   )
 }
 
+/**
+ * The dock / tab-bar clearance a scroller reserves below its last item.
+ *
+ * This USED to be the scroller's own `padding-bottom`, and these expectations
+ * used to read it there. It is now a `DockSpacer` at the tail instead, because
+ * trailing padding contributes no scrollable extent, so a screen whose content
+ * stopped just short of filling its scroller left the last item stranded under
+ * the dock with nothing to scroll (see `src/shared/ui/DockSpacer.tsx`).
+ *
+ * Where the scroller is a flex column with a `gap`, the spacer is exactly that
+ * much shorter and the gap makes up the difference, so every reserved total
+ * below is unchanged from the padding it replaced.
+ */
+async function clearance(scroller: Locator): Promise<string> {
+  const spacer = scroller.getByTestId('dock-spacer')
+  await expect(spacer).toHaveCount(1)
+  return computed(spacer, 'height')
+}
+
 async function openLists(page: Page): Promise<void> {
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
@@ -86,8 +105,8 @@ test('Lists tab: header 64, scroller 116, tab bar 26', async ({ page }) => {
 
   // calc(54 + 10)
   expect(await computed(page.getByTestId('mobile-lists-header'), 'padding-top')).toBe('64px')
-  // calc(34 + 82)
-  expect(await computed(page.getByTestId('mobile-lists-scroll'), 'padding-bottom')).toBe('116px')
+  // calc(34 + 82) — no column gap on this scroller, so the spacer is the lot.
+  expect(await clearance(page.getByTestId('mobile-lists-scroll'))).toBe('116px')
   // max(calc(34 - 8), 10) — the deliberate overlap onto the home indicator's
   // own 8px lower margin.
   expect(await computed(page.getByTestId('mobile-tab-bar'), 'padding-bottom')).toBe('26px')
@@ -98,8 +117,8 @@ test('List detail: header 60, scroller 130, submit footer 32', async ({ page }) 
 
   // calc(54 + 6)
   expect(await computed(page.getByTestId('mobile-list-header'), 'padding-top')).toBe('60px')
-  // calc(34 + 96)
-  expect(await computed(page.getByTestId('mobile-list-scroll'), 'padding-bottom')).toBe('130px')
+  // calc(34 + 86), plus this column's 10px gap = the 130 it replaced.
+  expect(await clearance(page.getByTestId('mobile-list-scroll'))).toBe('120px')
   // max(calc(34 - 2), 14)
   expect(await computed(page.getByTestId('mobile-list-footer'), 'padding-bottom')).toBe('32px')
 })
@@ -145,7 +164,8 @@ test('Availability, Balances and More: 64 top, 116 bottom', async ({ page }) => 
   await expect(availabilityHeader).toHaveCount(1)
   await expect(availabilityScroll).toHaveCount(1)
   expect(await computed(availabilityHeader, 'padding-top')).toBe('64px')
-  expect(await computed(availabilityScroll, 'padding-bottom')).toBe('116px')
+  // calc(34 + 74), plus this column's 8px gap = the 116 it replaced.
+  expect(await clearance(availabilityScroll)).toBe('108px')
 
   // Balances and More are single scroll divs carrying both paddings.
   await page.getByRole('button', { name: 'Balances' }).click()
@@ -153,21 +173,21 @@ test('Availability, Balances and More: 64 top, 116 bottom', async ({ page }) => 
   const balances = page.getByText('Your account', { exact: true }).locator('xpath=../../..')
   await expect(balances).toHaveCount(1)
   expect(await computed(balances, 'padding-top')).toBe('64px')
-  expect(await computed(balances, 'padding-bottom')).toBe('116px')
+  expect(await clearance(balances)).toBe('116px')
 
   await page.getByRole('button', { name: 'More' }).click()
   await page.waitForTimeout(300)
   const more = page.getByText('Settings', { exact: true }).locator('xpath=../../..')
   await expect(more).toHaveCount(1)
   expect(await computed(more, 'padding-top')).toBe('64px')
-  expect(await computed(more, 'padding-bottom')).toBe('116px')
+  expect(await clearance(more)).toBe('116px')
 })
 
 test('read-only Card scroller: 40 when the completion dock is absent', async ({ page }) => {
   await openCard(page)
 
-  // With a dock the scroller's bottom padding is the MEASURED dock height plus
-  // 16, plus `--aa-keyboard-inset` so the reserved space grows with the software
+  // With a dock the scroller's clearance is the MEASURED dock height plus
+  // a little, plus `--aa-keyboard-inset` so the reserved space grows with the software
   // keyboard. Neither term is a safe-area inset, and the keyboard one is unset
   // outside the PWA host, so THIS spec's inset expression only shows on a card
   // with no dock. Make one: a cancelled card is read-only, drops its dock
@@ -182,6 +202,6 @@ test('read-only Card scroller: 40 when the completion dock is absent', async ({ 
   await expect(sheet).toHaveCount(0)
 
   await expect(page.getByTestId('mobile-card-commit')).toHaveCount(0)
-  // max(calc(34 + 6), 24)
-  expect(await computed(page.getByTestId('mobile-card-scroll'), 'padding-bottom')).toBe('40px')
+  // max(calc(34 - 6), 12), plus this column's 12px gap = the 40 it replaced.
+  expect(await clearance(page.getByTestId('mobile-card-scroll'))).toBe('28px')
 })

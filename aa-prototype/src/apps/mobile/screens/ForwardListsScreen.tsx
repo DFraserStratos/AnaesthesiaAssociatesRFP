@@ -5,6 +5,7 @@ import type { Card, List } from '../../../domain/types'
 import { isListBilled, useAppStore, useToday } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, drSurname, sessionStart } from '../../../shared/format'
+import { DockSpacer } from '../../../shared/ui/DockSpacer'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -202,8 +203,10 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       </div>
 
       {/* Scroll clearance for the tab bar, which itself tracks the inset 1:1,
-          so the optical gap above the bar stays a constant 32px. */}
-      <div data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px calc(var(--aa-inset-bottom, 34px) + 82px)' }}>
+          so the optical gap above the bar stays a constant 32px. It is a
+          `DockSpacer` at the tail rather than padding here, because trailing
+          padding contributes no scrollable extent on WebKit. */}
+      <div data-testid="mobile-lists-scroll" style={{ flex: 1, overflow: 'auto', padding: '0 20px 0' }}>
         {sections.length === 0 && (
           <div style={{ marginTop: 28, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>
             {filter === 'done'
@@ -243,6 +246,8 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
             </div>
           </div>
         ))}
+        {/* No column gap on this scroller, so the full clearance goes here. */}
+        <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
       </div>
     </div>
   )

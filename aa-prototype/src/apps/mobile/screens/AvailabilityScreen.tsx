@@ -5,7 +5,7 @@ import { freeDashedBorder, statusColours, unavailableHatchTint, type StatusKey }
 import type { List, Session } from '../../../domain/types'
 import { setAvailability, useAppStore, useToday, type Actor } from '../../../store'
 import { MobileHeader } from '../components'
-import { Avatar } from '../../../shared'
+import { Avatar, DockSpacer } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { RequestCoverSheet } from '../../../shared/flows'
 import { initialsOf } from '../../../shared/format'
@@ -176,7 +176,8 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
         </span>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px calc(var(--aa-inset-bottom, 34px) + 82px)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Tab bar clearance is the `DockSpacer` at the tail, not padding here. */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* My availability */}
         <div style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -238,6 +239,8 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
         {rowsToShow.length === 0 && (
           <div style={{ marginTop: 20, textAlign: 'center', color: neutral.mist, fontSize: 14 }}>No free sessions on this day.</div>
         )}
+        {/* 82 - 8 for the column gap, so the reserved space is unchanged. */}
+        <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 74px)" />
       </div>
 
       {cover !== null && (

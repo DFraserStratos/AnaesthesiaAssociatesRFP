@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { neutral } from '../../../theme/tokens'
-import { Avatar, DemoBadge } from '../../../shared'
+import { Avatar, DemoBadge, DockSpacer } from '../../../shared'
 import { MobileHeader } from '../components'
 
 interface MoreScreenProps {
@@ -22,7 +22,8 @@ export function MoreScreen({ personaName, personaRole, initials, extra }: MoreSc
       style={{
         height: '100%',
         overflow: 'auto',
-        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px calc(var(--aa-inset-bottom, 34px) + 82px)',
+        // Tab bar clearance is the `DockSpacer` at the tail, not padding here.
+        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0',
       }}
     >
       <MobileHeader eyebrow="Settings" title="More" initials={initials} />
@@ -69,6 +70,7 @@ export function MoreScreen({ personaName, personaRole, initials, extra }: MoreSc
       </div>
 
       {extra}
+      <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
     </div>
   )
 }

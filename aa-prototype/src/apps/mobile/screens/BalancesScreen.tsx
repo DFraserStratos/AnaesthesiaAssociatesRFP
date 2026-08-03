@@ -12,6 +12,7 @@ import {
 } from '../../../store'
 import { formatCurrency } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
+import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { MobileHeader } from '../components'
 
 type Section = 'outstanding' | 'gst'
@@ -50,7 +51,8 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
       style={{
         height: '100%',
         overflow: 'auto',
-        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px calc(var(--aa-inset-bottom, 34px) + 82px)',
+        // Tab bar clearance is the `DockSpacer` at the tail, not padding here.
+        padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0',
       }}
     >
       <MobileHeader eyebrow="Your account" title="Balances" initials={initials} />
@@ -130,6 +132,7 @@ export function BalancesScreen({ initials, anaesthetistId }: { initials: string;
           )}
         </div>
       )}
+      <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
     </div>
   )
 }

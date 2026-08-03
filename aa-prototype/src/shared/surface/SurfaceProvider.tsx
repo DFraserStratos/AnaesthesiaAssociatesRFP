@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import { CardTotalPanel, CardTotalStrip } from '../capture'
+import { DockSpacer } from '../ui/DockSpacer'
 import { BottomSheet } from './BottomSheet'
 import { Dialog } from './Dialog'
 import { SurfaceCtx, type CardLayoutSlots, type Surface, type SurfaceVariant } from './context'
@@ -115,21 +116,12 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
           paddingTop: 14,
           paddingLeft: 20,
           paddingRight: 20,
-          // With a dock this auto-tracks the measured dock height (which now
-          // itself tracks the inset) PLUS whatever the keyboard is covering:
-          // the dock itself rides up by `--aa-keyboard-inset` (see below), so
-          // the clearance it reserves has to move with it or the card's tail
-          // (the last BTM block, "Add another procedure", the quiet actions)
-          // has no scroll extent left to clear either the dock or the keys.
-          // Only the device host sets that var, so in the frame the expression
-          // is `calc(<measured>px + 0px)` and the computed padding is
-          // unchanged. Without a dock, clear the host's bottom inset plus 6px
-          // of air, floored at 24 so a zero-inset device still gets a sensible
-          // tail. Resolves to today's 40 at the simulated 34.
-          paddingBottom:
-            commit !== null
-              ? `calc(${dockHeight + 16}px + var(--aa-keyboard-inset, 0px))`
-              : 'max(calc(var(--aa-inset-bottom, 34px) + 6px), 24px)',
+          // Zero, because the dock clearance is the `DockSpacer` at the tail of
+          // this column instead. Trailing padding contributes no scrollable
+          // extent, so on a card whose content stops just short of filling the
+          // scroller the tail would sit under the dock with no way to scroll it
+          // out; see `DockSpacer` for the measurement that found this.
+          paddingBottom: 0,
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -140,6 +132,23 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
         {context}
         {capture}
         {actions}
+        {/* With a dock this auto-tracks the MEASURED dock height (which itself
+            tracks the inset) plus whatever the keyboard is covering: the dock
+            rides up by `--aa-keyboard-inset` (see below), so the clearance has
+            to move with it or the card's tail (the last BTM block, "Add another
+            procedure", the quiet actions) ends up behind the dock or the keys.
+            Only the device host sets that var, so in the frame it resolves to
+            0 and the reserved space is unchanged. Without a dock, clear the
+            host's bottom inset plus a little air, floored so a zero-inset
+            device still gets a sensible tail. Both arms are 12 less than the
+            old padding, which is this column's `gap`. */}
+        <DockSpacer
+          height={
+            commit !== null
+              ? `calc(${dockHeight + 4}px + var(--aa-keyboard-inset, 0px))`
+              : 'max(calc(var(--aa-inset-bottom, 34px) - 6px), 12px)'
+          }
+        />
       </div>
       {commit !== null && (
         <div
