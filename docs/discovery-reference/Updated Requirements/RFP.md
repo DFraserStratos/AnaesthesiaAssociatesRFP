@@ -1,181 +1,96 @@
 # Anaesthesia Associates
 
-## Booking and Billing Systems Upgrade
+Booking and Billing Systems Upgrade
 
-## Request for Proposal
+Request for Proposal
 
-## Final
+Final
 
-```
 July 2026
-```
 
-Table of Contents
-
-##### Introduction ............................................................................................................................... 4	
-
-##### Background ........................................................................................................................... 4	
-
-##### Who should respond .............................................................................................................. 4	
-
-##### Approach ............................................................................................................................... 4	
-
-##### Timeline ................................................................................................................................. 5	
-
-##### Confidentiality ........................................................................................................................ 6	
-
-##### Questions and RFP Contact .................................................................................................... 6	
-
-##### Demonstration participants .................................................................................................... 6	
-
-##### Project Overview ........................................................................................................................ 7	
-
-##### High-level Requirements Summary ......................................................................................... 7	
-
-##### General features / Non-Functional Requirements .................................................................... 8	
-
-##### Data Volumes ........................................................................................................................ 8	
-
-##### Approach to Requirements ..................................................................................................... 8	
-
-##### Request for Proposal Response .................................................................................................. 9	
-
-##### Service Provider Information ................................................................................................... 9	
-
-##### Solution Overview .................................................................................................................. 9	
-
-##### Client References ................................................................................................................... 9	
-
-##### Innovation / Value Add ............................................................................................................ 9	
-
-##### Approach Methodology, Solution Deployment and Timeline ..................................................... 9	
-
-##### Scoping/Design Phase ............................................................................................................ 9	
-
-##### Commercial Approach and Summary of Indicative Costs ....................................................... 10	
-
-##### Requirements Introduction ....................................................................................................... 12	
-
-##### Major System Components ................................................................................................... 12	
-
-##### Schedule Management – Candidate Architecture ...................................................................... 13	
-
-##### Purpose ............................................................................................................................... 13	
-
-##### Overview .............................................................................................................................. 13	
-
-##### Entity Descriptions ................................................................................................................... 14	
-
-##### Schedule ............................................................................................................................. 14	
-
-##### Day ...................................................................................................................................... 14	
-
-##### Anaesthetist ......................................................................................................................... 14	
-
-##### List ...................................................................................................................................... 14	
-
-##### Card .................................................................................................................................... 14	
-
-
-##### Procedure ............................................................................................................................ 15	
-
-##### Billing Route Resolution ........................................................................................................ 16	
-
-##### Supporting / Master Data ...................................................................................................... 17	
-
-##### Key Design Principles ............................................................................................................ 18	
-
-##### Open Questions ................................................................................................................... 19	
-
-##### Billing Engine – Candidate Architecture ..................................................................................... 21	
-
-##### Generic Process Flow Overview ............................................................................................ 21	
-
-##### The Card as the Billing Anchor ............................................................................................... 22	
-
-##### Card Immutability and the List Approval Process .................................................................... 22	
-
-##### The Big Picture: What Are We Actually Calculating? ................................................................ 23	
-
-##### How Anaesthesia Associates Calculates Invoices .................................................................. 26	
-
-##### Who Receives the Invoice? .................................................................................................... 27	
-
-##### Split Billing ........................................................................................................................... 28	
-
-##### Payments — Where the Money Lands .................................................................................... 28	
-
-##### Summary: What This Means for the Billing Engine ................................................................... 29	
-
-##### Card Copy ........................................................................................................................... 29	
-
-##### Ad-Hoc Card creation ........................................................................................................... 29	
-
-##### Billing Engine Integration Point .............................................................................................. 30	
-
-##### The Agency Perspective ........................................................................................................ 30	
-
-##### Xero Integration – Candidate Design .......................................................................................... 31	
-
-##### Mobile App Consumption Model ........................................................................................... 32	
-
-##### Open Items Carried Forward ................................................................................................. 33	
-
-##### Health Systems Integration ....................................................................................................... 34	
-
-##### Overview .............................................................................................................................. 34	
-
-##### Manual Processing ............................................................................................................... 34	
-
-##### Automated Processing .......................................................................................................... 34	
-
-##### Current State: HL7 v2 Messaging ........................................................................................... 34	
-
-##### Health New Zealand Policy Context: FHIR First .......................................................................... 36	
-
-##### The FHIR Standard ............................................................................................................... 36	
-
-##### Integration Requirements ......................................................................................................... 38	
-
-##### HL7 v2 Inbound Processing ................................................................................................... 38	
-
-##### FHIR R4 Translation .............................................................................................................. 38	
-
-##### FHIR-Native Architecture and Message Pre-Processing .......................................................... 38	
-
-##### NZ Identity Standards ........................................................................................................... 38	
-
-##### Reliability and Monitoring ...................................................................................................... 38	
-
-
-##### Reference Links .................................................................................................................... 39	
-
-##### Changes to the National Health Index (NHI) .............................................................................. 40	
-
-##### Why the change is happening ................................................................................................ 40	
-
-##### What is changing .................................................................................................................. 40	
-
-##### Impact on patients ............................................................................................................... 40	
-
-##### Impact on digital health systems ........................................................................................... 40	
-
-##### Our approach to compliance ................................................................................................ 40	
-
-##### Design policy: separating clinical and billing identifiers ........................................................... 41	
-
-##### Overview .............................................................................................................................. 42	
-
-##### Identity Layers ...................................................................................................................... 42	
-
-##### Workflow ............................................................................................................................. 42	
-
-##### Anaesthetist Mobile App .......................................................................................................... 44	
-
-##### Admin Schedule View (One Day Dashboard) ............................................................................. 45	
-
-##### Anaesthetist Web App .............................................................................................................. 46	
-
+## Table of Contents
+
+- Introduction (4)
+  - Background (4)
+  - Who should respond (4)
+  - Approach (4)
+  - Timeline (5)
+  - Confidentiality (6)
+  - Questions and RFP Contact (6)
+  - Demonstration participants (6)
+- Project Overview (7)
+  - High-level Requirements Summary (7)
+  - General features / Non-Functional Requirements (8)
+  - Data Volumes (8)
+  - Approach to Requirements (8)
+- Request for Proposal Response (9)
+  - Service Provider Information (9)
+  - Solution Overview (9)
+  - Client References (9)
+  - Innovation / Value Add (9)
+  - Approach Methodology, Solution Deployment and Timeline (9)
+  - Scoping/Design Phase (9)
+  - Commercial Approach and Summary of Indicative Costs (10)
+- Requirements Introduction (12)
+  - Major System Components (12)
+- Schedule Management – Candidate Architecture (13)
+  - Purpose (13)
+  - Overview (13)
+- Entity Descriptions (14)
+  - Schedule (14)
+  - Day (14)
+  - Anaesthetist (14)
+  - List (14)
+  - Card (14)
+  - Procedure (15)
+  - Billing Route Resolution (16)
+  - Supporting / Master Data (17)
+  - Key Design Principles (18)
+  - Open Questions (19)
+- Billing Engine – Candidate Architecture (21)
+  - Generic Process Flow Overview (21)
+  - The Card as the Billing Anchor (22)
+  - Card Immutability and the List Approval Process (22)
+  - The Big Picture: What Are We Actually Calculating? (23)
+  - How Anaesthesia Associates Calculates Invoices (26)
+  - Who Receives the Invoice? (27)
+  - Split Billing (28)
+  - Payments — Where the Money Lands (28)
+  - Summary: What This Means for the Billing Engine (29)
+  - Card Copy (29)
+  - Ad-Hoc Card creation (29)
+  - Billing Engine Integration Point (30)
+  - The Agency Perspective (30)
+- Xero Integration – Candidate Design (31)
+  - Mobile App Consumption Model (32)
+  - Open Items Carried Forward (33)
+- Health Systems Integration (34)
+  - Overview (34)
+  - Manual Processing (34)
+  - Automated Processing (34)
+  - Current State: HL7 v2 Messaging (34)
+- Health New Zealand Policy Context: FHIR First (36)
+  - The FHIR Standard (36)
+- Integration Requirements (38)
+  - HL7 v2 Inbound Processing (38)
+  - FHIR R4 Translation (38)
+  - FHIR-Native Architecture and Message Pre-Processing (38)
+  - NZ Identity Standards (38)
+  - Reliability and Monitoring (38)
+- Reference Links (39)
+- Changes to the National Health Index (NHI) (40)
+  - Why the change is happening (40)
+  - What is changing (40)
+  - Impact on patients (40)
+  - Impact on digital health systems (40)
+  - Our approach to compliance (40)
+  - Design policy: separating clinical and billing identifiers (41)
+  - Overview (42)
+  - Identity Layers (42)
+  - Workflow (42)
+- Anaesthetist Mobile App (44)
+- Admin Schedule View (One Day Dashboard) (45)
+- Anaesthetist Web App (46)
 
 ### Introduction
 
@@ -190,7 +105,7 @@ who provide both mobile and web-based applications for the anaesthetists to mana
 and capture information about the various procedures performed.
 
 AA have a legacy system that has been in place for many years, and they are seeking to refresh their
-systems to provide greater reliability and ehiciencies. Many of the current processes are handled
+systems to provide greater reliability and efficiencies. Many of the current processes are handled
 manually and are subject to bottlenecks and data quality issues.
 
 **Who should respond**
@@ -211,7 +126,7 @@ We are approaching the process in steps:
 
 1. Evaluating the responses received and selecting a short list of providers from the responses
     received to our RFP
-2. Providing opportunities for the short-listed providers to interview Peritia and AA stah to discuss
+2. Providing opportunities for the short-listed providers to interview Peritia and AA staff to discuss
     the requirements and opportunities
 3. Requesting a presentation or demonstration workshop from short-listed suppliers
 4. Selection of a preferred supplier
@@ -224,42 +139,20 @@ We are approaching the process in steps:
 
 The following table outlines an approximate timeline for the envisaged project.
 
-```
-Activity Proposed Dates*
-```
-```
-Publication of the RFP and Workshop documents 16 th July 2026
-```
-```
-Close-oh date for receipt of proposals 31 st July 2026
-```
-```
-Selection of short-listed providers
-Notification of next steps / interviews / demonstrations
-7 th August 2026
-```
-```
-Demonstration Workshops 10 th - 14 th August 2026
-```
-```
-Selection of preferred partner(s) 14 th August 2026
-```
-```
-Vendor Discovery / Scoping 17 th – 28 th August 2026
-```
-```
-Submission of Proposal and Statement of Work 31 st August 202 6
-```
-```
-Proposal Approval 4 th September 2026
-```
-```
-Project Implementation Sep – Oct 2026
-```
-```
-Go-live October 2026
-```
-* Indicative Dates - To be confirmed.
+| Activity | Proposed dates |
+| --- | --- |
+| Publication of the RFP and Workshop documents | 16th July 2026 |
+| Close-off date for receipt of proposals | 31st July 2026 |
+| Selection of short-listed providers<br>Notification of next steps / interviews / demonstrations | 7th August 2026 |
+| Demonstration Workshops | 10th–14th August 2026 |
+| Selection of preferred partner(s) | 14th August 2026 |
+| Vendor Discovery / Scoping | 17th–28th August 2026 |
+| Submission of Proposal and Statement of Work | 31st August 2026 |
+| Proposal Approval | 4th September 2026 |
+| Project Implementation | Sep–Oct 2026 |
+| Go-live | October 2026 |
+
+Indicative dates. To be confirmed.
 
 
 **Confidentiality**
@@ -267,13 +160,13 @@ Go-live October 2026
 This RFP, and all other material related to this process, is provided in confidence to potential Service
 Providers.
 
-AA will require respondents (and all related stah) to sign formal Non-Disclosure Agreements as it may be
+AA will require respondents (and all related staff) to sign formal Non-Disclosure Agreements as it may be
 necessary to permit limited visibility of patient, and other personally identifiable, information in the
 compilation of the response:
 
-® All information is confidential and intended only for the recipients.
-® The information provided will not be used for any other purpose.
-® All information will be held strictly confidential and only available to those directly involved in this project.
+- All information is confidential and intended only for the recipients.
+- The information provided will not be used for any other purpose.
+- All information will be held strictly confidential and only available to those directly involved in this project.
 
 **Questions and RFP Contact**
 
@@ -287,7 +180,7 @@ Director
 Peritia Limited
 Email: greg.smith@peritia.co.nz
 
-#### Phone: 021 477 163
+Phone: 021 477 163
 
 **Demonstration participants**
 
@@ -318,7 +211,7 @@ The introduction of modern integrations is a key goal to reduce manual workloads
 **Billing Management**
 
 The calculation of invoice billing is the second key functionality. Once anaesthetists have completed their
-data capture, and work has been checked by the ohice, the invoices are generated from the Card
+data capture, and work has been checked by the office, the invoices are generated from the Card
 information and sent to Xero for collection. Automation is also a key goal for the design of this module.
 
 **Mobile and Web Applications**
@@ -329,7 +222,7 @@ provides a time-sheeting function to capture time and charge details for each Pr
 availability of other anaesthetists where swaps are needed. Provision should be made to allow
 attachments to the schedule records.
 
-Admin ohice stah also require a web application that allows them to operate on the schedule and billing
+Admin office staff also require a web application that allows them to operate on the schedule and billing
 management. This is primarily a set of views and permissions that allow oversight of the key processes:
 handling manual changes from hospitals and surgeons’ rooms, and validating Card entries for billing
 
@@ -337,8 +230,8 @@ handling manual changes from hospitals and surgeons’ rooms, and validating Car
 
 There are minor reporting requirements for anaesthetists that include:
 
-® Outstanding Balances lists, and
-® Monthly activity summaries
+- Outstanding Balances lists, and
+- Monthly activity summaries
 
 
 **General features / Non-Functional Requirements**
@@ -352,7 +245,7 @@ date in all systems.
 
 The solution needs to provide controls around view, access, edit rights etc. Access rights should be
 managed by role rather than on an individual user basis, to allow for easy management and consistent
-permissions for stah in like roles.
+permissions for staff in like roles.
 
 Audit trails of manual and automated actions are required.
 
@@ -378,7 +271,7 @@ needs and will provide an easier starting point from which to engage in the desi
 ### Request for Proposal Response
 
 Service Providers are requested to provide information about their services and expertise, and the
-products and services they would oher in support of this RFP. The aim is to clearly inform AA about the
+products and services they would offer in support of this RFP. The aim is to clearly inform AA about the
 following areas:
 
 **Service Provider Information**
@@ -410,7 +303,7 @@ particular focus on the user experience and ease of use.
 
 Describe the proposed implementation methodology used by your organisation. This may include, but is
 not restricted to, your approach to design, development, deployment, project management and
-methodologies, change management, and training. Please provide a suhicient level of detail to allow the
+methodologies, change management, and training. Please provide a sufficient level of detail to allow the
 Professional Services estimates build-up to be understood.
 
 AA is keen to have a new solution operational as soon as possible. Please provide an indicative timeline
@@ -448,7 +341,7 @@ Draft Timeline for a Project implementation
 
 Development methodology and expected team makeup
 
-Pricing should include details describing how adding or removing users ahects licencing, and the overall
+Pricing should include details describing how adding or removing users affects licencing, and the overall
 approach to managing user levels.
 
 We will treat any Professional Services budgets as indicative, as a further opportunity to undertake a more
@@ -457,15 +350,13 @@ detailed discovery will be provided for the preferred supplier.
 
 # Anaesthesia Associates
 
-## Booking and Billing Systems Upgrade
+Booking and Billing Systems Upgrade
 
 ## Outline of Functional Requirements
 
-## Candidate Architecture
+Candidate Architecture
 
-```
 July 2026
-```
 
 ### Requirements Introduction
 
@@ -473,7 +364,7 @@ This section introduces the AA business model and a Candidate Architecture.
 
 AA has been using its current system for many years, and it is seeking to refresh this with an updated
 application that will embrace the latest technologies available to maximise the automation of their
-information processing, reduce stah workloads and improve data quality.
+information processing, reduce staff workloads and improve data quality.
 
 Rather than providing a Detailed Requirement Specification, we have decided to provide a technical
 starting point that steps into the analysis and seeks to clarify the key business functions and technical
@@ -483,6 +374,35 @@ and ease of use, and to move existing AR functions into Xero.
 
 **Major System Components**
 
+```mermaid
+flowchart TB
+  subgraph UI["User Interface"]
+    Mobile["Anaesthetists' Mobile App"]
+    Web["Anaesthetists' Web App"]
+    Admin["Office Admin Web App"]
+  end
+  subgraph BL["Business Logic"]
+    Billing["Billing Engine"]
+    Scheduling["Scheduling Engine"]
+    Messaging["Health Messaging Engine"]
+    Database[("Database")]
+  end
+  subgraph EX["External Systems"]
+    Xero["Finance Engine (Xero)"]
+    Hospitals["Hospitals"]
+    Surgeons["Surgeons Rooms"]
+  end
+  UI --- BL
+  Billing <--> Scheduling
+  Messaging --> Scheduling
+  Billing <--> Xero
+  Hospitals --> Messaging
+  Surgeons --> Messaging
+```
+
+The three apps meet on one undirected bus into the Business Logic band, drawn above the
+Scheduling Engine. Database sits in that band with no connectors. The Hospitals and Surgeons
+Rooms lines join, then arrow up into the Health Messaging Engine.
 
 ### Schedule Management – Candidate Architecture
 
@@ -490,7 +410,7 @@ and ease of use, and to move existing AR functions into Xero.
 
 This section describes AA’s scheduling data. It is provided as a reference model — a starting point for
 design and discussion — not as a fixed specification. We expect this structure to be challenged, refined,
-and extended as the data model is developed, particularly where a diherent approach proves to be a
+and extended as the data model is developed, particularly where a different approach proves to be a
 better fit.
 
 **Overview**
@@ -501,9 +421,34 @@ booking clusters known as Lists. Lists can be assigned automatically, based on s
 
 The core scheduling entity is a nested hierarchy, rolling forward on a 4-month horizon:
 
+```mermaid
+flowchart TB
+  Schedule --> Day --> Anaesthetist
+  Anaesthetist --> AM["List AM"]
+  Anaesthetist --> PM["List PM"]
+  AM --> CardAM["Card"]
+  PM --> CardPM["Card"]
+  CardAM --> ProcAM["Procedure"]
+  CardPM --> ProcPM["Procedure"]
+```
+
+Figure label: "Fixed canvas - a stable grid that exists independently of activity."
+
+- Layer 1, rolling 4 month schedule: Schedule
+- Layer 2, one per calendar date: Day
+- Layer 3, one per practitioner, referenced by name: Anaesthetist
+- Layer 4, always exactly 2 lists: List AM and List PM. Each shows Status, Hospital, Surgeon
+- Layer 5, cards and procedures, which can be multiple: each List has one or more Cards
+    (Patient, Time, lastModifiedBy/At). Each Card has one or more Procedures (procedure details,
+    event detail, billing detail, other dynamic clinical fields)
+
+The AM and PM branches are the same shape. The figure shades layers 1 to 3 as the fixed canvas
+and layers 4 to 5 as the data on it. The two List slots are always present; Status, Hospital,
+Surgeon, Cards, and Procedures are what vary.
+
 Schedule → Day → Anaesthetist → List is structural and fixed, created by the system for every active
 Anaesthetist, for every Day in the rolling horizon, with exactly two Lists per Anaesthetist-Day (AM and PM).
-This part of the tree is ehectively a canvas — a stable grid that exists independently of activity.
+This part of the tree is effectively a canvas — a stable grid that exists independently of activity.
 
 List Status, Hospital, Surgeon, and Cards are the data painted onto that canvas; they vary, but the canvas
 itself does not grow or shrink with them.
@@ -541,8 +486,8 @@ default value, but that may be overridden. All day bookings simply use both list
 - Hospital is the physical location the List takes place at, drawn from a master Hospital table.
     Theatre information is not currently recorded.
 - Surgeon is the anaesthetist’s surgeon for that List. The assignment is usually (approximately 80%)
-    defined in the anaesthetist’s Permanent List but may otherwise be assigned manually by ohice
-    stah. The list instance is then only available for that anaesthetist/surgeon pairing.
+    defined in the anaesthetist’s Permanent List but may otherwise be assigned manually by office
+    staff. The list instance is then only available for that anaesthetist/surgeon pairing.
 
 **Card**
 
@@ -556,7 +501,7 @@ in time order.
     multiple sources (surgeon integration, hospital integration, anaesthetist mobile app) right up to
     the time of the procedure.
 - Card details are primarily filled by the surgeon/hospital, and (ideally) this data is passed through
-    via a hospital integration rather than entered manually by AA stah.
+    via a hospital integration rather than entered manually by AA staff.
 
 
 - Full audit of changes is required at the Card level — every create, update, and reassignment must
@@ -578,12 +523,12 @@ Procedure may be billed to the Hospital while another is billed to the Billable 
 - governingContract (→ Contract) is looked up to determine the rate applied, independently of
     which billingRoute was resolved. See Billing Route Resolution below.
 - priceOverride (optional) allows a discretionary adjustment to the standard rate — e.g. a friends-
-    and-family discount — independent of any Contract. Should carry a reason/note, both for ohice
+    and-family discount — independent of any Contract. Should carry a reason/note, both for office
     reference and for the audit trail. Designs should allow for both agreed, fixed fees and $ or %
     adjustments.
 - billableParty (→ Patient by default) identifies who is responsible for payment when billingRoute =
     Billable Party. In the common case this is the patient themself; an explicit override is used where
-    the Billable Party dihers from the patient — most commonly a guardian paying for a minor’s
+    the Billable Party differs from the patient — most commonly a guardian paying for a minor’s
     uninsured procedure.
 - Patient and Billable Party data is supplied by the surgeon/hospital as part of the booking. This
     data is captured here as the source feed for invoice generation; see the Xero Integration section
@@ -593,34 +538,14 @@ Procedure may be billed to the Hospital while another is billed to the Billable 
 **Billing Route Resolution**
 
 Each Procedure resolves to exactly one of three billing routes. This is set explicitly (by hospital advice, or
-by AA stah where the hospital does not specify) rather than derived from other flags:
+by AA staff where the hospital does not specify) rather than derived from other flags:
 
-```
-Billing Route Meaning
-```
-```
-Hospital / Contract
-Holder
-```
-```
-The Contract Holder (usually a hospital) accepts billing for this
-procedure, commonly noted with Contract and insurance details. The
-hospital may itself be acting as an agent or insurer-like party in the
-underlying arrangement. To accommodate various arrangements with the
-Hospital a number of Contracts are established – these are ehectively
-billing rules. A Default Contract, which has no conditions will always be
-present. The default contract is empty and is billed at the normal (no
-contract rates).
-```
-```
-Billable Party The patient (or their override, e.g. a guardian) is billed directly. No
-Contract applies; rate is standard, subject to an optional price Override.
-```
-```
-Insurer The named Insurer is billed directly. Only available where that Insurer
-accepts direct claims from AA (currently one only). Rate is governed by
-the Contract held for that Insurer.
-```
+| Billing route | Meaning |
+| --- | --- |
+| Hospital / Contract Holder | The Contract Holder (usually a hospital) accepts billing for this procedure, commonly noted with Contract and insurance details. The hospital may itself be acting as an agent or insurer-like party in the underlying arrangement. To accommodate various arrangements with the Hospital a number of Contracts are established – these are effectively billing rules. A Default Contract, which has no conditions will always be present. The default contract is empty and is billed at the normal (no contract rates). |
+| Billable Party | The patient (or their override, e.g. a guardian) is billed directly. No Contract applies; rate is standard, subject to an optional price Override. |
+| Insurer | The named Insurer is billed directly. Only available where that Insurer accepts direct claims from AA (currently one only). Rate is governed by the Contract held for that Insurer. |
+
 The Hospital entity plays two distinct roles in this model
 
 1. As the physical location of the theatre (List.hospital, is always present) for an active List
@@ -631,41 +556,14 @@ The Hospital entity plays two distinct roles in this model
 Rate calculation is independent of billing route, and follows a uniform lookup once the route is resolved:
 find the governing Contract for the relevant counterparty (Hospital or Insurer), and apply its type.
 
-```
-Contract type Behaviour
-```
-```
-1 — Reference
-only
-```
-```
-No overrides. Standard rate applies (anaesthetist’s own $/Base unit, RVG-
-referenced).
-```
-```
-This is the mandatory default Contract (Contract.Name = “Default”), held for
-every Hospital and every direct-billing Insurer.
-```
-```
-This Contract type is also used for Hospitals requiring a Contract reference to
-assist with their internal analysis, but which does not impact billing rules/pricing
-```
-```
-2 — Agreed rate
-/ discount
-```
-```
-Agreed rate or discount % oh standard rates.
-```
+| Contract type | Behaviour |
+| --- | --- |
+| 1 — Reference only | No overrides. Standard rate applies (anaesthetist's own $/Base unit, RVG-referenced).<br><br>This is the mandatory default Contract (Contract.Name = “Default”), held for every Hospital and every direct-billing Insurer.<br><br>This Contract type is also used for Hospitals requiring a Contract reference to assist with their internal analysis, but which does not impact billing rules/pricing. |
+| 2 — Agreed rate / discount | Agreed rate or discount % off standard rates. |
+| 3 — Fixed price | Fixed price, independent of standard rates. |
 
-```
-Contract type Behaviour
-```
-```
-3 — Fixed price Fixed price, independent of standard rates.
-```
 Every Hospital and every direct-billing Insurer is mandated to hold at least a default Type 1 Contract (a
-simple, one-oh admin step). This guarantees governing Contract always resolves to a real Contract when
+simple, one-off admin step). This guarantees governing Contract always resolves to a real Contract when
 billing Route is Hospital or Insurer — there is no “no Contract found” branch in the rating logic. Contract is
 looked up by counterparty (Hospital or Insurer), not by procedure type or any other dimension.
 
@@ -682,72 +580,19 @@ on the nature of the contract.
 The following are referenced by the structure above but maintained as separate, relatively static master
 tables:
 
-```
-Master table Description / key fields
-```
-```
-Hospital ID and Name. Minimal additional data at present. (A Hospital is usually,
-but not always the Contract Holder. See note re Bariatric Surgery)
-```
-```
-List Status Defined set of statuses (e.g. private, public, pre-op, holiday, unavailable,
-free). Fields: description, colour. (to be confirmed)
-```
-```
-Anaesthetist AA’s anaesthetist. Basic contact information plus registration number
-(ID).
-```
-```
-Hospital Holiday
-Calendar
-```
-```
-Each hospital’s own availability calendar (closures, holidays, etc.),
-maintained independently per hospital.
-```
-```
-Anaesthetist
-Availability
-```
-```
-Maintained by each Anaesthetist via the mobile app. Reflects their
-personal availability, independent of any List assignment. Any change in
-these settings is immediately reflected in the Schedule
-```
-```
-Recurring
-(“Permanent”) Lists
-```
-```
-Standing arrangements defined by Hospital, Day of Week, Anaesthetist,
-and AM/PM. Used to populate the rolling schedule with default Lists
-going forward.
-```
+| Master table | Description / key fields |
+| --- | --- |
+| Hospital | ID and Name. Minimal additional data at present. (A Hospital is usually, but not always the Contract Holder. See note re Bariatric Surgery) |
+| List Status | Defined set of statuses (e.g. private, public, pre-op, holiday, unavailable, free). Fields: description, colour. (to be confirmed) |
+| Anaesthetist | AA's anaesthetist. Basic contact information plus registration number (ID). |
+| Hospital Holiday Calendar | Each hospital's own availability calendar (closures, holidays, etc.), maintained independently per hospital. |
+| Anaesthetist Availability | Maintained by each Anaesthetist via the mobile app. Reflects their personal availability, independent of any List assignment. Any change in these settings is immediately reflected in the Schedule. |
+| Recurring (“Permanent”) Lists | Standing arrangements defined by Hospital, Day of Week, Anaesthetist, and AM/PM. Used to populate the rolling schedule with default Lists going forward. |
+| Surgeon | External party, called on by AA. |
+| Patient | Identified by NHI number, plus demographics. Patient and billable-party details are supplied by the surgeon/hospital as part of the Card, rather than originated by AA. |
+| Insurer | Held as a proper reference table even though only one Insurer (NIB) currently accepts direct claims from AA. Key field: acceptsDirectClaims. Holds a mandatory default Type 1 Contract. |
+| Contract | Governs rate calculation for a billing counterparty. Scoped to either a Hospital or an Insurer (an Insurer-scoped Contract applies across all hospitals). Every Hospital and every direct-billing Insurer is mandated to hold at least a default Type 1 (reference only) Contract; types 2 (agreed rate/discount) and 3 (fixed price) are used where a real negotiated arrangement exists. See Billing Route Resolution. |
 
-```
-Master table Description / key fields
-```
-```
-Surgeon External party, called on by AA.
-```
-```
-Patient Identified by NHI number, plus demographics. Patient and billable-party
-details are supplied by the surgeon/hospital as part of the Card, rather
-than originated by AA.
-```
-```
-Insurer Held as a proper reference table even though only one Insurer (NIB)
-currently accepts direct claims from AA. Key field: acceptsDirectClaims.
-Holds a mandatory default Type 1 Contract.
-```
-```
-Contract Governs rate calculation for a billing counterparty. Scoped to either a
-Hospital or an Insurer (an Insurer-scoped Contract applies across all
-hospitals). Every Hospital and every direct-billing Insurer is mandated to
-hold at least a default Type 1 (reference only) Contract; types 2 (agreed
-rate/discount) and 3 (fixed price) are used where a real negotiated
-arrangement exists. See Billing Route Resolution.
-```
 **Key Design Principles**
 
 1. Schedule → Day → Anaesthetist → List is a fixed canvas. It is pre-populated on a rolling 4-month
@@ -763,7 +608,7 @@ arrangement exists. See Billing Route Resolution.
     Cards attached — status is not derived from Card activity, and the presence or absence of Cards
     never changes the canvas structure itself.
 4. The List is the unit of availability, not the Anaesthetist or the Day. This is what supports AA’s
-    primary operational use case: when a surgeon’s ohice calls looking for a free slot, stah need to
+    primary operational use case: when a surgeon’s office calls looking for a free slot, staff need to
     see availability at AM/PM granularity across all anaesthetists for a given day.
 5. Master/reference data is decoupled from the schedule tree. Hospital, Surgeon, Anaesthetist,
     Patient, and List Status, Master Calendar, Hospital Calendar and Anaesthetist Availability
@@ -839,6 +684,39 @@ from the billing engine, rather than from Xero. This makes it easier to support 
 relationship between AA and the Anaesthetists. “Agent” has a very specific legal interpretation under GST
 legislation.
 
+```mermaid
+flowchart TD
+  subgraph HS["Hospitals / Surgeons"]
+    Start(["Start: Receive booking"]) --> Send["Send booking details"]
+  end
+  subgraph ENG["Scheduling / Billing Engine"]
+    Rep["Replicate booking and send"]
+    Lock["Lock booking card"] --> Trig["Trigger billing engine"] --> Calc["Calculate invoice values"]
+  end
+  subgraph APP["Anaesthetist, mobile/web app"]
+    Rec["Record procedure"]
+    Paid["Receive payment"] --> End(["End"])
+  end
+  subgraph OFF["Office staff, web app"]
+    Check["Check for completeness"] --> Auth["Authorise list"]
+  end
+  subgraph XERO["Xero"]
+    AR["Manage AR Process"] --> Rcpt["Process Receipt"] --> Auto["Auto-authorise payment to Anaesthetist"]
+  end
+  subgraph PAYER["Billable Party / Patient"]
+    Inv["Receive invoice"] --> Pay["Pay invoice"]
+  end
+  Send --> Rep --> Rec --> Check
+  Auth --> Lock
+  Calc --> AR --> Inv
+  Pay --> Rcpt
+  Auto --> Paid
+```
+
+Two notes sit on the figure. Beside Record procedure: it includes BTM times and comments, and one
+booking can capture multiple procedures performed during the session. Beside Manage AR Process:
+every procedure is managed with its own billing route (hospital, insurer, billable party).
+
 The major system components map onto the sections of this document as follows:
 
 
@@ -847,7 +725,7 @@ The major system components map onto the sections of this document as follows:
     section.
 - Scheduling engine — the central scheduling data store (Cards, Procedures, Lists); out of scope for this
     section, covered in the Candidate Data Structure section.
-- Admin App – where the oOice team check details before invoice generation
+- Admin App – where the office team check details before invoice generation
 - Billing engine — the subject of this section.
 - Xero — receives finalised invoice values (as ACCREC txns) and manages accounts receivable, invoicing,
     and collections; referenced under Payments — Where the Money Lands and Xero Integration Design,
@@ -875,7 +753,7 @@ counterparty:
 
 - Where all Procedures on a Card resolve to the same counterparty (the common case), they are billed
     together on a single invoice.
-- Where Procedures on a Card resolve to diOerent counterparties (uncommon, but must be supported), the
+- Where Procedures on a Card resolve to different counterparties (uncommon, but must be supported), the
     Card generates multiple invoices — one per distinct counterparty. The most common example of this is
     where a patient has requested an additional (elective, non-insured) procedure — see Split Billing, above.
 
@@ -891,125 +769,51 @@ work from. The trigger for that lock is a business process at List level, descri
 **Business process**
 
 1. The anaesthetist completes all Cards within a List, then flags the List as SUBMITTED (the button label may
-    read ‘Completed’). This sends the List to the oOice for checking. A List cannot be marked SUBMITTED
+    read ‘Completed’). This sends the List to the office for checking. A List cannot be marked SUBMITTED
     unless all its Cards are correctly completed.
 
 
-2. The oOice performs a sanity check on the List — typically Contract, Insurer, and reference completeness —
+2. The office performs a sanity check on the List — typically Contract, Insurer, and reference completeness —
     across all Cards within it.
-3. This check is managed as a review of the set of Cards within the List (an oOice/admin function, not a
+3. This check is managed as a review of the set of Cards within the List (an office/admin function, not a
     system gate).
-4. When the oOice marks the List AUTHORISED, it is passed to the Billing Engine for processing.
+4. When the office marks the List AUTHORISED, it is passed to the Billing Engine for processing.
 
 **Resulting state model**
 
-The List, not the Card, is the unit that carries approval state and triggers the handoh to the Billing Engine:
+The List, not the Card, is the unit that carries approval state and triggers the handoff to the Billing Engine:
 
-```
-List state Trigger Card behaviour
-```
-###### DRAFT
+| List state | Trigger | Card behaviour |
+| --- | --- | --- |
+| DRAFT | Anaesthetist actively entering/editing Cards | Fully editable by the anaesthetist. Can be updated by office and integrations. |
+| SUBMITTED | Anaesthetist flags the List as SUBMITTED (Button Label = “Completed”) | Editable only by office (OfficeAdmin role). |
+| AUTHORISED | Office signs off after sanity check | Locked — immutable; passed to Billing Engine as a unit. |
 
-```
-Anaesthetist actively
-entering/editing Cards
-```
-```
-Fully editable by the anaesthetist. Can
-be updated by office and integrations.
-```
-###### SUBMITTED
-
-```
-Anaesthetist flags the List as
-SUBMITTED (Button Label =
-“Completed”)
-```
-```
-Editable only by office (OfficeAdmin
-role).
-```
-```
-AUTHORISED Office signs off after sanity check Locked —^ immutable; passed to Billing
-Engine as a unit.
-```
 _Note: To align easily with Xero, we have used Xero statuses wherever possible. The one notable exception is the SUBMITTED
 item, above. This is to preserve continuity for users._
 
 **The Big Picture: What Are We Actually Calculating?**
 
 An anaesthetist doesn't charge a flat fee for a procedure the way, say, a plumber quotes a job. Instead,
-every anaesthetic generates a fee built from three separate ingredients, each calculated diherently, then
+every anaesthetic generates a fee built from three separate ingredients, each calculated differently, then
 added together. This three-part structure — base, time and modifiers — is often shorthand-referred to as
 “BTM.”
 
-```
-Key concept: Relative Value Units (RVUs), not dollars
-The RVG does not produce a dollar figure. It produces a number of Relative Value Units (RVUs) — a
-unit of “value” or “work,” independent of price.
-Each individual anaesthetist sets their own dollar value per unit (this is a regulatory requirement under
-the Commerce Act — anaesthetists can't collectively agree on pricing). The system therefore needs to
-store a unit-value setting per anaesthetist, not a single global price list.
-Fee = (Base units + Time units + Modifier units) × anaesthetist's $ unit value
-```
+> **Key concept: Relative Value Units (RVUs), not dollars**
+>
+> The RVG does not produce a dollar figure. It produces a number of Relative Value Units (RVUs) — a unit of “value” or “work,” independent of price.
+>
+> Each individual anaesthetist sets their own dollar value per unit (this is a regulatory requirement under the Commerce Act — anaesthetists can't collectively agree on pricing). The system therefore needs to store a unit-value setting per anaesthetist, not a single global price list.
+>
+> Fee = (Base units + Time units + Modifier units) × anaesthetist's $ unit value
 **The three components**
 
-```
-Component What it represents How it's determined
-```
-```
-Base units
-```
-```
-The procedure itself — a fixed
-value reflecting the
-complexity/risk of the surgical
-site and procedure type.
-```
-```
-Looked up from an NZSA RVG code table,
-organised by anatomical site (head, spine,
-abdomen, vascular, etc). Values range roughly
-from 4 units (minor/superficial) to 20–22 units
-```
+| Component | What it represents | How it is determined |
+| --- | --- | --- |
+| Base units | The procedure itself — a fixed value reflecting the complexity/risk of the surgical site and procedure type. | Looked up from an NZSA RVG code table, organised by anatomical site (head, spine, abdomen, vascular, etc). Values range roughly from 4 units (minor/superficial) to 20–22 units (major vascular, neurosurgery). Only one base code is charged per anaesthetic. |
+| Time units | The duration the anaesthetist had exclusive clinical responsibility for the patient. | Tiered rate: 1 unit per 15 minutes for the first two hours, then 1 unit per 10 minutes from the third hour onward. Time runs from when the anaesthetist takes over care to handover at recovery (PACU). |
+| Modifying units | Adjustments for patient complexity, urgency, or special circumstances. | A set of separate codes added on top — e.g. pre-assessment, extremes of age, ASA physical status score, emergency status, BMI, non-standard patient positioning, awake intubation, and post-operative care events. |
 
-```
-Component What it represents How it's determined
-```
-```
-(major vascular, neurosurgery). Only one base
-code is charged per anaesthetic.
-```
-```
-Time units
-```
-```
-The duration the anaesthetist had
-exclusive clinical responsibility
-for the patient.
-```
-```
-Tiered rate: 1 unit per 15 minutes for the first
-two hours, then 1 unit per 10 minutes from the
-third hour onward. Time runs from when the
-anaesthetist takes over care to handover at
-recovery (PACU).
-```
-```
-Modifying units
-```
-```
-Adjustments for patient
-complexity, urgency, or special
-circumstances.
-```
-```
-A set of separate codes added on top — e.g.
-pre-assessment, extremes of age, ASA
-physical status score, emergency status, BMI,
-non-standard patient positioning, awake
-intubation, and post-operative care events.
-```
 **Base units in detail — why this can't be a fixed lookup table**
 
 The base unit table is large and irregular by nature — it reflects decades of clinical convention rather than
@@ -1031,15 +835,11 @@ system supports selection and recording, not automatic code derivation.
 
 Time is tiered, not linear — this is a common source of calculation errors if not modelled correctly:
 
-```
-Tier Rate Applies to
-```
-```
-T1 1 unit per 15 minutes First 2 hours of anaesthetic time
-```
-```
-T2 1 unit per 10 minutes From the start of the third hour onward
-```
+| Tier | Rate | Applies to |
+| --- | --- | --- |
+| T1 | 1 unit per 15 minutes | First 2 hours of anaesthetic time |
+| T2 | 1 unit per 10 minutes | From the start of the third hour onward |
+
 Several billable events outside the main procedure also carry their own separate time-based charges —
 for example pain consultations, medical transport, and HDU or ward review visits that may occur days
 after the original procedure. This means a single patient episode can generate more than one billable
@@ -1058,51 +858,17 @@ Base/Time/Modifiers). Rather than being treated as a modifier code directly, the
 field with its corresponding unit value, which the anaesthetist can then adjust to add in any other
 applicable modifiers. As with all fields on the Card, the seeded value is overridable.
 
-```
-Modifier group Example range Nature
-```
-```
-Pre-assessment (PA1–
-PA5) 1 – 4 units^
-```
-```
-Phone or face-to-face assessment prior to the
-procedure
-```
-```
-Age extremes (A1–A2) 1 – 2 units Very young or very old patients
-```
-```
-ASA physical status (AS1–
-AS4)
-```
-```
-0 – 4 units Standard anaesthetic risk classification score
-```
-```
-Emergency (ASE) +2 units Flat addition for emergency/unplanned procedures
-```
-```
-BMI (OB1–OB4) 0 – 3 units Patient body mass index banding
-```
-```
-Non-standard positioning
-(P1)
-```
-```
-+2 units Conditional —^ only if not already included in the base
-code
-```
-```
-Awake intubation (AI1) +2 units Specific technique flag
-```
-```
-Post-operative care Varies
-```
-```
-PACU, HDU, ICU, ward reviews, nerve catheters —
-separately itemised, sometimes days later
-```
+| Modifier group | Example range | Nature |
+| --- | --- | --- |
+| Pre-assessment (PA1–PA5) | 1–4 units | Phone or face-to-face assessment prior to the procedure |
+| Age extremes (A1–A2) | 1–2 units | Very young or very old patients |
+| ASA physical status (AS1–AS4) | 0–4 units | Standard anaesthetic risk classification score |
+| Emergency (ASE) | +2 units | Flat addition for emergency/unplanned procedures |
+| BMI (OB1–OB4) | 0–3 units | Patient body mass index banding |
+| Non-standard positioning (P1) | +2 units | Conditional — only if not already included in the base code |
+| Awake intubation (AI1) | +2 units | Specific technique flag |
+| Post-operative care | Varies | PACU, HDU, ICU, ward reviews, nerve catheters — separately itemised, sometimes days later |
+
 **ACC billing**
 
 ACC (Accident Compensation Corporation) patients are never billed directly — ACC is always billed
@@ -1146,7 +912,7 @@ Examples include:
 
 For the system, this implies a need for an “agreed fee” or “contract price list” entity that can override or
 bypass the RVU calculation entirely for matching Cards, keyed by some combination of contract holder,
-surgeon, and/or procedure type. 2 nd procedure pricing usually requires additional rules.
+surgeon, and/or procedure type. 2nd procedure pricing usually requires additional rules.
 
 For future proofing, and design flexibility, the hierarchy of selection for the required billing calculation
 algorithm, should allow for both individual contracts and organisational contracts. Currently all contracts
@@ -1158,27 +924,22 @@ Individual anaesthetists may use an alternative billing method entirely — for 
 rate — rather than the RVG formula. This is permitted, but only where the arrangement has been agreed
 with the relevant contract holder.
 
-```
-Resolved design: no separate billing-method concept needed
-This is gated by the Contract held for the relevant counterparty (see the Candidate Data Structure
-section) — a Billable Party, Hospital, or Insurer must hold a Contract* that explicitly permits an
-individually-arranged structure such as an hourly rate before one can be used.
-Once permitted, the resulting charge is captured the same way as any other non-RVG charge: as a
-BillingLine with chargeBasis = rate×time, attached to the relevant Procedure. It is not a structurally
-distinct billing method — it reuses the same BillingLine shape already defined for ancillary, non-BTM
-charges (see ACC billing, above, and the Candidate Data Structure section).
-Because it is the same BillingLine shape, it flows into the mobile app through the same capture path
-as any other BillingLine entry, rather than requiring its own UI or workflow.
-```
+> **Resolved design: no separate billing-method concept needed**
+>
+> This is gated by the Contract held for the relevant counterparty (see the Candidate Data Structure section) — a Billable Party, Hospital, or Insurer must hold a Contract* that explicitly permits an individually-arranged structure such as an hourly rate before one can be used.
+>
+> Once permitted, the resulting charge is captured the same way as any other non-RVG charge: as a BillingLine with chargeBasis = rate×time, attached to the relevant Procedure. It is not a structurally distinct billing method — it reuses the same BillingLine shape already defined for ancillary, non-BTM charges (see ACC billing, above, and the Candidate Data Structure section).
+>
+> Because it is the same BillingLine shape, it flows into the mobile app through the same capture path as any other BillingLine entry, rather than requiring its own UI or workflow.
 _* Contract, in this sense, always refers to a construct in the Billing system that defines a set of billing rules for a particular
 circumstance; this is not a legal contract._
 
 
 **Who Receives the Invoice?**
 
-Unlike a simple patient-pays model, AA's invoices are addressed to one of two fundamentally diherent
+Unlike a simple patient-pays model, AA's invoices are addressed to one of two fundamentally different
 categories of recipient, and the category determines the entire downstream workflow: contract holders,
-or patients directly. As a note: these two billing types have slightly dihering invoice layouts.
+or patients directly. As a note: these two billing types have slightly differing invoice layouts.
 
 In this documentation, this invoice recipient is always referred to as the Billable Party.
 
@@ -1189,7 +950,7 @@ anaesthetist's fee.
 
 a. Hospital-based contracts
 
-- Southern Cross AOiliated Provider (SXAP)
+- Southern Cross Affiliated Provider (SXAP)
 - Health NZ (Te Whatu Ora)
 
 These are typically administered through specific hospitals, including:
@@ -1219,30 +980,13 @@ d. Insurance Direct
 **Patients**
 
 Where there is no contract holder, the patient is billed directly. Patients fall into one of three categories,
-each with a diherent payment workflow:
+each with a different payment workflow:
 
-```
-Category Description
-```
-```
-Self-funded (post-procedure) Patient is invoiced and pays after the procedure has taken place.
-```
-```
-Self-funded (full or split pre-
-payment required)
-```
-```
-Payment must be collected before the procedure proceeds. Any
-balance is then collected as normal, after the procedure.
-```
-```
-Insured
-```
-```
-Patient holds private health insurance and forwards the invoice to
-their insurer for reimbursement (the insurer is not invoiced directly
-by AA in this flow).
-```
+| Category | Description |
+| --- | --- |
+| Self-funded (post-procedure) | Patient is invoiced and pays after the procedure has taken place. |
+| Self-funded (full or split pre-payment required) | Payment must be collected before the procedure proceeds. Any balance is then collected as normal, after the procedure. |
+| Insured | Patient holds private health insurance and forwards the invoice to their insurer for reimbursement (the insurer is not invoiced directly by AA in this flow). |
 
 This distinction matters for the system because the contract-holder vs. patient split determines the
 invoice recipient and the expected payment timeline.
@@ -1256,34 +1000,27 @@ It occurs in two situations:
 
 1. A patient undergoes multiple procedures in the same episode of care.
 2. A single procedure is only partially covered by a contract or funding arrangement (i.e. part of the fee falls to
-    a contract holder and part to the patient, or two diOerent funders each cover a portion).
+    a contract holder and part to the patient, or two different funders each cover a portion).
 
 In either case, two separate invoices must be generated rather than one combined invoice.
 
-```
-Critical business rule — do not double-charge base or modifier units
-When a second (additional) procedure is billed as part of split billing:
-```
-- Only additional time units may be claimed for that second procedure.
-- Base units and modifying units cannot be claimed again — they were already charged against the
-primary procedure.
-This is a hard constraint the billing engine must enforce structurally, not just as a UI hint — for
-example, by preventing a base-unit field from being editable on any procedure flagged as “additional”
-within a split-billing episode.
+> **Critical business rule — do not double-charge base or modifier units**
+>
+> When a second (additional) procedure is billed as part of split billing:
+>
+> - Only additional time units may be claimed for that second procedure.
+> - Base units and modifying units cannot be claimed again — they were already charged against the primary procedure.
+>
+> This is a hard constraint the billing engine must enforce structurally, not just as a UI hint — for example, by preventing a base-unit field from being editable on any procedure flagged as “additional” within a split-billing episode.
 
 **Payments — Where the Money Lands**
 
 Under the new system, all payments will be processed by AA. Regardless of Billable Party, all funds are
 received into the AA account, and AA is responsible for reconciling and disbursing to anaesthetists.
 
-```
-Change from the previous arrangement
-Previously, certain hospital contract holders (St George's, Forte Health, Christchurch Eye) paid
-anaesthetists directly into their personal bank accounts, with a remittance advice emailed to AA for
-manual reconciliation. That direct-payment pathway is retired under the new system — the billing
-engine does not need to model two separate payment destinations going forward, only the single AA
-account flow.
-```
+> **Change from the previous arrangement**
+>
+> Previously, certain hospital contract holders (St George's, Forte Health, Christchurch Eye) paid anaesthetists directly into their personal bank accounts, with a remittance advice emailed to AA for manual reconciliation. That direct-payment pathway is retired under the new system — the billing engine does not need to model two separate payment destinations going forward, only the single AA account flow.
 This simplifies payment-destination logic considerably (one path, not two), but it shifts new responsibility
 onto the system: AA is now always the intermediary, so the system needs to track and manage
 anaesthetist disbursement (AA → anaesthetist) as its own first-class process, rather than something that
@@ -1328,14 +1065,11 @@ from this section:
 
 **Card Copy**
 
-On rare occasions the anaesthetist may want to copy a Card as a way of adding an additional procedure
-
-- this copy would be of the skeleton information on the selected Card, less any specific procedure
-details.
+On rare occasions the anaesthetist may want to copy a Card as a way of adding an additional procedure — this copy would be of the skeleton information on the selected Card, less any specific procedure details.
 
 **Ad-Hoc Card creation**
 
-In circumstances where there are diherences between the hospital’s list and the mobile device (for
+In circumstances where there are differences between the hospital’s list and the mobile device (for
 whatever reason, and there are many), the anaesthetist needs to be able to enter a new Card from
 scratch.
 
@@ -1344,22 +1078,13 @@ Mobile back to the scheduling engine. One mechanism requested is for the anaesth
 data with a photo of the hospital’s or surgeon’s Card details and have these processed by the system.
 
 
-```
-Proposed Design decisions
-```
-- No system gate is required on pre-op review (staff reviewing “tomorrow” on the Admin Web App
-calendar is an operational practice, not a tracked state transition).
-- Cards are never sent back to the anaesthetist. There is no “Returned” state. Any issue found by the
-office is resolved by phone, always initiated by office staff — not by the anaesthetist re-editing a
-completed Card.
-- Once a List reaches SUBMITTED, the anaesthetist has no edit access to its Cards at all — this is an
-access-control rule in the mobile app, not just a data-integrity lock. Corrections from that point are an
-admin/office function.
-- The mobile app itself performs validation to ensure minimum data required for billing is present
-before a Card can be marked complete, reducing (but not eliminating) the office's sanity-check
-burden.
-- References to “mobile app” throughout this section apply equally to the anaesthetists' web app
-view.
+> **Proposed design decisions**
+>
+> - No system gate is required on pre-op review (staff reviewing “tomorrow” on the Admin Web App calendar is an operational practice, not a tracked state transition).
+> - Cards are never sent back to the anaesthetist. There is no “Returned” state. Any issue found by the office is resolved by phone, always initiated by office staff — not by the anaesthetist re-editing a completed Card.
+> - Once a List reaches SUBMITTED, the anaesthetist has no edit access to its Cards at all — this is an access-control rule in the mobile app, not just a data-integrity lock. Corrections from that point are an admin/office function.
+> - The mobile app itself performs validation to ensure minimum data required for billing is present before a Card can be marked complete, reducing (but not eliminating) the office's sanity-check burden.
+> - References to “mobile app” throughout this section apply equally to the anaesthetists' web app view.
 
 **Billing Engine Integration Point**
 
@@ -1376,7 +1101,7 @@ On receipt of an AUTHORISED List, the Billing Engine:
     the Billing Anchor, above).
 4. Generates and despatches/queues the invoices for despatch to the Billable party.
 5. Generates the matching ACCREC/ACCPAY pair(s) in Xero (see Xero Integration Design, below).
-6. Reports status back for oOice monitoring (see OOice-facing monitoring, below).
+6. Reports status back for office monitoring (see Office-facing monitoring, below).
 
 **The Agency Perspective**
 
@@ -1396,7 +1121,7 @@ into the AA account, then disbursement — described under Payments, above:
 - An ACCREC, raised to the paying party (Hospital, Insurer, or Patient/Billable Party) — the collection invoice;
     payment lands in the AA account.
 - An ACCPAY, owed to the surgeon/anaesthetist — the undiscounted payable, created in DRAFT status and
-    not yet part of any payables run. This is eOectively a form of a Buyer Generated Tax Invoice.
+    not yet part of any payables run. This is effectively a form of a Buyer Generated Tax Invoice.
 
 Both records are created at the same time, from the same Billing Engine transaction, and are linked via
 the Billing Engine's own case record using the returned Xero GUIDs (not natively linked within Xero itself).
@@ -1405,33 +1130,11 @@ the Billing Engine's own case record using the returned Xero GUIDs (not natively
 
 Two distinct reference needs were identified, and are kept deliberately separate:
 
-```
-Xero field Populated with Used for
-```
-```
-InvoiceNumber Billing Engine-generated, unique
-invoice number
-```
-```
-The matching key for the automated
-remittance/reconciliation module — this
-is the field hospitals’ and insurers’ quote
-back on remittance advices, and the one
-an automated parser should key its
-lookups on. Uniqueness should be
-enforced via the Xero organisation setting
-that prevents duplicate invoice numbers.
-```
-```
-Reference Internal CaseReference (links
-back to Card/Procedure)
-```
-```
-Internal tracing and staff-facing display
-only. Not relied upon for automated
-matching, as Xero does not enforce
-uniqueness on this field.
-```
+| Xero field | Populated with | Used for |
+| --- | --- | --- |
+| InvoiceNumber | Billing Engine-generated, unique invoice number | The matching key for the automated remittance/reconciliation module — this is the field hospitals' and insurers' quote back on remittance advices, and the one an automated parser should key its lookups on. Uniqueness should be enforced via the Xero organisation setting that prevents duplicate invoice numbers. |
+| Reference | Internal CaseReference (links back to Card/Procedure) | Internal tracing and staff-facing display only. Not relied upon for automated matching, as Xero does not enforce uniqueness on this field. |
+
 This distinction matters because the remittance module handles bulk hospital payments covering
 multiple invoices/surgeons — it needs a reliable, uniquely-matchable field to allocate a lump payment
 across the correct individual invoices. InvoiceNumber is that field; Reference is not.
@@ -1490,54 +1193,33 @@ The two known reporting requirements for anaesthetists are:
 **Outstanding balance view — flat list, no rollup**
 
 Anaesthetists view their outstanding balance as a flat list of individual ACCPAY invoices, with no Card-
-level or other aggregation/rollup. If a surgeon has a query about a specific line, they contact ohice stah for
+level or other aggregation/rollup. If a surgeon has a query about a specific line, they contact office staff for
 detail — the app is not designed to answer accounting-level questions. This significantly simplifies both
 the mirror data structure (no rollup logic to maintain) and the UI (a list, not a summary-with-drill-down).
 
 **List visibility rules**
 
 The mobile app's List view and outstanding-balance view are two distinct surfaces, populated from
-diherent underlying states, with a defined handover between them:
+different underlying states, with a defined handover between them:
 
-```
-List state (anaesthetist's view) Mobile app behaviour
-```
-```
-DRAFT — in progress Visible and editable.^
-```
+| List state (anaesthetist's view) | Mobile app behaviour |
+| --- | --- |
+| DRAFT — in progress | Visible and editable. |
+| SUBMITTED — awaiting/undergoing office check | No longer editable by the anaesthetist (admin function only). Remains visible with a visual indicator (“completed, unbilled”). |
+| AUTHORISED — sent for billing | Disappears from the anaesthetist's List view. The internal “Sent for Billing” status detail is not surfaced to the anaesthetist — the List simply drops off, and the invoices would reappear the next day as line item(s) in the outstanding-balance view once the Billing Engine has generated the invoice(s). This supports the metaphor of the List as an anaesthetist's “to-do” list: items drop out of view once they are completed. |
 
-```
-SUBMITTED — awaiting/undergoing
-office check
-```
-```
-No longer editable by the anaesthetist (admin function only).
-Remains visible with a visual indicator (“completed, unbilled”).
-```
-```
-AUTHORISED — sent for billing
-```
-```
-Disappears from the anaesthetist’s List view. The internal “Sent
-for Billing” status detail is not surfaced to the anaesthetist —
-the List simply drops off, and the invoices would reappear the
-next day as line item(s) in the outstanding-balance view once
-the Billing Engine has generated the invoice(s). This supports
-the metaphor of the List as an anaesthetist's “to-do” list: items
-drop out of view once they are completed.
-```
 The precise trigger for a List disappearing from view should be invoice generation (i.e. submission to
 Xero), not the List reaching AUTHORISED and not payment — this needs to be an unambiguous system
-event the mobile app can key oh and is called out here as a build detail to confirm rather than leave
+event the mobile app can key off and is called out here as a build detail to confirm rather than leave
 implicit.
 
-**OZice-facing monitoring (distinct from the anaesthetist view)**
+**Office-facing monitoring (distinct from the anaesthetist view)**
 
-Unlike anaesthetists, ohice stah need to monitor the List → Billing Engine → Xero flow for completion and
+Unlike anaesthetists, office staff need to monitor the List → Billing Engine → Xero flow for completion and
 errors — this is a genuine requirement, not a by-product of the other two designs, and needs its own
 scoped surface. Open questions to resolve during detailed design:
 
-- Does a Card-level failure within a List (e.g. a Contract lookup that failed despite passing the oOice's own
+- Does a Card-level failure within a List (e.g. a Contract lookup that failed despite passing the office's own
     sanity check) block the whole List's processing, or only that Card?
 - Is this monitoring surface part of the existing Admin Web App (alongside the calendar/List review function),
     or a separate Billing Engine administration screen?
@@ -1548,9 +1230,9 @@ Consolidated across this section, for confirmation with AA / resolution during d
 
 - The dropdown of RVG codes and values is curated centrally (by AA) but is not encyclopaedic, and may be
     overridden by the anaesthetist for a given procedure — confirm this is the intended default.
-- Card-level vs List-level processing failure handling (see OOice-facing monitoring, above).
-- Where oOice monitoring of the billing flow should live — Admin Web App vs a dedicated Billing Engine
-    admin surface (see OOice-facing monitoring, above).
+- Card-level vs List-level processing failure handling (see Office-facing monitoring, above).
+- Where office monitoring of the billing flow should live — Admin Web App vs a dedicated Billing Engine
+    admin surface (see Office-facing monitoring, above).
 - Confirming the precise system event that removes a List from the anaesthetist's mobile view (invoice
     generation vs. a later point) (see List visibility rules, above).
 - Whether the Xero organisation setting preventing duplicate invoice numbers should be a mandated
@@ -1597,13 +1279,13 @@ Most hospital patient administration systems (PAS) in New Zealand currently comm
 version 2.x — a standard that has been in clinical use since the late 1980s. While widely deployed, HL7
 v2 is notoriously fragile in practice. Its pipe-delimited, flat-text message format lacks the schema
 enforcement of modern standards, and vendor-specific customisations (Z-segments, field reuse, non-
-standard code sets) mean that messages from diherent hospital systems often require bespoke parsing
+standard code sets) mean that messages from different hospital systems often require bespoke parsing
 logic.
 
 **Message Structure**
 
 HL7 v2 messages use a fixed set of delimiter characters — | to separate fields, ^ to separate components,
-& for subcomponents, and ~ for repeating fields. The result is compact but dihicult to read, debug, or
+& for subcomponents, and ~ for repeating fields. The result is compact but difficult to read, debug, or
 validate without dedicated tooling.
 
 **Example: SIU^S14 Appointment Modification Message**
@@ -1615,27 +1297,12 @@ to notify our system of changes to booked surgical appointments, including the p
 details, and allocated anaesthetists.
 
 ```
-MSH|^~\&|webPAS^HL7CISINV11.05.07^L|schlhosp|iPM|tns5qyhe|20260619153109||SIU^S14|593
-40703|P|2.3.1|||||AUS||en^^ISO 639- 1
-```
-```
-SCH||1661243^OAM|||||4827^TRANSFORAMINAL LUMBAR INTERBODY FUSION- TWO OR MORE
-LEVELS|||MIN^Minute(TI)^ISO+||||||||||
-```
-```
-PID|1||XXX5593^^^^MR^7777||PATIENT^NAME^XXXX^^MRS^^L||19520105|F|""||9
-XXXXXXX^""^""^XXXXXX 7608^2800^NEW ZEALAND^C|2800|...
-```
-```
+MSH|^~\&|webPAS^HL7CISINV11.05.07^L|schlhosp|iPM|tns5qyhe|20260619153109||SIU^S14|59340703|P|2.3.1|||||AUS||en^^ISO 639-1
+SCH||1661243^OAM|||||4827^TRANSFORAMINAL LUMBAR INTERBODY FUSION- TWO OR MORE LEVELS|||MIN^Minute(TI)^ISO+||||||||||
+PID|1||XXX5593^^^^MR^7777||PATIENT^NAME^XXXX^^MRS^^L||19520105|F|""||9 XXXXXXX^""^""^XXXXXX 7608^2800^NEW ZEALAND^C|2800|...
 AIS|1|U||20260629133000|0||240|MIN^Minute(TI)^ISO+||BOOKED
-```
-```
-AIP|1|U|12952^SURGEON^NAME|NS^Neuro
-Surgery^SPECT|PROC|20260629133000|||240|MIN^Minute(TI)^ISO+||BOOKED
-```
-```
-AIP|2|U|49641^ANAES^NAME|A^Anaesthetics^SPECT|ANAES|20260629133000|||240|MIN^Minute(
-TI)^ISO+||BOOKED
+AIP|1|U|12952^SURGEON^NAME|NS^Neuro Surgery^SPECT|PROC|20260629133000|||240|MIN^Minute(TI)^ISO+||BOOKED
+AIP|2|U|49641^ANAES^NAME|A^Anaesthetics^SPECT|ANAES|20260629133000|||240|MIN^Minute(TI)^ISO+||BOOKED
 ```
 The key segments in this message are:
 
@@ -1645,7 +1312,7 @@ The key segments in this message are:
     (Transforaminal Lumbar Interbody Fusion, two or more levels).
 - PID — Patient identification: MRN (XXX5593), demographics, NHI-related identifiers, ethnicity (NZ
     European / NZHIS), address.
-- AIS — Appointment slot: start time (2026- 06 - 29 13:30), duration (240 minutes), status
+- AIS — Appointment slot: start time (2026-06-29 13:30), duration (240 minutes), status
     (BOOKED).
 - AIP — Appointment personnel: surgeon (ID 12952, Neuro Surgery) and anaesthetist (ID 49641),
     both BOOKED.
@@ -1719,25 +1386,12 @@ NZ Base Implementation Guide v3.0.1
 
 **Standards Comparison**
 
-```
-Standard Format Readability NZ Adoption Status
-```
-```
-HL7 v2.x Pipe-delimited Poor Widespread
-(legacy)
-```
-```
-Incumbent
-```
-```
-HL7 v3 XML Moderate Minimal Deprecated
-```
-```
-CDA XML Moderate Niche Stable
-```
-```
-FHIR R4 JSON / REST Good Mandated (new) Strategic
-```
+| Standard | Format | Readability | NZ adoption | Status |
+| --- | --- | --- | --- | --- |
+| HL7 v2.x | Pipe-delimited | Poor | Widespread (legacy) | Incumbent |
+| HL7 v3 | XML | Moderate | Minimal | Deprecated |
+| CDA | XML | Moderate | Niche | Stable |
+| FHIR R4 | JSON / REST | Good | Mandated (new) | Strategic |
 
 ### Integration Requirements
 
@@ -1815,28 +1469,13 @@ ZAA0067) — provides a finite pool of identifiers, and that pool is running out
 
 **What is changing**
 
-```
-Current format New format
-```
-```
-Structure AAANNNC (3 letters, 3
-numbers, 1 numeric check
-digit)
-```
-```
-AAANNAX (3 letters, 2
-numbers, 1 letter, 1 alphabetic
-check digit)
-```
-```
-Example ZAA0067 ACA31FM
-```
-```
-Check digit algorithm Modulus 24 Modulus 23
-```
-```
-Issuance order Sequential Randomised (non-sequential)
-```
+| | Current format | New format |
+| --- | --- | --- |
+| Structure | AAANNNC (3 letters, 3 numbers, 1 numeric check digit) | AAANNAX (3 letters, 2 numbers, 1 letter, 1 alphabetic check digit) |
+| Example | ZAA0067 | ACA31FM |
+| Check digit algorithm | Modulus 24 | Modulus 23 |
+| Issuance order | Sequential | Randomised (non-sequential) |
+
 The new format extends the available range by introducing a randomised seven-character sequence and
 an alphabetic final character, creating over 33 million additional unique identifiers. Numbers will be
 issued in random, rather than sequential, order — a deliberate change to improve security and privacy,
@@ -1844,7 +1483,7 @@ including reducing the risk of identifying multiple births from sequential NHI a
 
 **Impact on patients**
 
-There is no impact on the public. Existing NHI numbers are unahected, and patients will continue to
+There is no impact on the public. Existing NHI numbers are unaffected, and patients will continue to
 access care exactly as they do today. The new format will only be issued to new NHI registrations — for
 example, newborns and people interacting with the New Zealand health system for the first time.
 
@@ -1882,7 +1521,7 @@ Xero’s native Contact ID, with the NHI attached only as a cross-reference fiel
     rather than being used as the record’s key.
 
 This gives the best of both worlds: financial workflows in Xero operate entirely on Xero’s own identifier, so
-the NHI never functions as a billing key or appears in financial reporting structures — but stah can still
+the NHI never functions as a billing key or appears in financial reporting structures — but staff can still
 look up a client in Xero directly by NHI when needed, since it is retained as a searchable reference on the
 contact. This keeps clinical identity and financial identity cleanly separated while preserving a fast,
 reliable lookup path between the two systems.
@@ -1913,39 +1552,12 @@ patient and billing history.
 
 Three separate identifiers are used, each scoped to a single system:
 
-```
-Identifier Lives In Purpose
-```
-```
-NHI (National Health
-Index)
-```
-```
-PMS only — never sent to Xero True clinical identity. Used at intake
-to validate and deduplicate
-patients, and to check for
-outstanding credit/balance issues
-from prior episodes.
-```
-```
-Hidden internal unique
-ID
-```
-```
-Generated and maintained by
-PMS; linked internally to NHI
-```
-```
-The only patient identifier exposed
-to Xero — stored in Xero’s
-ContactNumber field.
-```
-```
-Xero ContactID Xero-generated; cached in PMS Xero’s own system key, returned on
-contact creation. Cached against
-the hidden ID for fast future
-lookups.
-```
+| Identifier | Lives in | Purpose |
+| --- | --- | --- |
+| NHI (National Health Index) | PMS only — never sent to Xero | True clinical identity. Used at intake to validate and deduplicate patients, and to check for outstanding credit/balance issues from prior episodes. |
+| Hidden internal unique ID | Generated and maintained by PMS; linked internally to NHI | The only patient identifier exposed to Xero — stored in Xero's ContactNumber field. |
+| Xero ContactID | Xero-generated; cached in PMS | Xero's own system key, returned on contact creation. Cached against the hidden ID for fast future lookups. |
+
 This separation means NHI — subject to Health Information Privacy Code / HISO obligations — never
 leaves the PMS, while Xero still receives reliable, deduplicated billing contacts.
 
@@ -1975,7 +1587,7 @@ sandbox testing whether this requires an unarchive step first.
 **Outstanding Balance Check**
 
 Before billing a new episode, call GET /Invoices?ContactIDs={id}&Statuses=AUTHORISED to surface any
-unpaid or overdue invoices for stah attention at check-in. Decide whether to separately distinguish
+unpaid or overdue invoices for staff attention at check-in. Decide whether to separately distinguish
 “open” vs “genuinely overdue” in this filter.
 
 **Invoicing**
