@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import Markdown from 'react-markdown'
-import { COMPONENT_CODE, STATUS_HELP, TYPE_LABEL, statusClass, statusLabel, typeClass } from '../vocab.ts'
-import type { Item, ItemStatus, ItemType } from '../../shared/types.ts'
+import { COMPONENT_CODE, TYPE_LABEL, statusClass, statusLabel, typeClass } from '../vocab.ts'
+import type { Item, ItemType } from '../../shared/types.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
@@ -68,7 +68,7 @@ export function Lineage({ chain, onPick, small, endsWithCurrent }: { chain: Item
 
 export function StatusLabel({ status, className = '' }: { status: string; className?: string }) {
   return (
-    <span className={`status ${statusClass(status)} ${className}`} title={STATUS_HELP[status as ItemStatus]}>
+    <span className={`status ${statusClass(status)} ${className}`}>
       {statusLabel(status)}
     </span>
   )

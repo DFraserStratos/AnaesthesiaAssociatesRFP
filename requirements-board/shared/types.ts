@@ -7,7 +7,7 @@
 export const ITEM_TYPES = ['epic', 'feature', 'story'] as const
 export type ItemType = (typeof ITEM_TYPES)[number]
 
-export const ITEM_STATUSES = ['Confirmed', 'Proposed', 'Future', 'Open', 'Retired'] as const
+export const ITEM_STATUSES = ['Proposed', 'Open', 'Confirmed', 'Future', 'Retired'] as const
 export type ItemStatus = (typeof ITEM_STATUSES)[number]
 
 export const COMPONENTS = [

@@ -59,7 +59,7 @@ UI copy (use a middot, a comma or "to").
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
 - Then the title, description, notes, open questions, children, screenshots.
-- Bottom: **Status** (pill plus a plain-English meaning), **Area** (component), **Sources**, and the
+- Bottom: **Status** (the pill alone), **Area** (component), **Sources**, and the
   ID quietly in the bottom right.
 
 ## Interaction
@@ -72,7 +72,9 @@ UI copy (use a middot, a comma or "to").
   that holds focus and the consequence named on the other ("Discard changes", "Retire item"). On
   the canvas the question is a popover under the button that raised it ("Tidy all"). Escape
   withdraws the question either way.
-- Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion.
+- Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion. Stepping
+  between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
+  in place and skips the entrance, so the page behind never flashes through a re-fading scrim.
 - Mobile is out of scope: this is a desktop tool.
 
 ## Before shipping a visual change

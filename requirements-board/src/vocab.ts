@@ -1,13 +1,5 @@
 import type { ItemStatus, ItemType, QuestionKind, QuestionStatus } from '../shared/types.ts'
 
-export const STATUS_HELP: Record<ItemStatus, string> = {
-  Confirmed: 'Stated in the 2026-09 meeting notes, diagrams or Q&A answers',
-  Proposed: 'Not yet confirmed with AA: carried from the RFP or recommended to fill a gap (the sources say which)',
-  Future: 'RFP scope that does not reflect current reality, deferred',
-  Open: 'Depends on an open question',
-  Retired: 'No longer wanted, kept for traceability',
-}
-
 /** How a status reads on screen. Stored values are shown as-is today; kept as the one place to relabel. */
 export const STATUS_LABEL: Record<string, string> = {}
 export const statusLabel = (s: string) => STATUS_LABEL[s] ?? s

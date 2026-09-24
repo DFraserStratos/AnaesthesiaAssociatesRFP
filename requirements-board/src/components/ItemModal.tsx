@@ -5,7 +5,7 @@ import { COMPONENTS, ITEM_STATUSES, isOpenQuestion, type ImageRef, type Item, ty
 import { ApiError, assetUrl } from '../api.ts'
 import { useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
-import { STATUS_HELP, TYPE_LABEL, statusClass } from '../vocab.ts'
+import { TYPE_LABEL, statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
@@ -223,10 +223,7 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
         <div className="facts">
           <div>
             <h3 className="section-head">Status</h3>
-            <div className="fact-row">
-              <StatusLabel status={item.status} />
-              <span className="fact-help">{STATUS_HELP[item.status]}</span>
-            </div>
+            <StatusLabel status={item.status} />
           </div>
           {item.components.length > 0 && (
             <div>
@@ -433,7 +430,7 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
           <span>Status</span>
           <select className="select" value={draft.status} onChange={(e) => set({ status: e.target.value as Item['status'] })}>
             {ITEM_STATUSES.map((s) => (
-              <option key={s} value={s} title={STATUS_HELP[s]}>
+              <option key={s} value={s}>
                 {s}
               </option>
             ))}

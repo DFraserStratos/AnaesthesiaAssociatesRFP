@@ -1163,6 +1163,11 @@ mark {
   overflow: auto;
   animation: fade 160ms var(--ease);
 }
+/* Stepping between records swaps the sheet in place: no entrance, so nothing flashes behind it. */
+.scrim.swapped,
+.scrim.swapped .sheet {
+  animation: none;
+}
 .sheet:focus {
   outline: none;
 }
@@ -1689,16 +1694,6 @@ mark {
   flex-direction: column;
   gap: 16px;
   min-width: 0;
-}
-.fact-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.fact-help {
-  font-size: 13px;
-  color: var(--ink-3);
 }
 .card-foot .badge.q + .count,
 .card-foot .badge + .count {

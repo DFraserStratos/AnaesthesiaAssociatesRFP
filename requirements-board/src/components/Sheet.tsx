@@ -1,4 +1,13 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+
+/**
+ * Sheets on screen. The modals are keyed by record id, so stepping to a
+ * sibling unmounts one sheet and mounts another; without this the entrance
+ * would replay and the page behind would flash through the fading scrim.
+ * The replacement renders before the outgoing one unmounts, so a non-zero
+ * count here means this sheet is a swap, not an opening.
+ */
+let openSheets = 0
 
 /** A question the sheet asks about itself, over a veil of its own content. */
 export interface SheetConfirm {
@@ -38,10 +47,12 @@ export function Sheet({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const [entering] = useState(() => openSheets === 0)
   const handlers = useRef({ onClose, onKey, confirm })
   handlers.current = { onClose, onKey, confirm }
 
   useEffect(() => {
+    openSheets++
     const previous = document.activeElement as HTMLElement | null
     ref.current?.focus({ preventScroll: true })
     // aria-modal is only a promise: make the page behind actually unreachable by Tab and pointer.
@@ -64,6 +75,7 @@ export function Sheet({
     }
     window.addEventListener('keydown', listener)
     return () => {
+      openSheets--
       window.removeEventListener('keydown', listener)
       // Another sheet may already be open (switching item to question); leave it modal.
       if (document.querySelectorAll('.sheet').length <= 1) for (const el of behind) el.inert = false
@@ -82,7 +94,7 @@ export function Sheet({
 
   return (
     <div
-      className="scrim"
+      className={`scrim${entering ? '' : ' swapped'}`}
       onMouseDown={(e) => {
         if (e.target !== e.currentTarget) return
         if (confirm) confirm.onCancel()
