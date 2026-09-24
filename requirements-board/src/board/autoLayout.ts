@@ -10,7 +10,7 @@ import type { Item, ItemType } from '../../shared/types.ts'
 
 export const CARD: Record<ItemType, { w: number; h: number }> = {
   epic: { w: 0, h: 120 }, // width spans the epic's columns
-  feature: { w: 232, h: 128 },
+  feature: { w: 232, h: 168 }, // taller than stories: size, like colour, shows the level
   story: { w: 232, h: 112 },
 }
 const COL_GAP = 40

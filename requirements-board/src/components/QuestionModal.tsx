@@ -4,8 +4,8 @@ import { compareIds } from '../../shared/ids.ts'
 import { QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
 import { useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
-import { TYPE_LABEL, statusClass } from '../vocab.ts'
-import { Prose, StatusLabel } from './bits.tsx'
+import { statusClass, typeClass } from '../vocab.ts'
+import { ItemName, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { Sheet } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -169,10 +169,9 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
           {q.affects.map((a) => {
             const it = index.byId.get(a)
             return (
-              <div key={a} className="link-row" style={{ gridTemplateColumns: '96px 1fr auto auto' }}>
-                <span className="mono">{a}</span>
-                <button className="btn ghost" style={{ justifyContent: 'flex-start', height: 'auto', padding: '2px 4px', whiteSpace: 'normal', textAlign: 'left' }} onClick={() => open.item(a)} disabled={!it}>
-                  {it ? it.title : 'Missing item'}
+              <div key={a} className="link-row" style={{ gridTemplateColumns: '1fr auto auto' }}>
+                <button className="btn ghost" style={{ justifyContent: 'flex-start', height: 'auto', padding: '2px 4px', whiteSpace: 'normal', textAlign: 'left', minWidth: 0 }} onClick={() => open.item(a)} disabled={!it}>
+                  {it ? <ItemName item={it} /> : `Missing item ${a}`}
                 </button>
                 {it && <StatusLabel status={it.status} />}
                 {it && (
@@ -326,14 +325,18 @@ function AffectsPicker({ value, index, onChange }: { value: string[]; index: Ind
   return (
     <div className="picker">
       <div className="chip-row" style={{ marginBottom: 6 }}>
-        {value.map((a) => (
-          <span key={a} className="chip id" title={index.byId.get(a)?.title}>
-            {a}
-            <button type="button" className="x" aria-label={`Remove ${a}`} onClick={() => onChange(value.filter((x) => x !== a))}>
+        {value.map((a) => {
+          const it = index.byId.get(a)
+          return (
+          <span key={a} className={`chip item ${it ? typeClass(it.type) : ''}`} title={a}>
+            {it ? <TypeIcon type={it.type} size={12} /> : null}
+            <span>{it?.title ?? a}</span>
+            <button type="button" className="x" aria-label={`Remove ${it?.title ?? a}`} onClick={() => onChange(value.filter((x) => x !== a))}>
               <X size={12} />
             </button>
           </span>
-        ))}
+          )
+        })}
       </div>
       <input
         className="input"
@@ -369,10 +372,8 @@ function AffectsPicker({ value, index, onChange }: { value: string[]; index: Ind
         <div className="picker-list" role="listbox" id={listId}>
           {matches.map((m, i) => (
             <button key={m.id} id={`${listId}-${i}`} type="button" role="option" tabIndex={-1} aria-selected={i === active} className={i === active ? 'active' : ''} onClick={() => add(m.id)}>
+              <ItemName item={m} />
               <span className="mono">{m.id}</span>
-              <span>
-                {m.title} <span style={{ color: 'var(--ink-3)' }}>· {TYPE_LABEL[m.type]}</span>
-              </span>
             </button>
           ))}
         </div>

@@ -15,23 +15,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, type Item } from '../../shared/types.ts'
 import { autoLayout } from '../board/autoLayout.ts'
 import { CardNode, type CardData, type CardNodeType } from '../board/CardNode.tsx'
-import { Glyph } from '../components/bits.tsx'
+import { Glyph, Lineage, StatusLabel, TypeLabel } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, openQuestionsFor, useCatalogue, useIndex, useView, type Index } from '../store.ts'
-import { STATUS_HELP, TYPE_LABEL, statusClass } from '../vocab.ts'
+import { TYPE_LABEL } from '../vocab.ts'
 
 const nodeTypes = { card: CardNode }
 const VIEWPORT_KEY = 'requirements-board:viewport'
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
-const STATUS_HEX: Record<string, string> = {
-  Confirmed: '#2f7d4f',
-  RFP: '#8a989e',
-  Proposed: '#2f5fa8',
-  Future: '#7a62a8',
-  Open: '#c0851b',
-  Retired: '#c9d1d4',
-}
+/** Minimap blocks by type, matching the card colours. */
+const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as const
 
 function readViewport(): Viewport | undefined {
   try {
@@ -284,7 +278,7 @@ function Board() {
         {/* The anaesthetic chart: fine minor grid, stronger major grid every fifth line. */}
         <Background id="minor" variant={BackgroundVariant.Lines} gap={16} color="#e0e9e5" lineWidth={1} />
         <Background id="major" variant={BackgroundVariant.Lines} gap={80} color="#d3dfda" lineWidth={1} />
-        {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => STATUS_HEX[(n.data as CardData).item.status] ?? '#8a989e'} nodeBorderRadius={2} maskColor="rgba(237,242,240,0.7)" />}
+        {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => TYPE_HEX[(n.data as CardData).item.type]} nodeBorderRadius={2} maskColor="rgba(237,242,240,0.7)" />}
       </ReactFlow>
 
       <div className="toolbar">
@@ -354,17 +348,17 @@ function Board() {
 
       {selectedItem ? (
         <div className="selection-bar" role="status">
-          <div className="crumbs">
-            {[...ancestorsOf(index, selectedItem.id), selectedItem].map((a, i, arr) => (
-              <span key={a.id} style={{ display: 'contents' }}>
-                <span className="mono">{a.id}</span>
-                {i === arr.length - 1 && <span className="title">{a.title}</span>}
-                {i < arr.length - 1 && <span className="sep">›</span>}
-              </span>
-            ))}
-          </div>
+          <Lineage
+            small
+            endsWithCurrent
+            chain={[...ancestorsOf(index, selectedItem.id), selectedItem]}
+            onPick={(id) => {
+              setSelected(id)
+              centreOn(id)
+            }}
+          />
           {epicOfSelected && (
-            <button className="btn sm" onClick={() => tidy([epicOfSelected.id, ...descendantsOf(index, epicOfSelected.id).map((d) => d.id)])} title={`Put ${epicOfSelected.id} and everything under it back in the story map`}>
+            <button className="btn sm" onClick={() => tidy([epicOfSelected.id, ...descendantsOf(index, epicOfSelected.id).map((d) => d.id)])} title={`Put ${epicOfSelected.title} and everything under it back in the story map`}>
               <Sparkles size={14} /> Tidy this epic
             </button>
           )}
@@ -374,12 +368,16 @@ function Board() {
         </div>
       ) : (
         <div className="legend" aria-label="Legend">
-          {ITEM_STATUSES.filter((s) => s !== 'Retired' || view.showRetired).map((s) => (
-            <span key={s} className={`status ${statusClass(s)}`} title={STATUS_HELP[s]}>
-              {s}
-            </span>
+          {/* Only statuses a card can show: From RFP is the unmarked baseline. */}
+          {ITEM_STATUSES.filter((s) => s !== 'RFP' && (s !== 'Retired' || view.showRetired)).map((s) => (
+            <StatusLabel key={s} status={s} />
           ))}
-          <span>· click to trace, double-click to open</span>
+          <span className="sep" />
+          {ITEM_TYPES.map((t) => (
+            <TypeLabel key={t} type={t} />
+          ))}
+          <span className="sep" />
+          <span>Click to trace, double-click to open</span>
         </div>
       )}
     </div>
@@ -395,7 +393,7 @@ function FilterPopover() {
       <div className="chip-row">
         {ITEM_STATUSES.map((s) => (
           <button key={s} className="chip toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
-            <span className={`status ${statusClass(s)}`}>{s}</span>
+            <StatusLabel status={s} />
           </button>
         ))}
       </div>

@@ -27,9 +27,21 @@
   --st-confirmed: #2f7d4f;
   --st-rfp: #5b6b73;
   --st-proposed: #2f5fa8;
-  --st-future: #7a62a8;
+  --st-future: #8a7a66;
   --st-open: #c0851b;
   --st-retired: #9aa6ab;
+
+  /* Work item types, after Azure DevOps: epic orange, feature purple, story blue.
+     --ty is the accent (rules, icons), --ty-ink the text-safe shade, --ty-tint the fill. */
+  --ty-epic: #e06c00;
+  --ty-epic-ink: #a34f00;
+  --ty-epic-tint: #fdeedf;
+  --ty-feature: #773b93;
+  --ty-feature-ink: #6a3483;
+  --ty-feature-tint: #f2e9f6;
+  --ty-story: #009ccc;
+  --ty-story-ink: #00698b;
+  --ty-story-tint: #e0f3fa;
 
   --font: 'Hanken Grotesk', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -372,50 +384,143 @@ button.chip:hover {
   color: var(--teal);
 }
 
-/* Status: a coloured tick + label, never a filled badge. */
+/* Status: a tinted pill. The type owns a card's colour; status is always a labelled pill. */
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-2);
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
+  background: var(--sbg);
+  color: var(--sink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 22%, transparent);
 }
-.status::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--sc);
-}
-.st-confirmed {
+.st-confirmed,
+.st-answered {
   --sc: var(--st-confirmed);
+  --sbg: #e5f2ea;
+  --sink: #22613b;
 }
 .st-rfp {
   --sc: var(--st-rfp);
+  --sbg: #eceff0;
+  --sink: #46545b;
 }
 .st-proposed {
   --sc: var(--st-proposed);
+  --sbg: #e5ecf7;
+  --sink: #264d8a;
 }
 .st-future {
   --sc: var(--st-future);
+  --sbg: #efebe5;
+  --sink: #64553f;
 }
 .st-open,
 .st-open-from-rfp,
 .st-confirm {
   --sc: var(--st-open);
-}
-.st-answered {
-  --sc: var(--st-confirmed);
+  --sbg: #fbefd9;
+  --sink: #7d530a;
 }
 .st-retired {
-  --sc: repeating-linear-gradient(135deg, var(--st-retired) 0 2px, transparent 2px 4px);
+  --sc: var(--st-retired);
+  --sbg: repeating-linear-gradient(135deg, #eef1f2 0 3px, #f8f9f9 3px 6px);
+  --sink: #5f6e74;
 }
-.st-retired.status::before {
-  background: var(--sc);
-  outline: 1px solid var(--st-retired);
-  outline-offset: -1px;
+
+/* Type: accent, text-safe ink and tint for epics, features and stories. */
+.ty-epic {
+  --ty: var(--ty-epic);
+  --ty-ink: var(--ty-epic-ink);
+  --ty-tint: var(--ty-epic-tint);
+}
+.ty-feature {
+  --ty: var(--ty-feature);
+  --ty-ink: var(--ty-feature-ink);
+  --ty-tint: var(--ty-feature-tint);
+}
+.ty-story {
+  --ty: var(--ty-story);
+  --ty-ink: var(--ty-story-ink);
+  --ty-tint: var(--ty-story-tint);
+}
+.type-icon {
+  flex: none;
+  color: var(--ty);
+}
+.type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ty-ink);
+}
+
+/* Lineage: arrow-shaped pills that slot into each other, coloured by type. */
+.lineage {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  filter: drop-shadow(0 1px 0 rgba(31, 43, 48, 0.06));
+}
+.seg {
+  --notch: 10px;
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 72px;
+  max-width: 300px;
+  height: 30px;
+  padding: 0 calc(var(--notch) + 10px) 0 calc(var(--notch) + 10px);
+  margin-left: calc(var(--notch) * -1 + 3px);
+  border: 0;
+  background: var(--ty-tint);
+  color: var(--ty-ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  clip-path: polygon(0 0, calc(100% - var(--notch)) 0, 100% 50%, calc(100% - var(--notch)) 100%, 0 100%, var(--notch) 50%);
+  transition: background 120ms;
+}
+.seg:first-child {
+  margin-left: 0;
+  padding-left: 12px;
+  border-radius: 6px 0 0 6px;
+  clip-path: polygon(0 0, calc(100% - var(--notch)) 0, 100% 50%, calc(100% - var(--notch)) 100%, 0 100%);
+}
+.seg > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+button.seg:hover {
+  background: color-mix(in srgb, var(--ty) 22%, var(--ty-tint));
+}
+button.seg:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--ty) 28%, var(--ty-tint));
+  text-decoration: underline;
+}
+.seg.current {
+  background: var(--ty);
+  color: #fff;
+  max-width: none;
+  flex-shrink: 0.35; /* ancestors give up space first */
+}
+.seg.current .type-icon {
+  color: #fff;
+}
+.lineage.small .seg {
+  --notch: 8px;
+  height: 24px;
+  font-size: 12px;
+  max-width: 200px;
 }
 
 /* ------------------------------------------------------------------ board */
@@ -557,6 +662,7 @@ button.chip:hover {
   font-size: 12px;
   color: var(--ink-3);
   box-shadow: var(--shadow-tag);
+  align-items: center;
 }
 .selection-bar {
   position: absolute;
@@ -613,11 +719,12 @@ button.chip:hover {
   }
 }
 
-/* Cards: paper tags. Hierarchy by form (size, rule, radius), status by stripe. */
+/* Cards: paper tags. Type by colour and form (top rule, size, radius); status by pill. */
 .card {
   position: relative;
   background: var(--card);
   border: 1px solid var(--rule);
+  border-top: 3px solid var(--ty);
   box-shadow: var(--shadow-tag);
   overflow: hidden;
   transition: opacity 200ms var(--ease), box-shadow 160ms, border-color 160ms, transform 160ms var(--ease);
@@ -632,53 +739,36 @@ button.chip:hover {
 }
 .card:hover {
   border-color: var(--rule-strong);
-}
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--sc);
+  border-top-color: var(--ty);
 }
 .card.story {
   border-radius: var(--r-story);
-  padding: 9px 11px 9px 15px;
+  padding: 9px 12px 9px 12px;
 }
 .card.feature {
   border-radius: var(--r-feature);
-  padding: 11px 13px 11px 17px;
-  background: var(--card);
+  border-top-width: 4px;
+  padding: 12px 14px 12px;
   border-color: var(--rule-strong);
-}
-.card.feature::after {
-  /* the fold line of a tag: features read as a heavier stock than stories */
-  content: '';
-  position: absolute;
-  left: 4px;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: var(--ink);
-  opacity: 0.85;
+  border-top-color: var(--ty);
+  background: linear-gradient(color-mix(in srgb, var(--ty-tint) 45%, var(--card)), var(--card) 56px);
 }
 .card.epic {
   border-radius: var(--r-epic);
+  border-top-width: 5px;
   padding: 12px 18px 12px;
-  border: 1px solid var(--rule-strong);
-  border-top: 5px solid var(--ink);
-  background: linear-gradient(var(--card), var(--card-soft));
-}
-.card.epic::before {
-  inset: auto 0 0 0;
-  width: auto;
-  height: 3px;
+  border-color: var(--rule-strong);
+  border-top-color: var(--ty);
+  background: linear-gradient(color-mix(in srgb, var(--ty-tint) 60%, var(--card)), var(--card));
 }
 .card.is-selected {
   border-color: var(--teal);
+  border-top-color: var(--ty);
   box-shadow: 0 0 0 2px var(--teal), var(--shadow-lift);
 }
 .card.is-lit {
   border-color: color-mix(in srgb, var(--teal) 50%, var(--rule));
+  border-top-color: var(--ty);
 }
 .card.is-dim {
   opacity: 0.28;
@@ -686,31 +776,21 @@ button.chip:hover {
 .card.is-faded {
   opacity: 0.12;
 }
-.card.is-hit {
-  box-shadow: 0 0 0 2px var(--st-open), var(--shadow-lift);
-}
 .card.st-retired {
   background: repeating-linear-gradient(135deg, #f4f6f6 0 6px, #fbfcfc 6px 12px);
+  border-top-color: var(--rule-strong);
   color: var(--ink-3);
 }
 .card-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  min-height: 18px;
-}
-.card-id {
-  font: 500 11px/1 var(--mono);
-  color: var(--ink-3);
-  letter-spacing: 0.01em;
-}
-.epic .card-id {
-  font-size: 12px;
 }
 .card-badges {
   margin-left: auto;
   display: flex;
   gap: 4px;
+  padding-top: 1px;
 }
 .badge {
   display: inline-flex;
@@ -725,10 +805,11 @@ button.chip:hover {
 }
 .badge.q {
   background: var(--warn-tint);
-  color: #8a5c0c;
+  color: #7d530a;
 }
 .card-title {
-  margin: 4px 0 0;
+  min-width: 0;
+  margin: 0;
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -738,21 +819,20 @@ button.chip:hover {
 }
 .story .card-title {
   font-size: 13.5px;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 .feature .card-title {
-  font-size: 15px;
+  font-size: 16px;
   -webkit-line-clamp: 2;
 }
 .epic .card-title {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
   -webkit-line-clamp: 1;
-  margin-top: 6px;
 }
 .card-excerpt {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.4;
   color: var(--ink-3);
@@ -760,6 +840,12 @@ button.chip:hover {
   -webkit-box-orient: vertical;
   overflow: hidden;
   -webkit-line-clamp: 2;
+}
+.feature .card-excerpt,
+.epic .card-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  font-size: 12.5px;
 }
 .epic .card-excerpt {
   -webkit-line-clamp: 1;
@@ -772,6 +858,13 @@ button.chip:hover {
   font-size: 11.5px;
   color: var(--ink-3);
 }
+.card-foot .count {
+  font: 500 11px/1 var(--mono);
+  color: var(--ink-3);
+}
+.card-foot .status {
+  margin-left: auto;
+}
 .glyph {
   font: 600 10px/1 var(--mono);
   letter-spacing: 0.04em;
@@ -781,28 +874,12 @@ button.chip:hover {
   color: var(--ink-2);
   background: var(--card);
 }
-.card-foot .status {
-  margin-left: auto;
-  font-size: 11.5px;
-}
-.card-foot .status::before {
-  display: none;
-}
-.card-foot .status {
-  color: var(--sc);
-}
-.st-rfp .card-foot .status,
-.card-foot .status.st-rfp {
-  color: var(--ink-3);
-}
-/* The Open amber is a fill colour; as small text it needs the darker ink (4.5:1). */
-.card-foot .status.st-open {
-  color: #8a5c0c;
-}
 
-/* Semantic zoom: far = ID and title only, larger; near = excerpt too. */
-.zoom-far .card-foot,
-.zoom-far .card-badges .badge span {
+/* Semantic zoom: far = title only, larger; near = description excerpt too. */
+.zoom-far .card-foot .glyph,
+.zoom-far .card-foot .count,
+.zoom-far .card-foot .badge span,
+.zoom-far .card-excerpt {
   display: none;
 }
 .zoom-far .story .card-title {
@@ -810,13 +887,14 @@ button.chip:hover {
   -webkit-line-clamp: 3;
 }
 .zoom-far .feature .card-title {
-  font-size: 19px;
-  -webkit-line-clamp: 3;
+  font-size: 21px;
+  -webkit-line-clamp: 4;
 }
 .zoom-far .epic .card-title {
-  font-size: 30px;
+  font-size: 32px;
 }
-.zoom-far .card-id {
+.zoom-far .status {
+  height: 24px;
   font-size: 13px;
 }
 .zoom-near .card-excerpt {
@@ -825,37 +903,31 @@ button.chip:hover {
 .zoom-near .story .card-title {
   -webkit-line-clamp: 1;
 }
-.zoom-near .feature .card-excerpt,
-.zoom-near .epic .card-excerpt {
-  -webkit-line-clamp: 1;
-}
 
 /* Overview: the whole wall on one screen. Epic names large, stories become status blocks. */
 .zoom-overview .card.story {
   background: color-mix(in srgb, var(--sc) 26%, var(--card));
   border-color: color-mix(in srgb, var(--sc) 40%, var(--card));
+  border-top-color: var(--ty);
 }
 .zoom-overview .card.story.st-retired {
   background: repeating-linear-gradient(135deg, #dfe4e6 0 10px, #f4f6f6 10px 20px);
 }
-.zoom-overview .card.story > * {
+.zoom-overview .card.story > *,
+.zoom-overview .card-foot {
   visibility: hidden;
 }
-.zoom-overview .epic .card-top {
+.zoom-overview .card-badges {
   display: none;
 }
 .zoom-overview .epic .card-title {
   font-size: 64px;
   line-height: 1.15;
-  margin-top: 4px;
 }
 .zoom-overview .feature .card-title {
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1.2;
-  -webkit-line-clamp: 2;
-}
-.zoom-overview .feature .card-top {
-  display: none;
+  -webkit-line-clamp: 4;
 }
 
 /* --------------------------------------------------------- list views */
@@ -997,7 +1069,7 @@ button.chip:hover {
 }
 .tree-row {
   display: grid;
-  grid-template-columns: 22px 92px 1fr auto auto;
+  grid-template-columns: 22px 1fr auto auto;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1028,6 +1100,10 @@ button.chip:hover {
 .tree-row .mono {
   font-size: 12px;
   color: var(--ink-3);
+}
+.tree-row .t-title .type-icon {
+  margin-right: 8px;
+  vertical-align: -2px;
 }
 .tree-row .t-title {
   overflow: hidden;
@@ -1098,7 +1174,7 @@ mark {
   content: '';
   display: block;
   height: 4px;
-  background: var(--sc, var(--ink));
+  background: var(--ty, var(--sc, var(--ink)));
 }
 @keyframes fade {
   from {
@@ -1115,7 +1191,7 @@ mark {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 14px 0 28px;
+  padding: 16px 14px 0 28px;
 }
 .crumbs {
   display: flex;
@@ -1239,7 +1315,7 @@ mark {
 }
 .link-row {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 10px;
   text-align: left;
@@ -1382,7 +1458,7 @@ mark {
 }
 .picker-list button {
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 1fr auto;
   gap: 8px;
   width: 100%;
   text-align: left;
@@ -1518,4 +1594,72 @@ mark {
     animation-duration: 1ms !important;
     transition-duration: 1ms !important;
   }
+}
+
+/* The foot of an item sheet: sources left, the ID quietly bottom right. */
+.sheet-tail {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.item-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font: 500 12px/1 var(--mono);
+  color: var(--ink-3);
+  padding: 6px 0 2px;
+}
+.oq-card .via {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.chip.item {
+  max-width: 280px;
+  gap: 6px;
+  color: var(--ty-ink);
+  border-color: color-mix(in srgb, var(--ty) 30%, var(--rule));
+  background: color-mix(in srgb, var(--ty-tint) 55%, var(--card));
+}
+.chip.item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.legend .sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--rule);
+}
+
+.sheet-head .lineage {
+  flex: 1 1 auto;
+}
+.sheet-head .mono {
+  white-space: nowrap;
+}
+
+.sheet-tail .facts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.fact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fact-help {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.card-foot .badge.q + .count,
+.card-foot .badge + .count {
+  margin-left: 4px;
 }

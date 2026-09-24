@@ -9,10 +9,17 @@ export const STATUS_HELP: Record<ItemStatus, string> = {
   Retired: 'No longer wanted, kept for traceability',
 }
 
+/** How a status reads on screen. The stored value stays `RFP` (the files and CSV keep it). */
+export const STATUS_LABEL: Record<string, string> = { RFP: 'From RFP' }
+export const statusLabel = (s: string) => STATUS_LABEL[s] ?? s
+
 /** CSS class suffix per status; colours live in styles.css tokens. */
 export const statusClass = (s: string) => `st-${s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/-$/, '')}`
 
 export const TYPE_LABEL: Record<ItemType, string> = { epic: 'Epic', feature: 'Feature', story: 'Story' }
+
+/** CSS class that sets the type colour tokens (--ty, --ty-ink, --ty-tint). */
+export const typeClass = (t: ItemType) => `ty-${t}`
 
 /** Short mono codes for the component glyph on cards. */
 export const COMPONENT_CODE: Record<string, string> = {

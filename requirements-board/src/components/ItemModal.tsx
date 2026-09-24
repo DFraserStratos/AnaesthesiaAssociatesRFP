@@ -6,7 +6,7 @@ import { ApiError, assetUrl } from '../api.ts'
 import { useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
 import { STATUS_HELP, TYPE_LABEL, statusClass } from '../vocab.ts'
-import { Glyph, Prose, StatusLabel } from './bits.tsx'
+import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { Sheet } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -135,23 +135,14 @@ function SheetHead({ item, index, leave }: { item: Item; index: Index; leave: (g
   const next = at >= 0 ? sibs[at + 1] : undefined
   return (
     <div className="sheet-head">
-      <nav className="crumbs" aria-label="Lineage">
-        {lineage.map((a) => (
-          <button key={a.id} className="crumb" onClick={() => leave(() => open.item(a.id))} title={a.title}>
-            <span className="mono">{a.id}</span>
-            <span>{a.title}</span>
-          </button>
-        ))}
-        {lineage.length === 0 && <span className="crumb">All epics</span>}
-      </nav>
-      <span className="spacer" />
-      <button className="btn icon ghost" disabled={!prev} onClick={() => prev && leave(() => open.item(prev.id))} title={prev ? `Previous: ${prev.id}` : undefined} aria-label="Previous sibling">
+      {lineage.length > 0 ? <Lineage chain={lineage} onPick={(id) => leave(() => open.item(id))} /> : <span className="lineage" />}
+      <button className="btn icon ghost" disabled={!prev} onClick={() => prev && leave(() => open.item(prev.id))} title={prev ? `Previous: ${prev.title}` : undefined} aria-label="Previous sibling">
         <ChevronLeft size={17} />
       </button>
       <span className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>
         {at + 1} of {sibs.length}
       </span>
-      <button className="btn icon ghost" disabled={!next} onClick={() => next && leave(() => open.item(next.id))} title={next ? `Next: ${next.id}` : undefined} aria-label="Next sibling">
+      <button className="btn icon ghost" disabled={!next} onClick={() => next && leave(() => open.item(next.id))} title={next ? `Next: ${next.title}` : undefined} aria-label="Next sibling">
         <ChevronRight size={17} />
       </button>
       <button className="btn icon ghost" onClick={() => leave(open.close)} aria-label="Close">
@@ -168,20 +159,7 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
 
   return (
     <>
-      <div className="sheet-id">
-        <span className="mono">{item.id}</span>
-        <span>{TYPE_LABEL[item.type]}</span>
-      </div>
       <h2>{item.title}</h2>
-      <div className="meta-row">
-        <StatusLabel status={item.status} />
-        {item.components.map((c) => (
-          <span key={c} className="chip">
-            <Glyph component={c} /> {c}
-          </span>
-        ))}
-      </div>
-
       {item.description ? <Prose text={item.description} /> : <p className="prose small">No description yet.</p>}
 
       {item.notes && (
@@ -206,7 +184,11 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
                 <StatusLabel status={q.status} />
               </div>
               <p>{q.question}</p>
-              {via && <p className="mono" style={{ fontSize: 11 }}>via {via}</p>}
+              {via && (
+                <p className="via">
+                  via <ItemName item={via} />
+                </p>
+              )}
             </button>
           ))}
         </section>
@@ -216,27 +198,54 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
 
       <Gallery item={item} />
 
-      {item.sources.length > 0 && (
-        <section className="section">
-          <h3 className="section-head">Sources</h3>
-          <div className="sources">
-            {item.sources.map((s) => (
-              <span key={s} className="chip">
-                {s}
-              </span>
-            ))}
+      {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
+      <section className="section sheet-tail">
+        <div className="facts">
+          <div>
+            <h3 className="section-head">Status</h3>
+            <div className="fact-row">
+              <StatusLabel status={item.status} />
+              <span className="fact-help">{STATUS_HELP[item.status]}</span>
+            </div>
           </div>
-        </section>
-      )}
+          {item.components.length > 0 && (
+            <div>
+              <h3 className="section-head">Area</h3>
+              <div className="sources">
+                {item.components.map((c) => (
+                  <span key={c} className="chip">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.sources.length > 0 && (
+            <div>
+              <h3 className="section-head">Sources</h3>
+              <div className="sources">
+                {item.sources.map((s) => (
+                  <span key={s} className="chip">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <span className="item-id" title={`${TYPE_LABEL[item.type]} ID`}>
+          <TypeIcon type={item.type} size={12} /> {item.id}
+        </span>
+      </section>
     </>
   )
 }
 
 /** Questions on this item first, then ones inherited from its feature and epic. */
-function linkedQuestions(index: Index, item: Item): { q: Question; via?: string }[] {
-  const out: { q: Question; via?: string }[] = []
+function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[] {
+  const out: { q: Question; via?: Item }[] = []
   const seen = new Set<string>()
-  const add = (id: string, via?: string) => {
+  const add = (id: string, via?: Item) => {
     for (const q of index.questionsFor.get(id) ?? []) {
       if (seen.has(q.id)) continue
       seen.add(q.id)
@@ -244,7 +253,7 @@ function linkedQuestions(index: Index, item: Item): { q: Question; via?: string 
     }
   }
   add(item.id)
-  for (const a of ancestorsOf(index, item.id).reverse()) add(a.id, a.id)
+  for (const a of ancestorsOf(index, item.id).reverse()) add(a.id, a)
   return out.sort((a, b) => Number(!isOpenQuestion(a.q)) - Number(!isOpenQuestion(b.q)))
 }
 
@@ -314,8 +323,9 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
         <div className="link-list">
           {children.map((c) => (
             <button key={c.id} className={`link-row ${statusClass(c.status)}`} onClick={() => open.item(c.id)}>
-              <span className="mono">{c.id}</span>
-              <span style={c.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>{c.title}</span>
+              <span style={c.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
+                <ItemName item={c} />
+              </span>
               <StatusLabel status={c.status} />
             </button>
           ))}
@@ -394,10 +404,6 @@ function Lightbox({ image, onClose }: { image: ImageRef; onClose: () => void }) 
 function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) => void; index: Index }) {
   return (
     <>
-      <div className="sheet-id">
-        <span className="mono">{draft.id}</span>
-        <span>{TYPE_LABEL[draft.type]}</span>
-      </div>
       <label className="field" style={{ marginTop: 8 }}>
         <span>Title</span>
         <input className="input title-input" value={draft.title} onChange={(e) => set({ title: e.target.value })} autoFocus />
@@ -487,8 +493,8 @@ function ParentPicker({ draft, index, onPick }: { draft: Item; index: Index; onP
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={openList && candidates[active] ? `${listId}-${active}` : undefined}
-        placeholder={current ? `${current.id} · ${current.title}` : 'Pick a parent'}
-        value={openList ? query : current ? `${current.id} · ${current.title}` : ''}
+        placeholder={current ? current.title : 'Pick a parent'}
+        value={openList ? query : current ? current.title : ''}
         onFocus={() => {
           setOpenList(true)
           setActive(0)
@@ -526,8 +532,8 @@ function ParentPicker({ draft, index, onPick }: { draft: Item; index: Index; onP
         <div className="picker-list" role="listbox" id={listId}>
           {candidates.map((c, i) => (
             <button key={c.id} id={`${listId}-${i}`} role="option" tabIndex={-1} aria-selected={i === active} className={i === active ? 'active' : ''} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(c)}>
+              <ItemName item={c} />
               <span className="mono">{c.id}</span>
-              <span>{c.title}</span>
             </button>
           ))}
           {candidates.length === 0 && <p className="empty">No match</p>}

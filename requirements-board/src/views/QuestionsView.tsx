@@ -2,8 +2,8 @@ import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
 import { useCatalogue, useIndex } from '../store.ts'
-import { QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass } from '../vocab.ts'
-import { Highlight } from '../components/bits.tsx'
+import { QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass, typeClass } from '../vocab.ts'
+import { Highlight, TypeIcon } from '../components/bits.tsx'
 
 export function QuestionsView() {
   const index = useIndex()
@@ -136,19 +136,23 @@ export function QuestionsView() {
                     <Highlight text={q.question} query={query} />
                   </span>
                   <span className="q-chips">
-                    {q.affects.map((a) => (
-                      <button
-                        key={a}
-                        className="chip id"
-                        title={index.byId.get(a)?.title ?? 'Missing item'}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          open.item(a)
-                        }}
-                      >
-                        {a}
-                      </button>
-                    ))}
+                    {q.affects.map((a) => {
+                      const it = index.byId.get(a)
+                      return (
+                        <button
+                          key={a}
+                          className={`chip item ${it ? typeClass(it.type) : ''}`}
+                          title={it ? `${it.id} · ${it.title}` : `Missing item ${a}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            open.item(a)
+                          }}
+                        >
+                          {it && <TypeIcon type={it.type} size={12} />}
+                          <span>{it?.title ?? a}</span>
+                        </button>
+                      )
+                    })}
                   </span>
                 </div>
               ))}

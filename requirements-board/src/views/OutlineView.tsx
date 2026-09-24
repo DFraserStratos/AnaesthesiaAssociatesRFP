@@ -1,10 +1,10 @@
 import { ChevronDown, ChevronRight, ImageIcon, MessageCircleQuestion, Search } from 'lucide-react'
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import type { Item } from '../../shared/types.ts'
-import { Glyph, Highlight, StatusLabel } from '../components/bits.tsx'
+import { Glyph, Highlight, StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
 import { descendantsOf, matchesFilters, openQuestionsFor, useIndex, useView, type Index } from '../store.ts'
-import { statusClass } from '../vocab.ts'
+import { statusClass, typeClass } from '../vocab.ts'
 
 const COLLAPSE_KEY = 'requirements-board:outline-collapsed'
 function readCollapsed(): Set<string> {
@@ -195,8 +195,8 @@ function OutlineRow({
       >
         {hasKids ? collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} /> : null}
       </span>
-      <span className="mono">{item.id}</span>
-      <span className="t-title">
+      <span className={`t-title ${typeClass(item.type)}`} title={item.id}>
+        <TypeIcon type={item.type} size={item.type === 'epic' ? 16 : 14} />
         <Highlight text={item.title} query={query} />
         {count > 0 && <span className="mono" style={{ marginLeft: 8 }}>+{count}</span>}
       </span>
