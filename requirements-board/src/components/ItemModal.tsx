@@ -7,7 +7,7 @@ import { useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
 import { STATUS_HELP, TYPE_LABEL, statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
-import { Sheet } from './Sheet.tsx'
+import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
 export function ItemModal({ id }: { id: string }) {
@@ -18,7 +18,6 @@ export function ItemModal({ id }: { id: string }) {
   const open = useOpen()
   const ed = useEditableRecord<Item>({
     key: `item:${id}`,
-    noun: 'item',
     rec,
     save: saveItem,
     adopt: adoptItem,
@@ -26,9 +25,10 @@ export function ItemModal({ id }: { id: string }) {
     startEditing: open.params.get('edit') === '1',
   })
 
+  const [askRetire, setAskRetire] = useState(false)
   const retire = async () => {
     if (!rec) return
-    if (!window.confirm(`Retire ${rec.data.id}? It stays in the catalogue, marked Retired, so its ID is never reused.`)) return
+    setAskRetire(false)
     try {
       await saveItem({ ...rec.data, status: 'Retired' }, rec.rev)
     } catch (e) {
@@ -51,8 +51,28 @@ export function ItemModal({ id }: { id: string }) {
   const item = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Item>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
+  const confirm: SheetConfirm | null = ed.discardAsk
+    ? {
+        title: 'Discard your changes?',
+        body: `Your unsaved edits to ${rec.data.title} will be lost.`,
+        cancelLabel: 'Keep editing',
+        confirmLabel: 'Discard changes',
+        onCancel: ed.discardAsk.cancel,
+        onConfirm: ed.discardAsk.confirm,
+      }
+    : askRetire
+      ? {
+          title: 'Retire this item?',
+          body: 'It stays in the catalogue, marked Retired, so its ID is never reused.',
+          cancelLabel: 'Keep it',
+          confirmLabel: 'Retire item',
+          onCancel: () => setAskRetire(false),
+          onConfirm: () => void retire(),
+        }
+      : null
+
   return (
-    <Sheet onClose={open.close} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} guardClose={() => ed.confirmDiscard()}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm}>
       <SheetHead item={rec.data} index={index} leave={ed.leave} />
       {ed.restored && ed.editing && !ed.conflict && (
         <div className="banner" role="status">
@@ -96,7 +116,7 @@ export function ItemModal({ id }: { id: string }) {
               <MapIcon size={15} /> Show on board
             </button>
             {item.status !== 'Retired' && (
-              <button className="btn ghost danger" onClick={() => void retire()}>
+              <button className="btn ghost danger" onClick={() => setAskRetire(true)}>
                 <Archive size={15} /> Retire
               </button>
             )}
@@ -349,7 +369,7 @@ function Gallery({ item }: { item: Item }) {
       {item.images.length === 0 ? (
         <div className="empty-shots">
           No screenshots yet. Save them to <code>catalogue/assets/{item.id}/</code> and list each under <code>images</code> in{' '}
-          <code>items/{item.id}.md</code> with its <code>viewport</code> (desktop or mobile), or add them here in Edit.
+          <code>requirements/{item.id}.md</code> with its <code>viewport</code> (desktop or mobile), or add them here in Edit.
         </div>
       ) : (
         <>

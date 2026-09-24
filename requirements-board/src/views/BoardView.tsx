@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, type Item } from '../../shared/types.ts'
 import { autoLayout } from '../board/autoLayout.ts'
 import { CardNode, type CardData, type CardNodeType } from '../board/CardNode.tsx'
-import { Glyph, Lineage, StatusLabel, TypeLabel } from '../components/bits.tsx'
+import { Glyph, Lineage, StatusLabel } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, openQuestionsFor, useCatalogue, useIndex, useView, type Index } from '../store.ts'
 import { TYPE_LABEL } from '../vocab.ts'
@@ -61,6 +61,7 @@ function Board() {
   const [initialViewport] = useState(readViewport)
   const [zoomClass, setZoomClass] = useState(() => zoomBand(initialViewport?.zoom ?? 0.4))
   const [showFilters, setShowFilters] = useState(false)
+  const [askTidy, setAskTidy] = useState(false)
   const [hitCursor, setHitCursor] = useState(-1)
   const searchRef = useRef<HTMLInputElement>(null)
   const modalOpen = open.params.has('item') || open.params.has('question')
@@ -158,8 +159,8 @@ function Board() {
         target: it.id,
         sourceHandle: spine && parent.type === 'feature' ? 'ls' : undefined,
         targetHandle: spine ? 'l' : undefined,
-        type: spine ? 'smoothstep' : 'default',
-        pathOptions: spine ? { offset: 18, borderRadius: 10 } : undefined,
+        type: 'smoothstep',
+        pathOptions: { offset: spine ? 18 : 12, borderRadius: 10 },
         className: lit ? 'lit' : dim ? 'dim' : '',
         focusable: false,
         selectable: false,
@@ -197,6 +198,11 @@ function Board() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (modalOpen) return
+      if (e.key === 'Escape' && askTidy) {
+        e.preventDefault()
+        setAskTidy(false)
+        return
+      }
       const target = e.target instanceof HTMLElement ? e.target : null
       const typing = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
       if (e.key === '/' && !typing) {
@@ -228,7 +234,7 @@ function Board() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [modalOpen, selected, index, open, centreOn])
+  }, [modalOpen, askTidy, selected, index, open, centreOn])
 
   const nextHit = (dir: 1 | -1) => {
     if (!hits.length) return
@@ -275,9 +281,8 @@ function Board() {
         onlyRenderVisibleElements
         proOptions={{ hideAttribution: true }}
       >
-        {/* The anaesthetic chart: fine minor grid, stronger major grid every fifth line. */}
-        <Background id="minor" variant={BackgroundVariant.Lines} gap={16} color="#e0e9e5" lineWidth={1} />
-        <Background id="major" variant={BackgroundVariant.Lines} gap={80} color="#d3dfda" lineWidth={1} />
+        {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. */}
+        <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />
         {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => TYPE_HEX[(n.data as CardData).item.type]} nodeBorderRadius={2} maskColor="rgba(237,242,240,0.7)" />}
       </ReactFlow>
 
@@ -323,20 +328,29 @@ function Board() {
           {showFilters && <FilterPopover />}
         </div>
         <span className="toolbar-spacer" />
-        <div className="toolbar-group">
+        <div className="toolbar-group" style={{ position: 'relative' }}>
           <button className="btn ghost" aria-pressed={view.showRetired} onClick={() => view.set({ showRetired: !view.showRetired })}>
             Retired
           </button>
           <button
             className="btn ghost"
             disabled={!moved}
+            aria-expanded={askTidy}
             title={moved ? `${moved} card${moved > 1 ? 's' : ''} moved from the story map` : 'Every card is in its story-map place'}
-            onClick={() => {
-              if (window.confirm(`Put all ${moved} moved card${moved > 1 ? 's' : ''} back in the story map?`)) tidy(Object.keys(positions))
-            }}
+            onClick={() => setAskTidy((v) => !v)}
           >
             <LayoutGrid size={15} /> Tidy all
           </button>
+          {askTidy && moved > 0 && (
+            <TidyAsk
+              moved={moved}
+              onCancel={() => setAskTidy(false)}
+              onConfirm={() => {
+                setAskTidy(false)
+                tidy(Object.keys(positions))
+              }}
+            />
+          )}
           <button className="btn icon ghost" onClick={() => void rf.fitView({ ...FIT, duration: 400 })} aria-label="Fit the whole map" title="Fit the whole map">
             <Maximize size={15} />
           </button>
@@ -346,7 +360,7 @@ function Board() {
         </div>
       </div>
 
-      {selectedItem ? (
+      {selectedItem && (
         <div className="selection-bar" role="status">
           <Lineage
             small
@@ -366,20 +380,28 @@ function Board() {
             <ExternalLink size={14} /> Open <kbd style={{ background: 'transparent', color: '#cfe', borderColor: '#5fa39a' }}>↵</kbd>
           </button>
         </div>
-      ) : (
-        <div className="legend" aria-label="Legend">
-          {/* Only statuses a card can show: From RFP is the unmarked baseline. */}
-          {ITEM_STATUSES.filter((s) => s !== 'RFP' && (s !== 'Retired' || view.showRetired)).map((s) => (
-            <StatusLabel key={s} status={s} />
-          ))}
-          <span className="sep" />
-          {ITEM_TYPES.map((t) => (
-            <TypeLabel key={t} type={t} />
-          ))}
-          <span className="sep" />
-          <span>Click to trace, double-click to open</span>
-        </div>
       )}
+    </div>
+  )
+}
+
+/** The board asks in its own frame too: a popover under the button, not a browser dialog. */
+function TidyAsk({ moved, onConfirm, onCancel }: { moved: number; onConfirm: () => void; onCancel: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => ref.current?.focus(), [])
+  return (
+    <div className="popover ask" role="dialog" aria-label="Tidy all moved cards">
+      <p>
+        Put {moved === 1 ? 'the moved card' : `all ${moved} moved cards`} back in the story map? Where you put them is not kept.
+      </p>
+      <div className="ask-actions">
+        <button ref={ref} className="btn primary" onClick={onConfirm}>
+          <LayoutGrid size={15} /> Tidy all
+        </button>
+        <button className="btn ghost" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import {
   COMPONENTS,
   ITEM_STATUSES,
   ITEM_TYPES,
+  QUESTION_KINDS,
   QUESTION_STATUSES,
   VIEWPORTS,
   type Issue,
@@ -51,6 +52,7 @@ export function checkCatalogue({ items, questions, fileExists }: CheckInput): Is
       if (!(COMPONENTS as readonly string[]).includes(c)) err(it.id, `component "${c}" is not in the vocabulary`)
     }
     if (it.components.length === 0) warn(it.id, 'no component')
+    if (it.sources.length === 0 && it.status !== 'Retired') warn(it.id, 'no source')
 
     if (it.type === 'epic') {
       if (it.parent) err(it.id, 'an epic has no parent')
@@ -76,6 +78,7 @@ export function checkCatalogue({ items, questions, fileExists }: CheckInput): Is
     if (qIds.has(q.id)) err(q.id, `duplicate ID ${q.id}`)
     qIds.add(q.id)
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
+    if (!QUESTION_KINDS.includes(q.kind)) err(q.id, `kind "${q.kind}" is not one of ${QUESTION_KINDS.join(', ')}`)
     if (!q.title.trim()) err(q.id, 'title is empty')
     if (!QUESTION_STATUSES.includes(q.status)) err(q.id, `status "${q.status}" is not one of ${QUESTION_STATUSES.join(', ')}`)
     for (const a of q.affects) if (!byId.has(a)) err(q.id, `affects ${a}, which does not exist`)

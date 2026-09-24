@@ -14,7 +14,7 @@ const item = (over: Partial<Item>): Item => ({
   type: 'story',
   parent: 'FT-01.1',
   title: 'A story',
-  status: 'RFP',
+  status: 'Proposed',
   components: ['Scheduling Engine'],
   sources: [],
   order: 1,
@@ -27,7 +27,7 @@ const item = (over: Partial<Item>): Item => ({
 const epic = item({ id: 'EP-01', type: 'epic', parent: null })
 const feature = item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01' })
 const question = (over: Partial<Question>): Question => ({
-  id: 'OQ-01', title: 'Q', status: 'Open', owner: 'AA', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
+  id: 'OQ-01', kind: 'question', title: 'Q', status: 'Open', owner: 'AA', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
 })
 
 describe('catalogue files', () => {

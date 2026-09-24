@@ -104,7 +104,7 @@ describe('saving', () => {
     call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
     const onDisk = parseItem(readFileSync(itemPath('US-01.1.2', root), 'utf8'))
     expect(onDisk.type).toBe('story')
-    expect(onDisk.status).toBe('RFP')
+    expect(onDisk.status).toBe('Proposed')
     expect(onDisk.extra).toEqual({ owner: 'kept' })
   })
 

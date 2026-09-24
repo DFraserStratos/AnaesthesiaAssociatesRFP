@@ -26,6 +26,21 @@ open-items handoff and Decisions log only when they are relevant to the task. Co
 `docs/prototype-build/prototype-review/00-SUMMARY.md` for RFP-wide conformance work or related review
 findings.
 
+## Requirements: where they live
+
+**The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/`**: one
+Markdown file per epic, feature and story (`requirements/`) and per outstanding item (`questions/`: open questions, missing sources), format in
+`catalogue/SCHEMA.md`. To add, change, retire or answer a requirement, edit those files (or use the
+Requirements Board, which edits the same files), then run `npm run check` from the repo root.
+`domain-model.md` beside the catalogue holds the narrative model; update it when a change alters the
+model. This catalogue supersedes the RFP wherever they differ.
+
+Not the place to edit requirements:
+- `requirements-board/` is the app that edits the catalogue; it holds no requirements itself.
+- `docs/rfp-reference/RFP.md` is the original RFP: historical input, read-only.
+- `docs/prototype-build/REQUIREMENTS.md` is the prototype's build checklist against the RFP, used only
+  for prototype work.
+
 ## Where things live
 
 - **The app** — `aa-prototype/` at the repo root. Never create a second prototype folder. Its
@@ -38,6 +53,8 @@ findings.
   both apps (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The
   prototype harness bar links to the board only when launched that way (it sets `VITE_REQUIREMENTS_URL`),
   so a presenter running `aa-prototype` on its own never sees the link.
+  **Its design rules are in `requirements-board/DESIGN.md`** (names over IDs, fixed type colours, status
+  as pills): read it before any visual change to the board.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
   from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`
@@ -46,15 +63,16 @@ findings.
   - `PROGRESS.md` — the historical build record: binding conventions, phase status, decisions log,
     per-phase entries and open-items handoff. Reference it selectively; routine tweak sessions do
     not need to read or update it.
-  - `REQUIREMENTS.md` — the numbered requirements catalogue (P/D/M/W/A/B/X/I/N).
+  - `REQUIREMENTS.md` — the prototype's numbered build checklist against the RFP (P/D/M/W/A/B/X/I/N).
+    Not the system's requirements; those are the catalogue above.
   - `prototype-review/` — the 2026-07-27 whole-RFP conformance review; start at `00-SUMMARY.md`.
   - `ROADMAP.md`, `phases/phase-00…13.md`, `index.html` — the build plan (historical, but the phase
     docs remain the best account of why each surface is the way it is).
 - **Demo guide** — `docs/demo-guide/`: personas, workflows, the S1 to S5 run sheet and the presenter
   cheat sheet; `master-demo-guide.html` is the self-contained single-page version. Behaviour changes
   that affect a scripted beat must be mirrored here.
-- **RFP & data model** — `docs/rfp-reference/`: `RFP.md` (the source of truth for requirements, PDF
-  alongside) and `Data-Model-and-Flow.md` / `.html` (our reading of the data model, the List/Card
+- **RFP & data model** — `docs/rfp-reference/`: `RFP.md` (the original RFP the prototype was built
+  against, PDF alongside; superseded by the catalogue for the real system's requirements) and `Data-Model-and-Flow.md` / `.html` (our reading of the data model, the List/Card
   lifecycle, and the booking → billing → payment flow).
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
 - **Assets** — `docs/assets/` (the AA logo).

@@ -1,12 +1,12 @@
 import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, X } from 'lucide-react'
 import { useId, useMemo, useRef, useState, type RefObject } from 'react'
 import { compareIds } from '../../shared/ids.ts'
-import { QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
+import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
 import { useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
-import { statusClass, typeClass } from '../vocab.ts'
+import { KIND_HELP, KIND_LABEL, statusClass, typeClass } from '../vocab.ts'
 import { ItemName, Prose, StatusLabel, TypeIcon } from './bits.tsx'
-import { Sheet } from './Sheet.tsx'
+import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
 const normalise = (q: Question): Question => ({
@@ -25,7 +25,6 @@ export function QuestionModal({ id }: { id: string }) {
   const open = useOpen()
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
-    noun: 'question',
     rec,
     save: saveQuestion,
     adopt: adoptQuestion,
@@ -71,12 +70,23 @@ export function QuestionModal({ id }: { id: string }) {
   const q = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Question>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
+  const confirm: SheetConfirm | null = ed.discardAsk
+    ? {
+        title: 'Discard your changes?',
+        body: `Your unsaved edits to ${rec.data.title} will be lost.`,
+        cancelLabel: 'Keep editing',
+        confirmLabel: 'Discard changes',
+        onCancel: ed.discardAsk.cancel,
+        onConfirm: ed.discardAsk.confirm,
+      }
+    : null
+
   return (
-    <Sheet onClose={open.close} onKey={onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} guardClose={() => ed.confirmDiscard()}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={confirm}>
       <div className="sheet-head">
         <nav className="crumbs">
           <button className="crumb" onClick={() => ed.leave(open.close)}>
-            Open questions
+            Outstanding items
           </button>
         </nav>
         <span className="spacer" />
@@ -145,7 +155,7 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
     <>
       <div className="sheet-id">
         <span className="mono">{q.id}</span>
-        <span>Open question</span>
+        <span title={KIND_HELP[q.kind]}>{KIND_LABEL[q.kind]}</span>
       </div>
       <h2>{q.title}</h2>
       <div className="meta-row">
@@ -261,11 +271,21 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
     <>
       <div className="sheet-id">
         <span className="mono">{draft.id}</span>
-        <span>Open question</span>
+        <span>{KIND_LABEL[draft.kind]}</span>
       </div>
       <label className="field" style={{ marginTop: 8 }}>
         <span>Title</span>
         <input className="input title-input" value={draft.title} onChange={(e) => set({ title: e.target.value })} autoFocus={draft.status !== 'Answered'} />
+      </label>
+      <label className="field">
+        <span>Kind</span>
+        <select className="select" value={draft.kind} onChange={(e) => set({ kind: e.target.value as Question['kind'] })}>
+          {QUESTION_KINDS.map((k) => (
+            <option key={k} value={k}>
+              {KIND_LABEL[k]}
+            </option>
+          ))}
+        </select>
       </label>
       <div className="field-grid">
         <label className="field">

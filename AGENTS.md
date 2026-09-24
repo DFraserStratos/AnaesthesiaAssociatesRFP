@@ -5,16 +5,25 @@
 When reporting information to me, be extremely concise and sacrifice grammar for the sake of
 concision.
 
+## Requirements
+
+The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/` (one
+Markdown file per epic, feature, story and open question; format in `catalogue/SCHEMA.md`). Edit those
+files to change requirements, then run `npm run check` from the repo root. `requirements-board/` is only
+the editing app; `docs/rfp-reference/RFP.md` is the historical RFP; `docs/prototype-build/REQUIREMENTS.md`
+is the prototype's build checklist, not the system's requirements.
+
 ## Project Structure & Module Organization
 
 The app lives in `aa-prototype/`; run npm commands there. `requirements-board/` is a separate
 local dev tool over the future-state requirements catalogue
 (`docs/discovery-reference/Updated Requirements/catalogue/`, format in its `SCHEMA.md`); root
-`npm run dev` starts both, root `npm run check` validates the catalogue. Under `src/`, `domain/` contains pure
+`npm run dev` starts both, root `npm run check` validates the catalogue. Board design rules:
+`requirements-board/DESIGN.md`. Under `src/`, `domain/` contains pure
 business rules, `store/` owns the Zustand-backed mock backend,
 `apps/` contains the mobile, web, admin, and demo surfaces, and `shared/`, `shell/`, and `theme/`
 hold reusable UI, routing, and design tokens. Tests are colocated as `*.test.ts(x)`; Playwright
-specs live in `visual/`. Requirements, decisions, demo scripts, and mockups live under `docs/`.
+specs live in `visual/`. Decisions, demo scripts, and mockups live under `docs/`; requirements as above.
 The mobile app also builds on its own as an installable PWA from a second Vite config
 (`vite.pwa.config.ts`): `pwa/` is that target's entry, `src/pwa/` its target-only modules, and
 `dist-pwa/` its output, so anything under `src/apps/mobile/`, `src/shared/`, or `src/theme/` now

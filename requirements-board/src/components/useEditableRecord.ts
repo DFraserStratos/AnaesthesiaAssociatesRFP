@@ -4,7 +4,8 @@
  *
  * - Unsaved edits live in a module-level draft store, so they survive the
  *   sheet unmounting (browser Back, following a link). Reopening the record
- *   restores them; every in-app way out goes through `leave`, which asks first.
+ *   restores them; every in-app way out goes through `leave`, which asks first
+ *   by veiling the sheet (`discardAsk`) rather than raising a browser prompt.
  * - A change on disk while editing raises a conflict instead of clobbering the
  *   draft; a 409 from the server adopts the server's copy so "Keep mine" saves
  *   against the right revision.
@@ -23,7 +24,6 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export interface EditableOptions<T> {
   /** Unique per record, e.g. `item:US-01.1.1`. */
   key: string
-  noun: string
   rec: Rev<T> | undefined
   save: (data: T, baseRev: string) => Promise<Rev<T>>
   adopt: (rec: Rev<T>) => void
@@ -31,7 +31,7 @@ export interface EditableOptions<T> {
   startEditing?: boolean
 }
 
-export function useEditableRecord<T>({ key, noun, rec, save, adopt, normalise = (d) => d, startEditing = false }: EditableOptions<T>) {
+export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) => d, startEditing = false }: EditableOptions<T>) {
   const [stored] = useState(() => drafts.get(key) as { draft: T; base: Rev<T> } | undefined)
   const [editing, setEditing] = useState(!!stored || startEditing)
   const [base, setBase] = useState<Rev<T> | undefined>(stored?.base ?? rec)
@@ -58,14 +58,33 @@ export function useEditableRecord<T>({ key, noun, rec, save, adopt, normalise = 
     }
   }, [rec, base, dirty])
 
-  const confirmDiscard = () => !dirty || window.confirm(`Discard your changes to this ${noun}?`)
+  /** The action waiting on "Discard changes"; while it is set the sheet shows the veil. */
+  const [pending, setPending] = useState<{ go: () => void } | null>(null)
 
-  /** Run a navigation away from the sheet, after confirming unsaved edits may be dropped. */
-  const leave = (go: () => void) => {
-    if (!confirmDiscard()) return
+  /**
+   * Run a way out of the sheet. With unsaved edits it asks first, in the sheet,
+   * and returns false; the caller's action runs only if the answer is Discard.
+   */
+  const leave = (go: () => void): boolean => {
+    if (dirty) {
+      setPending({ go })
+      return false
+    }
     drafts.delete(key)
     go()
+    return true
   }
+
+  const discardAsk = pending
+    ? {
+        confirm: () => {
+          setPending(null)
+          drafts.delete(key)
+          pending.go()
+        },
+        cancel: () => setPending(null),
+      }
+    : null
 
   const startEdit = (prepare: (d: T) => T = (d) => d) => {
     if (!rec) return
@@ -75,14 +94,13 @@ export function useEditableRecord<T>({ key, noun, rec, save, adopt, normalise = 
     setEditing(true)
   }
 
-  const cancelEdit = () => {
-    if (!confirmDiscard()) return
-    drafts.delete(key)
-    setEditing(false)
-    setDraft(rec?.data)
-    setConflict(false)
-    setError(null)
-  }
+  const cancelEdit = () =>
+    leave(() => {
+      setEditing(false)
+      setDraft(rec?.data)
+      setConflict(false)
+      setError(null)
+    })
 
   const commit = async (): Promise<Rev<T> | undefined> => {
     if (draft === undefined || !base || savingRef.current) return
@@ -122,6 +140,7 @@ export function useEditableRecord<T>({ key, noun, rec, save, adopt, normalise = 
   commitRef.current = commit
   /** Sheet key handler: Cmd/Ctrl+S saves, Esc cancels an edit. Returns true when handled. */
   const onKey = (e: KeyboardEvent) => {
+    if (pending) return false // the veil owns the keyboard while it is up
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault()
       if (editing) void commitRef.current()
@@ -151,7 +170,7 @@ export function useEditableRecord<T>({ key, noun, rec, save, adopt, normalise = 
     keepMine,
     loadTheirs,
     leave,
-    confirmDiscard,
+    discardAsk,
     onKey,
   }
 }

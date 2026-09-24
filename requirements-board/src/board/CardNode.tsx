@@ -3,7 +3,7 @@ import { ImageIcon, MessageCircleQuestion } from 'lucide-react'
 import { memo } from 'react'
 import type { Item } from '../../shared/types.ts'
 import { StatusLabel } from '../components/bits.tsx'
-import { TYPE_LABEL, excerpt, statusClass, typeClass } from '../vocab.ts'
+import { BASELINE_STATUS, TYPE_LABEL, excerpt, statusClass, typeClass } from '../vocab.ts'
 
 export interface CardData extends Record<string, unknown> {
   item: Item
@@ -44,8 +44,8 @@ function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
             {childCount} item{childCount === 1 ? '' : 's'}
           </span>
         )}
-        {/* "From RFP" is the baseline; a card only carries a pill when its status is worth noticing. */}
-        {item.status !== 'RFP' && <StatusLabel status={item.status} />}
+        {/* Proposed is the baseline; a card only carries a pill when its status is worth noticing. */}
+        {item.status !== BASELINE_STATUS && <StatusLabel status={item.status} />}
       </div>
     </div>
   )

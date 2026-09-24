@@ -103,7 +103,7 @@ function Masthead({ connected }: { connected: boolean }) {
           Board
         </NavLink>
         <NavLink className="tab" to="/questions">
-          Open questions <span className="count">{openCount}</span>
+          Outstanding items <span className="count">{openCount}</span>
         </NavLink>
         <NavLink className="tab" to="/outline">
           Outline <span className="count">{index.items.length}</span>

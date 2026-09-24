@@ -2,7 +2,8 @@ import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
 import { useCatalogue, useIndex } from '../store.ts'
-import { QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass, typeClass } from '../vocab.ts'
+import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
+import { KIND_LABEL, QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
 
 export function QuestionsView() {
@@ -10,12 +11,14 @@ export function QuestionsView() {
   const open = useOpen()
   const createQuestion = useCatalogue((s) => s.createQuestion)
   const [owner, setOwner] = useState('')
+  const [kind, setKind] = useState<QuestionKind | ''>('')
   const [query, setQuery] = useState('')
   const [showAnswered, setShowAnswered] = useState(true)
 
   const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
   const shown = index.questions.filter((q) => {
     if (owner && q.owner !== owner) return false
+    if (kind && q.kind !== kind) return false
     const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
     const hay = `${q.id} ${q.title} ${q.question} ${q.answer} ${q.affects.join(' ')}`.toLowerCase()
     return words.every((w) => hay.includes(w))
@@ -34,7 +37,7 @@ export function QuestionsView() {
     setBusy(true)
     setAddError(null)
     try {
-      const rec = await createQuestion({ title: newTitle.trim(), status: 'Open' })
+      const rec = await createQuestion({ kind: 'question', title: newTitle.trim(), status: 'Open' })
       setAdding(false)
       setNewTitle('')
       open.question(rec.data.id, { edit: true })
@@ -50,8 +53,8 @@ export function QuestionsView() {
       <div className="page-inner">
         <div className="page-head">
           <div>
-            <h1>Open questions</h1>
-            <p>Questions that block or shape requirements, and the items each one touches.</p>
+            <h1>Outstanding items</h1>
+            <p>Open questions and requirements with no known source, and the items each one touches.</p>
           </div>
           <span style={{ flex: 1 }} />
           {!adding && (
@@ -92,9 +95,19 @@ export function QuestionsView() {
         <div className="page-tools">
           <label className="search">
             <Search size={15} />
-            <span className="sr-only">Search questions</span>
-            <input className="input" placeholder="Search questions" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <span className="sr-only">Search outstanding items</span>
+            <input className="input" placeholder="Search outstanding items" value={query} onChange={(e) => setQuery(e.target.value)} />
           </label>
+          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as QuestionKind | '')} aria-label="Kind">
+            <option value="">All kinds</option>
+            {QUESTION_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {KIND_LABEL[k]}
+                {' · '}
+                {index.questions.filter((q) => q.kind === k).length}
+              </option>
+            ))}
+          </select>
           <select className="select" value={owner} onChange={(e) => setOwner(e.target.value)} aria-label="Owner">
             <option value="">All owners</option>
             {owners.map((o) => (
@@ -105,7 +118,7 @@ export function QuestionsView() {
             Show answered
           </button>
         </div>
-        {groups.length === 0 && <p className="empty">No questions match.</p>}
+        {groups.length === 0 && <p className="empty">Nothing matches.</p>}
         {groups.map(({ status, list }) => (
           <section key={status} className="group">
             <h2 className="group-head">
@@ -129,6 +142,7 @@ export function QuestionsView() {
                 >
                   <span className="mono">{q.id}</span>
                   <span className="q-title">
+                    {q.kind !== 'question' && <span className="kind-tag">{KIND_LABEL[q.kind]}</span>}
                     <Highlight text={q.title} query={query} />
                   </span>
                   <span className="q-owner">{q.owner}</span>

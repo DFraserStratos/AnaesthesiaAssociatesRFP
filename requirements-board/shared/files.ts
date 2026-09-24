@@ -6,11 +6,11 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { ImageRef, Item, ItemStatus, ItemType, Question, QuestionStatus, Viewport } from './types.ts'
+import type { ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
 
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'images']
-export const QUESTION_KEYS = ['id', 'title', 'status', 'owner', 'affects', 'sources']
+export const QUESTION_KEYS = ['id', 'kind', 'title', 'status', 'owner', 'affects', 'sources']
 export const NOTES_HEADING = '## Notes'
 export const ANSWER_HEADING = '## Answer'
 
@@ -93,6 +93,8 @@ export function toItem(meta: Record<string, unknown>, description: unknown = '',
 export function toQuestion(meta: Record<string, unknown>, question: unknown = '', answer: unknown = ''): Question {
   return {
     id: str(meta.id),
+    // A file with no kind is a plain question (every file written before kinds existed).
+    kind: (str(meta.kind) || 'question') as QuestionKind,
     title: str(meta.title),
     status: str(meta.status) as QuestionStatus,
     owner: str(meta.owner),
@@ -195,6 +197,7 @@ export function serialiseItem(item: Item): string {
 export function serialiseQuestion(q: Question): string {
   const meta: Record<string, unknown> = {
     id: q.id,
+    kind: q.kind,
     title: q.title,
     status: q.status,
     owner: q.owner,

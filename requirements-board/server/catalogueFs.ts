@@ -14,7 +14,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 export const REQUIREMENTS_DIR = resolve(here, '../../docs/discovery-reference/Updated Requirements')
 export const CATALOGUE_DIR = process.env.CATALOGUE_DIR ? resolve(process.env.CATALOGUE_DIR) : join(REQUIREMENTS_DIR, 'catalogue')
 
-export const itemsDir = (root = CATALOGUE_DIR) => join(root, 'items')
+export const itemsDir = (root = CATALOGUE_DIR) => join(root, 'requirements')
 export const questionsDir = (root = CATALOGUE_DIR) => join(root, 'questions')
 export const layoutPath = (root = CATALOGUE_DIR) => join(root, 'board-layout.json')
 export const itemPath = (id: string, root = CATALOGUE_DIR) => join(itemsDir(root), `${id}.md`)

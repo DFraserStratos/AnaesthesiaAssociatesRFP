@@ -4,6 +4,9 @@ A local dev tool for reading, editing and arranging the future-state requirement
 (`docs/discovery-reference/Updated Requirements/catalogue/`). Not part of the prototype and never
 deployed: its dev server is its file API.
 
+**No requirements live in this folder.** They are the Markdown files in the catalogue folder above;
+this app and any agent edit those same files.
+
 ```
 npm install
 npm run dev          # http://localhost:5180
@@ -14,6 +17,9 @@ npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhe
 ```
 
 From the repo root, `npm run dev` starts this and the prototype together.
+
+**Design:** `DESIGN.md` is the north star for anything visual (names over IDs, type colours, status
+pills, card and sheet anatomy). Read it before changing the UI.
 
 ## Stack
 

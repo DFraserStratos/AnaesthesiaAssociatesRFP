@@ -7,7 +7,7 @@
 export const ITEM_TYPES = ['epic', 'feature', 'story'] as const
 export type ItemType = (typeof ITEM_TYPES)[number]
 
-export const ITEM_STATUSES = ['Confirmed', 'RFP', 'Proposed', 'Future', 'Open', 'Retired'] as const
+export const ITEM_STATUSES = ['Confirmed', 'Proposed', 'Future', 'Open', 'Retired'] as const
 export type ItemStatus = (typeof ITEM_STATUSES)[number]
 
 export const COMPONENTS = [
@@ -22,8 +22,12 @@ export const COMPONENTS = [
 ] as const
 export type Component = (typeof COMPONENTS)[number]
 
-export const QUESTION_STATUSES = ['Open', 'Open (from RFP)', 'Confirm', 'Proposed', 'Answered'] as const
+export const QUESTION_STATUSES = ['Open', 'Confirm', 'Proposed', 'Answered'] as const
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number]
+
+/** What an outstanding item asks for: a decision (`question`) or where a requirement came from (`missing-source`). */
+export const QUESTION_KINDS = ['question', 'missing-source'] as const
+export type QuestionKind = (typeof QUESTION_KINDS)[number]
 
 export const VIEWPORTS = ['desktop', 'mobile'] as const
 export type Viewport = (typeof VIEWPORTS)[number]
@@ -55,6 +59,7 @@ export interface Item {
 
 export interface Question {
   id: string
+  kind: QuestionKind
   title: string
   affects: string[]
   owner: string

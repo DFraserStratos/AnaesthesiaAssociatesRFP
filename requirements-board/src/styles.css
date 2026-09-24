@@ -6,8 +6,8 @@
 :root {
   --paper: #edf2f0;
   --paper-deep: #e3ebe8;
-  --grid: #d3dfda;
-  --grid-minor: #e0e9e5;
+  --grid: #e3eae7;
+  --grid-minor: #e9efec;
   --ink: #1f2b30;
   --ink-2: #44535a;
   --ink-3: #5f6e74;
@@ -25,8 +25,8 @@
   --warn-tint: #fdf4e3;
 
   --st-confirmed: #2f7d4f;
-  --st-rfp: #5b6b73;
-  --st-proposed: #2f5fa8;
+  /* Proposed is the baseline (most items), so it takes the calm neutral. */
+  --st-proposed: #5b6b73;
   --st-future: #8a7a66;
   --st-open: #c0851b;
   --st-retired: #9aa6ab;
@@ -405,15 +405,10 @@ button.chip:hover {
   --sbg: #e5f2ea;
   --sink: #22613b;
 }
-.st-rfp {
-  --sc: var(--st-rfp);
-  --sbg: #eceff0;
-  --sink: #46545b;
-}
 .st-proposed {
   --sc: var(--st-proposed);
-  --sbg: #e5ecf7;
-  --sink: #264d8a;
+  --sbg: #eceff0;
+  --sink: #46545b;
 }
 .st-future {
   --sc: var(--st-future);
@@ -421,7 +416,6 @@ button.chip:hover {
   --sink: #64553f;
 }
 .st-open,
-.st-open-from-rfp,
 .st-confirm {
   --sc: var(--st-open);
   --sbg: #fbefd9;
@@ -621,6 +615,22 @@ button.seg:focus-visible {
   padding: 14px 16px 16px;
   z-index: 10;
 }
+.popover.ask {
+  left: auto;
+  right: 0;
+  width: 300px;
+  padding: 14px 16px;
+}
+.popover.ask p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.ask-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .popover h4 {
   margin: 12px 0 8px;
   font-size: 12px;
@@ -647,22 +657,6 @@ button.seg:focus-visible {
   accent-color: var(--teal);
   width: 15px;
   height: 15px;
-}
-.legend {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  z-index: 4;
-  display: flex;
-  gap: 14px;
-  padding: 7px 12px;
-  background: color-mix(in srgb, var(--card) 94%, transparent);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--ink-3);
-  box-shadow: var(--shadow-tag);
-  align-items: center;
 }
 .selection-bar {
   position: absolute;
@@ -1037,6 +1031,17 @@ button.seg:focus-visible {
   font-weight: 600;
   font-size: 15px;
 }
+.kind-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  vertical-align: 1px;
+}
 .q-text {
   grid-column: 2;
   color: var(--ink-2);
@@ -1396,6 +1401,47 @@ mark {
   gap: 4px;
   align-items: center;
 }
+/* A sheet never stacks a dialogue on itself: it veils its own content and asks there. */
+.sheet-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 28px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  backdrop-filter: blur(4px);
+  animation: fade 140ms var(--ease);
+}
+.veil-ask {
+  position: sticky;
+  top: clamp(24px, 20vh, 150px);
+  align-self: flex-start;
+  width: min(420px, 100%);
+}
+.veil-ask h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.veil-ask p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.veil-actions {
+  display: flex;
+  gap: 10px;
+}
+.veil-actions .btn.danger {
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.veil-actions .btn.danger:hover {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+}
+
 .banner {
   margin: 12px 28px 0;
   padding: 10px 12px;
@@ -1629,11 +1675,6 @@ mark {
 .chip.item > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.legend .sep {
-  width: 1px;
-  align-self: stretch;
-  background: var(--rule);
 }
 
 .sheet-head .lineage {
