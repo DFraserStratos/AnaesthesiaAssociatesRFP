@@ -75,6 +75,27 @@ export function AppShell() {
           >
             Prototype
           </span>
+          {/* The local Requirements Board (requirements-board/). Shown only when the repo-root
+              `npm run dev` launched both apps and set VITE_REQUIREMENTS_URL, so a presenter running
+              the prototype on its own for a vendor workshop never sees it. Never in a build. */}
+          {import.meta.env.DEV && import.meta.env.VITE_REQUIREMENTS_URL && (
+            <a
+              href={import.meta.env.VITE_REQUIREMENTS_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="Open the Requirements Board (local dev tool)"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.7)',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                flex: 'none',
+              }}
+            >
+              Requirements ↗
+            </a>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

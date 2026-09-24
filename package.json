@@ -1,0 +1,16 @@
+{
+  "name": "aa-rfp-workspace",
+  "private": true,
+  "description": "Launches the AA prototype and the Requirements Board together. Each app keeps its own dependencies.",
+  "scripts": {
+    "dev": "concurrently --names proto,board --prefix-colors magenta,cyan \"npm:dev:proto\" \"npm:dev:board\"",
+    "dev:proto": "VITE_REQUIREMENTS_URL=http://localhost:5180 npm --prefix aa-prototype run dev",
+    "dev:board": "npm --prefix requirements-board run dev",
+    "check": "npm --prefix requirements-board run check",
+    "export:csv": "npm --prefix requirements-board run export:csv",
+    "setup": "npm install && npm --prefix aa-prototype install && npm --prefix requirements-board install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -28,8 +28,16 @@ findings.
 
 ## Where things live
 
-- **The app** — `aa-prototype/` at the repo root. Never create a second app folder. Its `README.md`
-  is the developer entry point: scripts, stack versions and a `src/` folder map.
+- **The app** — `aa-prototype/` at the repo root. Never create a second prototype folder. Its
+  `README.md` is the developer entry point: scripts, stack versions and a `src/` folder map.
+- **Requirements Board** — `requirements-board/`: a separate local dev tool (Vite + React, port
+  5180) for reading, editing and arranging the future-state requirements catalogue in
+  `docs/discovery-reference/Updated Requirements/catalogue/` (format: `catalogue/SCHEMA.md`). Not
+  part of the prototype, never deployed; its dev server is the file API. The prototype conventions
+  below (mock backend, determinism, `PERSIST_VERSION`) do not apply to it. Root `npm run dev` starts
+  both apps (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The
+  prototype harness bar links to the board only when launched that way (it sets `VITE_REQUIREMENTS_URL`),
+  so a presenter running `aa-prototype` on its own never sees the link.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
   from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`

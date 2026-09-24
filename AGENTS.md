@@ -7,7 +7,10 @@ concision.
 
 ## Project Structure & Module Organization
 
-The app lives in `aa-prototype/`; run npm commands there. Under `src/`, `domain/` contains pure
+The app lives in `aa-prototype/`; run npm commands there. `requirements-board/` is a separate
+local dev tool over the future-state requirements catalogue
+(`docs/discovery-reference/Updated Requirements/catalogue/`, format in its `SCHEMA.md`); root
+`npm run dev` starts both, root `npm run check` validates the catalogue. Under `src/`, `domain/` contains pure
 business rules, `store/` owns the Zustand-backed mock backend,
 `apps/` contains the mobile, web, admin, and demo surfaces, and `shared/`, `shell/`, and `theme/`
 hold reusable UI, routing, and design tokens. Tests are colocated as `*.test.ts(x)`; Playwright
