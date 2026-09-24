@@ -1,20 +1,22 @@
 # Catalogue format
 
-The requirements catalogue: one Markdown file per epic, feature, story and open question. Humans
+The requirements catalogue: one Markdown file per epic, feature, story and outstanding item (an
+open question or a missing source). Humans
 edit it in the Requirements Board (`requirements-board/`, `npm run dev:board` from the repo root);
 agents and people edit the files directly. Both are first-class: the board watches this folder and
 picks up file edits live.
 
 ```
 catalogue/
-  items/EP-01.md  FT-01.1.md  US-01.1.1.md ...   one file per epic / feature / story (flat)
-  questions/OQ-01.md ...                           one file per open question
+  requirements/EP-01.md  FT-01.1.md  US-01.1.1.md ...   one file per epic / feature / story (flat)
+  questions/OQ-01.md ...                           one file per outstanding item (question or missing source)
+  notes/YYYY-MM-DD-<slug>.md                       meeting notes, transcripts, Q&A: the evidence sources cite (see notes/README.md)
   board-layout.json                                card positions moved off the story map (written by the board)
   assets/<ID>/<name>.png                           screenshots for an item
   SCHEMA.md                                        this file
 ```
 
-The file name is the ID. Items are flat on purpose: the parent is a field, so reparenting never
+The file name is the ID. Requirement files are flat on purpose: the parent is a field, so reparenting never
 moves a file.
 
 ## Item file
@@ -25,11 +27,12 @@ id: US-01.1.1
 type: story
 parent: FT-01.1
 title: Two Lists per anaesthetist per day
-status: RFP
+status: Proposed
 components:
   - Scheduling Engine
 sources:
-  - "RFP: Schedule Management"
+  - "RFP p.14 · Schedule Management › List"
+  - "Q&A 2026-09-24 #7"
 order: 1
 images: []
 ---
@@ -47,9 +50,9 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case. |
-| `status` | `Confirmed`, `RFP`, `Proposed`, `Future`, `Open`, `Retired` (meanings in `../README.md`). |
+| `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Retired` (meanings in `../README.md`). Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of (an empty list is a warning): Scheduling Engine, Billing/Invoice Engine, Anaesthetist App (mobile + web), Admin App, Xero Integration, Health Integration, Master Data, Cross-cutting. |
-| `sources` | Where it came from: RFP section, diagram, meeting notes, `"Q&A 2026-09-24 #n"`, data files. Quote each entry. |
+| `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop"` (a file in `notes/`), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `src` must be under `assets/` and the file must exist. |
 
@@ -65,11 +68,12 @@ and `check` warns when a hand edit trips over it.
 
 Any other frontmatter key is kept as-is by the board, so you can add fields without breaking it.
 
-## Question file
+## Outstanding item file
 
 ```md
 ---
 id: OQ-06
+kind: question
 title: Base units on RVG code or on Contract
 status: Proposed
 owner: Donald
@@ -87,7 +91,9 @@ Recommendation: base units live on the RVG code master ...
 (when answered)
 ```
 
-`status` is `Open`, `Open (from RFP)`, `Confirm`, `Proposed` or `Answered`. `affects` lists item IDs
+`kind` is `question` (a decision or fact that blocks or shapes requirements) or `missing-source`
+(an item whose origin is unknown; resolve it by adding the item's source, then answer it with where it
+came from). A file with no `kind` reads as `question`. `status` is `Open`, `Confirm`, `Proposed` or `Answered`. `affects` lists item IDs
 that must exist. The body is the question (which cannot itself contain a `## Answer` line);
 `## Answer` holds the answer once there is one.
 

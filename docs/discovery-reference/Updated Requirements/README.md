@@ -8,17 +8,17 @@ with AA's lead administrator, and the Q&A that followed.
 
 | File | What it is | Edit it? |
 | --- | --- | --- |
-| `catalogue/` | The catalogue: one Markdown file per epic, feature, story (`items/`) and open question (`questions/`), plus board layout and screenshots. Format in `catalogue/SCHEMA.md`. | Yes, this is the editing surface: in the Requirements Board or directly in the files. |
+| `catalogue/` | The catalogue: one Markdown file per epic, feature, story (`requirements/`) and outstanding item (`questions/`: open questions and missing sources), the notes that sources cite (`notes/`), plus board layout and screenshots. Format in `catalogue/SCHEMA.md`. | Yes, this is the editing surface: in the Requirements Board or directly in the files. |
 | `domain-model.md` | Narrative: what changed since the RFP, entity model, recommended Contract structure, calculation rules, glossary. | Yes. |
-| `source-notes-2026-09-24.md` | Raw notes the catalogue was built from. | Append only. |
+| `catalogue/notes/` | Meeting notes, transcripts and Q&A behind the catalogue, one dated file each (`2026-09-24-source-notes.md` is the first). Conventions in `catalogue/notes/README.md`. | Add new files; existing ones append only. |
 | `RFP.md`, `...[Final].pdf` | The original RFP. Historical reference. | No. |
 | `../Data files/` | NZSA RVG 2021, real contract fee schedules (SXAP, CES HNZ, Merivale). Evidence for the Contract model. | No. |
 | `build_requirements.py` | The retired Python generator the catalogue was migrated from. Not used any more. | No. Delete once committed. |
 
 ## Requirements Board
 
-A local app over the catalogue folder: story-map board (drag cards, trace lineage, filter), open
-questions list with the answer flow, outline view, and an item sheet for reading and editing.
+A local app over the catalogue folder: story-map board (drag cards, trace lineage, filter), outstanding
+items list (open questions and missing sources) with the answer flow, outline view, and an item sheet for reading and editing.
 
 ```
 npm run setup               # once, from the repo root: installs the root, aa-prototype/ and requirements-board/
@@ -43,8 +43,7 @@ to `Retired` rather than deleting it.
 | Status | Meaning |
 | --- | --- |
 | Confirmed | Stated in the 2026-09 meeting notes, diagrams, or Donald's Q&A answers. |
-| RFP | Carried from the RFP and not contradicted since. |
-| Proposed | Claude's recommendation to fill a gap. Needs sign-off. |
+| Proposed | Not yet confirmed with AA: carried from the RFP, or a recommendation to fill a gap. The sources say which. Needs sign-off. |
 | Future | RFP scope that does not reflect current reality (hospital integrations). Kept, deferred. |
 | Open | Depends on an open question. |
 | Retired | No longer wanted. Kept for traceability. |
@@ -52,8 +51,10 @@ to `Retired` rather than deleting it.
 **Component.** Scheduling Engine · Billing/Invoice Engine · Anaesthetist App (mobile + web) ·
 Admin App · Xero Integration · Health Integration · Master Data · Cross-cutting.
 
-**Source.** Where the requirement came from: an RFP section, a diagram, the meeting notes, a Q&A
-answer number, or the data files.
+**Source.** Where the requirement came from, as an ordered list, oldest first: the RFP page(s)
+(`RFP p.24 · Billing Engine › The three components`), then later notes, Q&A, diagrams or data files.
+An item with no known source has an empty list and a `missing-source` outstanding item. See
+`catalogue/notes/README.md`.
 
 ## Updating
 
