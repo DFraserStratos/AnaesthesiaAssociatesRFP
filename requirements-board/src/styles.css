@@ -519,9 +519,54 @@ button.seg:focus-visible {
 
 /* ------------------------------------------------------------------ board */
 
-.board {
+/* The board and, when a card is open, its item panel docked on the left: read one, see the map beside it. */
+.board-split {
   position: absolute;
   inset: 0;
+  display: flex;
+}
+.board {
+  position: relative;
+  flex: 1;
+  min-width: 360px;
+}
+.dock {
+  flex: 0 0 var(--panel-w, 33.333%);
+  min-width: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--card);
+  border-right: 1px solid var(--rule);
+  animation: dock-in 200ms var(--ease);
+}
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+.dock-resizer {
+  flex: 0 0 9px;
+  margin: 0 -4px 0 -5px;
+  position: relative;
+  z-index: 6;
+  cursor: col-resize;
+  touch-action: none;
+}
+.dock-resizer::after {
+  content: '';
+  position: absolute;
+  inset: 0 3px;
+  border-radius: 2px;
+  transition: background 120ms var(--ease);
+}
+.dock-resizer:hover::after,
+.dock-resizer.dragging::after,
+.dock-resizer:focus-visible::after {
+  background: var(--teal);
+}
+.dock-resizer:focus-visible {
+  outline: none;
 }
 .board .react-flow {
   --xy-background-color: var(--paper);
@@ -568,6 +613,7 @@ button.seg:focus-visible {
   left: 14px;
   right: 14px;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px;
   pointer-events: none;
@@ -591,6 +637,9 @@ button.seg:focus-visible {
   width: 280px;
   border-color: transparent;
   background: var(--paper);
+}
+.has-panel .toolbar .search .input {
+  width: 200px;
 }
 .toolbar .search .input:focus {
   background: var(--card);
@@ -660,9 +709,8 @@ button.seg:focus-visible {
 }
 .selection-bar {
   position: absolute;
-  left: 50%;
+  left: 14px;
   bottom: 18px;
-  transform: translateX(-50%);
   z-index: 4;
   display: flex;
   align-items: center;
@@ -673,7 +721,14 @@ button.seg:focus-visible {
   border-radius: 10px;
   box-shadow: var(--shadow-lift);
   animation: rise 180ms var(--ease);
-  max-width: min(760px, calc(100% - 420px));
+  max-width: calc(100% - 260px); /* clear of the minimap */
+}
+.selection-note {
+  font-size: 13px;
+  color: #cfe0dd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .selection-bar .crumbs {
   display: flex;
@@ -709,7 +764,7 @@ button.seg:focus-visible {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translate(-50%, 8px);
+    transform: translateY(8px);
   }
 }
 
@@ -1185,6 +1240,27 @@ mark {
   display: block;
   height: 4px;
   background: var(--ty, var(--sc, var(--ink)));
+}
+/* Docked beside the board: full height, no float; the head and foot stay put while the body scrolls. */
+.sheet.docked {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  animation: none;
+}
+.sheet.docked .sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding-bottom: 8px;
+  background: var(--card);
+}
+.sheet.docked .sheet-body {
+  flex: 1;
 }
 @keyframes fade {
   from {

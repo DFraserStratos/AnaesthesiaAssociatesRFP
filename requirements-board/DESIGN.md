@@ -56,6 +56,9 @@ UI copy (use a middot, a comma or "to").
 
 ## Item sheet
 
+The same sheet serves as the board's docked panel (its head and foot stay put while the body
+scrolls) and as the modal elsewhere.
+
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
 - Then the title, description, notes, open questions, children, screenshots.
@@ -64,7 +67,12 @@ UI copy (use a middot, a comma or "to").
 
 ## Interaction
 
-- Click a card to trace its lineage; double-click (or Enter) to open it.
+- One click opens a card: its sheet docks as a panel on the left (a third of the width by
+  default, the board two thirds; resizable, width kept per browser) and the board stays live on the right with the card's
+  lineage lit. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
+  click on empty canvas closes it. No double-click anywhere.
+- Outline and Outstanding items open the same sheet as a centred modal. A question opened from the
+  board's panel sits over the panel as a modal and closing it returns to the panel.
 - Unsaved edits are never lost silently: every way out of a sheet asks, and drafts survive
   navigation.
 - The board never raises a browser dialog. A sheet asks in its own frame: it veils its content

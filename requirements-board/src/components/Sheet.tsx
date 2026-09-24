@@ -25,6 +25,11 @@ export interface SheetConfirm {
  * content's own key handler has had a chance), clicking the scrim closes, and
  * focus returns to where it was when the sheet closes.
  *
+ * `docked` is the board's side panel instead: no scrim, the board stays live
+ * beside it, and it takes no focus on open so arrow keys keep walking the
+ * board. Esc still closes it, unless it came from the board's own controls
+ * (search, a popover) or a modal sheet is open over it.
+ *
  * A sheet never stacks a second dialogue on itself: when it has something to
  * ask, it veils its own content (`confirm`) and puts the question in its place.
  */
@@ -35,6 +40,7 @@ export function Sheet({
   confirm,
   label,
   statusClass = '',
+  docked = false,
 }: {
   children: ReactNode
   /** Every way out goes through here, so an unsaved-edit guard can intercept it. */
@@ -44,6 +50,7 @@ export function Sheet({
   confirm?: SheetConfirm | null
   label: string
   statusClass?: string
+  docked?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -52,6 +59,29 @@ export function Sheet({
   handlers.current = { onClose, onKey, confirm }
 
   useEffect(() => {
+    if (docked) {
+      const listener = (e: KeyboardEvent) => {
+        if (document.querySelector('.scrim')) return // a modal sheet over the panel owns the keyboard
+        const h = handlers.current
+        const target = e.target instanceof HTMLElement ? e.target : null
+        const fromBoard = !!target && target !== document.body && !ref.current?.contains(target) && !target.closest('.react-flow')
+        if (h.confirm) {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            h.confirm.onCancel()
+          }
+          return
+        }
+        if (e.key === 'Escape' && fromBoard) return
+        if (h.onKey?.(e)) return
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          h.onClose()
+        }
+      }
+      window.addEventListener('keydown', listener)
+      return () => window.removeEventListener('keydown', listener)
+    }
     openSheets++
     const previous = document.activeElement as HTMLElement | null
     ref.current?.focus({ preventScroll: true })
@@ -78,7 +108,7 @@ export function Sheet({
       openSheets--
       window.removeEventListener('keydown', listener)
       // Another sheet may already be open (switching item to question); leave it modal.
-      if (document.querySelectorAll('.sheet').length <= 1) for (const el of behind) el.inert = false
+      if (document.querySelectorAll('.scrim .sheet').length <= 1) for (const el of behind) el.inert = false
       previous?.focus?.({ preventScroll: true })
     }
   }, [])
@@ -92,6 +122,32 @@ export function Sheet({
     if (confirm) confirmRef.current?.focus({ preventScroll: true })
   }, [confirm])
 
+  const veil = confirm && (
+    <div className="sheet-veil" role="alertdialog" aria-label={confirm.title}>
+      <div className="veil-ask">
+        <h3>{confirm.title}</h3>
+        <p>{confirm.body}</p>
+        <div className="veil-actions">
+          <button ref={confirmRef} className="btn primary" onClick={confirm.onCancel}>
+            {confirm.cancelLabel}
+          </button>
+          <button className="btn danger" onClick={confirm.onConfirm}>
+            {confirm.confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (docked) {
+    return (
+      <div ref={ref} className={`sheet docked ${statusClass}${confirm ? ' veiled' : ''}`} role="region" aria-label={label} tabIndex={-1}>
+        {children}
+        {veil}
+      </div>
+    )
+  }
+
   return (
     <div
       className={`scrim${entering ? '' : ' swapped'}`}
@@ -103,22 +159,7 @@ export function Sheet({
     >
       <div ref={ref} className={`sheet ${statusClass}${confirm ? ' veiled' : ''}`} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
         {children}
-        {confirm && (
-          <div className="sheet-veil" role="alertdialog" aria-label={confirm.title}>
-            <div className="veil-ask">
-              <h3>{confirm.title}</h3>
-              <p>{confirm.body}</p>
-              <div className="veil-actions">
-                <button ref={confirmRef} className="btn primary" onClick={confirm.onCancel}>
-                  {confirm.cancelLabel}
-                </button>
-                <button className="btn danger" onClick={confirm.onConfirm}>
-                  {confirm.confirmLabel}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {veil}
       </div>
     </div>
   )

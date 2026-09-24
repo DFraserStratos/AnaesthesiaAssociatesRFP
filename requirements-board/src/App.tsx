@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { isOpenQuestion, type CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
@@ -18,6 +18,7 @@ export function App() {
   const applyEvent = useCatalogue((s) => s.applyEvent)
   const [connected, setConnected] = useState(true)
   const open = useOpen()
+  const onBoard = useLocation().pathname === '/board'
 
   useEffect(() => {
     void load()
@@ -75,7 +76,8 @@ export function App() {
           </Routes>
         )}
       </main>
-      {status === 'ready' && itemId && <ItemModal key={itemId} id={itemId} />}
+      {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
+      {status === 'ready' && itemId && !onBoard && <ItemModal key={itemId} id={itemId} />}
       {status === 'ready' && questionId && <QuestionModal key={questionId} id={questionId} />}
     </div>
   )

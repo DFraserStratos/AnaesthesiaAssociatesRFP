@@ -1,16 +1,17 @@
 import { Archive, ChevronLeft, ChevronRight, ImageIcon, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { compareIds } from '../../shared/ids.ts'
 import { COMPONENTS, ITEM_STATUSES, isOpenQuestion, type ImageRef, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError, assetUrl } from '../api.ts'
-import { useOpen } from '../nav.ts'
+import { setLeaveGuard, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
 import { TYPE_LABEL, statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
-export function ItemModal({ id }: { id: string }) {
+/** An item's sheet: a modal over Outline and Outstanding items, the docked side panel on the board. */
+export function ItemModal({ id, docked = false }: { id: string; docked?: boolean }) {
   const rec = useCatalogue((s) => s.items[id])
   const saveItem = useCatalogue((s) => s.saveItem)
   const adoptItem = useCatalogue((s) => s.adoptItem)
@@ -24,6 +25,16 @@ export function ItemModal({ id }: { id: string }) {
     normalise,
     startEditing: open.params.get('edit') === '1',
   })
+
+  // Docked beside the board, the board switches cards through this guard so a draft is never dropped silently.
+  const leaveRef = useRef(ed.leave)
+  leaveRef.current = ed.leave
+  useEffect(() => {
+    if (!docked) return
+    const guard = (go: () => void) => void leaveRef.current(go)
+    setLeaveGuard(guard)
+    return () => setLeaveGuard(null)
+  }, [docked])
 
   const [askRetire, setAskRetire] = useState(false)
   const retire = async () => {
@@ -39,7 +50,7 @@ export function ItemModal({ id }: { id: string }) {
 
   if (!rec || !ed.draft) {
     return (
-      <Sheet onClose={open.close} label="Item not found">
+      <Sheet onClose={open.close} label="Item not found" docked={docked}>
         <div className="sheet-body">
           <h2>{id} is not in the catalogue</h2>
           <p>It may have been renamed or removed on disk.</p>
@@ -72,7 +83,7 @@ export function ItemModal({ id }: { id: string }) {
       : null
 
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={index} leave={ed.leave} />
       {ed.restored && ed.editing && !ed.conflict && (
         <div className="banner" role="status">
@@ -113,7 +124,7 @@ export function ItemModal({ id }: { id: string }) {
         ) : (
           <>
             <button className="btn" onClick={() => open.showOnBoard(item.id)}>
-              <MapIcon size={15} /> Show on board
+              <MapIcon size={15} /> {docked ? 'Find on board' : 'Show on board'}
             </button>
             {item.status !== 'Retired' && (
               <button className="btn ghost danger" onClick={() => setAskRetire(true)}>

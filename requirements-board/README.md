@@ -64,6 +64,9 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   to the catalogue while the board is running.
 - The server watches the catalogue folder (debounced, at most 600ms behind) and pushes
   `catalogue:changed` events over Vite's HMR socket, so agent edits appear live.
+- On the board, `?item=ID` docks the item sheet as a left-hand panel beside the map (one click on
+  a card opens it); elsewhere it is a modal. The board switches cards through the panel's
+  unsaved-edit guard (`guarded` in `src/nav.ts`).
 - Unsaved edits in a sheet survive leaving it (browser Back, a link) and are restored on return;
   closing it from the app asks first, and reloading the tab warns.
 - The board's default arrangement is computed (`autoLayout`): epics as column heads wrapping into
