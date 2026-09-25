@@ -191,97 +191,102 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
   const linked = useMemo(() => linkedQuestions(index, item), [index, item])
 
   return (
-    <>
-      <h2>{item.title}</h2>
-      {item.description ? <Prose text={item.description} /> : <p className="prose small">No description yet.</p>}
+    <div className="read-view">
+      <div className="read-main">
+        <h2>{item.title}</h2>
+        {item.description ? <Prose text={item.description} /> : <p className="prose small">No description yet.</p>}
 
-      {item.acceptance && (
-        <section className="section">
-          <h3 className="section-head">Acceptance criteria</h3>
-          <Prose text={item.acceptance} />
-        </section>
-      )}
+        {item.acceptance && (
+          <section className="section">
+            <h3 className="section-head">Acceptance criteria</h3>
+            <Prose text={item.acceptance} />
+          </section>
+        )}
 
-      {item.technical && (
-        <section className="section">
-          <h3 className="section-head">Technical discussion</h3>
-          <Prose text={item.technical} />
-        </section>
-      )}
+        {item.technical && (
+          <section className="section">
+            <h3 className="section-head">Technical discussion</h3>
+            <Prose text={item.technical} />
+          </section>
+        )}
 
-      {item.notes && (
-        <section className="section">
-          <h3 className="section-head">Notes</h3>
-          <div className="notes">
-            <Prose text={item.notes} small />
-          </div>
-        </section>
-      )}
-
-      {linked.length > 0 && (
-        <section className="section">
-          <h3 className="section-head">
-            Open questions <span className="count">{linked.filter((l) => isOpenQuestion(l.q)).length}</span>
-          </h3>
-          {linked.map(({ q, via }) => (
-            <button key={q.id} className={`oq-card${isOpenQuestion(q) ? '' : ' answered'}`} onClick={() => open.question(q.id)}>
-              <div className="oq-top">
-                <span className="mono">{q.id}</span>
-                <strong>{q.title}</strong>
-                <StatusLabel status={q.status} />
-              </div>
-              <p>{q.question}</p>
-              {via && (
-                <p className="via">
-                  via <ItemName item={via} />
-                </p>
-              )}
-            </button>
-          ))}
-        </section>
-      )}
-
-      {item.type !== 'story' && <Children item={item} children={children} />}
-
-      <Gallery item={item} />
-
-      {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
-      <section className="section sheet-tail">
-        <div className="facts">
-          <div>
-            <h3 className="section-head">Status</h3>
-            <StatusLabel status={item.status} />
-          </div>
-          {item.components.length > 0 && (
-            <div>
-              <h3 className="section-head">Area</h3>
-              <div className="sources">
-                {item.components.map((c) => (
-                  <span key={c} className="chip">
-                    {c}
-                  </span>
-                ))}
-              </div>
+        {item.notes && (
+          <section className="section">
+            <h3 className="section-head">Notes</h3>
+            <div className="notes">
+              <Prose text={item.notes} small />
             </div>
-          )}
-          {item.sources.length > 0 && (
+          </section>
+        )}
+
+        {linked.length > 0 && (
+          <section className="section">
+            <h3 className="section-head">
+              Open questions <span className="count">{linked.filter((l) => isOpenQuestion(l.q)).length}</span>
+            </h3>
+            {linked.map(({ q, via }) => (
+              <button key={q.id} className={`oq-card${isOpenQuestion(q) ? '' : ' answered'}`} onClick={() => open.question(q.id)}>
+                <div className="oq-top">
+                  <span className="mono">{q.id}</span>
+                  <strong>{q.title}</strong>
+                  <StatusLabel status={q.status} />
+                </div>
+                <p>{q.question}</p>
+                {via && (
+                  <p className="via">
+                    via <ItemName item={via} />
+                  </p>
+                )}
+              </button>
+            ))}
+          </section>
+        )}
+
+        {item.type !== 'story' && <Children item={item} children={children} />}
+      </div>
+
+      {/* Screenshots and the facts sit at the foot of a docked panel while the content is short. */}
+      <div className="read-anchor">
+        <Gallery item={item} />
+
+        {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
+        <section className="section sheet-tail">
+          <div className="facts">
             <div>
-              <h3 className="section-head">Sources</h3>
-              <div className="sources">
-                {item.sources.map((s) => (
-                  <span key={s} className="chip">
-                    {s}
-                  </span>
-                ))}
-              </div>
+              <h3 className="section-head">Status</h3>
+              <StatusLabel status={item.status} />
             </div>
-          )}
-        </div>
-        <span className="item-id" title={`${TYPE_LABEL[item.type]} ID`}>
-          <TypeIcon type={item.type} size={12} /> {item.id}
-        </span>
-      </section>
-    </>
+            {item.components.length > 0 && (
+              <div>
+                <h3 className="section-head">Area</h3>
+                <div className="sources">
+                  {item.components.map((c) => (
+                    <span key={c} className="chip">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {item.sources.length > 0 && (
+              <div>
+                <h3 className="section-head">Sources</h3>
+                <div className="sources">
+                  {item.sources.map((s) => (
+                    <span key={s} className="chip">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <span className="item-id" title={`${TYPE_LABEL[item.type]} ID`}>
+            <TypeIcon type={item.type} size={12} /> {item.id}
+          </span>
+        </section>
+      </div>
+    </div>
   )
 }
 
