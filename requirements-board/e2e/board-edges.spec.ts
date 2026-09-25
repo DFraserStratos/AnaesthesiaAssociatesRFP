@@ -2,7 +2,7 @@
 /**
  * Every card on screen must be joined to its parent. The lines once vanished board-wide on
  * about two loads in three: a rebuild landing mid-measure left React Flow with sized nodes
- * but no handles, and nothing re-measured them (see `cardHandles` in src/board/CardNode.tsx).
+ * but no handles, and nothing re-measured them (see `cardHandles` in src/board/cardData.ts).
  * The race is timing-dependent, so each check runs over several fresh loads.
  */
 import { expect, test, type Page } from '@playwright/test'

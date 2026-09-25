@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 /**
@@ -15,6 +15,7 @@ export const guarded = (go: () => void) => (leaveGuard ? leaveGuard(go) : go())
 /**
  * Sheets are deep-linkable: `?item=US-01.1.1` or `?question=OQ-01` over whatever view is open.
  * On the board an item docks as a side panel, and a question opens over it without closing it.
+ * `?edit=<id>` opens that one record's sheet in its edit form (see `useEditOnOpen`).
  */
 export function useOpen() {
   const navigate = useNavigate()
@@ -36,12 +37,27 @@ export function useOpen() {
   )
 
   return {
-    item: (id: string, opts?: { edit?: boolean; replace?: boolean }) => withParams({ item: id, question: null, edit: opts?.edit ? '1' : null }, location.pathname, opts?.replace),
-    question: (id: string, opts?: { edit?: boolean }) => withParams({ question: id, item: onBoard ? params.get('item') : null, edit: opts?.edit ? '1' : null }),
+    item: (id: string, opts?: { edit?: boolean; replace?: boolean }) => withParams({ item: id, question: null, edit: opts?.edit ? id : null }, location.pathname, opts?.replace),
+    question: (id: string, opts?: { edit?: boolean }) => withParams({ question: id, item: onBoard ? params.get('item') : null, edit: opts?.edit ? id : null }),
     /** Closes the top sheet: a question over the board's item panel leaves the panel open. */
     close: () => withParams(params.has('question') ? { question: null, edit: null } : { item: null, edit: null }),
     showOnBoard: (id: string) => withParams({ item: id, question: null, edit: null, focus: id }, '/board'),
     clearFocus: () => withParams({ focus: null }, location.pathname, true),
+    clearEdit: () => withParams({ edit: null }, location.pathname, true),
     params,
   }
+}
+
+/**
+ * Whether this record's sheet should open in its edit form. The request is
+ * one-shot: it is read once on mount and then dropped from the URL, so a
+ * reload (or Back) reopens the sheet read-only rather than editing again.
+ */
+export function useEditOnOpen(id: string): boolean {
+  const open = useOpen()
+  const [asked] = useState(() => open.params.get('edit') === id)
+  useEffect(() => {
+    if (asked) open.clearEdit()
+  }, []) // once, on mount
+  return asked
 }

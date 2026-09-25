@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import Markdown from 'react-markdown'
-import { COMPONENT_CODE, TYPE_LABEL, statusClass, statusLabel, typeClass } from '../vocab.ts'
-import type { Item, ItemType } from '../../shared/types.ts'
+import { TYPE_LABEL, type Component, type Item, type ItemType } from '../../shared/types.ts'
+import { COMPONENT_CODE, statusClass, statusLabel, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
@@ -17,15 +17,6 @@ export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number })
   )
 }
 
-/** "Epic", "Feature" or "Story" with its icon, in the type colour. */
-export function TypeLabel({ type }: { type: ItemType }) {
-  return (
-    <span className={`type-label ${typeClass(type)}`}>
-      <TypeIcon type={type} /> {TYPE_LABEL[type]}
-    </span>
-  )
-}
-
 /** A title with its type icon: how an item is named everywhere outside its own sheet. */
 export function ItemName({ item }: { item: Item }) {
   return (
@@ -36,24 +27,19 @@ export function ItemName({ item }: { item: Item }) {
   )
 }
 
-/**
- * The lineage as arrow pills that slot into each other, each in its type
- * colour. Pills are clickable when `onPick` is given; if the chain ends with
- * the item being shown (the board's selection bar), that last pill is filled.
- */
-export function Lineage({ chain, onPick, small, endsWithCurrent }: { chain: Item[]; onPick?: (id: string) => void; small?: boolean; endsWithCurrent?: boolean }) {
+/** The lineage as arrow pills that slot into each other, each in its type colour. Pills are clickable when `onPick` is given. */
+export function Lineage({ chain, onPick }: { chain: Item[]; onPick?: (id: string) => void }) {
   return (
-    <nav className={`lineage${small ? ' small' : ''}`} aria-label="Lineage">
-      {chain.map((it, i) => {
-        const current = !!endsWithCurrent && i === chain.length - 1
+    <nav className="lineage" aria-label="Lineage">
+      {chain.map((it) => {
         const body = (
           <>
-            <TypeIcon type={it.type} size={small ? 12 : 13} />
+            <TypeIcon type={it.type} size={13} />
             <span>{it.title}</span>
           </>
         )
-        return current || !onPick ? (
-          <span key={it.id} className={`seg ${typeClass(it.type)}${current ? ' current' : ''}`} title={`${TYPE_LABEL[it.type]} · ${it.title}`} aria-current={current ? 'page' : undefined}>
+        return !onPick ? (
+          <span key={it.id} className={`seg ${typeClass(it.type)}`} title={`${TYPE_LABEL[it.type]} · ${it.title}`}>
             {body}
           </span>
         ) : (
@@ -77,7 +63,7 @@ export function StatusLabel({ status, className = '' }: { status: string; classN
 export function Glyph({ component }: { component: string }) {
   return (
     <span className="glyph" title={component}>
-      {COMPONENT_CODE[component] ?? component.slice(0, 3).toUpperCase()}
+      {COMPONENT_CODE[component as Component] ?? component.slice(0, 3).toUpperCase()}
     </span>
   )
 }

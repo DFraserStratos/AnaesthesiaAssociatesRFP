@@ -7,6 +7,7 @@
     "dev:proto": "VITE_REQUIREMENTS_URL=http://localhost:5180 npm --prefix aa-prototype run dev",
     "dev:board": "npm --prefix requirements-board run dev",
     "check": "npm --prefix requirements-board run check",
+    "verify:board": "npm --prefix requirements-board run verify",
     "export:csv": "npm --prefix requirements-board run export:csv",
     "setup": "npm install && npm --prefix aa-prototype install && npm --prefix requirements-board install"
   },

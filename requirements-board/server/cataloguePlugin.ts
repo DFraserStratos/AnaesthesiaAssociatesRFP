@@ -103,7 +103,8 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
   }
 }
 
-function serveAsset(root: string, url: URL, res: ServerResponse): boolean {
+/** Stream a file from the catalogue's `assets/` folder, and nothing outside it. Returns false to fall through. */
+export function serveAsset(root: string, url: URL, res: ServerResponse): boolean {
   const rel = decodeURIComponent(url.pathname.slice('/catalogue/'.length))
   const abs = resolve(root, rel)
   if (!abs.startsWith(resolve(root, 'assets') + sep) || !existsSync(abs) || !statSync(abs).isFile()) return false

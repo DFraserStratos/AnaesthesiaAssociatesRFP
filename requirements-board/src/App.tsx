@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { isOpenQuestion, type CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
@@ -8,6 +8,7 @@ import { QuestionModal } from './components/QuestionModal.tsx'
 import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
 import { useCatalogue, useIndex } from './store.ts'
+import { useDismiss } from './useDismiss.ts'
 import { BoardView } from './views/BoardView.tsx'
 import { OutlineView } from './views/OutlineView.tsx'
 import { QuestionsView } from './views/QuestionsView.tsx'
@@ -90,6 +91,7 @@ function Masthead({ connected }: { connected: boolean }) {
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const [showIssues, setShowIssues] = useState(false)
+  const checksRef = useRef<HTMLButtonElement>(null)
   const openCount = index.questions.filter(isOpenQuestion).length
   const errors = issues.filter((i) => i.severity === 'error').length
   const warnings = issues.length - errors
@@ -123,28 +125,34 @@ function Masthead({ connected }: { connected: boolean }) {
           <span className={`live-dot${connected ? '' : ' off'}`} />
           {connected ? 'Live' : 'Offline'}
         </span>
-        <button className={`checks${errors ? ' bad' : ''}`} onClick={() => setShowIssues((v) => !v)} aria-expanded={showIssues}>
+        <button ref={checksRef} className={`checks${errors ? ' bad' : ''}`} onClick={() => setShowIssues((v) => !v)} aria-expanded={showIssues}>
           {errors ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
           {errors ? `${errors} error${errors > 1 ? 's' : ''}` : 'Checks pass'}
           {warnings > 0 && <span className="mono">· {warnings} note{warnings > 1 ? 's' : ''}</span>}
         </button>
       </div>
-      {showIssues && (
-        <div className="checks-panel" role="dialog" aria-label="Catalogue checks">
-          {issues.length === 0 ? (
-            <p className="empty">Every ID, parent, link and value checks out.</p>
-          ) : (
-            <ul>
-              {issues.map((i, n) => (
-                <li key={n}>
-                  <span className={`mono sev-${i.severity}`}>{i.id}</span>
-                  <span className={`sev-${i.severity}`}>{i.message}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {showIssues && <ChecksPanel anchor={checksRef} onClose={() => setShowIssues(false)} />}
     </header>
+  )
+}
+
+function ChecksPanel({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
+  const issues = useCatalogue((s) => s.issues)
+  const ref = useDismiss<HTMLDivElement>(onClose, anchor)
+  return (
+    <div ref={ref} className="checks-panel" role="dialog" aria-label="Catalogue checks">
+      {issues.length === 0 ? (
+        <p className="empty">Every ID, parent, link and value checks out.</p>
+      ) : (
+        <ul>
+          {issues.map((i, n) => (
+            <li key={n}>
+              <span className={`mono sev-${i.severity}`}>{i.id}</span>
+              <span className={`sev-${i.severity}`}>{i.message}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

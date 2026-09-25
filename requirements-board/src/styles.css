@@ -134,10 +134,6 @@ button {
   font-size: 15px;
   color: var(--ink);
 }
-.brand-sub {
-  font-size: 12px;
-  color: var(--ink-3);
-}
 .tabs {
   display: flex;
   gap: 4px;
@@ -466,14 +462,6 @@ button.chip:hover {
   flex: none;
   color: var(--ty);
 }
-.type-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ty-ink);
-}
 
 /* Lineage: arrow-shaped pills that slot into each other, coloured by type. */
 .lineage {
@@ -519,21 +507,6 @@ button.seg:focus-visible {
   outline: none;
   background: color-mix(in srgb, var(--ty) 28%, var(--ty-tint));
   text-decoration: underline;
-}
-.seg.current {
-  background: var(--ty);
-  color: #fff;
-  max-width: none;
-  flex-shrink: 0.35; /* ancestors give up space first */
-}
-.seg.current .type-icon {
-  color: #fff;
-}
-.lineage.small .seg {
-  --notch: 8px;
-  height: 24px;
-  font-size: 12px;
-  max-width: 200px;
 }
 
 /* ------------------------------------------------------------------ board */
@@ -750,25 +723,6 @@ button.seg:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.selection-bar .crumbs {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  overflow: hidden;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.selection-bar .crumbs .mono {
-  color: #9fd3cb;
-  font-size: 12px;
-}
-.selection-bar .crumbs span.sep {
-  color: #6f8388;
-}
-.selection-bar .title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .selection-bar .btn {
   background: transparent;
   border-color: #3b4d53;
@@ -776,10 +730,6 @@ button.seg:focus-visible {
 }
 .selection-bar .btn:hover {
   background: #2c3c42;
-}
-.selection-bar .btn.primary {
-  background: var(--teal);
-  border-color: var(--teal);
 }
 @keyframes rise {
   from {
@@ -849,17 +799,6 @@ button.seg:focus-visible {
   background: repeating-linear-gradient(135deg, #f4f6f6 0 6px, #fbfcfc 6px 12px);
   border-top-color: var(--rule-strong);
   color: var(--ink-3);
-}
-.card-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.card-badges {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-  padding-top: 1px;
 }
 .badge {
   display: inline-flex;
@@ -985,9 +924,6 @@ button.seg:focus-visible {
 .zoom-overview .card.story > *,
 .zoom-overview .card-foot {
   visibility: hidden;
-}
-.zoom-overview .card-badges {
-  display: none;
 }
 .zoom-overview .epic .card-title {
   font-size: 64px;
@@ -1475,10 +1411,6 @@ mark {
   gap: 10px;
   align-items: baseline;
 }
-.oq-card .oq-top .mono {
-  font-size: 12px;
-  color: #8a5c0c;
-}
 .oq-card .oq-top strong {
   font-weight: 600;
 }
@@ -1575,6 +1507,18 @@ mark {
 }
 .banner .spacer {
   flex: 1;
+}
+/* An orphaned draft's text, shown as written so it can be copied out. */
+.orphan-text {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font: 12px/1.55 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
 }
 
 .field {

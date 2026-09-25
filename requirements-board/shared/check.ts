@@ -7,6 +7,7 @@ import {
   COMPONENTS,
   IMAGE_APPS,
   ITEM_STATUSES,
+  PARENT_TYPES,
   ITEM_TYPES,
   QUESTION_KINDS,
   QUESTION_STATUSES,
@@ -62,8 +63,10 @@ export function checkCatalogue({ items, questions, fileExists }: CheckInput): Is
     } else {
       const parent = byId.get(it.parent)
       if (!parent) err(it.id, `parent ${it.parent} does not exist`)
-      else if (it.type === 'feature' && parent.type !== 'epic') err(it.id, `a feature's parent must be an epic, ${it.parent} is a ${parent.type}`)
-      else if (it.type === 'story' && parent.type === 'story') err(it.id, `a story's parent must be a feature or epic, ${it.parent} is a story`)
+      else if (!PARENT_TYPES[it.type].includes(parent.type)) {
+        const allowed = PARENT_TYPES[it.type].join(' or ')
+        err(it.id, `a ${it.type}'s parent must be ${/^[aeiou]/.test(allowed) ? 'an' : 'a'} ${allowed}, ${it.parent} is a ${parent.type}`)
+      }
     }
 
     for (const img of it.images) {

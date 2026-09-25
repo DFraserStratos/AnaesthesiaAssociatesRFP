@@ -5,12 +5,11 @@
  * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings.
  */
 import { compareIds, compareSiblings } from './ids.ts'
-import type { Item, Question } from './types.ts'
+import { TYPE_LABEL, type Item, type Question } from './types.ts'
 
 export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion']
 export const QUESTION_COLUMNS = ['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source']
 
-const TYPE_LABEL = { epic: 'Epic', feature: 'Feature', story: 'Story' } as const
 export const LIST_SEPARATOR = '; '
 
 function field(v: string): string {

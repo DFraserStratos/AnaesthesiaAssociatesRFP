@@ -6,20 +6,21 @@ import {
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
-  type Edge,
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
 import { Filter, LayoutGrid, Map as MapIcon, Maximize, Search, Sparkles, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, type Item } from '../../shared/types.ts'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
+import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, type Item } from '../../shared/types.ts'
 import { autoLayout } from '../board/autoLayout.ts'
-import { CardNode, cardHandles, type CardData, type CardNodeType } from '../board/CardNode.tsx'
+import type { CardData, CardNodeType } from '../board/cardData.ts'
+import { CardNode } from '../board/CardNode.tsx'
+import { buildEdges, buildNodes, countDescendants, type GraphInput } from '../board/graph.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, openQuestionsFor, useCatalogue, useIndex, useView, type Index } from '../store.ts'
-import { TYPE_LABEL } from '../vocab.ts'
+import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, useCatalogue, useIndex, useView, type Index } from '../store.ts'
+import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode }
 const VIEWPORT_KEY = 'requirements-board:viewport'
@@ -31,7 +32,7 @@ const PANEL_MAX = 70
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
-/** Minimap blocks by type, matching the card colours. */
+/** Minimap blocks by type. The minimap paints SVG fills, not CSS, so these mirror the --ty-* tokens in styles.css. */
 const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as const
 /** How much of a wide card (an epic) must be on screen to count as in view. */
 const CARD_PEEK = 240
@@ -52,7 +53,7 @@ function readPanel(): number {
     return PANEL_DEFAULT
   }
 }
-/** Semantic zoom bands: overview (epic names, status blocks), far (ID + title), mid, near (excerpt). */
+/** Semantic zoom bands: overview (epic names, status blocks), far (titles only), mid, near (excerpt). */
 const zoomBand = (z: number) => (z < 0.3 ? 'zoom-far zoom-overview' : z < 0.5 ? 'zoom-far' : z >= 0.95 ? 'zoom-near' : 'zoom-mid')
 
 export function BoardView() {
@@ -83,6 +84,7 @@ function Board() {
   const [askTidy, setAskTidy] = useState(false)
   const [hitCursor, setHitCursor] = useState(-1)
   const searchRef = useRef<HTMLInputElement>(null)
+  const filtersRef = useRef<HTMLButtonElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
   const modalOpen = open.params.has('question')
 
@@ -110,61 +112,16 @@ function Board() {
     () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && (view.showRetired || index.byId.get(id)?.status !== 'Retired')) : []),
     [filtering, auto, matches, view.showRetired, index],
   )
+  const graph = useMemo<GraphInput>(
+    () => ({ index, auto, positions, showRetired: view.showRetired, selected, lineage, filtering, matches }),
+    [index, auto, positions, view.showRetired, selected, lineage, filtering, matches],
+  )
 
   // The hit list can shrink under the cursor (filters, Retired toggle, external edits).
   useEffect(() => setHitCursor(-1), [hits])
 
-  const toneFor = useCallback(
-    (id: string): CardData['tone'] => {
-      if (filtering && !matches.has(id)) return 'is-faded'
-      if (lineage) return id === selected ? 'is-selected' : lineage.has(id) ? 'is-lit' : 'is-dim'
-      return ''
-    },
-    [filtering, matches, lineage, selected],
-  )
-
-  const descendantCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    const count = (id: string): number => {
-      const cached = counts.get(id)
-      if (cached !== undefined) return cached
-      counts.set(id, 0) // cycle guard for bad data
-      const n = (index.children.get(id) ?? []).reduce((sum, c) => sum + 1 + count(c.id), 0)
-      counts.set(id, n)
-      return n
-    }
-    for (const it of index.items) count(it.id)
-    return counts
-  }, [index])
-
-  const computed = useMemo<CardNodeType[]>(
-    () =>
-      index.items
-        .filter((it) => auto[it.id])
-        .map((it) => {
-          const a = auto[it.id]!
-          const pos = positions[it.id] ?? { x: a.x, y: a.y }
-          return {
-            id: it.id,
-            type: 'card' as const,
-            position: pos,
-            // Handles come from the layout, not only from React Flow's DOM measurement, so a
-            // rebuild can never leave a card without them (and the board without edges): cardHandles.
-            handles: cardHandles(a.w, a.h),
-            hidden: it.status === 'Retired' && !view.showRetired,
-            zIndex: it.type === 'epic' ? 0 : it.type === 'feature' ? 1 : 2,
-            data: {
-              item: it,
-              w: a.w,
-              h: a.h,
-              openQuestions: openQuestionsFor(index, it.id).length,
-              childCount: descendantCounts.get(it.id) ?? 0,
-              tone: toneFor(it.id),
-            },
-          }
-        }),
-    [index, auto, positions, view.showRetired, toneFor, descendantCounts],
-  )
+  const descendantCounts = useMemo(() => countDescendants(index), [index])
+  const computed = useMemo(() => buildNodes(graph, descendantCounts), [graph, descendantCounts])
 
   // React Flow owns in-flight drag positions; the store owns everything else.
   const [nodes, setNodes] = useState<CardNodeType[]>(computed)
@@ -184,31 +141,7 @@ function Board() {
   }, [computed])
   const onNodesChange = useCallback((changes: NodeChange<CardNodeType>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
 
-  const edges = useMemo<Edge[]>(() => {
-    const out: Edge[] = []
-    for (const it of index.items) {
-      if (!it.parent) continue
-      const parent = index.byId.get(it.parent)
-      if (!parent || !auto[it.id]) continue
-      if (!view.showRetired && (it.status === 'Retired' || parent.status === 'Retired')) continue
-      const lit = !!lineage && lineage.has(it.id) && lineage.has(parent.id)
-      const dim = (!!lineage && !lit) || (filtering && (!matches.has(it.id) || !matches.has(parent.id)))
-      const spine = it.type === 'story'
-      out.push({
-        id: `${parent.id}>${it.id}`,
-        source: parent.id,
-        target: it.id,
-        sourceHandle: spine && parent.type === 'feature' ? 'ls' : undefined,
-        targetHandle: spine ? 'l' : undefined,
-        type: 'smoothstep',
-        pathOptions: { offset: spine ? 18 : 12, borderRadius: 10 },
-        className: lit ? 'lit' : dim ? 'dim' : '',
-        focusable: false,
-        selectable: false,
-      } as Edge)
-    }
-    return out
-  }, [index, auto, lineage, filtering, matches, view.showRetired])
+  const edges = useMemo(() => buildEdges(graph), [graph])
 
   const centreOn = useCallback(
     (id: string, zoom?: number) => {
@@ -242,23 +175,17 @@ function Board() {
     if (!focusId) return
     if (index.byId.has(focusId)) setTimeout(() => centreOn(focusId, 1), 60)
     open.clearFocus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusId])
+  }, [focusId]) // only when a new focus request arrives
 
-  // The open card must be on show: reveal it if retired, and pan to it when the panel's arrival
-  // (which narrows the board) or a link in the panel left it out of view.
+  // The open card must be on show (graph.ts shows it even while retired cards are hidden), and
+  // in view: pan to it when the panel's arrival (which narrows the board) or a panel link left it off screen.
   useEffect(() => {
-    if (!selected) return
-    const it = index.byId.get(selected)
-    if (!it) return
-    if (it.status === 'Retired' && !view.showRetired) view.set({ showRetired: true })
-    if (focusId) return
+    if (!selected || !index.byId.has(selected) || focusId) return
     const t = setTimeout(() => {
       if (!inView(selected)) centreOn(selected, rf.getZoom())
     }, 80)
     return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected])
+  }, [selected]) // only when the selection changes, not on every catalogue event
 
   // Keyboard: / search, arrows walk the tree (each step opens that card), Enter moves into the panel.
   // Esc closes the panel; the panel itself handles that.
@@ -313,7 +240,8 @@ function Board() {
   const tidy = (ids: string[]) => setPositions(Object.fromEntries(ids.map((id) => [id, null])))
   const selectedItem = selected ? index.byId.get(selected) : undefined
   const epicOfSelected = selectedItem ? (selectedItem.type === 'epic' ? selectedItem : ancestorsOf(index, selectedItem.id)[0]) : undefined
-  const moved = Object.keys(positions).length
+  // Positions can outlive their card (a file renamed or removed on disk); only count cards that exist.
+  const moved = Object.keys(positions).filter((id) => index.byId.has(id)).length
   const movedInEpic = epicOfSelected ? [epicOfSelected, ...descendantsOf(index, epicOfSelected.id)].filter((i) => positions[i.id]).length : 0
 
   return (
@@ -330,6 +258,7 @@ function Board() {
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
+          nodeDragThreshold={4}
           onNodeClick={(_, n) => n.id !== selected && select(n.id)}
           onPaneClick={() => selected && select(null)}
           onNodeDragStop={(_, _n, dragged) => setPositions(Object.fromEntries(dragged.map((d) => [d.id, d.position])))}
@@ -356,7 +285,7 @@ function Board() {
         >
           {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. */}
           <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />
-          {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => TYPE_HEX[(n.data as CardData).item.type]} nodeBorderRadius={2} maskColor="rgba(237,242,240,0.7)" />}
+          {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => TYPE_HEX[(n.data as CardData).item.type]} nodeBorderRadius={2} />}
         </ReactFlow>
 
         <div className="toolbar">
@@ -390,7 +319,7 @@ function Board() {
                 {hitCursor >= 0 ? `${hitCursor + 1} of ${hits.length}` : `${hits.length} match${hits.length === 1 ? '' : 'es'}`}
               </span>
             )}
-            <button className="btn" aria-pressed={showFilters || (filtering && !view.search)} aria-expanded={showFilters} onClick={() => setShowFilters((v) => !v)}>
+            <button ref={filtersRef} className="btn" aria-pressed={showFilters || (filtering && !view.search)} aria-expanded={showFilters} onClick={() => setShowFilters((v) => !v)}>
               <Filter size={15} /> Filters
             </button>
             {filtering && (
@@ -398,7 +327,7 @@ function Board() {
                 <X size={15} />
               </button>
             )}
-            {showFilters && <FilterPopover />}
+            {showFilters && <FilterPopover anchor={filtersRef} onClose={() => setShowFilters(false)} />}
           </div>
           <span className="toolbar-spacer" />
           <div className="toolbar-group" style={{ position: 'relative' }}>
@@ -511,11 +440,12 @@ function TidyAsk({ moved, onConfirm, onCancel }: { moved: number; onConfirm: () 
   )
 }
 
-function FilterPopover() {
+function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
   const view = useView()
+  const ref = useDismiss<HTMLDivElement>(onClose, anchor)
   const toggle = <T extends string>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   return (
-    <div className="popover" role="dialog" aria-label="Filters">
+    <div ref={ref} className="popover" role="dialog" aria-label="Filters">
       <h4>Status</h4>
       <div className="chip-row">
         {ITEM_STATUSES.map((s) => (

@@ -1,19 +1,22 @@
 import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
+import { tidyText } from '../../shared/files.ts'
 import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
-import { useOpen } from '../nav.ts'
+import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
 import { KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
 import { ItemName, Prose, StatusLabel } from './bits.tsx'
+import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { AffectsPicker } from './ItemPicker.tsx'
-import { Sheet, type SheetConfirm } from './Sheet.tsx'
+import { Sheet } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
+/** Markdown fields go through `tidyText`, like a file read, so a leading code-block indent survives a save. */
 const normalise = (q: Question): Question => ({
   ...q,
   title: q.title.trim(),
-  question: q.question.trim(),
-  answer: q.answer.trim(),
+  question: tidyText(q.question),
+  answer: tidyText(q.answer),
   sources: q.sources.map((s) => s.trim()).filter(Boolean),
 })
 
@@ -23,39 +26,45 @@ export function QuestionModal({ id }: { id: string }) {
   const adoptQuestion = useCatalogue((s) => s.adoptQuestion)
   const index = useIndex()
   const open = useOpen()
+  /** Items to offer flipping Open to Confirmed after the question is answered. */
+  const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
     rec,
     save: saveQuestion,
     adopt: adoptQuestion,
     normalise,
-    startEditing: open.params.get('edit') === '1',
+    startEditing: useEditOnOpen(id),
+    // However the save came (button or Cmd+S), answering it offers to settle the items it affects.
+    onSaved: (next, before) => {
+      if (before.data.status === 'Answered' || next.data.status !== 'Answered') return
+      const openItems = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && it.status === 'Open')
+      if (openItems.length) setFlipOffer(openItems)
+    },
   })
-  /** Items to offer flipping Open to Confirmed after the question is answered. */
-  const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const answerRef = useRef<HTMLTextAreaElement>(null)
 
   const startEdit = (answering = false) => {
     ed.startEdit(answering ? (d) => ({ ...d, status: 'Answered' }) : undefined)
     if (answering) setTimeout(() => answerRef.current?.focus(), 30)
   }
-  const save = async () => {
-    const wasAnswered = ed.base?.data.status === 'Answered'
-    const next = await ed.save()
-    if (next && !wasAnswered && next.data.status === 'Answered') {
-      const openItems = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && it.status === 'Open')
-      if (openItems.length) setFlipOffer(openItems)
-    }
-  }
-  const saveRef = useRef(save)
-  saveRef.current = save
-  const onKey = (e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault()
-      if (ed.editing) void saveRef.current()
-      return true
-    }
-    return ed.onKey(e)
+
+  if (ed.orphaned && ed.draft) {
+    const d = ed.draft
+    return (
+      <OrphanedDraft
+        ed={ed}
+        id={id}
+        noun="Question"
+        onClose={open.close}
+        fields={[
+          { label: 'Title', text: d.title },
+          { label: 'Question', text: d.question },
+          { label: 'Answer', text: d.answer },
+          { label: 'Sources', text: d.sources.join('\n') },
+        ]}
+      />
+    )
   }
 
   if (!rec || !ed.draft) {
@@ -70,19 +79,8 @@ export function QuestionModal({ id }: { id: string }) {
   const q = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Question>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
-  const confirm: SheetConfirm | null = ed.discardAsk
-    ? {
-        title: 'Discard your changes?',
-        body: `Your unsaved edits to ${rec.data.title} will be lost.`,
-        cancelLabel: 'Keep editing',
-        confirmLabel: 'Discard changes',
-        onCancel: ed.discardAsk.cancel,
-        onConfirm: ed.discardAsk.confirm,
-      }
-    : null
-
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={confirm}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={discardConfirm(ed, rec.data.title)}>
       <div className="sheet-head">
         <nav className="crumbs">
           <button className="crumb" onClick={() => ed.leave(open.close)}>
@@ -94,43 +92,14 @@ export function QuestionModal({ id }: { id: string }) {
           <X size={18} />
         </button>
       </div>
-      {ed.restored && ed.editing && !ed.conflict && (
-        <div className="banner" role="status">
-          <span>Restored the unsaved edits you left here.</span>
-        </div>
-      )}
-      {ed.conflict && (
-        <div className="banner" role="alert">
-          <span>This question changed on disk while you were editing.</span>
-          <span className="spacer" />
-          <button className="btn sm" onClick={ed.keepMine}>
-            Keep mine
-          </button>
-          <button className="btn sm" onClick={ed.loadTheirs}>
-            Load theirs
-          </button>
-        </div>
-      )}
-      {ed.error && <div className="banner error">{ed.error}</div>}
+      <EditBanners ed={ed} noun="question" />
       <div className="sheet-body">
         {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} answerRef={answerRef} /> : <ReadView q={q} index={index} />}
         {flipOffer && !ed.editing && <FlipOffer items={flipOffer} question={q} onDone={() => setFlipOffer(null)} />}
       </div>
       <footer className="sheet-foot">
         {ed.editing ? (
-          <>
-            <span className="hint">
-              <kbd>⌘</kbd>
-              <kbd>S</kbd> save · <kbd>Esc</kbd> cancel
-            </span>
-            <span className="spacer" />
-            <button className="btn ghost" onClick={ed.cancelEdit}>
-              Cancel
-            </button>
-            <button className="btn primary" onClick={() => void save()} disabled={!ed.dirty || ed.saving}>
-              {ed.saving ? 'Saving…' : 'Save'}
-            </button>
-          </>
+          <EditActions ed={ed} />
         ) : (
           <>
             <span className="spacer" />
@@ -233,7 +202,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
   return (
     <div className="answer-flow" role="region" aria-label="Update affected items">
       <h4>
-        <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.id} is answered
+        <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.title} is answered
       </h4>
       <p>These affected items are still Open. Flip the ones the answer settles to Confirmed?</p>
       {items.map((it) => (
@@ -248,8 +217,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
               setPicked(next)
             }}
           />
-          <span className="mono">{it.id}</span>
-          <span>{it.title}</span>
+          <ItemName item={it} />
         </label>
       ))}
       {error && <div className="banner error" style={{ margin: '8px 0' }}>{error}</div>}

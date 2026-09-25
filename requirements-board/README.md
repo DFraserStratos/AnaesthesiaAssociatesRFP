@@ -10,9 +10,11 @@ this app and any agent edit those same files.
 ```
 npm install
 npm run dev          # http://localhost:5180
-npm test             # Vitest: file round-trip, check rules, IDs, the file API, auto-layout
+npm test             # Vitest: file round-trip, check rules, IDs, the file API, store, board graph, auto-layout
 npm run test:e2e     # Playwright: board rendering (edges join every card); own server on 5181, read-only
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
+npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
+npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
 ```
@@ -41,12 +43,15 @@ server/
   catalogueFs.ts     load the folder, atomic / exclusive writes, layout file
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets, folder watcher → HMR events
-scripts/       check, export-csv
+scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable)
 src/
   store.ts       catalogue mirror + derived index + view prefs
+  nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
+  useDismiss.ts  Esc / outside-press close for popovers
   views/         BoardView, QuestionsView, OutlineView
-  board/         autoLayout (story map, pure), CardNode
-  components/    ItemModal, QuestionModal, Sheet, useEditableRecord (shared edit/conflict/draft logic), bits
+  board/         autoLayout (story map, pure), graph (nodes + edges from the catalogue, pure), cardData, CardNode
+  components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
+                 useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus one test that the real catalogue is valid)
 shots/         local-only Playwright scratch scripts (gitignored; some mutate the real catalogue)
 ```
@@ -74,7 +79,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   bands, features beneath, stories stacked. Only cards you drag are stored, in
   `board-layout.json`, sent as patches; "Tidy" removes those overrides. Moves that fail to save
   are retried on reconnect. The viewport is per-browser (localStorage).
-- Semantic zoom bands: overview (epic names, stories as status blocks), far (ID + title), mid, near
+- Semantic zoom bands: overview (epic names, stories as status blocks), far (titles only), mid, near
   (description excerpt).
 
 Screenshots: put files under `catalogue/assets/<ID>/` and list them in the item's `images`, each
@@ -94,3 +99,5 @@ gallery has one tab per app present, in that order; untagged images fall back to
   descendants); `--dry` checks recipes and selectors without writing anything.
 - Output: `catalogue/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
   (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.
+  A file counts as generated when its name starts with an app and a dash (`scripts/captureFiles.ts`),
+  so give hand-added screenshots another prefix (`hand-dashboard.png`, not `web-dashboard.png`).

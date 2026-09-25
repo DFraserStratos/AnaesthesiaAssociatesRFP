@@ -1,12 +1,15 @@
-import { Archive, ChevronLeft, ChevronRight, ImageIcon, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Archive, ChevronLeft, ChevronRight, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { COMPONENTS, IMAGE_APPS, ITEM_STATUSES, isOpenQuestion, type ImageRef, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
-import { ApiError, assetUrl } from '../api.ts'
-import { setLeaveGuard, useOpen } from '../nav.ts'
+import { tidyText } from '../../shared/files.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { ApiError } from '../api.ts'
+import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
-import { TYPE_LABEL, statusClass } from '../vocab.ts'
+import { statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
+import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { ParentPicker } from './ItemPicker.tsx'
+import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -23,7 +26,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     save: saveItem,
     adopt: adoptItem,
     normalise,
-    startEditing: open.params.get('edit') === '1',
+    startEditing: useEditOnOpen(id),
   })
 
   // Docked beside the board, the board switches cards through this guard so a draft is never dropped silently.
@@ -48,6 +51,27 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     }
   }
 
+  if (ed.orphaned && ed.draft) {
+    const d = ed.draft
+    return (
+      <OrphanedDraft
+        ed={ed}
+        id={id}
+        noun="Item"
+        docked={docked}
+        onClose={open.close}
+        fields={[
+          { label: 'Title', text: d.title },
+          { label: 'Description', text: d.description },
+          { label: 'Acceptance criteria', text: d.acceptance },
+          { label: 'Technical discussion', text: d.technical },
+          { label: 'Notes', text: d.notes },
+          { label: 'Sources', text: d.sources.join('\n') },
+        ]}
+      />
+    )
+  }
+
   if (!rec || !ed.draft) {
     return (
       <Sheet onClose={open.close} label="Item not found" docked={docked}>
@@ -62,16 +86,9 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   const item = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Item>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
-  const confirm: SheetConfirm | null = ed.discardAsk
-    ? {
-        title: 'Discard your changes?',
-        body: `Your unsaved edits to ${rec.data.title} will be lost.`,
-        cancelLabel: 'Keep editing',
-        confirmLabel: 'Discard changes',
-        onCancel: ed.discardAsk.cancel,
-        onConfirm: ed.discardAsk.confirm,
-      }
-    : askRetire
+  const confirm: SheetConfirm | null =
+    discardConfirm(ed, rec.data.title) ??
+    (askRetire
       ? {
           title: 'Retire this item?',
           body: 'It stays in the catalogue, marked Retired, so its ID is never reused.',
@@ -80,47 +97,18 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
           onCancel: () => setAskRetire(false),
           onConfirm: () => void retire(),
         }
-      : null
+      : null)
 
   return (
     <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm} docked={docked}>
       <SheetHead item={rec.data} index={index} leave={ed.leave} />
-      {ed.restored && ed.editing && !ed.conflict && (
-        <div className="banner" role="status">
-          <span>Restored the unsaved edits you left here.</span>
-        </div>
-      )}
-      {ed.conflict && (
-        <div className="banner" role="alert">
-          <span>This item changed on disk while you were editing.</span>
-          <span className="spacer" />
-          <button className="btn sm" onClick={ed.keepMine}>
-            Keep mine
-          </button>
-          <button className="btn sm" onClick={ed.loadTheirs}>
-            Load theirs
-          </button>
-        </div>
-      )}
-      {ed.error && <div className="banner error">{ed.error}</div>}
+      <EditBanners ed={ed} noun="item" />
       <div className="sheet-body">
         {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : <ReadView item={item} index={index} />}
       </div>
       <footer className="sheet-foot">
         {ed.editing ? (
-          <>
-            <span className="hint">
-              <kbd>⌘</kbd>
-              <kbd>S</kbd> save · <kbd>Esc</kbd> cancel
-            </span>
-            <span className="spacer" />
-            <button className="btn ghost" onClick={ed.cancelEdit}>
-              Cancel
-            </button>
-            <button className="btn primary" onClick={() => void ed.save()} disabled={!ed.dirty || ed.saving}>
-              {ed.saving ? 'Saving…' : 'Save'}
-            </button>
-          </>
+          <EditActions ed={ed} />
         ) : (
           <>
             <button className="btn" onClick={() => open.showOnBoard(item.id)}>
@@ -142,16 +130,17 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   )
 }
 
+/** Markdown fields go through `tidyText`, like a file read, so a leading code-block indent survives a save. */
 function normalise(it: Item): Item {
   return {
     ...it,
     title: it.title.trim(),
     sources: it.sources.map((s) => s.trim()).filter(Boolean),
     images: it.images.filter((i) => i.src.trim()),
-    description: it.description.trim(),
-    acceptance: it.acceptance.trim(),
-    technical: it.technical.trim(),
-    notes: it.notes.trim(),
+    description: tidyText(it.description),
+    acceptance: tidyText(it.acceptance),
+    technical: tidyText(it.technical),
+    notes: tidyText(it.notes),
   }
 }
 
@@ -225,9 +214,8 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
               Open questions <span className="count">{linked.filter((l) => isOpenQuestion(l.q)).length}</span>
             </h3>
             {linked.map(({ q, via }) => (
-              <button key={q.id} className={`oq-card${isOpenQuestion(q) ? '' : ' answered'}`} onClick={() => open.question(q.id)}>
+              <button key={q.id} className={`oq-card${isOpenQuestion(q) ? '' : ' answered'}`} title={q.id} onClick={() => open.question(q.id)}>
                 <div className="oq-top">
-                  <span className="mono">{q.id}</span>
                   <strong>{q.title}</strong>
                   <StatusLabel status={q.status} />
                 </div>
@@ -311,15 +299,20 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
   const createItem = useCatalogue((s) => s.createItem)
   const [adding, setAdding] = useState<ItemType | null>(null)
   const [title, setTitle] = useState('')
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const add = async () => {
-    if (!adding || !title.trim()) return
+    if (busy || !adding || !title.trim()) return
+    setBusy(true)
+    setError(null)
     try {
       const rec = await createItem({ type: adding, parent: item.id, title: title.trim(), status: 'Proposed' })
       open.item(rec.data.id, { edit: true })
     } catch (e) {
       setError((e as Error).message)
+    } finally {
+      setBusy(false)
     }
   }
   const label = item.type === 'epic' ? 'Features and stories' : 'Stories'
@@ -359,8 +352,8 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
               }
             }}
           />
-          <button className="btn primary" type="submit" disabled={!title.trim()}>
-            Add {adding}
+          <button className="btn primary" type="submit" disabled={!title.trim() || busy}>
+            {busy ? 'Adding…' : `Add ${adding}`}
           </button>
           <button className="btn ghost" type="button" onClick={() => setAdding(null)}>
             Cancel
@@ -381,100 +374,6 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
         </div>
       )}
     </section>
-  )
-}
-
-/** Gallery tabs: one per app, in IMAGE_APPS order; images with no app fall back to their viewport. */
-const GALLERY_TABS = [...IMAGE_APPS, 'desktop'] as const
-type GalleryTab = (typeof GALLERY_TABS)[number]
-const TAB_LABEL: Record<GalleryTab, string> = { admin: 'Admin', web: 'Web', mobile: 'Mobile', simulator: 'Simulator', desktop: 'Desktop' }
-const tabOf = (img: ImageRef): GalleryTab => img.app ?? (img.viewport === 'mobile' ? 'mobile' : 'desktop')
-
-function Gallery({ item }: { item: Item }) {
-  const tabs = GALLERY_TABS.filter((t) => item.images.some((i) => tabOf(i) === t))
-  const [picked, setTab] = useState<GalleryTab | null>(null)
-  const tab = picked && tabs.includes(picked) ? picked : (tabs[0] ?? 'desktop')
-  // The lightbox steps through every screenshot, tab by tab in gallery order, whatever tab it opened from.
-  const ordered = tabs.flatMap((t) => item.images.filter((i) => tabOf(i) === t))
-  const [zoomedAt, setZoomedAt] = useState<number | null>(null)
-  const zoomed = zoomedAt !== null ? ordered[zoomedAt] : undefined
-  const step = (dir: 1 | -1) => {
-    if (zoomedAt === null || !ordered.length) return
-    const n = (zoomedAt + dir + ordered.length) % ordered.length
-    setZoomedAt(n)
-    setTab(tabOf(ordered[n]!)) // closing lands on the tab of the last screenshot seen
-  }
-  const shown = item.images.filter((i) => tabOf(i) === tab)
-  const count = (t: GalleryTab) => item.images.filter((i) => tabOf(i) === t).length
-  const layout = shown.every((i) => i.viewport === 'mobile') ? 'mobile' : 'desktop'
-
-  return (
-    <section className="section">
-      <h3 className="section-head">
-        <ImageIcon size={14} /> Screenshots <span className="count">{item.images.length}</span>
-      </h3>
-      {item.images.length === 0 ? (
-        <div className="empty-shots">
-          No screenshots yet. Save them to <code>catalogue/assets/{item.id}/</code> and list each under <code>images</code> in{' '}
-          <code>requirements/{item.id}.md</code> with its <code>viewport</code> (desktop or mobile) and <code>app</code>, or add them here in Edit.
-        </div>
-      ) : (
-        <>
-          <div className="gallery-tabs" role="group" aria-label="App">
-            {tabs.map((t) => (
-              <button key={t} aria-pressed={tab === t} className="btn sm" onClick={() => setTab(t)}>
-                {TAB_LABEL[t]} <span className="mono">{count(t)}</span>
-              </button>
-            ))}
-          </div>
-          <div className={`gallery ${layout}`}>
-            {shown.map((img) => (
-              <figure key={img.src} style={{ margin: 0 }}>
-                <button className="shot" onClick={() => setZoomedAt(ordered.indexOf(img))} aria-label={`Enlarge ${img.caption ?? img.src}`}>
-                  <img src={assetUrl(img.src)} alt={img.caption ?? ''} loading="lazy" />
-                  <figcaption>{img.caption ?? img.src.split('/').pop()}</figcaption>
-                </button>
-              </figure>
-            ))}
-          </div>
-        </>
-      )}
-      {zoomed && <Lightbox image={zoomed} at={zoomedAt!} total={ordered.length} label={TAB_LABEL[tabOf(zoomed)]} onStep={step} onClose={() => setZoomedAt(null)} />}
-    </section>
-  )
-}
-
-/** A screenshot enlarged. Left and right arrows step through all of the item's screenshots, wrapping at the ends. */
-function Lightbox({ image, at, total, label, onStep, onClose }: { image: ImageRef; at: number; total: number; label: string; onStep: (dir: 1 | -1) => void; onClose: () => void }) {
-  const handlers = useRef({ onStep, onClose })
-  handlers.current = { onStep, onClose }
-  useEffect(() => {
-    // Capture phase, so the board's arrow-key tree walk and the sheet's Esc never see these keys.
-    const onKey = (e: KeyboardEvent) => {
-      const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
-      if (e.key !== 'Escape' && !dir) return
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      if (dir) handlers.current.onStep(dir)
-      else handlers.current.onClose()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [])
-  return (
-    <div className="lightbox" onClick={onClose} role="dialog" aria-label="Screenshot">
-      <div>
-        <img src={assetUrl(image.src)} alt={image.caption ?? ''} />
-        <p>
-          {image.caption ?? image.src}
-          {total > 1 && (
-            <span className="lightbox-count">
-              {label} · {at + 1} of {total}
-            </span>
-          )}
-        </p>
-      </div>
-    </div>
   )
 }
 
@@ -546,40 +445,5 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
       </label>
       <ImagesEditor draft={draft} set={set} />
     </>
-  )
-}
-
-function ImagesEditor({ draft, set }: { draft: Item; set: (p: Partial<Item>) => void }) {
-  const update = (i: number, patch: Partial<ImageRef>) => set({ images: draft.images.map((img, n) => (n === i ? { ...img, ...patch } : img)) })
-  return (
-    <div className="field">
-      <span>Screenshots · paths relative to the catalogue folder</span>
-      {draft.images.map((img, i) => (
-        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 110px 1fr 32px', gap: 8 }}>
-          <input className="input mono" style={{ fontSize: 12 }} value={img.src} placeholder={`assets/${draft.id}/screen.png`} onChange={(e) => update(i, { src: e.target.value })} />
-          <select className="select" value={img.viewport} onChange={(e) => update(i, { viewport: e.target.value as ImageRef['viewport'] })}>
-            <option value="desktop">Desktop</option>
-            <option value="mobile">Mobile</option>
-          </select>
-          <select className="select" aria-label="App" value={img.app ?? ''} onChange={(e) => update(i, { app: (e.target.value || undefined) as ImageRef['app'] })}>
-            <option value="">No app</option>
-            {IMAGE_APPS.map((a) => (
-              <option key={a} value={a}>
-                {TAB_LABEL[a]}
-              </option>
-            ))}
-          </select>
-          <input className="input" value={img.caption ?? ''} placeholder="Caption" onChange={(e) => update(i, { caption: e.target.value || undefined })} />
-          <button type="button" className="btn icon ghost" aria-label="Remove screenshot" onClick={() => set({ images: draft.images.filter((_, n) => n !== i) })}>
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ))}
-      <div>
-        <button type="button" className="btn sm" onClick={() => set({ images: [...draft.images, { src: `assets/${draft.id}/`, viewport: 'desktop' }] })}>
-          <Plus size={14} /> Add screenshot
-        </button>
-      </div>
-    </div>
   )
 }

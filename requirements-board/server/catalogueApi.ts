@@ -27,6 +27,7 @@ import {
   questionPath,
   questionsDir,
   readItemFile,
+  readLayout,
   readQuestionFile,
   takenIds,
   writeItem,
@@ -93,8 +94,9 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
    */
   function checked<T extends { id: string }>(id: string, r: LoadedFile<T>): Rev<T> {
     if (r.missing) throw new HttpError(404, `${id} does not exist`)
-    if (r.error || !r.record) throw new HttpError(409, `${id}.md cannot be read (${r.error}); fix the file on disk first`)
-    if (r.record.data.id !== id) throw new HttpError(409, `${id}.md holds id ${r.record.data.id}; fix the file on disk first`)
+    // 422, not 409: a 409 means "someone else changed it", which "Keep mine" can answer; this it cannot.
+    if (r.error || !r.record) throw new HttpError(422, `${id}.md cannot be read (${r.error}); fix the file on disk first`)
+    if (r.record.data.id !== id) throw new HttpError(422, `${id}.md holds id ${r.record.data.id}; fix the file on disk first`)
     return r.record
   }
   function itemOnDisk(id: string): Rev<Item> {
@@ -152,7 +154,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         claimed.add(rec.id)
       }
     }
-    throw new HttpError(409, 'could not find a free ID; the catalogue folder is changing too fast, try again')
+    throw new HttpError(503, 'could not find a free ID; the catalogue folder is changing too fast, try again')
   }
 
   function refuseCrossSite(req: ApiRequest) {
@@ -251,14 +253,17 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     }
 
     if (path === '/api/layout' && method === 'PUT') {
-      if (!state.layoutReadable) throw new HttpError(422, 'board-layout.json cannot be read; fix or delete it before moving cards')
+      // Patch what is on disk now, not what we last synced: a git pull may have rewritten it a moment ago.
+      const onDisk = readLayout(root)
+      if (onDisk.error) throw new HttpError(422, 'board-layout.json cannot be read; fix or delete it before moving cards')
       const patch = (body.positions ?? {}) as Record<string, { x: number; y: number } | null>
-      const positions = { ...state.layout.positions }
+      const positions = { ...onDisk.layout.positions }
       for (const [id, p] of Object.entries(patch)) {
         if (p === null) delete positions[id]
         else if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) positions[id] = { x: Math.round(p.x), y: Math.round(p.y) }
       }
       state.layout = { positions }
+      state.layoutReadable = true
       writeLayout(state.layout, root)
       emit({ kind: 'layout', layout: state.layout })
       return state.layout

@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "test": "vitest run",
+    "verify": "tsc -b && vitest run && node scripts/check.ts",
     "test:e2e": "playwright test",
     "check": "node scripts/check.ts",
     "export:csv": "node scripts/export-csv.ts",

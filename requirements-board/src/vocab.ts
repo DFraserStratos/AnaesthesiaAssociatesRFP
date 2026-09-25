@@ -1,4 +1,4 @@
-import type { ItemStatus, ItemType, QuestionKind, QuestionStatus } from '../shared/types.ts'
+import { QUESTION_STATUSES, type Component, type ItemStatus, type ItemType, type QuestionKind, type QuestionStatus } from '../shared/types.ts'
 
 /** How a status reads on screen. Stored values are shown as-is today; kept as the one place to relabel. */
 export const STATUS_LABEL: Record<string, string> = {}
@@ -10,13 +10,11 @@ export const BASELINE_STATUS: ItemStatus = 'Proposed'
 /** CSS class suffix per status; colours live in styles.css tokens. */
 export const statusClass = (s: string) => `st-${s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/-$/, '')}`
 
-export const TYPE_LABEL: Record<ItemType, string> = { epic: 'Epic', feature: 'Feature', story: 'Story' }
-
 /** CSS class that sets the type colour tokens (--ty, --ty-ink, --ty-tint). */
 export const typeClass = (t: ItemType) => `ty-${t}`
 
 /** Short mono codes for the component glyph on cards. */
-export const COMPONENT_CODE: Record<string, string> = {
+export const COMPONENT_CODE: Record<Component, string> = {
   'Scheduling Engine': 'SCH',
   'Billing/Invoice Engine': 'BIL',
   'Anaesthetist App (mobile + web)': 'ANA',
@@ -27,7 +25,8 @@ export const COMPONENT_CODE: Record<string, string> = {
   'Cross-cutting': 'NFR',
 }
 
-export const QUESTION_GROUP_ORDER: QuestionStatus[] = ['Open', 'Confirm', 'Proposed', 'Answered']
+/** Outstanding items are grouped by status in the vocabulary's own order, so a new status can never drop out of the view. */
+export const QUESTION_GROUP_ORDER: readonly QuestionStatus[] = QUESTION_STATUSES
 export const QUESTION_GROUP_LABEL: Record<QuestionStatus, string> = {
   Open: 'Open',
   Confirm: 'Awaiting confirmation',

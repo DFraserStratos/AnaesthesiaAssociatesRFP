@@ -13,7 +13,7 @@
  * the runner did not generate are kept. A step or highlight selector that matches nothing
  * fails the recipe: it never writes a silently wrong shot.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test'
@@ -21,6 +21,7 @@ import { CATALOGUE_DIR, itemPath, loadCatalogue, readItemFile, writeItem } from 
 import { serialiseItem } from '../shared/files.ts'
 import { compareIds } from '../shared/ids.ts'
 import { IMAGE_APPS, type ImageApp, type ImageRef, type Item } from '../shared/types.ts'
+import { fileFor, isGenerated, pruneGenerated } from './captureFiles.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const CAPTURE_DIR = resolve(here, '../capture')
@@ -107,7 +108,6 @@ const fullRun = !only
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const DASHES = /[–—]/
-const GENERATED = new RegExp(`^(?:${IMAGE_APPS.join('|')})-[a-z0-9-]+\\.png$`)
 
 function validate(r: Recipe, fileId: string): string[] {
   const out: string[] = []
@@ -137,7 +137,6 @@ function validate(r: Recipe, fileId: string): string[] {
   return out
 }
 
-const fileFor = (id: string, s: Shot, st: State) => `assets/${id}/${s.app}-${s.name}${st.state ? `-${st.state}` : ''}.png`
 
 function readRecipes(): { recipes: Map<string, Recipe>; broken: Map<string, string[]> } {
   const recipes = new Map<string, Recipe>()
@@ -373,7 +372,6 @@ async function capture(browser: Browser, job: Job): Promise<Buffer> {
 
 // ── Catalogue linking ────────────────────────────────────────────────────────
 
-const isGenerated = (id: string, src: string) => src.startsWith(`assets/${id}/`) && GENERATED.test(src.slice(`assets/${id}/`.length))
 
 function imagesFor(recipe: Recipe): ImageRef[] {
   return (recipe.shots ?? []).flatMap((s) =>
@@ -400,17 +398,8 @@ function linkItem(recipe: Recipe): boolean {
 
 /** Delete generated files for this item that the recipe no longer produces. */
 function pruneAssets(recipe: Recipe): string[] {
-  const dir = join(CATALOGUE_DIR, 'assets', recipe.id)
-  if (!existsSync(dir)) return []
-  const wanted = new Set(imagesFor(recipe).map((i) => i.src.split('/').pop()))
-  const removed: string[] = []
-  for (const f of readdirSync(dir)) {
-    if (GENERATED.test(f) && !wanted.has(f)) {
-      unlinkSync(join(dir, f))
-      removed.push(f)
-    }
-  }
-  return removed
+  const wanted = new Set(imagesFor(recipe).map((i) => i.src.split('/').pop()!))
+  return pruneGenerated(join(CATALOGUE_DIR, 'assets', recipe.id), wanted)
 }
 
 // ── Report ───────────────────────────────────────────────────────────────────

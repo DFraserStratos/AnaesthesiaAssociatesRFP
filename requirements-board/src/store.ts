@@ -15,7 +15,7 @@ interface CatalogueState {
   questions: Record<string, Rev<Question>>
   layout: Layout
   issues: Issue[]
-  /** Set when card moves could not be saved; they are retried on the next move or reconnect. */
+  /** Set when card moves could not be saved; they are retried on the next move, layout change on disk, or reconnect. */
   layoutError?: string
   load: () => Promise<void>
   applyEvent: (e: CatalogueEvent) => void
@@ -72,8 +72,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       else delete questions[e.id]
       set({ questions })
     } else if (e.kind === 'layout') {
+      const pending = Object.keys(pendingLayout).length > 0
+      // Moves left over from a failed save: the file just changed (perhaps fixed), so try them again now.
+      if (pending && !layoutTimer) void get().flushLayout()
       // Our own debounced write echoes back; don't let it undo moves still in flight.
-      if (!layoutTimer && !Object.keys(pendingLayout).length && JSON.stringify(e.layout) !== JSON.stringify(s.layout)) set({ layout: e.layout })
+      if (!layoutTimer && !pending && JSON.stringify(e.layout) !== JSON.stringify(s.layout)) set({ layout: e.layout })
     } else {
       set({ issues: e.issues })
     }

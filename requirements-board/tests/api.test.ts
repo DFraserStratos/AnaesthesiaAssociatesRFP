@@ -6,6 +6,8 @@ import { parseItem, serialiseItem } from '../shared/files.ts'
 import type { CatalogueEvent, Item, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
+import type { ServerResponse } from 'node:http'
+import { serveAsset } from '../server/cataloguePlugin.ts'
 import { item, question } from './fixtures.ts'
 
 const JSON_HEADERS = { 'content-type': 'application/json', host: 'localhost:5180' }
@@ -214,5 +216,65 @@ describe('sync', () => {
     expect(issues.some((m) => m.includes('YAML comment'))).toBe(true)
     expect(issues.some((m) => m.includes('title was read as a number'))).toBe(true)
     expect(existsSync(itemPath('US-01.1.5', root))).toBe(true)
+  })
+})
+
+describe('refusals the board cannot answer with "Keep mine"', () => {
+  it('answers a save to an unreadable file with 422, not a 409 conflict', () => {
+    const a = api()
+    const r = recOf(a, 'US-01.1.2')
+    writeFileSync(itemPath('US-01.1.2', root), '---\nid: US-01.1.2\n<<<<<<< HEAD\n')
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+  })
+
+  it('answers a save to a file holding another id with 422', () => {
+    const a = api()
+    const r = recOf(a, 'US-01.1.2')
+    writeItem({ ...r.data, id: 'US-01.1.9' }, root)
+    writeFileSync(itemPath('US-01.1.2', root), readFileSync(itemPath('US-01.1.9', root), 'utf8'))
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+  })
+})
+
+describe('layout re-read', () => {
+  it('patches the file as it is on disk, not the last synced copy', () => {
+    const a = api()
+    writeLayout({ positions: { 'US-01.1.2': { x: 5, y: 6 } } }, root) // a git pull, not yet synced
+    call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.1': { x: 1, y: 2 } } })
+    expect(JSON.parse(readFileSync(layoutPath(root), 'utf8')).positions).toEqual({ 'US-01.1.1': { x: 1, y: 2 }, 'US-01.1.2': { x: 5, y: 6 } })
+  })
+
+  it('refuses when the file went bad after the last sync, and leaves it alone', () => {
+    const a = api()
+    writeFileSync(layoutPath(root), '{\n<<<<<<< HEAD\n')
+    expect(status(() => call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.1': { x: 1, y: 1 } } }))).toBe(422)
+    expect(readFileSync(layoutPath(root), 'utf8')).toContain('<<<<<<<')
+  })
+})
+
+describe('check warns about what a save would refuse or change', () => {
+  it('flags a repeated section heading the board cannot save', () => {
+    const text = serialiseItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', notes: 'First' })) + '\n## Notes\n\nSecond\n'
+    writeFileSync(itemPath('US-01.1.2', root), text)
+    const issues = loadCatalogue(root).issues.filter((i) => i.id === 'US-01.1.2')
+    expect(issues.some((i) => i.severity === 'warning' && /cannot save/.test(i.message))).toBe(true)
+  })
+
+  it('flags a missing order and image keys the board drops', () => {
+    const text = readFileSync(itemPath('US-01.1.2', root), 'utf8').replace(/^order: .*\n/m, '').replace('images: []', 'images:\n  - src: assets/US-01.1.2/a.png\n    viewport: desktop\n    alt: A')
+    writeFileSync(itemPath('US-01.1.2', root), text)
+    const msgs = loadCatalogue(root).issues.filter((i) => i.id === 'US-01.1.2').map((i) => i.message)
+    expect(msgs.some((m) => /order is missing/.test(m))).toBe(true)
+    expect(msgs.some((m) => /keys the board does not keep \(alt\)/.test(m))).toBe(true)
+  })
+})
+
+describe('serveAsset', () => {
+  const res = () => ({ setHeader: () => {}, end: () => {} }) as unknown as ServerResponse
+  it('serves nothing outside the assets folder', () => {
+    writeFileSync(join(root, 'secret.txt'), 'x')
+    for (const p of ['/catalogue/secret.txt', '/catalogue/assets/../secret.txt', '/catalogue/assets/%2e%2e/secret.txt', '/catalogue/requirements/EP-01.md']) {
+      expect(serveAsset(root, new URL(p, 'http://local'), res())).toBe(false)
+    }
   })
 })

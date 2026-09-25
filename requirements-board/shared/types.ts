@@ -7,6 +7,11 @@
 export const ITEM_TYPES = ['epic', 'feature', 'story'] as const
 export type ItemType = (typeof ITEM_TYPES)[number]
 
+export const TYPE_LABEL: Record<ItemType, string> = { epic: 'Epic', feature: 'Feature', story: 'Story' }
+
+/** What an item of this type may sit under: a feature under an epic, a story under a feature or straight under an epic. */
+export const PARENT_TYPES: Record<ItemType, readonly ItemType[]> = { epic: [], feature: ['epic'], story: ['feature', 'epic'] }
+
 export const ITEM_STATUSES = ['Proposed', 'Open', 'Confirmed', 'Future', 'Retired'] as const
 export type ItemStatus = (typeof ITEM_STATUSES)[number]
 

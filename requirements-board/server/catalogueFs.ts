@@ -6,7 +6,7 @@ import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync,
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkCatalogue } from '../shared/check.ts'
-import { ParseError, lintFrontmatter, parseItem, parseQuestion, revOf, serialiseItem, serialiseQuestion } from '../shared/files.ts'
+import { ParseError, lintFrontmatter, lintItem, lintQuestion, parseItem, parseQuestion, revOf, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareIds } from '../shared/ids.ts'
 import type { CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 
@@ -33,7 +33,7 @@ export interface LoadedFile<T> {
   missing?: boolean
 }
 
-export function readRecord<T>(file: string, parse: (text: string) => T): LoadedFile<T> {
+export function readRecord<T>(file: string, parse: (text: string) => T, lint: (text: string, data: T) => string[] = () => []): LoadedFile<T> {
   let text: string
   try {
     text = readFileSync(file, 'utf8')
@@ -41,14 +41,15 @@ export function readRecord<T>(file: string, parse: (text: string) => T): LoadedF
     return { file, error: (e as Error).message, missing: (e as NodeJS.ErrnoException).code === 'ENOENT' }
   }
   try {
-    return { file, record: { data: parse(text), rev: revOf(text) }, lint: lintFrontmatter(text) }
+    const data = parse(text)
+    return { file, record: { data, rev: revOf(text) }, lint: [...lintFrontmatter(text), ...lint(text, data)] }
   } catch (e) {
     return { file, error: e instanceof ParseError ? e.message : (e as Error).message }
   }
 }
 
-export const readItemFile = (file: string) => readRecord<Item>(file, parseItem)
-export const readQuestionFile = (file: string) => readRecord<Question>(file, parseQuestion)
+export const readItemFile = (file: string) => readRecord<Item>(file, parseItem, lintItem)
+export const readQuestionFile = (file: string) => readRecord<Question>(file, parseQuestion, lintQuestion)
 
 function listMd(dir: string): string[] {
   let names: string[]

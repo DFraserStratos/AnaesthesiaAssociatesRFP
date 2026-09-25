@@ -8,7 +8,9 @@
  *   by veiling the sheet (`discardAsk`) rather than raising a browser prompt.
  * - A change on disk while editing raises a conflict instead of clobbering the
  *   draft; a 409 from the server adopts the server's copy so "Keep mine" saves
- *   against the right revision.
+ *   against the right revision. Any other refusal is shown as an error.
+ * - If the record vanishes from disk mid-edit (renamed, deleted), the draft is
+ *   `orphaned`: the sheet shows it so it can be copied, then `discard`ed.
  */
 import { useEffect, useRef, useState } from 'react'
 import type { Rev } from '../../shared/types.ts'
@@ -29,10 +31,14 @@ export interface EditableOptions<T> {
   adopt: (rec: Rev<T>) => void
   normalise?: (data: T) => T
   startEditing?: boolean
+  /** Runs after a successful save, with the version the edit started from. */
+  onSaved?: (next: Rev<T>, before: Rev<T>) => void
 }
 
-export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) => d, startEditing = false }: EditableOptions<T>) {
+export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) => d, startEditing = false, onSaved }: EditableOptions<T>) {
   const [stored] = useState(() => drafts.get(key) as { draft: T; base: Rev<T> } | undefined)
+  /** True until the restored draft is saved or dropped, so the banner shows once, not on every later edit. */
+  const [restored, setRestored] = useState(!!stored)
   const [editing, setEditing] = useState(!!stored || startEditing)
   const [base, setBase] = useState<Rev<T> | undefined>(stored?.base ?? rec)
   const [draft, setDraft] = useState<T | undefined>(stored?.draft ?? rec?.data)
@@ -91,16 +97,24 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
     setBase(rec)
     setDraft(prepare(rec.data))
     setError(null)
+    setRestored(false)
     setEditing(true)
   }
 
-  const cancelEdit = () =>
-    leave(() => {
-      setEditing(false)
-      setDraft(rec?.data)
-      setConflict(false)
-      setError(null)
-    })
+  const reset = () => {
+    setEditing(false)
+    setDraft(rec?.data)
+    setConflict(false)
+    setError(null)
+    setRestored(false)
+  }
+  const cancelEdit = () => leave(reset)
+
+  /** Drop the draft without asking (the orphaned-draft sheet's own button). */
+  const discard = () => {
+    drafts.delete(key)
+    reset()
+  }
 
   const commit = async (): Promise<Rev<T> | undefined> => {
     if (draft === undefined || !base || savingRef.current) return
@@ -114,10 +128,13 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
       setDraft(next.data)
       setEditing(false)
       setConflict(false)
+      setRestored(false)
+      onSaved?.(next, base)
       return next
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        if (e.current) adopt(e.current as Rev<T>)
+      // Only a revision clash carries the server's copy; anything else "Keep mine" cannot fix.
+      if (e instanceof ApiError && e.status === 409 && e.current) {
+        adopt(e.current as Rev<T>)
         setConflict(true)
       } else setError((e as Error).message)
     } finally {
@@ -163,9 +180,11 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
     error,
     setError,
     saving,
-    restored: !!stored,
+    restored: restored && editing && !conflict,
+    orphaned: !rec && dirty,
     startEdit,
     cancelEdit,
+    discard,
     save: commit,
     keepMine,
     loadTheirs,
@@ -174,3 +193,5 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
     onKey,
   }
 }
+
+export type EditableRecord<T> = ReturnType<typeof useEditableRecord<T>>

@@ -1,12 +1,12 @@
 import { MessageCircleQuestion, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { ITEM_TYPES, QUESTION_KINDS, type Item, type ItemType, type QuestionKind } from '../../shared/types.ts'
+import { ITEM_TYPES, PARENT_TYPES, QUESTION_KINDS, TYPE_LABEL, type Item, type ItemType, type QuestionKind } from '../../shared/types.ts'
 import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
-import { KIND_HELP, KIND_LABEL, TYPE_LABEL, typeClass } from '../vocab.ts'
+import { KIND_HELP, KIND_LABEL, typeClass } from '../vocab.ts'
 import { TypeIcon } from './bits.tsx'
-import { AffectsPicker, PARENT_TYPES, ParentPicker } from './ItemPicker.tsx'
+import { AffectsPicker, ParentPicker } from './ItemPicker.tsx'
 
 type CardKind = ItemType | 'question'
 const KINDS: readonly CardKind[] = [...ITEM_TYPES, 'question']

@@ -54,7 +54,8 @@ Not the place to edit requirements:
   prototype harness bar links to the board only when launched that way (it sets `VITE_REQUIREMENTS_URL`),
   so a presenter running `aa-prototype` on its own never sees the link.
   **Its design rules are in `requirements-board/DESIGN.md`** (names over IDs, fixed type colours, status
-  as pills): read it before any visual change to the board.
+  as pills): read it before any visual change to the board. **Finish green on board work:**
+  `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check) passes before handing back.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
   from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`

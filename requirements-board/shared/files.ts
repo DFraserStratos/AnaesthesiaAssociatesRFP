@@ -211,6 +211,37 @@ export function lintFrontmatter(text: string): string[] {
   return out
 }
 
+const IMAGE_KEYS = ['src', 'viewport', 'app', 'caption']
+
+/**
+ * Item-specific pitfalls: things that parse but that the board would change
+ * or refuse on its next save. Reported as warnings so `npm run check` sees
+ * them before a save does.
+ */
+export function lintItem(text: string, item: Item): string[] {
+  let meta: Record<string, unknown>
+  try {
+    meta = splitFrontmatter(text).meta
+  } catch {
+    return []
+  }
+  const out: string[] = []
+  if (!Number.isFinite(Number(meta.order)) || meta.order === null || meta.order === undefined || meta.order === '') {
+    out.push(`order is missing or not a number (${String(meta.order)}); it sorts as 0, and 0 is written back on the next save`)
+  }
+  for (const raw of Array.isArray(meta.images) ? meta.images : []) {
+    if (!raw || typeof raw !== 'object') continue
+    const unknown = Object.keys(raw).filter((k) => !IMAGE_KEYS.includes(k))
+    if (unknown.length) out.push(`image ${str((raw as Record<string, unknown>).src)} has keys the board does not keep (${unknown.join(', ')}); they are dropped on the next save`)
+  }
+  for (const p of itemRoundTripProblems(item)) out.push(`the board cannot save this item until it is fixed: ${p}`)
+  return out
+}
+
+export function lintQuestion(_text: string, q: Question): string[] {
+  return questionRoundTripProblems(q).map((p) => `the board cannot save this question until it is fixed: ${p}`)
+}
+
 function yamlBlock(meta: Record<string, unknown>): string {
   return stringifyYaml(meta, { lineWidth: 0, flowCollectionPadding: false })
 }

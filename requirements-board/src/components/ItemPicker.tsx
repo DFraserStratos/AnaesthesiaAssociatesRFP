@@ -1,13 +1,10 @@
 import { X } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
-import type { Item, ItemType } from '../../shared/types.ts'
+import { PARENT_TYPES, type Item, type ItemType } from '../../shared/types.ts'
 import { lineageTitles, searchItems } from '../itemSearch.ts'
 import type { Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
 import { ItemName, TypeIcon } from './bits.tsx'
-
-/** What an item of this type may sit under: a feature under an epic, a story under a feature or straight under an epic. */
-export const PARENT_TYPES: Record<ItemType, readonly ItemType[]> = { epic: [], feature: ['epic'], story: ['feature', 'epic'] }
 
 /** One result row: the name first, then where it sits, so two features of the same name can be told apart. */
 function Option({ item, index, active, id, onPick }: { item: Item; index: Index; active: boolean; id: string; onPick: () => void }) {
