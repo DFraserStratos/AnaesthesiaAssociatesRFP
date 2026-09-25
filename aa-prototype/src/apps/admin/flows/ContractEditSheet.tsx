@@ -250,7 +250,7 @@ function PriceRows({
   }
 
   return (
-    <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div data-shot="contract-price-rows" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <FieldLabel>Fixed price rows</FieldLabel>
       {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No price rows yet.</div>}
       {rows.map((r) => (

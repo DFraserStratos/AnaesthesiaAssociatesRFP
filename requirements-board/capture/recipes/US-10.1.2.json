@@ -1,0 +1,123 @@
+{
+  "id": "US-10.1.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "two-states",
+      "app": "admin",
+      "caption": "Paid into AA and disbursed to the anaesthetist tracked separately",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "state": "paid-in",
+          "caption": "Paid into AA, not yet disbursed",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr:has-text(\"Brian Holt\")"
+          ]
+        },
+        {
+          "state": "disbursed",
+          "caption": "After the payables run, disbursed to the anaesthetist",
+          "steps": [
+            {
+              "click": "role=button[name=\"Run payables\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr:has-text(\"Brian Holt\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "invoice-states",
+      "app": "admin",
+      "caption": "The two money states on the invoice",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-money-states]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "id": "US-01.5.2",
+  "status": "partial",
+  "absentReason": "Conflicts are flagged as advisory warnings (hard block versus soft warning is still open, OQ-09). The web app shows no conflict for the anaesthetist.",
+  "shots": [
+    {
+      "name": "holiday-conflict",
+      "app": "admin",
+      "caption": "Booked List flagged against a hospital closure",
+      "start": "/admin/day/2026-07-22",
+      "setup": [
+        {
+          "goto": "/admin/masters"
+        },
+        {
+          "click": "text=\"Hospitals & holidays\""
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "text=\"Add holiday\" >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "[role=dialog] input[type=date]",
+          "value": "2026-07-22"
+        },
+        {
+          "fill": "input[placeholder=\"e.g. Planned maintenance closure\"]",
+          "value": "Theatre maintenance closure"
+        },
+        {
+          "click": "[role=dialog] >> role=button[name=\"Add holiday\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "state": "grid",
+          "caption": "Booked List flagged on the day grid",
+          "steps": [],
+          "highlight": [
+            "[data-day-grid-row=\"34821\"]"
+          ]
+        },
+        {
+          "state": "reason",
+          "caption": "The flag explains the conflict with the hospital closure",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] div:has(> :text(\"Needs attention\"))"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unavailable-conflict",
+      "app": "admin",
+      "caption": "List flagged when the anaesthetist is unavailable",
+      "start": "/admin/day/2026-07-22",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"29104\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] div:has(> :text(\"Needs attention\"))"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unavailable-conflict",
+      "app": "mobile",
+      "caption": "Blocking a booked session flags a conflict",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=availability-block-pm]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=availability-mine]"
+          ]
+        }
+      ]
+    }
+  ]
+}

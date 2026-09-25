@@ -1,0 +1,36 @@
+{
+  "id": "US-03.1.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "card-capture",
+      "app": "web",
+      "caption": "The same booking capture on web and on mobile",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "card-capture",
+      "app": "mobile",
+      "caption": "The same booking capture on web and on mobile",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 350
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

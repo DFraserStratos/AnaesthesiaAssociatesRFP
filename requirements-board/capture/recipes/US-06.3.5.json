@@ -1,0 +1,61 @@
+{
+  "id": "US-06.3.5",
+  "status": "partial",
+  "absentReason": "The pre-payment requirement is re-derived live whenever the procedure's payment category changes, as shown. The prepaid amount is not recalculated when procedures or the Contract change: the deposit or full-fee type is fixed on the procedure.",
+  "shots": [
+    {
+      "name": "recheck-on-change",
+      "app": "admin",
+      "caption": "Pre-payment requirement re-checked when the billing setup changes",
+      "start": "/admin/day/2026-07-24",
+      "states": [
+        {
+          "state": "before",
+          "caption": "Payment category Pre-payment, so pre-payment is required",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "Category changed to Self-funded, the pre-payment banner is gone from the card",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Edit billing setup\"] >> nth=0"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Self-funded\"]"
+            },
+            {
+              "click": "role=button[name=\"Save billing setup\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "text=\"Day view\" >> nth=0"
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

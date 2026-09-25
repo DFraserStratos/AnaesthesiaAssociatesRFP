@@ -1,0 +1,37 @@
+{
+  "id": "US-05.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "time-units",
+      "app": "web",
+      "caption": "Time units calculated from the anaesthetic start and finish",
+      "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-times]",
+            "[data-shot=units-row-t]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "time-units",
+      "app": "mobile",
+      "caption": "Time units calculated from the anaesthetic start and finish",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-times]",
+            "[data-testid=slide-card] [data-shot=units-row-t]"
+          ]
+        }
+      ]
+    }
+  ]
+}

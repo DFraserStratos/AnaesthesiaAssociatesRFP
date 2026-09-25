@@ -1,0 +1,99 @@
+{
+  "id": "US-09.2.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "accpay-disbursed",
+      "app": "simulator",
+      "caption": "ACCPAY disbursement tracked on the Xero pair",
+      "start": "/demo/xero/invoices/XRH01",
+      "states": [
+        {
+          "state": "awaiting",
+          "caption": "ACCPAY before payment, nothing disbursed",
+          "steps": [
+            {
+              "scroll": "[data-shot=xero-accpay-card]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accpay-card]"
+          ]
+        },
+        {
+          "state": "disbursed",
+          "caption": "ACCPAY paid in the payables run and recorded as disbursed",
+          "steps": [
+            {
+              "click": "role=button[name=\"Simulate payment and payout\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-shot=xero-accpay-card]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payables-run",
+      "app": "admin",
+      "caption": "Payables run in the billing monitor",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24/cards/C0034"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "state": "due",
+          "caption": "Payables run with an authorised payable ready to disburse",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        },
+        {
+          "state": "run",
+          "caption": "Payables run disbursed to the anaesthetist",
+          "steps": [
+            {
+              "click": "[data-shot=billing-payables-run] >> role=button[name=\"Run payables\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "id": "US-07.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "submit-list",
+      "app": "web",
+      "caption": "Submit a completed List",
+      "start": "/web/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "state": "ready",
+          "caption": "Every Card complete, Mark list completed is available",
+          "steps": [],
+          "highlight": [
+            "role=button[name=\"Mark list completed\"]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "Confirm submitting the List to the office",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "submitted",
+          "caption": "List submitted to the office",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Submit to office\"]"
+            },
+            {
+              "wait": 2000
+            }
+          ],
+          "highlight": [
+            "span:has-text(\"Submitted to office\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "submit-list",
+      "app": "mobile",
+      "caption": "Submit a completed List",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "state": "ready",
+          "caption": "Every Card complete, Mark list completed is available",
+          "steps": [],
+          "highlight": [
+            "[data-testid=mobile-list-footer]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "Confirm submitting the List to the office",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "submitted",
+          "caption": "List submitted to the office",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Submit to office\"]"
+            },
+            {
+              "wait": 1500
+            }
+          ],
+          "highlight": [
+            "[data-testid=mobile-list-footer]"
+          ]
+        }
+      ]
+    }
+  ]
+}

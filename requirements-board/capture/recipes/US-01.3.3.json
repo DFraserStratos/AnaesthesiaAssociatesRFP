@@ -1,0 +1,65 @@
+{
+  "id": "US-01.3.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "assign-free-list",
+      "app": "admin",
+      "caption": "Assign a hospital to a free List",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "drawer",
+          "steps": [
+            {
+              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer]"
+          ],
+          "caption": "A free List, with Book (phone advice)"
+        },
+        {
+          "state": "book",
+          "steps": [
+            {
+              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[role=dialog] select >> nth=0",
+              "value": "Forte Health"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[role=dialog] select >> nth=1",
+              "value": "Mr C. Okafor"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Booking the free List for a surgeon and hospital"
+        }
+      ]
+    }
+  ]
+}

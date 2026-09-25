@@ -1,0 +1,58 @@
+{
+  "id": "US-08.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "patient-layout",
+      "app": "admin",
+      "caption": "Invoice document, patient layout",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "contract-holder-layout",
+      "app": "admin",
+      "caption": "Invoice document, contract holder layout",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

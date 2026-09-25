@@ -1,0 +1,38 @@
+{
+  "id": "US-02.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "correct-and-ingest",
+      "app": "admin",
+      "caption": "Correct an extracted PDF row, then ingest it",
+      "start": "/admin/integrations",
+      "states": [
+        {
+          "state": "flagged",
+          "caption": "Extracted row with an invalid NHI flagged for correction",
+          "steps": [
+            { "click": "role=button[name=\"Surgeon PDFs\"]" },
+            { "click": "role=button[name=\"Open\"] >> nth=0" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-shot=pdf-row-3]"]
+        },
+        {
+          "state": "ingested",
+          "caption": "NHI corrected and the row ingested as a new Card",
+          "steps": [
+            { "click": "role=button[name=\"Surgeon PDFs\"]" },
+            { "click": "role=button[name=\"Open\"] >> nth=0" },
+            { "wait": 500 },
+            { "fill": "[data-shot=pdf-row-3] input >> nth=0", "value": "ZAA0067" },
+            { "click": "[data-shot=pdf-row-3] >> role=button[name=\"Ingest row\"]" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-shot=pdf-row-3]"]
+        }
+      ]
+    }
+  ]
+}

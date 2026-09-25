@@ -1,0 +1,19 @@
+{
+  "id": "US-13.5.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "audit-viewer",
+      "app": "admin",
+      "caption": "Audit viewer, every action with who, role, source and what changed",
+      "start": "/admin/audit",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

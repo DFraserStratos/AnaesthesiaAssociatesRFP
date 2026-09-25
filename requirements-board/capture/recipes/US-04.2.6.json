@@ -1,0 +1,6 @@
+{
+  "id": "US-04.2.6",
+  "status": "absent",
+  "absentReason": "The contract has no settings for whether the anaesthetist may discount or set a final price, or whether the office may override. Its only permission flag is \"Permits individual arrangement (Method 3)\", which gates rate times time lines. Searched domain/types.ts (Contract), ContractEditSheet.tsx, OverrideCard.tsx and PriceOverrideSheet.tsx.",
+  "shots": []
+}

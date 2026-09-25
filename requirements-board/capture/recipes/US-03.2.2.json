@@ -1,0 +1,6 @@
+{
+  "id": "US-03.2.2",
+  "status": "absent",
+  "absentReason": "The first procedure on a card is its fixed anchor (it cannot be removed and there is no control to make another procedure primary). Searched CardDetailBody, BtmCaptureBlock, EditProcedureSheet, AdminCardDetail and the store for a primary switch.",
+  "shots": []
+}

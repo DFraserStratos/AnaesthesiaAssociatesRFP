@@ -1,0 +1,70 @@
+{
+  "id": "FT-08.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "billing-monitor",
+      "app": "admin",
+      "caption": "Billing monitor, the office view of every billing run",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Trigger failure\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "h1"
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

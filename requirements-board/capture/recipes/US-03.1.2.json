@@ -1,0 +1,40 @@
+{
+  "id": "US-03.1.2",
+  "status": "partial",
+  "absentReason": "The applied Contract is shown read-only on each procedure of the card, but not on the List view before the session.",
+  "shots": [
+    {
+      "name": "procedure-contract",
+      "app": "web",
+      "caption": "Contract shown on the procedure",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=procedure-contract]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-contract",
+      "app": "mobile",
+      "caption": "Contract shown on the procedure",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 350
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-contract]"
+          ]
+        }
+      ]
+    }
+  ]
+}

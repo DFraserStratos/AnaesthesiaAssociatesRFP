@@ -1,0 +1,35 @@
+{
+  "id": "US-05.3.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "per-procedure",
+      "app": "web",
+      "caption": "Card total broken down by procedure",
+      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "per-procedure",
+      "app": "mobile",
+      "caption": "Card total broken down by procedure",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

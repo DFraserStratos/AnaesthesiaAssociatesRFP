@@ -1,0 +1,92 @@
+{
+  "id": "US-02.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "inbound-message",
+      "app": "simulator",
+      "caption": "Inbound modification applied to an existing Booking",
+      "start": "/demo/integrations",
+      "states": [
+        {
+          "state": "received",
+          "caption": "Hospital modification message received (new time and a booking office note)",
+          "steps": [
+            {
+              "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-raw-hl7]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Modification applied to the existing Card",
+          "steps": [
+            {
+              "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=integrations-replay]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "scroll": "[data-shot=integrations-schedule-change]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-schedule-change]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "card-history",
+      "app": "admin",
+      "caption": "Card history records who changed the Booking, when, and what changed",
+      "start": "/admin/day/2026-08-04/cards/C0043",
+      "setup": [
+        {
+          "goto": "/demo/integrations"
+        },
+        {
+          "click": "[data-testid=integration-library] >> text=\"S14 · Modification\""
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=integrations-replay]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

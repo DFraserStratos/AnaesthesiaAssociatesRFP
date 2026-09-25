@@ -1,0 +1,159 @@
+{
+  "id": "US-03.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "ranged-base-code",
+      "app": "web",
+      "caption": "Choosing the exact base units within a ranged code",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "choose",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "47522"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] >> text=\"47522\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Hip revision is a ranged code (8 to 10 units): choose a value"
+        },
+        {
+          "state": "chosen",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "47522"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] >> text=\"47522\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-procedure-code] button >> nth=-1"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=capture-procedure-code] button >> nth=-1"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Exact base units chosen within the range"
+        }
+      ]
+    },
+    {
+      "name": "ranged-base-code",
+      "app": "mobile",
+      "caption": "Choosing the exact base units within a ranged code",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "choose",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "47522"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> text=\"47522\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Hip revision is a ranged code (8 to 10 units): choose a value"
+        },
+        {
+          "state": "chosen",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "47522"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> text=\"47522\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-procedure-code] button >> nth=-1"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=capture-procedure-code] button >> nth=-1"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Exact base units chosen within the range"
+        }
+      ]
+    }
+  ]
+}

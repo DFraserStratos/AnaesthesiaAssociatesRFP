@@ -1,0 +1,69 @@
+{
+  "id": "US-03.1.3",
+  "status": "partial",
+  "absentReason": "Photos can be attached to a Booking (card) on web and mobile. Other file types and attachments on a List are not in the prototype.",
+  "shots": [
+    {
+      "name": "attachments",
+      "app": "web",
+      "caption": "Attachments on a booking",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "empty",
+          "steps": [],
+          "highlight": [
+            "[data-shot=card-attachments]"
+          ],
+          "caption": "Attachments section with Add photo"
+        },
+        {
+          "state": "added",
+          "steps": [
+            {
+              "click": "[data-shot=card-attachments] >> text=\"Add photo\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-attachments]"
+          ],
+          "caption": "A photo attached to the booking"
+        }
+      ]
+    },
+    {
+      "name": "attachments",
+      "app": "mobile",
+      "caption": "Attachments on a booking",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "empty",
+          "steps": [],
+          "highlight": [
+            "[data-shot=card-attachments]"
+          ],
+          "caption": "Attachments section with Add photo"
+        },
+        {
+          "state": "added",
+          "steps": [
+            {
+              "click": "[data-shot=card-attachments] >> text=\"Add photo\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-attachments]"
+          ],
+          "caption": "A photo attached to the booking"
+        }
+      ]
+    }
+  ]
+}

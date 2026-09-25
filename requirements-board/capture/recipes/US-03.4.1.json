@@ -1,0 +1,51 @@
+{
+  "id": "US-03.4.1",
+  "status": "partial",
+  "absentReason": "The anaesthetist can change the billing route, insurer and billing reference (audited in card history), which decides the Contract, but cannot pick the Contract itself from a filtered list, and the change is not flagged for office review.",
+  "shots": [
+    {
+      "name": "edit-operation",
+      "app": "web",
+      "caption": "Edit the billing route on a procedure",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=procedure-header] >> text=\"Edit\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Edit operation: billing route, insurer and reference"
+        }
+      ]
+    },
+    {
+      "name": "edit-operation",
+      "app": "mobile",
+      "caption": "Edit the billing route on a procedure",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=procedure-header] >> text=\"Edit\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ],
+          "caption": "Edit operation: billing route, insurer and reference"
+        }
+      ]
+    }
+  ]
+}

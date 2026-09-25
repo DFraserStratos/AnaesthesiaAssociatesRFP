@@ -1,0 +1,85 @@
+{
+  "id": "US-02.5.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "inbound-message",
+      "app": "simulator",
+      "caption": "Inbound cancellation of a Booking",
+      "start": "/demo/integrations",
+      "states": [
+        {
+          "state": "received",
+          "caption": "Hospital cancellation message received",
+          "steps": [
+            {
+              "click": "[data-testid=integration-library] >> text=\"S15 · Cancellation\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-raw-hl7]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Cancellation applied, the Card is soft-cancelled",
+          "steps": [
+            {
+              "click": "[data-testid=integration-library] >> text=\"S15 · Cancellation\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=integrations-replay]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "scroll": "[data-shot=integrations-schedule-change]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-schedule-change]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancelled-card",
+      "app": "web",
+      "caption": "Cancelled Booking stays visible on the List",
+      "start": "/web/lists/L-34821-2026-08-04-AM",
+      "setup": [
+        {
+          "goto": "/demo/integrations"
+        },
+        {
+          "click": "[data-testid=integration-library] >> text=\"S15 · Cancellation\""
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=integrations-replay]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Fiona Gray\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

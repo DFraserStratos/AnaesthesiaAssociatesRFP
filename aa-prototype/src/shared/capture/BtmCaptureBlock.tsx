@@ -186,7 +186,7 @@ export function BtmCaptureBlock({
       {/* Read-only billing context line: route chip · contract · insurer ·
           billable party · reference. Route-setting is office knowledge
           (Phase 06); mobile corrects via the Edit sheet. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div data-shot="procedure-contract" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span
           style={{
             padding: '4px 10px',
@@ -207,7 +207,7 @@ export function BtmCaptureBlock({
       <FailureNotes failures={contextFailures} />
 
       {procedure.isAdditional && (
-        <div style={{ background: accent.tint, color: accent.pressed, borderRadius: 10, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
+        <div data-shot="procedure-additional-note" style={{ background: accent.tint, color: accent.pressed, borderRadius: 10, padding: '10px 12px', fontSize: 13, lineHeight: '18px' }}>
           Additional procedure. It bills for time units only; base and modifier units stay on the
           first procedure.
         </div>

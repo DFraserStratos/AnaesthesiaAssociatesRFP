@@ -1,0 +1,48 @@
+{
+  "id": "US-05.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "additional-time",
+      "app": "web",
+      "caption": "Additional procedure with its own times and time units",
+      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-times] >> nth=1",
+            "[data-shot=capture-units] >> nth=1 >> [data-shot=units-row-t]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "additional-time",
+      "app": "mobile",
+      "caption": "Additional procedure with its own times and time units",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-card] [data-shot=capture-times] >> nth=1"
+            },
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 250
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-times] >> nth=1",
+            "[data-testid=slide-card] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-t]"
+          ]
+        }
+      ]
+    }
+  ]
+}

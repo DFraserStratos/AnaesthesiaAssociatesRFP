@@ -1,0 +1,37 @@
+{
+  "id": "US-14.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "dead-letter",
+      "app": "admin",
+      "caption": "Failed integration message flagged for manual reprocessing",
+      "start": "/admin/integrations",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "select": "[data-shot=control-integration-message] select",
+          "value": "MSG-CPH-2001"
+        },
+        {
+          "click": "[data-shot=control-integration-message] >> role=button[name=\"Fire message\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=integrations-attention]",
+            "table"
+          ]
+        }
+      ]
+    }
+  ]
+}

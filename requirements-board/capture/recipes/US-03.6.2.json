@@ -1,0 +1,69 @@
+{
+  "id": "US-03.6.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "incomplete",
+      "app": "web",
+      "caption": "Incomplete bookings on a List",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "list",
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Margaret Ellison\")"
+          ],
+          "caption": "Margaret Ellison still to capture on the List"
+        },
+        {
+          "state": "blocked",
+          "steps": [
+            {
+              "click": "text=/to finish before submitting/"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Cards still to finish, with what is missing"
+        }
+      ]
+    },
+    {
+      "name": "incomplete",
+      "app": "mobile",
+      "caption": "Incomplete bookings on a List",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "list",
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
+          ],
+          "caption": "Margaret Ellison still to capture on the List"
+        },
+        {
+          "state": "blocked",
+          "steps": [
+            {
+              "click": "[data-testid=mobile-list-footer] button"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ],
+          "caption": "Cards still to finish, with what is missing"
+        }
+      ]
+    }
+  ]
+}

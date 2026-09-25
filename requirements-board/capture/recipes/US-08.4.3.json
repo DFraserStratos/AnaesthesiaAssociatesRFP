@@ -1,0 +1,41 @@
+{
+  "id": "US-08.4.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "xero-numbers",
+      "app": "simulator",
+      "caption": "Unique invoice numbers, the payable number matching the receivable with a -P suffix",
+      "start": "/demo/xero/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=xero-invoice-table] tbody tr:nth-child(-n+4) td:first-child"
+          ]
+        }
+      ]
+    }
+  ]
+}

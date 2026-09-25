@@ -55,13 +55,13 @@ export function DemoXero() {
       maxWidth={1440}
       subtitleMaxWidth={820}
     >
-      <Callout tone="warn" title="NHI never resides in Xero (Appendix 2 vs Appendix 1)">
+      <Callout tone="warn" title="NHI never resides in Xero (Appendix 2 vs Appendix 1)" shot="xero-nhi-policy">
         The prototype implements RFP Appendix 2 (data minimisation): only the hidden internal ID
         (ContactNumber) and the Xero ContactID cross to Xero, never the NHI. Appendix 1's design policy
         instead wants the NHI as a searchable cross-reference field on the Xero contact. This is an
         unresolved contradiction needing an AA ruling, not a settled requirement.
       </Callout>
-      <Callout tone="warn" title="Duplicate-invoice-number-prevention (mandated Xero org setting)">
+      <Callout tone="warn" title="Duplicate-invoice-number-prevention (mandated Xero org setting)" shot="xero-duplicate-number-policy">
         The RFP requires the Xero organisation setting that prevents duplicate invoice numbers, so the
         Billing Engine's unique InvoiceNumber can be the reliable matching key for remittance
         reconciliation. Configuring this in the AA Xero org is an open item to confirm in discovery.
@@ -113,7 +113,7 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
             </thead>
             <tbody>
               {contacts.map((contact) => (
-                <tr key={contact.contactId}>
+                <tr key={contact.contactId} data-shot={`xero-contact-${contact.contactNumber.toLowerCase()}`}>
                   <Td mono>{contact.contactId}</Td>
                   <Td mono>{contact.contactNumber}</Td>
                   <Td>{contact.name}</Td>
@@ -345,7 +345,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
         </Callout>
       )}
 
-      <Callout tone="info" title="Linked Billing Engine case, not stored on the Xero contact">
+      <Callout tone="info" title="Linked Billing Engine case, not stored on the Xero contact" shot="xero-engine-link">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span>
             This presenter context comes from the Billing Engine link. Patient:
@@ -398,6 +398,7 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
   const rec = pair.accRec
   return (
     <RecordCard
+      shot="xero-accrec-card"
       eyebrow="Accounts receivable · ACCREC"
       title={rec.invoiceNumber}
       status={<RecordStatus status={rec.status} />}
@@ -468,6 +469,7 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
 
   return (
     <RecordCard
+      shot="xero-accpay-card"
       eyebrow="Accounts payable · ACCPAY"
       title={pay.billNumber}
       status={<RecordStatus status={pay.status} />}
@@ -563,9 +565,9 @@ function MoneyFlowCard({
   )
 }
 
-function RecordCard({ eyebrow, title, status, children }: { eyebrow: string; title: string; status?: React.ReactNode; children: React.ReactNode }) {
+function RecordCard({ eyebrow, title, status, children, shot }: { eyebrow: string; title: string; status?: React.ReactNode; children: React.ReactNode; shot?: string }) {
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 18 }}>
+    <section data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 16, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div>
           <div style={{ fontSize: 10.5, color: neutral.mist, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{eyebrow}</div>
@@ -652,13 +654,13 @@ function RecordStatus({ status }: { status: string }) {
   )
 }
 
-function Callout({ tone, title, children }: { tone: 'warn' | 'info'; title: string; children: React.ReactNode }) {
+function Callout({ tone, title, children, shot }: { tone: 'warn' | 'info'; title: string; children: React.ReactNode; shot?: string }) {
   const colours = tone === 'warn'
     ? { bg: semantic.warning.tint, fg: semantic.warning.onTint, border: semantic.warning.solid }
     : { bg: neutral.sunken, fg: neutral.slate, border: neutral.lineStrong }
   const Icon = tone === 'warn' ? AlertTriangle : Info
   return (
-    <div style={{ display: 'flex', gap: 10, background: colours.bg, border: `1px solid ${colours.border}44`, borderRadius: radius.card, padding: '12px 14px' }}>
+    <div data-shot={shot} style={{ display: 'flex', gap: 10, background: colours.bg, border: `1px solid ${colours.border}44`, borderRadius: radius.card, padding: '12px 14px' }}>
       <Icon size={16} strokeWidth={2} aria-hidden style={{ flex: 'none', marginTop: 2, color: colours.fg }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: colours.fg }}>{title}</span>

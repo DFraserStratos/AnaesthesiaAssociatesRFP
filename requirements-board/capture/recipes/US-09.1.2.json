@@ -1,0 +1,26 @@
+{
+  "id": "US-09.1.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "invoice-number-reference",
+      "app": "simulator",
+      "caption": "Engine invoice number as the Xero InvoiceNumber, case reference alongside",
+      "start": "/demo/xero/invoices/XRH01",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=xero-pair-detail] h2"
+            }
+          ],
+          "highlight": [
+            "[data-testid=xero-pair-detail] h2",
+            "[data-shot=xero-engine-link]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "US-11.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "insurers",
+      "app": "admin",
+      "caption": "Insurer master with the accepts direct claims flag",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Insurers\"]"
+            }
+          ],
+          "highlight": [
+            "table"
+          ]
+        }
+      ]
+    }
+  ]
+}

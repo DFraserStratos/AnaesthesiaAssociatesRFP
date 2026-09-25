@@ -1,0 +1,25 @@
+{
+  "id": "US-10.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "money-path",
+      "app": "simulator",
+      "caption": "One payment path: payer pays AA, AA pays the anaesthetist",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=xero-money-flow-grid]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=xero-money-flow-grid]"
+          ]
+        }
+      ]
+    }
+  ]
+}

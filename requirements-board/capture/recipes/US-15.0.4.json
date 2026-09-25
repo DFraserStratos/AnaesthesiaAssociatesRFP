@@ -1,0 +1,3 @@
+{ "id": "US-15.0.4", "status": "absent",
+  "absentReason": "Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.",
+  "shots": [] }

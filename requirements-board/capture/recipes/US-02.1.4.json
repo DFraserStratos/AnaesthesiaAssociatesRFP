@@ -1,0 +1,27 @@
+{
+  "id": "US-02.1.4",
+  "status": "partial",
+  "absentReason": "There are no hospital download rows, so there is no unmatched-row queue. The analogue shown is the integration message log: messages that cannot be applied (dead-letter, or manual intervention when the target List is already submitted) are retained for the office to fix and reprocess, never dropped.",
+  "shots": [
+    {
+      "name": "needs-attention-queue",
+      "app": "admin",
+      "caption": "Messages that could not be applied, held for manual intervention",
+      "start": "/admin/integrations",
+      "setup": [
+        { "goto": "/demo/integrations" },
+        { "click": "role=button[name=/Christchurch Public/] >> nth=0" },
+        { "click": "[data-testid=integration-library] >> text=\"S12 · Malformed under mapping (dead-letter)\"" },
+        { "click": "[data-shot=integrations-replay]" },
+        { "wait": 1500 },
+        { "click": "role=button[name=/St George/] >> nth=0" },
+        { "click": "[data-testid=integration-library] >> text=\"S14 · Locked target (manual intervention)\"" },
+        { "click": "[data-shot=integrations-replay]" },
+        { "wait": 1500 }
+      ],
+      "states": [
+        { "steps": [], "highlight": ["[data-shot=integrations-attention]", "table"] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "US-11.1.1",
+  "status": "partial",
+  "absentReason": "Patient details show on each card; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.",
+  "shots": [
+    {
+      "name": "patient-record",
+      "app": "admin",
+      "caption": "Patient details keyed on the NHI",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            
+            "[data-shot=card-patient]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edit-patient",
+      "app": "admin",
+      "caption": "Edit patient details",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=card-patient] >> text=\"Edit\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

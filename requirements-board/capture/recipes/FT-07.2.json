@@ -1,0 +1,19 @@
+{
+  "id": "FT-07.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "review-queue",
+      "app": "admin",
+      "caption": "Review queue of submitted Lists",
+      "start": "/admin/review",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

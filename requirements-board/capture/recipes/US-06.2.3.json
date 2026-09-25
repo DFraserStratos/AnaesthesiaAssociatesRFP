@@ -1,0 +1,22 @@
+{
+  "id": "US-06.2.3",
+  "status": "partial",
+  "absentReason": "The full pre-payment is raised as an estimate from the fee calculator and the invoice says so. The case where the final amount comes out more or less than the estimate is not demonstrated with seeded data.",
+  "shots": [
+    {
+      "name": "estimated-full-fee",
+      "app": "admin",
+      "caption": "Full pre-payment invoiced as the estimated full fee",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

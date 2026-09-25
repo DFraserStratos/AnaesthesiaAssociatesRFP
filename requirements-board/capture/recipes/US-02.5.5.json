@@ -1,0 +1,40 @@
+{
+  "id": "US-02.5.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "card-history",
+      "app": "admin",
+      "caption": "Card history, every change with who, when and the field movements, including billing route and contract",
+      "start": "/admin/day/2026-07-21/cards/C0008",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"History\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "audit-log",
+      "app": "admin",
+      "caption": "Audit log, nothing here is ever edited or deleted",
+      "start": "/admin/audit",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

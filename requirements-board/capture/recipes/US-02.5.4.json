@@ -1,0 +1,37 @@
+{
+  "id": "US-02.5.4",
+  "status": "partial",
+  "absentReason": "Inbound changes are applied to any DRAFT List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.",
+  "shots": [
+    {
+      "name": "change-cutoff",
+      "app": "simulator",
+      "caption": "A change to a submitted List is held for manual intervention",
+      "start": "/demo/integrations",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=integration-library] >> text=\"S14 · Locked target (manual intervention)\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=integrations-replay]"
+            },
+            {
+              "wait": 1500
+            },
+            {
+              "scroll": "[data-shot=integrations-schedule-change]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-schedule-change]"
+          ]
+        }
+      ]
+    }
+  ]
+}

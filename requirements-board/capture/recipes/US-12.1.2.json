@@ -1,0 +1,42 @@
+{
+  "id": "US-12.1.2",
+  "status": "partial",
+  "absentReason": "The GST period is held on the anaesthetist but set by the office in admin Master data, not by the anaesthetist. The web GST view defaults to it and can be switched for viewing only; the mobile app shows the current month only.",
+  "shots": [
+    {
+      "name": "gst-period-setting",
+      "app": "admin",
+      "caption": "GST period on the anaesthetist record, set by the office",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "tr:has-text(\"Souter\") >> text=\"Edit\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"GST period\"))"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gst-period-view",
+      "app": "web",
+      "caption": "GST activity, defaulting to the anaesthetist's GST period",
+      "start": "/web/accounts/gst",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-sliding-segmented-control]:has-text(\"Six-monthly\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "US-13.2.3",
+  "status": "absent",
+  "absentReason": "No per-anaesthetist ledger view for the office. Each anaesthetist sees their own balances in the Anaesthetist app (web Accounts, mobile Balances), but the Admin app has no equivalent. Searched apps/admin for balance and receivable views.",
+  "shots": []
+}

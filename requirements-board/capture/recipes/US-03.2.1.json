@@ -1,0 +1,51 @@
+{
+  "id": "US-03.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "primary-and-additional",
+      "app": "web",
+      "caption": "First procedure anchors base and modifier units",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-additional-note]"
+          ],
+          "caption": "Procedure 2 is additional: it bills time units only, base and modifiers stay on the first"
+        }
+      ]
+    },
+    {
+      "name": "primary-and-additional",
+      "app": "mobile",
+      "caption": "First procedure anchors base and modifier units",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-additional-note]"
+          ],
+          "caption": "Procedure 2 is additional: it bills time units only, base and modifiers stay on the first"
+        }
+      ]
+    }
+  ]
+}

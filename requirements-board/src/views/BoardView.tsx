@@ -14,7 +14,7 @@ import { Filter, LayoutGrid, Map as MapIcon, Maximize, Search, Sparkles, X } fro
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, type Item } from '../../shared/types.ts'
 import { autoLayout } from '../board/autoLayout.ts'
-import { CardNode, type CardData, type CardNodeType } from '../board/CardNode.tsx'
+import { CardNode, cardHandles, type CardData, type CardNodeType } from '../board/CardNode.tsx'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { guarded, useOpen } from '../nav.ts'
@@ -148,6 +148,9 @@ function Board() {
             id: it.id,
             type: 'card' as const,
             position: pos,
+            // Handles come from the layout, not only from React Flow's DOM measurement, so a
+            // rebuild can never leave a card without them (and the board without edges): cardHandles.
+            handles: cardHandles(a.w, a.h),
             hidden: it.status === 'Retired' && !view.showRetired,
             zIndex: it.type === 'epic' ? 0 : it.type === 'feature' ? 1 : 2,
             data: {
@@ -168,6 +171,8 @@ function Board() {
   useEffect(() => {
     // Carry React Flow's own per-node state across rebuilds: without `measured` every card
     // hides and re-measures on each click or keystroke; a card mid-drag keeps its live position.
+    // This copy of `measured` can lag React Flow's (a rebuild landing mid-measure), which once
+    // stripped every card's handles for good; nodes now carry `handles`, so a lag only delays.
     setNodes((prev) => {
       const byId = new Map(prev.map((n) => [n.id, n]))
       return computed.map((n) => {

@@ -1,0 +1,164 @@
+{
+  "id": "US-08.6.1",
+  "status": "partial",
+  "absentReason": "The post-op charge becomes a new linked addendum card on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.",
+  "shots": [
+    {
+      "name": "post-op-event",
+      "app": "web",
+      "caption": "Add post-op event on a card whose list is already invoiced",
+      "start": "/web/lists/L-34821-2026-07-20-AM",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Brian Holt\" >> nth=0"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "text=/A post-op charge \\(an HDU review/"
+            }
+          ],
+          "highlight": [
+            "text=/A post-op charge \\(an HDU review/",
+            "role=button[name=\"Add post-op event\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "post-op-event",
+      "app": "mobile",
+      "caption": "Add post-op event on a card whose list is already invoiced, on the phone",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Submit to office\"]"
+            },
+            {
+              "wait": 6500
+            },
+            {
+              "goto": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "[data-testid=slide-card] >> text=/A post-op charge \\(an HDU review/"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] >> text=/A post-op charge \\(an HDU review/",
+            "[data-testid=slide-card] >> role=button[name=\"Add post-op event\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "post-op-addendum",
+      "app": "admin",
+      "caption": "Post-op addendum raised on a locked, invoiced card",
+      "start": "/admin/day/2026-07-14",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Stage scenario\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "locked",
+          "caption": "Locked, invoiced card offering Add post-op event",
+          "steps": [
+            {
+              "click": "text=\"Christchurch Public\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "text=/A post-op charge \\(an HDU review/"
+            }
+          ],
+          "highlight": [
+            "text=/A post-op charge \\(an HDU review/",
+            "role=button[name=\"Add post-op event\"]"
+          ]
+        },
+        {
+          "state": "added",
+          "caption": "Addendum created as a new linked card, the original stays locked",
+          "steps": [
+            {
+              "click": "text=\"Christchurch Public\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Add post-op event\"]"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "scroll": "text=/A post-op charge \\(an HDU review/"
+            }
+          ],
+          "highlight": [
+            "text=/Post-op addendum created/",
+            "role=button[name=\"Add post-op event\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

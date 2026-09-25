@@ -1,0 +1,56 @@
+{
+  "id": "US-04.2.9",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contract-scope",
+      "app": "admin",
+      "caption": "Contract scope",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "organisational",
+          "caption": "Contracts list, each scoped to the organisation or an individual",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "individual",
+          "caption": "New contract scoped to an individual anaesthetist",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"New contract\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Individual\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"Scope\"))",
+            "[role=dialog] label:has-text(\"Anaesthetist\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

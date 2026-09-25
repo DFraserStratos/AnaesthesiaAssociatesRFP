@@ -1,0 +1,25 @@
+{
+  "id": "US-09.1.4",
+  "status": "partial",
+  "absentReason": "The ACCPAY to the anaesthetist exists with payee, bill number and the AA service fee, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).",
+  "shots": [
+    {
+      "name": "accpay-record",
+      "app": "simulator",
+      "caption": "ACCPAY to the anaesthetist, without buyer-created tax invoice wording",
+      "start": "/demo/xero/invoices/XRH01",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=xero-accpay-card]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    }
+  ]
+}

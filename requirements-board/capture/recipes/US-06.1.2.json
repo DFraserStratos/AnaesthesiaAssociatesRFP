@@ -1,0 +1,3 @@
+{ "id": "US-06.1.2", "status": "absent",
+  "absentReason": "No prepaid settings exist to maintain. Admin Master data holds each anaesthetist's unit value, contact, GST period and active flag, but no prepaid RVG codes or groups; pre-payment is set per procedure in the card's office billing setup instead.",
+  "shots": [] }

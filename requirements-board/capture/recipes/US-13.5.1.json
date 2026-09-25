@@ -1,0 +1,64 @@
+{
+  "id": "US-13.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "roles",
+      "app": "admin",
+      "caption": "Roles in this prototype, view and edit rights by role",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=/Roles in this prototype/]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "role-refused",
+      "app": "simulator",
+      "caption": "Guard refuses authorisation by the anaesthetist role",
+      "start": "/demo/data",
+      "states": [
+        {
+          "steps": [
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=0",
+              "value": "souter"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=1",
+              "value": "authoriseList"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=2",
+              "value": "L-34821-2026-07-20-AM"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=data-guard-console] >> role=button[name=\"Attempt\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=data-guard-console]"
+          ]
+        }
+      ]
+    }
+  ]
+}

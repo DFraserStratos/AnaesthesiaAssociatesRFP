@@ -1,0 +1,26 @@
+{
+  "id": "FT-04.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contracts",
+      "app": "admin",
+      "caption": "Contract catalogue in master data",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

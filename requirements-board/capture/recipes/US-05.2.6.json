@@ -1,0 +1,189 @@
+{
+  "id": "US-05.2.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rate-time",
+      "app": "web",
+      "caption": "Rate times time billing line",
+      "start": "/web/lists/L-34821-2026-07-27-AM/cards/C0037",
+      "states": [
+        {
+          "state": "entry",
+          "caption": "Billing line priced as hours times the arranged hourly rate",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> text=\"Rate × time (hourly)\""
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "Laser session, arranged hourly rate"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 200
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "added",
+          "caption": "Rate times time line added to the card",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> text=\"Rate × time (hourly)\""
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "Laser session, arranged hourly rate"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Add line\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-billing-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rate-time",
+      "app": "mobile",
+      "caption": "Rate times time billing line",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM/cards/C0037",
+      "states": [
+        {
+          "state": "entry",
+          "caption": "Billing line priced as hours times the arranged hourly rate",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> text=\"Rate × time (hourly)\""
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "Laser session, arranged hourly rate"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 200
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "added",
+          "caption": "Rate times time line added to the card",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> text=\"Rate × time (hourly)\""
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "Laser session, arranged hourly rate"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Add line\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-card] [data-shot=capture-billing-lines]"
+            },
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 200
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-billing-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

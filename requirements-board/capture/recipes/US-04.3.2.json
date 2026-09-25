@@ -1,0 +1,28 @@
+{
+  "id": "US-04.3.2",
+  "status": "partial",
+  "absentReason": "The office picks the governing contract from every contract in master data; the list is not filtered by the hospital, surgeon, insurer, funding or RVG code. The anaesthetist apps show the contract read-only and have no contract picker.",
+  "shots": [
+    {
+      "name": "contract-picker",
+      "app": "admin",
+      "caption": "Governing contract picker in the office billing setup",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit billing setup\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] label:has-text(\"Governing contract\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "US-05.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "additional-base",
+      "app": "web",
+      "caption": "Additional procedure: base units not charged and not editable",
+      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "additional-base",
+      "app": "mobile",
+      "caption": "Additional procedure: base units not charged and not editable",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
+          ]
+        }
+      ]
+    }
+  ]
+}

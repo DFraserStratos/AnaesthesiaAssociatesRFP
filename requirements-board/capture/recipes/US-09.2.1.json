@@ -1,0 +1,49 @@
+{
+  "id": "US-09.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "payment-webhook",
+      "app": "simulator",
+      "caption": "Xero invoice webhook marking an ACCREC paid",
+      "start": "/demo/control",
+      "states": [
+        {
+          "state": "ready",
+          "caption": "Xero invoice webhook trigger, choosing an open invoice",
+          "steps": [],
+          "highlight": [
+            "[data-shot=control-payment-webhook]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Webhook applied: the ACCREC is paid and its ACCPAY authorised",
+          "steps": [
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=control-payment-webhook]"
+          ]
+        }
+      ],
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24/cards/C0034"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 800
+        }
+      ]
+    }
+  ]
+}

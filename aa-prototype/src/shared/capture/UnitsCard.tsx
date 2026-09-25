@@ -131,7 +131,7 @@ function StepperRow({
   onReset: (() => void) | undefined
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div data-shot={`units-row-${title.charAt(0).toLowerCase()}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={{ fontSize: 15, fontWeight: 600 }}>{title}</span>
         {overridden ? (

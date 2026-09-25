@@ -1,0 +1,39 @@
+{
+  "id": "US-12.1.1",
+  "status": "partial",
+  "absentReason": "Each anaesthetist's dollar value per unit is held and editable, but only by the office in admin Master data. The anaesthetist cannot set it in the mobile or web app.",
+  "shots": [
+    {
+      "name": "unit-value",
+      "app": "admin",
+      "caption": "Anaesthetists in Master data with their unit value",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "list",
+          "caption": "Anaesthetists in Master data with their dollar value per unit",
+          "steps": [],
+          "highlight": [
+            "table th:nth-child(3)",
+            "table td:nth-child(3)"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Editing an anaesthetist's unit value",
+          "steps": [
+            {
+              "click": "tr:has-text(\"Souter\") >> text=\"Edit\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] label:has-text(\"Unit value\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

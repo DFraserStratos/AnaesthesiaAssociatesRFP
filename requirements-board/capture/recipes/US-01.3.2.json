@@ -1,0 +1,49 @@
+{
+  "id": "US-01.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "permanent-lists",
+      "app": "admin",
+      "caption": "Permanent lists",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "table",
+          "steps": [
+            {
+              "click": "text=\"Permanent lists\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [],
+          "caption": "Permanent lists: hospital, day, anaesthetist, session and surgeon"
+        },
+        {
+          "state": "add",
+          "steps": [
+            {
+              "click": "text=\"Permanent lists\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Add permanent list\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Add a permanent list"
+        }
+      ]
+    }
+  ]
+}

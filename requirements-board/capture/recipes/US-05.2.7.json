@@ -1,0 +1,22 @@
+{
+  "id": "US-05.2.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "invoice-gst",
+      "app": "admin",
+      "caption": "Invoice with GST exclusive amounts, GST and the inclusive total",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Subtotal\"))",
+            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

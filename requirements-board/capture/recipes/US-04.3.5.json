@@ -1,0 +1,52 @@
+{
+  "id": "US-04.3.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contract-before",
+      "app": "admin",
+      "caption": "Billing setup still editable while the list awaits review",
+      "start": "/admin/day/2026-07-20/cards/C0012",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "locked-contract",
+      "app": "admin",
+      "caption": "Billing setup locked once the list is authorised",
+      "start": "/admin/day/2026-07-20/cards/C0012",
+      "setup": [
+        {
+          "goto": "/admin/review/L-25490-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    }
+  ]
+}

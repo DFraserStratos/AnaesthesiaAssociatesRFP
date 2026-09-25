@@ -1,0 +1,73 @@
+{
+  "id": "US-05.4.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "price-override",
+      "app": "admin",
+      "caption": "Office price override",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "state": "entry",
+          "caption": "Price override: fixed fee, dollar or percentage adjustment, with a reason",
+          "steps": [
+            {
+              "click": "role=button[name=\"Price override\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"% adjust\"]"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"-10\"]",
+              "value": "-10"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
+              "value": "Hardship discount approved"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Override applied, shown in the office billing setup",
+          "steps": [
+            {
+              "click": "role=button[name=\"Price override\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"% adjust\"]"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"-10\"]",
+              "value": "-10"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
+              "value": "Hardship discount approved"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    }
+  ]
+}

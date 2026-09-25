@@ -1,0 +1,50 @@
+{
+  "id": "US-01.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "am-pm-differ",
+      "app": "admin",
+      "caption": "AM and PM Lists at different hospitals and surgeons",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-day-grid-row=\"34821\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "am-pm-differ",
+      "app": "web",
+      "caption": "AM and PM at different hospitals",
+      "start": "/web/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Tue 21 Jul\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "am-pm-differ",
+      "app": "mobile",
+      "caption": "AM and PM at different hospitals",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-home] button:has-text(\"St George\") >> nth=0",
+            "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "US-11.2.2",
+  "status": "partial",
+  "absentReason": "Admin only: the office sets a guardian or other payer in the billing setup. There is no invoice email for the billable party, and the anaesthetist apps show the billable party read-only without a way to change it.",
+  "shots": [
+    {
+      "name": "guardian-payer",
+      "app": "admin",
+      "caption": "Guardian set as the billable party for a child",
+      "start": "/admin/day/2026-07-24/cards/C0033",
+      "states": [
+        {
+          "state": "set",
+          "caption": "Guardian set as the billable party for a child",
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Choosing the payer, or adding a new guardian",
+          "steps": [
+            {
+              "click": "[data-shot=office-billing-setup-1] >> role=button[name=\"Edit billing setup\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[role=dialog] select >> nth=0"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

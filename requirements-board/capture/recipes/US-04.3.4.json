@@ -1,0 +1,37 @@
+{
+  "id": "US-04.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "billing-setup",
+      "app": "admin",
+      "caption": "Office billing setup on a booked card",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "state": "summary",
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Edit billing setup, route, insurer and governing contract",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit billing setup\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

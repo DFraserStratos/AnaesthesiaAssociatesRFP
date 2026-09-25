@@ -1,0 +1,6 @@
+{
+  "id": "US-11.2.3",
+  "status": "absent",
+  "absentReason": "No invoice email is captured or required for patient-direct billing; searched the add card form, billing setup sheet, patient edit sheet and billing guards for an invoice email field or rule.",
+  "shots": []
+}

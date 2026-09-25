@@ -1,0 +1,99 @@
+{
+  "id": "US-03.3.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rate-time",
+      "app": "web",
+      "caption": "Rate x time capture",
+      "start": "/web/lists/L-34821-2026-07-27-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "tr:has-text(\"Heather Sinclair\")"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Add billing line\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[role=dialog] >> text=\"Rate \u00d7 time (hourly)\""
+            },
+            {
+              "fill": "[placeholder=\"What this line charges\"]",
+              "value": "Hourly anaesthetic cover"
+            },
+            {
+              "fill": "input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Rate x time billing line: hours times the agreed hourly rate"
+        }
+      ]
+    },
+    {
+      "name": "rate-time",
+      "app": "mobile",
+      "caption": "Rate x time capture",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=slide-list] button:has-text(\"Heather Sinclair\")"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "role=button[name=\"Add billing line\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> text=\"Rate \u00d7 time (hourly)\""
+            },
+            {
+              "fill": "[placeholder=\"What this line charges\"]",
+              "value": "Hourly anaesthetic cover"
+            },
+            {
+              "fill": "input[placeholder=\"3.0\"]",
+              "value": "2.5"
+            },
+            {
+              "fill": "input[placeholder=\"480.00\"]",
+              "value": "480"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ],
+          "caption": "Rate x time billing line: hours times the agreed hourly rate"
+        }
+      ]
+    }
+  ]
+}

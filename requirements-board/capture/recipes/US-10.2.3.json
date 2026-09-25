@@ -1,0 +1,106 @@
+{
+  "id": "US-10.2.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "receipt-in-ledger",
+      "app": "web",
+      "caption": "A receipt recorded in Xero shown against its ledger invoice in the anaesthetist's payments",
+      "start": "/web/accounts/payments?invoice=AA-2026-0002",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=payment-history-row-AA-2026-0002]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "engine-link",
+      "app": "simulator",
+      "caption": "Xero pair carrying its link back to the billing engine case",
+      "start": "/demo/xero/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-engine-link]"
+          ]
+        }
+      ]
+    }
+  ]
+}

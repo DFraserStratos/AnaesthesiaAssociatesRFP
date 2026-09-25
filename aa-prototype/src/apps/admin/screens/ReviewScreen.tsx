@@ -208,7 +208,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
 
       {/* Authorised banner (choreography) */}
       {authorised && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
+        <div data-shot="review-authorised-banner" style={{ display: 'flex', alignItems: 'center', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: semantic.success.solid, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', animation: 'aa-circle-pop 320ms ease' }}>
               <Check size={18} strokeWidth={3} aria-hidden />

@@ -1,0 +1,54 @@
+{
+  "id": "US-04.1.2",
+  "status": "partial",
+  "absentReason": "Contracts can be created, edited, end-dated and deleted with effective from and to dates. There is no review date, and editing changes the contract in place rather than creating a new version.",
+  "shots": [
+    {
+      "name": "contracts",
+      "app": "admin",
+      "caption": "Contracts list with effective from and to dates",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "edit-contract",
+      "app": "admin",
+      "caption": "Edit contract, effective dates and delete",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"Health NZ agreed rate\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] label:has(input[type=date])",
+            "[role=dialog] >> role=button[name=\"Delete contract\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

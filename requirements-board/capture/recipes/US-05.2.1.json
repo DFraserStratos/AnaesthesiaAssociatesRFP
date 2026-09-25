@@ -1,0 +1,50 @@
+{
+  "id": "US-05.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "unit-values",
+      "app": "admin",
+      "caption": "Each anaesthetist's own unit value",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "table th:nth-child(3)",
+            "table td:nth-child(3)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "card-fee",
+      "app": "web",
+      "caption": "Card fee at Dr Souter's own unit value",
+      "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "card-fee",
+      "app": "mobile",
+      "caption": "Card fee at Dr Souter's own unit value",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

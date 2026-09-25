@@ -1,0 +1,70 @@
+{
+  "id": "US-07.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "locked-cards",
+      "app": "admin",
+      "caption": "Authorised List, every Card locked",
+      "start": "/admin/review/L-25490-2026-07-20-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 1500
+            }
+          ],
+          "highlight": [
+            "[data-testid=review-detail-table-shell]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edit-refused",
+      "app": "simulator",
+      "caption": "Guard refuses an office edit to a Card on an authorised List",
+      "start": "/demo/data",
+      "states": [
+        {
+          "steps": [
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=0",
+              "value": "kirsty"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=1",
+              "value": "editCard"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=2",
+              "value": "HC05"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=data-guard-console] >> role=button[name=\"Attempt\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=data-guard-console]"
+          ]
+        }
+      ]
+    }
+  ]
+}

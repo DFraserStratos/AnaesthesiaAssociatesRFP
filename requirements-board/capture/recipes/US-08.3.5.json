@@ -1,0 +1,43 @@
+{
+  "id": "US-08.3.5",
+  "status": "partial",
+  "absentReason": "Each anaesthetist sees their own position in the web and mobile apps, but there is no office view of a chosen anaesthetist's ledger position, and the mobile app shows only what is outstanding, not collected or paid out.",
+  "shots": [
+    {
+      "name": "web-overdue",
+      "app": "web",
+      "caption": "What is still owed to the anaesthetist, aged",
+      "start": "/web/accounts/overdue",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "web-payments",
+      "app": "web",
+      "caption": "What has been collected and what has been paid out to the anaesthetist",
+      "start": "/web/accounts/payments",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "mobile-balances",
+      "app": "mobile",
+      "caption": "Outstanding to you, on the phone",
+      "start": "/mobile/balances",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

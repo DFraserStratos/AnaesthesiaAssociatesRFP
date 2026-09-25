@@ -1,0 +1,28 @@
+{
+  "id": "US-01.2.2",
+  "status": "partial",
+  "absentReason": "The List status table is shown in master data (key, label, description) but is view only: statuses cannot be added or renamed, and colour is not editable.",
+  "shots": [
+    {
+      "name": "list-statuses",
+      "app": "admin",
+      "caption": "List statuses master data",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"List statuses\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "table"
+          ]
+        }
+      ]
+    }
+  ]
+}

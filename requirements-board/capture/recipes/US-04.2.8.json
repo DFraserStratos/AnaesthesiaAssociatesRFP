@@ -1,0 +1,6 @@
+{
+  "id": "US-04.2.8",
+  "status": "absent",
+  "absentReason": "Invoice layout, delivery method and GST treatment are not contract settings. The invoice recipient follows the billing route, delivery is a simulated email, and GST is a fixed 15%. Searched domain/types.ts (Contract), ContractEditSheet.tsx and apps/admin/screens/InvoiceDocument.tsx.",
+  "shots": []
+}

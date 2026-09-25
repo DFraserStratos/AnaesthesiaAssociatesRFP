@@ -1,0 +1,102 @@
+{
+  "id": "US-07.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "submitted-list",
+      "app": "web",
+      "caption": "Submitted List, visible but no longer editable",
+      "start": "/web/lists/L-34821-2026-07-20-AM",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "span:has-text(\"Submitted to office\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "read-only-card",
+      "app": "web",
+      "caption": "Card on a submitted List is read only, with no edit or capture controls",
+      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "done-unbilled",
+      "app": "mobile",
+      "caption": "Submitted Lists marked Done · unbilled",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Done\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-home] button:has-text(\"Done · unbilled\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "read-only-card",
+      "app": "mobile",
+      "caption": "Card on a submitted List is read only",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "edit-refused",
+      "app": "simulator",
+      "caption": "Guard refuses the anaesthetist's edit to a Card on a submitted List",
+      "start": "/demo/data",
+      "states": [
+        {
+          "steps": [
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=0",
+              "value": "souter"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=1",
+              "value": "editCard"
+            },
+            {
+              "select": "[data-shot=data-guard-console] select >> nth=2",
+              "value": "C0022"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=data-guard-console] >> role=button[name=\"Attempt\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=data-guard-console]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "US-12.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "outstanding",
+      "app": "web",
+      "caption": "Flat list of outstanding invoices, no rollup",
+      "start": "/web/accounts/overdue",
+      "states": [ { "steps": [], "highlight": [] } ]
+    },
+    {
+      "name": "outstanding",
+      "app": "mobile",
+      "caption": "Outstanding to you, one row per invoice",
+      "start": "/mobile/balances",
+      "states": [ { "steps": [], "highlight": [] } ]
+    }
+  ]
+}

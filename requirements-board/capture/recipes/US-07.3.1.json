@@ -1,0 +1,51 @@
+{
+  "id": "US-07.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "authorise",
+      "app": "admin",
+      "caption": "Authorise the List for billing",
+      "start": "/admin/review/L-25490-2026-07-20-AM",
+      "states": [
+        {
+          "state": "confirm",
+          "caption": "Confirm authorising the whole List",
+          "steps": [
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "authorised",
+          "caption": "List authorised and locked, invoices raised by the billing run",
+          "steps": [
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": 1500
+            }
+          ],
+          "highlight": [
+            "[data-shot=review-authorised-banner]"
+          ]
+        }
+      ]
+    }
+  ]
+}

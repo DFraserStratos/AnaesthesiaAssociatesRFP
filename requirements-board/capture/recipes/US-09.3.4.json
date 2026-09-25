@@ -1,0 +1,48 @@
+{
+  "id": "US-09.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "archived-contact-reused",
+      "app": "simulator",
+      "caption": "Returning patient's archived Xero contact",
+      "start": "/demo/xero",
+      "states": [
+        {
+          "state": "archived",
+          "caption": "Returning patient's Xero contact is archived",
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-contact-pt0017]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contact-unarchived",
+      "app": "simulator",
+      "caption": "Invoicing the returning patient unarchives the same contact",
+      "start": "/demo/xero",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24/cards/C0034"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-contact-pt0017]"
+          ]
+        }
+      ]
+    }
+  ]
+}

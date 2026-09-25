@@ -138,7 +138,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
               Reference <span className="mono">{billingReferences.join(' · ')}</span>
             </div>
           )}
-          <div style={{ fontSize: 12.5, color: neutral.slate, fontStyle: 'italic' }}>
+          <div data-shot="invoice-agency-line" style={{ fontSize: 12.5, color: neutral.slate, fontStyle: 'italic' }}>
             Billed by Anaesthesia Associates as agent for {anaesthetist?.name ?? 'the anaesthetist'}.
           </div>
         </div>
@@ -156,7 +156,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         ))}
 
         {/* Lines */}
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <table data-shot="invoice-lines" style={{ borderCollapse: 'collapse', width: '100%' }}>
           <thead>
             <tr>
               <th style={{ ...docHead, textAlign: 'left' }}>Description</th>
@@ -188,7 +188,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         {/* Two-state money (RFP): paid into the AA account, then disbursed to the
             anaesthetist. Two independent, separately-tracked states. */}
         {theCase !== undefined && theCase.accRecId !== undefined && (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
+          <div data-shot="invoice-money-states" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: 12 }}>
             <StateChip
               on={theCase.paidInAtISO !== undefined}
               label={

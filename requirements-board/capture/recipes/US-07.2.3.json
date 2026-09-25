@@ -1,0 +1,100 @@
+{
+  "id": "US-07.2.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "price-override",
+      "app": "admin",
+      "caption": "Office corrects a submitted Booking directly",
+      "start": "/admin/day/2026-07-20/cards/C0010",
+      "states": [
+        {
+          "state": "override",
+          "caption": "Price override on a submitted Card: a dollar adjustment with its reason",
+          "steps": [
+            {
+              "click": "role=button[name=\"Price override\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[role=dialog] >> text=\"$ adjust\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed by phone with the rooms"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "saved",
+          "caption": "Correction saved straight onto the Card, no return to the anaesthetist",
+          "steps": [
+            {
+              "click": "role=button[name=\"Price override\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[role=dialog] >> text=\"$ adjust\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed by phone with the rooms"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "text=/Office billing setup/ >> xpath=ancestor::div[.//button[normalize-space()='Edit billing setup']][1]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-note",
+      "app": "admin",
+      "caption": "Log a phone note, issues are resolved by a call from the office",
+      "start": "/admin/review/L-25490-2026-07-20-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Log phone note\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

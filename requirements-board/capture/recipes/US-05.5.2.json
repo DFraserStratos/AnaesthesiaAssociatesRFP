@@ -1,0 +1,65 @@
+{
+  "id": "US-05.5.2",
+  "status": "partial",
+  "absentReason": "An ACC pre-operative assessment is added as an ancillary fixed amount line, with the code typed into the description. CS250, CS260 and CS70 are not a code set to pick from, and their rates are not held.",
+  "shots": [
+    {
+      "name": "acc-preop",
+      "app": "web",
+      "caption": "ACC pre-op assessment added as a flat fee billing line",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "CS250 ACC pre-operative assessment"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"85.50\"]",
+              "value": "85.50"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "acc-preop",
+      "app": "mobile",
+      "caption": "ACC pre-op assessment added as a flat fee billing line",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Add billing line\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"What this line charges\"]",
+              "value": "CS250 ACC pre-operative assessment"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] input[placeholder=\"85.50\"]",
+              "value": "85.50"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "US-04.2.1",
+  "status": "partial",
+  "absentReason": "A contract records its holder (hospital, insurer, surgeon, organisation or billable party) and an organisational or individual scope. Applicability by hospitals, surgeons, insurers, RVG codes or groups and funding source cannot be set.",
+  "shots": [
+    {
+      "name": "contract-holder",
+      "app": "admin",
+      "caption": "Contract holder type, holder and scope",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"ACC orthopaedic services\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] label:has(select)",
+            "[role=dialog] div:has(> div:text-is(\"Scope\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

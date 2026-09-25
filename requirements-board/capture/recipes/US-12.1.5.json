@@ -1,0 +1,3 @@
+{ "id": "US-12.1.5", "status": "absent",
+  "absentReason": "No bank account is held for anaesthetists. Searched apps, shared and domain types for bank: Master data holds unit value, contact, GST period and HPI only, and the payables run is a simulated Xero ACCPAY with no account details. Where these live is open (OQ-14).",
+  "shots": [] }

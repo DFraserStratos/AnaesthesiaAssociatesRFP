@@ -1,0 +1,19 @@
+{
+  "id": "FT-13.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "day-view",
+      "app": "admin",
+      "caption": "Schedule dashboard, the one-day view",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

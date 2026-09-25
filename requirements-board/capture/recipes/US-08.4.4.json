@@ -1,0 +1,33 @@
+{
+  "id": "US-08.4.4",
+  "status": "partial",
+  "absentReason": "Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.",
+  "shots": [
+    {
+      "name": "snapshot-invoice",
+      "app": "admin",
+      "caption": "An invoice kept exactly as raised, its lines fixed from the contract in force",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S5"
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Hemi Walker\"):has-text(\"Whitaker\") >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

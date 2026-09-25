@@ -1,0 +1,38 @@
+{
+  "id": "US-14.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "fhir-model",
+      "app": "simulator",
+      "caption": "Inbound booking held as FHIR R4",
+      "start": "/demo/integrations",
+      "states": [
+        {
+          "state": "translated",
+          "caption": "HL7 v2 booking translated into FHIR R4",
+          "steps": [],
+          "highlight": [
+            "[data-shot=integrations-fhir]"
+          ]
+        },
+        {
+          "state": "native",
+          "caption": "FHIR-native booking from Southern Cross",
+          "steps": [
+            {
+              "click": "role=button[name=/Southern Cross/]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=integrations-fhir]"
+          ]
+        }
+      ]
+    }
+  ]
+}

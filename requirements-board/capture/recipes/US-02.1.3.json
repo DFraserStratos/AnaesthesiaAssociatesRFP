@@ -1,0 +1,6 @@
+{
+  "id": "US-02.1.3",
+  "status": "absent",
+  "absentReason": "No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Card, the prototype only notes \"Already booked on this List · will update, not duplicate\" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.",
+  "shots": []
+}

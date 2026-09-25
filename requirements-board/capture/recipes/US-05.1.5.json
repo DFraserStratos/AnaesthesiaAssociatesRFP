@@ -1,0 +1,26 @@
+{
+  "id": "US-05.1.5",
+  "status": "partial",
+  "absentReason": "The modifier code master holds the A, AI, AS, ASE, OB, P, PA and post-op codes with unit values, view only. VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3 and NC1 to NC2 are not in the set.",
+  "shots": [
+    {
+      "name": "modifier-codes",
+      "app": "admin",
+      "caption": "Modifier codes with group, selection rule and units",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Modifier codes\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

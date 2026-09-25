@@ -1,0 +1,36 @@
+{
+  "id": "US-01.2.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "status-without-bookings",
+      "app": "admin",
+      "caption": "Unavailable and holiday Lists with no bookings",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-day-grid-row]:has-text(\"Ngata, Tom\")",
+            "[data-day-grid-row]:has-text(\"Beaumont, Sarah\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status-without-bookings",
+      "app": "web",
+      "caption": "Leave sessions on my Lists with no bookings",
+      "start": "/web/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Annual leave / back Monday\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

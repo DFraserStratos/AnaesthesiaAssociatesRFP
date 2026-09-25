@@ -1,0 +1,68 @@
+{
+  "id": "US-09.2.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "webhook-replay",
+      "app": "simulator",
+      "caption": "Payment webhook replayed with the same key",
+      "start": "/demo/control",
+      "states": [
+        {
+          "state": "first",
+          "caption": "First webhook applies a part payment",
+          "steps": [
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Half (partial)\"]"
+            },
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=control-payment-webhook]"
+          ]
+        },
+        {
+          "state": "replayed",
+          "caption": "Replayed webhook ignored as a duplicate, no double effect",
+          "steps": [
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Half (partial)\"]"
+            },
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Replay last event\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=control-payment-webhook]"
+          ]
+        }
+      ],
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24/cards/C0034"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 800
+        }
+      ]
+    }
+  ]
+}

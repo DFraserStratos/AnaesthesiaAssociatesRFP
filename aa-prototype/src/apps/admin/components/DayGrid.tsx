@@ -317,6 +317,7 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
     <button
       type="button"
       onClick={onClick}
+      data-shot={prepaymentFlag !== undefined ? 'daygrid-block-prepayment' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{
         position: 'absolute',

@@ -238,20 +238,20 @@ export function DemoIntegrations() {
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.label}</div>
                 </div>
-                <button type="button" onClick={replay} style={{ ...pillButton, flex: 'none', background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
+                <button type="button" data-shot="integrations-replay" onClick={replay} style={{ ...pillButton, flex: 'none', background: accent.base, borderColor: accent.base, color: '#FFFFFF' }}>
                   <RotateCw size={14} strokeWidth={2.5} aria-hidden />
                   Replay
                 </button>
               </div>
               {selected.transport !== 'fhir' && (
-                <Pane title={`1 · Raw HL7 v2 · ${FEED_META[selected.feedId]?.name ?? 'Hospital feed'}`}>
+                <Pane shot="integrations-raw-hl7" title={`1 · Raw HL7 v2 · ${FEED_META[selected.feedId]?.name ?? 'Hospital feed'}`}>
                   <Hl7View raw={selected.raw ?? ''} />
                 </Pane>
               )}
-              <Pane title={selected.transport === 'fhir' ? 'FHIR R4 · Native source' : '2 · Translated FHIR R4'}>
+              <Pane shot="integrations-fhir" title={selected.transport === 'fhir' ? 'FHIR R4 · Native source' : '2 · Translated FHIR R4'}>
                 <pre style={codeBlock}>{fhirJson}</pre>
               </Pane>
-              <Pane title={selected.transport === 'fhir' ? 'Schedule change' : '3 · Schedule change'}>
+              <Pane shot="integrations-schedule-change" title={selected.transport === 'fhir' ? 'Schedule change' : '3 · Schedule change'}>
                 <EffectView
                   status={row?.status}
                   displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}
@@ -414,9 +414,10 @@ function MessageRow({
   )
 }
 
-function Pane({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Pane({ title, subtitle, shot, children }: { title: string; subtitle?: string; shot?: string; children: React.ReactNode }) {
   return (
     <div
+      data-shot={shot}
       style={{
         display: 'flex',
         flexDirection: 'column',

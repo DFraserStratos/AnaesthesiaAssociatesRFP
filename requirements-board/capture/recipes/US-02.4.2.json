@@ -1,0 +1,119 @@
+{
+  "id": "US-02.4.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "photo-capture",
+      "app": "web",
+      "caption": "Booking pre-filled from a photo of the paper card",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "scan",
+          "caption": "Photo of the paper card (simulated with sample cards)",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Photo of paper list\""
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "prefilled",
+          "caption": "Booking pre-filled from the scan, for the anaesthetist to check and save",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Photo of paper list\""
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "text=\"Losa Tuilagi · knee arthroscopy\""
+            },
+            {
+              "wait": 1500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "photo-capture",
+      "app": "mobile",
+      "caption": "Booking pre-filled from a photo of the paper card",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "scan",
+          "caption": "Photo of the paper card (simulated with sample cards)",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Photo of paper list\""
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "prefilled",
+          "caption": "Booking pre-filled from the scan, for the anaesthetist to check and save",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Photo of paper list\""
+            },
+            {
+              "wait": 800
+            },
+            {
+              "click": "text=\"Losa Tuilagi · knee arthroscopy\""
+            },
+            {
+              "wait": 1500
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

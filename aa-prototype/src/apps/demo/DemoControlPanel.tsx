@@ -49,14 +49,16 @@ import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
-function ControlCard({ icon: Icon, title, eyebrow, children }: {
+function ControlCard({ icon: Icon, title, eyebrow, children, shot }: {
   icon: LucideIcon
   title: string
   eyebrow: string
   children: React.ReactNode
+  shot?: string
 }) {
   return (
     <div
+      data-shot={shot}
       style={{
         display: 'flex',
         gap: 14,
@@ -477,6 +479,7 @@ function ScenarioJumps() {
                 <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
                   <button
                     type="button"
+                    data-shot="scenario-confirm"
                     onClick={() => {
                       setResult({ id: s.id, res: s.run() })
                       setConfirming(null)
@@ -490,7 +493,7 @@ function ScenarioJumps() {
                   </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setConfirming(s.id)} style={{ ...actionButtonStyle, flex: 'none' }}>
+                <button type="button" data-shot={`scenario-${s.id.toLowerCase()}`} onClick={() => setConfirming(s.id)} style={{ ...actionButtonStyle, flex: 'none' }}>
                   Jump
                 </button>
               )}
@@ -575,7 +578,7 @@ function PaymentReceivedCard() {
   }
 
   return (
-    <ControlCard icon={CreditCard} eyebrow="Xero payments" title="Payment received (webhook)">
+    <ControlCard icon={CreditCard} eyebrow="Xero payments" title="Payment received (webhook)" shot="control-payment-webhook">
       <div><DemoBadge label="Demo trigger" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
         Simulates a Xero INVOICE webhook: the ACCREC is marked (part) paid and its paired ACCPAY is
@@ -654,7 +657,7 @@ function IntegrationTriggerCard() {
   }
 
   return (
-    <ControlCard icon={Zap} eyebrow="Integrations" title="Fire an integration message">
+    <ControlCard icon={Zap} eyebrow="Integrations" title="Fire an integration message" shot="control-integration-message">
       <div><DemoBadge label="Demo trigger" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
         Sends a canned hospital HL7 / FHIR message into the mock backend. Includes the Christchurch
@@ -798,7 +801,7 @@ function AutomatedJobsCard() {
   }
 
   return (
-    <ControlCard icon={Banknote} eyebrow="Automated jobs" title="Run a scheduled job now">
+    <ControlCard icon={Banknote} eyebrow="Automated jobs" title="Run a scheduled job now" shot="control-scheduled-jobs">
       <div><DemoBadge label="Demo trigger" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
         Fires the jobs that otherwise run on the daily clock tick, without advancing the clock. The

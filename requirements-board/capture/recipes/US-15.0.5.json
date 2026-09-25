@@ -1,0 +1,3 @@
+{ "id": "US-15.0.5", "status": "absent",
+  "absentReason": "No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.",
+  "shots": [] }

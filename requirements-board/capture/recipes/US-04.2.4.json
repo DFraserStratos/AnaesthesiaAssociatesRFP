@@ -1,0 +1,34 @@
+{
+  "id": "US-04.2.4",
+  "status": "partial",
+  "absentReason": "Type 3 fee schedule rows hold an optional RVG code, an optional procedure ordinal and a price only. The holder's own code, description, GST inclusive price, time band, add-on flag and quantity rule are not captured.",
+  "shots": [
+    {
+      "name": "price-rows",
+      "app": "admin",
+      "caption": "Fixed price rows on a Type 3 contract",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"Bariatric fixed prices\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-rows]"
+          ]
+        }
+      ]
+    }
+  ]
+}

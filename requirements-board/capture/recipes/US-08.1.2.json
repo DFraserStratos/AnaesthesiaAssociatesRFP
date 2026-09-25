@@ -1,0 +1,22 @@
+{
+  "id": "US-08.1.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "review-contracts",
+      "app": "admin",
+      "caption": "Each procedure already carries its locked contract before billing",
+      "start": "/admin/review/L-34821-2026-07-20-PM",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=review-detail-table-shell] thead th:nth-child(4)",
+            "[data-testid=review-detail-table-shell] tbody tr:has(td:nth-child(10)) td:nth-child(4)"
+          ]
+        }
+      ]
+    }
+  ]
+}

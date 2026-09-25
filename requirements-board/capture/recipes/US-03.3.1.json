@@ -1,0 +1,113 @@
+{
+  "id": "US-03.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rvg-picker",
+      "app": "web",
+      "caption": "RVG code picker",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "closed",
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Procedure code with its seeded base units"
+        },
+        {
+          "state": "open",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Picker grouped by anatomical site"
+        },
+        {
+          "state": "search",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "hip"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Searching the picker by code or name"
+        }
+      ]
+    },
+    {
+      "name": "rvg-picker",
+      "app": "mobile",
+      "caption": "RVG code picker",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "closed",
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-procedure-code]"
+          ],
+          "caption": "Procedure code with its seeded base units"
+        },
+        {
+          "state": "open",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ],
+          "caption": "Picker grouped by anatomical site"
+        },
+        {
+          "state": "search",
+          "steps": [
+            {
+              "click": "[data-shot=capture-procedure-code] >> text=\"Change\""
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "input[placeholder=\"Search code or name\"]",
+              "value": "hip"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ],
+          "caption": "Searching the picker by code or name"
+        }
+      ]
+    }
+  ]
+}

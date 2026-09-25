@@ -1,0 +1,45 @@
+{
+  "id": "US-11.3.3",
+  "status": "partial",
+  "absentReason": "An invoice can be emailed from the invoice document, but once sent there is no re-send, and there is no way to record follow-up actions against a patient's outstanding items.",
+  "shots": [
+    {
+      "name": "resend-invoice",
+      "app": "admin",
+      "caption": "Emailing an invoice from the invoice document",
+      "start": "/admin/invoices/INV0002",
+      "setup": [
+        {
+          "scenario": "S5"
+        }
+      ],
+      "states": [
+        {
+          "state": "ready",
+          "caption": "Invoice ready to email",
+          "steps": [],
+          "highlight": [
+            "text=\"Delivery\"",
+            "[data-testid=invoice-action-row]"
+          ]
+        },
+        {
+          "state": "sent",
+          "caption": "Invoice emailed, recorded as a simulated send",
+          "steps": [
+            {
+              "click": "role=button[name=\"Email invoice\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "text=\"Delivery\"",
+            "[data-testid=invoice-action-row]"
+          ]
+        }
+      ]
+    }
+  ]
+}

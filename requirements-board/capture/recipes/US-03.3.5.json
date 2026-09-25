@@ -1,0 +1,74 @@
+{
+  "id": "US-03.3.5",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "modifiers",
+      "app": "web",
+      "caption": "Itemised modifiers",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-adjustment-and-charge]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifiers]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "modifiers",
+      "app": "mobile",
+      "caption": "Itemised modifiers",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "bands",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-modifiers]"
+            },
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": -60
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifiers] [data-sliding-segmented-control]"
+          ],
+          "caption": "Modifier bands: pre-assessment, age and BMI"
+        },
+        {
+          "state": "also-applies",
+          "steps": [
+            {
+              "click": "[data-shot=capture-modifiers] button:has-text(\"Emergency\")"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 450
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-modifiers] button:has-text(\"\u00b7 +\")"
+          ],
+          "caption": "Stacking modifiers itemised one by one"
+        }
+      ]
+    }
+  ]
+}

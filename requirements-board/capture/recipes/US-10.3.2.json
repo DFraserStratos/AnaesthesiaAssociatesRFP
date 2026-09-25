@@ -1,0 +1,22 @@
+{
+  "id": "US-10.3.2",
+  "status": "partial",
+  "absentReason": "No AA fee invoices or their payment status: the web app shows the fee deducted from each payment. The mobile app does not show the AA fee.",
+  "shots": [
+    {
+      "name": "fee-in-payments",
+      "app": "web",
+      "caption": "AA fee shown against each payment in the anaesthetist's account",
+      "start": "/web/accounts/payments",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "th:text-is(\"AA fee\")",
+            "tbody td:nth-child(6)"
+          ]
+        }
+      ]
+    }
+  ]
+}

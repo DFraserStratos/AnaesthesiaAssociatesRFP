@@ -1,0 +1,19 @@
+{
+  "id": "FT-09.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contacts",
+      "app": "simulator",
+      "caption": "Xero contacts and archiving",
+      "start": "/demo/xero",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

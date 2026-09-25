@@ -1,0 +1,98 @@
+{
+  "id": "US-03.6.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "mark-complete",
+      "app": "web",
+      "caption": "Mark a booking complete",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "blocked",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-times]"
+          ],
+          "caption": "Mark complete refused: the missing handover time is flagged"
+        },
+        {
+          "state": "complete",
+          "steps": [
+            {
+              "click": "text=\"Finish now\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": "tr:has-text(\"Margaret Ellison\") >> text=\"Complete\""
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Margaret Ellison\")"
+          ],
+          "caption": "Booking marked complete, back on its List"
+        }
+      ]
+    },
+    {
+      "name": "mark-complete",
+      "app": "mobile",
+      "caption": "Mark a booking complete",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "blocked",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-times]"
+          ],
+          "caption": "Mark complete refused: the missing handover time is flagged"
+        },
+        {
+          "state": "complete",
+          "steps": [
+            {
+              "click": "text=\"Finish now\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Mark complete\"]"
+            },
+            {
+              "wait": "[data-testid=mobile-card-commit] >> text=\"Amend\""
+            },
+            {
+              "wait": 2000
+            }
+          ],
+          "highlight": [
+            "[data-testid=mobile-card-commit]"
+          ],
+          "caption": "Booking marked complete once the minimum data is in"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "id": "US-07.1.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "blocked-submit",
+      "app": "web",
+      "caption": "A List with an incomplete Card cannot be submitted",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "blocked",
+          "caption": "Submit replaced by the count of Cards still to finish",
+          "steps": [],
+          "highlight": [
+            "role=button[name=\"1 to finish before submitting\"]"
+          ]
+        },
+        {
+          "state": "what-is-missing",
+          "caption": "Cards still to finish, showing what is missing",
+          "steps": [
+            {
+              "click": "role=button[name=\"1 to finish before submitting\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "blocked-submit",
+      "app": "mobile",
+      "caption": "A List with an incomplete Card cannot be submitted",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "blocked",
+          "caption": "Mark list completed is disabled with the count still to finish",
+          "steps": [],
+          "highlight": [
+            "[data-testid=mobile-list-footer]"
+          ]
+        },
+        {
+          "state": "what-is-missing",
+          "caption": "Cards still to finish, showing what is missing",
+          "steps": [
+            {
+              "click": "[data-testid=mobile-list-footer] button"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

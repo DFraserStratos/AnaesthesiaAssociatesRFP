@@ -1,0 +1,39 @@
+{
+  "id": "US-15.0.1",
+  "status": "partial",
+  "absentReason": "Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.",
+  "shots": [
+    {
+      "name": "card-capture",
+      "app": "mobile",
+      "caption": "Card capture on the phone, large controls and one clear action",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-card] [data-testid=mobile-card-scroll]",
+              "by": 520
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "day-view",
+      "app": "admin",
+      "caption": "Office day view, the main operational screen",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

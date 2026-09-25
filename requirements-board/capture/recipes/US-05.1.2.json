@@ -1,0 +1,6 @@
+{
+  "id": "US-05.1.2",
+  "status": "absent",
+  "absentReason": "The RVG code master is view only: codes cannot be added, and there is no AA sourced marker. Searched apps/admin/screens/MasterData.tsx (RvgCodesView), domain/types.ts (RvgCode) and domain/seed/rvgCodes.ts.",
+  "shots": []
+}

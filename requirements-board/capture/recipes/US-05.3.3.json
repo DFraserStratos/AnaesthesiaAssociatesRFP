@@ -1,0 +1,6 @@
+{
+  "id": "US-05.3.3",
+  "status": "absent",
+  "absentReason": "The prototype keeps all modifier units on the first procedure and charges additional procedures for time only; there is no four unit threshold or equal split of modifiers across procedures. Searched domain/billing (fee.ts, modifierUnits.ts) and the capture UnitsCard.",
+  "shots": []
+}

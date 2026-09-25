@@ -1,0 +1,36 @@
+{
+  "id": "US-13.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "day-view",
+      "app": "admin",
+      "caption": "One-day view of every anaesthetist's AM and PM Lists",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "day",
+          "steps": [],
+          "highlight": [],
+          "caption": "One-day view of every anaesthetist's AM and PM Lists, with hospital, surgeon and status"
+        },
+        {
+          "state": "drill-down",
+          "caption": "Drill into a List to see its session and Cards",
+          "steps": [
+            {
+              "click": "text=\"Southern Cross\" >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer]"
+          ]
+        }
+      ]
+    }
+  ]
+}

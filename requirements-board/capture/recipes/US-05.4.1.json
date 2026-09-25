@@ -1,0 +1,134 @@
+{
+  "id": "US-05.4.1",
+  "status": "partial",
+  "absentReason": "The anaesthetist can apply a dollar adjustment or a fixed charge with a reason, and the card shows the fee before the override. It is not gated by the contract, and percentage discounts are office only.",
+  "shots": [
+    {
+      "name": "adjustment",
+      "app": "web",
+      "caption": "Anaesthetist adjustment",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "entry",
+          "caption": "Adjustment with a reason",
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed discount with patient"
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Adjustment applied, the card total shows the fee before it",
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed discount with patient"
+            },
+            {
+              "click": "role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adjustment",
+      "app": "mobile",
+      "caption": "Anaesthetist adjustment",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "entry",
+          "caption": "Adjustment with a reason",
+          "steps": [
+            {
+              "click": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed discount with patient"
+            },
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 250
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Adjustment applied, the card total shows the fee before it",
+          "steps": [
+            {
+              "click": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+            },
+            {
+              "wait": 200
+            },
+            {
+              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "value": "-40"
+            },
+            {
+              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "value": "Agreed discount with patient"
+            },
+            {
+              "click": "[data-testid=slide-card] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

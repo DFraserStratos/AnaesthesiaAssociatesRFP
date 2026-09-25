@@ -1,0 +1,24 @@
+{
+  "id": "US-06.3.3",
+  "status": "partial",
+  "absentReason": "An unpaid pre-payment is flagged on the admin day grid and on the card, and completion is blocked. There is no time-based alert or notification as the procedure date approaches.",
+  "shots": [
+    {
+      "name": "day-grid-flag",
+      "app": "admin",
+      "caption": "Pre-payment outstanding flag on the day grid",
+      "start": "/admin/day/2026-07-24",
+      "states": [ { "steps": [], "highlight": ["[data-shot=daygrid-block-prepayment]"] } ]
+    },
+    {
+      "name": "card-gate",
+      "app": "mobile",
+      "caption": "The anaesthetist sees the unpaid pre-payment on the card",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM",
+      "states": [
+        { "steps": [ { "click": "text=\"Annette Riley\" >> nth=0" }, { "wait": "[data-testid=slide-card] [data-shot=card-prepayment]" } ],
+          "highlight": ["[data-testid=slide-card] [data-shot=card-prepayment]"] }
+      ]
+    }
+  ]
+}

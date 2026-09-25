@@ -1,0 +1,57 @@
+{
+  "id": "US-08.3.3",
+  "status": "partial",
+  "absentReason": "Archiving is simulated for Xero contacts only; purging a contact is not shown.",
+  "shots": [
+    {
+      "name": "archived-contacts",
+      "app": "simulator",
+      "caption": "Annette Riley's Xero contact archived by the nightly job",
+      "start": "/demo/xero",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Run archive job\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-contact-pt0017]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "history-kept",
+      "app": "web",
+      "caption": "Annette Riley's billing history still shown from the ledger after archiving",
+      "start": "/web/accounts/payments",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Run archive job\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Annette Riley\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

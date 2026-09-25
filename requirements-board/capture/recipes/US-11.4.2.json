@@ -1,0 +1,21 @@
+{
+  "id": "US-11.4.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "insured-reimbursement",
+      "app": "admin",
+      "caption": "Insured patient invoiced directly, to claim from their insurer",
+      "start": "/admin/day/2026-07-16/cards/C0030",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    }
+  ]
+}

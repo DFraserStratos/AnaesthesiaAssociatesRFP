@@ -1,0 +1,49 @@
+{
+  "id": "US-08.5.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "card-failure",
+      "app": "admin",
+      "caption": "One card fails to bill while its sibling still invoices",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Trigger failure\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "failed",
+          "caption": "A failed card blocks only its own invoice, the rest of the list still bills",
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+          ]
+        },
+        {
+          "state": "retried",
+          "caption": "After resolve and retry, the failed card bills on its own",
+          "steps": [
+            {
+              "click": "role=button[name=\"Resolve & retry\"] >> nth=0"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+          ]
+        }
+      ]
+    }
+  ]
+}

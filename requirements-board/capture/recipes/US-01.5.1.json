@@ -1,0 +1,57 @@
+{
+  "id": "US-01.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "hospital-holidays",
+      "app": "admin",
+      "caption": "Hospital holiday calendar",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "list",
+          "steps": [
+            {
+              "click": "text=\"Hospitals & holidays\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [],
+          "caption": "Each hospital keeps its own closure dates"
+        },
+        {
+          "state": "add",
+          "steps": [
+            {
+              "click": "text=\"Hospitals & holidays\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Add holiday\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] input[type=date]",
+              "value": "2026-07-22"
+            },
+            {
+              "fill": "input[placeholder=\"e.g. Planned maintenance closure\"]",
+              "value": "Theatre maintenance closure"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Add a hospital holiday"
+        }
+      ]
+    }
+  ]
+}

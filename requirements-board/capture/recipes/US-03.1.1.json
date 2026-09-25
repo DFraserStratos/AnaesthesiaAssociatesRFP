@@ -1,0 +1,108 @@
+{
+  "id": "US-03.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "drill-down",
+      "app": "web",
+      "caption": "Schedule to List to Booking",
+      "start": "/web/lists",
+      "states": [
+        {
+          "state": "schedule",
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+          ],
+          "caption": "My Lists, one row per session"
+        },
+        {
+          "state": "list",
+          "steps": [
+            {
+              "click": "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+            },
+            {
+              "wait": "text=\"Margaret Ellison\""
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Margaret Ellison\")"
+          ],
+          "caption": "List detail with its cards"
+        },
+        {
+          "state": "booking",
+          "steps": [
+            {
+              "click": "tr:has-text(\"Southern Cross · Ms K. Patel\") >> nth=0"
+            },
+            {
+              "click": "tr:has-text(\"Margaret Ellison\")"
+            },
+            {
+              "wait": "[data-testid=procedure-header]"
+            }
+          ],
+          "highlight": [],
+          "caption": "Booking detail with its procedure"
+        }
+      ]
+    },
+    {
+      "name": "drill-down",
+      "app": "mobile",
+      "caption": "Schedule to List to Booking",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "state": "schedule",
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+          ],
+          "caption": "My Lists, one row per session"
+        },
+        {
+          "state": "list",
+          "steps": [
+            {
+              "click": "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-list] >> text=\"Margaret Ellison\""
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
+          ],
+          "caption": "List detail with its cards"
+        },
+        {
+          "state": "booking",
+          "steps": [
+            {
+              "click": "[data-testid=slide-home] button:has-text(\"Southern Cross\") >> nth=0"
+            },
+            {
+              "click": "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
+            },
+            {
+              "wait": "[data-testid=slide-card] [data-testid=mobile-card-scroll]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "scroll": "[data-testid=slide-card] [data-testid=mobile-card-scroll]",
+              "by": 350
+            }
+          ],
+          "highlight": [],
+          "caption": "Booking detail with its procedure"
+        }
+      ]
+    }
+  ]
+}

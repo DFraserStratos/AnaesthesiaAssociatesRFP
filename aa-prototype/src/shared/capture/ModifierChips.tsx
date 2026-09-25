@@ -91,7 +91,7 @@ export function ModifierChips({ procedure, baseCode, actor, disabled, onError }:
   const absorbed = [...BANDS.flatMap((b) => b.codes), ...STACKING_CODES].filter((m) => absorbs(m.code))
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: web ? 12 : 14, opacity: disabled ? 0.55 : 1 }}>
+    <div data-shot="capture-modifiers" style={{ display: 'flex', flexDirection: 'column', gap: web ? 12 : 14, opacity: disabled ? 0.55 : 1 }}>
       {/* The seam: seeded arithmetic above it, the clinical facts that drive the
           M total below. A desktop card is wide enough for the rule to read as
           structure; on the phone the band titles carry it alone. */}

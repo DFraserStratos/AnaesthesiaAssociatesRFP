@@ -1,0 +1,3 @@
+{ "id": "US-06.1.1", "status": "absent",
+  "absentReason": "No prepaid settings exist on the anaesthetist profile. Searched the mobile More screen, the web app and admin Master data for prepaid or pre-payment settings: the prototype triggers pre-payment from a per-procedure payment category instead of anaesthetist-chosen RVG codes or groups.",
+  "shots": [] }

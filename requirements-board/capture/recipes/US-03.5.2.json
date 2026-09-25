@@ -1,0 +1,93 @@
+{
+  "id": "US-03.5.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "full-discount",
+      "app": "web",
+      "caption": "Full discount keeps the base, time and modifier record",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-212.00"
+            },
+            {
+              "fill": "input[placeholder=\"Why the price differs\"]",
+              "value": "Professional courtesy, no charge"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=procedure-contract]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ],
+          "caption": "100% adjustment: the fee is zero but the units are still recorded"
+        }
+      ]
+    },
+    {
+      "name": "full-discount",
+      "app": "mobile",
+      "caption": "Full discount keeps the base, time and modifier record",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 1900
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-212.00"
+            },
+            {
+              "fill": "input[placeholder=\"Why the price differs\"]",
+              "value": "Professional courtesy, no charge"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=units-row-b]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=units-row-b]",
+            "[data-shot=units-row-m]"
+          ],
+          "caption": "100% adjustment: the fee is zero but the units are still recorded"
+        }
+      ]
+    }
+  ]
+}

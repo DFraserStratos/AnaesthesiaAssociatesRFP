@@ -1,0 +1,95 @@
+{
+  "id": "US-02.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "add-card",
+      "app": "web",
+      "caption": "Add a Booking to my List",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "choose",
+          "caption": "Add a card, enter manually or from a photo",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "manual",
+          "caption": "Manual entry of the patient and operation",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add-card",
+      "app": "mobile",
+      "caption": "Add a Booking to my List",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "choose",
+          "caption": "Add a card, enter manually or from a photo",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "manual",
+          "caption": "Manual entry of the patient and operation",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

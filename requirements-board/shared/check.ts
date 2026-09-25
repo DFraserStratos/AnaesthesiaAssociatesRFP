@@ -5,6 +5,7 @@
  */
 import {
   COMPONENTS,
+  IMAGE_APPS,
   ITEM_STATUSES,
   ITEM_TYPES,
   QUESTION_KINDS,
@@ -70,6 +71,8 @@ export function checkCatalogue({ items, questions, fileExists }: CheckInput): Is
       else if (!img.src.startsWith('assets/')) err(it.id, `image ${img.src} must live under assets/ (the board only serves that folder)`)
       else if (fileExists && !fileExists(img.src)) err(it.id, `image file ${img.src} is missing`)
       if (!VIEWPORTS.includes(img.viewport)) err(it.id, `image viewport "${img.viewport}" is not desktop or mobile`)
+      if (img.app !== undefined && !IMAGE_APPS.includes(img.app)) err(it.id, `image app "${img.app}" is not one of ${IMAGE_APPS.join(', ')}`)
+      else if (img.app === 'mobile' && img.viewport !== 'mobile') warn(it.id, `image ${img.src} is from the mobile app but its viewport is ${img.viewport}`)
     }
   }
 

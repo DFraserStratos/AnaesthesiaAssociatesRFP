@@ -1,0 +1,21 @@
+{
+  "id": "US-12.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "gst-activity",
+      "app": "web",
+      "caption": "Amounts received and their GST component for the GST period",
+      "start": "/web/accounts/gst",
+      "states": [ { "steps": [], "highlight": [] } ]
+    },
+    {
+      "name": "gst-activity",
+      "app": "mobile",
+      "caption": "Amounts received this month with their GST component",
+      "start": "/mobile/balances",
+      "states": [ { "steps": [ { "click": "text=\"GST this month\"" }, { "wait": 500 } ], "highlight": [] } ]
+    }
+  ]
+}

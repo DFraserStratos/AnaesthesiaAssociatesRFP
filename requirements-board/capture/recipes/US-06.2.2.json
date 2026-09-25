@@ -1,0 +1,57 @@
+{
+  "id": "US-06.2.2",
+  "status": "partial",
+  "absentReason": "Full versus deposit and the deposit amount are stored on the procedure and drive the pre-procedure invoice, but they are seeded only: no screen lets an admin or anaesthetist set or change the prepaid amount.",
+  "shots": [
+    {
+      "name": "deposit-invoice",
+      "app": "admin",
+      "caption": "Pre-procedure invoice for an agreed deposit",
+      "start": "/admin/invoices/INV0002",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24"
+        },
+        {
+          "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+        },
+        {
+          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+        },
+        {
+          "wait": "[data-shot=card-prepayment]"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "full-fee-invoice",
+      "app": "admin",
+      "caption": "Pre-procedure invoice for the estimated full fee",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

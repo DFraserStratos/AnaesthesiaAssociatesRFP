@@ -1,0 +1,57 @@
+{
+  "id": "US-04.3.3",
+  "status": "partial",
+  "absentReason": "Seeded hospital procedures carry the hospital default contract, and billing falls back to the protected hospital default when no other contract is in effect. A new procedure is not stamped with the default when it is created; it is resolved at billing.",
+  "shots": [
+    {
+      "name": "default-contract",
+      "app": "admin",
+      "caption": "Procedure governed by the St George's default contract",
+      "start": "/admin/day/2026-07-21/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "default-contract",
+      "app": "web",
+      "caption": "Default hospital contract shown on the card",
+      "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=procedure-header] + div"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "default-contract",
+      "app": "mobile",
+      "caption": "Default hospital contract shown on the card",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 450
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-testid=procedure-header] + div"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "US-01.4.3",
+  "status": "partial",
+  "absentReason": "From the availability view an anaesthetist can ask a colleague to cover a free session, or offer their own free session. Requesting that one of their own booked Lists be swapped to a colleague, and the office confirming that reassignment, are not in the prototype.",
+  "shots": [
+    {
+      "name": "cover-request",
+      "app": "web",
+      "caption": "Ask a colleague to cover a free session",
+      "start": "/web/availability",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button:has-text(\"Open for booking\") >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cover-request",
+      "app": "mobile",
+      "caption": "Ask a colleague to cover a free session",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Tap to ask\" >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

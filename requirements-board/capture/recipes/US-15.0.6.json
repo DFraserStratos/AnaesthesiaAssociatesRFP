@@ -1,0 +1,21 @@
+{
+  "id": "US-15.0.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "xero-contacts",
+      "app": "simulator",
+      "caption": "Xero contacts carry only the hidden internal ID, never the NHI",
+      "start": "/demo/xero",
+      "states": [ { "steps": [], "highlight": ["[data-shot=xero-nhi-policy]"] } ]
+    },
+    {
+      "name": "xero-pair",
+      "app": "simulator",
+      "caption": "A Xero invoice pair identifies the payer by ContactNumber, with no NHI",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [ { "steps": [], "highlight": ["[data-testid=xero-money-flow-grid]"] } ]
+    }
+  ]
+}

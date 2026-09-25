@@ -1,0 +1,37 @@
+{
+  "id": "US-09.3.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "archive-settings",
+      "app": "admin",
+      "caption": "Xero contact archiving: inactivity window and nightly job",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Xero & archiving\"]"
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "archived-contact",
+      "app": "simulator",
+      "caption": "A fully paid, inactive patient contact archived in Xero",
+      "start": "/demo/xero",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-contact-pt0017]"
+          ]
+        }
+      ]
+    }
+  ]
+}

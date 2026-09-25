@@ -1,0 +1,112 @@
+{
+  "id": "US-13.4.1",
+  "status": "partial",
+  "absentReason": "Anaesthetists, Contracts, Permanent Lists and hospitals with their holiday calendars are editable. Surgeons, insurers, organisations, RVG codes, modifier codes and list statuses are view only. There are no surgeon groups or RVG groups, and public holidays are held per hospital with no separate master calendar.",
+  "shots": [
+    {
+      "name": "master-data",
+      "app": "admin",
+      "caption": "Master data",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "anaesthetists",
+          "caption": "Master data, anaesthetists with editable unit value, GST period and active flag",
+          "steps": [],
+          "highlight": []
+        },
+        {
+          "state": "contracts",
+          "caption": "Master data, Contracts",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "permanent-lists",
+          "caption": "Master data, Permanent Lists",
+          "steps": [
+            {
+              "click": "role=button[name=\"Permanent lists\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "hospitals-holidays",
+          "caption": "Master data, hospitals and their holiday calendars",
+          "steps": [
+            {
+              "click": "role=button[name=\"Hospitals & holidays\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "surgeons",
+          "caption": "Master data, surgeons (view only)",
+          "steps": [
+            {
+              "click": "role=button[name=\"Surgeons\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "rvg-codes",
+          "caption": "Master data, RVG codes (view only)",
+          "steps": [
+            {
+              "click": "role=button[name=\"RVG codes\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "modifier-codes",
+          "caption": "Master data, modifier codes (view only)",
+          "steps": [
+            {
+              "click": "role=button[name=\"Modifier codes\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "list-statuses",
+          "caption": "Master data, list statuses (view only)",
+          "steps": [
+            {
+              "click": "role=button[name=\"List statuses\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

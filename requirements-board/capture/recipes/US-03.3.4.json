@@ -1,0 +1,84 @@
+{
+  "id": "US-03.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "asa",
+      "app": "web",
+      "caption": "ASA score seeds the modifier units",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "asa-1",
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-asa-status]"
+          ],
+          "caption": "ASA I seeds no modifier units"
+        },
+        {
+          "state": "asa-3",
+          "steps": [
+            {
+              "click": "[data-shot=capture-asa-status] >> text=\"III\""
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-asa-status]"
+          ],
+          "caption": "ASA III seeds extra modifier units"
+        }
+      ]
+    },
+    {
+      "name": "asa",
+      "app": "mobile",
+      "caption": "ASA score seeds the modifier units",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "asa-1",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 350
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-asa-status]"
+          ],
+          "caption": "ASA I seeds no modifier units"
+        },
+        {
+          "state": "asa-3",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 350
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-asa-status] >> text=\"III\""
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-asa-status]"
+          ],
+          "caption": "ASA III seeds extra modifier units"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "US-11.3.1",
+  "status": "absent",
+  "absentReason": "There is no patient view listing a patient's invoices across anaesthetists; the admin Invoices screen lists invoices without a per-patient view, and the web and mobile accounts show only the anaesthetist's own payables.",
+  "shots": []
+}

@@ -1,0 +1,44 @@
+{
+  "id": "US-02.1.1",
+  "status": "partial",
+  "absentReason": "No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.",
+  "shots": [
+    {
+      "name": "surgeon-pdf-import",
+      "app": "admin",
+      "caption": "Surgeon PDF import, the nearest analogue to a booking download",
+      "start": "/admin/integrations",
+      "states": [
+        {
+          "state": "inbox",
+          "steps": [
+            {
+              "click": "role=button[name=\"Surgeon PDFs\"]"
+            }
+          ],
+          "highlight": [
+            "text=Operating list · Monday 27 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]",
+            "text=Cataract list · Wednesday 29 July (AM) >> xpath=ancestor::div[.//button[normalize-space()='Open']][1]"
+          ],
+          "caption": "Surgeon PDF inbox, the nearest analogue to a booking download"
+        },
+        {
+          "state": "review-rows",
+          "steps": [
+            {
+              "click": "role=button[name=\"Surgeon PDFs\"]"
+            },
+            {
+              "click": "role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [],
+          "caption": "Extracted rows reviewed beside the PDF before ingesting"
+        }
+      ]
+    }
+  ]
+}

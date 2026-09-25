@@ -1,0 +1,26 @@
+{
+  "id": "FT-05.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rvg-codes",
+      "app": "admin",
+      "caption": "RVG code master",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"RVG codes\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

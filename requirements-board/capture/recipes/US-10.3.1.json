@@ -1,0 +1,21 @@
+{
+  "id": "US-10.3.1",
+  "status": "partial",
+  "absentReason": "No separate AA fee invoice to the anaesthetist. The prototype deducts an illustrative AA service fee from each payable instead, the nearest analogue.",
+  "shots": [
+    {
+      "name": "service-fee",
+      "app": "simulator",
+      "caption": "AA service fee calculated against each payable",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=aa-service-fee]"
+          ]
+        }
+      ]
+    }
+  ]
+}

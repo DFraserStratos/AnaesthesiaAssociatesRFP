@@ -1,0 +1,28 @@
+{
+  "id": "US-14.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "live-feed",
+      "app": "simulator",
+      "caption": "Live feed processing each message as it arrives",
+      "start": "/demo/integrations",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Start live feed\"]"
+            },
+            {
+              "wait": 3500
+            }
+          ],
+          "highlight": [
+            "[data-testid=integration-library]"
+          ]
+        }
+      ]
+    }
+  ]
+}

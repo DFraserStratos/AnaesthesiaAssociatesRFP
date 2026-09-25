@@ -1,0 +1,73 @@
+{
+  "id": "US-02.4.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "copy-card",
+      "app": "web",
+      "caption": "Copy a Booking",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0006",
+      "states": [
+        {
+          "state": "button",
+          "caption": "Copy for an additional procedure, on a Card",
+          "steps": [],
+          "highlight": [
+            "role=button[name=\"Copy for an additional procedure\"]"
+          ]
+        },
+        {
+          "state": "copied",
+          "caption": "The copy keeps the patient and List, with the procedure left to capture",
+          "steps": [
+            {
+              "click": "role=button[name=\"Copy for an additional procedure\"]"
+            },
+            {
+              "wait": 1000
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Procedure to capture\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "copy-card",
+      "app": "mobile",
+      "caption": "Copy a Booking",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "button",
+          "caption": "Copy for an additional procedure, on a Card",
+          "steps": [
+            {
+              "scroll": "[data-testid=slide-card] >> role=button[name=\"Copy for an additional procedure\"]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] >> role=button[name=\"Copy for an additional procedure\"]"
+          ]
+        },
+        {
+          "state": "copied",
+          "caption": "The copy keeps the patient and List, with the procedure left to capture",
+          "steps": [
+            {
+              "click": "role=button[name=\"Copy for an additional procedure\"]"
+            },
+            {
+              "wait": 1000
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-list] button:has-text(\"Procedure to capture\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

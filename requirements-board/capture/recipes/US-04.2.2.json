@@ -1,0 +1,101 @@
+{
+  "id": "US-04.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "pricing-basis",
+      "app": "admin",
+      "caption": "Contract pricing basis",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "type-1",
+          "caption": "Type 1 contract priced at RVG units times the anaesthetist's unit value",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"St George's standard units\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"Type\"))"
+          ]
+        },
+        {
+          "state": "type-2",
+          "caption": "Type 2 contract priced at an agreed rate per unit, or a percentage discount",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"Southern Cross Affiliated Provider\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"Type 2 basis\"))",
+            "[role=dialog] label:has-text(\"Agreed unit rate\")",
+            "[role=dialog] div:has(> div:text-is(\"Permits individual arrangement (Method 3)\"))"
+          ]
+        },
+        {
+          "state": "type-3",
+          "caption": "Type 3 contract priced from a fixed fee schedule",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"Bariatric fixed prices\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-rows]"
+          ]
+        },
+        {
+          "state": "rate-time",
+          "caption": "Contract permitting an individually arranged rate times time",
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr:has-text(\"Aria Skin and Laser Clinic\") >> role=button[name=\"Edit\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"Permits individual arrangement (Method 3)\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

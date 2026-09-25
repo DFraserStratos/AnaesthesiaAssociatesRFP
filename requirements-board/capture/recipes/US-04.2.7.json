@@ -1,0 +1,6 @@
+{
+  "id": "US-04.2.7",
+  "status": "absent",
+  "absentReason": "A contract cannot declare required booking inputs. Completion checks come from the billing route and fixed validator rules, not from the contract. Searched domain/types.ts (Contract), domain/billing/validateCardForBilling.ts and ContractEditSheet.tsx.",
+  "shots": []
+}

@@ -1,0 +1,36 @@
+{
+  "id": "FT-13.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "billing-monitor",
+      "app": "admin",
+      "caption": "Billing monitor",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/admin/review/L-25490-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "US-02.1.2",
+  "status": "partial",
+  "absentReason": "No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Card instead of duplicating it. There is no option to create a new List or to reject a row.",
+  "shots": [
+    {
+      "name": "pdf-row-matching",
+      "app": "admin",
+      "caption": "Surgeon PDF rows matched to a target List, an existing Booking is updated rather than duplicated",
+      "start": "/admin/integrations",
+      "states": [
+        {
+          "steps": [
+            { "click": "role=button[name=\"Surgeon PDFs\"]" },
+            { "click": "role=button[name=\"Open\"] >> nth=0" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-shot=pdf-target-list]", "[data-shot=pdf-row-1]"]
+        }
+      ]
+    }
+  ]
+}

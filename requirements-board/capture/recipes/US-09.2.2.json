@@ -1,0 +1,28 @@
+{
+  "id": "US-09.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "reconciliation-poll",
+      "app": "simulator",
+      "caption": "Daily reconciliation poll, the safety net for missed webhooks",
+      "start": "/demo/control",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=control-scheduled-jobs] >> role=button[name=\"Run reconciliation poll\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=control-scheduled-jobs]"
+          ]
+        }
+      ]
+    }
+  ]
+}

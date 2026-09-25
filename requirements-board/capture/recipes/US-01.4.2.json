@@ -1,0 +1,73 @@
+{
+  "id": "US-01.4.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "availability-finder",
+      "app": "admin",
+      "caption": "Free sessions across all anaesthetists on the day grid",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "availability-finder",
+      "app": "web",
+      "caption": "Availability across all anaesthetists",
+      "start": "/web/availability",
+      "states": [
+        {
+          "state": "everyone",
+          "steps": [],
+          "highlight": [],
+          "caption": "AM and PM availability for every anaesthetist"
+        },
+        {
+          "state": "free-only",
+          "steps": [
+            {
+              "click": "button:has-text(\"Free only\")"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [],
+          "caption": "Free sessions only, to find cover fast"
+        }
+      ]
+    },
+    {
+      "name": "availability-finder",
+      "app": "mobile",
+      "caption": "Availability across all anaesthetists",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "state": "everyone",
+          "steps": [],
+          "highlight": [],
+          "caption": "AM and PM availability for every anaesthetist"
+        },
+        {
+          "state": "free-only",
+          "steps": [
+            {
+              "click": "button:has-text(\"Free only\")"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [],
+          "caption": "Free sessions only, to find cover fast"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "US-05.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rvg-codes",
+      "app": "admin",
+      "caption": "RVG codes with description, site, base units or range, and absorbed modifiers",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"RVG codes\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

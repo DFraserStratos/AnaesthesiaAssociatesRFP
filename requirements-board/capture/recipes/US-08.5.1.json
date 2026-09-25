@@ -1,0 +1,81 @@
+{
+  "id": "US-08.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "processing-status",
+      "app": "admin",
+      "caption": "Billing monitor, processing succeeded for the list and each card",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "failure-reason",
+      "app": "admin",
+      "caption": "A card that failed to process, with the reason why",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Trigger failure\"]"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr:has-text(\"Losa Tuilagi\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

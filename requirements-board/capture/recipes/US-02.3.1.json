@@ -1,0 +1,44 @@
+{
+  "id": "US-02.3.1",
+  "status": "partial",
+  "absentReason": "The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a Free, empty List through the phone-advice booking; there is no way for the office to add a Booking to a List that already has one.",
+  "shots": [
+    {
+      "name": "phone-advice-booking",
+      "app": "admin",
+      "caption": "Office creates a Booking from a phone call",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "free-list",
+          "caption": "A Free List offers Book (phone advice)",
+          "steps": [{ "click": "text=\"open for cover\" >> nth=0" }, { "wait": 600 }],
+          "highlight": ["role=button[name=\"Book (phone advice)\"]"]
+        },
+        {
+          "state": "form",
+          "caption": "Phone-advice booking sets the List context, then adds the patient's Card",
+          "steps": [
+            { "click": "text=\"open for cover\" >> nth=0" },
+            { "wait": 600 },
+            { "click": "role=button[name=\"Book (phone advice)\"]" },
+            { "wait": 600 }
+          ],
+          "highlight": ["[role=dialog]"]
+        }
+      ]
+    },
+    {
+      "name": "amend-booking",
+      "app": "admin",
+      "caption": "Office amends a Booking's patient details",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "steps": [{ "click": "role=button[name=\"Edit\"] >> nth=1" }, { "wait": 600 }],
+          "highlight": ["[role=dialog]"]
+        }
+      ]
+    }
+  ]
+}

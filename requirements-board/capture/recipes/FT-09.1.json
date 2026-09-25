@@ -1,0 +1,19 @@
+{
+  "id": "FT-09.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "invoice-pairs",
+      "app": "simulator",
+      "caption": "Xero invoice pairs",
+      "start": "/demo/xero/invoices",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

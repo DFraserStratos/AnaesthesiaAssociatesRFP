@@ -1,0 +1,26 @@
+{
+  "id": "US-13.1.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "tomorrow",
+      "app": "admin",
+      "caption": "Tomorrow's Lists in the day view, reviewed with no tracked state",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"›\"] >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

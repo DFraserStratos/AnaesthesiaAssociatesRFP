@@ -1,0 +1,6 @@
+{
+  "id": "US-13.2.1",
+  "status": "absent",
+  "absentReason": "No whole-ledger view. Receivables, receipts held, payables due, disbursed and imbalance are never totalled for the office; the billing monitor shows only the payables due for the next payables run, and each invoice shows its own paid and disbursed state. Searched apps/admin and apps/demo for ledger, balance, receivable and disbursed.",
+  "shots": []
+}

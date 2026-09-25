@@ -1,0 +1,219 @@
+{
+  "id": "US-07.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "list-drops-off",
+      "app": "mobile",
+      "caption": "List leaves the anaesthetist's view when its invoices are generated",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "states": [
+        {
+          "state": "submitted",
+          "caption": "Submitted and still unbilled, the List shows under Done",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Submit to office\"]"
+            },
+            {
+              "wait": 1200
+            },
+            {
+              "goto": "/mobile/lists"
+            },
+            {
+              "click": "text=\"Done\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-home] button:has-text(\"Mr T. Hale\")"
+          ]
+        },
+        {
+          "state": "invoiced",
+          "caption": "Once invoices are generated the List is gone from Done",
+          "steps": [
+            {
+              "click": "role=button[name=\"Mark list completed\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Submit to office\"]"
+            },
+            {
+              "wait": 6500
+            },
+            {
+              "goto": "/mobile/lists"
+            },
+            {
+              "click": "text=\"Done\""
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "list-drops-off",
+      "app": "web",
+      "caption": "List leaves the web Lists table when its invoices are generated",
+      "start": "/web/lists",
+      "states": [
+        {
+          "state": "submitted",
+          "caption": "Monday's submitted Lists still listed while unbilled",
+          "steps": [
+            {
+              "fill": "input[type=date] >> nth=0",
+              "value": "2026-07-20"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Mon 20 Jul\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list-drops-off-invoiced",
+      "app": "web",
+      "caption": "After the office authorises and invoices are generated, Monday's Lists are gone",
+      "start": "/web/lists",
+      "setup": [
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "input[type=date] >> nth=0",
+              "value": "2026-07-20"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "invoices-in-balances",
+      "app": "web",
+      "caption": "The next day the new invoices appear in the anaesthetist's outstanding balances",
+      "start": "/web/accounts/overdue",
+      "setup": [
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "role=button[name=\"Next day\"]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "tr:has-text(\"21 Jul 2026\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

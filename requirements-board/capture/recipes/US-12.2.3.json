@@ -1,0 +1,14 @@
+{
+  "id": "US-12.2.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "dashboard",
+      "app": "web",
+      "caption": "Web dashboard: week calendar, receivables, productivity and cover",
+      "start": "/web",
+      "states": [ { "steps": [], "highlight": [] } ]
+    }
+  ]
+}

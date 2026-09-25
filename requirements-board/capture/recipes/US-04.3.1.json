@@ -1,0 +1,21 @@
+{
+  "id": "US-04.3.1",
+  "status": "partial",
+  "absentReason": "Each procedure holds a single governing contract, set by the office. A procedure with no contract is not blocked from completion: it falls back to default pricing and the hospital default contract is resolved at billing.",
+  "shots": [
+    {
+      "name": "procedure-contract",
+      "app": "admin",
+      "caption": "Office billing setup, one governing contract per procedure",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    }
+  ]
+}

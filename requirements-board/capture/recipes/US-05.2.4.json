@@ -1,0 +1,21 @@
+{
+  "id": "US-05.2.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contract-rate",
+      "app": "admin",
+      "caption": "Card priced at the contract's agreed $24 per unit instead of Dr Rutherford's $32",
+      "start": "/admin/day/2026-07-09/cards/C0031",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

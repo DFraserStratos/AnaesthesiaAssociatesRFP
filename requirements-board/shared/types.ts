@@ -32,10 +32,15 @@ export type QuestionKind = (typeof QUESTION_KINDS)[number]
 export const VIEWPORTS = ['desktop', 'mobile'] as const
 export type Viewport = (typeof VIEWPORTS)[number]
 
+/** Which app a screenshot shows. The board groups an item's gallery by it, in this order. */
+export const IMAGE_APPS = ['admin', 'web', 'mobile', 'simulator'] as const
+export type ImageApp = (typeof IMAGE_APPS)[number]
+
 export interface ImageRef {
   /** Path relative to the catalogue folder, e.g. `assets/US-01.1.1/dashboard.png`. */
   src: string
   viewport: Viewport
+  app?: ImageApp
   caption?: string
 }
 

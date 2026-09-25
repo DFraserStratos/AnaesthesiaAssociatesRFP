@@ -1,0 +1,37 @@
+{
+  "id": "US-01.5.3",
+  "status": "partial",
+  "absentReason": "Availability is set per session on the mobile app, on the List itself, not as a separate calendar independent of Lists (OQ-27). The web app cannot change availability.",
+  "shots": [
+    {
+      "name": "my-availability",
+      "app": "mobile",
+      "caption": "My availability, set per session",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "state": "before",
+          "steps": [],
+          "highlight": [
+            "[data-shot=availability-mine]"
+          ]
+        },
+        {
+          "state": "blocked",
+          "steps": [
+            {
+              "click": "[data-shot=availability-block-pm]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=availability-mine]"
+          ],
+          "caption": "PM blocked while booked: flagged as a conflict for the office"
+        }
+      ]
+    }
+  ]
+}

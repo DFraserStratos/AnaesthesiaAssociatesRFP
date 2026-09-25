@@ -1,0 +1,108 @@
+{
+  "id": "US-01.4.1",
+  "status": "partial",
+  "absentReason": "Reassignment moves the List and its cards to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.",
+  "shots": [
+    {
+      "name": "reassign",
+      "app": "admin",
+      "caption": "Reassign a List with its bookings",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "pick",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Choose an anaesthetist whose session is free"
+        },
+        {
+          "state": "done",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Confirm reassignment\"]"
+            },
+            {
+              "wait": 250
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "List reassigned to Hughes, Rawiri"
+        },
+        {
+          "state": "after",
+          "caption": "Hughes now holds the St George's List with its cards",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Confirm reassignment\"]"
+            },
+            {
+              "wait": 2500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-day-grid-row=\"46822\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

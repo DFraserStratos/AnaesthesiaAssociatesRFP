@@ -1,0 +1,52 @@
+{
+  "id": "US-01.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "list-pairing",
+      "app": "admin",
+      "caption": "An assigned List has one hospital and one surgeon",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "drawer",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] >> text=\"Session\"",
+            "[data-testid=admin-list-drawer] >> text=\"Mr T. Hale\""
+          ],
+          "caption": "List drawer: one hospital, one surgeon"
+        },
+        {
+          "state": "edit",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Edit list\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog] label:has(select)"
+          ],
+          "caption": "Edit list: a single hospital and a single surgeon"
+        }
+      ]
+    }
+  ]
+}

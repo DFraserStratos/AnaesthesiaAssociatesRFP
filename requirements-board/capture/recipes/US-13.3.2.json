@@ -1,0 +1,49 @@
+{
+  "id": "US-13.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "resolve-retry",
+      "app": "admin",
+      "caption": "Resolve and retry a failed billing item",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Trigger failure\"]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "state": "failed",
+          "caption": "A Card that failed to rate, with the reason and Resolve & retry",
+          "steps": [],
+          "highlight": [
+            "tr:has(button:has-text(\"Resolve & retry\"))"
+          ]
+        },
+        {
+          "state": "retried",
+          "caption": "After Resolve & retry the Card invoices and hands off",
+          "steps": [
+            {
+              "click": "role=button[name=\"Resolve & retry\"]"
+            },
+            {
+              "wait": 1200
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -55,7 +55,7 @@ export function OfficeBillingSetup({ procedure, list, ordinal, actor, canEdit }:
   })()
 
   return (
-    <div style={{ background: accent.tint, border: `1px solid ${accent.base}33`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div data-shot={`office-billing-setup-${ordinal}`} style={{ background: accent.tint, border: `1px solid ${accent.base}33`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: accent.pressed, textTransform: 'uppercase' }}>
           Office billing setup · procedure {ordinal}

@@ -1,0 +1,61 @@
+{
+  "id": "US-08.3.4",
+  "status": "partial",
+  "absentReason": "Receipts and disbursements are tracked per invoice and shown per card, but there is no equilibrium view for AA overall, per anaesthetist or per patient.",
+  "shots": [
+    {
+      "name": "money-in-out",
+      "app": "admin",
+      "caption": "Money in and money out per card, after the payables run",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Run payables\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-payables-run]",
+            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
+          ]
+        }
+      ]
+    }
+  ]
+}

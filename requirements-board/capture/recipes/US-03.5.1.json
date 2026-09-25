@@ -1,0 +1,85 @@
+{
+  "id": "US-03.5.1",
+  "status": "partial",
+  "absentReason": "The dollar adjustment and fixed charge fields are always offered, not only when the Contract allows adjustment, and a percentage discount is set by the office rather than the anaesthetist.",
+  "shots": [
+    {
+      "name": "adjustment",
+      "app": "web",
+      "caption": "Adjustment and charge on the procedure",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "none",
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Adjustment and charge, none applied"
+        },
+        {
+          "state": "adjustment",
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Dollar adjustment field"
+        }
+      ]
+    },
+    {
+      "name": "adjustment",
+      "app": "mobile",
+      "caption": "Adjustment and charge on the procedure",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "none",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-adjustment-and-charge]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Adjustment and charge, none applied"
+        },
+        {
+          "state": "adjustment",
+          "steps": [
+            {
+              "scroll": "[data-shot=capture-adjustment-and-charge]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Dollar adjustment field"
+        }
+      ]
+    }
+  ]
+}

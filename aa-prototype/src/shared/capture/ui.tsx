@@ -33,6 +33,7 @@ export function CaptureSection({
   return (
     <div
       tabIndex={validationTarget === undefined ? undefined : -1}
+      data-shot={`capture-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       data-validation-procedure-id={validationTarget?.procedureId}
       data-validation-fields={validationTarget?.fields.join(' ')}
       style={{

@@ -1,0 +1,55 @@
+{
+  "id": "US-09.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "invoice-pairs",
+      "app": "simulator",
+      "caption": "Xero invoices, each ACCREC to the payer paired with an ACCPAY to the anaesthetist",
+      "start": "/demo/xero/invoices",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=xero-invoice-table] tbody tr:nth-child(-n+2)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pair-detail",
+      "app": "simulator",
+      "caption": "One pair: ACCREC to the payer and draft ACCPAY to the anaesthetist",
+      "start": "/demo/xero/invoices/XRH01",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-testid=xero-money-flow-grid]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=xero-money-flow-grid]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "invoice-xero-ids",
+      "app": "admin",
+      "caption": "Both Xero records referenced on the engine's invoice record",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=xero-handoff-status]",
+            "[data-testid=xero-accrec-reference]",
+            "[data-testid=xero-accpay-reference]"
+          ]
+        }
+      ]
+    }
+  ]
+}

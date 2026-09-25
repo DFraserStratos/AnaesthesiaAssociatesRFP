@@ -1,0 +1,6 @@
+{
+  "id": "US-13.2.2",
+  "status": "absent",
+  "absentReason": "No patient profile or per-patient balance in the Admin app. The only patient balance signal is the \"Prior balance\" flag on a billing monitor row. Searched apps/admin for patient balance and patient profile screens.",
+  "shots": []
+}

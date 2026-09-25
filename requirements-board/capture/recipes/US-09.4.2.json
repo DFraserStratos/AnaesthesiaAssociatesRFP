@@ -1,0 +1,21 @@
+{
+  "id": "US-09.4.2",
+  "status": "partial",
+  "absentReason": "The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).",
+  "shots": [
+    {
+      "name": "duplicate-number-setting",
+      "app": "simulator",
+      "caption": "Duplicate invoice number prevention, noted as an open setting",
+      "start": "/demo/xero",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-duplicate-number-policy]"
+          ]
+        }
+      ]
+    }
+  ]
+}

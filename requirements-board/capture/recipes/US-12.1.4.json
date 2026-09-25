@@ -1,0 +1,21 @@
+{
+  "id": "US-12.1.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "anaesthetist-record",
+      "app": "admin",
+      "caption": "Anaesthetist contact details in Master data",
+      "start": "/admin/masters",
+      "states": [
+        { "state": "edit", "caption": "Editing an anaesthetist's phone and email",
+          "steps": [ { "click": "tr:has-text(\"Souter\") >> text=\"Edit\"" }, { "wait": 500 } ],
+          "highlight": ["[role=dialog]"] },
+        { "state": "add", "caption": "Adding an anaesthetist with registration number, contact and HPI",
+          "steps": [ { "click": "role=button[name=\"Add anaesthetist\"]" }, { "wait": 500 } ],
+          "highlight": ["[role=dialog]"] }
+      ]
+    }
+  ]
+}

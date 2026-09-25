@@ -1,0 +1,21 @@
+{
+  "id": "US-05.2.5",
+  "status": "partial",
+  "absentReason": "A Type 3 card is priced from the matched fixed price row (by RVG code, surgeon and procedure ordinal) and BTM is still recorded. Schedule lines have no time band or add-on fee to match on.",
+  "shots": [
+    {
+      "name": "fixed-price",
+      "app": "admin",
+      "caption": "Card priced from the surgeon's fixed price list, units still recorded",
+      "start": "/admin/day/2026-07-14/cards/C0028",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=card-calculation]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "US-14.4.1",
+  "status": "partial",
+  "absentReason": "The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.",
+  "shots": [
+    {
+      "name": "nhi-lookup",
+      "app": "web",
+      "caption": "NHI lookup when adding a card",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nhi-lookup",
+      "app": "mobile",
+      "caption": "NHI lookup when adding a card",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

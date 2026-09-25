@@ -1,0 +1,39 @@
+{
+  "id": "US-09.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contacts",
+      "app": "simulator",
+      "caption": "Xero contacts identified by the hidden internal ID in ContactNumber",
+      "start": "/demo/xero",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "table"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pair-contact-ids",
+      "app": "simulator",
+      "caption": "ContactID and ContactNumber on the ACCREC",
+      "start": "/demo/xero/invoices/XRH12",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=xero-accrec-card]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accrec-card] >> text=\"ContactID\" >> xpath=../.."
+          ]
+        }
+      ]
+    }
+  ]
+}

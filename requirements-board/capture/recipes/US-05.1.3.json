@@ -1,0 +1,71 @@
+{
+  "id": "US-05.1.3",
+  "status": "partial",
+  "absentReason": "Codes are grouped by anatomical site from the guide, and the code picker lists them under those groups. AA groups such as cosmetic, dental or plastics cannot be defined, and codes cannot be selected as a set.",
+  "shots": [
+    {
+      "name": "rvg-sites",
+      "app": "admin",
+      "caption": "RVG codes with their anatomical site",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"RVG codes\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "table th:nth-child(3)",
+            "table td:nth-child(3)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "code-picker",
+      "app": "web",
+      "caption": "Procedure code picker grouped by anatomical site",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Change\" >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "code-picker",
+      "app": "mobile",
+      "caption": "Procedure code picker grouped by anatomical site",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Change\" >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

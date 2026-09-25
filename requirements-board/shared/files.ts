@@ -6,7 +6,7 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
+import type { ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
 
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'images']
@@ -66,6 +66,7 @@ function images(v: unknown): ImageRef[] {
     if (typeof raw === 'string') return { src: raw, viewport: 'desktop' as const }
     const o = (raw ?? {}) as Record<string, unknown>
     const img: ImageRef = { src: str(o.src), viewport: (o.viewport === undefined ? 'desktop' : str(o.viewport)) as Viewport }
+    if (o.app) img.app = str(o.app) as ImageApp
     if (o.caption) img.caption = str(o.caption)
     return img
   })
@@ -186,7 +187,12 @@ export function serialiseItem(item: Item): string {
   meta.components = item.components
   meta.sources = item.sources
   meta.order = item.order
-  meta.images = item.images.map((i) => (i.caption ? { src: i.src, viewport: i.viewport, caption: i.caption } : { src: i.src, viewport: i.viewport }))
+  meta.images = item.images.map((i) => {
+    const img: Record<string, unknown> = { src: i.src, viewport: i.viewport }
+    if (i.app) img.app = i.app
+    if (i.caption) img.caption = i.caption
+    return img
+  })
   withExtra(meta, item.extra, ITEM_KEYS)
   return assemble(meta, [
     [null, item.description],

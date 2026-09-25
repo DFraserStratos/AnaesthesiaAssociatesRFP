@@ -1,0 +1,125 @@
+{
+  "id": "US-06.3.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "recheck-after-payment",
+      "app": "admin",
+      "caption": "Pre-payment status re-checked after the receipt",
+      "start": "/admin/day/2026-07-24",
+      "states": [
+        {
+          "state": "part-paid",
+          "caption": "Half the deposit received, pre-payment still outstanding",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/demo/control"
+            },
+            {
+              "select": "select >> nth=1",
+              "value": "XR0001"
+            },
+            {
+              "click": "role=button[name=\"Half (partial)\"]"
+            },
+            {
+              "click": "role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24"
+            },
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        },
+        {
+          "state": "paid",
+          "caption": "Deposit paid in full, pre-payment received and gate cleared",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/demo/control"
+            },
+            {
+              "select": "select >> nth=1",
+              "value": "XR0001"
+            },
+            {
+              "click": "role=button[name=\"Full payment\"]"
+            },
+            {
+              "click": "role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24"
+            },
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        }
+      ]
+    }
+  ]
+}

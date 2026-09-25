@@ -1,0 +1,64 @@
+{
+  "id": "US-08.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "xero-pair",
+      "app": "simulator",
+      "caption": "Receivable and payable pair, linked to each other and to the case",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=xero-engine-link]",
+            "[data-shot=xero-accrec-card]",
+            "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "invoice-handoff",
+      "app": "admin",
+      "caption": "Invoice with its linked receivable and payable references",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Xero handoff\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

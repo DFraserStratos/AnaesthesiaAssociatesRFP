@@ -10,8 +10,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "check": "node scripts/check.ts",
-    "export:csv": "node scripts/export-csv.ts"
+    "export:csv": "node scripts/export-csv.ts",
+    "capture": "node scripts/capture.ts"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",

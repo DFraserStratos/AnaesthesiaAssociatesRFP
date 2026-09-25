@@ -1,0 +1,6 @@
+{
+  "id": "US-04.1.3",
+  "status": "absent",
+  "absentReason": "Contracts are edited in place; no version history is kept. Contract edits are audited, and an invoice already raised is a snapshot that later contract edits do not change, but there is nothing to show or restore an earlier version. Searched domain/types.ts (Contract), store/contractActions.ts and apps/admin/flows/ContractEditSheet.tsx.",
+  "shots": []
+}

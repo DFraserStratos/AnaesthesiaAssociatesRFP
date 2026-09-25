@@ -1,0 +1,26 @@
+{
+  "id": "US-01.1.2",
+  "status": "partial",
+  "absentReason": "The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.",
+  "shots": [
+    {
+      "name": "permanent-lists",
+      "app": "admin",
+      "caption": "Weekly templates the canvas generates from",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Permanent lists\""
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

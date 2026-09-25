@@ -79,7 +79,7 @@ function MessagesTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {attention.length > 0 && (
-        <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
+        <div data-shot="integrations-attention" style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
           {attention.length} message{attention.length === 1 ? '' : 's'} need attention (dead-letter or manual intervention). Reprocess after fixing the cause below.
         </div>
       )}
@@ -283,7 +283,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
         <div style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.mist }}>Extracted rows · review and correct</div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: neutral.slate }}>
+          <label data-shot="pdf-target-list" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: neutral.slate }}>
             Ingest onto
             <select value={targetListId} onChange={(e) => setTargetListId(e.target.value)} style={{ font: 'inherit', fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}>
               {listOptions.map((l) => (
@@ -294,13 +294,13 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
             </select>
           </label>
 
-          {rows.map((row) => {
+          {rows.map((row, rowIndex) => {
             const nhiVerdict = row.nhi.trim() !== '' ? validateNhi(row.nhi) : undefined
             const normalised = nhiVerdict?.valid === true ? nhiVerdict.normalised : undefined
             const match = normalised !== undefined ? cardsOnListByNhi({ schedule, masters }, targetListId, normalised)[0] : undefined
             const result = results[row.id]
             return (
-              <div key={row.id} style={{ background: neutral.surface, border: `1px solid ${result?.outcome === 'error' ? semantic.error.solid : neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div key={row.id} data-shot={`pdf-row-${rowIndex + 1}`} style={{ background: neutral.surface, border: `1px solid ${result?.outcome === 'error' ? semantic.error.solid : neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <RowField label="NHI" value={row.nhi} mono onChange={(v) => updateRow(row.id, { nhi: v })} width={110} invalid={nhiVerdict?.valid === false} />
                   <RowField label="Name" value={row.name} onChange={(v) => updateRow(row.id, { name: v })} width={150} />
@@ -408,7 +408,7 @@ function ValidatorsTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 720 }}>
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div data-shot="integrations-nhi-validator" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>NHI validator</div>
         <div style={{ fontSize: 12, color: neutral.slate }}>
           Current format AAANNNC uses a mod-11 check digit; the new format AAANNAX uses a mod-23 check

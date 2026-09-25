@@ -1,0 +1,94 @@
+{
+  "id": "US-03.2.3",
+  "status": "partial",
+  "absentReason": "Anaesthetists add procedures on web and mobile; each carries its own billing route, but the Contract is not chosen separately per added procedure. Admin adding procedures is covered by the admin card screen, not shot here.",
+  "shots": [
+    {
+      "name": "add-procedure",
+      "app": "web",
+      "caption": "Add another procedure to a booking",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "before",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Add another procedure\"]"
+            }
+          ],
+          "highlight": [
+            "role=button[name=\"Add another procedure\"]"
+          ],
+          "caption": "Add another procedure to the booking"
+        },
+        {
+          "state": "copy",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Copy for an additional procedure\"]"
+            }
+          ],
+          "highlight": [
+            "role=button[name=\"Copy for an additional procedure\"]"
+          ],
+          "caption": "Or copy the card for an additional procedure"
+        },
+        {
+          "state": "added",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=1",
+            "[data-shot=procedure-contract] >> nth=1",
+            "[data-shot=procedure-additional-note]"
+          ],
+          "caption": "Procedure 2 added to the booking"
+        }
+      ]
+    },
+    {
+      "name": "add-procedure",
+      "app": "mobile",
+      "caption": "Add another procedure to a booking",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "before",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Add another procedure\"]"
+            }
+          ],
+          "highlight": [
+            "role=button[name=\"Add another procedure\"]",
+            "role=button[name=\"Copy for an additional procedure\"]"
+          ],
+          "caption": "Add another procedure, or copy the card for an additional procedure"
+        },
+        {
+          "state": "added",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add another procedure\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-testid=procedure-header] >> nth=1",
+            "[data-shot=procedure-contract] >> nth=1",
+            "[data-shot=procedure-additional-note]"
+          ],
+          "caption": "Procedure 2 added to the booking"
+        }
+      ]
+    }
+  ]
+}

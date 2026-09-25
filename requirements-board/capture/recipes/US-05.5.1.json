@@ -1,0 +1,21 @@
+{
+  "id": "US-05.5.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "acc-contract",
+      "app": "admin",
+      "caption": "ACC procedure billed under the contract holder's ACC contract",
+      "start": "/admin/day/2026-07-09/cards/C0031",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=office-billing-setup-1]"
+          ]
+        }
+      ]
+    }
+  ]
+}

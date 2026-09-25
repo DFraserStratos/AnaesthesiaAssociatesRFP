@@ -1,0 +1,128 @@
+{
+  "id": "US-10.2.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "full-payment",
+      "app": "simulator",
+      "caption": "Full payment of the receivable authorises the matching payable",
+      "start": "/demo/xero/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "unpaid",
+          "caption": "Before payment: receivable awaiting payment, payable not authorised",
+          "steps": [
+            {
+              "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accrec-card]",
+            "[data-shot=xero-accpay-card]"
+          ]
+        },
+        {
+          "state": "paid",
+          "caption": "Paid in full: the payable is authorised for the next payables run",
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/demo/control"
+            },
+            {
+              "click": "role=button[name=\"Record payment\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/demo/xero/invoices"
+            },
+            {
+              "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-accrec-card]",
+            "[data-shot=xero-accpay-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payables-run",
+      "app": "admin",
+      "caption": "Authorised payables waiting for the payables run",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-payables-run]"
+          ]
+        }
+      ]
+    }
+  ]
+}

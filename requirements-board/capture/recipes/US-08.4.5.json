@@ -1,0 +1,48 @@
+{
+  "id": "US-08.4.5",
+  "status": "partial",
+  "absentReason": "The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.",
+  "shots": [
+    {
+      "name": "agent-line",
+      "app": "admin",
+      "caption": "Invoice billed by AA as agent for the anaesthetist",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-agency-line]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "US-10.2.4",
+  "status": "absent",
+  "absentReason": "Bulk remittance and bank reconciliation stay in Xero by design, so the prototype has no screen for them. Searched the Xero simulator, admin and control panel for remittance and bank reconciliation; only a note on the Xero simulator mentions remittance matching.",
+  "shots": []
+}

@@ -121,7 +121,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       {/* Payables run (unbadged office action; the disbursement side of the
           two-state money model). Pays every authorised ACCPAY the increment
           since the last run. */}
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <div data-shot="billing-payables-run" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Payables run</div>
           <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
@@ -160,7 +160,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveRetry: (r: MonitorCardRow) => void }) {
   const context = [row.hospitalName ?? 'Unassigned', row.list.session, dayMicroCap(row.list.dateISO)].join(' · ')
   return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div data-shot={`billing-pipeline-${row.listId}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700 }}>{row.anaesthetistName}</div>
@@ -197,7 +197,7 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
             {row.cardRows.map((cardRow) => (
               <tr key={cardRow.cardId}>
                 <td className="mono" style={cellStyle}>{cardRow.cardId}</td>
-                <td style={cellStyle}>
+                <td style={cellStyle} data-shot={cardRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
                   {cardRow.patientName}
                   {cardRow.outstandingPriorBalance === true && (
                     <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>

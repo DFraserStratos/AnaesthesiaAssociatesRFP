@@ -1,0 +1,23 @@
+{
+  "id": "FT-02.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeon-pdf-inbox",
+      "app": "admin",
+      "caption": "Surgeon PDF inbox",
+      "start": "/admin/integrations",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Surgeon PDFs\"]"
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

@@ -26,9 +26,10 @@ import { neutral, accent, semantic, radius, elevation } from '../../theme/tokens
 // Shared bits
 // ---------------------------------------------------------------------------
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children, shot }: { title: string; subtitle?: string; children: React.ReactNode; shot?: string }) {
   return (
     <section
+      data-shot={shot}
       style={{
         background: neutral.surface,
         border: `1px solid ${neutral.line}`,
@@ -549,6 +550,7 @@ export function DemoData() {
 
       {/* Guard console */}
       <Panel
+        shot="data-guard-console"
         title="Guard console"
         subtitle="Attempt a lifecycle action as any persona and see the guard's outcome. Forbidden transitions return their refusal messages; nothing bypasses a guard."
       >

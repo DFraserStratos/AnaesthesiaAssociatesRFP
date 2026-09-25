@@ -1,0 +1,127 @@
+{
+  "id": "US-08.4.2",
+  "status": "partial",
+  "absentReason": "Emailing is simulated and records only the time sent; the invoice does not show or use an invoice email address captured on the booking, so sending to a guardian's address is not shown. Portal upload for an insurer is shown.",
+  "shots": [
+    {
+      "name": "email-invoice",
+      "app": "admin",
+      "caption": "Sending the invoice to the invoice email",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "state": "ready",
+          "caption": "Invoice ready to email",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+          ]
+        },
+        {
+          "state": "emailed",
+          "caption": "Invoice emailed, simulated send",
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\")"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "role=button[name=\"Email invoice\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "portal-upload",
+      "app": "admin",
+      "caption": "Insurer invoice queued for the insurer's upload portal",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "scenario": "S3"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-20-PM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Alan Prentice\") >> nth=1"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=invoice-info-rail] section:has(h2:text-is(\"Delivery\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

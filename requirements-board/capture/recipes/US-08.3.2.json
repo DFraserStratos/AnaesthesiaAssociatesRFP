@@ -1,0 +1,31 @@
+{
+  "id": "US-08.3.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "web-accounts",
+      "app": "web",
+      "caption": "Anaesthetist's outstanding accounts, read from the billing engine ledger",
+      "start": "/web/accounts/overdue",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "mobile-balances",
+      "app": "mobile",
+      "caption": "Balances on the phone, read from the billing engine ledger",
+      "start": "/mobile/balances",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

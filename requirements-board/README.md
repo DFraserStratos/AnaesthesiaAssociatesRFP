@@ -11,6 +11,7 @@ this app and any agent edit those same files.
 npm install
 npm run dev          # http://localhost:5180
 npm test             # Vitest: file round-trip, check rules, IDs, the file API, auto-layout
+npm run test:e2e     # Playwright: board rendering (edges join every card); own server on 5181, read-only
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
@@ -76,5 +77,20 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - Semantic zoom bands: overview (epic names, stories as status blocks), far (ID + title), mid, near
   (description excerpt).
 
-Screenshots: put files under `catalogue/assets/<ID>/` and list them in the item's `images`. A
-Playwright capture step that fills these from the prototype is the intended next step.
+Screenshots: put files under `catalogue/assets/<ID>/` and list them in the item's `images`, each
+with a `viewport` and optionally an `app` (`admin`, `web`, `mobile`, `simulator`). The item sheet's
+gallery has one tab per app present, in that order; untagged images fall back to Desktop / Mobile.
+
+### Capturing prototype screenshots
+
+`npm run capture` takes screenshots of the prototype from recipes and links them to the catalogue:
+
+- Recipes: one JSON file per item in `capture/recipes/<ID>.json` (format and screen atlas in
+  `capture/ATLAS.md`). Each recipe lists shots, each with an app, a start route, optional setup,
+  and one or more states (steps plus the selectors to box in red).
+- Needs the prototype on `localhost:5173` (root `npm run dev`) and the mobile PWA dev server on
+  `localhost:5174` (`npm --prefix aa-prototype run dev:pwa`). The runner stops if either is down.
+- `node scripts/capture.ts --only US-03.2.4,EP-03` limits the run (an epic or feature ID takes its
+  descendants); `--dry` checks recipes and selectors without writing anything.
+- Output: `catalogue/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
+  (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.

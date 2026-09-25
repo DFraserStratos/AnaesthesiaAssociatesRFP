@@ -1,0 +1,205 @@
+{
+  "id": "US-08.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "deposit-invoice",
+      "app": "admin",
+      "caption": "The pre-payment deposit invoice raised before the procedure",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24"
+        },
+        {
+          "click": "text=\"Ms G. Lim \u00b7 Plastics\""
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "role=button[name=\"Override gate\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "[role=dialog] textarea",
+          "value": "Patient paid the deposit by EFTPOS in clinic"
+        },
+        {
+          "click": "role=button[name=\"Override and allow completion\"]"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "role=button[name=\"Mark complete\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "role=button[name=\"Mark list completed\"]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Submit to office\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Annette Riley\") >> nth=1"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "balance-invoice",
+      "app": "admin",
+      "caption": "Balance invoice less the pre-payment deposit already invoiced",
+      "start": "/admin/invoices",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24"
+        },
+        {
+          "click": "text=\"Ms G. Lim \u00b7 Plastics\""
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "role=button[name=\"Override gate\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "[role=dialog] textarea",
+          "value": "Patient paid the deposit by EFTPOS in clinic"
+        },
+        {
+          "click": "role=button[name=\"Override and allow completion\"]"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "click": "role=button[name=\"Mark complete\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "role=button[name=\"Mark list completed\"]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "role=button[name=\"Submit to office\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "wait": 400
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Annette Riley\") >> nth=0"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-lines]"
+          ]
+        }
+      ]
+    }
+  ]
+}

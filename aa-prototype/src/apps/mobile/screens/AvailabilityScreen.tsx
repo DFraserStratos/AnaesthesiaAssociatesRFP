@@ -179,7 +179,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
       {/* Tab bar clearance is the `DockSpacer` at the tail, not padding here. */}
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* My availability */}
-        <div style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div data-shot="availability-mine" style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Avatar initials={initials} size={34} />
             <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>My availability</span>
@@ -194,7 +194,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
                   {cellTitle(list)}
                 </span>
                 <button onClick={() => setMine(session, 'available')} style={miniBtn(statusColours.free.solid)}>Free</button>
-                <button onClick={() => setMine(session, 'unavailable')} style={miniBtn(neutral.slate)}>Block</button>
+                <button data-shot={`availability-block-${session.toLowerCase()}`} onClick={() => setMine(session, 'unavailable')} style={miniBtn(neutral.slate)}>Block</button>
               </div>
             )
           })}

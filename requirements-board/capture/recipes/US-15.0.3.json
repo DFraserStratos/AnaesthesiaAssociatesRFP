@@ -1,0 +1,22 @@
+{
+  "id": "US-15.0.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "entered-by-anaesthetist",
+      "app": "web",
+      "caption": "Anaesthetist stamps the finish time on a card",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [ { "steps": [ { "click": "text=\"Finish now\"" }, { "wait": 500 } ], "highlight": ["[data-testid=time-capture-track]"] } ]
+    },
+    {
+      "name": "seen-by-office",
+      "app": "admin",
+      "caption": "The same finish time, current in the office's view of the card",
+      "start": "/admin/day/2026-07-21/cards/C0009",
+      "setup": [ { "goto": "/web/lists/L-34821-2026-07-21-PM/cards/C0009" }, { "click": "text=\"Finish now\"" }, { "wait": 600 } ],
+      "states": [ { "steps": [], "highlight": ["[data-testid=time-capture-track]"] } ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "US-01.2.1",
+  "status": "partial",
+  "absentReason": "The mobile app sets each own session to Free or Block only; available for emergency and on leave are not offered. The web app shows own availability in the grid but cannot change it.",
+  "shots": [
+    {
+      "name": "my-availability",
+      "app": "mobile",
+      "caption": "My availability",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "state": "before",
+          "steps": [],
+          "highlight": [
+            "[data-shot=availability-mine]"
+          ],
+          "caption": "My availability, each session can be set free or blocked"
+        },
+        {
+          "state": "pm-blocked",
+          "steps": [
+            {
+              "click": "[data-shot=availability-block-pm]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=availability-mine]"
+          ],
+          "caption": "PM blocked while booked: a conflict is flagged and the office notified"
+        }
+      ]
+    },
+    {
+      "name": "availability-grid",
+      "app": "web",
+      "caption": "Own availability in the web availability grid",
+      "start": "/web/availability",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=availability-row-mine]"
+          ]
+        }
+      ]
+    }
+  ]
+}

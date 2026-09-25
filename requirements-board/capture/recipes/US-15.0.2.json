@@ -1,0 +1,21 @@
+{
+  "id": "US-15.0.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "lists-home",
+      "app": "mobile",
+      "caption": "Mobile app, the anaesthetist's primary tool",
+      "start": "/mobile/lists",
+      "states": [ { "steps": [], "highlight": [] } ]
+    },
+    {
+      "name": "lists",
+      "app": "web",
+      "caption": "Web app, the full desktop alternative",
+      "start": "/web/lists",
+      "states": [ { "steps": [], "highlight": [] } ]
+    }
+  ]
+}

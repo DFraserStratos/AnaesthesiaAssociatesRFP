@@ -1,0 +1,59 @@
+{
+  "id": "US-05.1.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "rvg-absorbs",
+      "app": "admin",
+      "caption": "RVG codes list the modifiers each base code absorbs",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"RVG codes\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "table th:nth-child(5)",
+            "table td:nth-child(5)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "absorbed-positioning",
+      "app": "web",
+      "caption": "Positioning is struck through on a hip replacement, which already includes it",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=capture-modifiers] button:has-text(\"Positioning\")",
+            "[data-shot=capture-modifiers] >> text=/already includes P1/"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "absorbed-positioning",
+      "app": "mobile",
+      "caption": "Positioning is struck through on a hip replacement, which already includes it",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=capture-modifiers] button:has-text(\"Positioning\")",
+            "[data-testid=slide-card] [data-shot=capture-modifiers] >> text=/already includes P1/"
+          ]
+        }
+      ]
+    }
+  ]
+}

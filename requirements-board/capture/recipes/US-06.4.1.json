@@ -1,0 +1,107 @@
+{
+  "id": "US-06.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "balance-invoice",
+      "app": "admin",
+      "caption": "Balance invoice after the procedure, final fee less the paid deposit",
+      "start": "/admin/invoices/INV0003",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-24"
+        },
+        {
+          "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+        },
+        {
+          "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "select": "select >> nth=1",
+          "value": "XR0001"
+        },
+        {
+          "click": "role=button[name=\"Full payment\"]"
+        },
+        {
+          "click": "role=button[name=\"Record payment\"]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "text=\"Annette Riley\" >> nth=0"
+        },
+        {
+          "click": "text=\"Start now\""
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "text=\"Finish now\""
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "role=button[name=\"I\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Mark complete\"]"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "goto": "/web/lists/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "text=\"Mark list completed\" >> nth=0"
+        },
+        {
+          "click": "text=\"Submit to office\" >> nth=0"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "goto": "/admin/review/L-34821-2026-07-24-AM"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+        },
+        {
+          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment balance\"))",
+            "[data-shot=invoice-lines]",
+            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
+          ]
+        }
+      ]
+    }
+  ]
+}

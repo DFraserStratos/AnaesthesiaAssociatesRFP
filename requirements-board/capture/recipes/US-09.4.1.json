@@ -1,0 +1,19 @@
+{
+  "id": "US-09.4.1",
+  "status": "partial",
+  "absentReason": "The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.",
+  "shots": [
+    {
+      "name": "xero-organisation",
+      "app": "simulator",
+      "caption": "The simulated Xero organisation, holding only contacts, invoice pairs and payments",
+      "start": "/demo/xero/invoices",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "US-11.1.4",
+  "status": "partial",
+  "absentReason": "A patient can be created without an NHI (the add card form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.",
+  "shots": [
+    {
+      "name": "nhi-pending",
+      "app": "admin",
+      "caption": "Patient booked without an NHI, shown as NHI pending",
+      "start": "/admin/day/2026-07-27/cards/C0035",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            
+            "[data-shot=card-patient]"
+          ]
+        }
+      ]
+    }
+  ]
+}

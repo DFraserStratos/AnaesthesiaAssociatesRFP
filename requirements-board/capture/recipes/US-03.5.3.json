@@ -1,0 +1,136 @@
+{
+  "id": "US-03.5.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "adjustment-reason",
+      "app": "web",
+      "caption": "Reason recorded with an adjustment",
+      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "required",
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-25.00"
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "A reason is required before the adjustment can be saved"
+        },
+        {
+          "state": "saved",
+          "steps": [
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-25.00"
+            },
+            {
+              "fill": "input[placeholder=\"Why the price differs\"]",
+              "value": "Long-standing patient, agreed discount"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Adjustment saved with its reason"
+        }
+      ]
+    },
+    {
+      "name": "adjustment-reason",
+      "app": "mobile",
+      "caption": "Reason recorded with an adjustment",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "states": [
+        {
+          "state": "required",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 1900
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-25.00"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "A reason is required before the adjustment can be saved"
+        },
+        {
+          "state": "saved",
+          "steps": [
+            {
+              "scroll": "[data-testid=mobile-card-scroll]",
+              "by": 1900
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> text=\"Adjustment $\""
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=capture-adjustment-and-charge] input >> nth=0",
+              "value": "-25.00"
+            },
+            {
+              "fill": "input[placeholder=\"Why the price differs\"]",
+              "value": "Long-standing patient, agreed discount"
+            },
+            {
+              "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Save override\"]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=capture-adjustment-and-charge]"
+          ],
+          "caption": "Adjustment saved with its reason"
+        }
+      ]
+    }
+  ]
+}

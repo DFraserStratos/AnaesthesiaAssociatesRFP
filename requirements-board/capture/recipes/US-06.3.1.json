@@ -1,0 +1,84 @@
+{
+  "id": "US-06.3.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "raise-prepayment-invoice",
+      "app": "admin",
+      "caption": "Office raises the pre-procedure invoice from the card",
+      "start": "/admin/day/2026-07-24",
+      "states": [
+        {
+          "state": "required",
+          "caption": "Pre-payment required, with Raise pre-procedure invoice",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        },
+        {
+          "state": "raised",
+          "caption": "Pre-procedure invoice raised, pre-payment now outstanding",
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Raise pre-procedure invoice\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prepayment-invoice",
+      "app": "admin",
+      "caption": "Pre-procedure invoice, full estimated fee",
+      "start": "/admin/invoices/INV0001",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            ".aa-invoice-doc div:has(> span:text-is(\"Pre-payment (pre-procedure)\"))",
+            "[data-shot=invoice-lines]",
+            ".aa-invoice-doc div:has(> span:text-is(\"Total due\"))"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prepayment-xero-pair",
+      "app": "simulator",
+      "caption": "The pre-payment's Xero pair: receivable from the patient and payable to the anaesthetist",
+      "start": "/demo/xero/invoices/XRB0",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=xero-money-flow-grid]"
+          ]
+        }
+      ]
+    }
+  ]
+}

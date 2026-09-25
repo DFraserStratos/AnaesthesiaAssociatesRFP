@@ -1,0 +1,26 @@
+{
+  "id": "US-11.3.2",
+  "status": "partial",
+  "absentReason": "The unpaid prior balance is flagged in the billing monitor once the list is authorised, not as an alert when the booking is created or matched.",
+  "shots": [
+    {
+      "name": "prior-balance",
+      "app": "admin",
+      "caption": "Prior balance flag on a returning patient with unpaid invoices",
+      "start": "/admin/billing",
+      "setup": [
+        {
+          "scenario": "S5"
+        }
+      ],
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=billing-prior-balance]"
+          ]
+        }
+      ]
+    }
+  ]
+}

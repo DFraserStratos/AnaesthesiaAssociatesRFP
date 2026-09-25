@@ -1,0 +1,6 @@
+{
+  "id": "US-06.4.2",
+  "status": "absent",
+  "absentReason": "No credit or refund path exists. Searched the billing domain, store and apps for credit note, refund and overpayment: when a pre-payment exceeds the final amount the balance run refuses the invoice as a negative amount for office review instead of raising a credit (invoiceBuild.ts). The refund mechanism is open (OQ-03).",
+  "shots": []
+}

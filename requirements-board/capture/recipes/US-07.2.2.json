@@ -1,0 +1,56 @@
+{
+  "id": "US-07.2.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "review-contracts",
+      "app": "admin",
+      "caption": "Office review of each Booking's route, Contract, codes and flags",
+      "start": "/admin/review/L-25490-2026-07-20-AM",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=review-detail-table-shell]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "correct-contract",
+      "app": "admin",
+      "caption": "Office corrects a Contract selection in the billing setup",
+      "start": "/admin/day/2026-07-20/cards/C0010",
+      "states": [
+        {
+          "state": "setup",
+          "caption": "Office billing setup on a submitted Card",
+          "steps": [
+            {
+              "scroll": "text=/Office billing setup/"
+            }
+          ],
+          "highlight": [
+            "text=/Office billing setup/ >> xpath=ancestor::div[.//button[normalize-space()='Edit billing setup']][1]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Edit billing setup, choosing the route and Contract",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit billing setup\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

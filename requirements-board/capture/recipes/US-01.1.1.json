@@ -1,0 +1,43 @@
+{
+  "id": "US-01.1.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "day-grid",
+      "app": "admin",
+      "caption": "Every anaesthetist has an AM and a PM List, booked or not",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "my-lists",
+      "app": "web",
+      "caption": "My Lists, two per day, including free and leave sessions",
+      "start": "/web/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "my-lists",
+      "app": "mobile",
+      "caption": "My Lists, two per day, including free sessions",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

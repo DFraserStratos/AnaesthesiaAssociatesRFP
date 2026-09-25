@@ -1,0 +1,6 @@
+{
+  "id": "US-08.6.2",
+  "status": "absent",
+  "absentReason": "No credit note, payable reversal or re-issue flow. Searched the prototype source for credit note, reverse and re-issue; none exist. Invoiced bookings can only take a post-op addendum.",
+  "shots": []
+}

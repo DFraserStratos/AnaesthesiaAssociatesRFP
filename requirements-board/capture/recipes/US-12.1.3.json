@@ -1,0 +1,3 @@
+{ "id": "US-12.1.3", "status": "absent",
+  "absentReason": "The anaesthetist profile holds no prepaid RVG codes or groups (see US-06.1.1). Searched the mobile More screen, the web app and admin Master data; pre-payment is a per-procedure payment category in the prototype.",
+  "shots": [] }

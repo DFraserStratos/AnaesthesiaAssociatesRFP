@@ -1,0 +1,19 @@
+{
+  "id": "FT-13.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "master-data",
+      "app": "admin",
+      "caption": "Master data",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

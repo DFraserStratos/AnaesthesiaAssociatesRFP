@@ -1,0 +1,163 @@
+{
+  "id": "US-11.1.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "dedupe-nhi",
+      "app": "web",
+      "caption": "Returning patient matched on NHI",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "lookup",
+          "caption": "NHI entered for a returning patient",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "linked",
+          "caption": "Card linked to the existing patient record, no duplicate created",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] [placeholder=\"Operation description\"]",
+              "value": "Laparoscopic cholecystectomy"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save card\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dedupe-nhi",
+      "app": "mobile",
+      "caption": "Returning patient matched on NHI",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "lookup",
+          "caption": "NHI entered for a returning patient",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "linked",
+          "caption": "Card linked to the existing patient record, no duplicate created",
+          "steps": [
+            {
+              "click": "text=\"Add a card\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "text=\"Enter manually\""
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"Operation description\"]",
+              "value": "Laparoscopic cholecystectomy"
+            },
+            {
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Save card\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

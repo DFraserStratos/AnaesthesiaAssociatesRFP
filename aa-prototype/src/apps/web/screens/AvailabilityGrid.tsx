@@ -152,7 +152,7 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
               <div style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>No anaesthetists match.</div>
             )}
             {visible.map((row) => (
-              <div key={row.anaesthetistId} style={{ display: 'grid', gridTemplateColumns: '220px 1fr 1fr', gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
+              <div key={row.anaesthetistId} data-shot={row.anaesthetistId === anaesthetistId ? 'availability-row-mine' : undefined} style={{ display: 'grid', gridTemplateColumns: '220px 1fr 1fr', gap: '0 12px', alignItems: 'center', padding: '7px 20px', borderBottom: `1px solid ${neutral.sunken}` }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                   <span aria-hidden style={{ width: 30, height: 30, borderRadius: 99, background: brand.tint, color: brand.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flex: 'none' }}>{row.initials}</span>
                   <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

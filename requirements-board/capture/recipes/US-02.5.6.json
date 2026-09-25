@@ -1,0 +1,6 @@
+{
+  "id": "US-02.5.6",
+  "status": "absent",
+  "absentReason": "No concurrency handling is shown. The prototype is a single in-browser store where writes apply in order (last write wins, each audited); there is no conflict detection, locking or merge UI. Searched store/ and apps/ for concurrency, stale or version-conflict handling.",
+  "shots": []
+}

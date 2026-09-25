@@ -67,6 +67,22 @@ describe('catalogue files', () => {
     expect(parseQuestion(serialiseQuestion(q))).toEqual(q)
   })
 
+  it('round-trips an image app byte for byte, in src, viewport, app, caption order', () => {
+    const it1 = item({ images: [{ src: 'assets/US-01.1.1/mobile-home.png', viewport: 'mobile', app: 'mobile', caption: 'Home' }] })
+    const text = serialiseItem(it1)
+    expect(text).toContain('  - src: assets/US-01.1.1/mobile-home.png\n    viewport: mobile\n    app: mobile\n    caption: Home\n')
+    expect(parseItem(text)).toEqual(it1)
+    expect(serialiseItem(parseItem(text))).toBe(text)
+  })
+
+  it('flags an unknown image app and a mobile-app shot with a desktop viewport', () => {
+    const bad = parseItem(serialiseItem(item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'phone' as never }] })))
+    const odd = item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'mobile' }] })
+    const msgs = (i: typeof bad) => checkCatalogue({ items: [epic, feature, i], questions: [] }).map((x) => x.message)
+    expect(msgs(bad)).toContain('image app "phone" is not one of admin, web, mobile, simulator')
+    expect(msgs(odd)).toContain('image assets/US-01.1.1/a.png is from the mobile app but its viewport is desktop')
+  })
+
   it('keeps a leading indent (a code block) through a round trip', () => {
     const it1 = item({ description: '    code line\nmore', notes: '    indented note' })
     expect(parseItem(serialiseItem(it1))).toEqual(it1)

@@ -1,0 +1,89 @@
+{
+  "id": "US-04.4.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "add-hospital",
+      "app": "admin",
+      "caption": "Adding a hospital creates its default contract",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "state": "added",
+          "caption": "Hospital added, with its default contract created",
+          "steps": [
+            {
+              "click": "role=button[name=\"Hospitals & holidays\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[role=dialog] input",
+              "value": "Ashburton Surgical"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "contracts",
+          "caption": "The new default contract, protected, in the contracts list",
+          "steps": [
+            {
+              "click": "role=button[name=\"Hospitals & holidays\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[role=dialog] input",
+              "value": "Ashburton Surgical"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Ashburton Surgical\")"
+          ]
+        }
+      ]
+    }
+  ]
+}

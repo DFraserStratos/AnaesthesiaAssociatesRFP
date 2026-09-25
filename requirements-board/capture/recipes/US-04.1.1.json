@@ -1,0 +1,35 @@
+{
+  "id": "US-04.1.1",
+  "status": "partial",
+  "absentReason": "Contracts are typed by the RFP pricing types (Type 1 units, Type 2 rate, Type 3 fixed) plus a holder type (hospital, insurer, surgeon, organisation, billable party). The seven named categories (RVG Default Post-paid, Pre-paid, Hospital, Surgeon Solo, Surgeon Group, Insurance) are not offered as categories.",
+  "shots": [
+    {
+      "name": "contract-types",
+      "app": "admin",
+      "caption": "New contract, choosing the contract type and holder type",
+      "start": "/admin/masters",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "role=button[name=\"Contracts\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"New contract\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog] div:has(> div:text-is(\"Type\"))",
+            "[role=dialog] label:has(select)"
+          ]
+        }
+      ]
+    }
+  ]
+}
