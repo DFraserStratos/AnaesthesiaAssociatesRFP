@@ -61,7 +61,9 @@ scrolls) and as the modal elsewhere.
 
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
-- Then the title, description, notes, open questions, children, screenshots.
+- Then the title, description, acceptance criteria, technical discussion, notes, open questions,
+  children, screenshots. Empty sections are not shown. Cards never show acceptance criteria or
+  technical discussion; their excerpt is the description only.
 - Bottom: **Status** (the pill alone), **Area** (component), **Sources**, and the
   ID quietly in the bottom right.
 

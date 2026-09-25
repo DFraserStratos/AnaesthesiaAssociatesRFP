@@ -11,7 +11,15 @@ import type { ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, Question
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'images']
 export const QUESTION_KEYS = ['id', 'kind', 'title', 'status', 'owner', 'affects', 'sources']
+export const ACCEPTANCE_HEADING = '## Acceptance criteria'
+export const TECHNICAL_HEADING = '## Technical discussion'
 export const NOTES_HEADING = '## Notes'
+/** An item body's level-2 sections after the description, in the order they are written. */
+const ITEM_SECTIONS = [
+  { heading: ACCEPTANCE_HEADING, field: 'acceptance', label: 'Acceptance criteria' },
+  { heading: TECHNICAL_HEADING, field: 'technical', label: 'Technical discussion' },
+  { heading: NOTES_HEADING, field: 'notes', label: 'Notes' },
+] as const
 export const ANSWER_HEADING = '## Answer'
 
 export class ParseError extends Error {}
@@ -48,6 +56,37 @@ function splitSection(body: string, heading: string): [string, string] {
   return [tidyText(lines.slice(0, at).join('\n')), tidyText(lines.slice(at + 1).join('\n'))]
 }
 
+/**
+ * Split a body at any of several level-2 headings: the text before the first
+ * is the lead, and each heading's text runs to the next known heading. Headings
+ * may appear in any order (hand edits); the first occurrence of each wins, so a
+ * repeated heading stays inside the earlier section's text.
+ */
+function splitSections(body: string, headings: readonly string[]): { lead: string; sections: Record<string, string> } {
+  const lines = body.split('\n')
+  const sections: Record<string, string> = {}
+  for (const h of headings) sections[h] = ''
+  const seen = new Set<string>()
+  let current: string | null = null
+  let buf: string[] = []
+  let lead = ''
+  const flush = () => {
+    if (current === null) lead = tidyText(buf.join('\n'))
+    else sections[current] = tidyText(buf.join('\n'))
+  }
+  for (const line of lines) {
+    const h = headings.find((x) => isHeading(line, x) && !seen.has(x))
+    if (h) {
+      flush()
+      seen.add(h)
+      current = h
+      buf = []
+    } else buf.push(line)
+  }
+  flush()
+  return { lead, sections }
+}
+
 const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v))
 const strList = (v: unknown): string[] => {
   if (v === null || v === undefined || v === '') return []
@@ -73,7 +112,13 @@ function images(v: unknown): ImageRef[] {
 }
 
 /** Coerce any object (a parsed frontmatter mapping, or an API request body) into a well-formed Item. */
-export function toItem(meta: Record<string, unknown>, description: unknown = '', notes: unknown = ''): Item {
+export function toItem(
+  meta: Record<string, unknown>,
+  description: unknown = '',
+  acceptance: unknown = '',
+  technical: unknown = '',
+  notes: unknown = '',
+): Item {
   const order = Number(meta.order)
   return {
     id: str(meta.id),
@@ -86,6 +131,8 @@ export function toItem(meta: Record<string, unknown>, description: unknown = '',
     order: Number.isFinite(order) ? order : 0,
     images: images(meta.images),
     description: str(description),
+    acceptance: str(acceptance),
+    technical: str(technical),
     notes: str(notes),
     extra: pickExtra((meta.extra as Record<string, unknown>) ?? {}, ITEM_KEYS),
   }
@@ -110,7 +157,7 @@ export function toQuestion(meta: Record<string, unknown>, question: unknown = ''
 /** Normalise an untrusted record (e.g. a PUT body) through the same coercions a file read uses. */
 export function normaliseItem(raw: unknown): Item {
   const o = (raw ?? {}) as Record<string, unknown>
-  return toItem(o, o.description, o.notes)
+  return toItem(o, o.description, o.acceptance, o.technical, o.notes)
 }
 export function normaliseQuestion(raw: unknown): Question {
   const o = (raw ?? {}) as Record<string, unknown>
@@ -119,8 +166,14 @@ export function normaliseQuestion(raw: unknown): Question {
 
 export function parseItem(text: string): Item {
   const { meta, body } = splitFrontmatter(text)
-  const [description, notes] = splitSection(body, NOTES_HEADING)
-  return toItem({ ...meta, extra: pickExtra(meta, ITEM_KEYS) }, description, notes)
+  const { lead, sections } = splitSections(body, ITEM_SECTIONS.map((s) => s.heading))
+  return toItem(
+    { ...meta, extra: pickExtra(meta, ITEM_KEYS) },
+    lead,
+    sections[ACCEPTANCE_HEADING],
+    sections[TECHNICAL_HEADING],
+    sections[NOTES_HEADING],
+  )
 }
 
 export function parseQuestion(text: string): Question {
@@ -196,7 +249,7 @@ export function serialiseItem(item: Item): string {
   withExtra(meta, item.extra, ITEM_KEYS)
   return assemble(meta, [
     [null, item.description],
-    [NOTES_HEADING, item.notes],
+    ...ITEM_SECTIONS.map((s): [string, string] => [s.heading, item[s.field]]),
   ])
 }
 
@@ -220,8 +273,14 @@ export function serialiseQuestion(q: Question): string {
 /** Why a record would not survive being written and read back, or [] if it would. */
 export function itemRoundTripProblems(item: Item): string[] {
   const out: string[] = []
-  if (item.description.split('\n').some((l) => isHeading(l, NOTES_HEADING))) {
-    out.push(`the description cannot contain a "${NOTES_HEADING}" line; that heading starts the Notes section`)
+  const texts = [{ label: 'description', text: item.description }, ...ITEM_SECTIONS.map((s) => ({ label: s.label, text: item[s.field] }))]
+  for (const { label, text } of texts) {
+    const lines = text.split('\n')
+    for (const s of ITEM_SECTIONS) {
+      if (lines.some((l) => isHeading(l, s.heading))) {
+        out.push(`the ${label} cannot contain a "${s.heading}" line; that heading starts the ${s.label} section`)
+      }
+    }
   }
   return out
 }

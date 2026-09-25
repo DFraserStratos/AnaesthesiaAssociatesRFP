@@ -149,6 +149,8 @@ function normalise(it: Item): Item {
     sources: it.sources.map((s) => s.trim()).filter(Boolean),
     images: it.images.filter((i) => i.src.trim()),
     description: it.description.trim(),
+    acceptance: it.acceptance.trim(),
+    technical: it.technical.trim(),
     notes: it.notes.trim(),
   }
 }
@@ -192,6 +194,20 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
     <>
       <h2>{item.title}</h2>
       {item.description ? <Prose text={item.description} /> : <p className="prose small">No description yet.</p>}
+
+      {item.acceptance && (
+        <section className="section">
+          <h3 className="section-head">Acceptance criteria</h3>
+          <Prose text={item.acceptance} />
+        </section>
+      )}
+
+      {item.technical && (
+        <section className="section">
+          <h3 className="section-head">Technical discussion</h3>
+          <Prose text={item.technical} />
+        </section>
+      )}
 
       {item.notes && (
         <section className="section">
@@ -506,6 +522,14 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
       <label className="field">
         <span>Description · Markdown{draft.type === 'story' ? ' · "As a …, I …, so that …"' : ''}</span>
         <textarea className="textarea" rows={5} value={draft.description} onChange={(e) => set({ description: e.target.value })} />
+      </label>
+      <label className="field">
+        <span>Acceptance criteria · Markdown · one per line or Given/When/Then</span>
+        <textarea className="textarea" rows={4} value={draft.acceptance} onChange={(e) => set({ acceptance: e.target.value })} />
+      </label>
+      <label className="field">
+        <span>Technical discussion · Markdown</span>
+        <textarea className="textarea" rows={4} value={draft.technical} onChange={(e) => set({ technical: e.target.value })} />
       </label>
       <label className="field">
         <span>Notes</span>

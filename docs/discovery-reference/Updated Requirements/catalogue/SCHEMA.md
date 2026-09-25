@@ -39,6 +39,14 @@ images: []
 
 As the system, I create exactly two Lists (AM and PM) for every active anaesthetist ...
 
+## Acceptance criteria
+
+- Given an active anaesthetist, when a day is generated, then they have one AM and one PM List.
+
+## Technical discussion
+
+Lists are generated ahead by the Scheduling Engine, not on first view.
+
 ## Notes
 
 About 85 x 120 x 2 = 20,000 List records at current roster size.
@@ -56,9 +64,12 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `order` | Sort position among siblings (1-based). Gaps are fine. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is `admin`, `web`, `mobile` or `simulator` and groups the board's gallery; a `mobile` app shot should have `viewport: mobile`. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the capture runner (`requirements-board/scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
-Body: the description (stories use "As a ..., I ..., so that ..."), then an optional `## Notes`
-section. Markdown is fine and multi-line is fine, but the description cannot itself contain a
-`## Notes` line (that heading is what starts the Notes section; use `### Notes` or other wording).
+Body: the description (stories use "As a ..., I ..., so that ..."), then up to three optional
+sections, written in this order: `## Acceptance criteria` (one criterion per list item, Given/When/Then
+where it helps), `## Technical discussion`, `## Notes`. Every type (epic, feature, story) may have
+them; an empty section is not written. The board reads the sections in any order, but writes them in
+this one. Markdown is fine and multi-line is fine, but no part of the body can itself contain one of
+those three heading lines (each heading is what starts its section; use `###` or other wording).
 
 **Quote strings in frontmatter.** YAML reads an unquoted ` #` as the start of a comment and
 silently drops the rest (`- Q&A 2026-09-24 #7` becomes `Q&A 2026-09-24`), turns bare numbers into

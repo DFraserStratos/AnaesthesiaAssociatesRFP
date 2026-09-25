@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { checkCatalogue, hasErrors } from '../shared/check.ts'
 import { depthFirst, parseCsv, questionsCsv, requirementsCsv } from '../shared/csv.ts'
-import { parseItem, parseQuestion, serialiseItem, serialiseQuestion } from '../shared/files.ts'
+import { itemRoundTripProblems, parseItem, parseQuestion, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { nextItemId, nextQuestionId } from '../shared/ids.ts'
 import type { Item, Question } from '../shared/types.ts'
 import { itemsDir, loadCatalogue, questionsDir, serialiseLayout, writeItem } from '../server/catalogueFs.ts'
@@ -20,6 +20,8 @@ const item = (over: Partial<Item>): Item => ({
   order: 1,
   images: [],
   description: '',
+  acceptance: '',
+  technical: '',
   notes: '',
   extra: {},
   ...over,
@@ -83,6 +85,42 @@ describe('catalogue files', () => {
     expect(msgs(odd)).toContain('image assets/US-01.1.1/a.png is from the mobile app but its viewport is desktop')
   })
 
+  it('round-trips all four body sections, written in a fixed order', () => {
+    const it1 = item({
+      description: 'As a user, I book, so that I work.',
+      acceptance: '- Given a list, when I book, then it saves.\n- Another.',
+      technical: 'Uses the scheduling engine.',
+      notes: 'A note.',
+    })
+    const text = serialiseItem(it1)
+    const body = text.slice(text.indexOf('\n---\n') + 5)
+    expect(body).toBe(
+      '\nAs a user, I book, so that I work.\n\n## Acceptance criteria\n\n- Given a list, when I book, then it saves.\n- Another.\n\n## Technical discussion\n\nUses the scheduling engine.\n\n## Notes\n\nA note.\n',
+    )
+    expect(parseItem(text)).toEqual(it1)
+    expect(serialiseItem(parseItem(text))).toBe(text)
+  })
+
+  it('writes only the sections that have text', () => {
+    const it1 = item({ description: 'D.', technical: 'T.' })
+    const text = serialiseItem(it1)
+    expect(text).not.toContain('## Acceptance criteria')
+    expect(text).not.toContain('## Notes')
+    expect(serialiseItem(parseItem(text))).toBe(text)
+  })
+
+  it('reads sections written out of order by hand', () => {
+    const head = serialiseItem(item({}))
+    const got = parseItem(head + '\nDesc.\n\n## Notes\n\nN.\n\n## Technical discussion\n\nT.\n\n## Acceptance criteria\n\nA.\n')
+    expect([got.description, got.acceptance, got.technical, got.notes]).toEqual(['Desc.', 'A.', 'T.', 'N.'])
+  })
+
+  it('flags any section that holds another section\'s heading', () => {
+    expect(itemRoundTripProblems(item({ description: 'x\n## Technical discussion\ny' }))[0]).toMatch(/description cannot contain a "## Technical discussion"/)
+    expect(itemRoundTripProblems(item({ notes: '## Acceptance criteria' }))[0]).toMatch(/Notes cannot contain a "## Acceptance criteria"/)
+    expect(itemRoundTripProblems(item({ acceptance: '- a', technical: 't', notes: 'n' }))).toEqual([])
+  })
+
   it('keeps a leading indent (a code block) through a round trip', () => {
     const it1 = item({ description: '    code line\nmore', notes: '    indented note' })
     expect(parseItem(serialiseItem(it1))).toEqual(it1)
@@ -99,6 +137,9 @@ describe('catalogue files', () => {
     const rows = parseCsv(requirementsCsv(items))
     expect(rows).toHaveLength(items.length)
     expect(rows[0]!.ID).toBe(depthFirst(items)[0]!.id)
+    const one = parseCsv(requirementsCsv([item({ acceptance: '- A, "quoted"\n- B', technical: 'T.' })]))[0]!
+    expect(Object.keys(one).slice(-2)).toEqual(['Acceptance criteria', 'Technical discussion'])
+    expect([one['Acceptance criteria'], one['Technical discussion']]).toEqual(['- A, "quoted"\n- B', 'T.'])
     const qs = parseCsv(questionsCsv(Object.values(real.questions).map((r) => r.data)))
     expect(qs.map((q) => q.ID ?? '')).toEqual([...qs.map((q) => q.ID ?? '')].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })))
   })

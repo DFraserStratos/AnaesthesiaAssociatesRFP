@@ -1,12 +1,13 @@
 /**
- * CSV in the old generator's column shape, for Miro or a spreadsheet.
- * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings, so an
- * unchanged catalogue exports byte-identical to the files it was migrated from.
+ * CSV in the old generator's column shape, for Miro or a spreadsheet, with
+ * Acceptance criteria and Technical discussion appended at the end so every
+ * earlier column keeps its position for existing imports.
+ * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings.
  */
 import { compareIds, compareSiblings } from './ids.ts'
 import type { Item, Question } from './types.ts'
 
-export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source']
+export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion']
 export const QUESTION_COLUMNS = ['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source']
 
 const TYPE_LABEL = { epic: 'Epic', feature: 'Feature', story: 'Story' } as const
@@ -55,6 +56,8 @@ export function requirementsCsv(items: Item[]): string {
           it.components.join(LIST_SEPARATOR),
           it.status,
           it.sources.join(LIST_SEPARATOR),
+          it.acceptance,
+          it.technical,
         ]),
       )
       .join('')

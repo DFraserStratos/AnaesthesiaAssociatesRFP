@@ -154,6 +154,13 @@ describe('saving', () => {
     expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, description: 'Intro\n\n## Notes\n\nnot notes' }, baseRev: r.rev }))).toBe(422)
   })
 
+  it('refuses any section that holds another section\'s heading', () => {
+    const a = api()
+    const r = recOf(a, 'US-01.1.1')
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, acceptance: '- ok\n## Technical discussion' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, notes: '## Acceptance criteria' }, baseRev: r.rev }))).toBe(422)
+  })
+
   it('refuses to save a file whose id does not match its name', () => {
     writeFileSync(itemPath('US-01.1.9', root), serialiseItem(item({ id: 'US-01.1.2', parent: 'FT-01.1' })))
     const a = api()

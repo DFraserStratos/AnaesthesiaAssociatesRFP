@@ -57,6 +57,10 @@ export interface Item {
   order: number
   images: ImageRef[]
   description: string
+  /** `## Acceptance criteria` section: Markdown, typically one criterion per list item. */
+  acceptance: string
+  /** `## Technical discussion` section: Markdown. */
+  technical: string
   notes: string
   /** Frontmatter keys this tool doesn't know about, kept verbatim so agents can add fields. */
   extra: Record<string, unknown>

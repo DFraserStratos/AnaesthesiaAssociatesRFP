@@ -279,7 +279,7 @@ export function matchesFilters(it: Item, v: ViewPrefs, index: Index): boolean {
   if (v.onlyWithQuestions && openQuestionsFor(index, it.id).length === 0) return false
   const q = v.search.trim().toLowerCase()
   if (q) {
-    const hay = `${it.id} ${it.title} ${it.description} ${it.notes} ${it.sources.join(' ')}`.toLowerCase()
+    const hay = `${it.id} ${it.title} ${it.description} ${it.acceptance} ${it.technical} ${it.notes} ${it.sources.join(' ')}`.toLowerCase()
     if (!q.split(/\s+/).every((w) => hay.includes(w))) return false
   }
   return true
