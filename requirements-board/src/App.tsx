@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { isOpenQuestion, type CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
+import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
 import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
@@ -75,6 +76,7 @@ export function App() {
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
         )}
+        {status === 'ready' && <NewCardButton />}
       </main>
       {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
       {status === 'ready' && itemId && !onBoard && <ItemModal key={itemId} id={itemId} />}

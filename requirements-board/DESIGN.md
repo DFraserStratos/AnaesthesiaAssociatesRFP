@@ -71,6 +71,9 @@ scrolls) and as the modal elsewhere.
   default, the board two thirds; resizable, width kept per browser) and the board stays live on the right with the card's
   lineage lit. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
   click on empty canvas closes it. No double-click anywhere.
+- One round teal plus, bottom right of every view (or `n`), makes any card: epic, feature, story or
+  outstanding item. It asks only for the type, the title and where it sits (a searchable parent, or
+  what an outstanding item affects), starting from the open card, then opens the new card in Edit.
 - Outline and Outstanding items open the same sheet as a centred modal. A question opened from the
   board's panel sits over the panel as a modal and closing it returns to the panel.
 - Unsaved edits are never lost silently: every way out of a sheet asks, and drafts survive

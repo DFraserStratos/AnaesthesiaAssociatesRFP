@@ -1,11 +1,11 @@
 import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, X } from 'lucide-react'
-import { useId, useMemo, useRef, useState, type RefObject } from 'react'
-import { compareIds } from '../../shared/ids.ts'
+import { useMemo, useRef, useState, type RefObject } from 'react'
 import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
 import { useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
-import { KIND_HELP, KIND_LABEL, statusClass, typeClass } from '../vocab.ts'
-import { ItemName, Prose, StatusLabel, TypeIcon } from './bits.tsx'
+import { KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
+import { ItemName, Prose, StatusLabel } from './bits.tsx'
+import { AffectsPicker } from './ItemPicker.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -323,81 +323,5 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
         <textarea className="textarea" rows={2} value={draft.sources.join('\n')} onChange={(e) => set({ sources: e.target.value.split('\n') })} />
       </label>
     </>
-  )
-}
-
-function AffectsPicker({ value, index, onChange }: { value: string[]; index: Index; onChange: (v: string[]) => void }) {
-  const listId = useId()
-  const [query, setQuery] = useState('')
-  const [active, setActive] = useState(0)
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return index.items
-      .filter((it) => !value.includes(it.id) && `${it.id} ${it.title}`.toLowerCase().includes(q))
-      .sort((a, b) => compareIds(a.id, b.id))
-      .slice(0, 40)
-  }, [query, index, value])
-  const add = (id: string) => {
-    onChange([...value, id])
-    setQuery('')
-  }
-  return (
-    <div className="picker">
-      <div className="chip-row" style={{ marginBottom: 6 }}>
-        {value.map((a) => {
-          const it = index.byId.get(a)
-          return (
-          <span key={a} className={`chip item ${it ? typeClass(it.type) : ''}`} title={a}>
-            {it ? <TypeIcon type={it.type} size={12} /> : null}
-            <span>{it?.title ?? a}</span>
-            <button type="button" className="x" aria-label={`Remove ${it?.title ?? a}`} onClick={() => onChange(value.filter((x) => x !== a))}>
-              <X size={12} />
-            </button>
-          </span>
-          )
-        })}
-      </div>
-      <input
-        className="input"
-        role="combobox"
-        aria-expanded={matches.length > 0}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={matches[active] ? `${listId}-${active}` : undefined}
-        placeholder="Add an epic, feature or story by ID or title"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value)
-          setActive(0)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setActive((a) => Math.min(a + 1, matches.length - 1))
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setActive((a) => Math.max(a - 1, 0))
-          } else if (e.key === 'Enter') {
-            e.preventDefault()
-            const m = matches[active]
-            if (m) add(m.id)
-          } else if (e.key === 'Escape' && query) {
-            e.stopPropagation()
-            setQuery('')
-          }
-        }}
-      />
-      {matches.length > 0 && (
-        <div className="picker-list" role="listbox" id={listId}>
-          {matches.map((m, i) => (
-            <button key={m.id} id={`${listId}-${i}`} type="button" role="option" tabIndex={-1} aria-selected={i === active} className={i === active ? 'active' : ''} onClick={() => add(m.id)}>
-              <ItemName item={m} />
-              <span className="mono">{m.id}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }

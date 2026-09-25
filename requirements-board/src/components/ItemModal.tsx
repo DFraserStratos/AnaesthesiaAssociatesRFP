@@ -1,12 +1,12 @@
 import { Archive, ChevronLeft, ChevronRight, ImageIcon, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { compareIds } from '../../shared/ids.ts'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { COMPONENTS, IMAGE_APPS, ITEM_STATUSES, isOpenQuestion, type ImageRef, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError, assetUrl } from '../api.ts'
 import { setLeaveGuard, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
 import { TYPE_LABEL, statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
+import { ParentPicker } from './ItemPicker.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -480,7 +480,7 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
         {draft.type !== 'epic' && (
           <div className="field">
             <span>Parent</span>
-            <ParentPicker draft={draft} index={index} onPick={(parent) => set({ parent })} />
+            <ParentPicker type={draft.type} value={draft.parent} excludeId={draft.id} index={index} onPick={(parent) => set({ parent })} />
           </div>
         )}
       </div>
@@ -517,87 +517,6 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
       </label>
       <ImagesEditor draft={draft} set={set} />
     </>
-  )
-}
-
-function ParentPicker({ draft, index, onPick }: { draft: Item; index: Index; onPick: (id: string) => void }) {
-  const [query, setQuery] = useState('')
-  const [openList, setOpenList] = useState(false)
-  const [active, setActive] = useState(0)
-  const current = draft.parent ? index.byId.get(draft.parent) : undefined
-  const candidates = useMemo(() => {
-    const ok = (it: Item) => (draft.type === 'feature' ? it.type === 'epic' : it.type !== 'story') && it.id !== draft.id
-    const q = query.trim().toLowerCase()
-    return index.items
-      .filter(ok)
-      .filter((it) => !q || `${it.id} ${it.title}`.toLowerCase().includes(q))
-      .sort((a, b) => compareIds(a.id, b.id))
-      .slice(0, 60)
-  }, [index, draft.type, draft.id, query])
-
-  const listId = useId()
-  const pick = (it: Item) => {
-    onPick(it.id)
-    setOpenList(false)
-    setQuery('')
-    setActive(0)
-  }
-  return (
-    <div className="picker">
-      <input
-        className="input"
-        role="combobox"
-        aria-expanded={openList}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={openList && candidates[active] ? `${listId}-${active}` : undefined}
-        placeholder={current ? current.title : 'Pick a parent'}
-        value={openList ? query : current ? current.title : ''}
-        onFocus={() => {
-          setOpenList(true)
-          setActive(0)
-        }}
-        onBlur={() => setTimeout(() => setOpenList(false), 120)}
-        onChange={(e) => {
-          setQuery(e.target.value)
-          setActive(0)
-        }}
-        onKeyDown={(e) => {
-          if (!openList) {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault()
-              setOpenList(true)
-            }
-            return
-          }
-          if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setActive((a) => Math.min(a + 1, candidates.length - 1))
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setActive((a) => Math.max(a - 1, 0))
-          } else if (e.key === 'Enter') {
-            e.preventDefault()
-            const c = candidates[active]
-            if (c) pick(c)
-          } else if (e.key === 'Escape') {
-            e.stopPropagation()
-            setOpenList(false)
-          }
-        }}
-      />
-      {openList && (
-        <div className="picker-list" role="listbox" id={listId}>
-          {candidates.map((c, i) => (
-            <button key={c.id} id={`${listId}-${i}`} role="option" tabIndex={-1} aria-selected={i === active} className={i === active ? 'active' : ''} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(c)}>
-              <ItemName item={c} />
-              <span className="mono">{c.id}</span>
-            </button>
-          ))}
-          {candidates.length === 0 && <p className="empty">No match</p>}
-        </div>
-      )}
-    </div>
   )
 }
 

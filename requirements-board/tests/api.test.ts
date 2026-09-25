@@ -62,6 +62,41 @@ describe('creating', () => {
     expect(q.data.id).toBe('OQ-03')
   })
 
+  it('makes an epic with the next free number and no parent', () => {
+    writeItem(item({ id: 'EP-03', type: 'epic' }), root)
+    const rec = call(api(), 'POST', '/api/items', { type: 'epic', title: 'New epic' }) as Rev<Item>
+    expect(rec.data).toMatchObject({ id: 'EP-04', parent: null, status: 'Proposed', title: 'New epic' })
+    expect(existsSync(itemPath('EP-04', root))).toBe(true)
+  })
+
+  it('refuses a parent the type cannot have', () => {
+    expect(status(() => call(api(), 'POST', '/api/items', { type: 'epic', parent: 'EP-01', title: 'x' }))).toBe(422)
+    expect(status(() => call(api(), 'POST', '/api/items', { type: 'feature', parent: 'US-01.1.1', title: 'x' }))).toBe(422)
+    expect(status(() => call(api(), 'POST', '/api/items', { type: 'feature', title: 'x' }))).toBe(422)
+    expect(status(() => call(api(), 'POST', '/api/items', { type: 'story', parent: 'US-01.1.1', title: 'x' }))).toBe(422)
+  })
+
+  it('puts a story straight under an epic in its .0 slot, after the epic’s last child', () => {
+    const rec = call(api(), 'POST', '/api/items', { type: 'story', parent: 'EP-01', title: 'Epic-level story' }) as Rev<Item>
+    expect(rec.data.id).toBe('US-01.0.1')
+    expect(rec.data.order).toBe(2) // after FT-01.1 (order 1)
+  })
+
+  it('defaults a new card: last among its siblings, its parent’s components, Proposed', () => {
+    writeItem(item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2, components: ['Admin App'] }), root)
+    const rec = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.2', title: 'First' }) as Rev<Item>
+    expect(rec.data).toMatchObject({ id: 'US-01.2.1', order: 1, components: ['Admin App'], status: 'Proposed' })
+    const next = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'Third' }) as Rev<Item>
+    expect(next.data).toMatchObject({ id: 'US-01.1.3', order: 3 })
+  })
+
+  it('checks what an outstanding item affects', () => {
+    expect(status(() => call(api(), 'POST', '/api/questions', { title: 'x', affects: ['US-09.9.9'] }))).toBe(422)
+    const q = call(api(), 'POST', '/api/questions', { kind: 'missing-source', title: 'Where is it', affects: ['FT-01.1'] }) as Rev<{ id: string; kind: string; affects: string[] }>
+    expect(q.data).toMatchObject({ id: 'OQ-02', kind: 'missing-source', affects: ['FT-01.1'] })
+    expect(readFileSync(questionPath('OQ-02', root), 'utf8')).toContain('FT-01.1')
+  })
+
   it('rejects an unknown type rather than crashing', () => {
     expect(status(() => call(api(), 'POST', '/api/items', { type: 'saga', title: 'x' }))).toBe(422)
   })
