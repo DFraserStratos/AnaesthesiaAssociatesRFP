@@ -519,7 +519,7 @@ function FilterPopover() {
       <h4>Status</h4>
       <div className="chip-row">
         {ITEM_STATUSES.map((s) => (
-          <button key={s} className="chip toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
+          <button key={s} className="status-toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
             <StatusLabel status={s} />
           </button>
         ))}
