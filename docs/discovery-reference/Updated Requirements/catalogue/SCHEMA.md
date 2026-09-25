@@ -11,7 +11,7 @@ catalogue/
   requirements/EP-01.md  FT-01.1.md  US-01.1.1.md ...   one file per epic / feature / story (flat)
   questions/OQ-01.md ...                           one file per outstanding item (question or missing source)
   notes/YYYY-MM-DD-<slug>.md                       meeting notes, transcripts, Q&A: the evidence sources cite (see notes/README.md)
-  board-layout.json                                card positions moved off the story map (written by the board)
+  board-layout.json                                Freeform card positions and the Mapped board's lane list (written by the board)
   assets/<ID>/<name>.png                           screenshots for an item
   SCHEMA.md                                        this file
 ```
@@ -34,6 +34,7 @@ sources:
   - "RFP p.14 · Schedule Management › List"
   - "Q&A 2026-09-24 #7"
 order: 1
+swimlane: MVP
 images: []
 ---
 
@@ -61,7 +62,8 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Retired` (meanings in `../README.md`). Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of (an empty list is a warning): Scheduling Engine, Billing/Invoice Engine, Anaesthetist App (mobile + web), Admin App, Xero Integration, Health Integration, Master Data, Cross-cutting. |
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop"` (a file in `notes/`), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. |
-| `order` | Sort position among siblings (1-based). Gaps are fine. |
+| `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
+| `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is `admin`, `web`, `mobile` or `simulator` and groups the board's gallery; a `mobile` app shot should have `viewport: mobile`. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the capture runner (`requirements-board/scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
 Body: the description (stories use "As a ..., I ..., so that ..."), then up to three optional
@@ -108,11 +110,35 @@ came from). A file with no `kind` reads as `question`. `status` is `Open`, `Conf
 that must exist. The body is the question (which cannot itself contain a `## Answer` line);
 `## Answer` holds the answer once there is one.
 
+## Board layout file (`board-layout.json`)
+
+Written by the board; safe to hand-edit while it is closed.
+
+```json
+{
+  "positions": {
+    "US-01.1.1": {"x":120,"y":480}
+  },
+  "firstLane": "Backlog",
+  "lanes": [
+    "MVP",
+    "Phase 2"
+  ]
+}
+```
+
+`positions`: cards dragged off the computed layout in the board's Freeform mode, one per line.
+`lanes` (omitted while empty): the Mapped board's named swim lanes, top to bottom. The first lane
+(stories with no `swimlane`) is implicit and always first; `firstLane` (omitted until renamed) is
+what it is called, `Unassigned` by default. Renaming it changes no story. All lane names, the first
+lane's included, are unique regardless of case.
+
 ## Rules the tools enforce
 
 `npm run check` (from the repo root) and every save in the board run the same checks: unique IDs,
 ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values,
-`affects` targets exist, image files exist under `assets/`. The board refuses a save that would add
+`affects` targets exist, image files exist under `assets/`, and (as warnings) a `swimlane` sits only on a
+story and names a lane in `board-layout.json`. The board refuses a save that would add
 an error. A file that fails to parse, or whose `id:` differs from its file name, is left out of the board and
 listed under Checks until fixed; its ID stays reserved, so nothing new is ever written
 over it.

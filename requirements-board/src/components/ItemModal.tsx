@@ -1,7 +1,7 @@
 import { Archive, ChevronLeft, ChevronRight, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
@@ -135,6 +135,7 @@ function normalise(it: Item): Item {
   return {
     ...it,
     title: it.title.trim(),
+    swimlane: it.swimlane?.trim() || null,
     sources: it.sources.map((s) => s.trim()).filter(Boolean),
     images: it.images.filter((i) => i.src.trim()),
     description: tidyText(it.description),
@@ -176,6 +177,7 @@ function SheetHead({ item, index, leave }: { item: Item; index: Index; leave: (g
 
 function ReadView({ item, index }: { item: Item; index: Index }) {
   const open = useOpen()
+  const lanes = useCatalogue((s) => s.layout.lanes)
   const children = index.children.get(item.id) ?? []
   const linked = useMemo(() => linkedQuestions(index, item), [index, item])
 
@@ -244,6 +246,15 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
               <h3 className="section-head">Status</h3>
               <StatusLabel status={item.status} />
             </div>
+            {/* Only a story in a named lane: the first lane is the baseline, left unmarked (so no lanes, no row). */}
+            {item.type === 'story' && item.swimlane && (
+              <div>
+                <h3 className="section-head">Swimlane</h3>
+                <span className="chip" title={lanes.includes(item.swimlane) ? undefined : 'No lane on the board is called this'}>
+                  {item.swimlane}
+                </span>
+              </div>
+            )}
             {item.components.length > 0 && (
               <div>
                 <h3 className="section-head">Area</h3>
@@ -380,6 +391,10 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
 /* ------------------------------------------------------------------ edit */
 
 function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) => void; index: Index }) {
+  const lanes = useCatalogue((s) => s.layout.lanes)
+  const firstLane = useCatalogue((s) => firstLaneName(s.layout))
+  // A name no lane has (a hand edit) stays selectable, so opening Edit never silently drops it.
+  const laneChoices = draft.swimlane && !lanes.includes(draft.swimlane) ? [...lanes, draft.swimlane] : lanes
   return (
     <>
       <label className="field" style={{ marginTop: 8 }}>
@@ -402,6 +417,19 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
             <span>Parent</span>
             <ParentPicker type={draft.type} value={draft.parent} excludeId={draft.id} index={index} onPick={(parent) => set({ parent })} />
           </div>
+        )}
+        {draft.type === 'story' && laneChoices.length > 0 && (
+          <label className="field">
+            <span>Swimlane</span>
+            <select className="select" value={draft.swimlane ?? ''} onChange={(e) => set({ swimlane: e.target.value || null })}>
+              <option value="">{firstLane}</option>
+              {laneChoices.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
       </div>
       <div className="field">

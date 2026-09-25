@@ -29,9 +29,11 @@ export interface CheckInput {
   questions: Question[]
   /** Returns whether a catalogue-relative path exists. Omit to skip image checks (browser). */
   fileExists?: (relPath: string) => boolean
+  /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane check. */
+  lanes?: string[]
 }
 
-export function checkCatalogue({ items, questions, fileExists }: CheckInput): Issue[] {
+export function checkCatalogue({ items, questions, fileExists, lanes }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const err = (id: string, message: string) => issues.push({ severity: 'error', id, message })
   const warn = (id: string, message: string) => issues.push({ severity: 'warning', id, message })
@@ -67,6 +69,11 @@ export function checkCatalogue({ items, questions, fileExists }: CheckInput): Is
         const allowed = PARENT_TYPES[it.type].join(' or ')
         err(it.id, `a ${it.type}'s parent must be ${/^[aeiou]/.test(allowed) ? 'an' : 'a'} ${allowed}, ${it.parent} is a ${parent.type}`)
       }
+    }
+
+    if (it.swimlane !== null) {
+      if (it.type !== 'story') warn(it.id, `swimlane "${it.swimlane}" is set on ${it.type === 'epic' ? 'an' : 'a'} ${it.type}; only stories sit in lanes, so the board ignores it`)
+      else if (lanes && !lanes.includes(it.swimlane)) warn(it.id, `swimlane "${it.swimlane}" is not a lane on the board; add it on the Mapped board or fix the name`)
     }
 
     for (const img of it.images) {

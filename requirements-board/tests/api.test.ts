@@ -22,7 +22,7 @@ beforeEach(() => {
   writeItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, notes: 'A note.' }), root)
   writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2 }), root)
   writeQuestion(question({ id: 'OQ-01', affects: ['US-01.1.1'] }), root)
-  writeLayout({ positions: {} }, root)
+  writeLayout({ positions: {}, lanes: [] }, root)
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
@@ -184,9 +184,103 @@ describe('cross-site writes', () => {
   })
 })
 
+describe('batch moves', () => {
+  const batch = (a: ReturnType<typeof api>, changes: unknown[]) => call(a, 'POST', '/api/items/batch', { changes }) as { records: Rev<Item>[] }
+
+  it('writes every record in one go, each as its own item event', () => {
+    const a = api()
+    const r = batch(a, [
+      { id: 'US-01.1.2', baseRev: recOf(a, 'US-01.1.2').rev, patch: { order: 1, swimlane: 'MVP' } },
+      { id: 'US-01.1.1', baseRev: recOf(a, 'US-01.1.1').rev, patch: { order: 2 } },
+    ])
+    expect(r.records.map((x) => [x.data.id, x.data.order])).toEqual([
+      ['US-01.1.2', 1],
+      ['US-01.1.1', 2],
+    ])
+    expect(parseItem(readFileSync(itemPath('US-01.1.2', root), 'utf8'))).toMatchObject({ order: 1, swimlane: 'MVP' })
+    expect(events.filter((e) => e.kind === 'item').map((e) => (e as { id: string }).id)).toEqual(['US-01.1.2', 'US-01.1.1'])
+  })
+
+  it('writes nothing when one record is stale, and names it', () => {
+    const a = api()
+    const before = readFileSync(itemPath('US-01.1.1', root), 'utf8')
+    writeItem({ ...recOf(a, 'US-01.1.2').data, title: 'Edited on disk' }, root)
+    let err: HttpError | undefined
+    try {
+      batch(a, [
+        { id: 'US-01.1.1', baseRev: recOf(a, 'US-01.1.1').rev, patch: { order: 5 } },
+        { id: 'US-01.1.2', baseRev: 'stale', patch: { order: 1 } },
+      ])
+    } catch (e) {
+      err = e as HttpError
+    }
+    expect(err?.status).toBe(409)
+    expect(err?.message).toMatch(/US-01\.1\.2/)
+    expect(readFileSync(itemPath('US-01.1.1', root), 'utf8')).toBe(before)
+  })
+
+  it('writes nothing when the whole would break a rule', () => {
+    const a = api()
+    const before = readFileSync(itemPath('US-01.1.1', root), 'utf8')
+    const s = status(() =>
+      batch(a, [
+        { id: 'US-01.1.1', baseRev: recOf(a, 'US-01.1.1').rev, patch: { order: 9 } },
+        { id: 'US-01.1.2', baseRev: recOf(a, 'US-01.1.2').rev, patch: { parent: 'US-01.1.1' } },
+      ]),
+    )
+    expect(s).toBe(422)
+    expect(readFileSync(itemPath('US-01.1.1', root), 'utf8')).toBe(before)
+  })
+
+  it('refuses a type change, a repeated id and a missing baseRev', () => {
+    const a = api()
+    const rev = recOf(a, 'US-01.1.1').rev
+    expect(status(() => batch(a, [{ id: 'US-01.1.1', baseRev: rev, patch: { type: 'feature' } }]))).toBe(422)
+    expect(status(() => batch(a, [{ id: 'US-01.1.1', baseRev: rev, patch: {} }, { id: 'US-01.1.1', baseRev: rev, patch: {} }]))).toBe(400)
+    expect(status(() => batch(a, [{ id: 'US-01.1.1', patch: {} }]))).toBe(400)
+  })
+})
+
+describe('lanes', () => {
+  it('saves the lane list beside positions, and re-checks swimlanes against it', () => {
+    const a = api()
+    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
+    expect(a.getState().issues.some((i) => i.message.startsWith('swimlane "MVP" is not a lane'))).toBe(true)
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'] })
+    expect(JSON.parse(readFileSync(layoutPath(root), 'utf8'))).toEqual({ positions: {}, lanes: ['MVP', 'Phase 2'] })
+    expect(a.getState().issues.some((i) => i.message.includes('swimlane'))).toBe(false)
+    expect(events.some((e) => e.kind === 'layout' && e.layout.lanes.length === 2)).toBe(true)
+    // A positions patch leaves the lanes alone.
+    call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.1': { x: 1, y: 2 } } })
+    expect(loadCatalogue(root).layout.lanes).toEqual(['MVP', 'Phase 2'])
+  })
+
+  it('refuses a bad lane list', () => {
+    const a = api()
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'mvp'] }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['Unassigned'] }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: [''] }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: 'MVP' }))).toBe(422)
+  })
+
+  it('renames the first lane, keeps the name clear of the others, and resets it with null', () => {
+    const a = api()
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
+    call(a, 'PUT', '/api/layout', { firstLane: 'Backlog' })
+    expect(loadCatalogue(root).layout).toMatchObject({ firstLane: 'Backlog', lanes: ['MVP'] })
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: 'mvp' }))).toBe(422)
+    // Unassigned is free once the first lane has another name.
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Unassigned'] })
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: null }))).toBe(422)
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
+    call(a, 'PUT', '/api/layout', { firstLane: null })
+    expect(loadCatalogue(root).layout.firstLane).toBeUndefined()
+  })
+})
+
 describe('layout', () => {
   it('applies a patch and keeps positions it was not sent, even for items not currently loaded', () => {
-    writeLayout({ positions: { 'US-01.1.1': { x: 1, y: 2 }, 'US-07.7.7': { x: 3, y: 4 } } }, root)
+    writeLayout({ positions: { 'US-01.1.1': { x: 1, y: 2 }, 'US-07.7.7': { x: 3, y: 4 } }, lanes: [] }, root)
     const a = api()
     call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.2': { x: 10.4, y: 20 }, 'US-01.1.1': null } })
     expect(JSON.parse(readFileSync(layoutPath(root), 'utf8')).positions).toEqual({ 'US-01.1.2': { x: 10, y: 20 }, 'US-07.7.7': { x: 3, y: 4 } })
@@ -239,7 +333,7 @@ describe('refusals the board cannot answer with "Keep mine"', () => {
 describe('layout re-read', () => {
   it('patches the file as it is on disk, not the last synced copy', () => {
     const a = api()
-    writeLayout({ positions: { 'US-01.1.2': { x: 5, y: 6 } } }, root) // a git pull, not yet synced
+    writeLayout({ positions: { 'US-01.1.2': { x: 5, y: 6 } }, lanes: [] }, root) // a git pull, not yet synced
     call(a, 'PUT', '/api/layout', { positions: { 'US-01.1.1': { x: 1, y: 2 } } })
     expect(JSON.parse(readFileSync(layoutPath(root), 'utf8')).positions).toEqual({ 'US-01.1.1': { x: 1, y: 2 }, 'US-01.1.2': { x: 5, y: 6 } })
   })

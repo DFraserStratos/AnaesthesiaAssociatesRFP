@@ -1,6 +1,12 @@
 /** Thin client for the dev-server file API (server/cataloguePlugin.ts). */
 import type { CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
 
+export interface BatchChange {
+  id: string
+  baseRev: string
+  patch: Partial<Item>
+}
+
 export class ApiError extends Error {
   status: number
   current?: Rev<unknown>
@@ -29,8 +35,10 @@ export const api = {
   putQuestion: (record: Question, baseRev?: string) =>
     call<Rev<Question>>('PUT', `/api/questions/${encodeURIComponent(record.id)}`, { record, baseRev }),
   createQuestion: (partial: Partial<Question>) => call<Rev<Question>>('POST', '/api/questions', partial),
-  /** A patch: positions to set, or null to put a card back in its story-map place. */
-  putLayout: (patch: { positions: Record<string, { x: number; y: number } | null> }) => call<Layout>('PUT', '/api/layout', patch),
+  /** All or nothing: every record must still be at its baseRev (a Mapped board move). */
+  batchItems: (changes: BatchChange[]) => call<{ records: Rev<Item>[] }>('POST', '/api/items/batch', { changes }),
+  /** Positions are a patch (null puts a card back in its story-map place); lanes, when sent, replace the list. */
+  putLayout: (patch: { positions?: Record<string, { x: number; y: number } | null>; lanes?: string[]; firstLane?: string | null }) => call<Layout>('PUT', '/api/layout', patch),
 }
 
 /** URL the dev server serves a catalogue-relative asset path from. */

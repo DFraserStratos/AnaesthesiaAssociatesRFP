@@ -13,14 +13,14 @@ export const CARD: Record<ItemType, { w: number; h: number }> = {
   feature: { w: 232, h: 168 }, // taller than stories: size, like colour, shows the level
   story: { w: 232, h: 112 },
 }
-const COL_GAP = 40
-const COL_PITCH = CARD.story.w + COL_GAP
-const EPIC_GAP = 72
+export const COL_GAP = 40
+export const COL_PITCH = CARD.story.w + COL_GAP
+export const EPIC_GAP = 72
 const BAND_GAP = 160
 /** Epics wrap to a new band once a band would pass this width. */
 export const BAND_WIDTH = 6400
-const ROW_GAP = 48
-const STACK_GAP = 14
+export const ROW_GAP = 48
+export const STACK_GAP = 14
 export const FEATURE_Y = CARD.epic.h + ROW_GAP
 const STORY_Y = FEATURE_Y + CARD.feature.h + ROW_GAP
 

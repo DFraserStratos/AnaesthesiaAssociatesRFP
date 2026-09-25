@@ -5,8 +5,9 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
-import { isOpenQuestion, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
-import { api } from './api.ts'
+import { applyChanges, laneListProblem, type Change } from '../shared/move.ts'
+import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
+import { ApiError, api } from './api.ts'
 
 interface CatalogueState {
   status: 'loading' | 'ready' | 'error'
@@ -26,6 +27,19 @@ interface CatalogueState {
   /** Take the server's current copy (e.g. from a 409) into the store. */
   adoptItem: (rec: Rev<Item>) => void
   adoptQuestion: (rec: Rev<Question>) => void
+  /** Set when a Mapped board move or lane edit was refused or failed; the move is rolled back. */
+  moveError?: string
+  clearMoveError: () => void
+  /**
+   * Apply a planned move (`shared/move.ts`) at once, so the map reflows, then save it as one
+   * batch. Rolled back if the server refuses it. Resolves true when it saved.
+   */
+  moveItems: (changes: Change[]) => Promise<boolean>
+  /** Replace the lane list. Rename and delete also repoint the lane's stories, in one batch, first. */
+  setLanes: (lanes: string[]) => Promise<boolean>
+  /** Rename a lane: a named one (its stories follow), one only a story names (it becomes a lane), or the first lane (null). */
+  renameLane: (from: string | null, to: string) => Promise<boolean>
+  deleteLane: (name: string) => Promise<boolean>
   setPositions: (patch: Record<string, { x: number; y: number } | null>) => void
   /** Send any card moves not yet saved. Resolves true when nothing is left pending. */
   flushLayout: () => Promise<boolean>
@@ -34,12 +48,14 @@ interface CatalogueState {
 let layoutTimer: ReturnType<typeof setTimeout> | undefined
 /** Moves not yet acknowledged by the server, sent as a patch so other cards are never touched. */
 let pendingLayout: Record<string, { x: number; y: number } | null> = {}
+/** Moves are sent one after another, each with the revs the one before it returned. */
+let moveQueue: Promise<unknown> = Promise.resolve()
 
 export const useCatalogue = create<CatalogueState>((set, get) => ({
   status: 'loading',
   items: {},
   questions: {},
-  layout: { positions: {} },
+  layout: { positions: {}, lanes: [] },
   issues: [],
 
   async load() {
@@ -51,7 +67,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         if (p) positions[id] = p
         else delete positions[id]
       }
-      set({ status: 'ready', error: undefined, ...snap, layout: { positions } })
+      set({ status: 'ready', error: undefined, ...snap, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
     } catch (e) {
       set({ status: 'error', error: (e as Error).message })
     }
@@ -75,8 +91,10 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       const pending = Object.keys(pendingLayout).length > 0
       // Moves left over from a failed save: the file just changed (perhaps fixed), so try them again now.
       if (pending && !layoutTimer) void get().flushLayout()
-      // Our own debounced write echoes back; don't let it undo moves still in flight.
-      if (!layoutTimer && !pending && JSON.stringify(e.layout) !== JSON.stringify(s.layout)) set({ layout: e.layout })
+      // Our own debounced write echoes back; don't let it undo moves still in flight. Lanes have no such race.
+      const positions = !layoutTimer && !pending ? e.layout.positions : s.layout.positions
+      const next = withFirst({ positions, lanes: e.layout.lanes ?? [] }, e.layout.firstLane)
+      if (JSON.stringify(next) !== JSON.stringify(s.layout)) set({ layout: next })
     } else {
       set({ issues: e.issues })
     }
@@ -110,6 +128,98 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
   },
 
+  clearMoveError() {
+    set({ moveError: undefined })
+  },
+
+  moveItems(changes) {
+    if (!changes.length) return Promise.resolve(true)
+    const before = get().items
+    const prev = new Map(changes.map((c) => [c.id, before[c.id]]))
+    if ([...prev.values()].some((r) => !r)) return Promise.resolve(false)
+    const moved = applyChanges(
+      changes.map((c) => before[c.id]!.data),
+      changes,
+    )
+    const optimistic = new Map(moved.map((it) => [it.id, { data: it, rev: before[it.id]!.rev }]))
+    set({ items: { ...before, ...Object.fromEntries(optimistic) } })
+
+    const send = async () => {
+      const now = get().items
+      try {
+        const { records } = await api.batchItems(
+          changes.map(({ id, ...patch }) => ({ id, baseRev: (now[id] ?? prev.get(id))!.rev, patch })),
+        )
+        set({ items: { ...get().items, ...Object.fromEntries(records.map((r) => [r.data.id, r])) }, moveError: undefined })
+        return true
+      } catch (e) {
+        // Put back what we moved, unless something newer has already replaced it.
+        const items = { ...get().items }
+        for (const [id, rec] of optimistic) if (items[id] === rec) items[id] = prev.get(id)!
+        if (e instanceof ApiError && e.current) {
+          const cur = e.current as Rev<Item>
+          items[cur.data.id] = cur
+        }
+        set({ items, moveError: `Move not saved: ${(e as Error).message}` })
+        return false
+      }
+    }
+    const run = moveQueue.then(send)
+    moveQueue = run
+    return run
+  },
+
+  async setLanes(lanes) {
+    const prev = get().layout
+    set({ layout: { ...prev, lanes } })
+    try {
+      const saved = await api.putLayout({ lanes })
+      set({ layout: { ...get().layout, lanes: saved.lanes }, moveError: undefined })
+      return true
+    } catch (e) {
+      set({ layout: { ...get().layout, lanes: prev.lanes }, moveError: `Lanes not saved: ${(e as Error).message}` })
+      return false
+    }
+  },
+
+  async renameLane(from, to) {
+    const layout = get().layout
+    const first = firstLaneName(layout)
+    if (from === null) {
+      if (to === first) return true
+      const problem = laneListProblem([to, ...layout.lanes])
+      if (problem) {
+        set({ moveError: `Lane not renamed: ${problem}` })
+        return false
+      }
+      set({ layout: withFirst({ ...layout }, to) })
+      try {
+        const saved = await api.putLayout({ firstLane: to === UNASSIGNED_LANE ? null : to })
+        set({ layout: withFirst({ ...get().layout }, saved.firstLane), moveError: undefined })
+        return true
+      } catch (e) {
+        set({ layout: withFirst({ ...get().layout }, layout.firstLane), moveError: `Lane not renamed: ${(e as Error).message}` })
+        return false
+      }
+    }
+    if (from === to) return true
+    // A name only a story uses (not a lane yet) becomes a lane under its new name.
+    const next = layout.lanes.includes(from) ? layout.lanes.map((l) => (l === from ? to : l)) : [...layout.lanes, to]
+    // Check the name before touching any story, so a refused name never leaves stories pointing at nothing.
+    const problem = laneListProblem([first, ...next])
+    if (problem) {
+      set({ moveError: `Lane not renamed: ${problem}` })
+      return false
+    }
+    if (!(await get().moveItems(storiesIn(get().items, from).map((id) => ({ id, swimlane: to }))))) return false
+    return get().setLanes(next)
+  },
+
+  async deleteLane(name) {
+    if (!(await get().moveItems(storiesIn(get().items, name).map((id) => ({ id, swimlane: null }))))) return false
+    return get().setLanes(get().layout.lanes.filter((l) => l !== name))
+  },
+
   setPositions(patch) {
     const positions = { ...get().layout.positions }
     for (const [id, p] of Object.entries(patch)) {
@@ -118,7 +228,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       else delete positions[id]
       pendingLayout[id] = rounded
     }
-    set({ layout: { positions } })
+    set({ layout: { ...get().layout, positions } })
     clearTimeout(layoutTimer)
     layoutTimer = setTimeout(() => {
       layoutTimer = undefined
@@ -141,6 +251,17 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     }
   },
 }))
+
+/** A layout with the first lane's name set, or left out when it is the default. */
+function withFirst(layout: Layout, firstLane: string | undefined): Layout {
+  const { firstLane: _drop, ...rest } = layout
+  return firstLane && firstLane !== UNASSIGNED_LANE ? { ...rest, firstLane } : rest
+}
+
+const storiesIn = (items: Record<string, Rev<Item>>, lane: string) =>
+  Object.values(items)
+    .filter((r) => r.data.type === 'story' && r.data.swimlane === lane)
+    .map((r) => r.data.id)
 
 /* ------------------------------------------------------------------ derived */
 
@@ -228,7 +349,13 @@ export interface ViewPrefs {
   onlyWithQuestions: boolean
   showRetired: boolean
   showMinimap: boolean
+  /** Freeform: cards anywhere, positions in board-layout.json. Mapped: a story map with lanes, order in the files. */
+  boardMode: BoardMode
+  /** Mapped lanes drawn as a header strip only, by `laneKey`. A per-browser preference, not a catalogue fact. */
+  collapsedLanes: string[]
 }
+
+export type BoardMode = 'freeform' | 'mapped'
 
 const PREFS_KEY = 'requirements-board:view'
 const DEFAULT_PREFS: ViewPrefs = {
@@ -239,6 +366,8 @@ const DEFAULT_PREFS: ViewPrefs = {
   onlyWithQuestions: false,
   showRetired: false,
   showMinimap: true,
+  boardMode: 'freeform',
+  collapsedLanes: [],
 }
 
 function readPrefs(): ViewPrefs {

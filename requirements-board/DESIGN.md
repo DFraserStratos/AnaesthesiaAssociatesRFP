@@ -39,8 +39,8 @@ Future was moved off purple for this reason. Proposed, the baseline, takes the c
 **Sizes carry level.** Epics are wide bars spanning their features; features are taller cards
 (168px); stories are compact (112px). Keep features visibly taller than stories.
 
-**Other fixed choices:** the canvas is the faint teal-grey grid of an anaesthetic chart, one 80px
-ruling kept low enough in contrast that cards read cleanly over it; type is
+**Other fixed choices:** the Freeform canvas is the faint teal-grey grid of an anaesthetic chart, one 80px
+ruling kept low enough in contrast that cards read cleanly over it (Mapped uses the same paper without the ruling: see Board modes); type is
 Hanken Grotesk for everything, JetBrains Mono only for genuine codes; sentence case; teal
 `#0D6E63` is the only action colour; AA crimson only for the wordmark; no en or em dashes in any
 UI copy (use a middot, a comma or "to").
@@ -64,8 +64,8 @@ scrolls) and as the modal elsewhere.
 - Then the title, description, acceptance criteria, technical discussion, notes, open questions,
   children, screenshots. Empty sections are not shown. Cards never show acceptance criteria or
   technical discussion; their excerpt is the description only.
-- Bottom: **Status** (the pill alone), **Area** (component), **Sources**, and the
-  ID quietly in the bottom right.
+- Bottom: **Status** (the pill alone), **Swimlane** (stories in a named lane only; Unassigned is the
+  baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right.
 
 ## Interaction
 
@@ -85,10 +85,44 @@ scrolls) and as the modal elsewhere.
   that holds focus and the consequence named on the other ("Discard changes", "Retire item"). On
   the canvas the question is a popover under the button that raised it ("Tidy all"). Escape
   withdraws the question either way.
+- Navigating the canvas: two fingers on a trackpad pan it, a pinch zooms; a mouse wheel zooms (the
+  board tells them apart itself: `src/board/trackpad.ts`); dragging empty canvas pans. A pinch
+  never zooms the page itself, wherever it lands (masthead, panel, list views): only the board
+  zooms. Keyboard zoom (Cmd plus, Cmd minus) is left to the browser.
 - Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion. Stepping
   between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
   in place and skips the entrance, so the page behind never flashes through a re-fading scrim.
 - Mobile is out of scope: this is a desktop tool.
+
+## Board modes
+
+A two-segment switch at the head of the board's right-hand controls: **Freeform · Mapped**.
+
+- **Freeform** is the wall described above: the chart grid, connector lines, cards dragged anywhere,
+  Tidy to put them back.
+- **Mapped** is a user story map, read left to right in one strip, with no grid and no connector
+  lines (position shows the hierarchy). It is an open, infinite canvas of the same teal-grey chart
+  paper as Freeform, edge to edge, without the ruling: no sheet, no tinted bands, no texture. White
+  cards lift off the paper; lanes are separated by a thin rule and their headers. The backbone is the epic row, each
+  epic spanning its feature columns, with the feature row beneath. Below it the swim lanes run
+  across the whole map; every column stacks the stories it has in each lane.
+- **Lanes are neutral bands, never a type or status colour**: a thin rule across the map and a
+  small header at its top left, the name then a muted count ("MVP | 67"). Headers are part of the
+  map: they zoom with it (with the same semantic-zoom steps as card titles, so they stay readable
+  far out, capped at a feature title's size so they never outgrow the cards), and they stay pinned just inside the board's left edge while
+  panning. Clicking a lane's name turns it into a text box to rename it (Enter
+  keeps, Esc drops). The first lane holds stories with no lane: while it is the only lane it has no
+  header, so the board reads as a plain map; once a lane is named it shows first, as
+  **Unassigned** until renamed like any other. A story naming a lane the board doesn't have gets its own lane, flagged
+  "not a lane". Lane actions (rename, move, delete) sit in a quiet menu on the header; deleting asks
+  in a popover, with Keep lane as the safe, focused answer. Tidy doesn't apply and is hidden.
+- **Drag feedback**: the dragged card lifts and carries everything under it; the other cards ease
+  aside into their new slots as you move, and a thin teal bar marks where it will land. A drop
+  nowhere valid (a feature over a lane, a story on the backbone) springs back. Click still opens;
+  motion respects reduced motion.
+- A faint plus sits at the foot of every column in every lane, stronger on hover: it makes an
+  untitled story right there and opens it in Edit. The round teal plus still makes a story in
+  Unassigned.
 
 ## Before shipping a visual change
 

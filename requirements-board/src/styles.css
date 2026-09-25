@@ -1789,6 +1789,284 @@ mark {
   white-space: nowrap;
 }
 
+/* ---------------------------------------------------------- mapped board */
+
+/* Freeform or Mapped, a two-segment switch at the head of the right-hand controls. */
+.mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  margin-right: 2px;
+  border-radius: 8px;
+  background: var(--paper);
+}
+.mode-switch button {
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: 500 13px/1 var(--font);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.mode-switch button:hover {
+  color: var(--ink);
+}
+.mode-switch button[aria-checked='true'] {
+  background: var(--card);
+  color: var(--teal);
+  box-shadow: var(--shadow-tag);
+}
+
+/*
+ * Mapped is an open canvas of the chart paper (--paper) edge to edge: no ruling, no connector lines,
+ * no sheet. Lanes are told apart by a thin rule across the map and their headers, never by a type
+ * or status colour.
+ */
+.board.mapped,
+.board.mapped .react-flow {
+  --xy-background-color: var(--paper);
+  background: var(--paper);
+}
+.lane-band {
+  border-top: 1px solid var(--rule-strong);
+  /* The rule fades out past the map instead of stopping dead: the canvas has no edge. */
+  mask-image: linear-gradient(to right, transparent, #000 var(--lane-fade), #000 calc(100% - var(--lane-fade)), transparent);
+  --lane-fade: 160px;
+}
+.board.previewing .lane-band {
+  transition: height 180ms var(--ease);
+}
+
+/* Lanes are neutral bands: a thin rule, never a type or status colour. Only the add button takes the pointer. */
+.board .react-flow__node-lane,
+.board .react-flow__node-marker,
+.board .react-flow__node-add {
+  pointer-events: none !important;
+  cursor: default;
+}
+.add-slot {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0;
+  border: 1px dashed transparent;
+  border-radius: var(--r-story);
+  background: none;
+  color: var(--ink-4);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 120ms, color 120ms, border-color 120ms, background 120ms;
+}
+.add-slot:hover,
+.add-slot:focus-visible {
+  opacity: 1;
+  color: var(--teal);
+  border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+  background: var(--teal-tint);
+  outline: none;
+}
+.board.previewing .react-flow__node-add,
+.zoom-overview .react-flow__node-add {
+  visibility: hidden;
+}
+.drop-bar {
+  border-radius: 2px;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 16%, transparent);
+}
+/* While a drag previews its drop, every other card eases aside into its new slot. */
+.board.previewing .react-flow__node:not(.dragging):not(.in-drag) {
+  transition: transform 180ms var(--ease);
+}
+
+/*
+ * Lane headers ("MVP | 67") live in the canvas, so they zoom with the map. Everything is sized in
+ * em off --lf, the label size in canvas pixels, which takes the same semantic-zoom bumps as card
+ * titles, capped at a feature title's size, so a lane stays readable from far out without ever
+ * outgrowing the cards.
+ */
+.board .react-flow__viewport-portal {
+  z-index: 2000; /* above cards, even a lifted one */
+  pointer-events: none;
+}
+.lane-headers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  --lf: 20px;
+}
+.zoom-far .lane-headers {
+  --lf: 21px; /* a far feature title */
+}
+.zoom-overview .lane-headers {
+  --lf: 30px; /* an overview feature title: never larger */
+}
+.lane-strip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  font-size: var(--lf);
+}
+.lane-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  height: 1.7em;
+  padding: 0 0.2em 0 0.1em;
+  border-radius: 0.35em;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+.zoom-overview .lane-head {
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+}
+.lane-name {
+  padding: 0.15em 0.35em;
+  border: 0;
+  border-radius: 0.25em;
+  background: none;
+  font: 600 1em/1.2 var(--font);
+  color: var(--ink);
+  cursor: text;
+}
+.lane-name:hover,
+.lane-name:focus-visible {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  outline: none;
+}
+.lane-name:focus-visible {
+  box-shadow: 0 0 0 0.1em var(--teal);
+}
+.lane-count {
+  padding-left: 0.5em;
+  border-left: 1px solid var(--rule-strong);
+  font: 500 0.85em/1 var(--mono);
+  color: var(--ink-3);
+}
+.lane-flag {
+  padding: 0.2em 0.45em;
+  border-radius: 0.25em;
+  background: var(--warn-tint);
+  font-size: 0.7em;
+  color: #7d530a;
+}
+.lane-toggle,
+.lane-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  padding: 0;
+  border: 0;
+  border-radius: 0.3em;
+  background: none;
+  font-size: 1em;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.lane-toggle:hover,
+.lane-menu-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.lane-menu-btn {
+  opacity: 0;
+}
+.lane-head:hover .lane-menu-btn,
+.lane-menu-btn:focus-visible,
+.lane-menu-btn[aria-expanded='true'] {
+  opacity: 1;
+}
+.lane-input.input {
+  width: 10em;
+  height: 1.5em;
+  padding: 0 0.4em;
+  font-size: 1em;
+}
+.lane-add {
+  position: absolute;
+  font-size: var(--lf);
+  white-space: nowrap;
+  padding-top: 0.4em;
+  pointer-events: auto;
+}
+.lane-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  height: 1.6em;
+  padding: 0 0.5em;
+  border: 0;
+  border-radius: 0.3em;
+  background: none;
+  font: 500 0.75em/1 var(--font);
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.lane-add-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* Menus and questions raised from a header stay at screen size whatever the zoom: scaled back by 1/zoom. */
+.lane-menu,
+.popover.ask.lane-ask {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: auto;
+  margin: 0;
+  transform: scale(var(--inv-zoom, 1));
+  transform-origin: top left;
+  font-size: 13px;
+  white-space: normal;
+}
+.lane-strip.up .lane-menu,
+.lane-strip.up .popover.ask.lane-ask {
+  top: auto;
+  bottom: 100%;
+  transform-origin: bottom left;
+}
+.lane-menu {
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lift);
+}
+.lane-menu button {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  text-align: left;
+  font: 500 13px/1 var(--font);
+  color: var(--ink);
+  cursor: pointer;
+}
+.lane-menu button:hover:not(:disabled) {
+  background: var(--paper);
+}
+.lane-menu button:disabled {
+  color: var(--ink-4);
+  cursor: default;
+}
+.lane-menu button.danger {
+  color: var(--danger);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

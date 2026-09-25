@@ -10,8 +10,8 @@ this app and any agent edit those same files.
 ```
 npm install
 npm run dev          # http://localhost:5180
-npm test             # Vitest: file round-trip, check rules, IDs, the file API, store, board graph, auto-layout
-npm run test:e2e     # Playwright: board rendering (edges join every card); own server on 5181, read-only
+npm test             # Vitest: file round-trip, check rules, IDs, the file API, store, board graph, both layouts, move planner
+npm run test:e2e     # Playwright: edges on the real catalogue (5181, read-only); Mapped drags on a fixture (5182)
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
 npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
@@ -38,6 +38,7 @@ shared/        code shared by server, scripts and browser
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
+  move.ts        Mapped board moves (pure): planMove / applyMove, lane-name rules
   csv.ts         CSV export in the old generator's shape
 server/
   catalogueFs.ts     load the folder, atomic / exclusive writes, layout file
@@ -49,7 +50,8 @@ src/
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
   useDismiss.ts  Esc / outside-press close for popovers
   views/         BoardView, QuestionsView, OutlineView
-  board/         autoLayout (story map, pure), graph (nodes + edges from the catalogue, pure), cardData, CardNode
+  board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
+                 from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus one test that the real catalogue is valid)
@@ -75,10 +77,23 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   unsaved-edit guard (`guarded` in `src/nav.ts`).
 - Unsaved edits in a sheet survive leaving it (browser Back, a link) and are restored on return;
   closing it from the app asks first, and reloading the tab warns.
-- The board's default arrangement is computed (`autoLayout`): epics as column heads wrapping into
-  bands, features beneath, stories stacked. Only cards you drag are stored, in
-  `board-layout.json`, sent as patches; "Tidy" removes those overrides. Moves that fail to save
-  are retried on reconnect. The viewport is per-browser (localStorage).
+- The board has two modes, switched top right (per browser, each with its own viewport):
+  - **Freeform** (the original view): the arrangement is computed (`autoLayout`): epics as column
+    heads wrapping into bands, features beneath, stories stacked. Only cards you drag are stored,
+    in `board-layout.json`, sent as patches; "Tidy" removes those overrides. Moves that fail to
+    save are retried on reconnect. It ignores `swimlane`.
+  - **Mapped**: a user story map in one strip (`mappedLayout`): epics, features, then swim lanes
+    across the whole map. Dragging an epic or feature carries everything under it and the others
+    bump aside live; a story can be dragged within a column, into another feature and into another
+    lane. A drop rewrites catalogue fields, never positions: `planMove` works out the `parent`,
+    `order` and `swimlane` changes, and `POST /api/items/batch` writes them all or none (each
+    record checked against its `baseRev`, the integrity rules run once over the result). The store
+    applies the move at once and rolls it back if the server refuses. The lane list is
+    `lanes` in `board-layout.json`; a story names its lane in its own `swimlane` field, so renaming
+    a lane rewrites its stories in one batch; the first lane (stories with no `swimlane`) is renamed
+    through `firstLane` instead, so no story changes. Collapsed lanes are a per-browser preference.
+- Trackpad two-finger scroll pans and pinch zooms; a mouse wheel zooms. `src/board/trackpad.ts` tells
+  them apart and pans before React Flow's wheel handler (which would zoom) sees the event.
 - Semantic zoom bands: overview (epic names, stories as status blocks), far (titles only), mid, near
   (description excerpt).
 

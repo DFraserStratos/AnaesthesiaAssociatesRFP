@@ -9,6 +9,7 @@ export const item = (over: Partial<Item> & Pick<Item, 'id'>): Item => ({
   components: ['Scheduling Engine'],
   sources: [],
   order: 1,
+  swimlane: null,
   images: [],
   description: '',
   acceptance: '',

@@ -1,3 +1,7 @@
 {
-  "positions": {}
+  "positions": {},
+  "firstLane": "MVP",
+  "lanes": [
+    "Future Work"
+  ]
 }

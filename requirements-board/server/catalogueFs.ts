@@ -74,13 +74,16 @@ export function readLayout(root = CATALOGUE_DIR): { layout: Layout; error?: stri
   try {
     text = readFileSync(layoutPath(root), 'utf8')
   } catch {
-    return { layout: { positions: {} } } // no layout yet: every card is in its story-map place
+    return { layout: { positions: {}, lanes: [] } } // no layout yet: every card is in its story-map place
   }
   try {
     const raw = JSON.parse(text) as Partial<Layout>
-    return { layout: { positions: raw.positions ?? {} } }
+    const lanes = Array.isArray(raw.lanes) ? raw.lanes.filter((l): l is string => typeof l === 'string' && l.trim() !== '') : []
+    const layout: Layout = { positions: raw.positions ?? {}, lanes }
+    if (typeof raw.firstLane === 'string' && raw.firstLane.trim()) layout.firstLane = raw.firstLane.trim()
+    return { layout }
   } catch (e) {
-    return { layout: { positions: {} }, error: `board-layout.json is not valid JSON (${(e as Error).message}); fix or delete it` }
+    return { layout: { positions: {}, lanes: [] }, error: `board-layout.json is not valid JSON (${(e as Error).message}); fix or delete it` }
   }
 }
 
@@ -97,6 +100,7 @@ export function issuesFor(
   questions: Record<string, Rev<Question>>,
   parseIssues: Issue[],
   root = CATALOGUE_DIR,
+  lanes?: string[],
 ): Issue[] {
   return [
     ...parseIssues,
@@ -104,6 +108,7 @@ export function issuesFor(
       items: Object.values(items).map((r) => r.data),
       questions: Object.values(questions).map((r) => r.data),
       fileExists: fileExistsIn(root),
+      lanes,
     }),
   ]
 }
@@ -145,7 +150,7 @@ export function loadCatalogue(root = CATALOGUE_DIR): LoadResult {
   const questions = collect(listMd(questionsDir(root)), readQuestionFile, parseIssues)
   const { layout, error } = readLayout(root)
   if (error) parseIssues.push({ severity: 'error', id: 'layout', message: error })
-  return { items, questions, layout, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root) }
+  return { items, questions, layout, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes) }
 }
 
 /** Write via a temp file + rename so a reader (or the watcher) never sees half a file. */
@@ -192,7 +197,10 @@ export function serialiseLayout(layout: Layout): string {
       return `    ${JSON.stringify(id)}: ${JSON.stringify({ x: Math.round(p.x), y: Math.round(p.y) })}`
     })
     .join(',\n')
-  return `{\n  "positions": {${ids.length ? `\n${body}\n  ` : ''}}\n}\n`
+  // Lanes only once there are any, so a board that never used them keeps its old file.
+  const first = layout.firstLane ? `,\n  "firstLane": ${JSON.stringify(layout.firstLane)}` : ''
+  const lanes = layout.lanes?.length ? `,\n  "lanes": [\n${layout.lanes.map((l) => `    ${JSON.stringify(l)}`).join(',\n')}\n  ]` : ''
+  return `{\n  "positions": {${ids.length ? `\n${body}\n  ` : ''}}${first}${lanes}\n}\n`
 }
 
 export function writeLayout(layout: Layout, root = CATALOGUE_DIR) {

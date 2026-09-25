@@ -18,6 +18,7 @@ const item = (over: Partial<Item>): Item => ({
   components: ['Scheduling Engine'],
   sources: [],
   order: 1,
+  swimlane: null,
   images: [],
   description: '',
   acceptance: '',
@@ -144,16 +145,42 @@ describe('catalogue files', () => {
     expect(qs.map((q) => q.ID ?? '')).toEqual([...qs.map((q) => q.ID ?? '')].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })))
   })
 
+  it('round-trips swimlane after order, and writes nothing for the unnamed lane', () => {
+    const plain = serialiseItem(item({}))
+    expect(plain).not.toContain('swimlane')
+    expect(serialiseItem(parseItem(plain))).toBe(plain)
+    const laned = item({ swimlane: 'Phase 2' })
+    const text = serialiseItem(laned)
+    expect(text).toContain('order: 1\nswimlane: Phase 2\nimages: []\n')
+    expect(parseItem(text)).toEqual(laned)
+    expect(serialiseItem(parseItem(text))).toBe(text)
+    expect(parseItem(text.replace('swimlane: Phase 2', 'swimlane: ""')).swimlane).toBeNull()
+  })
+
+  it('writes lanes after positions, one per line, only once there are any', () => {
+    expect(serialiseLayout({ positions: {}, lanes: ['MVP', 'Phase 2'] })).toBe('{\n  "positions": {},\n  "lanes": [\n    "MVP",\n    "Phase 2"\n  ]\n}\n')
+    expect(serialiseLayout({ positions: {}, lanes: [], firstLane: 'Backlog' })).toBe('{\n  "positions": {},\n  "firstLane": "Backlog"\n}\n')
+  })
+
   it('writes layout one card per line with rounded, sorted positions', () => {
-    expect(serialiseLayout({ positions: { 'FT-01.10': { x: 1.4, y: 2.6 }, 'FT-01.9': { x: 0, y: 0 } } })).toBe(
+    expect(serialiseLayout({ positions: { 'FT-01.10': { x: 1.4, y: 2.6 }, 'FT-01.9': { x: 0, y: 0 } }, lanes: [] })).toBe(
       '{\n  "positions": {\n    "FT-01.9": {"x":0,"y":0},\n    "FT-01.10": {"x":1,"y":3}\n  }\n}\n',
     )
-    expect(serialiseLayout({ positions: {} })).toBe('{\n  "positions": {}\n}\n')
+    expect(serialiseLayout({ positions: {}, lanes: [] })).toBe('{\n  "positions": {}\n}\n')
   })
 })
 
 describe('check rules', () => {
   const ok = [epic, feature, item({})]
+  it('warns about a swimlane on an epic or feature, and one that names no lane', () => {
+    const msgs = (items: Item[], lanes?: string[]) => checkCatalogue({ items, questions: [], lanes }).filter((i) => i.severity === 'warning').map((i) => i.message)
+    expect(msgs([{ ...epic, swimlane: 'MVP' }, feature, item({})], ['MVP'])).toContain('swimlane "MVP" is set on an epic; only stories sit in lanes, so the board ignores it')
+    expect(msgs([epic, feature, item({ swimlane: 'Phase 9' })], ['MVP']).some((m) => m.startsWith('swimlane "Phase 9" is not a lane'))).toBe(true)
+    expect(msgs([epic, feature, item({ swimlane: 'MVP' })], ['MVP']).some((m) => m.includes('swimlane'))).toBe(false)
+    expect(msgs([epic, feature, item({ swimlane: 'Phase 9' })]).some((m) => m.includes('swimlane'))).toBe(false) // no lane list: not checked
+    expect(hasErrors(checkCatalogue({ items: [epic, feature, item({ swimlane: 'Phase 9' })], questions: [], lanes: [] }))).toBe(false)
+  })
+
   it('passes a clean tree', () => {
     expect(hasErrors(checkCatalogue({ items: ok, questions: [question({})] }))).toBe(false)
   })

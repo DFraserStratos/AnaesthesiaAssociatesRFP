@@ -12,6 +12,10 @@ import '@fontsource/jetbrains-mono/600.css'
 import '@xyflow/react/dist/base.css'
 import './styles.css'
 import { App } from './App.tsx'
+import { blockPagePinch } from './board/trackpad.ts'
+
+// The page never pinch-zooms: only the board zooms (see trackpad.ts).
+blockPagePinch(window)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -11,19 +11,31 @@ import {
 } from '@xyflow/react'
 import { Filter, LayoutGrid, Map as MapIcon, Maximize, Search, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
-import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, type Item } from '../../shared/types.ts'
-import { autoLayout } from '../board/autoLayout.ts'
+import { applyMove, planMove, type Move } from '../../shared/move.ts'
+import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
+import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
 import type { CardData, CardNodeType } from '../board/cardData.ts'
 import { CardNode } from '../board/CardNode.tsx'
-import { buildEdges, buildNodes, countDescendants, type GraphInput } from '../board/graph.ts'
+import { buildEdges, buildNodes, countDescendants, isShown, type GraphInput } from '../board/graph.ts'
+import { LaneHeaders } from '../board/LaneHeaders.tsx'
+import { wheelGestures } from '../board/trackpad.ts'
+import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, type MarkerNodeType } from '../board/LaneNode.tsx'
+import { dropTarget, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, useCatalogue, useIndex, useView, type Index } from '../store.ts'
+import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, useCatalogue, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 
-const nodeTypes = { card: CardNode }
-const VIEWPORT_KEY = 'requirements-board:viewport'
+const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
+type BoardNode = CardNodeType | LaneNodeType | AddNodeType | MarkerNodeType
+/** Each mode keeps its own view of the map: their geometry differs. */
+const VIEWPORT_KEY: Record<BoardMode, string> = { freeform: 'requirements-board:viewport', mapped: 'requirements-board:viewport:mapped' }
+const NO_POSITIONS = {}
+const MIN_ZOOM = 0.08
+const MAX_ZOOM = 1.8
+/** How long cards keep easing into place after a Mapped drop. */
+const SETTLE_MS = 240
 /** The item panel's share of the width, in percent: a third by default, the board keeps two thirds. */
 const PANEL_KEY = 'requirements-board:panel-width'
 const PANEL_DEFAULT = 100 / 3
@@ -37,9 +49,9 @@ const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as co
 /** How much of a wide card (an epic) must be on screen to count as in view. */
 const CARD_PEEK = 240
 
-function readViewport(): Viewport | undefined {
+function readViewport(mode: BoardMode): Viewport | undefined {
   try {
-    const raw = localStorage.getItem(VIEWPORT_KEY)
+    const raw = localStorage.getItem(VIEWPORT_KEY[mode])
     return raw ? (JSON.parse(raw) as Viewport) : undefined
   } catch {
     return undefined
@@ -57,28 +69,46 @@ function readPanel(): number {
 const zoomBand = (z: number) => (z < 0.3 ? 'zoom-far zoom-overview' : z < 0.5 ? 'zoom-far' : z >= 0.95 ? 'zoom-near' : 'zoom-mid')
 
 export function BoardView() {
+  // A fresh canvas per mode, so each opens on its own saved viewport.
+  const mode = useView((v) => v.boardMode)
   return (
-    <ReactFlowProvider>
-      <Board />
+    <ReactFlowProvider key={mode}>
+      <Board mode={mode} />
     </ReactFlowProvider>
   )
 }
+
+/** A Mapped drag in progress: the card, everything under it (which moves with it), and the map without them to hit-test against. */
+interface MappedDrag {
+  item: Item
+  subtree: Set<string>
+  rest: MappedLayout
+  start: Map<string, { x: number; y: number }>
+  origin: { x: number; y: number }
+  target: Move | null
+}
+
+const sameTarget = (a: Move | null, b: Move | null) => (a && b ? a.parent === b.parent && a.index === b.index && a.swimlane === b.swimlane : a === b)
 
 function lineageOf(index: Index, id: string): Set<string> {
   return new Set([id, ...ancestorsOf(index, id).map((i) => i.id), ...descendantsOf(index, id).map((i) => i.id)])
 }
 
-function Board() {
+function Board({ mode }: { mode: BoardMode }) {
   const index = useIndex()
   const positions = useCatalogue((s) => s.layout.positions)
+  const lanes = useCatalogue((s) => s.layout.lanes)
+  const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   const setPositions = useCatalogue((s) => s.setPositions)
+  const moveItems = useCatalogue((s) => s.moveItems)
   const view = useView()
   const open = useOpen()
-  const rf = useReactFlow<CardNodeType>()
+  const rf = useReactFlow<BoardNode>()
+  const mapped = mode === 'mapped'
   // The open card is the URL's `?item=`: clicking a card opens it in the side panel and lights its lineage.
   const selected = open.params.get('item')
   const [panelW, setPanelW] = useState(readPanel)
-  const [initialViewport] = useState(readViewport)
+  const [initialViewport] = useState(() => readViewport(mode))
   const [zoomClass, setZoomClass] = useState(() => zoomBand(initialViewport?.zoom ?? 0.4))
   const [showFilters, setShowFilters] = useState(false)
   const [askTidy, setAskTidy] = useState(false)
@@ -96,6 +126,28 @@ function Board() {
       after?.()
     })
 
+  // Two fingers on a trackpad pan the board; pinching (or a mouse wheel) zooms it, never the page.
+  useEffect(() => {
+    const pane = paneRef.current
+    if (!pane) return
+    return wheelGestures(pane, {
+      pan: (dx, dy) => {
+        const vp = rf.getViewport()
+        void rf.setViewport({ x: vp.x - dx, y: vp.y - dy, zoom: vp.zoom })
+      },
+      // Zoom about the pointer, within the canvas's own limits.
+      zoom: (factor, cx, cy) => {
+        const r = pane.getBoundingClientRect()
+        const px = cx - r.left
+        const py = cy - r.top
+        const vp = rf.getViewport()
+        const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, vp.zoom * factor))
+        const s = zoom / vp.zoom
+        void rf.setViewport({ x: px - (px - vp.x) * s, y: py - (py - vp.y) * s, zoom })
+      },
+    })
+  }, [rf])
+
   useEffect(() => {
     try {
       localStorage.setItem(PANEL_KEY, String(panelW))
@@ -104,44 +156,115 @@ function Board() {
     }
   }, [panelW])
 
-  const auto = useMemo(() => autoLayout(index.items), [index.items])
+  // Mapped: the drop slot under the pointer while dragging, previewed live so the other cards make room.
+  const [target, setTarget] = useState<Move | null>(null)
+  const [previewing, setPreviewing] = useState(false)
+  const [resetTick, setResetTick] = useState(0)
+  const dragRef = useRef<MappedDrag | null>(null)
+  const collapsedLanes = useMemo(() => new Set(view.collapsedLanes), [view.collapsedLanes])
+  const visible = useCallback((it: Item) => isShown(it, { showRetired: view.showRetired, selected }), [view.showRetired, selected])
+  const laneOpts = useMemo(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible }), [lanes, firstLane, collapsedLanes, visible])
+  const previewItems = useMemo(() => (target ? applyMove(index.items, target) : index.items), [index.items, target])
+  const map = useMemo(() => (mapped ? mappedLayout(previewItems, laneOpts) : null), [mapped, previewItems, laneOpts])
+  const freeform = useMemo(() => (mapped ? null : autoLayout(index.items)), [mapped, index.items])
+  const auto = map?.placements ?? freeform!
   const lineage = useMemo(() => (selected && index.byId.has(selected) ? lineageOf(index, selected) : null), [index, selected])
   const filtering = filtersActive(view)
   const matches = useMemo(() => new Set(index.items.filter((it) => matchesFilters(it, view, index)).map((i) => i.id)), [index, view])
   const hits = useMemo(
-    () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && (view.showRetired || index.byId.get(id)?.status !== 'Retired')) : []),
-    [filtering, auto, matches, view.showRetired, index],
+    () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && !map?.collapsed.has(id) && (view.showRetired || index.byId.get(id)?.status !== 'Retired')) : []),
+    [filtering, auto, map, matches, view.showRetired, index],
   )
   const graph = useMemo<GraphInput>(
-    () => ({ index, auto, positions, showRetired: view.showRetired, selected, lineage, filtering, matches }),
-    [index, auto, positions, view.showRetired, selected, lineage, filtering, matches],
+    () => ({ index, auto, positions: mapped ? NO_POSITIONS : positions, collapsed: map?.collapsed, showRetired: view.showRetired, selected, lineage, filtering, matches }),
+    [index, auto, mapped, positions, map, view.showRetired, selected, lineage, filtering, matches],
   )
 
   // The hit list can shrink under the cursor (filters, Retired toggle, external edits).
   useEffect(() => setHitCursor(-1), [hits])
 
   const descendantCounts = useMemo(() => countDescendants(index), [index])
-  const computed = useMemo(() => buildNodes(graph, descendantCounts), [graph, descendantCounts])
+  const computed = useMemo<BoardNode[]>(() => {
+    const cards: BoardNode[] = buildNodes(graph, descendantCounts)
+    return map ? [...cards, ...mappedExtras(map, index, lanes.length > 0, target)] : cards
+  }, [graph, descendantCounts, map, index, lanes.length, target, resetTick])
 
   // React Flow owns in-flight drag positions; the store owns everything else.
-  const [nodes, setNodes] = useState<CardNodeType[]>(computed)
+  const [nodes, setNodes] = useState<BoardNode[]>(computed)
   useEffect(() => {
     // Carry React Flow's own per-node state across rebuilds: without `measured` every card
     // hides and re-measures on each click or keystroke; a card mid-drag keeps its live position.
     // This copy of `measured` can lag React Flow's (a rebuild landing mid-measure), which once
     // stripped every card's handles for good; nodes now carry `handles`, so a lag only delays.
+    // In Mapped, a dragged card carries everything under it, so that whole subtree holds its live position.
     setNodes((prev) => {
       const byId = new Map(prev.map((n) => [n.id, n]))
+      const drag = dragRef.current
       return computed.map((n) => {
         const p = byId.get(n.id)
         if (!p) return n
-        return { ...n, measured: p.measured, selected: p.selected, dragging: p.dragging, position: p.dragging ? p.position : n.position }
+        const held = drag ? drag.subtree.has(n.id) : !mapped && !!p.dragging
+        return { ...n, measured: p.measured, selected: p.selected, dragging: p.dragging, position: held ? p.position : n.position, className: drag?.subtree.has(n.id) ? 'in-drag' : n.className } as BoardNode
       })
     })
   }, [computed])
-  const onNodesChange = useCallback((changes: NodeChange<CardNodeType>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
+  const onNodesChange = useCallback((changes: NodeChange<BoardNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
 
-  const edges = useMemo(() => buildEdges(graph), [graph])
+  const onNodeDragStart = (_: unknown, node: BoardNode) => {
+    if (!mapped || node.type !== 'card') return
+    const it = index.byId.get(node.id)
+    if (!it) return
+    const subtree = new Set([it.id, ...descendantsOf(index, it.id).map((d) => d.id)])
+    dragRef.current = {
+      item: it,
+      subtree,
+      rest: mappedLayout(
+        index.items.filter((i) => !subtree.has(i.id)),
+        laneOpts,
+      ),
+      start: new Map(nodes.filter((n) => subtree.has(n.id)).map((n) => [n.id, n.position])),
+      origin: node.position,
+      target: null,
+    }
+    setPreviewing(true)
+  }
+  const onNodeDrag = (e: MouseEvent | TouchEvent, node: BoardNode) => {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = node.position.x - drag.origin.x
+    const dy = node.position.y - drag.origin.y
+    setNodes((ns) =>
+      ns.map((n) => {
+        const s = n.id !== node.id ? drag.start.get(n.id) : undefined
+        return s ? ({ ...n, position: { x: s.x + dx, y: s.y + dy }, className: 'in-drag' } as BoardNode) : n
+      }),
+    )
+    const at = 'touches' in e ? e.touches[0] : e
+    if (!at) return
+    const t = dropTarget(drag.rest, rf.screenToFlowPosition({ x: at.clientX, y: at.clientY }), drag.item)
+    if (!sameTarget(t, drag.target)) {
+      drag.target = t
+      setTarget(t)
+    }
+  }
+  const onNodeDragStop = (_: unknown, _node: BoardNode, dragged: BoardNode[]) => {
+    if (!mapped) {
+      setPositions(Object.fromEntries(dragged.map((d) => [d.id, d.position])))
+      return
+    }
+    const drag = dragRef.current
+    if (!drag) return
+    dragRef.current = null
+    // Anywhere invalid (a feature over a lane, a story over the backbone) snaps back.
+    const changes = drag.target ? planMove(index.items, drag.target) : []
+    if (changes.length) void moveItems(changes)
+    setTarget(null)
+    setResetTick((n) => n + 1)
+    setTimeout(() => setPreviewing(false), SETTLE_MS)
+  }
+  const toggleLane = (key: string) => view.set({ collapsedLanes: collapsedLanes.has(key) ? view.collapsedLanes.filter((k) => k !== key) : [...view.collapsedLanes, key] })
+
+  const edges = useMemo(() => (mapped ? [] : buildEdges(graph)), [mapped, graph])
 
   const centreOn = useCallback(
     (id: string, zoom?: number) => {
@@ -252,20 +375,25 @@ function Board() {
         </aside>
       )}
       {selected && <PanelResizer width={panelW} onChange={setPanelW} />}
-      <div ref={paneRef} className={`board ${zoomClass}`}>
-        <ReactFlow<CardNodeType>
+      <div ref={paneRef} className={`board ${zoomClass}${mapped ? ' mapped' : ''}${previewing ? ' previewing' : ''}${target ? ' has-target' : ''}`}>
+        <ReactFlow<BoardNode>
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           nodeDragThreshold={4}
-          onNodeClick={(_, n) => n.id !== selected && select(n.id)}
+          // Mapped moves one card (and what hangs under it) at a time, so no multi-select there.
+          selectionKeyCode={mapped ? null : undefined}
+          multiSelectionKeyCode={mapped ? null : undefined}
+          onNodeClick={(_, n) => n.type === 'card' && n.id !== selected && select(n.id)}
           onPaneClick={() => selected && select(null)}
-          onNodeDragStop={(_, _n, dragged) => setPositions(Object.fromEntries(dragged.map((d) => [d.id, d.position])))}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDrag={onNodeDrag}
+          onNodeDragStop={onNodeDragStop}
           onMove={(_, vp) => setZoomClass((z) => (zoomBand(vp.zoom) === z ? z : zoomBand(vp.zoom)))}
           onMoveEnd={(_, vp) => {
             try {
-              localStorage.setItem(VIEWPORT_KEY, JSON.stringify(vp))
+              localStorage.setItem(VIEWPORT_KEY[mode], JSON.stringify(vp))
             } catch {
               /* not persisted */
             }
@@ -273,8 +401,8 @@ function Board() {
           defaultViewport={initialViewport}
           fitView={!initialViewport}
           fitViewOptions={FIT}
-          minZoom={0.08}
-          maxZoom={1.8}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
           zoomOnDoubleClick={false}
           deleteKeyCode={null}
           disableKeyboardA11y
@@ -283,9 +411,10 @@ function Board() {
           onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
         >
-          {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. */}
-          <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />
-          {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => TYPE_HEX[(n.data as CardData).item.type]} nodeBorderRadius={2} />}
+          {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped is plain white. */}
+          {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
+          {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => (n.type === 'card' ? TYPE_HEX[(n.data as CardData).item.type] : 'transparent')} nodeBorderRadius={2} />}
+          {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} />}
         </ReactFlow>
 
         <div className="toolbar">
@@ -331,9 +460,23 @@ function Board() {
           </div>
           <span className="toolbar-spacer" />
           <div className="toolbar-group" style={{ position: 'relative' }}>
+            <div className="mode-switch" role="radiogroup" aria-label="Board mode">
+              {(['freeform', 'mapped'] as const).map((m) => (
+                <button
+                  key={m}
+                  role="radio"
+                  aria-checked={mode === m}
+                  title={m === 'freeform' ? 'Freeform: place cards anywhere' : 'Mapped: a story map with lanes; dragging reorders the catalogue'}
+                  onClick={() => mode !== m && guarded(() => view.set({ boardMode: m }))}
+                >
+                  {m === 'freeform' ? 'Freeform' : 'Mapped'}
+                </button>
+              ))}
+            </div>
             <button className="btn ghost" aria-pressed={view.showRetired} onClick={() => view.set({ showRetired: !view.showRetired })}>
               Retired
             </button>
+            {!mapped && (
             <button
               className="btn ghost"
               disabled={!moved}
@@ -343,7 +486,8 @@ function Board() {
             >
               <LayoutGrid size={15} /> Tidy all
             </button>
-            {askTidy && moved > 0 && (
+            )}
+            {!mapped && askTidy && moved > 0 && (
               <TidyAsk
                 moved={moved}
                 onCancel={() => setAskTidy(false)}
@@ -363,7 +507,7 @@ function Board() {
         </div>
 
         {/* Only worth showing when this epic has cards dragged out of the story map. */}
-        {epicOfSelected && movedInEpic > 0 && (
+        {!mapped && epicOfSelected && movedInEpic > 0 && (
           <div className="selection-bar" role="status">
             <span className="selection-note">
               {movedInEpic} card{movedInEpic > 1 ? 's' : ''} moved in {epicOfSelected.title}
@@ -376,6 +520,33 @@ function Board() {
       </div>
     </div>
   )
+}
+
+/** Mapped's non-card nodes: each lane's rule, the add button at the foot of every column in every lane, and the drop marker. */
+function mappedExtras(map: MappedLayout, index: Index, named: boolean, target: Move | null): BoardNode[] {
+  const out: BoardNode[] = []
+  const fixed = { draggable: false, selectable: false, focusable: false } as const
+  const w = map.width + 2 * LANE_MARGIN
+  for (const lane of map.lanes) {
+    if (!lane.head) continue // the only lane, unnamed: no rule, a plain map
+    out.push({ id: `lane:${laneKey(lane.key)}`, type: 'lane', position: { x: -LANE_MARGIN, y: lane.y }, width: w, height: lane.h, data: { w, h: lane.h }, zIndex: -1, ...fixed })
+  }
+  for (const a of map.adds) {
+    const where = index.byId.get(a.parent)?.title ?? a.parent
+    const label = `Add a story to ${where}${named ? ` in ${a.swimlane ?? map.lanes[0]!.name}` : ''}`
+    out.push({ id: `add:${a.parent}|${laneKey(a.swimlane)}`, type: 'add', position: { x: a.x, y: a.y }, data: { w: CARD.story.w, parent: a.parent, swimlane: a.swimlane, label }, zIndex: 1, ...fixed })
+  }
+  const slot = target && map.placements[target.id]
+  const moving = target && index.byId.get(target.id)
+  if (slot && moving) {
+    const bar = 3
+    const box =
+      moving.type === 'story'
+        ? { x: slot.x, y: slot.y - STACK_GAP / 2 - bar / 2, w: slot.w, h: bar }
+        : { x: slot.x - (moving.type === 'epic' ? EPIC_GAP : COL_GAP) / 2 - bar / 2, y: slot.y, w: bar, h: slot.h }
+    out.push({ id: 'drop-marker', type: 'marker', position: { x: box.x, y: box.y }, data: { w: box.w, h: box.h }, zIndex: 5, ...fixed })
+  }
+  return out
 }
 
 /** The divider between the item panel and the board: drag, arrow keys, or double-click to reset to a third. */

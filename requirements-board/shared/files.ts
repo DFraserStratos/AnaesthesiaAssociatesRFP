@@ -9,7 +9,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
 
 const FENCE = '---'
-export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'images']
+export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'images']
 export const QUESTION_KEYS = ['id', 'kind', 'title', 'status', 'owner', 'affects', 'sources']
 export const ACCEPTANCE_HEADING = '## Acceptance criteria'
 export const TECHNICAL_HEADING = '## Technical discussion'
@@ -129,6 +129,7 @@ export function toItem(
     components: strList(meta.components),
     sources: strList(meta.sources),
     order: Number.isFinite(order) ? order : 0,
+    swimlane: meta.swimlane === null || meta.swimlane === undefined || str(meta.swimlane).trim() === '' ? null : str(meta.swimlane).trim(),
     images: images(meta.images),
     description: str(description),
     acceptance: str(acceptance),
@@ -200,7 +201,7 @@ export function lintFrontmatter(text: string): string[] {
     if (/^["']/.test(value)) continue
     if (/(^|\s)#/.test(value)) out.push(`unquoted "#" in \`${line.trim()}\` starts a YAML comment, so the rest is dropped; quote the value`)
   }
-  for (const key of ['title', 'owner']) {
+  for (const key of ['title', 'owner', 'swimlane']) {
     const v = parts.meta[key]
     if (v !== undefined && v !== null && typeof v !== 'string') out.push(`${key} was read as a ${typeof v} (${String(v)}); quote it to keep it exactly`)
   }
@@ -271,6 +272,7 @@ export function serialiseItem(item: Item): string {
   meta.components = item.components
   meta.sources = item.sources
   meta.order = item.order
+  if (item.swimlane) meta.swimlane = item.swimlane
   meta.images = item.images.map((i) => {
     const img: Record<string, unknown> = { src: i.src, viewport: i.viewport }
     if (i.app) img.app = i.app

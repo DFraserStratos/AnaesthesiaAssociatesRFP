@@ -58,8 +58,10 @@ export interface Item {
   status: ItemStatus
   components: string[]
   sources: string[]
-  /** Sort position among siblings (1-based). */
+  /** Sort position among siblings (1-based). The Mapped board rewrites it when a card is dragged. */
   order: number
+  /** Stories only: the Mapped board's swim lane, by name (one of `Layout.lanes`), or null for the unnamed first lane. */
+  swimlane: string | null
   images: ImageRef[]
   description: string
   /** `## Acceptance criteria` section: Markdown, typically one criterion per list item. */
@@ -85,9 +87,17 @@ export interface Question {
 }
 
 export interface Layout {
-  /** Card positions that override the auto story-map layout. */
+  /** Card positions that override the auto story-map layout (Freeform mode only). */
   positions: Record<string, { x: number; y: number }>
+  /** The Mapped board's named swim lanes, top to bottom, below the implicit first lane. */
+  lanes: string[]
+  /** What the implicit first lane (stories with no `swimlane`) is called. Unset: `UNASSIGNED_LANE`. */
+  firstLane?: string
 }
+
+/** The implicit first lane's name until it is renamed. */
+export const UNASSIGNED_LANE = 'Unassigned'
+export const firstLaneName = (layout: Pick<Layout, 'firstLane'>) => layout.firstLane || UNASSIGNED_LANE
 
 /** A record plus the hash of the file text it was read from (for optimistic concurrency). */
 export interface Rev<T> {

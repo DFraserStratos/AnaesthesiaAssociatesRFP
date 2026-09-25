@@ -12,8 +12,12 @@ import { cardHandles, type CardData, type CardNodeType } from './cardData.ts'
 
 export interface GraphInput {
   index: Index
+  /** Where each card sits: `autoLayout` (Freeform) or `mappedLayout` (Mapped). */
   auto: Record<string, Placement>
+  /** Freeform's dragged positions, which override `auto`. Mapped passes none. */
   positions: Layout['positions']
+  /** Cards placed but not drawn (Mapped: in a collapsed lane). */
+  collapsed?: ReadonlySet<string>
   showRetired: boolean
   /** The card open in the panel. It always shows, even when retired cards are hidden. */
   selected: string | null
@@ -58,7 +62,7 @@ export function buildNodes(g: GraphInput, descendantCounts: Map<string, number>)
         // Handles come from the layout, not only from React Flow's DOM measurement, so a
         // rebuild can never leave a card without them (and the board without edges): cardHandles.
         handles: cardHandles(a.w, a.h),
-        hidden: !isShown(it, g),
+        hidden: !isShown(it, g) || !!g.collapsed?.has(it.id),
         zIndex: it.type === 'epic' ? 0 : it.type === 'feature' ? 1 : 2,
         data: {
           item: it,

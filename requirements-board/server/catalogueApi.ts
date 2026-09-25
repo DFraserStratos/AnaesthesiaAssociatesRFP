@@ -4,10 +4,13 @@
  *
  *   GET  /api/catalogue          everything, parsed, with a rev per record
  *   PUT  /api/items/:id          { record, baseRev }  409 if the file on disk is not at baseRev
+ *   POST /api/items/batch        { changes: [{ id, baseRev, patch }] }  all or nothing (a Mapped board move)
  *   POST /api/items              { type, parent, title, ... }  server assigns the ID
  *   PUT  /api/questions/:id      { record, baseRev }
  *   POST /api/questions          { title, ... }
- *   PUT  /api/layout             { positions: { id: {x,y} | null } }  a patch; null restores the story-map place
+ *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
+ *                                positions are a patch (null restores the story-map place); lanes replace the
+ *                                list; firstLane renames the implicit first lane (null: back to Unassigned)
  *
  * Every write re-reads the target file first (so an edit made on disk a moment
  * ago is never overwritten), checks the record would survive a round trip,
@@ -16,7 +19,8 @@
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
-import { ITEM_TYPES, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
+import { laneListProblem } from '../shared/move.ts'
+import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
   FileExistsError,
   fileExistsIn,
@@ -63,13 +67,13 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const questionList = () => Object.values(state.questions).map((r) => r.data)
   const refreshIssues = () => {
-    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root)
+    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes)
   }
 
   /** Refuse a change that would introduce an integrity error not already present. */
   function guard(items: Item[], questions: Question[]) {
     const before = new Set(state.issues.map(issueKey))
-    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root) })
+    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes })
     const added = after.filter((i) => i.severity === 'error' && !before.has(issueKey(i)))
     if (added.length) throw new HttpError(422, added.map((i) => `${i.id}: ${i.message}`).join('\n'))
   }
@@ -188,6 +192,27 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       return commitItem(item, false)
     }
 
+    if (path === '/api/items/batch' && method === 'POST') {
+      // Check every record first, then write them all: a move never lands half done.
+      const changes = Array.isArray(body.changes) ? (body.changes as Record<string, unknown>[]) : null
+      if (!changes) throw new HttpError(400, 'changes must be a list of { id, baseRev, patch }')
+      const next = new Map<string, Item>()
+      for (const c of changes) {
+        const id = typeof c?.id === 'string' ? c.id : ''
+        if (!id) throw new HttpError(400, 'every change needs an id')
+        if (next.has(id)) throw new HttpError(400, `${id} appears twice in one batch`)
+        const current = itemOnDisk(id)
+        checkBase(current, id, c.baseRev)
+        const patch = (c.patch ?? {}) as Record<string, unknown>
+        const item = prepareItem({ ...current.data, ...patch, id })
+        if (item.type !== current.data.type) throw new HttpError(422, `${id}: the type of an item cannot change`)
+        next.set(id, item)
+      }
+      if (!next.size) return { records: [] }
+      guard([...itemList().filter((i) => !next.has(i.id)), ...next.values()], questionList())
+      return { records: [...next.values()].map((item) => commitItem(item, false)) }
+    }
+
     if (path === '/api/items' && method === 'POST') {
       const type = body.type as ItemType
       if (!ITEM_TYPES.includes(type)) throw new HttpError(422, `type must be one of ${ITEM_TYPES.join(', ')}`)
@@ -262,10 +287,25 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         if (p === null) delete positions[id]
         else if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) positions[id] = { x: Math.round(p.x), y: Math.round(p.y) }
       }
-      state.layout = { positions }
+      if (body.lanes !== undefined && !Array.isArray(body.lanes)) throw new HttpError(422, 'lanes must be a list of names')
+      const lanes = body.lanes !== undefined ? (body.lanes as string[]) : onDisk.layout.lanes
+      let firstLane = onDisk.layout.firstLane
+      if (body.firstLane !== undefined) {
+        if (body.firstLane !== null && typeof body.firstLane !== 'string') throw new HttpError(422, 'firstLane must be a name or null')
+        firstLane = typeof body.firstLane === 'string' && body.firstLane !== UNASSIGNED_LANE ? body.firstLane : undefined
+      }
+      const problem = laneListProblem([firstLaneName({ firstLane }), ...lanes])
+      if (problem) throw new HttpError(422, problem)
+      const lanesChanged = JSON.stringify(lanes) !== JSON.stringify(state.layout.lanes)
+      state.layout = { positions, lanes } as Layout
+      if (firstLane) state.layout.firstLane = firstLane
       state.layoutReadable = true
       writeLayout(state.layout, root)
       emit({ kind: 'layout', layout: state.layout })
+      if (lanesChanged) {
+        refreshIssues() // lane names feed the swimlane check
+        emit({ kind: 'issues', issues: state.issues })
+      }
       return state.layout
     }
 

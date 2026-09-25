@@ -1,13 +1,28 @@
 import { defineConfig } from '@playwright/test'
+import { FIXTURE_DIR } from './e2e/fixtureCatalogue.ts'
 
 /**
- * Browser checks for what Vitest can't reach: React Flow's rendering. Boots its own board
- * on 5181 over the real catalogue, read-only (no spec saves, drags or edits), so it can run
- * beside the board you have open on 5180. Run: `npm run test:e2e`.
+ * Browser checks for what Vitest can't reach: React Flow's rendering. Two boards boot:
+ *   5181  the real catalogue, read-only (no spec saves, drags or edits there), so it can
+ *         run beside the board you have open on 5180;
+ *   5182  a synthetic fixture catalogue in the temp folder, for specs that write (Mapped drags).
+ * Run: `npm run test:e2e`.
  */
 export default defineConfig({
   testDir: './e2e',
   reporter: 'list',
-  use: { baseURL: 'http://localhost:5181', viewport: { width: 1600, height: 1000 } },
-  webServer: { command: 'npx vite --port 5181 --strictPort', url: 'http://localhost:5181', reuseExistingServer: false },
+  use: { viewport: { width: 1600, height: 1000 } },
+  projects: [
+    { name: 'real', testMatch: 'board-edges.spec.ts', use: { baseURL: 'http://localhost:5181' } },
+    { name: 'fixture', testMatch: 'board-mapped.spec.ts', use: { baseURL: 'http://localhost:5182' } },
+  ],
+  webServer: [
+    { command: 'npx vite --port 5181 --strictPort', url: 'http://localhost:5181', reuseExistingServer: false },
+    {
+      command: `node e2e/fixtureCatalogue.ts "${FIXTURE_DIR}" && npx vite --port 5182 --strictPort`,
+      env: { CATALOGUE_DIR: FIXTURE_DIR },
+      url: 'http://localhost:5182',
+      reuseExistingServer: false,
+    },
+  ],
 })

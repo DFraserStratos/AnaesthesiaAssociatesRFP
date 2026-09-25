@@ -90,6 +90,8 @@ function Masthead({ connected }: { connected: boolean }) {
   const index = useIndex()
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
+  const moveError = useCatalogue((s) => s.moveError)
+  const clearMoveError = useCatalogue((s) => s.clearMoveError)
   const [showIssues, setShowIssues] = useState(false)
   const checksRef = useRef<HTMLButtonElement>(null)
   const openCount = index.questions.filter(isOpenQuestion).length
@@ -120,6 +122,12 @@ function Masthead({ connected }: { connected: boolean }) {
           <span className="checks bad" role="alert" title={layoutError}>
             <AlertTriangle size={14} /> Card moves not saved
           </span>
+        )}
+        {/* A refused Mapped move is already rolled back; this says why, until dismissed or the next move saves. */}
+        {moveError && (
+          <button className="checks bad" role="alert" title={`${moveError}\nClick to dismiss`} onClick={clearMoveError}>
+            <AlertTriangle size={14} /> {moveError.split(':')[0]}
+          </button>
         )}
         <span className="live" title={connected ? 'Watching the catalogue folder for changes' : 'Dev server not reachable'}>
           <span className={`live-dot${connected ? '' : ' off'}`} />
