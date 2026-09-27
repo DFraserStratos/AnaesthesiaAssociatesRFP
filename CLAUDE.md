@@ -50,7 +50,7 @@ Not the place to edit requirements:
   `docs/discovery-reference/Updated Requirements/catalogue/` (format: `catalogue/SCHEMA.md`). Not
   part of the prototype, never deployed; its dev server is the file API. The prototype conventions
   below (mock backend, determinism, `PERSIST_VERSION`) do not apply to it. Root `npm run dev` starts
-  both apps (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The
+  the prototype, its mobile PWA (5174) and the board (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The
   prototype harness bar links to the board only when launched that way (it sets `VITE_REQUIREMENTS_URL`),
   so a presenter running `aa-prototype` on its own never sees the link.
   **Its design rules are in `requirements-board/DESIGN.md`** (names over IDs, fixed type colours, status

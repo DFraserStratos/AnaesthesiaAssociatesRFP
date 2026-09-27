@@ -19,7 +19,7 @@ npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
 ```
 
-From the repo root, `npm run dev` starts this and the prototype together.
+From the repo root, `npm run dev` starts this, the prototype and the mobile PWA together.
 
 **Design:** `DESIGN.md` is the north star for anything visual (names over IDs, type colours, status
 pills, card and sheet anatomy). Read it before changing the UI.
@@ -108,8 +108,8 @@ gallery has one tab per app present, in that order; untagged images fall back to
 - Recipes: one JSON file per item in `capture/recipes/<ID>.json` (format and screen atlas in
   `capture/ATLAS.md`). Each recipe lists shots, each with an app, a start route, optional setup,
   and one or more states (steps plus the selectors to box in red).
-- Needs the prototype on `localhost:5173` (root `npm run dev`) and the mobile PWA dev server on
-  `localhost:5174` (`npm --prefix aa-prototype run dev:pwa`). The runner stops if either is down.
+- Needs the prototype on `localhost:5173` and the mobile PWA dev server on `localhost:5174`; root
+  `npm run dev` starts both. The runner stops if either is down. VS Code task: **Screenshot Update**.
 - `node scripts/capture.ts --only US-03.2.4,EP-03` limits the run (an epic or feature ID takes its
   descendants); `--dry` checks recipes and selectors without writing anything.
 - Output: `catalogue/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`

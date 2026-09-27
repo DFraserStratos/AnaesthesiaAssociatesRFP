@@ -496,7 +496,7 @@ async function main() {
   for (const url of needs) if (!(await serverUp(url))) down.push(url)
   if (down.length) {
     console.error(`Dev server not running: ${down.join(', ')}.`)
-    console.error('Start the prototype with `npm run dev` at the repo root (5173) and the PWA with `npm --prefix aa-prototype run dev:pwa` (5174).')
+    console.error('Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174).')
     process.exit(2)
   }
 

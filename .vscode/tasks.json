@@ -6,7 +6,10 @@
       "detail": "Re-capture every prototype screenshot into the catalogue (needs the prototype on :5173 and the PWA dev server on :5174)",
       "type": "shell",
       "command": "npm run capture",
-      "options": { "cwd": "${workspaceFolder}/requirements-board" },
+      "options": {
+        "cwd": "${workspaceFolder}/requirements-board",
+        "shell": { "executable": "/bin/zsh", "args": ["-i", "-c"] }
+      },
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
     }
