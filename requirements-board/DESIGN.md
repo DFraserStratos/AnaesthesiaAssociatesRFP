@@ -80,7 +80,8 @@ scrolls) and as the modal elsewhere.
 
 - One click opens a card: its sheet docks as a panel on the left (a third of the width by
   default, the board two thirds; resizable, width kept per browser) and the board stays live on the right with the card's
-  lineage lit. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
+  lineage lit. The panel floats over the board rather than narrowing it, so opening or closing a
+  card never moves the map; the board's search and lane names step right to clear it. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
   click on empty canvas closes it. No double-click anywhere.
 - One round teal plus, bottom right of every view (or `n`), makes any card: epic, feature, story or
   outstanding item. It asks only for the type, the title and where it sits (a searchable parent, or

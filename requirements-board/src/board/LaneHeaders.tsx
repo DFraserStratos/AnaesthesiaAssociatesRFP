@@ -3,7 +3,7 @@
  * canvas (a ViewportPortal, in the same coordinates as the cards), so they zoom
  * with the map like every other label, with the same semantic zoom bumps
  * (styles.css). Horizontally each is pinned to the visible left edge of the
- * board: its x is the map's left edge or the edge of the view, whichever is
+ * board (right of the item panel, when one is open over it): its x is the map's left edge or that edge, whichever is
  * further right, so a lane stays named however far the map is panned sideways. Clicking any
  * lane's name (the first lane's too) turns it into a text box to rename it.
  * Each named lane also has a small menu (rename, move, delete); "+ Add lane"
@@ -21,11 +21,11 @@ import { LANE_MARGIN, laneKey, type LaneBand } from './mappedLayout.ts'
 const GUTTER = 16
 
 /** Render inside <ReactFlow>. Positions are in flow coordinates; the viewport's transform does the rest. */
-export function LaneHeaders({ bands, collapsed, onToggle }: { bands: LaneBand[]; collapsed: ReadonlySet<string>; onToggle: (key: string) => void }) {
+export function LaneHeaders({ bands, collapsed, onToggle, inset = 0 }: { bands: LaneBand[]; collapsed: ReadonlySet<string>; onToggle: (key: string) => void; /** Screen pixels covered on the left (the item panel). */ inset?: number }) {
   const { x, y, zoom } = useViewport()
   const paneH = useStore((s) => s.height)
-  // The flow x at the board's left edge, plus the gutter; never left of the map itself.
-  const left = Math.max(-LANE_MARGIN + GUTTER / zoom, (GUTTER - x) / zoom)
+  // The flow x at the board's visible left edge, plus the gutter; never left of the map itself.
+  const left = Math.max(-LANE_MARGIN + GUTTER / zoom, (inset + GUTTER - x) / zoom)
   const last = bands.at(-1)
   return (
     <ViewportPortal>

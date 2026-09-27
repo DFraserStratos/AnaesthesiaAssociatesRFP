@@ -511,24 +511,34 @@ button.seg:focus-visible {
 
 /* ------------------------------------------------------------------ board */
 
-/* The board and, when a card is open, its item panel docked on the left: read one, see the map beside it. */
+/* The board and, when a card is open, its item panel docked on the left: read one, see the map beside it.
+   The panel floats over the board rather than narrowing it, so opening or closing a card never moves the map;
+   the board's own left-hand chrome (search, lane names) steps right to clear it (--dock-w). */
 .board-split {
   position: absolute;
   inset: 0;
-  display: flex;
+  --dock-w: 0px;
+}
+.board-split.has-panel {
+  --dock-w: max(380px, var(--panel-w, 33.333%));
 }
 .board {
-  position: relative;
-  flex: 1;
-  min-width: 360px;
+  position: absolute;
+  inset: 0;
 }
 .dock {
-  flex: 0 0 var(--panel-w, 33.333%);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  width: var(--panel-w, 33.333%);
   min-width: 380px;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--card);
   border-right: 1px solid var(--rule);
+  box-shadow: var(--shadow-lift);
   animation: dock-in 200ms var(--ease);
 }
 @keyframes dock-in {
@@ -538,9 +548,11 @@ button.seg:focus-visible {
   }
 }
 .dock-resizer {
-  flex: 0 0 9px;
-  margin: 0 -4px 0 -5px;
-  position: relative;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--dock-w) - 5px);
+  width: 9px;
   z-index: 6;
   cursor: col-resize;
   touch-action: none;
@@ -608,7 +620,7 @@ button.seg:focus-visible {
 .toolbar {
   position: absolute;
   top: 14px;
-  left: 14px;
+  left: calc(var(--dock-w, 0px) + 14px);
   right: 14px;
   display: flex;
   flex-wrap: wrap;
@@ -707,7 +719,7 @@ button.seg:focus-visible {
 }
 .selection-bar {
   position: absolute;
-  left: 14px;
+  left: calc(var(--dock-w, 0px) + 14px);
   bottom: 18px;
   z-index: 4;
   display: flex;

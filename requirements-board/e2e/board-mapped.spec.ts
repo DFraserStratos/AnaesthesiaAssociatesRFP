@@ -232,3 +232,27 @@ test('a real pinch never zooms the page, and the headers stay whole on screen an
     expect(h.left).toBeLessThanOrEqual(h.boardLeft + 24)
   }
 })
+
+test('opening and closing a card floats the panel over the board without moving the map', async ({ page }) => {
+  // A card on screen that the panel (a third of the width) will not cover.
+  const id = await page.evaluate(() => {
+    const el = [...document.querySelectorAll<HTMLElement>('.react-flow__node-card')].find((n) => {
+      const r = n.getBoundingClientRect()
+      return r.left > 700 && r.right < window.innerWidth && r.bottom < window.innerHeight
+    })
+    return el?.dataset.id
+  })
+  expect(id).toBeTruthy()
+  const before = (await node(page, id!).boundingBox())!
+  await node(page, id!).click()
+  await expect(page.locator('.dock')).toBeVisible()
+  await page.waitForTimeout(600) // past the panel's entrance and any pan it might trigger
+  expect(await node(page, id!).boundingBox()).toEqual(before)
+  // The lane names and the search step right to stay clear of it.
+  const dock = (await page.locator('.dock').boundingBox())!
+  expect((await page.locator('.lane-name').first().boundingBox())!.x).toBeGreaterThan(dock.x + dock.width)
+  expect((await page.locator('.toolbar .search').boundingBox())!.x).toBeGreaterThan(dock.x + dock.width)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.dock')).toHaveCount(0)
+  expect(await node(page, id!).boundingBox()).toEqual(before)
+})

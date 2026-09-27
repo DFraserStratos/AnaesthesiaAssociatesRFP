@@ -6,6 +6,7 @@ import {
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
+  useStore,
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
@@ -43,6 +44,8 @@ const PANEL_KEY = 'requirements-board:panel-width'
 const PANEL_DEFAULT = 100 / 3
 const PANEL_MIN = 25
 const PANEL_MAX = 70
+/** The panel never gets narrower than this (styles.css `.dock` min-width). */
+const DOCK_MIN = 380
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
@@ -124,6 +127,13 @@ function Board({ mode }: { mode: BoardMode }) {
   const filtersRef = useRef<HTMLButtonElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
   const modalOpen = open.params.has('question')
+  // The panel floats over the left of the board rather than narrowing it, so opening or closing a
+  // card never moves the map. What the board keeps clear of it is this many pixels from its left edge.
+  const paneW = useStore((s) => s.width)
+  const openDockPx = Math.min(paneW, Math.max(DOCK_MIN, (paneW * panelW) / 100))
+  const dockPx = selected ? openDockPx : 0
+  const dockRef = useRef(openDockPx)
+  dockRef.current = openDockPx
 
   /** Open a card in the panel (or close it). Swapping cards replaces history, so Back doesn't replay every click. */
   const select = (id: string | null, after?: () => void) =>
@@ -291,12 +301,14 @@ function Board({ mode }: { mode: BoardMode }) {
       if (!n) return
       const w = (n.data as CardData).w
       const h = (n.data as CardData).h
-      void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: zoom ?? Math.max(rf.getZoom(), 0.9), duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
+      const z = zoom ?? Math.max(rf.getZoom(), 0.9)
+      // Centre it in the part of the board the panel leaves visible (a card is always open when this runs).
+      void rf.setCenter(n.position.x + w / 2 - dockRef.current / 2 / z, n.position.y + h / 2, { zoom: z, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
     },
     [rf],
   )
 
-  /** Is the top left of a card on screen, clear of the toolbar? */
+  /** Is the top left of a card on screen, clear of the toolbar and the panel? */
   const inView = useCallback(
     (id: string) => {
       const n = rf.getNode(id)
@@ -306,7 +318,7 @@ function Board({ mode }: { mode: BoardMode }) {
       const d = n.data as CardData
       const left = n.position.x * zoom + x
       const top = n.position.y * zoom + y
-      return left >= 0 && top >= 64 && left + Math.min(d.w, CARD_PEEK) * zoom <= pane.clientWidth && top + d.h * zoom <= pane.clientHeight
+      return left >= dockRef.current && top >= 64 && left + Math.min(d.w, CARD_PEEK) * zoom <= pane.clientWidth && top + d.h * zoom <= pane.clientHeight
     },
     [rf],
   )
@@ -320,7 +332,7 @@ function Board({ mode }: { mode: BoardMode }) {
   }, [focusId]) // only when a new focus request arrives
 
   // The open card must be on show (graph.ts shows it even while retired cards are hidden), and
-  // in view: pan to it when the panel's arrival (which narrows the board) or a panel link left it off screen.
+  // in view: pan to it when the panel opened over it or a panel link left it off screen.
   useEffect(() => {
     if (!selected || !index.byId.has(selected) || focusId) return
     const t = setTimeout(() => {
@@ -442,7 +454,7 @@ function Board({ mode }: { mode: BoardMode }) {
           {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
           {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
           {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => (n.type === 'card' ? TYPE_HEX[(n.data as CardData).item.type] : 'transparent')} nodeBorderRadius={2} />}
-          {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} />}
+          {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} inset={dockPx} />}
         </ReactFlow>
 
         <div className="toolbar">
@@ -543,7 +555,7 @@ function Board({ mode }: { mode: BoardMode }) {
             >
               <Redo2 size={15} />
             </button>
-            <button className="btn icon ghost" onClick={() => void rf.fitView({ ...FIT, duration: 400 })} aria-label="Fit the whole map" title="Fit the whole map">
+            <button className="btn icon ghost" onClick={() => void rf.fitView({ ...FIT, padding: { ...FIT.padding, left: `${dockPx + 24}px` }, duration: 400 })} aria-label="Fit the whole map" title="Fit the whole map">
               <Maximize size={15} />
             </button>
             <button className="btn icon ghost" aria-pressed={view.showMinimap} onClick={() => view.set({ showMinimap: !view.showMinimap })} aria-label="Minimap" title="Minimap">
