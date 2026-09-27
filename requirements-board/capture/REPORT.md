@@ -6,17 +6,20 @@ Scope: every story plus every feature with no stories (194 items, 194 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 119 | 108 |
-| Partial | 62 | 62 |
+| Captured | 116 | 105 |
+| Partial | 61 | 61 |
 | Absent from the prototype | 24 | 24 |
-| Failed recipe | 0 | 0 |
+| Failed recipe | 4 | 4 |
 | No recipe | 0 | 0 |
 
-401 screenshots. Items per app: admin 109, web 61, mobile 56, simulator 36.
+390 screenshots. Items per app: admin 108, web 57, mobile 52, simulator 36.
 
-## Failed recipes (0)
+## Failed recipes (4)
 
-None.
+- **US-03.5.2** BTM still recorded in full · web-full-discount: highlight [data-testid=card-calculation]: selector [data-testid=card-calculation] matched nothing (at http://localhost:5173/web/lists/L-34821-2026-07-21-PM/cards/C0009)
+- **US-05.2.1** Per-anaesthetist unit value · mobile-card-fee: highlight [data-testid=card-calculation]: selector [data-testid=card-calculation] matched nothing (at http://localhost:5174/mobile/lists/L-34821-2026-07-21-AM/cards/C0001)
+- **US-05.3.5** Ledger tracks each Procedure's share · mobile-per-procedure: highlight [data-testid=card-calculation]: selector [data-testid=card-calculation] matched nothing (at http://localhost:5174/mobile/lists/L-34821-2026-07-20-AM/cards/C0022)
+- **US-05.4.1** Apply anaesthetist adjustment · mobile-adjustment-applied: highlight [data-testid=card-calculation]: selector [data-testid=card-calculation] matched nothing (at http://localhost:5174/mobile/lists/L-34821-2026-07-21-PM/cards/C0009)
 
 ## Absent from the prototype (24)
 
@@ -45,7 +48,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (62)
+## Partial (61)
 
 - **US-01.1.2** Horizon rolls forward daily · The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.
 - **US-01.1.3** New anaesthetist gets a populated canvas · Adding an anaesthetist generates their forward Lists in the store (confirmed on save), but the admin day grid shows only the seeded roster, so the new rows are not visible there.
@@ -78,7 +81,6 @@ None.
 - **US-05.1.3** Group codes · Codes are grouped by anatomical site from the guide, and the code picker lists them under those groups. AA groups such as cosmetic, dental or plastics cannot be defined, and codes cannot be selected as a set.
 - **US-05.1.5** Modifier code master · The modifier code master holds the A, AI, AS, ASE, OB, P, PA and post-op codes with unit values, view only. VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3 and NC1 to NC2 are not in the set.
 - **US-05.2.5** Fixed fee schedule pricing · A Type 3 card is priced from the matched fixed price row (by RVG code, surgeon and procedure ordinal) and BTM is still recorded. Schedule lines have no time band or add-on fee to match on.
-- **US-05.4.1** Apply anaesthetist adjustment · The anaesthetist can apply a dollar adjustment or a fixed charge with a reason, and the card shows the fee before the override. It is not gated by the contract, and percentage discounts are office only.
 - **US-05.5.2** ACC pre-op flat fee codes · An ACC pre-operative assessment is added as an ancillary fixed amount line, with the code typed into the description. CS250, CS260 and CS70 are not a code set to pick from, and their rates are not held.
 - **US-06.2.1** Detect prepayment requirement · The prototype flags a card as needing pre-payment when a procedure's patient payment category is set to self funded pre-payment. There is no per-anaesthetist prepaid set of RVG codes or groups to match against.
 - **US-06.2.2** Set the prepaid amount · Full versus deposit and the deposit amount are stored on the procedure and drive the pre-procedure invoice, but they are seeded only: no screen lets an admin or anaesthetist set or change the prepaid amount.
@@ -114,7 +116,7 @@ None.
 
 None.
 
-## Captured (119)
+## Captured (116)
 
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
@@ -153,7 +155,6 @@ None.
 - **US-03.3.4** ASA seeds the modifier field · web, mobile
 - **US-03.3.5** Itemise modifiers · web, mobile
 - **US-03.3.7** Rate x time capture · web, mobile
-- **US-03.5.2** BTM still recorded in full · web, mobile
 - **US-03.5.3** Adjustment reason · web, mobile
 - **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
@@ -164,7 +165,6 @@ None.
 - **US-04.4.1** Mandatory default Contract · admin
 - **US-05.1.1** Load NZSA RVG codes · admin
 - **US-05.1.4** Absorbed modifiers · admin, web, mobile
-- **US-05.2.1** Per-anaesthetist unit value · admin, web, mobile
 - **US-05.2.2** Tiered time units · web, mobile
 - **US-05.2.3** Conditional positioning modifier · web, mobile
 - **US-05.2.4** Contract rate or discount · admin
@@ -173,7 +173,6 @@ None.
 - **US-05.3.1** Base units on primary only · web, mobile
 - **US-05.3.2** Time units on every Procedure · web, mobile
 - **US-05.3.4** Contract-specific second-procedure rules · admin
-- **US-05.3.5** Ledger tracks each Procedure's share · web, mobile
 - **US-05.4.2** Office price override · admin
 - **US-05.5.1** ACC through the holder's Contract · admin
 - **US-06.3.1** Raise the prepayment invoice · admin, simulator
