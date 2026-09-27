@@ -101,7 +101,8 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
 - **Freeform** is the wall described above: the chart grid, connector lines, cards dragged anywhere,
   Tidy to put them back.
 - **Mapped** is a user story map, read left to right in one strip, with no grid and no connector
-  lines (position shows the hierarchy). It is an open, infinite canvas of the same teal-grey chart
+  lines (position shows the hierarchy), except the open card's lineage: while a card is open, teal lines
+  join it to its feature and epic (and to what sits under it), and they drop away during a drag. It is an open, infinite canvas of the same teal-grey chart
   paper as Freeform, edge to edge, without the ruling: no sheet, no tinted bands, no texture. White
   cards lift off the paper; lanes are separated by a thin rule and their headers. The backbone is the epic row, each
   epic spanning its feature columns, with the feature row beneath. Below it the swim lanes run

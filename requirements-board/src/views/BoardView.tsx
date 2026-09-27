@@ -18,6 +18,7 @@ import type { CardData, CardNodeType } from '../board/cardData.ts'
 import { CardNode } from '../board/CardNode.tsx'
 import { buildEdges, buildNodes, countDescendants, isShown, type GraphInput } from '../board/graph.ts'
 import { LaneHeaders } from '../board/LaneHeaders.tsx'
+import { RiseEdge } from '../board/RiseEdge.tsx'
 import { wheelGestures } from '../board/trackpad.ts'
 import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, type MarkerNodeType } from '../board/LaneNode.tsx'
 import { dropTarget, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
@@ -28,6 +29,7 @@ import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, useCatalogue
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
+const edgeTypes = { rise: RiseEdge }
 type BoardNode = CardNodeType | LaneNodeType | AddNodeType | MarkerNodeType
 /** Each mode keeps its own view of the map: their geometry differs. */
 const VIEWPORT_KEY: Record<BoardMode, string> = { freeform: 'requirements-board:viewport', mapped: 'requirements-board:viewport:mapped' }
@@ -264,7 +266,8 @@ function Board({ mode }: { mode: BoardMode }) {
   }
   const toggleLane = (key: string) => view.set({ collapsedLanes: collapsedLanes.has(key) ? view.collapsedLanes.filter((k) => k !== key) : [...view.collapsedLanes, key] })
 
-  const edges = useMemo(() => (mapped ? [] : buildEdges(graph)), [mapped, graph])
+  // Mapped draws no connectors except the open card's lineage, and none mid-drag (the map is reflowing).
+  const edges = useMemo(() => (!mapped ? buildEdges(graph) : lineage && !previewing ? buildEdges(graph, { mapped: true }) : []), [mapped, graph, lineage, previewing])
 
   const centreOn = useCallback(
     (id: string, zoom?: number) => {
@@ -380,6 +383,7 @@ function Board({ mode }: { mode: BoardMode }) {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           nodeDragThreshold={4}
           // Mapped moves one card (and what hangs under it) at a time, so no multi-select there.
@@ -411,7 +415,7 @@ function Board({ mode }: { mode: BoardMode }) {
           onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
         >
-          {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped is plain white. */}
+          {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
           {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
           {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => (n.type === 'card' ? TYPE_HEX[(n.data as CardData).item.type] : 'transparent')} nodeBorderRadius={2} />}
           {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} />}

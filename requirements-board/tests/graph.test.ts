@@ -57,6 +57,15 @@ describe('board graph', () => {
     expect(tones).toMatchObject({ 'US-01.1.1': 'is-selected', 'FT-01.1': 'is-lit', 'US-01.0.1': 'is-faded' })
   })
 
+  it('joins only the open lineage in Mapped, a feature rising straight to its epic', () => {
+    const lineage = new Set(['EP-01', 'FT-01.1', 'US-01.1.1'])
+    const e = Object.fromEntries(buildEdges(input({ selected: 'US-01.1.1', lineage }), { mapped: true }).map((x) => [x.id, x]))
+    expect(Object.keys(e).sort()).toEqual(['EP-01>FT-01.1', 'FT-01.1>US-01.1.1'])
+    expect(e['EP-01>FT-01.1']!.type).toBe('rise')
+    expect(e['FT-01.1>US-01.1.1']!.type).toBe('smoothstep')
+    expect(buildEdges(input(), { mapped: true })).toEqual([])
+  })
+
   it('counts descendants at any depth', () => {
     expect(countDescendants(index).get('EP-01')).toBe(4)
   })

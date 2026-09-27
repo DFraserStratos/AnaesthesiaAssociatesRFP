@@ -76,7 +76,11 @@ export function buildNodes(g: GraphInput, descendantCounts: Map<string, number>)
     })
 }
 
-export function buildEdges(g: GraphInput): Edge[] {
+/**
+ * `mapped`: only the open card's lineage is joined (position shows the rest of the hierarchy),
+ * and a feature rises straight to its epic, which always spans it (`RiseEdge`).
+ */
+export function buildEdges(g: GraphInput, { mapped = false } = {}): Edge[] {
   const out: Edge[] = []
   for (const it of g.index.items) {
     if (!it.parent) continue
@@ -84,6 +88,7 @@ export function buildEdges(g: GraphInput): Edge[] {
     if (!parent || !g.auto[it.id]) continue
     if (!isShown(it, g) || !isShown(parent, g)) continue
     const lit = !!g.lineage && g.lineage.has(it.id) && g.lineage.has(parent.id)
+    if (mapped && !lit) continue
     const dim = (!!g.lineage && !lit) || (g.filtering && (!g.matches.has(it.id) || !g.matches.has(parent.id)))
     // Stories hang off a spine down their feature's left side; everything else joins top to bottom.
     const spine = it.type === 'story'
@@ -93,7 +98,9 @@ export function buildEdges(g: GraphInput): Edge[] {
       target: it.id,
       sourceHandle: spine && parent.type === 'feature' ? 'ls' : undefined,
       targetHandle: spine ? 'l' : undefined,
-      type: 'smoothstep',
+      type: mapped && it.type === 'feature' ? 'rise' : 'smoothstep',
+      // Mapped: beneath the lane rules (zIndex -1), so a lane still reads as one unbroken band.
+      ...(mapped && { zIndex: -2 }),
       pathOptions: { offset: spine ? 18 : 12, borderRadius: 10 },
       className: lit ? 'lit' : dim ? 'dim' : '',
       focusable: false,
