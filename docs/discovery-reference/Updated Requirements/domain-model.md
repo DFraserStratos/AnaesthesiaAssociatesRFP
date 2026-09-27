@@ -118,7 +118,6 @@ values. The Contract *declares that they are required*; the Booking *holds them*
 | contractRate / discountPercent | For `RVG_UNITS_CONTRACT_RATE`. |
 | multiProcedureRule | `RVG_DEFAULT` (base once, time each, modifier split > 4) · `SECOND_CODE_PERCENT` (e.g. 50%) · `ADD_ON_FEE` · `NOT_BILLABLE`. |
 | allowsAnaesthetistAdjustment | Shows the % discount / fixed final price field in the app. |
-| allowsOfficeOverride | Office may apply a discretionary override with reason at review. Whether this is Contract-gated at all is OQ-16. |
 | coveredAmount / coveredPercent | Optional. For partial cover (gap billing): the holder pays this portion, the patient pays the rest as a second invoice. Mechanism is OQ-23. |
 | requiredBookingInputs | Any of: invoiceEmail, billableParty, prepaidAmount, insurerMemberNumber, claimReference, purchaseOrder. Blocks Booking completion until present. |
 | prepayment | Prepayment is driven by the anaesthetist's prepaid RVG settings (Q&A #5). Whether a Pre-paid Contract category is also a trigger is OQ-25. |
@@ -201,7 +200,7 @@ fee(procedure) =
   if contract.pricingBasis == RATE_TIME:       rate x duration
   else:                                        units(procedure) x unitValue
        where unitValue = contract rate (RVG_UNITS_CONTRACT_RATE) or anaesthetist's own $ per unit
-  then apply anaesthetist adjustment (if allowed), then office override (if allowed)
+  then apply anaesthetist adjustment (if allowed), then office override (if any, see OQ-16)
 ```
 
 **Units within a Booking** (RVG default multi-procedure rule):
