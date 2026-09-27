@@ -534,8 +534,7 @@ button.seg:focus-visible {
   z-index: 5;
   width: var(--panel-w, 33.333%);
   min-width: 380px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
   background: var(--card);
   border-right: 1px solid var(--rule);
   box-shadow: var(--shadow-lift);
@@ -1189,6 +1188,8 @@ mark {
   place-items: start center;
   padding: 5vh 20px;
   overflow: auto;
+  /* Both edges, so the centred sheet stays put whether or not the record overflows. */
+  scrollbar-gutter: stable both-edges;
   animation: fade 160ms var(--ease);
 }
 /* Stepping between records swaps the sheet in place: no entrance, so nothing flashes behind it. */
@@ -1214,26 +1215,42 @@ mark {
   height: 4px;
   background: var(--ty, var(--sc, var(--ink)));
 }
-/* Docked beside the board: full height, no float; the head and foot stay put while the body scrolls. */
+/* Docked beside the board: full height, no float; the head and foot stay put while only the body scrolls,
+   so the scrollbar sits inside the content area and the head and foot run edge to edge. */
 .sheet.docked {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   border-radius: 0;
   box-shadow: none;
-  overflow: visible;
+  overflow: hidden;
   animation: none;
 }
 .sheet.docked .sheet-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   padding-bottom: 8px;
-  background: var(--card);
 }
+/* The scrollbar's lane is always reserved (and given a fixed width, which the right padding gives back), so
+   stepping between a short and a long record never slides the text or the head's arrows sideways. */
 .sheet.docked .sheet-body {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 16px;
+}
+.sheet.docked .sheet-body::-webkit-scrollbar {
+  width: 12px;
+}
+.sheet.docked .sheet-body::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 6px;
+}
+.sheet.docked .sheet-body::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-4);
 }
 /* Read view: pin the screenshots + facts to the foot of the docked panel; they just follow the content once it overflows. */
 .sheet.docked .sheet-body:has(> .read-view) {
