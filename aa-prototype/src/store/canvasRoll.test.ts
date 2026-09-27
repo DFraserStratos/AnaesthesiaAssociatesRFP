@@ -189,10 +189,8 @@ describe('reset determinism', () => {
   it('reset preserves the shell slice', () => {
     const api = createAppStore()
     api.getState().setCurrentApp('admin')
-    api.getState().setCardCalculationMode('off')
     resetDemo(api)
     expect(api.getState().shell.currentApp).toBe('admin')
-    expect(api.getState().shell.cardCalculationMode).toBe('off')
   })
 })
 

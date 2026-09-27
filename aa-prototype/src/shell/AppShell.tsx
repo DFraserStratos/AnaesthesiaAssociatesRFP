@@ -5,7 +5,6 @@ import { APP_CONFIG, appIdForPath, type AppId } from './appConfig'
 import { AppSwitcher } from './AppSwitcher'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
-import { CardCalculationControl } from './CardCalculationControl'
 import { neutral, brand } from '../theme/tokens'
 
 /**
@@ -123,7 +122,6 @@ export function AppShell() {
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{persona.role}</span>
             </span>
           </div>
-          <CardCalculationControl />
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
           <DemoClockMenu />
           <DemoResetButton />

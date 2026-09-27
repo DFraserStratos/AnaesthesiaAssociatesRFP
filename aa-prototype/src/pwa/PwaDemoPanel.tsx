@@ -3,7 +3,6 @@ import { format, parseISO } from 'date-fns'
 import { Check, ClipboardCopy, RefreshCw, RotateCcw } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { BottomSheet } from '../shared/surface'
-import { SlidingSegmentedControl } from '../shared/ui/SlidingSegmentedControl'
 import {
   PERSIST_KEY,
   persistStatus,
@@ -13,7 +12,6 @@ import {
   useAppStore,
   useClockTimeLabel,
   useToday,
-  type CardCalculationMode,
 } from '../store'
 import { demoClockShortcuts } from '../shared/demoClockShortcuts'
 import { readViewportMetrics, viewportShortfall, type ViewportMetrics } from './viewportMetrics'
@@ -30,9 +28,9 @@ import { clearInstallCoachDismissal } from './installPrompt'
 /**
  * The presenter controls the installed PWA has no harness bar for.
  *
- * `AppShell` supplies `DemoClockMenu`, `DemoResetButton`,
- * `CardCalculationControl` and `AppSwitcher`. The PWA renders none of it, which
- * is correct for the illusion but takes the clock and Reset with it. The fake
+ * `AppShell` supplies `DemoClockMenu`, `DemoResetButton` and `AppSwitcher`.
+ * The PWA renders none of it, which is correct for the illusion but takes the
+ * clock and Reset with it. The fake
  * status bar was also the only place the DEMO clock was visible, and that
  * matters, because "Start now" and "Finish now" stamp from it.
  *
@@ -45,12 +43,6 @@ import { clearInstallCoachDismissal } from './installPrompt'
  *
  * Every control here is presenter chrome. None of it is proposed product UI.
  */
-
-const CALCULATION_MODES: readonly { value: CardCalculationMode; label: string }[] = [
-  { value: 'off', label: 'Off' },
-  { value: 'units', label: 'Units' },
-  { value: 'fee', label: 'Fee' },
-]
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -214,27 +206,6 @@ function OfficeSimulationCard() {
         Off, and a submitted list simply waits, as it really would until the office reviews it. There is no
         Admin app on the phone, so nothing else would move it on. Switch it back on and the office picks
         that same list up a few seconds later.
-      </div>
-    </Card>
-  )
-}
-
-function CardCalculationCard() {
-  const mode = useAppStore((s) => s.shell.cardCalculationMode)
-  const setMode = useAppStore((s) => s.setCardCalculationMode)
-
-  return (
-    <Card title="Card calculation">
-      <SlidingSegmentedControl
-        value={mode}
-        options={CALCULATION_MODES}
-        onSelect={setMode}
-        variant="surface"
-        ariaLabel="Anaesthetist Card calculation"
-        buttonStyle={{ height: 40 }}
-      />
-      <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>
-        What the Card shows above the completion bar. On the desktop prototype this sits in the harness bar.
       </div>
     </Card>
   )
@@ -589,7 +560,6 @@ export function PwaDemoPanel() {
       <InstallCoach />
       <DemoClockCard />
       <OfficeSimulationCard />
-      <CardCalculationCard />
       <ResetCard />
       <BuildCard />
       <ViewportCard />

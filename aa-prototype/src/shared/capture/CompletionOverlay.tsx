@@ -5,28 +5,24 @@ interface CompletionOverlayProps {
   /** CARD totals (all procedures summed), not a single procedure's. */
   units: number
   fee: number
-  mode: 'off' | 'units' | 'fee'
+  /** Show the `N units · $X` line. Office Cards only; the anaesthetist sees none. */
+  showCalculation: boolean
   /** Runs the owner's dismissal on a tap. See `SuccessOverlay`. */
   onDismiss?: () => void
 }
 
 /**
  * The completion moment (mockup screen 3): white blur flood, the success
- * circle pops (`aa-circle-pop`) and the tick draws (dasharray 34). Its
- * calculation line follows the global anaesthetist display: none, units, or
- * units plus fee. The screen owns the ~1050 ms auto-dismiss.
+ * circle pops (`aa-circle-pop`) and the tick draws (dasharray 34). The
+ * units-and-fee line shows only on office Cards. The screen owns the ~1050 ms
+ * auto-dismiss.
  *
  * `onDismiss` is the standalone-PWA safety valve: the same handler that timer
  * runs, reachable by tapping the flood, for the case where the timer is lost to
  * an unmount race and there is no reload to fall back on.
  */
-export function CompletionOverlay({ units, fee, mode, onDismiss }: CompletionOverlayProps) {
-  const calculation =
-    mode === 'off'
-      ? null
-      : mode === 'units'
-        ? `${units} ${units === 1 ? 'unit' : 'units'}`
-        : `${units} ${units === 1 ? 'unit' : 'units'} · $${fee.toFixed(2)}`
+export function CompletionOverlay({ units, fee, showCalculation, onDismiss }: CompletionOverlayProps) {
+  const calculation = showCalculation ? `${units} ${units === 1 ? 'unit' : 'units'} · $${fee.toFixed(2)}` : null
 
   return (
     <SuccessOverlay title="Card complete" testId="completion-overlay" onDismiss={onDismiss}>

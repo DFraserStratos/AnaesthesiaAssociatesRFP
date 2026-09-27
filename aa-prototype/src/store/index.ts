@@ -14,7 +14,6 @@ export {
   type AppStore,
   type AppStoreApi,
   type BoundAppStore,
-  type CardCalculationMode,
 } from './appStore'
 export {
   resilientLocalStorage,

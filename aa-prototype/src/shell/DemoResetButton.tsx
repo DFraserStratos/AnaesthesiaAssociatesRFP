@@ -5,8 +5,8 @@ import { accent, elevation, neutral, radius, semantic } from '../theme/tokens'
 
 /**
  * Global recovery control for the demo harness. Resetting replaces the domain
- * data and clock with the deterministic seed while preserving shell choices,
- * including the current app and Card calculation display.
+ * data and clock with the deterministic seed while preserving shell choices
+ * (the current app).
  */
 export function DemoResetButton() {
   const [confirming, setConfirming] = useState(false)

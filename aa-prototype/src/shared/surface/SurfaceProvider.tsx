@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { neutral, radius } from '../../theme/tokens'
-import { CardTotalPanel, CardTotalStrip } from '../capture'
+import { CardTotalPanel } from '../capture'
 import { DockSpacer } from '../ui/DockSpacer'
 import { BottomSheet } from './BottomSheet'
 import { Dialog } from './Dialog'
@@ -10,7 +10,8 @@ import { SurfaceCtx, type CardLayoutSlots, type Surface, type SurfaceVariant } f
  * `SurfaceProvider` supplies the platform surface (convention 16). Mobile's
  * `Overlay` is the existing `BottomSheet` verbatim; web's is the centred
  * `Dialog`. `CardLayout` arranges the card-detail slots per platform, `CardTotal`
- * is the money object in that platform's shape, and `Pair` is the one density
+ * is the money object (web only: the phone only ever shows anaesthetist Cards,
+ * which carry no calculation), and `Pair` is the one density
  * primitive a shared capture block needs. `variant` is exposed for the few
  * remaining density tweaks (touch 44/48px targets vs desktop).
  */
@@ -25,21 +26,18 @@ const WEB_COMMIT_HALO = 12
 /**
  * Mobile card layout — the phone-frame `flex:1; overflow:auto` scroll region,
  * every slot in one column in capture order, between a masthead that folds as
- * you work and the pinned calculation / completion dock.
+ * you work and the pinned completion dock.
  *
  * The dock is the `CompleteBar` container Phase 04 shipped (absolute to the
  * phone-frame content region, blurred translucent bar, `14 / 20 / 32` so the
- * bottom padding clears the home indicator) and optionally carrying the Card
- * calculation above it. That 32 is now derived rather than literal: it reads
- * the host's `--aa-inset-bottom` so the same dock clears a real iPhone's home
- * bar, a gesture-nav Android bar, or nothing at all. See the inset contract in
- * `theme/global.css`.
- * Keeping these styles here rather than in `CompleteBar` / `CardTotalStrip` is
- * what "splits positioning into the surface" means.
+ * bottom padding clears the home indicator). That 32 is now derived rather
+ * than literal: it reads the host's `--aa-inset-bottom` so the same dock clears
+ * a real iPhone's home bar, a gesture-nav Android bar, or nothing at all. See
+ * the inset contract in `theme/global.css`.
+ * Keeping these styles here rather than in `CompleteBar` is what "splits
+ * positioning into the surface" means.
  *
- * Its height is content-dependent: Off carries only the action, Units adds a
- * compact count, and Fee may add procedure chips or an override note. The bar
- * also swaps for the shorter success state, so bottom clearance is MEASURED.
+ * The bar swaps for the shorter success state, so bottom clearance is MEASURED.
  */
 function MobileCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
@@ -191,11 +189,12 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
  *   span 12  card-wide banners when present (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
- *            pins the chosen Card calculation with a separate, matching-width
- *            complete/amend bar below it, or the bar alone in Off mode; patient
+ *            pins the Card calculation (office Cards) with a separate,
+ *            matching-width complete/amend bar below it, or the bar alone on an
+ *            anaesthetist Card; patient
  *            / time / attachments / notes and quiet actions follow.
  *
- * The commit block is `sticky`, so the selected calculation or completion
+ * The commit block is `sticky`, so the calculation or completion
  * action stays in place while the capture column scrolls under it. It carries
  * the canvas colour as its own background (with the padding
  * cancelled by equal negative margins) so rail content passes behind it rather
@@ -299,7 +298,7 @@ const MOBILE_SURFACE: Surface = {
   variant: 'mobile',
   Overlay: BottomSheet,
   CardLayout: MobileCardLayout,
-  CardTotal: CardTotalStrip,
+  CardTotal: () => null,
   Pair: MobilePair,
 }
 

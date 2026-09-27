@@ -33,34 +33,21 @@ export interface CardTotalLine {
   note?: string
 }
 
-export type CardTotalDisplayMode = 'units' | 'fee'
-
 /**
- * The Card calculation. Both surfaces are handed the same figures and each
- * renders either units alone or the full fee presentation in its own shape.
- * The desktop has room for a stacked breakdown; the phone turns procedures
- * into chips and leaves fee-line detail to the capture column.
+ * The Card calculation: units, fee and breakdown. Office Cards only; the
+ * anaesthetist Card shows none, so only the desktop surface renders it (the
+ * phone's `CardTotal` renders nothing).
  *
- * `action` is the complete / amend bar. The phone total embeds it in the dock's
- * stack; the web layout passes null and renders the control as a separate,
- * matching-width sibling below the total.
+ * `action` is the complete / amend bar. The web layout passes null and renders
+ * the control as a separate, matching-width sibling below the total.
  */
 export interface CardTotalProps {
-  /** Units-only privacy view, or the full units-and-fee presentation. */
-  displayMode: CardTotalDisplayMode
   /** Summed billable units across the Card's procedures (`cardFee`). */
   units: number
   /** Summed fee across the Card's procedures (`cardFee`). */
   fee: number
   /** Breakdown rows; empty when there is nothing to break down. */
   lines: readonly CardTotalLine[]
-  /**
-   * True when `lines` are one per PROCEDURE, false when they are one
-   * procedure's several fee lines. The two are not interchangeable: a surface
-   * that shows procedures as chips must not chip up fee lines, which have no
-   * ordinal to name them by.
-   */
-  linesArePerProcedure: boolean
   /** The applied rate, e.g. "FEE @ $26.50/UNIT", or null when procedures disagree. */
   rateLabel: string | null
   /** Price-override note, or null. */

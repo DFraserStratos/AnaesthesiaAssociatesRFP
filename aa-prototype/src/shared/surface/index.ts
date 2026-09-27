@@ -9,7 +9,6 @@ export {
   type OverlayProps,
   type FooterProps,
   type CardLayoutSlots,
-  type CardTotalDisplayMode,
   type CardTotalLine,
   type CardTotalProps,
 } from './context'

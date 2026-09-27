@@ -130,9 +130,8 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, cardId))
   const audit = useAppStore((s) => s.audit)
-  const calculationMode = useAppStore((s) =>
-    actor.role === 'anaesthetist' ? s.shell.cardCalculationMode : 'fee',
-  )
+  // The anaesthetist Card carries no calculation; only the office sees the fee.
+  const showCardTotal = actor.role !== 'anaesthetist'
   const todayISO = useToday()
 
   const list = card !== undefined ? listsRecord[card.listId] : undefined
@@ -198,9 +197,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   /**
    * The breakdown behind the pinned Card total. Rows are per PROCEDURE on a
    * multi-procedure Card, and per FEE LINE when a single procedure has more than
-   * one (a rate-by-time line beside the RVG fee) — `linesArePerProcedure` says
-   * which, because the phone's dock chips up the first kind and cannot chip the
-   * second (a fee line has no ordinal to name it by).
+   * one (a rate-by-time line beside the RVG fee).
    *
    * The rate label is shown only where every procedure agrees on it: a Card
    * mixing a Type 3 fixed price with a units-by-rate procedure has no single
@@ -209,7 +206,6 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const cardBreakdown = useMemo(() => {
     const empty = {
       lines: [] as CardTotalLine[],
-      linesArePerProcedure: false,
       rateLabel: null as string | null,
       overrideNote: null as string | null,
     }
@@ -249,7 +245,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
           ? `Override applied · was $${overridden[0]!.fee.override!.before.toFixed(2)}`
           : `Override applied on ${overridden.length} of ${procedures.length} procedures`
 
-    return { lines, linesArePerProcedure: procedures.length > 1, rateLabel, overrideNote }
+    return { lines, rateLabel, overrideNote }
   }, [list, procedures, masters, billingLinesRecord])
 
   // The card's full history: its own id plus its procedures' and billing lines'
@@ -753,15 +749,13 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         capture={capture}
         actions={actions}
         summary={
-          cancelled || procedures.length === 0 || calculationMode === 'off'
+          cancelled || procedures.length === 0 || !showCardTotal
             ? null
             : (action) => (
                 <CardTotal
-                  displayMode={calculationMode}
                   units={cardTotals.units}
                   fee={cardTotals.total}
                   lines={cardBreakdown.lines}
-                  linesArePerProcedure={cardBreakdown.linesArePerProcedure}
                   rateLabel={cardBreakdown.rateLabel}
                   overrideNote={cardBreakdown.overrideNote}
                   action={action}
@@ -783,7 +777,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             <CompletionOverlay
               units={cardTotals.units}
               fee={cardTotals.total}
-              mode={calculationMode}
+              showCalculation={showCardTotal}
               onDismiss={dismissOverlay}
             />
           ) : null

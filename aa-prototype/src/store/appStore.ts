@@ -68,11 +68,8 @@ export interface IntegrationsSlice {
   messages: Record<string, IntegrationMessage>
 }
 
-export type CardCalculationMode = 'off' | 'units' | 'fee'
-
 export interface ShellSlice {
   currentApp: AppId
-  cardCalculationMode: CardCalculationMode
 }
 
 export interface AppState extends SeedState {
@@ -85,7 +82,6 @@ export interface AppState extends SeedState {
 
 export interface AppActions {
   setCurrentApp: (app: AppId) => void
-  setCardCalculationMode: (mode: CardCalculationMode) => void
 }
 
 export type AppStore = AppState & AppActions
@@ -170,7 +166,7 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    shell: { currentApp: 'mobile', cardCalculationMode: 'fee' },
+    shell: { currentApp: 'mobile' },
   }
 }
 
@@ -210,8 +206,6 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
     ...freshAppState(),
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
-    setCardCalculationMode: (mode: CardCalculationMode) =>
-      set((state) => ({ shell: { ...state.shell, cardCalculationMode: mode } })),
   })
 
   if (options.persisted === true) {

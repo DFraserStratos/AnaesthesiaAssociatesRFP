@@ -8,15 +8,11 @@ import { CompletionOverlay } from './CompletionOverlay'
 const ARM_AFTER = motion.completeTick.drawDelay + motion.completeTick.drawDuration
 
 describe('CompletionOverlay calculation display', () => {
-  it('follows the selected off, units and fee modes', () => {
-    const view = render(<CompletionOverlay units={3} fee={79.5} mode="fee" />)
+  it('shows units and fee only when asked', () => {
+    const view = render(<CompletionOverlay units={3} fee={79.5} showCalculation />)
     expect(screen.getByText('3 units · $79.50')).toBeInTheDocument()
 
-    view.rerender(<CompletionOverlay units={3} fee={79.5} mode="units" />)
-    expect(screen.getByText('3 units')).toBeInTheDocument()
-    expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
-
-    view.rerender(<CompletionOverlay units={3} fee={79.5} mode="off" />)
+    view.rerender(<CompletionOverlay units={3} fee={79.5} showCalculation={false} />)
     expect(screen.getByText('Card complete')).toBeInTheDocument()
     expect(screen.queryByText(/3 units/)).not.toBeInTheDocument()
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
@@ -29,7 +25,7 @@ describe('CompletionOverlay dismissal', () => {
   })
 
   it('is inert while the screen owns the timing alone', () => {
-    render(<CompletionOverlay units={3} fee={79.5} mode="fee" />)
+    render(<CompletionOverlay units={3} fee={79.5} showCalculation />)
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
@@ -37,7 +33,7 @@ describe('CompletionOverlay dismissal', () => {
   it('runs the screen dismissal when the flood is tapped', () => {
     vi.useFakeTimers()
     const onDismiss = vi.fn()
-    render(<CompletionOverlay units={3} fee={79.5} mode="fee" onDismiss={onDismiss} />)
+    render(<CompletionOverlay units={3} fee={79.5} showCalculation onDismiss={onDismiss} />)
 
     // The valve is deliberately absent until the complete-tick has drawn, so the
     // finger that just tapped "Mark complete" cannot swallow the moment. Wait it

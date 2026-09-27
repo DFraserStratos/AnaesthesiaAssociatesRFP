@@ -126,7 +126,6 @@ working List rather than an empty one.
 
 - **Click:**
   - Go to **Anaesthetist Mobile App → Tue 28 Jul St George's List → Sarah Mitchell**.
-  - Set the global **Off | Units | Fee** control to **Fee**.
   - Choose procedure **20950 — Appendicectomy, laparoscopic → Start now**.
   - Without leaving Sarah, select **live clock → +1 hour**, close the popup, then select
     **Finish now**.
@@ -137,18 +136,14 @@ working List rather than an empty one.
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
   active Card is complete, so one captured Card out of four submits nothing yet. That gate is the
   reason the List is the unit of approval, not the Card."
-- **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete** and the fee
-  updates. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
+- **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
   **Cards still to finish** sheet, which names each remaining Card by time and patient with what it
   needs. The List stays `DRAFT`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
   the seeded Review queue.
-- **Worth pointing at:** the Card total is **pinned to the bottom of the phone**, so every ASA tap,
-  modifier and time nudge ticks while your thumb is still on the control. The top-bar choice lets the
-  audience compare **Fee** (units and dollars), **Units** (units only) and **Off** (Mark complete
-  only); the Card-complete animation follows the same choice. Scroll down once and the masthead folds
-  to a nav row to make room. On a multi-procedure Card the Fee dock carries a chip per procedure, so
-  its height never grows. If Mark complete finds missing data, the Card moves directly to the first
-  incomplete control and focuses it. Demo reset preserves the chosen display.
+- **Worth pointing at:** only **Mark complete** is pinned to the bottom of the phone; the anaesthetist
+  captures inputs and sees no running fee, which the office sees on the Admin Card in S2. Scroll down
+  once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Card
+  moves directly to the first incomplete control and focuses it.
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
 interval); the RFP defines the tiers but not the rounding.

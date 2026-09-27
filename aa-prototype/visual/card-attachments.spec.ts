@@ -16,6 +16,15 @@ async function openEllison(page: Page): Promise<void> {
   await expect(page.getByText('ASA status', { exact: true })).toBeVisible()
 }
 
+/** The office Card: the only desktop Card that carries the Card total. */
+async function openAdminCard(page: Page): Promise<void> {
+  await page.goto('/admin/day/2026-07-21')
+  await page.waitForLoadState('networkidle')
+  await page.getByText("St George's").first().click()
+  await page.getByRole('button', { name: 'Open', exact: true }).first().click()
+  await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
+}
+
 /** The CaptureSection wrapping a micro-caps label is that label's parent. */
 function cardByLabel(page: Page, label: string) {
   return page.getByText(label, { exact: true }).locator('..')
@@ -36,7 +45,7 @@ test('paired capture cards match heights on the desktop', async ({ page }) => {
 })
 
 test('desktop Card total starts level with the first capture-card pair', async ({ page }) => {
-  await openEllison(page)
+  await openAdminCard(page)
   const asa = await cardByLabel(page, 'ASA status').boundingBox()
   const total = await page.getByText('CARD TOTAL', { exact: true }).locator('../../..').boundingBox()
 
@@ -46,9 +55,10 @@ test('desktop Card total starts level with the first capture-card pair', async (
 })
 
 test('desktop completion action is separate and matches the Card total width', async ({ page }) => {
-  await openEllison(page)
+  await openAdminCard(page)
   const total = await page.getByText('CARD TOTAL', { exact: true }).locator('../../..').boundingBox()
-  const complete = await page.getByRole('button', { name: 'Mark complete' }).boundingBox()
+  // The seeded office Card is already complete, so the bar is its success state.
+  const complete = await page.getByRole('button', { name: 'Amend', exact: true }).locator('..').boundingBox()
   const stickyBackdrop = page.getByTestId('web-card-commit')
   const backdrop = await stickyBackdrop.boundingBox()
 

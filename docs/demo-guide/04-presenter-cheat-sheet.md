@@ -66,12 +66,10 @@ DRAFT -> SUBMITTED -> AUTHORISED -> Billing run completed
 Fee = (Base + Time + Modifier units) x anaesthetist's own dollar value per unit
 ```
 
-- The global **Off | Units | Fee** control changes only the anaesthetist Card calculation:
-  **Fee** shows the full interactive total, **Units** hides money, and **Off** leaves only the
-  completion action. The Card-complete animation follows the same mode. The choice survives app
-  switches, reloads and Demo reset; Admin Cards always retain the full billing view.
+- The anaesthetist Card shows no units or fee, only Mark complete; Admin Cards retain the full
+  billing view.
 - **Reset → Confirm reset** in the shared top bar restores the pristine data and clock from any app
-  while keeping the current app and Card calculation display.
+  while keeping the current app.
 - Time: 1 unit per 15 minutes for the first two hours.
 - Time after two hours: 1 unit per 10 minutes.
 - Each anaesthetist has an independent dollar value per unit.

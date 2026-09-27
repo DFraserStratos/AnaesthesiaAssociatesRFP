@@ -66,15 +66,14 @@ test('mobile Card header folds History out of the compact navigation row', async
 test('capture: Ellison BTM block', async ({ page }) => {
   await openEllison(page)
   await page.screenshot({ path: 'visual/shots/m4-01-card-top.png', fullPage: true })
-  // Scroll the phone frame's content to the capture block. The Card total is
-  // pinned in the dock now, so it is already on screen — what the scroll shows
-  // is the masthead folded to its nav row.
+  // Scroll the phone frame's content to the capture block. What the scroll
+  // shows is the masthead folded to its nav row above the Mark complete dock.
   await page.getByText('ASA status', { exact: true }).scrollIntoViewIfNeeded()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/m4-01-btm-block.png', fullPage: true })
   await page.getByText('Modifiers', { exact: false }).first().scrollIntoViewIfNeeded()
   await page.waitForTimeout(400)
-  await page.screenshot({ path: 'visual/shots/m4-01-fee-dock.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/m4-01-modifiers.png', fullPage: true })
 })
 
 test('capture: code picker sheet', async ({ page }) => {
@@ -84,18 +83,18 @@ test('capture: code picker sheet', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m4-02-code-picker.png', fullPage: true })
 })
 
-test('capture: ASA III fee flash', async ({ page }) => {
+test('capture: ASA III selected', async ({ page }) => {
   await openEllison(page)
   await page.getByRole('button', { name: 'III', exact: true }).click()
   await page.waitForTimeout(150)
-  await page.screenshot({ path: 'visual/shots/m4-03-asa-flash.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/m4-03-asa-selected.png', fullPage: true })
 })
 
 test('capture: finish now, complete, submit walk', async ({ page }) => {
   await advanceClockTo1715(page)
   await openEllison(page)
 
-  // Finish now stamps the advanced demo clock; the fee ticks up.
+  // Finish now stamps the advanced demo clock.
   await page.getByRole('button', { name: 'Finish now' }).click()
   await page.waitForTimeout(600)
   await page.screenshot({ path: 'visual/shots/m4-04-finish-stamped.png', fullPage: true })
