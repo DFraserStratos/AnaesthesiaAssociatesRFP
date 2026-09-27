@@ -7,7 +7,7 @@ import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
 import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
-import { useCatalogue, useIndex } from './store.ts'
+import { useCatalogue, useIndex, useShownIndex } from './store.ts'
 import { useDismiss } from './useDismiss.ts'
 import { BoardView } from './views/BoardView.tsx'
 import { OutlineView } from './views/OutlineView.tsx'
@@ -88,6 +88,7 @@ export function App() {
 
 function Masthead({ connected }: { connected: boolean }) {
   const index = useIndex()
+  const shown = useShownIndex()
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
@@ -114,7 +115,7 @@ function Masthead({ connected }: { connected: boolean }) {
           Outstanding items <span className="count">{openCount}</span>
         </NavLink>
         <NavLink className="tab" to="/outline">
-          Outline <span className="count">{index.items.length}</span>
+          Outline <span className="count">{shown.items.length}</span>
         </NavLink>
       </nav>
       <div className="masthead-right">

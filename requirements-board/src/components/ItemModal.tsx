@@ -4,7 +4,7 @@ import { tidyText } from '../../shared/files.ts'
 import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
+import { ancestorsOf, useCatalogue, useIndex, useShownIndex, type Index } from '../store.ts'
 import { statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
@@ -20,6 +20,8 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   const saveItem = useCatalogue((s) => s.saveItem)
   const adoptItem = useCatalogue((s) => s.adoptItem)
   const index = useIndex()
+  // Siblings and children as shown: retired cards drop out unless the Retired toggle is on (this card always stays).
+  const shown = useShownIndex(id)
   const open = useOpen()
   const ed = useEditableRecord<Item>({
     key: `item:${id}`,
@@ -104,10 +106,10 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
 
   return (
     <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm} docked={docked}>
-      <SheetHead item={rec.data} index={index} leave={ed.leave} />
+      <SheetHead item={rec.data} index={shown} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
       <div className="sheet-body">
-        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={index} />}
+        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={shown} />}
       </div>
       <footer className="sheet-foot">
         {ed.editing ? (
@@ -337,19 +339,24 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
     }
   }
   const label = item.type === 'epic' ? 'Features and stories' : 'Stories'
+  // Nothing new goes under a retired card.
+  const retired = item.status === 'Retired'
+  if (retired && children.length === 0) return null
 
   return (
     <section className="section">
       <h3 className="section-head">
         {label} <span className="count">{children.length}</span>
-        {item.type === 'epic' && (
+        {!retired && item.type === 'epic' && (
           <button className="btn sm ghost" onClick={() => setAdding('feature')}>
             <Plus size={14} /> Feature
           </button>
         )}
-        <button className="btn sm ghost" style={item.type === 'epic' ? { marginLeft: 0 } : undefined} onClick={() => setAdding('story')}>
-          <Plus size={14} /> Story
-        </button>
+        {!retired && (
+          <button className="btn sm ghost" style={item.type === 'epic' ? { marginLeft: 0 } : undefined} onClick={() => setAdding('story')}>
+            <Plus size={14} /> Story
+          </button>
+        )}
       </h3>
       {adding && (
         <form

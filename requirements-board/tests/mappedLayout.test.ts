@@ -94,6 +94,18 @@ describe('mappedLayout', () => {
     expect(hidden.placements['US-01.1.1']!.y).toBeGreaterThan(hidden.placements['US-01.1.2']!.y)
     expect(hidden.lanes[0]!.count).toBe(shown.lanes[0]!.count - 1)
   })
+
+  it('gives a hidden (retired) feature no column and no add slot', () => {
+    const retired = base.map((i) => (i.id === 'FT-01.2' ? { ...i, status: 'Retired' as const } : i))
+    const visible = (i: Item) => i.status !== 'Retired' && retired.find((p) => p.id === i.parent)?.status !== 'Retired'
+    const shown = mappedLayout(retired, { lanes: [] })
+    const hidden = mappedLayout(retired, { lanes: [], visible })
+    expect(hidden.columns.some((c) => c.parent === 'FT-01.2')).toBe(false)
+    expect(hidden.adds.some((a) => a.parent === 'FT-01.2')).toBe(false)
+    expect(hidden.placements['FT-01.2']).toBeUndefined()
+    expect(hidden.columns).toHaveLength(shown.columns.length - 1)
+    expect(hidden.placements['EP-01']!.w).toBeLessThan(shown.placements['EP-01']!.w)
+  })
 })
 
 describe('dropTarget', () => {

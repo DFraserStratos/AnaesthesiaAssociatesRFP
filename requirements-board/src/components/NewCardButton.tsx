@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ITEM_TYPES, PARENT_TYPES, QUESTION_KINDS, TYPE_LABEL, type Item, type ItemType, type QuestionKind } from '../../shared/types.ts'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
+import { ancestorsOf, isRetiredOrUnder, useCatalogue, useIndex, type Index } from '../store.ts'
 import { KIND_HELP, KIND_LABEL, typeClass } from '../vocab.ts'
 import { TypeIcon } from './bits.tsx'
 import { AffectsPicker, ParentPicker } from './ItemPicker.tsx'
@@ -20,25 +20,24 @@ interface Draft {
   affects: string[]
 }
 
-/** A parent that suits `kind`, keeping the one picked where it fits, else the nearest ancestor that does. */
+/** A parent that suits `kind`, keeping the one picked where it fits, else the nearest ancestor that does. Never a retired card, or one under it. */
 function fitParent(index: Index, kind: CardKind, parent: string | null): string | null {
   if (kind === 'epic' || kind === 'question' || !parent) return null
   const allowed = PARENT_TYPES[kind]
   const it = index.byId.get(parent)
   if (!it) return null
-  if (allowed.includes(it.type)) return it.id
-  return [...ancestorsOf(index, it.id)].reverse().find((a) => allowed.includes(a.type))?.id ?? null
+  return [it, ...ancestorsOf(index, it.id).reverse()].find((a) => allowed.includes(a.type) && !isRetiredOrUnder(index, a))?.id ?? null
 }
 
 /** Start from where the person is: the open card's natural child, or an outstanding item on that page. */
 function startingDraft(index: Index, openId: string | null, onQuestions: boolean): Draft {
   const open: Item | undefined = openId ? index.byId.get(openId) : undefined
-  const base = { title: '', questionKind: 'question' as const, affects: open ? [open.id] : [] }
+  const base = { title: '', questionKind: 'question' as const, affects: open && !isRetiredOrUnder(index, open) ? [open.id] : [] }
   if (onQuestions) return { ...base, kind: 'question', parent: null }
   if (!open) return { ...base, kind: 'story', parent: null }
-  if (open.type === 'epic') return { ...base, kind: 'feature', parent: open.id }
-  if (open.type === 'feature') return { ...base, kind: 'story', parent: open.id }
-  return { ...base, kind: 'story', parent: open.parent }
+  if (open.type === 'epic') return { ...base, kind: 'feature', parent: fitParent(index, 'feature', open.id) }
+  if (open.type === 'feature') return { ...base, kind: 'story', parent: fitParent(index, 'story', open.id) }
+  return { ...base, kind: 'story', parent: fitParent(index, 'story', open.parent) }
 }
 
 /**

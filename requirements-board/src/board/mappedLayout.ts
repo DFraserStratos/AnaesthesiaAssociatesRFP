@@ -74,7 +74,7 @@ export interface MappedOptions {
   firstLane?: string
   /** Lane keys (`laneKey`) drawn as a header strip only. */
   collapsed?: ReadonlySet<string>
-  /** Cards that take up room; the rest are placed at the foot of their stack. Defaults to all. */
+  /** Cards that take up room. Hidden stories are placed at the foot of their stack; hidden epics and features get no column. Defaults to all. */
   visible?: (it: Item) => boolean
 }
 
@@ -103,10 +103,12 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
 
   // Backbone: epics across the top, each over its feature columns.
   let x = 0
+  // A hidden epic or feature takes no column (so no add slot either); what hangs under it is hidden with it.
   for (const epic of epics) {
+    if (!visible(epic)) continue
     const children = kids.get(epic.id) ?? []
-    const features = children.filter((c) => c.type === 'feature')
-    const direct = children.filter((c) => c.type === 'story')
+    const features = children.filter((c) => c.type === 'feature' && visible(c))
+    const direct = children.filter((c) => c.type === 'story' && visible(c))
     const hasDirect = direct.length > 0 || features.length === 0
     const cols = features.length + (hasDirect ? 1 : 0)
     const w = cols * COL_PITCH - COL_GAP
@@ -122,7 +124,7 @@ export function mappedLayout(items: Item[], opts: MappedOptions): MappedLayout {
     x += w + EPIC_GAP
   }
   const storiesOf = (col: Column): Item[] => (col.parent ? (kids.get(col.parent) ?? []).filter((c) => c.type === 'story') : orphans)
-  if (orphans.length) out.columns.push({ parent: null, epic: null, x, direct: false })
+  if (orphans.some(visible)) out.columns.push({ parent: null, epic: null, x, direct: false })
   const last = out.columns.at(-1)
   out.width = Math.max(last ? last.x + CARD.story.w : 0, ...out.epics.map((e) => e.x + e.w))
 

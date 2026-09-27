@@ -1,13 +1,14 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
-import { useCatalogue, useIndex } from '../store.ts'
+import { isRetiredOrUnder, useCatalogue, useIndex, useView } from '../store.ts'
 import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
 import { KIND_LABEL, QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
 
 export function QuestionsView() {
   const index = useIndex()
+  const showRetired = useView((s) => s.showRetired)
   const open = useOpen()
   const createQuestion = useCatalogue((s) => s.createQuestion)
   const [owner, setOwner] = useState('')
@@ -152,6 +153,8 @@ export function QuestionsView() {
                   <span className="q-chips">
                     {q.affects.map((a) => {
                       const it = index.byId.get(a)
+                      // Retired cards are hidden unless the Retired toggle is on; a missing one still shows, flagged.
+                      if (it && !showRetired && isRetiredOrUnder(index, it)) return null
                       return (
                         <button
                           key={a}

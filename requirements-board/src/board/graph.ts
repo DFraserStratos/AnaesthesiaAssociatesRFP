@@ -6,7 +6,7 @@
  */
 import type { Edge } from '@xyflow/react'
 import type { Item, Layout } from '../../shared/types.ts'
-import { openQuestionsFor, type Index } from '../store.ts'
+import { isRetiredOrUnder, openQuestionsFor, type Index } from '../store.ts'
 import type { Placement } from './autoLayout.ts'
 import { cardHandles, type CardData, type CardNodeType } from './cardData.ts'
 
@@ -27,7 +27,8 @@ export interface GraphInput {
   matches: Set<string>
 }
 
-export const isShown = (it: Item, g: Pick<GraphInput, 'showRetired' | 'selected'>) => it.status !== 'Retired' || g.showRetired || it.id === g.selected
+/** Retired cards, and everything under one, are hidden unless the Retired toggle is on; the open card always shows. */
+export const isShown = (it: Item, g: Pick<GraphInput, 'index' | 'showRetired' | 'selected'>) => g.showRetired || it.id === g.selected || !isRetiredOrUnder(g.index, it)
 
 export function toneFor(id: string, g: GraphInput): CardData['tone'] {
   if (g.filtering && !g.matches.has(id)) return 'is-faded'
@@ -35,7 +36,7 @@ export function toneFor(id: string, g: GraphInput): CardData['tone'] {
   return ''
 }
 
-/** How many cards sit under each item, at any depth. */
+/** How many cards sit under each item, at any depth. Pass `shownIndex` to count only the cards on show. */
 export function countDescendants(index: Index): Map<string, number> {
   const counts = new Map<string, number>()
   const count = (id: string): number => {

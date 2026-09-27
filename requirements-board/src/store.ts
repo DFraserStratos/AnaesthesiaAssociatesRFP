@@ -406,6 +406,40 @@ export function useIndex(): Index {
   return useMemo(() => buildIndex(items, questions), [items, questions])
 }
 
+/** Is the item Retired, or does it sit under a Retired card? Either way it is hidden with retired cards. */
+export function isRetiredOrUnder(index: Index, it: Item): boolean {
+  const seen = new Set<string>()
+  for (let cur: Item | undefined = it; cur && !seen.has(cur.id); cur = cur.parent ? index.byId.get(cur.parent) : undefined) {
+    if (cur.status === 'Retired') return true
+    seen.add(cur.id)
+  }
+  return false
+}
+
+/**
+ * The index as the app shows it: with `showRetired` off, retired cards (and everything under them)
+ * leave `items`, `epics` and every `children` list, so counts, sibling steps and lists never see
+ * them. `keep` (the open card) stays in its own sibling list. `byId` and the questions stay
+ * complete, so a retired card still resolves by ID.
+ */
+export function shownIndex(index: Index, showRetired: boolean, keep?: string | null): Index {
+  if (showRetired) return index
+  const shown = (it: Item) => it.id === keep || !isRetiredOrUnder(index, it)
+  const children = new Map<string, Item[]>()
+  for (const [id, list] of index.children) {
+    const live = list.filter(shown)
+    if (live.length) children.set(id, live)
+  }
+  return { ...index, items: index.items.filter(shown), epics: index.epics.filter(shown), children }
+}
+
+/** `shownIndex` over the live catalogue and the Retired toggle. */
+export function useShownIndex(keep?: string | null): Index {
+  const index = useIndex()
+  const showRetired = useView((s) => s.showRetired)
+  return useMemo(() => shownIndex(index, showRetired, keep), [index, showRetired, keep])
+}
+
 export function ancestorsOf(index: Index, id: string): Item[] {
   const out: Item[] = []
   const seen = new Set<string>()

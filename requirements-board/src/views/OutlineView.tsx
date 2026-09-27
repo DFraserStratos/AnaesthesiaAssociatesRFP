@@ -3,7 +3,7 @@ import { useMemo, useState, type KeyboardEvent } from 'react'
 import type { Item } from '../../shared/types.ts'
 import { Glyph, Highlight, StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
-import { descendantsOf, matchesFilters, openQuestionsFor, useIndex, useView, type Index } from '../store.ts'
+import { descendantsOf, matchesFilters, openQuestionsFor, useShownIndex, useView, type Index } from '../store.ts'
 import { statusClass, typeClass } from '../vocab.ts'
 
 const COLLAPSE_KEY = 'requirements-board:outline-collapsed'
@@ -16,7 +16,8 @@ function readCollapsed(): Set<string> {
 }
 
 export function OutlineView() {
-  const index = useIndex()
+  // As shown: with the Retired toggle off, retired cards and everything under them are out of the tree and its counts.
+  const index = useShownIndex()
   const view = useView()
   const open = useOpen()
   const [collapsed, setCollapsedState] = useState(readCollapsed)
@@ -48,7 +49,6 @@ export function OutlineView() {
   const rows: { item: Item; depth: number }[] = []
   const walk = (list: Item[], depth: number) => {
     for (const it of list) {
-      if (!view.showRetired && it.status === 'Retired') continue
       if (visible && !visible.has(it.id)) continue
       rows.push({ item: it, depth })
       if (visible || !collapsed.has(it.id)) walk(index.children.get(it.id) ?? [], depth + 1)

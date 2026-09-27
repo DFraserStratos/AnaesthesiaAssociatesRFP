@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { autoLayout } from '../src/board/autoLayout.ts'
 import { buildEdges, buildNodes, countDescendants, type GraphInput } from '../src/board/graph.ts'
-import { buildIndex } from '../src/store.ts'
+import { buildIndex, shownIndex } from '../src/store.ts'
 import type { Item, Rev } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
@@ -66,7 +66,19 @@ describe('board graph', () => {
     expect(buildEdges(input(), { mapped: true })).toEqual([])
   })
 
-  it('counts descendants at any depth', () => {
+  it('counts descendants at any depth, only the shown ones when retired cards are hidden', () => {
     expect(countDescendants(index).get('EP-01')).toBe(4)
+    expect(countDescendants(shownIndex(index, false)).get('EP-01')).toBe(3)
+    expect(countDescendants(shownIndex(index, true)).get('EP-01')).toBe(4)
+  })
+
+  it('hides a live card under a retired one with it', () => {
+    const under: Item[] = [...items.map((i) => (i.id === 'FT-01.1' ? { ...i, status: 'Retired' as const } : i))]
+    const idx = buildIndex(Object.fromEntries(under.map((i): [string, Rev<Item>] => [i.id, { data: i, rev: 'r' }])), {})
+    const g = input({ index: idx, auto: autoLayout(under) })
+    const node = (gi: GraphInput) => buildNodes(gi, countDescendants(idx)).find((n) => n.id === 'US-01.1.1')!
+    expect(node(g).hidden).toBe(true)
+    expect(node({ ...g, showRetired: true }).hidden).toBe(false)
+    expect(node({ ...g, selected: 'US-01.1.1' }).hidden).toBe(false)
   })
 })

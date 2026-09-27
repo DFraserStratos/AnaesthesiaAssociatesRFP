@@ -26,7 +26,7 @@ import { dropTarget, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } fro
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, useCatalogue, useIndex, useView, type BoardMode, type Index } from '../store.ts'
+import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
@@ -179,7 +179,9 @@ function Board({ mode }: { mode: BoardMode }) {
   const [resetTick, setResetTick] = useState(0)
   const dragRef = useRef<MappedDrag | null>(null)
   const collapsedLanes = useMemo(() => new Set(view.collapsedLanes), [view.collapsedLanes])
-  const visible = useCallback((it: Item) => isShown(it, { showRetired: view.showRetired, selected }), [view.showRetired, selected])
+  const visible = useCallback((it: Item) => isShown(it, { index, showRetired: view.showRetired, selected }), [index, view.showRetired, selected])
+  // The index as shown: retired cards (unless the toggle is on) are out of every count and every arrow-key step.
+  const shown = useMemo(() => shownIndex(index, view.showRetired, selected), [index, view.showRetired, selected])
   const laneOpts = useMemo(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible }), [lanes, firstLane, collapsedLanes, visible])
   const previewItems = useMemo(() => (target ? applyMove(index.items, target) : index.items), [index.items, target])
   const map = useMemo(() => (mapped ? mappedLayout(previewItems, laneOpts) : null), [mapped, previewItems, laneOpts])
@@ -189,8 +191,8 @@ function Board({ mode }: { mode: BoardMode }) {
   const filtering = filtersActive(view)
   const matches = useMemo(() => new Set(index.items.filter((it) => matchesFilters(it, view, index)).map((i) => i.id)), [index, view])
   const hits = useMemo(
-    () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && !map?.collapsed.has(id) && (view.showRetired || index.byId.get(id)?.status !== 'Retired')) : []),
-    [filtering, auto, map, matches, view.showRetired, index],
+    () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && !map?.collapsed.has(id) && visible(index.byId.get(id)!)) : []),
+    [filtering, auto, map, matches, visible, index],
   )
   const graph = useMemo<GraphInput>(
     () => ({ index, auto, positions: mapped ? NO_POSITIONS : positions, collapsed: map?.collapsed, showRetired: view.showRetired, selected, lineage, filtering, matches }),
@@ -200,7 +202,7 @@ function Board({ mode }: { mode: BoardMode }) {
   // The hit list can shrink under the cursor (filters, Retired toggle, external edits).
   useEffect(() => setHitCursor(-1), [hits])
 
-  const descendantCounts = useMemo(() => countDescendants(index), [index])
+  const descendantCounts = useMemo(() => countDescendants(shownIndex(index, view.showRetired)), [index, view.showRetired])
   const computed = useMemo<BoardNode[]>(() => {
     const cards: BoardNode[] = buildNodes(graph, descendantCounts)
     return map ? [...cards, ...mappedExtras(map, index, lanes.length > 0, target)] : cards
@@ -378,13 +380,13 @@ function Board({ mode }: { mode: BoardMode }) {
         e.preventDefault()
         select(next.id, () => centreOn(next.id))
       }
-      const sibs = it.parent ? (index.children.get(it.parent) ?? []) : index.epics
+      const sibs = it.parent ? (shown.children.get(it.parent) ?? []) : shown.epics
       const at = sibs.findIndex((s) => s.id === it.id)
       if (e.key === 'Enter') {
         e.preventDefault()
         document.querySelector<HTMLElement>('.sheet.docked')?.focus()
       } else if (e.key === 'ArrowUp') go(it.type === 'story' && at > 0 ? sibs[at - 1] : it.parent ? index.byId.get(it.parent) : undefined)
-      else if (e.key === 'ArrowDown') go(it.type === 'story' ? sibs[at + 1] : index.children.get(it.id)?.[0])
+      else if (e.key === 'ArrowDown') go(it.type === 'story' ? sibs[at + 1] : shown.children.get(it.id)?.[0])
       else if (e.key === 'ArrowLeft') go(sibs[at - 1])
       else if (e.key === 'ArrowRight') go(sibs[at + 1])
     }
@@ -677,7 +679,8 @@ function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElemen
     <div ref={ref} className="popover" role="dialog" aria-label="Filters">
       <h4>Status</h4>
       <div className="chip-row">
-        {ITEM_STATUSES.map((s) => (
+        {/* Retired is offered only while retired cards are on show (or still picked, so it can be cleared). */}
+        {ITEM_STATUSES.filter((s) => s !== 'Retired' || view.showRetired || view.statuses.includes(s)).map((s) => (
           <button key={s} className="status-toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
             <StatusLabel status={s} />
           </button>
