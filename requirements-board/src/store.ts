@@ -5,9 +5,22 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
-import { applyChanges, laneListProblem, type Change } from '../shared/move.ts'
+import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
 import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { ApiError, api } from './api.ts'
+
+type PosPatch = Record<string, { x: number; y: number } | null>
+
+/** One undoable card move: Freeform positions, or the catalogue fields a Mapped drop rewrote. */
+export type MoveEntry = { label: string } & ({ kind: 'positions'; before: PosPatch; after: PosPatch } | { kind: 'fields'; before: Change[]; after: Change[] })
+
+/** Options for a card move. `record: false` keeps it out of undo history (undo itself, lane edits). */
+interface MoveOpts {
+  record?: boolean
+  label?: string
+}
+
+const HISTORY_CAP = 50
 
 interface CatalogueState {
   status: 'loading' | 'ready' | 'error'
@@ -34,13 +47,21 @@ interface CatalogueState {
    * Apply a planned move (`shared/move.ts`) at once, so the map reflows, then save it as one
    * batch. Rolled back if the server refuses it. Resolves true when it saved.
    */
-  moveItems: (changes: Change[]) => Promise<boolean>
+  moveItems: (changes: Change[], opts?: MoveOpts) => Promise<boolean>
+  /** Card moves this tab can undo (newest last) and redo (next redo last). In memory only. */
+  past: MoveEntry[]
+  future: MoveEntry[]
+  /** Set while an undo or redo is saving; further presses are ignored. */
+  stepping: boolean
+  /** Undo the last card move. Refused (and that history dropped) if a moved card has changed since. Resolves true when it applied. */
+  undo: () => Promise<boolean>
+  redo: () => Promise<boolean>
   /** Replace the lane list. Rename and delete also repoint the lane's stories, in one batch, first. */
   setLanes: (lanes: string[]) => Promise<boolean>
   /** Rename a lane: a named one (its stories follow), one only a story names (it becomes a lane), or the first lane (null). */
   renameLane: (from: string | null, to: string) => Promise<boolean>
   deleteLane: (name: string) => Promise<boolean>
-  setPositions: (patch: Record<string, { x: number; y: number } | null>) => void
+  setPositions: (patch: PosPatch, opts?: MoveOpts) => void
   /** Send any card moves not yet saved. Resolves true when nothing is left pending. */
   flushLayout: () => Promise<boolean>
 }
@@ -50,6 +71,8 @@ let layoutTimer: ReturnType<typeof setTimeout> | undefined
 let pendingLayout: Record<string, { x: number; y: number } | null> = {}
 /** Moves are sent one after another, each with the revs the one before it returned. */
 let moveQueue: Promise<unknown> = Promise.resolve()
+/** Mapped moves sent but not yet answered: undo waits for them, so it never steps over a move still in flight. */
+let movesInFlight = 0
 
 export const useCatalogue = create<CatalogueState>((set, get) => ({
   status: 'loading',
@@ -57,6 +80,9 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   questions: {},
   layout: { positions: {}, lanes: [] },
   issues: [],
+  past: [],
+  future: [],
+  stepping: false,
 
   async load() {
     try {
@@ -132,11 +158,15 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     set({ moveError: undefined })
   },
 
-  moveItems(changes) {
+  moveItems(changes, opts) {
     if (!changes.length) return Promise.resolve(true)
     const before = get().items
     const prev = new Map(changes.map((c) => [c.id, before[c.id]]))
     if ([...prev.values()].some((r) => !r)) return Promise.resolve(false)
+    const inverse = invertChanges(
+      changes.map((c) => before[c.id]!.data),
+      changes,
+    )
     const moved = applyChanges(
       changes.map((c) => before[c.id]!.data),
       changes,
@@ -151,6 +181,8 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
           changes.map(({ id, ...patch }) => ({ id, baseRev: (now[id] ?? prev.get(id))!.rev, patch })),
         )
         set({ items: { ...get().items, ...Object.fromEntries(records.map((r) => [r.data.id, r])) }, moveError: undefined })
+        // Only a move that saved enters history: a refused one is already rolled back.
+        if (opts?.record !== false) record({ kind: 'fields', label: opts?.label ?? 'Move', before: inverse, after: changes })
         return true
       } catch (e) {
         // Put back what we moved, unless something newer has already replaced it.
@@ -162,8 +194,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         }
         set({ items, moveError: `Move not saved: ${(e as Error).message}` })
         return false
+      } finally {
+        movesInFlight--
       }
     }
+    movesInFlight++
     const run = moveQueue.then(send)
     moveQueue = run
     return run
@@ -211,30 +246,41 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       set({ moveError: `Lane not renamed: ${problem}` })
       return false
     }
-    if (!(await get().moveItems(storiesIn(get().items, from).map((id) => ({ id, swimlane: to }))))) return false
+    if (!(await get().moveItems(storiesIn(get().items, from).map((id) => ({ id, swimlane: to })), { record: false }))) return false
     return get().setLanes(next)
   },
 
   async deleteLane(name) {
-    if (!(await get().moveItems(storiesIn(get().items, name).map((id) => ({ id, swimlane: null }))))) return false
+    if (!(await get().moveItems(storiesIn(get().items, name).map((id) => ({ id, swimlane: null })), { record: false }))) return false
     return get().setLanes(get().layout.lanes.filter((l) => l !== name))
   },
 
-  setPositions(patch) {
+  setPositions(patch, opts) {
     const positions = { ...get().layout.positions }
+    const before: PosPatch = {}
+    const after: PosPatch = {}
     for (const [id, p] of Object.entries(patch)) {
       const rounded = p ? { x: Math.round(p.x), y: Math.round(p.y) } : null
+      const was = positions[id] ?? null
+      if (JSON.stringify(was) !== JSON.stringify(rounded)) {
+        before[id] = was
+        after[id] = rounded
+      }
       if (rounded) positions[id] = rounded
       else delete positions[id]
       pendingLayout[id] = rounded
     }
     set({ layout: { ...get().layout, positions } })
+    if (opts?.record !== false && Object.keys(after).length) record({ kind: 'positions', label: opts?.label ?? 'Move', before, after })
     clearTimeout(layoutTimer)
     layoutTimer = setTimeout(() => {
       layoutTimer = undefined
       void get().flushLayout()
     }, 400)
   },
+
+  undo: () => step('undo'),
+  redo: () => step('redo'),
 
   async flushLayout() {
     const sending = pendingLayout
@@ -251,6 +297,55 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     }
   },
 }))
+
+/** Push a new move onto the undo history; a new move clears redo. */
+function record(entry: MoveEntry) {
+  const { past } = useCatalogue.getState()
+  useCatalogue.setState({ past: [...past, entry].slice(-HISTORY_CAP), future: [] })
+}
+
+/** Undo (or redo) the newest entry: check the moved cards still sit where it left them, then apply the other side. */
+async function step(dir: 'undo' | 'redo'): Promise<boolean> {
+  const s = useCatalogue.getState()
+  if (s.stepping || movesInFlight > 0) return false
+  const from = dir === 'undo' ? 'past' : 'future'
+  const to = dir === 'undo' ? 'future' : 'past'
+  const entry = s[from].at(-1)
+  if (!entry) return false
+  const rest = s[from].slice(0, -1)
+  const land = () => useCatalogue.setState((cur) => ({ [to]: [...cur[to], entry].slice(-HISTORY_CAP) }))
+
+  if (entry.kind === 'positions') {
+    // Positions are cosmetic: apply even if a card was dragged since.
+    useCatalogue.setState({ [from]: rest })
+    s.setPositions(dir === 'undo' ? entry.before : entry.after, { record: false })
+    land()
+    return true
+  }
+
+  const [expected, apply] = dir === 'undo' ? [entry.after, entry.before] : [entry.before, entry.after]
+  const items = Object.values(s.items).map((r) => r.data)
+  const byId = new Map(items.map((i) => [i.id, i]))
+  const drifted =
+    driftFrom(items, expected) ??
+    apply.find((c) => c.parent !== undefined && !canParent(byId.get(c.id)!, c.parent === null ? null : (byId.get(c.parent) ?? null)))?.id ??
+    null
+  if (drifted) {
+    // Everything older builds on this entry, so that side of history goes too.
+    const name = byId.get(drifted)?.title ?? drifted
+    useCatalogue.setState({ [from]: [], moveError: `Can't ${dir}: ${name} changed since` })
+    return false
+  }
+  useCatalogue.setState({ [from]: rest, stepping: true })
+  try {
+    const ok = await s.moveItems(apply, { record: false })
+    // A refused step is rolled back by moveItems (which says why); the entry is dropped.
+    if (ok) land()
+    return ok
+  } finally {
+    useCatalogue.setState({ stepping: false })
+  }
+}
 
 /** A layout with the first lane's name set, or left out when it is the default. */
 function withFirst(layout: Layout, firstLane: string | undefined): Layout {

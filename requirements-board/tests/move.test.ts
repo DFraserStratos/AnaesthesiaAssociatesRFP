@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyMove, laneListProblem, planMove } from '../shared/move.ts'
+import { applyChanges, applyMove, driftFrom, invertChanges, laneListProblem, planMove, type Move } from '../shared/move.ts'
 import type { Item } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
@@ -115,5 +115,35 @@ describe('laneListProblem', () => {
     expect(laneListProblem(['Backlog', 'MVP', 'mvp'])).toMatch(/already a lane/)
     expect(laneListProblem(['Unassigned', 'unassigned'])).toMatch(/already a lane/)
     expect(laneListProblem('MVP')).toMatch(/list/)
+  })
+})
+
+describe('invertChanges', () => {
+  const moves: [string, Move][] = [
+    ['a reorder in one lane', { id: 'US-01.1.3', parent: 'FT-01.1', index: 0, swimlane: null }],
+    ['a story into another feature', { id: 'US-01.1.2', parent: 'FT-01.2', index: 1, swimlane: null }],
+    ['a lane change', { id: 'US-01.1.1', parent: 'FT-01.1', index: 0, swimlane: 'MVP' }],
+    ['a feature into another epic', { id: 'FT-01.2', parent: 'EP-02', index: 0 }],
+    ['an epic reorder', { id: 'EP-03', parent: null, index: 0 }],
+  ]
+  it.each(moves)('puts back %s exactly', (_, move) => {
+    const changes = planMove(items, move)
+    expect(changes.length).toBeGreaterThan(0)
+    const after = applyChanges(items, changes)
+    const back = invertChanges(items, changes)
+    expect(applyChanges(after, back)).toEqual(items)
+    // Touches the same records and fields as the move, nothing else.
+    expect(back.map((c) => Object.keys(c).sort())).toEqual(changes.map((c) => Object.keys(c).sort()))
+  })
+
+  it('driftFrom names the first record no longer where the changes left it', () => {
+    const changes = planMove(items, { id: 'US-01.1.2', parent: 'FT-01.2', index: 0, swimlane: null })
+    const after = applyChanges(items, changes)
+    expect(driftFrom(after, changes)).toBeNull()
+    const moved = after.map((i) => (i.id === 'US-01.1.2' ? { ...i, parent: 'FT-01.3' } : i))
+    expect(driftFrom(moved, changes)).toBe('US-01.1.2')
+    // A field the changes never touched does not count.
+    const retitled = after.map((i) => (i.id === 'US-01.1.2' ? { ...i, title: 'New' } : i))
+    expect(driftFrom(retitled, changes)).toBeNull()
   })
 })

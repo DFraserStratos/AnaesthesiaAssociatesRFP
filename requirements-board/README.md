@@ -10,7 +10,7 @@ this app and any agent edit those same files.
 ```
 npm install
 npm run dev          # http://localhost:5180
-npm test             # Vitest: file round-trip, check rules, IDs, the file API, store, board graph, both layouts, move planner
+npm test             # Vitest: file round-trip, check rules, IDs, the file API, store (incl. undo), board graph, both layouts, move planner
 npm run test:e2e     # Playwright: edges on the real catalogue (5181, read-only); Mapped drags on a fixture (5182)
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
@@ -92,6 +92,12 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     `lanes` in `board-layout.json`; a story names its lane in its own `swimlane` field, so renaming
     a lane rewrites its stories in one batch; the first lane (stories with no `swimlane`) is renamed
     through `firstLane` instead, so no story changes. Collapsed lanes are a per-browser preference.
+- Card moves undo and redo (⌘Z / ⇧⌘Z, Ctrl+Y, or the toolbar arrows): Freeform drags and Tidy,
+  and Mapped drops. History is per tab, in memory, and never covers lane edits or sheet edits. A
+  Mapped undo sends back the old `parent` / `order` / `swimlane` of every record the move rewrote,
+  as one batch; it is refused (and that history dropped) if any of those fields changed since, so
+  it never overwrites an agent's or another tab's edit. Fields and the item panel keep their own
+  text undo.
 - Trackpad two-finger scroll pans and pinch zooms; a mouse wheel zooms. `src/board/trackpad.ts` tells
   them apart and pans before React Flow's wheel handler (which would zoom) sees the event.
 - Semantic zoom bands: overview (epic names, stories as status blocks), far (titles only), mid, near

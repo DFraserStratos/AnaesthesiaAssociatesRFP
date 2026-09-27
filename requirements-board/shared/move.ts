@@ -97,6 +97,31 @@ export function applyChanges(items: Item[], changes: Change[]): Item[] {
   })
 }
 
+/** The changes that put back what `changes` would rewrite: each record's current value of every field it touches. */
+export function invertChanges(items: Item[], changes: Change[]): Change[] {
+  const byId = new Map(items.map((i) => [i.id, i]))
+  return changes.flatMap((c) => {
+    const it = byId.get(c.id)
+    if (!it) return []
+    const back: Change = { id: c.id }
+    if ('parent' in c) back.parent = it.parent
+    if ('order' in c) back.order = it.order
+    if ('swimlane' in c) back.swimlane = it.swimlane
+    return [back]
+  })
+}
+
+/** Does every record still hold the values `changes` sets? (The id of the first one that doesn't, else null.) */
+export function driftFrom(items: Item[], changes: Change[]): string | null {
+  const byId = new Map(items.map((i) => [i.id, i]))
+  for (const c of changes) {
+    const it = byId.get(c.id)
+    if (!it) return c.id
+    if (('parent' in c && it.parent !== c.parent) || ('order' in c && it.order !== c.order) || ('swimlane' in c && it.swimlane !== c.swimlane)) return c.id
+  }
+  return null
+}
+
 /** The catalogue as it would be after `move`: the board's live drag preview. */
 export const applyMove = (items: Item[], move: Move): Item[] => applyChanges(items, planMove(items, move))
 

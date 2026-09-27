@@ -77,6 +77,22 @@ test('a story dropped into another feature and lane changes parent and lane, and
   await expect(page.locator('.lane-head', { hasText: 'Phase 2' }).locator('.lane-count')).toHaveText('1')
 })
 
+test('undo puts a dropped story back in its feature and lane, and redo drops it again', async ({ page }) => {
+  const before = onDisk('US-01.1.2')
+  const story = (await node(page, 'US-01.1.2').boundingBox())!
+  const col = (await node(page, 'FT-01.3').boundingBox())!
+  const lane = (await page.locator('.lane-head', { hasText: 'Phase 2' }).boundingBox())!
+  await drag(page, { x: story.x + 30, y: story.y + 20 }, { x: col.x + 40, y: lane.y + 70 })
+  await expect.poll(() => onDisk('US-01.1.2').parent).toBe('FT-01.3')
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => onDisk('US-01.1.2')).toMatchObject({ parent: before.parent, swimlane: before.swimlane, order: before.order })
+  await expect(page.getByRole('button', { name: /^Redo Move/ })).toBeEnabled()
+  await page.keyboard.press('ControlOrMeta+Shift+z')
+  await expect.poll(() => onDisk('US-01.1.2')).toMatchObject({ parent: 'FT-01.3', swimlane: 'Phase 2' })
+  await page.getByRole('button', { name: /^Undo Move/ }).click()
+  await expect.poll(() => onDisk('US-01.1.2').parent).toBe(before.parent)
+})
+
 test('clicking a lane name renames it, the first lane too', async ({ page }) => {
   await page.getByRole('button', { name: 'Rename Unassigned' }).click()
   await page.getByRole('textbox', { name: 'Rename Unassigned' }).fill('Backlog')

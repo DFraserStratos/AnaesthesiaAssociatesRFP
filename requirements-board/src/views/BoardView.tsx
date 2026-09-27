@@ -9,7 +9,7 @@ import {
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
-import { Filter, LayoutGrid, Map as MapIcon, Maximize, Search, Sparkles, X } from 'lucide-react'
+import { Filter, LayoutGrid, Map as MapIcon, Maximize, Redo2, Search, Sparkles, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
@@ -48,6 +48,8 @@ const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
 /** Minimap blocks by type. The minimap paints SVG fills, not CSS, so these mirror the --ty-* tokens in styles.css. */
 const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as const
+/** The platform's undo modifier, for button titles. */
+const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'
 /** How much of a wide card (an epic) must be on screen to count as in view. */
 const CARD_PEEK = 240
 
@@ -103,6 +105,9 @@ function Board({ mode }: { mode: BoardMode }) {
   const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   const setPositions = useCatalogue((s) => s.setPositions)
   const moveItems = useCatalogue((s) => s.moveItems)
+  const undoNext = useCatalogue((s) => s.past.at(-1))
+  const redoNext = useCatalogue((s) => s.future.at(-1))
+  const stepping = useCatalogue((s) => s.stepping)
   const view = useView()
   const open = useOpen()
   const rf = useReactFlow<BoardNode>()
@@ -251,7 +256,8 @@ function Board({ mode }: { mode: BoardMode }) {
   }
   const onNodeDragStop = (_: unknown, _node: BoardNode, dragged: BoardNode[]) => {
     if (!mapped) {
-      setPositions(Object.fromEntries(dragged.map((d) => [d.id, d.position])))
+      const one = dragged.length === 1 ? index.byId.get(dragged[0]!.id) : undefined
+      setPositions(Object.fromEntries(dragged.map((d) => [d.id, d.position])), { label: one ? `Move ${one.title}` : `Move ${dragged.length} cards` })
       return
     }
     const drag = dragRef.current
@@ -259,10 +265,20 @@ function Board({ mode }: { mode: BoardMode }) {
     dragRef.current = null
     // Anywhere invalid (a feature over a lane, a story over the backbone) snaps back.
     const changes = drag.target ? planMove(index.items, drag.target) : []
-    if (changes.length) void moveItems(changes)
+    if (changes.length) void moveItems(changes, { label: `Move ${drag.item.title}` })
     setTarget(null)
     setResetTick((n) => n + 1)
     setTimeout(() => setPreviewing(false), SETTLE_MS)
+  }
+  /** Undo or redo a card move; in Mapped the map eases back into place, as after a drop. */
+  const step = (dir: 'undo' | 'redo') => {
+    const s = useCatalogue.getState()
+    if (dragRef.current || nodes.some((n) => n.dragging) || !(dir === 'undo' ? s.past : s.future).length) return
+    if (mapped) {
+      setPreviewing(true)
+      setTimeout(() => setPreviewing(false), SETTLE_MS)
+    }
+    void (dir === 'undo' ? s.undo() : s.redo())
   }
   const toggleLane = (key: string) => view.set({ collapsedLanes: collapsedLanes.has(key) ? view.collapsedLanes.filter((k) => k !== key) : [...view.collapsedLanes, key] })
 
@@ -325,6 +341,14 @@ function Board({ mode }: { mode: BoardMode }) {
       }
       const target = e.target instanceof HTMLElement ? e.target : null
       const typing = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
+      // Undo / redo card moves, unless a field or the item panel has focus (they keep their own undo).
+      const key = e.key.toLowerCase()
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && (key === 'z' || (key === 'y' && e.ctrlKey && !e.shiftKey))) {
+        if (typing || target?.isContentEditable || target?.closest('.sheet')) return
+        e.preventDefault()
+        step(key === 'z' && !e.shiftKey ? 'undo' : 'redo')
+        return
+      }
       if (e.key === '/' && !typing) {
         e.preventDefault()
         searchRef.current?.focus()
@@ -363,7 +387,7 @@ function Board({ mode }: { mode: BoardMode }) {
     select(hits[n]!, () => centreOn(hits[n]!))
   }
 
-  const tidy = (ids: string[]) => setPositions(Object.fromEntries(ids.map((id) => [id, null])))
+  const tidy = (ids: string[], label: string) => setPositions(Object.fromEntries(ids.map((id) => [id, null])), { label })
   const selectedItem = selected ? index.byId.get(selected) : undefined
   const epicOfSelected = selectedItem ? (selectedItem.type === 'epic' ? selectedItem : ancestorsOf(index, selectedItem.id)[0]) : undefined
   // Positions can outlive their card (a file renamed or removed on disk); only count cards that exist.
@@ -497,10 +521,28 @@ function Board({ mode }: { mode: BoardMode }) {
                 onCancel={() => setAskTidy(false)}
                 onConfirm={() => {
                   setAskTidy(false)
-                  tidy(Object.keys(positions))
+                  tidy(Object.keys(positions), 'Tidy all')
                 }}
               />
             )}
+            <button
+              className="btn icon ghost"
+              disabled={!undoNext || stepping}
+              onClick={() => step('undo')}
+              aria-label={undoNext ? `Undo ${undoNext.label}` : 'Undo'}
+              title={undoNext ? `Undo ${undoNext.label} (${MOD}Z)` : 'Nothing to undo'}
+            >
+              <Undo2 size={15} />
+            </button>
+            <button
+              className="btn icon ghost"
+              disabled={!redoNext || stepping}
+              onClick={() => step('redo')}
+              aria-label={redoNext ? `Redo ${redoNext.label}` : 'Redo'}
+              title={redoNext ? `Redo ${redoNext.label} (${MOD}${MOD === '⌘' ? '⇧Z' : 'Y'})` : 'Nothing to redo'}
+            >
+              <Redo2 size={15} />
+            </button>
             <button className="btn icon ghost" onClick={() => void rf.fitView({ ...FIT, duration: 400 })} aria-label="Fit the whole map" title="Fit the whole map">
               <Maximize size={15} />
             </button>
@@ -516,7 +558,7 @@ function Board({ mode }: { mode: BoardMode }) {
             <span className="selection-note">
               {movedInEpic} card{movedInEpic > 1 ? 's' : ''} moved in {epicOfSelected.title}
             </span>
-            <button className="btn sm" onClick={() => tidy([epicOfSelected.id, ...descendantsOf(index, epicOfSelected.id).map((d) => d.id)])} title={`Put ${epicOfSelected.title} and everything under it back in the story map`}>
+            <button className="btn sm" onClick={() => tidy([epicOfSelected.id, ...descendantsOf(index, epicOfSelected.id).map((d) => d.id)], `Tidy ${epicOfSelected.title}`)} title={`Put ${epicOfSelected.title} and everything under it back in the story map`}>
               <Sparkles size={14} /> Tidy this epic
             </button>
           </div>
@@ -601,7 +643,7 @@ function TidyAsk({ moved, onConfirm, onCancel }: { moved: number; onConfirm: () 
   return (
     <div className="popover ask" role="dialog" aria-label="Tidy all moved cards">
       <p>
-        Put {moved === 1 ? 'the moved card' : `all ${moved} moved cards`} back in the story map? Where you put them is not kept.
+        Put {moved === 1 ? 'the moved card' : `all ${moved} moved cards`} back in the story map? Undo puts them back where they were.
       </p>
       <div className="ask-actions">
         <button ref={ref} className="btn primary" onClick={onConfirm}>

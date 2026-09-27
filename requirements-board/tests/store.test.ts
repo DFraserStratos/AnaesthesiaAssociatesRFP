@@ -22,7 +22,7 @@ beforeEach(async () => {
   putLayout.mockResolvedValue({ positions: {}, lanes: [] })
   await s().flushLayout()
   putLayout.mockReset()
-  useCatalogue.setState({ layout: { positions: {}, lanes: [] }, layoutError: undefined })
+  useCatalogue.setState({ layout: { positions: {}, lanes: [] }, layoutError: undefined, past: [], future: [] })
 })
 afterEach(() => vi.useRealTimers())
 
@@ -120,5 +120,101 @@ describe('Mapped moves', () => {
     expect(s().items['US-01.1.2']!.data.order).toBe(2)
     expect(s().items['US-01.1.1']!.data.order).toBe(1)
     expect(s().moveError).toMatch(/US-01\.1\.2 changed on disk/)
+  })
+})
+
+describe('undo and redo', () => {
+  const recs = (): Record<string, Rev<Item>> => ({
+    'FT-01.1': { data: item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01', order: 1 }), rev: 'f1' },
+    'FT-01.2': { data: item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2 }), rev: 'f2' },
+    'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1 }), rev: 'r1' },
+    'US-01.1.2': { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2 }), rev: 'r2' },
+  })
+  /** The server echoes each patched record back with a fresh rev. */
+  const echo = () =>
+    batchItems.mockImplementation(async (changes: { id: string; patch: Partial<Item> }[]) => ({
+      records: changes.map((c) => ({ data: { ...s().items[c.id]!.data, ...c.patch }, rev: `${s().items[c.id]!.rev}+` })),
+    }))
+  const move = [{ id: 'US-01.1.2', parent: 'FT-01.2', order: 1 }]
+
+  beforeEach(() => {
+    vi.useRealTimers()
+    batchItems.mockReset()
+    useCatalogue.setState({ items: recs(), moveError: undefined, past: [], future: [], stepping: false })
+  })
+
+  it('undoes and redoes a Freeform drag, including a card put back in its story-map place', async () => {
+    putLayout.mockResolvedValue({ positions: {}, lanes: [] })
+    s().setPositions({ a: { x: 5, y: 5 } }, { label: 'Move A' })
+    s().setPositions({ a: null }, { label: 'Tidy all' })
+    expect(s().past.map((e) => e.label)).toEqual(['Move A', 'Tidy all'])
+    expect(await s().undo()).toBe(true)
+    expect(s().layout.positions.a).toEqual({ x: 5, y: 5 })
+    expect(await s().undo()).toBe(true)
+    expect(s().layout.positions.a).toBeUndefined()
+    expect(await s().redo()).toBe(true)
+    expect(s().layout.positions.a).toEqual({ x: 5, y: 5 })
+    expect(s().future.map((e) => e.label)).toEqual(['Tidy all'])
+  })
+
+  it('does not record a drag that changed nothing', () => {
+    s().setPositions({ a: null })
+    expect(s().past).toEqual([])
+  })
+
+  it('undoes a Mapped move by sending the old fields back, then redoes it', async () => {
+    echo()
+    expect(await s().moveItems(move, { label: 'Move story' })).toBe(true)
+    expect(await s().undo()).toBe(true)
+    expect(batchItems.mock.calls[1]![0]).toEqual([{ id: 'US-01.1.2', baseRev: 'r2+', patch: { parent: 'FT-01.1', order: 2 } }])
+    expect(s().items['US-01.1.2']!.data).toMatchObject({ parent: 'FT-01.1', order: 2 })
+    expect(s().future).toHaveLength(1)
+    expect(await s().redo()).toBe(true)
+    expect(s().items['US-01.1.2']!.data).toMatchObject({ parent: 'FT-01.2', order: 1 })
+    expect(s().past).toHaveLength(1)
+  })
+
+  it('does not record a move the server refused', async () => {
+    batchItems.mockRejectedValue(new Error('nope'))
+    expect(await s().moveItems(move)).toBe(false)
+    expect(s().past).toEqual([])
+  })
+
+  it('refuses to undo a move whose card has changed since, and drops that history', async () => {
+    echo()
+    await s().moveItems([{ id: 'US-01.1.1', order: 3 }])
+    await s().moveItems(move)
+    const cur = s().items['US-01.1.2']!
+    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, parent: 'FT-01.1' }, rev: 'agent' } })
+    expect(await s().undo()).toBe(false)
+    expect(batchItems).toHaveBeenCalledTimes(2)
+    expect(s().moveError).toMatch(/Can't undo/)
+    expect(s().past).toEqual([])
+  })
+
+  it('still undoes when a moved card was only retitled', async () => {
+    echo()
+    await s().moveItems(move)
+    const cur = s().items['US-01.1.2']!
+    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, title: 'Renamed' }, rev: 'agent' } })
+    expect(await s().undo()).toBe(true)
+    expect(s().items['US-01.1.2']!.data).toMatchObject({ parent: 'FT-01.1', title: 'Renamed' })
+  })
+
+  it('clears redo when a new move is made', async () => {
+    echo()
+    await s().moveItems(move)
+    await s().undo()
+    expect(s().future).toHaveLength(1)
+    await s().moveItems([{ id: 'US-01.1.1', order: 3 }])
+    expect(s().future).toEqual([])
+  })
+
+  it('keeps lane renames out of card-move history', async () => {
+    echo()
+    putLayout.mockResolvedValue({ positions: {}, lanes: ['Later'] })
+    useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'] } })
+    expect(await s().renameLane('MVP', 'Later')).toBe(true)
+    expect(s().past).toEqual([])
   })
 })
