@@ -1,4 +1,4 @@
-import { Archive, ChevronLeft, ChevronRight, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
+import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
@@ -8,6 +8,7 @@ import { ancestorsOf, useCatalogue, useIndex, type Index } from '../store.ts'
 import { statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
+import { HistoryView } from './HistoryView.tsx'
 import { ParentPicker } from './ItemPicker.tsx'
 import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
@@ -40,6 +41,8 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   }, [docked])
 
   const [askRetire, setAskRetire] = useState(false)
+  /** The body shows the card, or its history timeline (read mode only; a new card opens on the card). */
+  const [view, setView] = useState<'card' | 'history'>('card')
   const retire = async () => {
     if (!rec) return
     setAskRetire(false)
@@ -104,15 +107,22 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
       <SheetHead item={rec.data} index={index} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
       <div className="sheet-body">
-        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : <ReadView item={item} index={index} />}
+        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={index} />}
       </div>
       <footer className="sheet-foot">
         {ed.editing ? (
           <EditActions ed={ed} />
+        ) : view === 'history' ? (
+          <button className="btn" onClick={() => setView('card')}>
+            <ArrowLeft size={15} /> Back to card
+          </button>
         ) : (
           <>
             <button className="btn" onClick={() => open.showOnBoard(item.id)}>
               <MapIcon size={15} /> {docked ? 'Find on board' : 'Show on board'}
+            </button>
+            <button className="btn ghost" onClick={() => setView('history')}>
+              <History size={15} /> History
             </button>
             {item.status !== 'Retired' && (
               <button className="btn ghost danger" onClick={() => setAskRetire(true)}>

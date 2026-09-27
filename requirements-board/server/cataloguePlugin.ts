@@ -4,13 +4,17 @@
  * so edits made elsewhere (an agent, a terminal, git) reach the open board as
  * `catalogue:changed` HMR events. No separate server process.
  */
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { extname, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { dirname, extname, join, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import type { CatalogueEvent } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from './catalogueApi.ts'
 import { CATALOGUE_DIR } from './catalogueFs.ts'
+import { gitBlob } from './gitHistory.ts'
+import { createJournal, gitBlobSha } from './historyJournal.ts'
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -20,6 +24,16 @@ const MIME: Record<string, string> = {
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
 }
+/**
+ * Where the change journal lives: HISTORY_DIR, else `.history/` beside this app for the real
+ * catalogue, else a temp folder per catalogue (a fixture never mixes into the real one's history).
+ */
+function historyDirFor(root: string): string {
+  if (process.env.HISTORY_DIR) return resolve(process.env.HISTORY_DIR)
+  if (resolve(root) === resolve(CATALOGUE_DIR) && !process.env.CATALOGUE_DIR) return join(dirname(fileURLToPath(import.meta.url)), '..', '.history')
+  return join(tmpdir(), 'requirements-board-history', resolve(root).replace(/[^A-Za-z0-9]+/g, '_').slice(-80))
+}
+
 /** Coalesce bursts of file events, but never hold a sync back longer than this. */
 const DEBOUNCE_MS = 120
 const MAX_WAIT_MS = 600
@@ -52,7 +66,7 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
   return {
     name: 'catalogue-api',
     configureServer(dev) {
-      const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e))
+      const api = createCatalogueApi(root, (e: CatalogueEvent) => dev.ws.send('catalogue:changed', e), { journal: createJournal(historyDirFor(root)) })
 
       const sync = () => {
         try {
@@ -83,6 +97,10 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
           if (!serveAsset(root, url, res)) next()
           return
         }
+        if (url.pathname.startsWith('/history-blob/')) {
+          void serveHistoryBlob(root, url, res).then((ok) => ok || next())
+          return
+        }
         if (!url.pathname.startsWith('/api/')) return next()
         readJson(req)
           .then((body) =>
@@ -101,6 +119,30 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
       })
     },
   }
+}
+
+/**
+ * An earlier version of a screenshot, for a card's history: `/history-blob/<git blob sha>?src=assets/<ID>/<file>`.
+ * Read from git, or from the file on disk while it still has that content (a version not yet
+ * committed). Only ever served as the image type of a file under `assets/`. Returns false to fall through.
+ */
+export async function serveHistoryBlob(root: string, url: URL, res: ServerResponse): Promise<boolean> {
+  const sha = url.pathname.slice('/history-blob/'.length)
+  const src = url.searchParams.get('src') ?? ''
+  const abs = resolve(root, src)
+  const type = MIME[extname(abs).toLowerCase()]
+  if (!/^[0-9a-f]{40}$/.test(sha) || !type || !abs.startsWith(resolve(root, 'assets') + sep)) return false
+  let buf = await gitBlob(root, sha)
+  if (!buf && existsSync(abs) && statSync(abs).isFile()) {
+    const onDisk = readFileSync(abs)
+    if (gitBlobSha(onDisk) === sha) buf = onDisk
+  }
+  if (!buf) return false
+  res.setHeader('Content-Type', type)
+  // A blob never changes: its name is its content.
+  res.setHeader('Cache-Control', 'private, max-age=31536000, immutable')
+  res.end(buf)
+  return true
 }
 
 /** Stream a file from the catalogue's `assets/` folder, and nothing outside it. Returns false to fall through. */

@@ -93,6 +93,24 @@ test('undo puts a dropped story back in its feature and lane, and redo drops it 
   await expect.poll(() => onDisk('US-01.1.2').parent).toBe(before.parent)
 })
 
+test('a card\'s history shows the move that was just made, and Back returns to the card', async ({ page }) => {
+  const story = (await node(page, 'US-01.1.2').boundingBox())!
+  const col = (await node(page, 'FT-01.3').boundingBox())!
+  const lane = (await page.locator('.lane-head', { hasText: 'Phase 2' }).boundingBox())!
+  await drag(page, { x: story.x + 30, y: story.y + 20 }, { x: col.x + 40, y: lane.y + 70 })
+  await expect.poll(() => onDisk('US-01.1.2').parent).toBe('FT-01.3')
+  await node(page, 'US-01.1.2').click()
+  await page.locator('.sheet.docked').getByRole('button', { name: 'History' }).click()
+  const newest = page.locator('.hist-entry').first()
+  await expect(newest).toContainText('On the board')
+  await expect(newest).toContainText('Moved from')
+  await expect(newest.locator('.hist-name').last()).toContainText('Feature 1.3')
+  await expect(newest).toContainText('Phase 2')
+  await page.getByRole('button', { name: 'Back to card' }).click()
+  await expect(page.locator('.history')).toHaveCount(0)
+  await expect(page.locator('.sheet.docked .read-view')).toBeVisible()
+})
+
 test('clicking a lane name renames it, the first lane too', async ({ page }) => {
   await page.getByRole('button', { name: 'Rename Unassigned' }).click()
   await page.getByRole('textbox', { name: 'Rename Unassigned' }).fill('Backlog')

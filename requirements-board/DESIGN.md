@@ -64,6 +64,15 @@ scrolls) and as the modal elsewhere.
 - Then the title, description, acceptance criteria, technical discussion, notes, open questions,
   children, screenshots. Empty sections are not shown. Cards never show acceptance criteria or
   technical discussion; their excerpt is the description only.
+- Footer (read mode): Find on board, **History**, Retire, then Edit on the right. History swaps the
+  body for the card's timeline, read like the chart's time column: times in a left gutter, a
+  trace beside them with one mark per change (filled: the board, ring: an edit on disk, square: a
+  git commit), commits ruled across like hour lines, day headings on the trace. Changes not
+  committed yet turn the trace amber under one "Not committed yet" label. Rows are sentences
+  ("Moved from <feature> to <feature>" with type-coloured item chips, status pill to pill), and
+  Markdown fields are a "+2 −1 lines" disclosure over a line diff; a re-captured screenshot is a
+  "Screenshot updated" disclosure over its before and after, side by side, each opening full size.
+  The footer then holds only Back to card.
 - Bottom: **Status** (the pill alone), **Swimlane** (stories in a named lane only; Unassigned is the
   baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right.
 

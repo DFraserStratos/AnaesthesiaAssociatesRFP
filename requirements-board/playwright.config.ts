@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineConfig } from '@playwright/test'
 import { FIXTURE_DIR } from './e2e/fixtureCatalogue.ts'
 
@@ -17,7 +19,8 @@ export default defineConfig({
     { name: 'fixture', testMatch: 'board-mapped.spec.ts', use: { baseURL: 'http://localhost:5182' } },
   ],
   webServer: [
-    { command: 'npx vite --port 5181 --strictPort', url: 'http://localhost:5181', reuseExistingServer: false },
+    // Its own change journal, so a test run never writes into the one beside the board on 5180.
+    { command: 'npx vite --port 5181 --strictPort', env: { HISTORY_DIR: join(tmpdir(), 'requirements-board-e2e-history') }, url: 'http://localhost:5181', reuseExistingServer: false },
     {
       command: `node e2e/fixtureCatalogue.ts "${FIXTURE_DIR}" && npx vite --port 5182 --strictPort`,
       env: { CATALOGUE_DIR: FIXTURE_DIR },

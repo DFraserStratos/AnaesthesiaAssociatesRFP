@@ -8,6 +8,7 @@
  *   POST /api/items              { type, parent, title, ... }  server assigns the ID
  *   PUT  /api/questions/:id      { record, baseRev }
  *   POST /api/questions          { title, ... }
+ *   GET  /api/items/:id/history  the card's timeline: the change journal, backfilled from git
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
  *                                positions are a patch (null restores the story-map place); lanes replace the
  *                                list; firstLane renames the implicit first lane (null: back to Unassigned)
@@ -16,9 +17,11 @@
  * ago is never overwritten), checks the record would survive a round trip,
  * and runs the integrity rules on exactly what will be written.
  */
+import { join } from 'node:path'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import { itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
+import { buildTimeline } from '../shared/history.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
@@ -27,6 +30,7 @@ import {
   issuesFor,
   itemPath,
   itemsDir,
+  layoutPath,
   loadCatalogue,
   questionPath,
   questionsDir,
@@ -40,6 +44,8 @@ import {
   type LoadResult,
   type LoadedFile,
 } from './catalogueFs.ts'
+import { gitDirty, gitFileHistory, gitScreenshots } from './gitHistory.ts'
+import { NO_JOURNAL, type Journal } from './historyJournal.ts'
 
 export class HttpError extends Error {
   status: number
@@ -61,8 +67,22 @@ export interface ApiRequest {
 
 const MAX_CREATE_ATTEMPTS = 5
 
-export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => void = () => {}) {
+export interface ApiOptions {
+  /** Where card changes are journalled; omitted, nothing is kept (history is git only). */
+  journal?: Journal
+  /** A card file's git history (injectable for tests). */
+  gitHistory?: typeof gitFileHistory
+  /** A card's screenshot rewrites in git (injectable for tests). */
+  gitScreenshots?: typeof gitScreenshots
+}
+
+export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => void = () => {}, opts: ApiOptions = {}) {
   let state: LoadResult = loadCatalogue(root)
+  const journal = opts.journal ?? NO_JOURNAL
+  const gitHistory = opts.gitHistory ?? gitFileHistory
+  const gitShots = opts.gitScreenshots ?? gitScreenshots
+  journal.baseline(state.items)
+  journal.screenshots(join(root, 'assets'), { offline: true })
 
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const questionList = () => Object.values(state.questions).map((r) => r.data)
@@ -107,6 +127,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     const rec = checked(id, readItemFile(itemPath(id, root)))
     if (state.items[id]?.rev !== rec.rev) {
       state.items[id] = rec
+      journal.item(rec, 'disk')
       refreshIssues()
       emit({ kind: 'item', id, record: rec })
       emit({ kind: 'issues', issues: state.issues })
@@ -132,6 +153,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   function commitItem(item: Item, create: boolean): Rev<Item> {
     const rec = writeItem(item, root, { create })
     state.items[item.id] = rec
+    journal.item(rec, 'board')
     refreshIssues()
     emit({ kind: 'item', id: item.id, record: rec })
     emit({ kind: 'issues', issues: state.issues })
@@ -180,7 +202,21 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       return { items: state.items, questions: state.questions, layout: state.layout, issues: state.issues }
     }
 
-    let m = /^\/api\/items\/([^/]+)$/.exec(path)
+    let m = /^\/api\/items\/([^/]+)\/history$/.exec(path)
+    if (m && method === 'GET') {
+      const id = decodeURIComponent(m[1]!)
+      if (!state.items[id]) throw new HttpError(404, `${id} does not exist`)
+      // The one asynchronous route: git runs in child processes, off the request path of every other call.
+      return Promise.all([
+        gitHistory(itemPath(id, root)).catch(() => ({ versions: [], dirty: false, working: null })),
+        gitDirty(layoutPath(root)),
+        gitShots(root, id).catch(() => ({ commits: [], dirty: false })),
+      ]).then(([git, layoutDirty, shots]) => ({
+        entries: buildTimeline(journal.read(id), { ...git, layoutDirty, screenshots: shots.commits, screenshotsDirty: shots.dirty }),
+      }))
+    }
+
+    m = /^\/api\/items\/([^/]+)$/.exec(path)
     if (m && method === 'PUT') {
       const id = decodeURIComponent(m[1]!)
       const item = prepareItem(body.record)
@@ -287,6 +323,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         if (p === null) delete positions[id]
         else if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) positions[id] = { x: Math.round(p.x), y: Math.round(p.y) }
       }
+      const moved = Object.keys(patch).filter((id) => state.items[id])
       if (body.lanes !== undefined && !Array.isArray(body.lanes)) throw new HttpError(422, 'lanes must be a list of names')
       const lanes = body.lanes !== undefined ? (body.lanes as string[]) : onDisk.layout.lanes
       let firstLane = onDisk.layout.firstLane
@@ -301,6 +338,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       if (firstLane) state.layout.firstLane = firstLane
       state.layoutReadable = true
       writeLayout(state.layout, root)
+      for (const id of moved) journal.position(id, onDisk.layout.positions[id] ?? null, positions[id] ?? null, 'board')
       emit({ kind: 'layout', layout: state.layout })
       if (lanesChanged) {
         refreshIssues() // lane names feed the swimlane check
@@ -314,16 +352,26 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
 
   /** Re-read the folder and emit an event for every record whose file changed. */
   function syncFromDisk() {
+    // Screenshot files carry no rev in the catalogue: the journal fingerprints them itself.
+    journal.screenshots(join(root, 'assets'))
     const prev = state
     const next = loadCatalogue(root)
     const events: CatalogueEvent[] = []
     for (const id of new Set([...Object.keys(prev.items), ...Object.keys(next.items)])) {
-      if (prev.items[id]?.rev !== next.items[id]?.rev) events.push({ kind: 'item', id, record: next.items[id] ?? null })
+      if (prev.items[id]?.rev !== next.items[id]?.rev) {
+        events.push({ kind: 'item', id, record: next.items[id] ?? null })
+        if (next.items[id]) journal.item(next.items[id]!, 'disk')
+      }
     }
     for (const id of new Set([...Object.keys(prev.questions), ...Object.keys(next.questions)])) {
       if (prev.questions[id]?.rev !== next.questions[id]?.rev) events.push({ kind: 'question', id, record: next.questions[id] ?? null })
     }
-    if (JSON.stringify(prev.layout) !== JSON.stringify(next.layout)) events.push({ kind: 'layout', layout: next.layout })
+    if (JSON.stringify(prev.layout) !== JSON.stringify(next.layout)) {
+      events.push({ kind: 'layout', layout: next.layout })
+      for (const id of new Set([...Object.keys(prev.layout.positions), ...Object.keys(next.layout.positions)])) {
+        if (next.items[id]) journal.position(id, prev.layout.positions[id] ?? null, next.layout.positions[id] ?? null, 'disk')
+      }
+    }
     const issuesChanged = JSON.stringify(prev.issues) !== JSON.stringify(next.issues)
     state = next
     if (!events.length && !issuesChanged) return

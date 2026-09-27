@@ -38,11 +38,14 @@ shared/        code shared by server, scripts and browser
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
-  move.ts        Mapped board moves (pure): planMove / applyMove, lane-name rules
+  move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
+  history.ts     card history (pure): field and line diffs, the journal + git timeline merge
   csv.ts         CSV export in the old generator's shape
 server/
   catalogueFs.ts     load the folder, atomic / exclusive writes, layout file
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
+  historyJournal.ts  the per-card change journal (.history/, gitignored)
+  gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets, folder watcher → HMR events
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable)
 src/
@@ -92,6 +95,18 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     `lanes` in `board-layout.json`; a story names its lane in its own `swimlane` field, so renaming
     a lane rewrites its stories in one batch; the first lane (stories with no `swimlane`) is renamed
     through `firstLane` instead, so no story changes. Collapsed lanes are a per-browser preference.
+- Every card has a **History** (sheet footer): a newest-first timeline of its changes. The dev
+  server journals every change it sees to a card, its own saves and moves and anyone's edit on
+  disk, to `requirements-board/.history/<ID>.jsonl` (gitignored, per machine; `HISTORY_DIR`
+  overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
+  changed while it was off. Commits older than a card's first journal entry fill in its past from
+  git (`git log` + `cat-file`); newer ones show as dividers. Changes newer than the last commit
+  are marked not committed yet. View only.
+  Screenshots count too: a file under `assets/<ID>/` rewritten in place (a `npm run capture` run)
+  logs a "Screenshot updated" entry with a before and after. The journal keeps each image's git
+  blob hash (`<ID>.shots.json`, rehashed only when size or mtime changes), so the before image is
+  read back out of git (`/history-blob/<sha>`); a version that was never committed is not kept.
+  Git backfill reads the same from `git log --raw -- assets/<ID>/`.
 - Card moves undo and redo (⌘Z / ⇧⌘Z, Ctrl+Y, or the toolbar arrows): Freeform drags and Tidy,
   and Mapped drops. History is per tab, in memory, and never covers lane edits or sheet edits. A
   Mapped undo sends back the old `parent` / `order` / `swimlane` of every record the move rewrote,

@@ -2136,3 +2136,365 @@ mark {
 .card-foot .badge + .count {
   margin-left: 4px;
 }
+
+/*
+ * A card's history, read like the chart's time column: times in the gutter, a trace beside
+ * them with one mark per change, commits ruled across like the chart's hour lines. Changes
+ * not committed yet turn the trace amber: the one thing on this page worth noticing.
+ */
+.history {
+  --hist-gutter: 44px;
+  --hist-trace: var(--rule-strong);
+  animation: fade 180ms var(--ease);
+}
+.history .section-head {
+  margin-top: 4px;
+}
+.hist-note {
+  color: var(--ink-3);
+  font-size: 14px;
+  max-width: 44ch;
+}
+.hist-note.bad {
+  color: var(--danger);
+}
+.hist-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+.hist-list > li {
+  display: grid;
+  grid-template-columns: var(--hist-gutter) 20px minmax(0, 1fr);
+  column-gap: 8px;
+}
+.hist-day {
+  display: block !important;
+  padding: 18px 0 6px calc(var(--hist-gutter) + 28px);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.hist-list > .hist-day:first-child {
+  padding-top: 4px;
+}
+.hist-time {
+  grid-column: 1;
+  justify-self: end;
+  padding-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+/* The trace: one continuous line down the second column, a mark where each change lands. */
+.hist-mark {
+  grid-column: 2;
+  position: relative;
+  align-self: stretch;
+}
+.hist-mark::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--hist-trace);
+}
+.hist-mark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  box-shadow: 0 0 0 3px var(--card);
+}
+.src-disk .hist-mark::after {
+  background: var(--card);
+  border: 2px solid var(--ink-2);
+}
+.src-git .hist-mark::after {
+  border-radius: 2px;
+  background: var(--ink-4);
+}
+.uncommitted {
+  --hist-trace: var(--st-open);
+}
+.uncommitted .hist-mark::after {
+  border-color: var(--st-open);
+}
+.uncommitted.src-board .hist-mark::after {
+  background: var(--st-open);
+}
+.hist-pending-label {
+  display: block !important;
+  padding: 2px 0 6px calc(var(--hist-gutter) + 28px);
+  font-size: 12px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--st-open) 70%, var(--ink));
+}
+.hist-body {
+  grid-column: 3;
+  min-width: 0;
+  padding: 0 0 14px;
+}
+.hist-src {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  padding-top: 1px;
+}
+.hist-src q,
+.hist-commit q {
+  color: var(--ink-2);
+}
+.hist-changes {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hist-row {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.hist-row .status {
+  vertical-align: 1px;
+}
+.hist-row.quiet,
+.hist-lines .quiet,
+.hist-counts .quiet {
+  color: var(--ink-3);
+}
+.hist-field {
+  color: var(--ink-3);
+  margin-right: 2px;
+}
+.hist-row del {
+  color: var(--ink-3);
+  text-decoration-color: var(--ink-4);
+}
+.hist-row ins {
+  text-decoration: none;
+  font-weight: 600;
+}
+.hist-name {
+  vertical-align: middle;
+  max-width: 100%;
+}
+.hist-lines {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 13px;
+}
+.hist-lines li::before {
+  display: inline-block;
+  width: 14px;
+  color: var(--ink-3);
+}
+.hist-lines .add::before {
+  content: '+';
+}
+.hist-lines .del {
+  color: var(--ink-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+}
+.hist-lines .del::before {
+  content: '−';
+}
+.hist-counts {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.hist-counts .add {
+  color: var(--st-confirmed);
+  font-weight: 600;
+}
+.hist-counts .del {
+  color: var(--danger);
+  font-weight: 600;
+}
+.hist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -4px;
+  padding: 2px 6px 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+.hist-toggle svg {
+  color: var(--ink-3);
+}
+.hist-toggle:hover {
+  background: var(--paper);
+}
+.hist-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+/* The line diff: removed lines on the danger tint, added on a confirmed-green tint, context plain. */
+.hist-diff {
+  margin: 6px 0 2px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hist-diff > div {
+  padding: 1px 10px 1px 26px;
+  position: relative;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hist-diff .sign {
+  position: absolute;
+  left: 10px;
+  color: var(--ink-3);
+}
+.hist-diff .same {
+  color: var(--ink-2);
+}
+.hist-diff .add {
+  background: color-mix(in srgb, var(--st-confirmed) 10%, var(--card));
+}
+.hist-diff .del {
+  background: var(--danger-tint);
+  color: var(--ink-2);
+}
+.hist-diff .fold {
+  padding-left: 26px;
+  background: var(--card-soft);
+  color: var(--ink-3);
+  font-size: 12px;
+}
+/* A commit: ruled across the page like the chart's hour line, the time still in the gutter. */
+.hist-commit {
+  align-items: center;
+  margin: 2px 0 12px;
+}
+.hist-commit .hist-time {
+  padding-top: 0;
+}
+.hist-commit-label {
+  grid-column: 2 / 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  min-width: 0;
+}
+.hist-commit-label q {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-commit-label::after {
+  content: '';
+  flex: 1;
+  min-width: 16px;
+  border-top: 1px solid var(--rule-strong);
+}
+/* The trace runs on through day headings, from the first mark to the last. */
+.hist-day,
+.hist-pending-label {
+  background: linear-gradient(var(--hist-trace), var(--hist-trace)) no-repeat calc(var(--hist-gutter) + 17px) 0 / 2px 100%;
+}
+.hist-pending-label {
+  --hist-trace: var(--st-open);
+}
+.hist-list > .hist-day:first-child {
+  background: none;
+}
+.hist-list > li:last-child .hist-mark::before {
+  bottom: auto;
+  height: 10px;
+}
+/* A re-captured screenshot: before and after side by side, each opening full size. */
+.hist-shot-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.hist-toggle:has(.hist-shot-name) {
+  max-width: 100%;
+}
+.hist-shots {
+  list-style: none;
+  margin: 6px 0 2px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hist-shot-caption {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.hist-shot-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.hist-shot {
+  margin: 0;
+  min-width: 0;
+}
+.hist-shot a {
+  display: block;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--card-soft);
+}
+.hist-shot a:hover {
+  border-color: var(--rule-strong);
+}
+.hist-shot a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+.hist-shot img {
+  display: block;
+  width: 100%;
+  height: 128px;
+  object-fit: contain;
+  object-position: top center;
+}
+.hist-shot-gone {
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  text-align: center;
+  border: 1px dashed var(--rule-strong);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hist-shot figcaption {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
