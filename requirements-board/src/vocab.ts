@@ -44,3 +44,12 @@ export function excerpt(text: string, max = 160): string {
   const plain = text.replace(/[*_`#>]/g, '').replace(/\s+/g, ' ').trim()
   return plain.length > max ? plain.slice(0, max - 1).trimEnd() + '…' : plain
 }
+
+/** What each item status means, in a line (after the catalogue README). Shown beside the pills in the status menu. */
+export const ITEM_STATUS_HELP: Record<ItemStatus, string> = {
+  Proposed: 'Needs sign-off from AA',
+  Open: 'Waiting on an open question',
+  Confirmed: 'Agreed with AA',
+  Future: 'Kept, but deferred',
+  Retired: 'No longer wanted, kept for traceability',
+}

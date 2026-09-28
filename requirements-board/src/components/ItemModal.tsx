@@ -1,7 +1,7 @@
 import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, useCatalogue, useIndex, useShownIndex, type Index } from '../store.ts'
@@ -12,6 +12,7 @@ import { HistoryView } from './HistoryView.tsx'
 import { ParentPicker } from './ItemPicker.tsx'
 import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
+import { StatusPicker } from './StatusPicker.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
 /** An item's sheet: a modal over Outline and Outstanding items, the docked side panel on the board. */
@@ -53,6 +54,22 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     } catch (e) {
       if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
       ed.setError((e as Error).message)
+    }
+  }
+  /** The status menu saves straight away, no Edit needed. Retired still asks first, as the Retire button does. */
+  const [statusBusy, setStatusBusy] = useState(false)
+  const changeStatus = async (status: ItemStatus) => {
+    if (!rec) return
+    if (status === 'Retired') return setAskRetire(true)
+    setStatusBusy(true)
+    ed.setError(null)
+    try {
+      await saveItem({ ...rec.data, status }, rec.rev)
+    } catch (e) {
+      if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
+      ed.setError((e as Error).message)
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -109,7 +126,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
       <SheetHead item={rec.data} index={shown} leave={ed.leave} />
       <EditBanners ed={ed} noun="item" />
       <div className="sheet-body">
-        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={shown} />}
+        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={shown} onStatus={(s) => void changeStatus(s)} statusBusy={statusBusy} />}
       </div>
       <footer className="sheet-foot">
         {ed.editing ? (
@@ -187,7 +204,7 @@ function SheetHead({ item, index, leave }: { item: Item; index: Index; leave: (g
   )
 }
 
-function ReadView({ item, index }: { item: Item; index: Index }) {
+function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: Index; onStatus: (s: ItemStatus) => void; statusBusy: boolean }) {
   const open = useOpen()
   const lanes = useCatalogue((s) => s.layout.lanes)
   const children = index.children.get(item.id) ?? []
@@ -256,7 +273,7 @@ function ReadView({ item, index }: { item: Item; index: Index }) {
           <div className="facts">
             <div>
               <h3 className="section-head">Status</h3>
-              <StatusLabel status={item.status} />
+              <StatusPicker status={item.status} onPick={onStatus} busy={statusBusy} />
             </div>
             {/* Only a story in a named lane: the first lane is the baseline, left unmarked (so no lanes, no row). */}
             {item.type === 'story' && item.swimlane && (

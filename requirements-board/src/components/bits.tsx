@@ -52,10 +52,11 @@ export function Lineage({ chain, onPick }: { chain: Item[]; onPick?: (id: string
   )
 }
 
-export function StatusLabel({ status, className = '' }: { status: string; className?: string }) {
+export function StatusLabel({ status, className = '', children }: { status: string; className?: string; children?: ReactNode }) {
   return (
     <span className={`status ${statusClass(status)} ${className}`}>
       {statusLabel(status)}
+      {children}
     </span>
   )
 }

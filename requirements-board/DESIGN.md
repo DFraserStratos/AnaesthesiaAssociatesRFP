@@ -73,7 +73,9 @@ scrolls) and as the modal elsewhere.
   Markdown fields are a "+2 −1 lines" disclosure over a line diff; a re-captured screenshot is a
   "Screenshot updated" disclosure over its before and after, side by side, each opening full size.
   The footer then holds only Back to card.
-- Bottom: **Status** (the pill alone), **Swimlane** (stories in a named lane only; Unassigned is the
+- Bottom: **Status** (the pill alone, pressable without Edit: a quiet chevron in the pill, and a
+  small menu opens upward listing each status pill beside a line on what it means; picking one
+  saves at once, and Retired still asks first, as the Retire button does), **Swimlane** (stories in a named lane only; Unassigned is the
   baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right.
 
 ## Interaction

@@ -2527,3 +2527,120 @@ mark {
   font-size: 12px;
   color: var(--ink-3);
 }
+
+/*
+ * The status pill in an item sheet is pressable: a quiet chevron inside the pill says so, and a
+ * small menu of the statuses opens upward from it (the pill sits at the sheet's foot). Each row
+ * is the pill itself beside what it means, pills in one column so the meanings line up.
+ */
+.status-pick {
+  position: relative;
+  display: inline-flex;
+}
+.status-pick-btn {
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+.status-pick-btn .status {
+  height: 24px;
+  gap: 4px;
+  padding: 0 7px 0 10px;
+  transition: box-shadow 120ms var(--ease);
+}
+.status-pick-btn .status svg {
+  opacity: 0.55;
+  transition: opacity 120ms var(--ease), transform 160ms var(--ease);
+}
+.status-pick-btn:hover .status,
+.status-pick-btn[aria-expanded='true'] .status {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 60%, transparent);
+}
+.status-pick-btn:hover .status svg,
+.status-pick-btn[aria-expanded='true'] .status svg {
+  opacity: 1;
+}
+.status-pick-btn[aria-expanded='true'] .status svg {
+  transform: rotate(180deg);
+}
+.status-pick-btn:focus-visible {
+  outline: none;
+}
+.status-pick-btn:focus-visible .status {
+  box-shadow: 0 0 0 2px var(--teal);
+}
+.status-pick-btn:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.status-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 344px;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lift);
+  transform-origin: bottom left;
+  animation: status-menu-in 140ms var(--ease);
+}
+.status-menu button {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.status-menu button .status {
+  justify-self: start;
+}
+.status-menu button:hover,
+.status-menu button:focus-visible {
+  outline: none;
+  background: var(--paper);
+}
+.status-menu button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--teal);
+}
+.status-menu button.retire {
+  margin-top: 4px;
+  position: relative;
+}
+.status-menu button.retire::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 8px;
+  right: 8px;
+  border-top: 1px solid var(--rule);
+}
+.status-menu-help {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+.status-menu button[aria-checked='true'] .status-menu-help {
+  color: var(--ink);
+}
+.status-menu-check {
+  color: var(--teal);
+}
+@keyframes status-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
