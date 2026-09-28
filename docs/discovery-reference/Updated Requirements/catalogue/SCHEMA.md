@@ -38,7 +38,9 @@ swimlane: MVP
 images: []
 ---
 
-As the system, I create exactly two Lists (AM and PM) for every active anaesthetist ...
+The Scheduling Engine creates exactly two Lists, an AM and a PM List, for every active anaesthetist ...
+
+This is so the admin team always have somewhere to make bookings.
 
 ## Acceptance criteria
 
@@ -66,7 +68,9 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is `admin`, `web`, `mobile` or `simulator` and groups the board's gallery; a `mobile` app shot should have `viewport: mobile`. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the capture runner (`requirements-board/scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
-Body: the description (stories use "As a ..., I ..., so that ..."), then up to three optional
+Body: the description (plain language: who or what acts and what happens, then why in its own
+paragraph, a blank line between paragraphs, bullets instead of long comma chains; not the "As a ...,
+I ..., so that ..." template), then up to three optional
 sections, written in this order: `## Acceptance criteria` (one criterion per list item, Given/When/Then
 where it helps), `## Technical discussion`, `## Notes`. Every type (epic, feature, story) may have
 them; an empty section is not written. The board reads the sections in any order, but writes them in
