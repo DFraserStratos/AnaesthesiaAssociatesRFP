@@ -17,7 +17,7 @@ export function StatusPicker({ status, onPick, busy = false }: { status: ItemSta
     setOpen(false)
     if (refocus) trigger.current?.focus({ preventScroll: true })
   }
-  const menu = useDismiss<HTMLDivElement>(() => close(), trigger)
+  const menu = useDismiss<HTMLDivElement>(() => close(), trigger, open)
 
   // Opening puts focus on the current status, so the arrow keys start from where the item is.
   useEffect(() => {

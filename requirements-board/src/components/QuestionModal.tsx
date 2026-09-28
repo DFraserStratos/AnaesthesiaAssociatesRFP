@@ -1,14 +1,16 @@
-import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, X } from 'lucide-react'
+import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question } from '../../shared/types.ts'
+import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question, type Rev } from '../../shared/types.ts'
+import { ApiError } from '../api.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
 import { KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
 import { ItemName, Prose, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { AffectsPicker } from './ItemPicker.tsx'
-import { Sheet } from './Sheet.tsx'
+import { MarkdownTextarea } from './MarkdownTextarea.tsx'
+import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
 /** Markdown fields go through `tidyText`, like a file read, so a leading code-block indent survives a save. */
@@ -24,6 +26,7 @@ export function QuestionModal({ id }: { id: string }) {
   const rec = useCatalogue((s) => s.questions[id])
   const saveQuestion = useCatalogue((s) => s.saveQuestion)
   const adoptQuestion = useCatalogue((s) => s.adoptQuestion)
+  const deleteQuestion = useCatalogue((s) => s.deleteQuestion)
   const index = useIndex()
   const open = useOpen()
   /** Items to offer flipping Open to Confirmed after the question is answered. */
@@ -43,6 +46,18 @@ export function QuestionModal({ id }: { id: string }) {
     },
   })
   const answerRef = useRef<HTMLTextAreaElement>(null)
+  const [askDelete, setAskDelete] = useState(false)
+  const remove = async () => {
+    if (!rec) return
+    setAskDelete(false)
+    try {
+      await deleteQuestion(id, rec.rev)
+      open.close()
+    } catch (e) {
+      if (e instanceof ApiError && e.current) adoptQuestion(e.current as Rev<Question>)
+      ed.setError((e as Error).message)
+    }
+  }
 
   const startEdit = (answering = false) => {
     ed.startEdit(answering ? (d) => ({ ...d, status: 'Answered' }) : undefined)
@@ -79,8 +94,21 @@ export function QuestionModal({ id }: { id: string }) {
   const q = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Question>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
+  const confirm: SheetConfirm | null =
+    discardConfirm(ed, rec.data.title) ??
+    (askDelete
+      ? {
+          title: 'Delete this question?',
+          body: 'Its file is removed and it drops off every item it affects. Only git can bring it back.',
+          cancelLabel: 'Keep it',
+          confirmLabel: 'Delete question',
+          onCancel: () => setAskDelete(false),
+          onConfirm: () => void remove(),
+        }
+      : null)
+
   return (
-    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={discardConfirm(ed, rec.data.title)}>
+    <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${q.id} ${q.title}`} statusClass={statusClass(q.status)} confirm={confirm}>
       <div className="sheet-head">
         <nav className="crumbs">
           <button className="crumb" onClick={() => ed.leave(open.close)}>
@@ -102,6 +130,9 @@ export function QuestionModal({ id }: { id: string }) {
           <EditActions ed={ed} />
         ) : (
           <>
+            <button className="btn ghost danger" onClick={() => setAskDelete(true)}>
+              <Trash2 size={15} /> Delete
+            </button>
             <span className="spacer" />
             <button className="btn" onClick={() => startEdit()}>
               <Pencil size={15} /> Edit
@@ -276,11 +307,11 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
       </div>
       <label className="field">
         <span>Question · Markdown</span>
-        <textarea className="textarea" rows={4} value={draft.question} onChange={(e) => set({ question: e.target.value })} />
+        <MarkdownTextarea className="textarea" rows={4} value={draft.question} onChange={(e) => set({ question: e.target.value })} />
       </label>
       <label className="field">
         <span>Answer</span>
-        <textarea ref={answerRef} className="textarea" rows={4} value={draft.answer} placeholder="What was decided, by whom, when" onChange={(e) => set({ answer: e.target.value })} />
+        <MarkdownTextarea ref={answerRef} className="textarea" rows={4} value={draft.answer} placeholder="What was decided, by whom, when" onChange={(e) => set({ answer: e.target.value })} />
       </label>
       <div className="field">
         <span>Affects</span>

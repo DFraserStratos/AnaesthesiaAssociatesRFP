@@ -34,6 +34,7 @@ export function fixtureItems(): Item[] {
 
 export function writeFixture(dir = FIXTURE_DIR) {
   rmSync(join(dir, 'requirements'), { recursive: true, force: true })
+  rmSync(join(dir, 'questions'), { recursive: true, force: true })
   mkdirSync(join(dir, 'questions'), { recursive: true })
   for (const it of fixtureItems()) writeItem(it, dir)
   writeLayout({ positions: {}, lanes: FIXTURE_LANES }, dir)

@@ -10,10 +10,11 @@ import {
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
-import { Filter, LayoutGrid, Map as MapIcon, Maximize, Redo2, Search, Sparkles, Undo2, X } from 'lucide-react'
+import { Filter, LayoutGrid, Map as MapIcon, Maximize, Redo2, Sparkles, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
+import { BoardSearch } from '../board/BoardSearch.tsx'
 import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
 import type { CardData, CardNodeType } from '../board/cardData.ts'
 import { CardNode } from '../board/CardNode.tsx'
@@ -25,6 +26,7 @@ import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, typ
 import { dropTarget, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
+import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
@@ -123,6 +125,10 @@ function Board({ mode }: { mode: BoardMode }) {
   const [showFilters, setShowFilters] = useState(false)
   const [askTidy, setAskTidy] = useState(false)
   const [hitCursor, setHitCursor] = useState(-1)
+  // The card the search list is pointing at: found on the board and ringed, not opened.
+  const [peek, setPeek] = useState<string | null>(null)
+  // Where the board was before the search list started moving it, so Esc can go back.
+  const peekFrom = useRef<Viewport | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const filtersRef = useRef<HTMLButtonElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
@@ -191,22 +197,26 @@ function Board({ mode }: { mode: BoardMode }) {
   const filtering = filtersActive(view)
   const matches = useMemo(() => new Set(index.items.filter((it) => matchesFilters(it, view, index)).map((i) => i.id)), [index, view])
   const hits = useMemo(
-    () => (filtering ? Object.keys(auto).filter((id) => matches.has(id) && !map?.collapsed.has(id) && visible(index.byId.get(id)!)) : []),
-    [filtering, auto, map, matches, visible, index],
+    () =>
+      filtering
+        ? rankMatches(
+            index,
+            Object.keys(auto).flatMap((id) => (matches.has(id) && !map?.collapsed.has(id) && visible(index.byId.get(id)!) ? [index.byId.get(id)!] : [])),
+            view.search,
+          )
+        : [],
+    [filtering, auto, map, matches, visible, index, view.search],
   )
   const graph = useMemo<GraphInput>(
     () => ({ index, auto, positions: mapped ? NO_POSITIONS : positions, collapsed: map?.collapsed, showRetired: view.showRetired, selected, lineage, filtering, matches }),
     [index, auto, mapped, positions, map, view.showRetired, selected, lineage, filtering, matches],
   )
 
-  // The hit list can shrink under the cursor (filters, Retired toggle, external edits).
-  useEffect(() => setHitCursor(-1), [hits])
-
   const descendantCounts = useMemo(() => countDescendants(shownIndex(index, view.showRetired)), [index, view.showRetired])
   const computed = useMemo<BoardNode[]>(() => {
-    const cards: BoardNode[] = buildNodes(graph, descendantCounts)
+    const cards: BoardNode[] = buildNodes(graph, descendantCounts).map((n) => (n.id === peek ? { ...n, className: 'peek' } : n))
     return map ? [...cards, ...mappedExtras(map, index, lanes.length > 0, target)] : cards
-  }, [graph, descendantCounts, map, index, lanes.length, target, resetTick])
+  }, [graph, descendantCounts, map, index, lanes.length, target, resetTick, peek])
 
   // React Flow owns in-flight drag positions; the store owns everything else.
   const [nodes, setNodes] = useState<BoardNode[]>(computed)
@@ -298,14 +308,14 @@ function Board({ mode }: { mode: BoardMode }) {
   const edges = useMemo(() => (!mapped ? buildEdges(graph) : lineage && !previewing ? buildEdges(graph, { mapped: true }) : []), [mapped, graph, lineage, previewing])
 
   const centreOn = useCallback(
-    (id: string, zoom?: number) => {
+    (id: string, zoom?: number, clearLeft = dockRef.current) => {
       const n = rf.getNode(id)
       if (!n) return
       const w = (n.data as CardData).w
       const h = (n.data as CardData).h
       const z = zoom ?? Math.max(rf.getZoom(), 0.9)
-      // Centre it in the part of the board the panel leaves visible (a card is always open when this runs).
-      void rf.setCenter(n.position.x + w / 2 - dockRef.current / 2 / z, n.position.y + h / 2, { zoom: z, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
+      // Centre it in the part of the board left visible right of `clearLeft` (the open panel by default).
+      void rf.setCenter(n.position.x + w / 2 - clearLeft / 2 / z, n.position.y + h / 2, { zoom: z, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
     },
     [rf],
   )
@@ -363,12 +373,16 @@ function Board({ mode }: { mode: BoardMode }) {
         step(key === 'z' && !e.shiftKey ? 'undo' : 'redo')
         return
       }
-      if (e.key === '/' && !typing) {
+      // Ctrl F (Cmd F on a Mac) finds on the board rather than in the page: most cards aren't in the page at all.
+      const find = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && key === 'f'
+      if (find || (e.key === '/' && !typing)) {
         e.preventDefault()
         searchRef.current?.focus()
         searchRef.current?.select()
         return
       }
+      // Esc also clears a search left standing (after Enter opened a match); the panel closes as usual.
+      if (e.key === 'Escape' && !typing && view.search) view.set({ search: '' })
       // Only walk the tree when focus is on the page or the canvas, never on a button or link
       // (Enter there must just press it).
       const onCanvas = !target || target === document.body || !!target.closest('.react-flow')
@@ -394,11 +408,19 @@ function Board({ mode }: { mode: BoardMode }) {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  const nextHit = (dir: 1 | -1) => {
-    if (!hits.length) return
-    const n = (hitCursor + dir + hits.length) % hits.length
-    setHitCursor(n)
-    select(hits[n]!, () => centreOn(hits[n]!))
+  /** Find a search hit on the board, clear of the panel and the results list, without opening it. */
+  const peekAt = (id: string | null, clearLeft: number) => {
+    setPeek(id)
+    const pane = paneRef.current
+    if (!id || !pane) return
+    peekFrom.current ??= rf.getViewport()
+    centreOn(id, undefined, Math.max(dockPx, clearLeft - pane.getBoundingClientRect().left + 16))
+  }
+  const leaveSearch = (restore: boolean) => {
+    setPeek(null)
+    const from = peekFrom.current
+    peekFrom.current = null
+    if (restore && from) void rf.setViewport(from, { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
   }
 
   const tidy = (ids: string[], label: string) => setPositions(Object.fromEntries(ids.map((id) => [id, null])), { label })
@@ -461,30 +483,27 @@ function Board({ mode }: { mode: BoardMode }) {
 
         <div className="toolbar">
           <div className="toolbar-group" style={{ position: 'relative' }}>
-            <label className="search">
-              <Search size={15} />
-              <span className="sr-only">Search the board</span>
-              <input
-                ref={searchRef}
-                className="input"
-                placeholder="Search the board"
-                value={view.search}
-                onChange={(e) => {
-                  view.set({ search: e.target.value })
-                  setHitCursor(-1)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    nextHit(e.shiftKey ? -1 : 1)
-                  } else if (e.key === 'Escape') {
-                    view.set({ search: '' })
-                    e.currentTarget.blur()
-                  }
-                }}
-              />
-              {!view.search && <kbd>/</kbd>}
-            </label>
+            <BoardSearch
+              inputRef={searchRef}
+              hits={hits}
+              index={index}
+              query={view.search}
+              onQuery={(search) => view.set({ search })}
+              onPeek={peekAt}
+              onOpen={(id) => {
+                leaveSearch(false)
+                if (id === selected) centreOn(id)
+                else select(id, () => centreOn(id, undefined, openDockPx))
+              }}
+              onCancel={() => {
+                leaveSearch(true)
+                view.set({ search: '' })
+              }}
+              onLeave={() => leaveSearch(false)}
+              onActive={setHitCursor}
+              filtersOn={view.statuses.length > 0 || view.components.length > 0 || view.types.length > 0 || view.onlyWithQuestions}
+              onClearFilters={() => view.set({ statuses: [], components: [], types: [], onlyWithQuestions: false })}
+            />
             {filtering && (
               <span className="search-count" aria-live="polite">
                 {hitCursor >= 0 ? `${hitCursor + 1} of ${hits.length}` : `${hits.length} match${hits.length === 1 ? '' : 'es'}`}

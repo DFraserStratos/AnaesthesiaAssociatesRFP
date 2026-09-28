@@ -372,3 +372,22 @@ describe('serveAsset', () => {
     }
   })
 })
+
+describe('deleting a question', () => {
+  it('removes the file and tells the clients', () => {
+    const a = api()
+    const rev = a.getState().questions['OQ-01']!.rev
+    call(a, 'DELETE', '/api/questions/OQ-01', { baseRev: rev })
+    expect(existsSync(questionPath('OQ-01', root))).toBe(false)
+    expect(a.getState().questions['OQ-01']).toBeUndefined()
+    expect(events).toContainEqual({ kind: 'question', id: 'OQ-01', record: null })
+  })
+
+  it('refuses a stale or missing baseRev, and a question that does not exist', () => {
+    const a = api()
+    expect(status(() => call(a, 'DELETE', '/api/questions/OQ-01', { baseRev: 'stale' }))).toBe(409)
+    expect(status(() => call(a, 'DELETE', '/api/questions/OQ-01', {}))).toBe(400)
+    expect(status(() => call(a, 'DELETE', '/api/questions/OQ-99', { baseRev: 'x' }))).toBe(404)
+    expect(existsSync(questionPath('OQ-01', root))).toBe(true)
+  })
+})

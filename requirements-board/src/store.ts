@@ -37,6 +37,7 @@ interface CatalogueState {
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => Promise<Rev<Item>>
   saveQuestion: (q: Question, baseRev?: string) => Promise<Rev<Question>>
   createQuestion: (partial: Partial<Question>) => Promise<Rev<Question>>
+  deleteQuestion: (id: string, baseRev: string) => Promise<void>
   /** Take the server's current copy (e.g. from a 409) into the store. */
   adoptItem: (rec: Rev<Item>) => void
   adoptQuestion: (rec: Rev<Question>) => void
@@ -145,6 +146,13 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const rec = await api.createQuestion(partial)
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
     return rec
+  },
+
+  async deleteQuestion(id, baseRev) {
+    await api.deleteQuestion(id, baseRev)
+    const questions = { ...get().questions }
+    delete questions[id]
+    set({ questions })
   },
 
   adoptItem(rec) {

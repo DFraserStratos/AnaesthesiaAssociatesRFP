@@ -37,6 +37,8 @@ export const api = {
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => call<Rev<Item>>('POST', '/api/items', partial),
   putQuestion: (record: Question, baseRev?: string) =>
     call<Rev<Question>>('PUT', `/api/questions/${encodeURIComponent(record.id)}`, { record, baseRev }),
+  /** Removes the question's file; refused with a 409 if it changed on disk since baseRev. */
+  deleteQuestion: (id: string, baseRev: string) => call<{ id: string }>('DELETE', `/api/questions/${encodeURIComponent(id)}`, { baseRev }),
   createQuestion: (partial: Partial<Question>) => call<Rev<Question>>('POST', '/api/questions', partial),
   /** All or nothing: every record must still be at its baseRev (a Mapped board move). */
   batchItems: (changes: BatchChange[]) => call<{ records: Rev<Item>[] }>('POST', '/api/items/batch', { changes }),

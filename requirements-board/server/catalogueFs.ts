@@ -188,6 +188,11 @@ export function writeQuestion(q: Question, root = CATALOGUE_DIR, opts: { create?
   return { data: parseQuestion(text), rev: revOf(text) }
 }
 
+/** Remove a question's file. Items never point at questions, so nothing else needs rewriting. */
+export function deleteQuestionFile(id: string, root = CATALOGUE_DIR) {
+  unlinkSync(questionPath(id, root))
+}
+
 export function serialiseLayout(layout: Layout): string {
   const ids = Object.keys(layout.positions).sort(compareIds)
   // One card per line keeps drag diffs to one line each.

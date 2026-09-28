@@ -4,13 +4,15 @@ import { useEffect, useRef, type RefObject } from 'react'
  * Put a popover away on Esc or a press outside it. Presses inside `anchor`
  * (the button that toggles it) are left to that button, so it can close it
  * without the press reopening it. Esc is taken in the capture phase, so the
- * docked panel behind never sees it and closes too.
+ * docked panel behind never sees it and closes too. Pass `active` false while the popover is
+ * shut, when the hook lives in a component that stays mounted, so Esc still reaches everything else.
  */
-export function useDismiss<T extends HTMLElement>(onClose: () => void, anchor?: RefObject<HTMLElement | null>) {
+export function useDismiss<T extends HTMLElement>(onClose: () => void, anchor?: RefObject<HTMLElement | null>, active = true) {
   const ref = useRef<T>(null)
   const close = useRef(onClose)
   close.current = onClose
   useEffect(() => {
+    if (!active) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.preventDefault()
@@ -28,6 +30,6 @@ export function useDismiss<T extends HTMLElement>(onClose: () => void, anchor?: 
       window.removeEventListener('keydown', onKey, true)
       window.removeEventListener('pointerdown', onDown)
     }
-  }, [anchor])
+  }, [anchor, active])
   return ref
 }

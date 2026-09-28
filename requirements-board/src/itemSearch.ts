@@ -82,3 +82,45 @@ export function searchItems(index: SearchIndex, query: string, opts: SearchOptio
     .slice(0, limit)
     .map((x) => x.it)
 }
+
+/**
+ * The board's search hits, best first: title matches (by `rank`), then the cards found
+ * only through their lineage or their text. Tree order within each rank.
+ */
+export function rankMatches(index: SearchIndex, hits: Item[], query: string): Item[] {
+  const q = query.trim().toLowerCase()
+  const ordered = treeOrder(hits, index)
+  if (!q) return ordered
+  const qWords = words(q)
+  const r = new Map(ordered.map((it) => [it.id, rank(it, q, qWords)]))
+  return ordered.sort((a, b) => r.get(a.id)! - r.get(b.id)!)
+}
+
+const CONTEXT_FIELDS = [
+  ['description', 'Description'],
+  ['acceptance', 'Acceptance criteria'],
+  ['technical', 'Technical discussion'],
+  ['notes', 'Notes'],
+] as const
+
+/**
+ * Why a card matched when its title and lineage don't say: the first field holding a
+ * query word they lack, with a short plain-text excerpt around it. Null when the name explains it.
+ */
+export function matchContext(index: SearchIndex, item: Item, query: string, span = 72): { label: string; text: string } | null {
+  const name = `${item.title} ${item.id} ${lineageTitles(index, item).join(' ')}`.toLowerCase()
+  const missing = words(query.trim().toLowerCase()).filter((w) => !name.includes(w))
+  if (!missing.length) return null
+  const fields: [string, string][] = [...CONTEXT_FIELDS.map(([k, label]) => [item[k], label] as [string, string]), [item.sources.join(', '), 'Sources']]
+  for (const [raw, label] of fields) {
+    const text = raw.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim()
+    const lower = text.toLowerCase()
+    const w = missing.find((m) => lower.includes(m))
+    if (!w) continue
+    const at = lower.indexOf(w)
+    const start = Math.max(0, at - Math.floor((span - w.length) / 3))
+    const end = Math.min(text.length, start + span)
+    return { label, text: `${start > 0 ? '…' : ''}${text.slice(start, end).trim()}${end < text.length ? '…' : ''}` }
+  }
+  return null
+}

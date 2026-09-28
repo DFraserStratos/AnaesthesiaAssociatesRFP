@@ -1,15 +1,16 @@
 import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, isOpenQuestion, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, useCatalogue, useIndex, useShownIndex, type Index } from '../store.ts'
+import { ancestorsOf, openQuestionsFor, useCatalogue, useIndex, useShownIndex, type Index } from '../store.ts'
 import { statusClass } from '../vocab.ts'
 import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
 import { ParentPicker } from './ItemPicker.tsx'
+import { MarkdownTextarea } from './MarkdownTextarea.tsx'
 import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { StatusPicker } from './StatusPicker.tsx'
@@ -242,10 +243,10 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
         {linked.length > 0 && (
           <section className="section">
             <h3 className="section-head">
-              Open questions <span className="count">{linked.filter((l) => isOpenQuestion(l.q)).length}</span>
+              Open questions <span className="count">{linked.length}</span>
             </h3>
             {linked.map(({ q, via }) => (
-              <button key={q.id} className={`oq-card${isOpenQuestion(q) ? '' : ' answered'}`} title={q.id} onClick={() => open.question(q.id)}>
+              <button key={q.id} className="oq-card" title={q.id} onClick={() => open.question(q.id)}>
                 <div className="oq-top">
                   <strong>{q.title}</strong>
                   <StatusLabel status={q.status} />
@@ -318,12 +319,12 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
   )
 }
 
-/** Questions on this item first, then ones inherited from its feature and epic. */
+/** Open questions on this item first, then ones inherited from its feature and epic. Answered ones live in Outstanding items. */
 function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[] {
   const out: { q: Question; via?: Item }[] = []
   const seen = new Set<string>()
   const add = (id: string, via?: Item) => {
-    for (const q of index.questionsFor.get(id) ?? []) {
+    for (const q of openQuestionsFor(index, id)) {
       if (seen.has(q.id)) continue
       seen.add(q.id)
       out.push({ q, via })
@@ -331,7 +332,7 @@ function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[
   }
   add(item.id)
   for (const a of ancestorsOf(index, item.id).reverse()) add(a.id, a)
-  return out.sort((a, b) => Number(!isOpenQuestion(a.q)) - Number(!isOpenQuestion(b.q)))
+  return out
 }
 
 function Children({ item, children }: { item: Item; children: Item[] }) {
@@ -487,19 +488,19 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
       </div>
       <label className="field">
         <span>Description · Markdown{draft.type === 'story' ? ' · "As a …, I …, so that …"' : ''}</span>
-        <textarea className="textarea" rows={5} value={draft.description} onChange={(e) => set({ description: e.target.value })} />
+        <MarkdownTextarea className="textarea" rows={5} value={draft.description} onChange={(e) => set({ description: e.target.value })} />
       </label>
       <label className="field">
         <span>Acceptance criteria · Markdown · one per line or Given/When/Then</span>
-        <textarea className="textarea" rows={4} value={draft.acceptance} onChange={(e) => set({ acceptance: e.target.value })} />
+        <MarkdownTextarea className="textarea" rows={4} value={draft.acceptance} onChange={(e) => set({ acceptance: e.target.value })} />
       </label>
       <label className="field">
         <span>Technical discussion · Markdown</span>
-        <textarea className="textarea" rows={4} value={draft.technical} onChange={(e) => set({ technical: e.target.value })} />
+        <MarkdownTextarea className="textarea" rows={4} value={draft.technical} onChange={(e) => set({ technical: e.target.value })} />
       </label>
       <label className="field">
         <span>Notes</span>
-        <textarea className="textarea" rows={3} value={draft.notes} onChange={(e) => set({ notes: e.target.value })} />
+        <MarkdownTextarea className="textarea" rows={3} value={draft.notes} onChange={(e) => set({ notes: e.target.value })} />
       </label>
       <label className="field">
         <span>Sources · one per line</span>

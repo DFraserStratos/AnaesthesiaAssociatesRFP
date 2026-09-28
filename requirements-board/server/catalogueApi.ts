@@ -7,6 +7,7 @@
  *   POST /api/items/batch        { changes: [{ id, baseRev, patch }] }  all or nothing (a Mapped board move)
  *   POST /api/items              { type, parent, title, ... }  server assigns the ID
  *   PUT  /api/questions/:id      { record, baseRev }
+ *   DELETE /api/questions/:id   { baseRev }  removes the file; 409 if it changed on disk since baseRev
  *   POST /api/questions          { title, ... }
  *   GET  /api/items/:id/history  the card's timeline: the change journal, backfilled from git
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
@@ -26,6 +27,7 @@ import { laneListProblem } from '../shared/move.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
   FileExistsError,
+  deleteQuestionFile,
   fileExistsIn,
   issuesFor,
   itemPath,
@@ -292,6 +294,16 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       checkBase(questionOnDisk(id), id, body.baseRev)
       guard(itemList(), [...questionList().filter((x) => x.id !== id), q])
       return commitQuestion(q, false)
+    }
+    if (m && method === 'DELETE') {
+      const id = decodeURIComponent(m[1]!)
+      checkBase(questionOnDisk(id), id, body.baseRev)
+      deleteQuestionFile(id, root)
+      delete state.questions[id]
+      refreshIssues()
+      emit({ kind: 'question', id, record: null })
+      emit({ kind: 'issues', issues: state.issues })
+      return { id }
     }
 
     if (path === '/api/questions' && method === 'POST') {

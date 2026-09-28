@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Item } from '../shared/types.ts'
-import { searchItems } from '../src/itemSearch.ts'
+import { matchContext, rankMatches, searchItems } from '../src/itemSearch.ts'
 import { item } from './fixtures.ts'
 
 const items: Item[] = [
@@ -58,5 +58,38 @@ describe('searchItems', () => {
   it('lists parents in tree order when nothing is typed', () => {
     expect(ids('', { types: ['feature', 'epic'] })).toEqual(['EP-01', 'FT-01.1', 'FT-01.2', 'EP-02', 'FT-02.1', 'FT-02.2'])
     expect(ids('', { types: ['epic'] })).toEqual(['EP-01', 'EP-02'])
+  })
+})
+
+describe('rankMatches', () => {
+  it('puts title matches first, then body-only ones, tree order within each', () => {
+    const hits = [
+      item({ id: 'US-01.1.1', parent: 'FT-01.1', title: 'Mark a day unavailable', description: 'Syncs to the roster' }),
+      item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', title: 'Roster settings', order: 2 }),
+      item({ id: 'FT-02.2', type: 'feature', parent: 'EP-02', title: 'Invoice calendar sync', order: 2, notes: 'Uses the roster' }),
+    ]
+    expect(rankMatches(index, hits, 'roster').map((i) => i.id)).toEqual(['FT-01.2', 'US-01.1.1', 'FT-02.2'])
+    expect(rankMatches(index, hits, '').map((i) => i.id)).toEqual(['FT-01.2', 'US-01.1.1', 'FT-02.2'])
+  })
+})
+
+describe('matchContext', () => {
+  const story = item({ id: 'US-01.1.1', parent: 'FT-01.1', title: 'Mark a day unavailable', acceptance: '- The **roster** shows the day as [hatched](x.md)' })
+
+  it('names the field and quotes around the word the title lacks', () => {
+    expect(matchContext(index, story, 'roster')).toEqual({ label: 'Acceptance criteria', text: '- The roster shows the day as hatched' })
+  })
+
+  it('is null when the title or lineage explains the match', () => {
+    expect(matchContext(index, story, 'mark')).toBeNull()
+    expect(matchContext(index, story, 'availability')).toBeNull()
+  })
+
+  it('trims long text to an excerpt', () => {
+    const long = item({ id: 'US-9', title: 'Long', notes: `${'a '.repeat(80)}needle ${'b '.repeat(80)}` })
+    const c = matchContext(index, long, 'needle')!
+    expect(c.label).toBe('Notes')
+    expect(c.text).toMatch(/^….*needle.*…$/)
+    expect(c.text.length).toBeLessThan(80)
   })
 })
