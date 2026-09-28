@@ -61,7 +61,7 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case. |
-| `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Retired` (meanings in `../README.md`). Where a requirement came from is not a status: that is `sources`. |
+| `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Verify`, `Retired` (meanings in `../README.md`). Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of (an empty list is a warning): Scheduling Engine, Billing/Invoice Engine, Anaesthetist App (mobile + web), Admin App, Xero Integration, Health Integration, Master Data, Cross-cutting. |
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop"` (a file in `notes/`), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
@@ -149,11 +149,15 @@ over it.
 
 ## Conventions
 
-- **No deletes.** Retire an item by setting `status: Retired`; the ID stays taken.
+- **No deletes for items.** Retire an item by setting `status: Retired`; the ID stays taken.
+- **Questions can be deleted** (the board's Delete, or remove the file): nothing points at a
+  question, so no other file changes. Deleting the highest `OQ-nn` frees that number for the next
+  new question, so prefer answering one that was simply settled.
 - **New IDs**: next free number under the parent (the board assigns them). By hand: look at the
   highest sibling ID and add one.
-- **Answering a question**: set `status: Answered`, add `## Answer`, then flip the affected items
-  from `Open` to `Confirmed` where the answer settles them (the board offers this).
+- **Answering a question**: set `status: Answered`, add `## Answer`, then move the affected items
+  off `Open`: to `Confirmed` where the answer settles them, to `Verify` where the item still needs
+  checking with AA (the board offers this for every item the question affects, whatever its status).
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

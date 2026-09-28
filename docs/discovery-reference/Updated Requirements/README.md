@@ -46,6 +46,7 @@ to `Retired` rather than deleting it.
 | Proposed | Not yet confirmed with AA: carried from the RFP, or a recommendation to fill a gap. The sources say which. Needs sign-off. |
 | Future | RFP scope that does not reflect current reality (hospital integrations). Kept, deferred. |
 | Open | Depends on an open question. |
+| Verify | Its open question is answered, but the item as a whole still needs checking with AA before it is Confirmed. |
 | Retired | No longer wanted. Kept for traceability. |
 
 **Component.** Scheduling Engine · Billing/Invoice Engine · Anaesthetist App (mobile + web) ·
@@ -62,8 +63,10 @@ An item with no known source has an empty list and a `missing-source` outstandin
 2. Run `npm run check` if you edited files by hand. The board checks on every save.
 3. If the change alters the model (an entity, a rule, a superseded RFP reading), update
    `domain-model.md` too, including the "What changed since the RFP" table.
-4. When an open question is answered, set its status to `Answered`, add `## Answer`, and flip the
-   affected items from `Open` to `Confirmed` (the board offers this when you answer).
+4. When an open question is answered, set its status to `Answered`, add `## Answer`, and move each
+   affected item off `Open`: to `Confirmed` if the answer settles it, or to `Verify` if the item still
+   needs checking with AA. When you answer, the board offers Verify or Confirmed for every item the
+   question affects, whatever its status.
 
 ## Miro
 
