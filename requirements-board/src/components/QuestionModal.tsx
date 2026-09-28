@@ -29,7 +29,7 @@ export function QuestionModal({ id }: { id: string }) {
   const deleteQuestion = useCatalogue((s) => s.deleteQuestion)
   const index = useIndex()
   const open = useOpen()
-  /** Open items to offer moving on (to Verify or Confirmed) after the question is answered. */
+  /** The items to offer a new status (Verify or Confirmed) after the question is answered. */
   const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
@@ -41,8 +41,8 @@ export function QuestionModal({ id }: { id: string }) {
     // However the save came (button or Cmd+S), answering it offers to settle the items it affects.
     onSaved: (next, before) => {
       if (before.data.status === 'Answered' || next.data.status !== 'Answered') return
-      const openItems = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && it.status === 'Open')
-      if (openItems.length) setFlipOffer(openItems)
+      const live = next.data.affects.map((a) => index.byId.get(a)).filter((it): it is Item => !!it && it.status !== 'Retired')
+      if (live.length) setFlipOffer(live)
     },
   })
   const answerRef = useRef<HTMLTextAreaElement>(null)
@@ -210,27 +210,29 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
   )
 }
 
-/** Where an answer can leave an Open item: settled outright, answered but still to verify, or untouched. */
-const SETTLE_CHOICES = ['Verify', 'Confirmed', 'Open'] as const satisfies readonly ItemStatus[]
-type SettleChoice = (typeof SETTLE_CHOICES)[number]
+/** Where an answer can take an item: answered but still to verify, or settled outright. The item's own status is the third choice. */
+const SETTLE_TARGETS = ['Verify', 'Confirmed'] as const satisfies readonly ItemStatus[]
+const choicesFor = (it: Item): ItemStatus[] => ((SETTLE_TARGETS as readonly ItemStatus[]).includes(it.status) ? [...SETTLE_TARGETS] : [it.status, ...SETTLE_TARGETS])
 
 function FlipOffer({ items, question, onDone }: { items: Item[]; question: Question; onDone: () => void }) {
   const saveItem = useCatalogue((s) => s.saveItem)
   const records = useCatalogue((s) => s.items)
-  // An answer rarely settles a whole item, so each starts at Verify rather than Confirmed.
-  const [choice, setChoice] = useState<Record<string, SettleChoice>>(() => Object.fromEntries(items.map((i) => [i.id, 'Verify'])))
+  // An Open item was waiting on this answer, but an answer rarely settles a whole item, so it starts at
+  // Verify rather than Confirmed. Any other item keeps its status unless picked.
+  const [choice, setChoice] = useState<Record<string, ItemStatus>>(() => Object.fromEntries(items.map((i) => [i.id, i.status === 'Open' ? 'Verify' : i.status])))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const moving = items.flatMap((it) => {
-    const to = choice[it.id] ?? 'Verify'
-    return to === 'Open' ? [] : [{ id: it.id, to }]
+    const to = choice[it.id] ?? it.status
+    return to === it.status ? [] : [{ id: it.id, from: it.status, to }]
   })
   const apply = async () => {
     setBusy(true)
     try {
-      for (const { id, to } of moving) {
+      for (const { id, from, to } of moving) {
         const rec = records[id]
-        if (rec && rec.data.status === 'Open') await saveItem({ ...rec.data, status: to }, rec.rev)
+        // Skip an item whose status changed elsewhere since the offer opened.
+        if (rec && rec.data.status === from) await saveItem({ ...rec.data, status: to }, rec.rev)
       }
       onDone()
     } catch (e) {
@@ -244,18 +246,18 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
       <h4>
         <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.title} is answered
       </h4>
-      <p>These affected items are still Open. Where does the answer leave each one? Verify if the item still needs checking with AA, Confirmed if the answer settles it.</p>
+      <p>Where does the answer leave the items it affects? Verify if an item still needs checking with AA, Confirmed if the answer settles it.</p>
       {items.map((it) => (
         <div key={it.id} className="settle-row">
           <ItemName item={it} />
           <div className="settle-choices" role="group" aria-label={`Status for ${it.title}`}>
-            {SETTLE_CHOICES.map((s) => (
+            {choicesFor(it).map((s) => (
               <button
                 key={s}
                 type="button"
                 className="status-toggle"
                 aria-pressed={choice[it.id] === s}
-                title={ITEM_STATUS_HELP[s]}
+                title={s === it.status ? `Keep as ${s}` : ITEM_STATUS_HELP[s]}
                 onClick={() => setChoice((c) => ({ ...c, [it.id]: s }))}
               >
                 <StatusLabel status={s} />
@@ -270,7 +272,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
           Update {moving.length} {moving.length === 1 ? 'item' : 'items'}
         </button>
         <button className="btn ghost" onClick={onDone}>
-          Leave them all Open
+          Leave them as they are
         </button>
       </div>
     </div>

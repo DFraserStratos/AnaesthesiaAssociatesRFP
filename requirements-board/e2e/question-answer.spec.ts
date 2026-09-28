@@ -1,7 +1,8 @@
 /// <reference lib="dom" />
 /**
- * Answering a question, over the fixture catalogue (port 5182): the prompt that follows offers each
- * Open item it affects Verify (the default), Confirmed or Open, and saves only the ones moved on.
+ * Answering a question, over the fixture catalogue (port 5182): the prompt that follows offers every
+ * item it affects Verify or Confirmed beside its own status. Open items start at Verify, the rest keep
+ * their status, and only the ones changed are saved.
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -13,18 +14,20 @@ import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
-const AFFECTS = ['FT-01.2', 'FT-01.3']
+/** Two Open items, and one already Confirmed (an answer can still send it back to Verify). */
+const STARTING = { 'FT-01.2': 'Open', 'FT-01.3': 'Open', 'FT-01.4': 'Confirmed' } as const
+const AFFECTS = Object.keys(STARTING) as (keyof typeof STARTING)[]
 const question: Question = { id: 'OQ-01', kind: 'question', title: 'Still open', status: 'Open', owner: '', question: 'Is this settled?', answer: '', affects: AFFECTS, sources: [], extra: {} }
 const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'requirements', `${id}.md`), 'utf8'))
 
 test.beforeEach(async ({ page, request }) => {
   writeFixture()
-  for (const it of fixtureItems().filter((i) => AFFECTS.includes(i.id))) writeItem({ ...it, status: 'Open' }, FIXTURE_DIR)
+  for (const it of fixtureItems()) if (it.id in STARTING) writeItem({ ...it, status: STARTING[it.id as keyof typeof STARTING] }, FIXTURE_DIR)
   writeQuestion(question, FIXTURE_DIR)
   await expect
     .poll(async () => {
       const snap = (await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot
-      return !!snap.questions['OQ-01'] && AFFECTS.every((id) => snap.items[id]?.data.status === 'Open')
+      return !!snap.questions['OQ-01'] && AFFECTS.every((id) => snap.items[id]?.data.status === STARTING[id])
     })
     .toBe(true)
   await page.goto('/')
@@ -42,25 +45,32 @@ test.beforeEach(async ({ page, request }) => {
 
 test.afterAll(() => writeFixture())
 
-test('each item defaults to Verify, and Update saves each to its pick', async ({ page }) => {
+test('Open items start at Verify, a Confirmed one stays, and Update saves each pick', async ({ page }) => {
   const offer = page.getByRole('region', { name: 'Update affected items' })
   const row = (title: string) => offer.getByRole('group', { name: `Status for ${title}` })
-  for (const title of ['Feature 1.2', 'Feature 1.3']) await expect(row(title).locator('[aria-pressed="true"]')).toHaveText('Verify')
+  for (const title of ['Feature 1.2', 'Feature 1.3']) {
+    await expect(row(title).getByRole('button')).toHaveText(['Open', 'Verify', 'Confirmed'])
+    await expect(row(title).locator('[aria-pressed="true"]')).toHaveText('Verify')
+  }
+  await expect(row('Feature 1.4').getByRole('button')).toHaveText(['Verify', 'Confirmed'])
+  await expect(row('Feature 1.4').locator('[aria-pressed="true"]')).toHaveText('Confirmed')
 
   await row('Feature 1.3').getByRole('button', { name: 'Confirmed' }).click()
-  await offer.getByRole('button', { name: 'Update 2 items' }).click()
+  await row('Feature 1.4').getByRole('button', { name: 'Verify' }).click()
+  await offer.getByRole('button', { name: 'Update 3 items' }).click()
   await expect(offer).toHaveCount(0)
   await expect.poll(() => onDisk('FT-01.2').status).toBe('Verify')
   expect(onDisk('FT-01.3').status).toBe('Confirmed')
+  expect(onDisk('FT-01.4').status).toBe('Verify')
 })
 
-test('an item left Open is not saved, and all Open leaves nothing to update', async ({ page }) => {
+test('an item kept at its own status is not saved, and nothing changed leaves nothing to update', async ({ page }) => {
   const offer = page.getByRole('region', { name: 'Update affected items' })
+  await expect(offer.getByRole('button', { name: 'Update 2 items' })).toBeEnabled()
   await offer.getByRole('group', { name: 'Status for Feature 1.2' }).getByRole('button', { name: 'Open' }).click()
-  await expect(offer.getByRole('button', { name: 'Update 1 item' })).toBeEnabled()
   await offer.getByRole('group', { name: 'Status for Feature 1.3' }).getByRole('button', { name: 'Open' }).click()
   await expect(offer.getByRole('button', { name: 'Update 0 items' })).toBeDisabled()
-  await offer.getByRole('button', { name: 'Leave them all Open' }).click()
+  await offer.getByRole('button', { name: 'Leave them as they are' }).click()
   await expect(offer).toHaveCount(0)
-  for (const id of AFFECTS) expect(onDisk(id).status).toBe('Open')
+  for (const id of AFFECTS) expect(onDisk(id).status).toBe(STARTING[id])
 })
