@@ -29,6 +29,8 @@
   --st-proposed: #5b6b73;
   --st-future: #8a7a66;
   --st-open: #c0851b;
+  /* Verify sits between Open (amber) and Confirmed (green): answered, not yet signed off. */
+  --st-verify: #7c8a1e;
   --st-retired: #9aa6ab;
 
   /* Work item types, after Azure DevOps: epic orange, feature purple, story blue.
@@ -435,6 +437,11 @@ button.chip:hover {
   --sc: var(--st-open);
   --sbg: #fbefd9;
   --sink: #7d530a;
+}
+.st-verify {
+  --sc: var(--st-verify);
+  --sbg: #eff2dc;
+  --sink: #4f5a0f;
 }
 .st-retired {
   --sc: var(--st-retired);
@@ -1822,10 +1829,18 @@ mark {
   font-size: 13px;
   color: var(--ink-2);
 }
-.answer-flow .check-row .mono {
-  font-size: 12px;
-  color: var(--ink-3);
-  width: 84px;
+.answer-flow .settle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+.settle-choices {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
 }
 
 .loading {

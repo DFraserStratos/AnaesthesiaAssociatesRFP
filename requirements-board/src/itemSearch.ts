@@ -111,16 +111,19 @@ export function matchContext(index: SearchIndex, item: Item, query: string, span
   const name = `${item.title} ${item.id} ${lineageTitles(index, item).join(' ')}`.toLowerCase()
   const missing = words(query.trim().toLowerCase()).filter((w) => !name.includes(w))
   if (!missing.length) return null
-  const fields: [string, string][] = [...CONTEXT_FIELDS.map(([k, label]) => [item[k], label] as [string, string]), [item.sources.join(', '), 'Sources']]
-  for (const [raw, label] of fields) {
-    const text = raw.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim()
+  for (const [k, label] of CONTEXT_FIELDS) {
+    const text = item[k].replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim()
     const lower = text.toLowerCase()
     const w = missing.find((m) => lower.includes(m))
     if (!w) continue
     const at = lower.indexOf(w)
-    const start = Math.max(0, at - Math.floor((span - w.length) / 3))
+    let start = Math.max(0, at - Math.floor((span - w.length) / 3))
+    // Start on a word, not halfway through one.
+    if (start > 0) start = Math.min(at, text.indexOf(' ', start) + 1 || at)
     const end = Math.min(text.length, start + span)
     return { label, text: `${start > 0 ? '…' : ''}${text.slice(start, end).trim()}${end < text.length ? '…' : ''}` }
   }
-  return null
+  // A source is short and reads whole: the one that matched.
+  const source = item.sources.find((src) => missing.some((m) => src.toLowerCase().includes(m)))
+  return source ? { label: 'Source', text: source } : null
 }

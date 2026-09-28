@@ -49,11 +49,13 @@ export function BoardSearch({
   const shown = hits.slice(0, SHOWN)
   const open = focused && !!query.trim()
 
-  // New hits, new list: nothing chosen until an arrow key says so.
+  // New hits, new list: nothing chosen until an arrow key says so. Keyed on the IDs, so a
+  // catalogue refresh that leaves the same matches keeps your place.
+  const hitKey = hits.map((h) => h.id).join('|')
   useEffect(() => {
     setActive(-1)
     onPeek(null, 0)
-  }, [hits]) // only when the hits change
+  }, [hitKey]) // only when the matches change
   useEffect(() => onActive(open ? active : -1), [active, open])
 
   const move = (dir: 1 | -1) => {

@@ -49,6 +49,7 @@ export function excerpt(text: string, max = 160): string {
 export const ITEM_STATUS_HELP: Record<ItemStatus, string> = {
   Proposed: 'Needs sign-off from AA',
   Open: 'Waiting on an open question',
+  Verify: 'Question answered, the whole item still to check with AA',
   Confirmed: 'Agreed with AA',
   Future: 'Kept, but deferred',
   Retired: 'No longer wanted, kept for traceability',

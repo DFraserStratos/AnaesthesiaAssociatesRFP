@@ -91,5 +91,11 @@ describe('matchContext', () => {
     expect(c.label).toBe('Notes')
     expect(c.text).toMatch(/^….*needle.*…$/)
     expect(c.text.length).toBeLessThan(80)
+    expect(c.text).toMatch(/^…a /) // starts on a word
+  })
+
+  it('quotes the matching source whole', () => {
+    const src = item({ id: 'US-8', title: 'Pairs', sources: ['RFP p.12 · Scheduling', 'RFP p.33 · Xero Integration › Open items'] })
+    expect(matchContext(index, src, 'xero')).toEqual({ label: 'Source', text: 'RFP p.33 · Xero Integration › Open items' })
   })
 })

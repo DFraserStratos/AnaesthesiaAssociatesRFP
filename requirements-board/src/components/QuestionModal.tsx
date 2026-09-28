@@ -1,11 +1,11 @@
 import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type Question, type Rev } from '../../shared/types.ts'
+import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
-import { KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
+import { ITEM_STATUS_HELP, KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
 import { ItemName, Prose, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { AffectsPicker } from './ItemPicker.tsx'
@@ -29,7 +29,7 @@ export function QuestionModal({ id }: { id: string }) {
   const deleteQuestion = useCatalogue((s) => s.deleteQuestion)
   const index = useIndex()
   const open = useOpen()
-  /** Items to offer flipping Open to Confirmed after the question is answered. */
+  /** Open items to offer moving on (to Verify or Confirmed) after the question is answered. */
   const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
@@ -210,18 +210,27 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
   )
 }
 
+/** Where an answer can leave an Open item: settled outright, answered but still to verify, or untouched. */
+const SETTLE_CHOICES = ['Verify', 'Confirmed', 'Open'] as const satisfies readonly ItemStatus[]
+type SettleChoice = (typeof SETTLE_CHOICES)[number]
+
 function FlipOffer({ items, question, onDone }: { items: Item[]; question: Question; onDone: () => void }) {
   const saveItem = useCatalogue((s) => s.saveItem)
   const records = useCatalogue((s) => s.items)
-  const [picked, setPicked] = useState(() => new Set(items.map((i) => i.id)))
+  // An answer rarely settles a whole item, so each starts at Verify rather than Confirmed.
+  const [choice, setChoice] = useState<Record<string, SettleChoice>>(() => Object.fromEntries(items.map((i) => [i.id, 'Verify'])))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const moving = items.flatMap((it) => {
+    const to = choice[it.id] ?? 'Verify'
+    return to === 'Open' ? [] : [{ id: it.id, to }]
+  })
   const apply = async () => {
     setBusy(true)
     try {
-      for (const id of picked) {
+      for (const { id, to } of moving) {
         const rec = records[id]
-        if (rec && rec.data.status === 'Open') await saveItem({ ...rec.data, status: 'Confirmed' }, rec.rev)
+        if (rec && rec.data.status === 'Open') await saveItem({ ...rec.data, status: to }, rec.rev)
       }
       onDone()
     } catch (e) {
@@ -235,29 +244,33 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
       <h4>
         <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.title} is answered
       </h4>
-      <p>These affected items are still Open. Flip the ones the answer settles to Confirmed?</p>
+      <p>These affected items are still Open. Where does the answer leave each one? Verify if the item still needs checking with AA, Confirmed if the answer settles it.</p>
       {items.map((it) => (
-        <label key={it.id} className="check-row">
-          <input
-            type="checkbox"
-            checked={picked.has(it.id)}
-            onChange={(e) => {
-              const next = new Set(picked)
-              if (e.target.checked) next.add(it.id)
-              else next.delete(it.id)
-              setPicked(next)
-            }}
-          />
+        <div key={it.id} className="settle-row">
           <ItemName item={it} />
-        </label>
+          <div className="settle-choices" role="group" aria-label={`Status for ${it.title}`}>
+            {SETTLE_CHOICES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className="status-toggle"
+                aria-pressed={choice[it.id] === s}
+                title={ITEM_STATUS_HELP[s]}
+                onClick={() => setChoice((c) => ({ ...c, [it.id]: s }))}
+              >
+                <StatusLabel status={s} />
+              </button>
+            ))}
+          </div>
+        </div>
       ))}
       {error && <div className="banner error" style={{ margin: '8px 0' }}>{error}</div>}
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <button className="btn primary" onClick={() => void apply()} disabled={busy || picked.size === 0}>
-          Flip {picked.size} to Confirmed
+        <button className="btn primary" onClick={() => void apply()} disabled={busy || moving.length === 0}>
+          Update {moving.length} {moving.length === 1 ? 'item' : 'items'}
         </button>
         <button className="btn ghost" onClick={onDone}>
-          Leave them Open
+          Leave them all Open
         </button>
       </div>
     </div>

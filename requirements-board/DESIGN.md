@@ -34,7 +34,8 @@ classes). Always pair an item's title with its `TypeIcon` (or use `ItemName`) ou
 **Status is always a labelled pill, never an item's main colour.** The type owns the card's colour;
 status is a small tinted pill (`StatusLabel`). No status colour may share a hue with a type:
 Future was moved off purple for this reason. Proposed, the baseline, takes the calm neutral grey
-(`BASELINE_STATUS` in `src/vocab.ts`). Where an item came from is its sources, never its status.
+(`BASELINE_STATUS` in `src/vocab.ts`). Verify (answered, still to check) takes olive, between Open's
+amber and Confirmed's green. Where an item came from is its sources, never its status.
 
 **Sizes carry level.** Epics are wide bars spanning their features; features are taller cards
 (168px); stories are compact (112px). Keep features visibly taller than stories.
@@ -85,6 +86,12 @@ scrolls) and as the modal elsewhere.
   lineage lit. The panel floats over the board rather than narrowing it, so opening or closing a
   card never moves the map; the board's search and lane names step right to clear it. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
   click on empty canvas closes it. No double-click anywhere.
+- **Search** (Ctrl F, Cmd F or `/`) fades the board to the matches and lists them under the box,
+  title matches first, each row the name with the words found, then where it sits (or, when only its
+  text matched, the line it was found in). The arrow keys walk the list and the board finds each card
+  without opening it: it pans the card clear of the panel and the list, and a teal ring closes in on
+  it. Enter or a click opens it; Esc takes the board back to where it was and clears the search (on
+  the board too, with the card closing as usual).
 - One round teal plus, bottom right of every view (or `n`), makes any card: epic, feature, story or
   outstanding item. It asks only for the type, the title and where it sits (a searchable parent, or
   what an outstanding item affects), starting from the open card, then opens the new card in Edit.

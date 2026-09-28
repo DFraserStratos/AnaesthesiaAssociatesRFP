@@ -348,65 +348,70 @@ function Board({ mode }: { mode: BoardMode }) {
   useEffect(() => {
     if (!selected || !index.byId.has(selected) || focusId) return
     const t = setTimeout(() => {
-      if (!inView(selected)) centreOn(selected, rf.getZoom())
+      // Not while the search list is steering the board: it has somewhere else to be.
+      if (!peekFrom.current && !inView(selected)) centreOn(selected, rf.getZoom())
     }, 80)
     return () => clearTimeout(t)
   }, [selected]) // only when the selection changes, not on every catalogue event
 
   // Keyboard: / search, arrows walk the tree (each step opens that card), Enter moves into the panel.
   // Esc closes the panel; the panel itself handles that.
+  // One listener for the board's life, reading the latest handler: re-subscribing on every render
+  // would drop a key whose earlier listener (the panel closing on Esc) re-rendered mid-dispatch.
+  const onKeyRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (modalOpen) return
-      if (e.key === 'Escape' && askTidy) {
-        e.preventDefault()
-        setAskTidy(false)
-        return
-      }
-      const target = e.target instanceof HTMLElement ? e.target : null
-      const typing = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
-      // Undo / redo card moves, unless a field or the item panel has focus (they keep their own undo).
-      const key = e.key.toLowerCase()
-      if ((e.metaKey || e.ctrlKey) && !e.altKey && (key === 'z' || (key === 'y' && e.ctrlKey && !e.shiftKey))) {
-        if (typing || target?.isContentEditable || target?.closest('.sheet')) return
-        e.preventDefault()
-        step(key === 'z' && !e.shiftKey ? 'undo' : 'redo')
-        return
-      }
-      // Ctrl F (Cmd F on a Mac) finds on the board rather than in the page: most cards aren't in the page at all.
-      const find = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && key === 'f'
-      if (find || (e.key === '/' && !typing)) {
-        e.preventDefault()
-        searchRef.current?.focus()
-        searchRef.current?.select()
-        return
-      }
-      // Esc also clears a search left standing (after Enter opened a match); the panel closes as usual.
-      if (e.key === 'Escape' && !typing && view.search) view.set({ search: '' })
-      // Only walk the tree when focus is on the page or the canvas, never on a button or link
-      // (Enter there must just press it).
-      const onCanvas = !target || target === document.body || !!target.closest('.react-flow')
-      if (typing || !onCanvas || !selected) return
-      const it = index.byId.get(selected)
-      if (!it) return
-      const go = (next: Item | undefined) => {
-        if (!next) return
-        e.preventDefault()
-        select(next.id, () => centreOn(next.id))
-      }
-      const sibs = it.parent ? (shown.children.get(it.parent) ?? []) : shown.epics
-      const at = sibs.findIndex((s) => s.id === it.id)
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        document.querySelector<HTMLElement>('.sheet.docked')?.focus()
-      } else if (e.key === 'ArrowUp') go(it.type === 'story' && at > 0 ? sibs[at - 1] : it.parent ? index.byId.get(it.parent) : undefined)
-      else if (e.key === 'ArrowDown') go(it.type === 'story' ? sibs[at + 1] : shown.children.get(it.id)?.[0])
-      else if (e.key === 'ArrowLeft') go(sibs[at - 1])
-      else if (e.key === 'ArrowRight') go(sibs[at + 1])
+    const listener = (e: KeyboardEvent) => onKeyRef.current(e)
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+  }, [])
+  onKeyRef.current = (e: KeyboardEvent) => {
+    if (modalOpen) return
+    if (e.key === 'Escape' && askTidy) {
+      e.preventDefault()
+      setAskTidy(false)
+      return
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+    const target = e.target instanceof HTMLElement ? e.target : null
+    const typing = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
+    // Undo / redo card moves, unless a field or the item panel has focus (they keep their own undo).
+    const key = e.key.toLowerCase()
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && (key === 'z' || (key === 'y' && e.ctrlKey && !e.shiftKey))) {
+      if (typing || target?.isContentEditable || target?.closest('.sheet')) return
+      e.preventDefault()
+      step(key === 'z' && !e.shiftKey ? 'undo' : 'redo')
+      return
+    }
+    // Ctrl F (Cmd F on a Mac) finds on the board rather than in the page: most cards aren't in the page at all.
+    const find = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && key === 'f'
+    if (find || (e.key === '/' && !typing)) {
+      e.preventDefault()
+      searchRef.current?.focus()
+      searchRef.current?.select()
+      return
+    }
+    // Esc also clears a search left standing (after Enter opened a match); the panel closes as usual.
+    if (e.key === 'Escape' && !typing && view.search) view.set({ search: '' })
+    // Only walk the tree when focus is on the page or the canvas, never on a button or link
+    // (Enter there must just press it).
+    const onCanvas = !target || target === document.body || !!target.closest('.react-flow')
+    if (typing || !onCanvas || !selected) return
+    const it = index.byId.get(selected)
+    if (!it) return
+    const go = (next: Item | undefined) => {
+      if (!next) return
+      e.preventDefault()
+      select(next.id, () => centreOn(next.id))
+    }
+    const sibs = it.parent ? (shown.children.get(it.parent) ?? []) : shown.epics
+    const at = sibs.findIndex((s) => s.id === it.id)
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      document.querySelector<HTMLElement>('.sheet.docked')?.focus()
+    } else if (e.key === 'ArrowUp') go(it.type === 'story' && at > 0 ? sibs[at - 1] : it.parent ? index.byId.get(it.parent) : undefined)
+    else if (e.key === 'ArrowDown') go(it.type === 'story' ? sibs[at + 1] : shown.children.get(it.id)?.[0])
+    else if (e.key === 'ArrowLeft') go(sibs[at - 1])
+    else if (e.key === 'ArrowRight') go(sibs[at + 1])
+  }
 
   /** Find a search hit on the board, clear of the panel and the results list, without opening it. */
   const peekAt = (id: string | null, clearLeft: number) => {
