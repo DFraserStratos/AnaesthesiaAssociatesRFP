@@ -19,6 +19,7 @@ const item = (over: Partial<Item>): Item => ({
   sources: [],
   order: 1,
   swimlane: null,
+  related: [],
   images: [],
   description: '',
   acceptance: '',
@@ -138,11 +139,57 @@ describe('catalogue files', () => {
     const rows = parseCsv(requirementsCsv(items))
     expect(rows).toHaveLength(items.length)
     expect(rows[0]!.ID).toBe(depthFirst(items)[0]!.id)
-    const one = parseCsv(requirementsCsv([item({ acceptance: '- A, "quoted"\n- B', technical: 'T.' })]))[0]!
-    expect(Object.keys(one).slice(-2)).toEqual(['Acceptance criteria', 'Technical discussion'])
-    expect([one['Acceptance criteria'], one['Technical discussion']]).toEqual(['- A, "quoted"\n- B', 'T.'])
+    const one = parseCsv(requirementsCsv([item({ acceptance: '- A, "quoted"\n- B', technical: 'See [the rule](US-01.1.2).', related: ['US-01.1.2', 'US-01.1.3'] })]))[0]!
+    expect(Object.keys(one).slice(-3)).toEqual(['Acceptance criteria', 'Technical discussion', 'Related'])
+    expect([one['Acceptance criteria'], one['Technical discussion'], one.Related]).toEqual(['- A, "quoted"\n- B', 'See the rule.', 'US-01.1.2; US-01.1.3'])
     const qs = parseCsv(questionsCsv(Object.values(real.questions).map((r) => r.data)))
     expect(qs.map((q) => q.ID ?? '')).toEqual([...qs.map((q) => q.ID ?? '')].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })))
+  })
+
+  it('round-trips related after swimlane, and writes nothing when there are none', () => {
+    expect(serialiseItem(item({}))).not.toContain('related:')
+    const text = serialiseItem(item({ swimlane: 'MVP', related: ['US-01.1.2', 'FT-02.1'] }))
+    expect(text).toContain('swimlane: MVP\nrelated:\n  - US-01.1.2\n  - FT-02.1\nimages: []')
+    expect(parseItem(text).related).toEqual(['US-01.1.2', 'FT-02.1'])
+  })
+
+  it('checks related items and links in the text', () => {
+    const story = (id: string, over: Partial<Item> = {}) => item({ id, sources: ['S'], ...over })
+    const messages = (items: Item[], questions: Question[] = []) =>
+      checkCatalogue({ items: [epic, feature, ...items], questions }).map((i) => `${i.severity} ${i.id} ${i.message}`)
+    const retired = story('US-01.1.9', { status: 'Retired' })
+    const q = { id: 'OQ-01', kind: 'question', title: 'Q', affects: ['US-01.1.1'], owner: '', status: 'Open', sources: [], question: 'See [the story](US-01.1.1).', answer: '', extra: {} } as Question
+
+    const ok = messages([story('US-01.1.1', { related: ['US-01.1.2'], description: 'Uses [the other](US-01.1.2), see OQ-01 and `US-09.9.9`.' }), story('US-01.1.2')], [q])
+    expect(ok.filter((m) => m.includes('related') || m.includes('the text'))).toEqual([])
+
+    const bad = messages(
+      [
+        story('US-01.1.1', { related: ['US-01.1.1', 'US-09.9.9', 'OQ-01', 'US-01.1.2', 'US-01.1.2', 'US-01.1.9'], notes: '[gone](US-09.9.9), [old](US-01.1.9), OQ-77, [q](OQ-78), US-08.8.8, merges the former US-01.1.9.' }),
+        story('US-01.1.2', { related: ['US-01.1.1'] }),
+        retired,
+      ],
+      [q],
+    )
+    expect(bad).toEqual(
+      expect.arrayContaining([
+        'error US-01.1.1 related lists the item itself',
+        'error US-01.1.1 related lists US-09.9.9, which does not exist',
+        'error US-01.1.1 related lists OQ-01, an outstanding item; list the item under its affects instead',
+        'warning US-01.1.1 related lists US-01.1.2 twice',
+        'warning US-01.1.1 related lists US-01.1.9, which is retired',
+        'warning US-01.1.2 related lists US-01.1.1, which already lists this item; keep it on one side',
+        'error US-01.1.1 the text links to US-09.9.9, which does not exist',
+        'warning US-01.1.1 the text links to US-01.1.9, which is retired',
+        'warning US-01.1.1 the text mentions OQ-77, which does not exist',
+        'warning US-01.1.1 the text links to OQ-78, which does not exist',
+        'warning US-01.1.1 the text mentions US-08.8.8, which does not exist',
+      ]),
+    )
+    // A bare mention of a retired item is history, not a problem.
+    expect(bad.filter((m) => m.includes('mentions US-01.1.9'))).toEqual([])
+    // Deleting a question never adds an error: links to it only warn.
+    expect(hasErrors(checkCatalogue({ items: [epic, feature, story('US-01.1.1', { description: '[q](OQ-01)' })], questions: [] }))).toBe(false)
   })
 
   it('round-trips swimlane after order, and writes nothing for the unnamed lane', () => {

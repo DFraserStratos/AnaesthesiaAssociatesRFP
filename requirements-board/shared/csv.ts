@@ -1,13 +1,14 @@
 /**
  * CSV in the old generator's column shape, for Miro or a spreadsheet, with
- * Acceptance criteria and Technical discussion appended at the end so every
- * earlier column keeps its position for existing imports.
+ * Acceptance criteria, Technical discussion and Related appended at the end so every
+ * earlier column keeps its position for existing imports. Links in the text become their words.
  * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings.
  */
 import { compareIds, compareSiblings } from './ids.ts'
+import { plainText } from './links.ts'
 import { TYPE_LABEL, type Item, type Question } from './types.ts'
 
-export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion']
+export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion', 'Related']
 export const QUESTION_COLUMNS = ['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source']
 
 export const LIST_SEPARATOR = '; '
@@ -50,13 +51,14 @@ export function requirementsCsv(items: Item[]): string {
           TYPE_LABEL[it.type],
           it.parent ?? '',
           it.title,
-          it.description,
-          it.notes,
+          plainText(it.description),
+          plainText(it.notes),
           it.components.join(LIST_SEPARATOR),
           it.status,
           it.sources.join(LIST_SEPARATOR),
-          it.acceptance,
-          it.technical,
+          plainText(it.acceptance),
+          plainText(it.technical),
+          it.related.join(LIST_SEPARATOR),
         ]),
       )
       .join('')
@@ -72,7 +74,7 @@ export function questionsCsv(questions: Question[]): string {
         row([
           q.id,
           q.title,
-          q.answer ? `${q.question} ANSWER: ${q.answer}` : q.question,
+          plainText(q.answer ? `${q.question} ANSWER: ${q.answer}` : q.question),
           q.affects.join(LIST_SEPARATOR),
           q.owner,
           q.status,

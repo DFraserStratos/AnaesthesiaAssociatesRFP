@@ -122,12 +122,14 @@ export function ParentPicker({
   )
 }
 
-/** The items an outstanding item bears on: chips for those picked, a search to add more. */
-export function AffectsPicker({ value, index, onChange }: { value: string[]; index: Index; onChange: (v: string[]) => void }) {
+const NONE: string[] = []
+
+/** A list of items (what an outstanding item affects, what an item is related to): chips for those picked, a search to add more. */
+export function ItemsPicker({ value, index, onChange, exclude = NONE }: { value: string[]; index: Index; onChange: (v: string[]) => void; exclude?: string[] }) {
   const listId = useId()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
-  const matches = useMemo(() => (query.trim() ? searchItems(index, query, { exclude: value, limit: 40 }) : []), [query, index, value])
+  const matches = useMemo(() => (query.trim() ? searchItems(index, query, { exclude: [...value, ...exclude], limit: 40 }) : []), [query, index, value, exclude])
   const add = (id: string) => {
     onChange([...value, id])
     setQuery('')

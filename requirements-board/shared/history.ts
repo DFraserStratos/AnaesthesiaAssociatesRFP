@@ -90,10 +90,13 @@ export type TimelineEntry =
   | { type: 'commit'; at: string; commit: CommitInfo }
 
 /** Fields in the order a history row lists them. `id` never changes; `extra` is agent-only frontmatter. */
-const FIELDS: Exclude<HistoryField, 'position' | 'screenshot'>[] = ['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra']
+const FIELDS: Exclude<HistoryField, 'position' | 'screenshot'>[] = ['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'related', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra']
+
+/** A field's value, reading a snapshot saved before the field existed as its empty value. */
+const valueOf = (it: Item, f: (typeof FIELDS)[number]) => (f === 'related' ? (it.related ?? []) : it[f])
 
 export function diffItems(a: Item, b: Item): FieldChange[] {
-  return FIELDS.filter((f) => JSON.stringify(a[f]) !== JSON.stringify(b[f])).map((field) => ({ field, from: a[field], to: b[field] }))
+  return FIELDS.filter((f) => JSON.stringify(valueOf(a, f)) !== JSON.stringify(valueOf(b, f))).map((field) => ({ field, from: valueOf(a, field), to: valueOf(b, field) }))
 }
 
 /** The Markdown fields: shown as a line diff behind a disclosure, not inline. */

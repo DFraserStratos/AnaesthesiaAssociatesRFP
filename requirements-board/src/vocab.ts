@@ -1,4 +1,5 @@
 import { QUESTION_STATUSES, type Component, type ItemStatus, type ItemType, type QuestionKind, type QuestionStatus } from '../shared/types.ts'
+import { plainText } from '../shared/links.ts'
 
 /** How a status reads on screen. Stored values are shown as-is today; kept as the one place to relabel. */
 export const STATUS_LABEL: Record<string, string> = {}
@@ -41,7 +42,7 @@ export const KIND_HELP: Record<QuestionKind, string> = {
 }
 
 export function excerpt(text: string, max = 160): string {
-  const plain = text.replace(/[*_`#>]/g, '').replace(/\s+/g, ' ').trim()
+  const plain = plainText(text).replace(/[*_`#>]/g, '').replace(/\s+/g, ' ').trim()
   return plain.length > max ? plain.slice(0, max - 1).trimEnd() + '…' : plain
 }
 

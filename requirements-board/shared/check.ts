@@ -16,6 +16,7 @@ import {
   type Item,
   type Question,
 } from './types.ts'
+import { isQuestionId, itemTexts, mentions } from './links.ts'
 
 export const ID_PATTERNS = {
   epic: /^EP-\d{2}$/,
@@ -90,6 +91,43 @@ export function checkCatalogue({ items, questions, fileExists, lanes }: CheckInp
   for (const q of questions) {
     if (qIds.has(q.id)) err(q.id, `duplicate ID ${q.id}`)
     qIds.add(q.id)
+  }
+
+  // Related items: stored on one side, shown on both.
+  const pairs = new Set<string>()
+  for (const it of items) {
+    const seen = new Set<string>()
+    for (const r of it.related) {
+      if (seen.has(r)) warn(it.id, `related lists ${r} twice`)
+      seen.add(r)
+      if (r === it.id) err(it.id, 'related lists the item itself')
+      else if (isQuestionId(r)) err(it.id, `related lists ${r}, an outstanding item; list the item under its affects instead`)
+      else if (!byId.has(r)) err(it.id, `related lists ${r}, which does not exist`)
+      else {
+        if (byId.get(r)!.status === 'Retired' && it.status !== 'Retired') warn(it.id, `related lists ${r}, which is retired`)
+        if (pairs.has(`${r}|${it.id}`)) warn(it.id, `related lists ${r}, which already lists this item; keep it on one side`)
+        pairs.add(`${it.id}|${r}`)
+      }
+    }
+  }
+
+  // Links in the text. A question can be deleted, so a link to a missing one warns rather than blocking the delete.
+  // A bare mention of a retired item is history ("merges the former US-01.3.4"), so only a link to one warns.
+  const linksIn = (id: string, texts: string[], live: boolean) => {
+    for (const m of mentions(texts.join('\n\n'))) {
+      const how = m.bare ? 'mentions' : 'links to'
+      if (isQuestionId(m.id)) {
+        if (!qIds.has(m.id)) warn(id, `the text ${how} ${m.id}, which does not exist`)
+      } else if (!byId.has(m.id)) {
+        if (m.bare) warn(id, `the text mentions ${m.id}, which does not exist`)
+        else err(id, `the text links to ${m.id}, which does not exist`)
+      } else if (live && !m.bare && byId.get(m.id)!.status === 'Retired') warn(id, `the text links to ${m.id}, which is retired`)
+    }
+  }
+  for (const it of items) linksIn(it.id, itemTexts(it), it.status !== 'Retired')
+  for (const q of questions) linksIn(q.id, [q.question, q.answer], q.status !== 'Answered')
+
+  for (const q of questions) {
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
     if (!QUESTION_KINDS.includes(q.kind)) err(q.id, `kind "${q.kind}" is not one of ${QUESTION_KINDS.join(', ')}`)
     if (!q.title.trim()) err(q.id, 'title is empty')

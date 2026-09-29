@@ -1,16 +1,18 @@
 import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { plainText } from '../../shared/links.ts'
+import { COMPONENTS, ITEM_STATUSES, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, openQuestionsFor, useCatalogue, useIndex, useShownIndex, type Index } from '../store.ts'
+import { ancestorsOf, openQuestionsFor, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
 import { statusClass } from '../vocab.ts'
-import { Glyph, ItemName, Lineage, Prose, StatusLabel, TypeIcon } from './bits.tsx'
+import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
-import { ParentPicker } from './ItemPicker.tsx'
+import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
 import { MarkdownTextarea } from './MarkdownTextarea.tsx'
+import { Prose } from './Prose.tsx'
 import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { StatusPicker } from './StatusPicker.tsx'
@@ -167,6 +169,7 @@ function normalise(it: Item): Item {
     title: it.title.trim(),
     swimlane: it.swimlane?.trim() || null,
     sources: it.sources.map((s) => s.trim()).filter(Boolean),
+    related: [...new Set(it.related.map((r) => r.trim()).filter((r) => r && r !== it.id))],
     images: it.images.filter((i) => i.src.trim()),
     description: tidyText(it.description),
     acceptance: tidyText(it.acceptance),
@@ -251,7 +254,7 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
                   <strong>{q.title}</strong>
                   <StatusLabel status={q.status} />
                 </div>
-                <p>{q.question}</p>
+                <p>{plainText(q.question)}</p>
                 {via && (
                   <p className="via">
                     via <ItemName item={via} />
@@ -268,6 +271,8 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
       {/* Screenshots and the facts sit at the foot of a docked panel while the content is short. */}
       <div className="read-anchor">
         <Gallery item={item} />
+
+        <Related item={item} index={index} />
 
         {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
         <section className="section sheet-tail">
@@ -310,9 +315,9 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
               </div>
             )}
           </div>
-          <span className="item-id" title={`${TYPE_LABEL[item.type]} ID`}>
+          <CopyLink id={item.id} className="item-id">
             <TypeIcon type={item.type} size={12} /> {item.id}
-          </span>
+          </CopyLink>
         </section>
       </div>
     </div>
@@ -333,6 +338,40 @@ function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[
   add(item.id)
   for (const a of ancestorsOf(index, item.id).reverse()) add(a.id, a)
   return out
+}
+
+/** Items related to this one (stored on either card), then the items whose text mentions it. */
+function Related({ item, index }: { item: Item; index: Index }) {
+  const open = useOpen()
+  const showRetired = useView((s) => s.showRetired)
+  const { related, mentionedIn } = useMemo(() => {
+    const all = relatedFor(index, item)
+    const shown = (r: Item) => showRetired || r.status !== 'Retired'
+    return { related: all.related.filter(shown), mentionedIn: all.mentionedIn.filter(shown) }
+  }, [index, item, showRetired])
+  if (!related.length && !mentionedIn.length) return null
+  const row = (r: Item) => (
+    <button key={r.id} className={`link-row ${statusClass(r.status)}`} onClick={() => open.item(r.id)}>
+      <span style={r.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
+        <ItemName item={r} />
+      </span>
+      <StatusLabel status={r.status} />
+    </button>
+  )
+  return (
+    <section className="section related">
+      <h3 className="section-head">
+        Related <span className="count">{related.length + mentionedIn.length}</span>
+      </h3>
+      {related.length > 0 && <div className="link-list">{related.map(row)}</div>}
+      {mentionedIn.length > 0 && (
+        <>
+          <h4 className="related-sub">Mentioned in</h4>
+          <div className="link-list">{mentionedIn.map(row)}</div>
+        </>
+      )}
+    </section>
+  )
 }
 
 function Children({ item, children }: { item: Item; children: Item[] }) {
@@ -506,7 +545,37 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
         <span>Sources · one per line</span>
         <textarea className="textarea" rows={3} value={draft.sources.join('\n')} onChange={(e) => set({ sources: e.target.value.split('\n') })} />
       </label>
+      <div className="field">
+        <span>Related · shown on both cards</span>
+        <ItemsPicker value={draft.related} index={index} exclude={selfOnly(draft.id)} onChange={(related) => set({ related })} />
+        <RelatedFrom id={draft.id} index={index} />
+      </div>
       <ImagesEditor draft={draft} set={set} />
     </>
+  )
+}
+
+const selfCache = new Map<string, string[]>()
+/** A stable one-ID exclusion list, so the picker's search isn't recomputed on every keystroke elsewhere. */
+function selfOnly(id: string): string[] {
+  if (!selfCache.has(id)) selfCache.set(id, [id])
+  return selfCache.get(id)!
+}
+
+/** The relations other cards store: shown here, edited there. */
+function RelatedFrom({ id, index }: { id: string; index: Index }) {
+  const from = (index.relatedFrom.get(id) ?? []).map((r) => index.byId.get(r)).filter((it): it is Item => !!it)
+  if (!from.length) return null
+  return (
+    <p className="field-note">
+      Also related from{' '}
+      {from.map((it, i) => (
+        <span key={it.id}>
+          {i > 0 && ', '}
+          <ItemName item={it} />
+        </span>
+      ))}
+      , stored on {from.length === 1 ? 'that card' : 'those cards'}.
+    </p>
   )
 }

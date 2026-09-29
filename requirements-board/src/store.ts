@@ -6,6 +6,7 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
+import { itemLinkTargets } from '../shared/links.ts'
 import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { ApiError, api } from './api.ts'
 
@@ -376,6 +377,10 @@ export interface Index {
   /** Questions that name an item in `affects`. */
   questionsFor: Map<string, Question[]>
   questions: Question[]
+  /** Items that list this one in their `related` (the other side of a relation stored once). */
+  relatedFrom: Map<string, string[]>
+  /** Items whose text links to or mentions this one, in ID order. */
+  mentionedBy: Map<string, string[]>
 }
 
 export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Record<string, Rev<Question>>): Index {
@@ -405,7 +410,31 @@ export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Re
       questionsFor.set(id, list)
     }
   }
-  return { items, byId, children, epics, questionsFor, questions }
+  const relatedFrom = new Map<string, string[]>()
+  const mentionedBy = new Map<string, string[]>()
+  const push = (map: Map<string, string[]>, key: string, id: string) => {
+    const list = map.get(key) ?? []
+    if (!list.includes(id)) list.push(id)
+    map.set(key, list)
+  }
+  for (const it of [...items].sort((a, b) => compareIds(a.id, b.id))) {
+    for (const r of it.related) if (r !== it.id) push(relatedFrom, r, it.id)
+    for (const t of itemLinkTargets(it)) if (t !== it.id) push(mentionedBy, t, it.id)
+  }
+  return { items, byId, children, epics, questionsFor, questions, relatedFrom, mentionedBy }
+}
+
+/**
+ * What the item sheet lists under Related: the relations either card stores, then the items whose
+ * text mentions this one. The lineage and the children are already on the sheet, so they are left out
+ * of the mentions, as are items already related.
+ */
+export function relatedFor(index: Index, item: Item): { related: Item[]; mentionedIn: Item[] } {
+  const resolve = (ids: string[]) => ids.map((id) => index.byId.get(id)).filter((it): it is Item => !!it)
+  const related = resolve([...new Set([...item.related, ...(index.relatedFrom.get(item.id) ?? [])])].filter((id) => id !== item.id))
+  const skip = new Set([item.id, ...related.map((r) => r.id), ...ancestorsOf(index, item.id).map((a) => a.id), ...(index.children.get(item.id) ?? []).map((c) => c.id)])
+  const mentionedIn = resolve((index.mentionedBy.get(item.id) ?? []).filter((id) => !skip.has(id)))
+  return { related, mentionedIn }
 }
 
 export function useIndex(): Index {

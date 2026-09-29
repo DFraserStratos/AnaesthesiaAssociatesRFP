@@ -1539,6 +1539,68 @@ mark {
   font-size: 12px;
   color: var(--ink-3);
 }
+/* Related: stored relations first, then the cards whose text mentions this one. */
+.related .related-sub {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+/* Links in Markdown. A link to another card keeps the words in ink, underlined in the action teal. */
+.prose a {
+  color: var(--teal);
+}
+.prose a.record-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--teal) 50%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.prose a.record-link:hover {
+  color: var(--teal);
+  text-decoration-color: var(--teal);
+}
+/* A bare ID reads as the card's name, with its type icon (names over codes). */
+.record-link.bare .type-icon,
+.record-link.bare .record-link-icon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.record-link-icon {
+  color: var(--st-open);
+}
+.prose a.record-link.retired {
+  color: var(--ink-3);
+  text-decoration-style: dotted;
+}
+.record-link.missing {
+  color: var(--ink-3);
+  text-decoration: underline dotted var(--danger);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+/* A record's ID doubles as its copy-link button: quiet until hovered. */
+.copy-link {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.copy-link:hover {
+  color: var(--teal);
+}
+.field-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.field-note .type-icon {
+  vertical-align: -2px;
+}
 .oq-card {
   text-align: left;
   width: 100%;
@@ -1691,6 +1753,22 @@ mark {
 }
 .picker {
   position: relative;
+}
+/* A Markdown field; Cmd+K floats its card picker over the top of the text. */
+.md-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.link-picker {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  right: 8px;
+  z-index: 5;
+}
+.link-picker > .input {
+  box-shadow: var(--shadow-lift);
 }
 .picker-list {
   position: absolute;

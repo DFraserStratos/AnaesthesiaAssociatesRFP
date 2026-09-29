@@ -20,12 +20,12 @@ export function fixtureItems(): Item[] {
   const out: Item[] = []
   for (let e = 1; e <= 2; e++) {
     const ep = `EP-0${e}`
-    out.push({ ...base, id: ep, type: 'epic', parent: null, title: `Epic ${e}`, order: e, components: [...base.components], sources: [...base.sources], images: [] })
+    out.push({ ...base, id: ep, type: 'epic', parent: null, title: `Epic ${e}`, order: e, components: [...base.components], sources: [...base.sources], images: [], related: [] })
     for (let f = 1; f <= 4; f++) {
       const ft = `FT-0${e}.${f}`
-      out.push({ ...base, id: ft, type: 'feature', parent: ep, title: `Feature ${e}.${f}`, order: f, components: [...base.components], sources: [...base.sources], images: [] })
+      out.push({ ...base, id: ft, type: 'feature', parent: ep, title: `Feature ${e}.${f}`, order: f, components: [...base.components], sources: [...base.sources], images: [], related: [] })
       for (let s = 1; s <= 3; s++) {
-        out.push({ ...base, id: `US-0${e}.${f}.${s}`, type: 'story', parent: ft, title: `Story ${e}.${f}.${s}`, order: s, swimlane: s === 1 ? 'MVP' : null, components: [...base.components], sources: [...base.sources], images: [] })
+        out.push({ ...base, id: `US-0${e}.${f}.${s}`, type: 'story', parent: ft, title: `Story ${e}.${f}.${s}`, order: s, swimlane: s === 1 ? 'MVP' : null, components: [...base.components], sources: [...base.sources], images: [], related: [] })
       }
     }
   }

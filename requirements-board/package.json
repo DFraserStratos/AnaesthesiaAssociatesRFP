@@ -15,7 +15,9 @@
     "test:e2e": "playwright test",
     "check": "node scripts/check.ts",
     "export:csv": "node scripts/export-csv.ts",
-    "capture": "node scripts/capture.ts"
+    "capture": "node scripts/capture.ts",
+    "links:index": "node scripts/link-index.ts",
+    "links:apply": "node scripts/apply-links.ts"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",

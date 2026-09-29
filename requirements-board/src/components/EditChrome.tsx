@@ -39,7 +39,8 @@ export function EditActions<T>({ ed }: { ed: EditableRecord<T> }) {
     <>
       <span className="hint">
         <kbd>⌘</kbd>
-        <kbd>S</kbd> save · <kbd>Esc</kbd> cancel
+        <kbd>S</kbd> save · <kbd>⌘</kbd>
+        <kbd>K</kbd> link to a card · <kbd>Esc</kbd> cancel
       </span>
       <span className="spacer" />
       <button className="btn ghost" onClick={ed.cancelEdit}>

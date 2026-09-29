@@ -62,6 +62,8 @@ export interface Item {
   order: number
   /** Stories only: the Mapped board's swim lane, by name (one of `Layout.lanes`), or null for the unnamed first lane. */
   swimlane: string | null
+  /** Items this one is related to, by ID (epics, features, stories). Stored on one side, shown on both. */
+  related: string[]
   images: ImageRef[]
   description: string
   /** `## Acceptance criteria` section: Markdown, typically one criterion per list item. */

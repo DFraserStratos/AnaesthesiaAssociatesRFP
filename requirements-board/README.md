@@ -17,6 +17,8 @@ npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `ts
 npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
+npm run links:index  # compact catalogue index for the linking agents (.links/index.md)
+npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
 ```
 
 From the repo root, `npm run dev` starts this, the prototype and the mobile PWA together.
@@ -47,7 +49,8 @@ server/
   historyJournal.ts  the per-card change journal (.history/, gitignored)
   gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets, folder watcher → HMR events
-scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable)
+scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
+               link-index, apply-links (+ linkProposals: the applier, testable)
 src/
   store.ts       catalogue mirror + derived index + view prefs
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
@@ -137,3 +140,22 @@ gallery has one tab per app present, in that order; untagged images fall back to
   (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.
   A file counts as generated when its name starts with an app and a dash (`scripts/captureFiles.ts`),
   so give hand-added screenshots another prefix (`hand-dashboard.png`, not `web-dashboard.png`).
+
+### Linking requirements
+
+Text links (`[words](US-06.1.1)`), bare IDs and the `related` field are described under Links in
+`catalogue/SCHEMA.md`; `shared/links.ts` is the one parser the check, the board and the scripts share.
+To link the whole catalogue with agents, from the repo root:
+
+1. `npm --prefix requirements-board run links:index` writes `requirements-board/.links/index.md`
+   (gitignored): one line per live item, which every agent reads to find targets.
+2. Run the saved workflow **link-requirements** (`.claude/workflows/link-requirements.js`): one
+   Sonnet agent per batch of epics proposes links, and a second Sonnet agent per batch rejects weak ones.
+   They write `<batch>.proposed.json` and `<batch>.verified.json` into `.links/` and edit nothing.
+   Pass `batches: [["EP-06"]]` to try one epic first.
+3. `npm --prefix requirements-board run links:apply -- --dry-run` checks every accepted proposal
+   again against the files and writes `.links/links-report.md`; without `--dry-run` it writes the
+   files through the board's serialiser, refusing if that would add a check error. Re-running skips
+   what is already applied.
+4. `npm run check`, then review the diff.
+

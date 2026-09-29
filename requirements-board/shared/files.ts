@@ -9,7 +9,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
 
 const FENCE = '---'
-export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'images']
+export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'images']
 export const QUESTION_KEYS = ['id', 'kind', 'title', 'status', 'owner', 'affects', 'sources']
 export const ACCEPTANCE_HEADING = '## Acceptance criteria'
 export const TECHNICAL_HEADING = '## Technical discussion'
@@ -130,6 +130,7 @@ export function toItem(
     sources: strList(meta.sources),
     order: Number.isFinite(order) ? order : 0,
     swimlane: meta.swimlane === null || meta.swimlane === undefined || str(meta.swimlane).trim() === '' ? null : str(meta.swimlane).trim(),
+    related: strList(meta.related).map((r) => r.trim()),
     images: images(meta.images),
     description: str(description),
     acceptance: str(acceptance),
@@ -273,6 +274,7 @@ export function serialiseItem(item: Item): string {
   meta.sources = item.sources
   meta.order = item.order
   if (item.swimlane) meta.swimlane = item.swimlane
+  if (item.related.length) meta.related = item.related
   meta.images = item.images.map((i) => {
     const img: Record<string, unknown> = { src: i.src, viewport: i.viewport }
     if (i.app) img.app = i.app

@@ -6,7 +6,7 @@ import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, isRetiredOrUnder, useCatalogue, useIndex, type Index } from '../store.ts'
 import { KIND_HELP, KIND_LABEL, typeClass } from '../vocab.ts'
 import { TypeIcon } from './bits.tsx'
-import { AffectsPicker, ParentPicker } from './ItemPicker.tsx'
+import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
 
 type CardKind = ItemType | 'question'
 const KINDS: readonly CardKind[] = [...ITEM_TYPES, 'question']
@@ -189,7 +189,7 @@ function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraf
           </div>
           <div className="field">
             <span>Affects · optional</span>
-            <AffectsPicker value={draft.affects} index={index} onChange={(affects) => set({ affects })} />
+            <ItemsPicker value={draft.affects} index={index} onChange={(affects) => set({ affects })} />
           </div>
         </>
       )}

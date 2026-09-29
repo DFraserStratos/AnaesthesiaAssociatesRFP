@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { isQuestionId } from '../shared/links.ts'
 
 /**
  * The docked item panel on the board registers its unsaved-edit guard here, so
@@ -46,6 +47,14 @@ export function useOpen() {
     clearEdit: () => withParams({ edit: null }, location.pathname, true),
     params,
   }
+}
+
+/**
+ * A link to a record's sheet on the board, for pasting anywhere: over a selection in a Markdown
+ * field it becomes `[selection](ID)` (see `pasteLink`).
+ */
+export function recordUrl(id: string): string {
+  return `${location.origin}${location.pathname}#/board?${isQuestionId(id) ? 'question' : 'item'}=${encodeURIComponent(id)}`
 }
 
 /**

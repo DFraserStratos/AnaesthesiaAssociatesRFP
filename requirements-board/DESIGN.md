@@ -63,8 +63,17 @@ scrolls) and as the modal elsewhere.
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
 - Then the title, description, acceptance criteria, technical discussion, notes, open questions,
-  children, screenshots. Empty sections are not shown. Cards never show acceptance criteria or
+  children, screenshots, related. Empty sections are not shown. Cards never show acceptance criteria or
   technical discussion; their excerpt is the description only.
+- **Links in the text** to another card keep the author's words in ink with a teal underline
+  (teal is the action colour) and open that card in place. A bare ID in the text reads as the
+  card's type icon and title, never the code; a question's shows the question mark in Open amber.
+  A link to a retired card is muted with a dotted underline; one to nothing is grey with a dotted
+  red underline and says so in its tooltip.
+- **Related** sits under the screenshots: the relations either card stores, as the same rows as
+  the children list (name, then status pill), then a quiet "Mentioned in" subhead over the cards
+  whose text mentions this one. Outgoing text links are not repeated there, since the text already
+  shows them.
 - Footer (read mode): Find on board, **History**, Retire, then Edit on the right. History swaps the
   body for the card's timeline, read like the chart's time column: times in a left gutter, a
   trace beside them with one mark per change (filled: the board, ring: an edit on disk, square: a
@@ -77,7 +86,10 @@ scrolls) and as the modal elsewhere.
 - Bottom: **Status** (the pill alone, pressable without Edit: a quiet chevron in the pill, and a
   small menu opens upward listing each status pill beside a line on what it means; picking one
   saves at once, and Retired still asks first, as the Retire button does), **Swimlane** (stories in a named lane only; Unassigned is the
-  baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right.
+  baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right. Clicking the ID copies
+  a link to the card ("Link copied" for a moment); pasted over selected words in any Markdown field
+  it makes them a link to that card, and Cmd+K over a selection picks the card by title. The
+  question sheet's ID does the same.
 
 ## Interaction
 

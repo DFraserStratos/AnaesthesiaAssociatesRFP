@@ -3,6 +3,7 @@
  * its ID, or the title of the epic or feature it sits under. Kept free of
  * React so the node tests can import it.
  */
+import { plainText } from '../shared/links.ts'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import type { Item, ItemType } from '../shared/types.ts'
 
@@ -112,7 +113,7 @@ export function matchContext(index: SearchIndex, item: Item, query: string, span
   const missing = words(query.trim().toLowerCase()).filter((w) => !name.includes(w))
   if (!missing.length) return null
   for (const [k, label] of CONTEXT_FIELDS) {
-    const text = item[k].replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim()
+    const text = plainText(item[k]).replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim()
     const lower = text.toLowerCase()
     const w = missing.find((m) => lower.includes(m))
     if (!w) continue

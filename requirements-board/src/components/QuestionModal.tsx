@@ -6,10 +6,11 @@ import { ApiError } from '../api.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
 import { ITEM_STATUS_HELP, KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
-import { ItemName, Prose, StatusLabel } from './bits.tsx'
+import { CopyLink, ItemName, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
-import { AffectsPicker } from './ItemPicker.tsx'
+import { ItemsPicker } from './ItemPicker.tsx'
 import { MarkdownTextarea } from './MarkdownTextarea.tsx'
+import { Prose } from './Prose.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
 
@@ -154,7 +155,9 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
   return (
     <>
       <div className="sheet-id">
-        <span className="mono">{q.id}</span>
+        <CopyLink id={q.id} className="mono">
+          {q.id}
+        </CopyLink>
         <span title={KIND_HELP[q.kind]}>{KIND_LABEL[q.kind]}</span>
       </div>
       <h2>{q.title}</h2>
@@ -330,7 +333,7 @@ function EditForm({ draft, set, index, answerRef }: { draft: Question; set: (p: 
       </label>
       <div className="field">
         <span>Affects</span>
-        <AffectsPicker value={draft.affects} index={index} onChange={(affects) => set({ affects })} />
+        <ItemsPicker value={draft.affects} index={index} onChange={(affects) => set({ affects })} />
       </div>
       <label className="field">
         <span>Sources · one per line</span>

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
-import Markdown from 'react-markdown'
+import { useEffect, useState, type ReactNode } from 'react'
 import { TYPE_LABEL, type Component, type Item, type ItemType } from '../../shared/types.ts'
+import { recordUrl } from '../nav.ts'
 import { COMPONENT_CODE, statusClass, statusLabel, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
@@ -69,11 +69,22 @@ export function Glyph({ component }: { component: string }) {
   )
 }
 
-export function Prose({ text, small }: { text: string; small?: boolean }) {
+/**
+ * A record's ID that copies a link to the record when clicked. Pasted over selected text in any
+ * Markdown field, the link turns the selection into a link to the record.
+ */
+export function CopyLink({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1600)
+    return () => clearTimeout(t)
+  }, [copied])
+  const copy = () => void navigator.clipboard?.writeText(recordUrl(id)).then(() => setCopied(true), () => {})
   return (
-    <div className={`prose${small ? ' small' : ''}`}>
-      <Markdown>{text}</Markdown>
-    </div>
+    <button type="button" className={`copy-link${className ? ` ${className}` : ''}`} onClick={copy} title="Copy a link to this card, to paste over text in a description or note">
+      {copied ? 'Link copied' : children}
+    </button>
   )
 }
 

@@ -10,6 +10,7 @@ export const item = (over: Partial<Item> & Pick<Item, 'id'>): Item => ({
   sources: [],
   order: 1,
   swimlane: null,
+  related: [],
   images: [],
   description: '',
   acceptance: '',

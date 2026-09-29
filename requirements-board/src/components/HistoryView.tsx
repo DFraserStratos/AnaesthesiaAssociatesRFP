@@ -194,6 +194,27 @@ function ChangeRow({ change: c, index, firstLane }: { change: FieldChange; index
         </div>
       )
     }
+    case 'related': {
+      const { added, removed } = setDiff(c.from as string[], c.to as string[])
+      return (
+        <div className="hist-row">
+          <span className="hist-field">Related</span>
+          <ul className="hist-lines">
+            {added.map((id) => (
+              <li key={`+${id}`} className="add">
+                <Named id={id} index={index} />
+              </li>
+            ))}
+            {removed.map((id) => (
+              <li key={`-${id}`} className="del">
+                <Named id={id} index={index} />
+              </li>
+            ))}
+            {!added.length && !removed.length && <li className="quiet">Reordered</li>}
+          </ul>
+        </div>
+      )
+    }
     case 'images': {
       const key = (i: ImageRef) => i.src
       const { added, removed } = setDiff((c.from as ImageRef[]).map(key), (c.to as ImageRef[]).map(key))
