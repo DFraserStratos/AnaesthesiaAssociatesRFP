@@ -35,6 +35,8 @@ sources:
   - "Q&A 2026-09-24 #7"
 order: 1
 swimlane: MVP
+related:
+  - US-01.2.1
 images: []
 ---
 
@@ -66,6 +68,7 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop"` (a file in `notes/`), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
+| `related` | Optional: items this one is related to, by ID (epics, features, stories; never an `OQ-nn`). A relation is **stored on one side only** and the board shows it on both cards, so list it on whichever card you are editing and never on both (`check` warns). Omitted when empty. For couplings the text doesn't name (a setting and the rule that reads it, a UI story and its engine story, the step before or after); a card the text already links to needs no entry. See Links below. |
 | `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is `admin`, `web`, `mobile` or `simulator` and groups the board's gallery; a `mobile` app shot should have `viewport: mobile`. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the capture runner (`requirements-board/scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
 Body: the description (plain language: who or what acts and what happens, then why in its own
@@ -84,6 +87,38 @@ containing `#`, `: ` or that looks like a number in double quotes. The board wri
 and `check` warns when a hand edit trips over it.
 
 Any other frontmatter key is kept as-is by the board, so you can add fields without breaking it.
+
+## Links
+
+Any Markdown text (an item's description and sections, a question and its answer) can link to
+another record:
+
+- **A text link**: `[the anaesthetist's prepaid set](US-06.1.1)`, standard Markdown whose target
+  is a record ID. The words stay as written; the board makes them open that card. Link the words
+  that name the thing, not a whole sentence, and don't reword the text to fit a link.
+- **A bare ID** in running text, `(OQ-25)`, is a link too: the board shows it as the record's
+  title. A title in brackets straight after the ID, as in `the former US-01.3.4 (AM and PM can
+  differ)`, is folded into it.
+
+Neither counts inside code (backticks or a fenced block). The board lists, under **Related** on each
+card, the `related` entries from both sides and then the cards whose text mentions it ("Mentioned
+in"), leaving out its own lineage and children, which the card already shows.
+
+When adding links (by hand or by an agent):
+
+- Link a phrase when another item **defines** the rule, concept or behaviour it names. US-06.2.1's
+  "RVG code in the anaesthetist's prepaid set" is defined by US-06.1.1, so it links there.
+- Link the most specific item (a story over its feature over its epic). Don't link an item to
+  itself, its own parent or epic, or its own children. Don't link to a Retired item, and don't edit
+  Retired items.
+- Link the first mention in each section only, and keep it to about four text links per item.
+- Leave everyday domain nouns (Booking, List, Procedure, Contract, anaesthetist) unlinked unless
+  the sentence relies on the specific rule a particular item states.
+- Use `related` for items that are coupled but not named in the text: a setting and the rule that
+  reads it (US-06.1.1 and US-06.2.1), a UI story and its engine story, one step and the step after it.
+  About four per item at most; being siblings is not enough.
+- In the board, copy a card's link by clicking its ID (bottom right of its sheet), then select
+  words in any Markdown field and paste. Cmd+K over a selection picks the card by title instead.
 
 ## Outstanding item file
 
@@ -141,8 +176,11 @@ lane's included, are unique regardless of case.
 
 `npm run check` (from the repo root) and every save in the board run the same checks: unique IDs,
 ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values,
-`affects` targets exist, image files exist under `assets/`, and (as warnings) a `swimlane` sits only on a
-story and names a lane in `board-layout.json`. The board refuses a save that would add
+`affects` targets exist, `related` entries are existing items (not the item itself, not a question),
+a text link to an epic, feature or story names one that exists, image files exist under `assets/`,
+and (as warnings) a `swimlane` sits only on a story and names a lane in `board-layout.json`; a
+relation listed on both cards or twice; a link or relation to a Retired item; a bare ID, or a link
+to a question, that names nothing (questions can be deleted, so this never blocks a delete). The board refuses a save that would add
 an error. A file that fails to parse, or whose `id:` differs from its file name, is left out of the board and
 listed under Checks until fixed; its ID stays reserved, so nothing new is ever written
 over it.
@@ -150,8 +188,9 @@ over it.
 ## Conventions
 
 - **No deletes for items.** Retire an item by setting `status: Retired`; the ID stays taken.
-- **Questions can be deleted** (the board's Delete, or remove the file): nothing points at a
-  question, so no other file changes. Deleting the highest `OQ-nn` frees that number for the next
+- **Questions can be deleted** (the board's Delete, or remove the file): no other file changes. A
+  text link to the deleted question becomes a `check` warning, and the board shows it as a
+  broken link until the text is fixed. Deleting the highest `OQ-nn` frees that number for the next
   new question, so prefer answering one that was simply settled.
 - **New IDs**: next free number under the parent (the board assigns them). By hand: look at the
   highest sibling ID and add one.
