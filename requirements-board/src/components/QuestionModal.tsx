@@ -1,8 +1,10 @@
-import { CheckCircle2, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
+import { useLocation } from 'react-router-dom'
 import { tidyText } from '../../shared/files.ts'
-import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type Rev } from '../../shared/types.ts'
+import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type QuestionStatus, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
+import { questionWalk, useQuestionFilters } from '../questionWalk.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
 import { ITEM_STATUS_HELP, KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
@@ -30,6 +32,8 @@ export function QuestionModal({ id }: { id: string }) {
   const deleteQuestion = useCatalogue((s) => s.deleteQuestion)
   const index = useIndex()
   const open = useOpen()
+  /** Where this question sat in the list when it was opened: answering it doesn't move it for stepping. */
+  const [anchorStatus] = useState(() => rec?.data.status)
   /** The items to offer a new status (Verify or Confirmed) after the question is answered. */
   const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
@@ -117,6 +121,7 @@ export function QuestionModal({ id }: { id: string }) {
           </button>
         </nav>
         <span className="spacer" />
+        {anchorStatus && <QuestionStepper id={id} anchorStatus={anchorStatus} leave={ed.leave} />}
         <button className="btn icon ghost" onClick={() => ed.leave(open.close)} aria-label="Close">
           <X size={18} />
         </button>
@@ -147,6 +152,35 @@ export function QuestionModal({ id }: { id: string }) {
         )}
       </footer>
     </Sheet>
+  )
+}
+
+/**
+ * Previous and next through the Outstanding items list as it is filtered on screen, so answering
+ * one leads straight to the next. Only over that list: opened from the board there is no list.
+ */
+function QuestionStepper({ id, anchorStatus, leave }: { id: string; anchorStatus: QuestionStatus; leave: (go: () => void) => void }) {
+  const open = useOpen()
+  const index = useIndex()
+  const filters = useQuestionFilters()
+  const onList = useLocation().pathname === '/questions'
+  const walk = useMemo(() => questionWalk(index.questions, filters, { id, status: anchorStatus }), [index, filters, id, anchorStatus])
+  const at = walk.findIndex((q) => q.id === id)
+  if (!onList || at < 0) return null
+  const prev = at > 0 ? walk[at - 1] : undefined
+  const next = walk[at + 1]
+  return (
+    <>
+      <button className="btn icon ghost" disabled={!prev} onClick={() => prev && leave(() => open.question(prev.id))} title={prev ? `Previous: ${prev.title}` : undefined} aria-label="Previous question">
+        <ChevronLeft size={17} />
+      </button>
+      <span className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+        {at + 1} of {walk.length}
+      </span>
+      <button className="btn icon ghost" disabled={!next} onClick={() => next && leave(() => open.question(next.id))} title={next ? `Next: ${next.title}` : undefined} aria-label="Next question">
+        <ChevronRight size={17} />
+      </button>
+    </>
   )
 }
 

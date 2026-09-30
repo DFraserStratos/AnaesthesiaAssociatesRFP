@@ -6,6 +6,8 @@
  *   PUT  /api/items/:id          { record, baseRev }  409 if the file on disk is not at baseRev
  *   POST /api/items/batch        { changes: [{ id, baseRev, patch }] }  all or nothing (a Mapped board move)
  *   POST /api/items              { type, parent, title, ... }  server assigns the ID
+ *   DELETE /api/items/:id       { baseRev, ids }  removes it and everything under it (`ids`: the set the user
+ *                                was shown, 409 if that is no longer it) and every reference to them
  *   PUT  /api/questions/:id      { record, baseRev }
  *   DELETE /api/questions/:id   { baseRev }  removes the file; 409 if it changed on disk since baseRev
  *   POST /api/questions          { title, ... }
@@ -24,9 +26,12 @@ import { itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, par
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildTimeline } from '../shared/history.ts'
 import { laneListProblem } from '../shared/move.ts'
+import { planDelete } from '../shared/remove.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
   FileExistsError,
+  deleteItemAssets,
+  deleteItemFile,
   deleteQuestionFile,
   fileExistsIn,
   issuesFor,
@@ -228,6 +233,49 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       if (current.data.type !== item.type) throw new HttpError(422, `${id}: the type of an item cannot change`)
       guard([...itemList().filter((i) => i.id !== id), item], questionList())
       return commitItem(item, false)
+    }
+
+    if (m && method === 'DELETE') {
+      const id = decodeURIComponent(m[1]!)
+      // The plan rewrites records across the catalogue, so plan it from the folder as it is right now.
+      syncFromDisk()
+      checkBase(itemOnDisk(id), id, body.baseRev)
+      const plan = planDelete(itemList(), questionList(), id)
+      const doomed = plan.doomed.map((i) => i.id)
+      const shown = Array.isArray(body.ids) ? [...(body.ids as unknown[])].map(String).sort() : null
+      if (!shown) throw new HttpError(400, 'ids is required: send the items you are deleting, the item and everything under it')
+      if (JSON.stringify(shown) !== JSON.stringify([...doomed].sort())) {
+        throw new HttpError(409, `what sits under ${id} changed since you asked; look again before deleting`)
+      }
+      const rewrites = new Map(plan.items.map((it) => [it.id, prepareItem(it)]))
+      const qRewrites = new Map(plan.questions.map((q) => [q.id, prepareQuestion(q)]))
+      guard(
+        [...itemList().filter((i) => !doomed.includes(i.id) && !rewrites.has(i.id)), ...rewrites.values()],
+        [...questionList().filter((q) => !qRewrites.has(q.id)), ...qRewrites.values()],
+      )
+
+      // References first, then the files: a failure part way leaves dangling links at worst, never a lost record.
+      const records = [...rewrites.values()].map((item) => commitItem(item, false))
+      const questions = [...qRewrites.values()].map((q) => commitQuestion(q, false))
+      const keptImages = new Set(itemList().filter((i) => !doomed.includes(i.id)).flatMap((i) => i.images.map((img) => img.src.split('/')[1])))
+      for (const x of doomed) {
+        deleteItemFile(x, root)
+        if (!keptImages.has(x)) deleteItemAssets(x, root)
+        delete state.items[x]
+        journal.forget(x)
+        emit({ kind: 'item', id: x, record: null })
+      }
+      const onDisk = readLayout(root)
+      if (!onDisk.error && doomed.some((x) => onDisk.layout.positions[x])) {
+        const positions = { ...onDisk.layout.positions }
+        for (const x of doomed) delete positions[x]
+        state.layout = { ...onDisk.layout, positions }
+        writeLayout(state.layout, root)
+        emit({ kind: 'layout', layout: state.layout })
+      }
+      refreshIssues()
+      emit({ kind: 'issues', issues: state.issues })
+      return { deleted: doomed, records, questions }
     }
 
     if (path === '/api/items/batch' && method === 'POST') {

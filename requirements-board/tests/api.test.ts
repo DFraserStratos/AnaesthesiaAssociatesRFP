@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -389,5 +389,53 @@ describe('deleting a question', () => {
     expect(status(() => call(a, 'DELETE', '/api/questions/OQ-01', {}))).toBe(400)
     expect(status(() => call(a, 'DELETE', '/api/questions/OQ-99', { baseRev: 'x' }))).toBe(404)
     expect(existsSync(questionPath('OQ-01', root))).toBe(true)
+  })
+})
+
+describe('deleting an item', () => {
+  const del = (a: ReturnType<typeof api>, id: string, ids: string[], baseRev = recOf(a, id).rev) => call(a, 'DELETE', `/api/items/${id}`, { baseRev, ids })
+
+  it('removes a story, its layout position and its screenshots, and tells the clients', () => {
+    writeLayout({ positions: { 'US-01.1.2': { x: 1, y: 2 }, 'US-01.1.1': { x: 3, y: 4 } }, lanes: [] }, root)
+    mkdirSync(join(root, 'assets', 'US-01.1.2'), { recursive: true })
+    writeFileSync(join(root, 'assets', 'US-01.1.2', 'shot.png'), 'png')
+    const a = api()
+    expect(del(a, 'US-01.1.2', ['US-01.1.2'])).toMatchObject({ deleted: ['US-01.1.2'] })
+    expect(existsSync(itemPath('US-01.1.2', root))).toBe(false)
+    expect(existsSync(join(root, 'assets', 'US-01.1.2'))).toBe(false)
+    expect(Object.keys(loadCatalogue(root).layout.positions)).toEqual(['US-01.1.1'])
+    expect(a.getState().items['US-01.1.2']).toBeUndefined()
+    expect(events).toContainEqual({ kind: 'item', id: 'US-01.1.2', record: null })
+  })
+
+  it('takes everything under an epic, and strips references from the records that stay', () => {
+    writeItem(item({ id: 'EP-02', type: 'epic', related: ['FT-01.1', 'EP-01'], description: 'See [the feature](FT-01.1) and `[code](FT-01.1)`.' }), root)
+    const a = api()
+    const res = del(a, 'EP-01', ['EP-01', 'FT-01.1', 'US-01.1.1', 'US-01.1.2']) as { deleted: string[] }
+    expect(res.deleted).toEqual(['US-01.1.1', 'US-01.1.2', 'FT-01.1', 'EP-01'])
+    const cat = loadCatalogue(root)
+    expect(Object.keys(cat.items)).toEqual(['EP-02'])
+    expect(cat.items['EP-02']!.data.related).toEqual([])
+    expect(cat.items['EP-02']!.data.description).toBe('See the feature and `[code](FT-01.1)`.')
+    expect(cat.questions['OQ-01']!.data.affects).toEqual([])
+    expect(cat.issues.filter((i) => i.severity === 'error')).toEqual([])
+  })
+
+  it('refuses when what sits under it is not what the user was shown, and deletes nothing', () => {
+    const a = api()
+    expect(status(() => del(a, 'FT-01.1', ['FT-01.1', 'US-01.1.1']))).toBe(409)
+    expect(status(() => call(a, 'DELETE', '/api/items/FT-01.1', { baseRev: recOf(a, 'FT-01.1').rev }))).toBe(400)
+    // A story added on disk since the question was asked.
+    writeItem(item({ id: 'US-01.1.3', parent: 'FT-01.1' }), root)
+    expect(status(() => del(a, 'FT-01.1', ['FT-01.1', 'US-01.1.1', 'US-01.1.2']))).toBe(409)
+    expect(existsSync(itemPath('FT-01.1', root))).toBe(true)
+    expect(existsSync(itemPath('US-01.1.1', root))).toBe(true)
+  })
+
+  it('refuses a stale baseRev and an item that does not exist', () => {
+    const a = api()
+    expect(status(() => del(a, 'US-01.1.2', ['US-01.1.2'], 'stale'))).toBe(409)
+    expect(status(() => call(a, 'DELETE', '/api/items/US-09.9.9', { baseRev: 'x', ids: ['US-09.9.9'] }))).toBe(404)
+    expect(existsSync(itemPath('US-01.1.2', root))).toBe(true)
   })
 })

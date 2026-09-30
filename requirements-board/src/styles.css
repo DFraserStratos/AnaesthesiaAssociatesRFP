@@ -581,8 +581,6 @@ button.seg:focus-visible {
 .board .react-flow {
   --xy-background-color: var(--paper);
   --xy-edge-stroke: var(--rule-strong);
-  --xy-minimap-background-color: var(--card);
-  --xy-minimap-mask-background-color: rgba(237, 242, 240, 0.72);
   --xy-selection-background-color: color-mix(in srgb, var(--teal) 8%, transparent);
   --xy-selection-border: 1px dashed var(--teal);
   --xy-controls-button-background-color: var(--card);
@@ -590,12 +588,58 @@ button.seg:focus-visible {
 .board .react-flow__attribution {
   display: none;
 }
-.board .react-flow__minimap {
+/* The minimap (BoardMinimap.tsx): the whole map, the view outlined in teal, the zoom row under it. */
+.board .minimap {
   margin-bottom: 80px; /* above the new-card plus */
+  background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow-tag);
+}
+.minimap-map {
+  display: block;
+  background: var(--paper);
+  cursor: pointer;
+  touch-action: none;
+}
+.minimap-lane {
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+}
+.minimap-mask {
+  fill: rgba(31, 43, 48, 0.07);
+  pointer-events: none;
+}
+.minimap-view {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.minimap-open {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2;
+}
+.minimap-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--rule);
+}
+.minimap-zoom .gap {
+  flex: 1;
+}
+.minimap-zoom .btn.icon {
+  width: 28px;
+  padding: 0;
+}
+.minimap-pct {
+  min-width: 52px;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
 }
 .board .react-flow__edge-path {
   stroke-width: 1.25;
@@ -1478,6 +1522,29 @@ mark {
 }
 .section-head .btn {
   margin-left: auto;
+}
+.section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -4px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.section-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.section-toggle .chev {
+  transition: transform 0.15s ease;
+}
+.section-toggle[aria-expanded='true'] .chev {
+  transform: rotate(90deg);
 }
 .prose {
   font-size: 16px;

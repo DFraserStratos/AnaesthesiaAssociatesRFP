@@ -1,12 +1,12 @@
 import {
   Background,
   BackgroundVariant,
-  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
   useStore,
+  useStoreApi,
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
@@ -14,6 +14,7 @@ import { Filter, LayoutGrid, Map as MapIcon, Maximize, Redo2, Sparkles, Undo2, X
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
+import { BoardMinimap } from '../board/BoardMinimap.tsx'
 import { BoardSearch } from '../board/BoardSearch.tsx'
 import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
 import type { CardData, CardNodeType } from '../board/cardData.ts'
@@ -23,7 +24,8 @@ import { LaneHeaders } from '../board/LaneHeaders.tsx'
 import { RiseEdge } from '../board/RiseEdge.tsx'
 import { wheelGestures } from '../board/trackpad.ts'
 import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, type MarkerNodeType } from '../board/LaneNode.tsx'
-import { dropTarget, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
+import { dropTarget, LANE_HEAD, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
+import { boundsOf, clampViewport, panExtent, type Bounds } from '../board/panLimits.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { rankMatches } from '../itemSearch.ts'
@@ -51,8 +53,6 @@ const DOCK_MIN = 380
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
-/** Minimap blocks by type. The minimap paints SVG fills, not CSS, so these mirror the --ty-* tokens in styles.css. */
-const TYPE_HEX = { epic: '#e06c00', feature: '#773b93', story: '#009ccc' } as const
 /** The platform's undo modifier, for button titles. */
 const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'
 /** How much of a wide card (an epic) must be on screen to count as in view. */
@@ -140,6 +140,17 @@ function Board({ mode }: { mode: BoardMode }) {
   const dockPx = selected ? openDockPx : 0
   const dockRef = useRef(openDockPx)
   dockRef.current = openDockPx
+  const store = useStoreApi<BoardNode>()
+  // What the board's own moves (trackpad pan, centring, search) are held to; drags and wheel zoom get the same via React Flow's extent (PanLimits).
+  const limitsRef = useRef<{ bounds: Bounds | null; dock: number }>({ bounds: null, dock: 0 })
+  // `dock` overrides what is covered on the left: centring for a panel that is only now opening, or clear of the search list.
+  const limit = useCallback(
+    (vp: Viewport, dock = limitsRef.current.dock) => {
+      const { width, height } = store.getState()
+      return clampViewport(vp, limitsRef.current.bounds, { w: width, h: height, dock })
+    },
+    [store],
+  )
 
   /** Open a card in the panel (or close it). Swapping cards replaces history, so Back doesn't replay every click. */
   const select = (id: string | null, after?: () => void) =>
@@ -156,7 +167,7 @@ function Board({ mode }: { mode: BoardMode }) {
     return wheelGestures(pane, {
       pan: (dx, dy) => {
         const vp = rf.getViewport()
-        void rf.setViewport({ x: vp.x - dx, y: vp.y - dy, zoom: vp.zoom })
+        void rf.setViewport(limit({ x: vp.x - dx, y: vp.y - dy, zoom: vp.zoom }))
       },
       // Zoom about the pointer, within the canvas's own limits.
       zoom: (factor, cx, cy) => {
@@ -166,10 +177,10 @@ function Board({ mode }: { mode: BoardMode }) {
         const vp = rf.getViewport()
         const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, vp.zoom * factor))
         const s = zoom / vp.zoom
-        void rf.setViewport({ x: px - (px - vp.x) * s, y: py - (py - vp.y) * s, zoom })
+        void rf.setViewport(limit({ x: px - (px - vp.x) * s, y: py - (py - vp.y) * s, zoom }))
       },
     })
-  }, [rf])
+  }, [rf, limit])
 
   useEffect(() => {
     try {
@@ -304,6 +315,16 @@ function Board({ mode }: { mode: BoardMode }) {
   }
   const toggleLane = (key: string) => view.set({ collapsedLanes: collapsedLanes.has(key) ? view.collapsedLanes.filter((k) => k !== key) : [...view.collapsedLanes, key] })
 
+  // The map's extent, which the board never pans far past: Mapped's whole strip (lane rules and the add-lane row included), Freeform's cards.
+  const bounds = useMemo<Bounds | null>(
+    () =>
+      map
+        ? { x: -LANE_MARGIN, y: 0, w: map.width + 2 * LANE_MARGIN, h: map.height + LANE_HEAD }
+        : boundsOf(nodes.flatMap((n) => (n.type === 'card' && !n.hidden ? [{ x: n.position.x, y: n.position.y, w: n.data.w, h: n.data.h }] : []))),
+    [map, nodes],
+  )
+  limitsRef.current = { bounds, dock: dockPx }
+
   // Mapped draws no connectors except the open card's lineage, and none mid-drag (the map is reflowing).
   const edges = useMemo(() => (!mapped ? buildEdges(graph) : lineage && !previewing ? buildEdges(graph, { mapped: true }) : []), [mapped, graph, lineage, previewing])
 
@@ -314,10 +335,12 @@ function Board({ mode }: { mode: BoardMode }) {
       const w = (n.data as CardData).w
       const h = (n.data as CardData).h
       const z = zoom ?? Math.max(rf.getZoom(), 0.9)
-      // Centre it in the part of the board left visible right of `clearLeft` (the open panel by default).
-      void rf.setCenter(n.position.x + w / 2 - clearLeft / 2 / z, n.position.y + h / 2, { zoom: z, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
+      // Centre it in the part of the board left visible right of `clearLeft` (the open panel by default), within the board's limits.
+      const { width, height } = store.getState()
+      const vp = { x: (width + clearLeft) / 2 - (n.position.x + w / 2) * z, y: height / 2 - (n.position.y + h / 2) * z, zoom: z }
+      void rf.setViewport(limit(vp, clearLeft), { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
     },
-    [rf],
+    [rf, store, limit],
   )
 
   /** Is the top left of a card on screen, clear of the toolbar and the panel? */
@@ -425,9 +448,10 @@ function Board({ mode }: { mode: BoardMode }) {
     setPeek(null)
     const from = peekFrom.current
     peekFrom.current = null
-    if (restore && from) void rf.setViewport(from, { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
+    if (restore && from) void rf.setViewport(limit(from), { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
   }
 
+  const fit = () => void rf.fitView({ ...FIT, padding: { ...FIT.padding, left: `${dockPx + 24}px` }, duration: 400 })
   const tidy = (ids: string[], label: string) => setPositions(Object.fromEntries(ids.map((id) => [id, null])), { label })
   const selectedItem = selected ? index.byId.get(selected) : undefined
   const epicOfSelected = selectedItem ? (selectedItem.type === 'epic' ? selectedItem : ancestorsOf(index, selectedItem.id)[0]) : undefined
@@ -482,7 +506,10 @@ function Board({ mode }: { mode: BoardMode }) {
         >
           {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
           {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
-          {view.showMinimap && <MiniMap pannable zoomable nodeColor={(n) => (n.type === 'card' ? TYPE_HEX[(n.data as CardData).item.type] : 'transparent')} nodeBorderRadius={2} />}
+          <PanLimits bounds={bounds} dock={dockPx} limit={limit} />
+          {view.showMinimap && (
+            <BoardMinimap bounds={bounds} nodes={nodes} lanes={map?.lanes} selected={selected} dock={dockPx} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} limit={limit} onFit={fit} />
+          )}
           {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} inset={dockPx} />}
         </ReactFlow>
 
@@ -581,7 +608,7 @@ function Board({ mode }: { mode: BoardMode }) {
             >
               <Redo2 size={15} />
             </button>
-            <button className="btn icon ghost" onClick={() => void rf.fitView({ ...FIT, padding: { ...FIT.padding, left: `${dockPx + 24}px` }, duration: 400 })} aria-label="Fit the whole map" title="Fit the whole map">
+            <button className="btn icon ghost" onClick={fit} aria-label="Fit the whole map" title="Fit the whole map">
               <Maximize size={15} />
             </button>
             <button className="btn icon ghost" aria-pressed={view.showMinimap} onClick={() => view.set({ showMinimap: !view.showMinimap })} aria-label="Minimap" title="Minimap">
@@ -605,6 +632,37 @@ function Board({ mode }: { mode: BoardMode }) {
     </div>
   )
 }
+
+/**
+ * Hold React Flow's own pans and zooms (drag, mouse wheel, a drag's auto-pan) to the board's
+ * limits. The extent's padding is in screen pixels, so it is reset as the zoom, the pane or the
+ * panel changes; a component of its own so that doesn't re-render the board. Also pulls a saved
+ * viewport from an earlier session back onto the map, once.
+ */
+function PanLimits({ bounds, dock, limit }: { bounds: Bounds | null; dock: number; limit: (vp: Viewport) => Viewport }) {
+  const store = useStoreApi()
+  const zoom = useStore((s) => s.transform[2])
+  const w = useStore((s) => s.width)
+  const h = useStore((s) => s.height)
+  const panZoom = useStore((s) => s.panZoom)
+  const settled = useRef(false)
+  useEffect(() => {
+    if (!panZoom || !w || !h) return
+    store.getState().setTranslateExtent(bounds ? panExtent(bounds, zoom, { w, h, dock }) : UNBOUNDED)
+  }, [store, panZoom, bounds, zoom, w, h, dock])
+  useEffect(() => {
+    if (settled.current || !panZoom || !w || !h || !bounds) return
+    settled.current = true
+    const [x, y, z] = store.getState().transform
+    const vp = limit({ x, y, zoom: z })
+    if (vp.x !== x || vp.y !== y) void panZoom.setViewport(vp)
+  }, [store, panZoom, bounds, w, h, limit])
+  return null
+}
+const UNBOUNDED: [[number, number], [number, number]] = [
+  [-Infinity, -Infinity],
+  [Infinity, Infinity],
+]
 
 /** Mapped's non-card nodes: each lane's rule, the add button at the foot of every column in every lane, and the drop marker. */
 function mappedExtras(map: MappedLayout, index: Index, named: boolean, target: Move | null): BoardNode[] {

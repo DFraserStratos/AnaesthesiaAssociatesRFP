@@ -98,6 +98,14 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
     `lanes` in `board-layout.json`; a story names its lane in its own `swimlane` field, so renaming
     a lane rewrites its stories in one batch; the first lane (stories with no `swimlane`) is renamed
     through `firstLane` instead, so no story changes. Collapsed lanes are a per-browser preference.
+- **Delete** (item sheet footer) removes a card for good, after asking: everything under it goes
+  too, and `shared/remove.ts` (`planDelete`) works out the rest, shown in the question and applied
+  by `DELETE /api/items/:id`: other cards drop it from `related`, outstanding items from `affects`,
+  and `[text](ID)` links to it become plain text; its layout position and `assets/<ID>/` go, and its
+  journal is set aside under `.history/deleted/` so a new card given the ID starts clean. The request
+  carries the IDs the user was shown and is refused if what sits under the card has changed since.
+  Retire is still the way to keep a record. Deleting a file by hand works too (the watcher drops the
+  card), but leaves any references to it for `npm run check` to report.
 - Every card has a **History** (sheet footer): a newest-first timeline of its changes. The dev
   server journals every change it sees to a card, its own saves and moves and anyone's edit on
   disk, to `requirements-board/.history/<ID>.jsonl` (gitignored, per machine; `HISTORY_DIR`

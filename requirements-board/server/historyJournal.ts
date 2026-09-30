@@ -28,10 +28,12 @@ export interface Journal {
   /** Look for screenshots rewritten in place under `assetsDir` (the catalogue's `assets/`). */
   screenshots: (assetsDir: string, opts?: { offline?: boolean }) => void
   read: (id: string) => JournalEntry[]
+  /** The card was deleted from the board: set its journal aside, so a new card given the same ID starts clean. */
+  forget: (id: string) => void
 }
 
 /** A journal that keeps nothing: for callers (tests, scripts) that pass no folder. */
-export const NO_JOURNAL: Journal = { item() {}, position() {}, baseline() {}, screenshots() {}, read: () => [] }
+export const NO_JOURNAL: Journal = { item() {}, position() {}, baseline() {}, screenshots() {}, read: () => [], forget() {} }
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'])
 
@@ -132,6 +134,18 @@ export function createJournal(dir: string, now: () => Date = () => new Date()): 
           else if (prev.rev !== rec.rev) item(rec, 'disk', { offline: true })
         })
       }
+    },
+    forget(id) {
+      if (!safe(id)) return
+      quietly(`set aside the history of ${id}`, () => {
+        const stamp = now().toISOString().replace(/[:.]/g, '-')
+        const aside = join(dir, 'deleted')
+        for (const f of [log(id), last(id), shotsFile(id)]) {
+          if (!existsSync(f)) continue
+          mkdirSync(aside, { recursive: true })
+          renameSync(f, join(aside, `${stamp}-${f.slice(dir.length + 1)}`))
+        }
+      })
     },
     read(id) {
       if (!safe(id) || !existsSync(log(id))) return []

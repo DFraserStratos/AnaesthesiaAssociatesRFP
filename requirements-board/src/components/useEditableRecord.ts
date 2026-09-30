@@ -33,9 +33,11 @@ export interface EditableOptions<T> {
   startEditing?: boolean
   /** Runs after a successful save, with the version the edit started from. */
   onSaved?: (next: Rev<T>, before: Rev<T>) => void
+  /** Runs when an edit is left without saving (Cancel, Esc, or a way out of the sheet), once any discard is confirmed. */
+  onAbandon?: () => void
 }
 
-export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) => d, startEditing = false, onSaved }: EditableOptions<T>) {
+export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) => d, startEditing = false, onSaved, onAbandon }: EditableOptions<T>) {
   const [stored] = useState(() => drafts.get(key) as { draft: T; base: Rev<T> } | undefined)
   /** True until the restored draft is saved or dropped, so the banner shows once, not on every later edit. */
   const [restored, setRestored] = useState(!!stored)
@@ -77,6 +79,7 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
       return false
     }
     drafts.delete(key)
+    if (editing) onAbandon?.()
     go()
     return true
   }
@@ -86,6 +89,7 @@ export function useEditableRecord<T>({ key, rec, save, adopt, normalise = (d) =>
         confirm: () => {
           setPending(null)
           drafts.delete(key)
+          if (editing) onAbandon?.()
           pending.go()
         },
         cancel: () => setPending(null),

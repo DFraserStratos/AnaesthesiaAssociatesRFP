@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
 import { isRetiredOrUnder, useCatalogue, useIndex, useView } from '../store.ts'
 import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
-import { KIND_LABEL, QUESTION_GROUP_LABEL, QUESTION_GROUP_ORDER, statusClass, typeClass } from '../vocab.ts'
+import { questionFilter, shownGroups, useQuestionFilters } from '../questionWalk.ts'
+import { KIND_LABEL, QUESTION_GROUP_LABEL, statusClass, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
 
 export function QuestionsView() {
@@ -11,20 +12,12 @@ export function QuestionsView() {
   const showRetired = useView((s) => s.showRetired)
   const open = useOpen()
   const createQuestion = useCatalogue((s) => s.createQuestion)
-  const [owner, setOwner] = useState('')
-  const [kind, setKind] = useState<QuestionKind | ''>('')
-  const [query, setQuery] = useState('')
-  const [showAnswered, setShowAnswered] = useState(true)
+  const filters = useQuestionFilters()
+  const { owner, kind, query, showAnswered, set: setFilters } = filters
 
   const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
-  const shown = index.questions.filter((q) => {
-    if (owner && q.owner !== owner) return false
-    if (kind && q.kind !== kind) return false
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    const hay = `${q.id} ${q.title} ${q.question} ${q.answer} ${q.affects.join(' ')}`.toLowerCase()
-    return words.every((w) => hay.includes(w))
-  })
-  const groups = QUESTION_GROUP_ORDER.filter((s) => showAnswered || s !== 'Answered')
+  const shown = index.questions.filter((q) => questionFilter(q, filters))
+  const groups = shownGroups(filters)
     .map((status) => ({ status, list: shown.filter((q) => q.status === status) }))
     .filter((g) => g.list.length)
 
@@ -97,9 +90,9 @@ export function QuestionsView() {
           <label className="search">
             <Search size={15} />
             <span className="sr-only">Search outstanding items</span>
-            <input className="input" placeholder="Search outstanding items" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input className="input" placeholder="Search outstanding items" value={query} onChange={(e) => setFilters({ query: e.target.value })} />
           </label>
-          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as QuestionKind | '')} aria-label="Kind">
+          <select className="select" value={kind} onChange={(e) => setFilters({ kind: e.target.value as QuestionKind | '' })} aria-label="Kind">
             <option value="">All kinds</option>
             {QUESTION_KINDS.map((k) => (
               <option key={k} value={k}>
@@ -109,13 +102,13 @@ export function QuestionsView() {
               </option>
             ))}
           </select>
-          <select className="select" value={owner} onChange={(e) => setOwner(e.target.value)} aria-label="Owner">
+          <select className="select" value={owner} onChange={(e) => setFilters({ owner: e.target.value })} aria-label="Owner">
             <option value="">All owners</option>
             {owners.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>
-          <button className="btn" aria-pressed={showAnswered} onClick={() => setShowAnswered((v) => !v)}>
+          <button className="btn" aria-pressed={showAnswered} onClick={() => setFilters({ showAnswered: !showAnswered })}>
             Show answered
           </button>
         </div>

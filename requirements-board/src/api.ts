@@ -35,6 +35,12 @@ export const api = {
   /** The card's timeline, newest first: the dev server's change journal, backfilled from git. */
   itemHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/items/${encodeURIComponent(id)}/history`),
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => call<Rev<Item>>('POST', '/api/items', partial),
+  /**
+   * Removes the item and everything under it (`ids`, as the user was shown them) and strips every reference to them.
+   * Refused with a 409 if the item changed on disk since baseRev, or what sits under it is no longer `ids`.
+   */
+  deleteItem: (id: string, baseRev: string, ids: string[]) =>
+    call<{ deleted: string[]; records: Rev<Item>[]; questions: Rev<Question>[] }>('DELETE', `/api/items/${encodeURIComponent(id)}`, { baseRev, ids }),
   putQuestion: (record: Question, baseRev?: string) =>
     call<Rev<Question>>('PUT', `/api/questions/${encodeURIComponent(record.id)}`, { record, baseRev }),
   /** Removes the question's file; refused with a 409 if it changed on disk since baseRev. */

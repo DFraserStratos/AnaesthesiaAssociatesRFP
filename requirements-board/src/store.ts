@@ -39,6 +39,8 @@ interface CatalogueState {
   saveQuestion: (q: Question, baseRev?: string) => Promise<Rev<Question>>
   createQuestion: (partial: Partial<Question>) => Promise<Rev<Question>>
   deleteQuestion: (id: string, baseRev: string) => Promise<void>
+  /** Delete an item and everything under it (`ids`: that set, as shown), with every reference to them. */
+  deleteItem: (id: string, baseRev: string, ids: string[]) => Promise<void>
   /** Take the server's current copy (e.g. from a 409) into the store. */
   adoptItem: (rec: Rev<Item>) => void
   adoptQuestion: (rec: Rev<Question>) => void
@@ -154,6 +156,21 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const questions = { ...get().questions }
     delete questions[id]
     set({ questions })
+  },
+
+  async deleteItem(id, baseRev, ids) {
+    const res = await api.deleteItem(id, baseRev, ids)
+    const s = get()
+    const items = { ...s.items }
+    const questions = { ...s.questions }
+    const positions = { ...s.layout.positions }
+    for (const x of res.deleted) {
+      delete items[x]
+      delete positions[x]
+    }
+    for (const r of res.records) items[r.data.id] = r
+    for (const q of res.questions) questions[q.data.id] = q
+    set({ items, questions, layout: { ...s.layout, positions } })
   },
 
   adoptItem(rec) {

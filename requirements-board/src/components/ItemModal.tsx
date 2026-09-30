@@ -1,8 +1,9 @@
-import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, X } from 'lucide-react'
+import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
-import { COMPONENTS, ITEM_STATUSES, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { planDelete, type DeletePlan } from '../../shared/remove.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, openQuestionsFor, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
@@ -27,14 +28,29 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   // Siblings and children as shown: retired cards drop out unless the Retired toggle is on (this card always stays).
   const shown = useShownIndex(id)
   const open = useOpen()
+  const deleteItem = useCatalogue((s) => s.deleteItem)
+  // A card the board has just made opens in Edit (`?edit=`). Left without a save while still blank, it was never wanted: drop it.
+  const fresh = useEditOnOpen(id)
+  const saved = useRef(false)
+  const [dropped, setDropped] = useState(false)
   const ed = useEditableRecord<Item>({
     key: `item:${id}`,
     rec,
     save: saveItem,
     adopt: adoptItem,
     normalise,
-    startEditing: useEditOnOpen(id),
+    startEditing: fresh,
+    onSaved: () => void (saved.current = true),
+    onAbandon: () => {
+      if (!fresh || saved.current || !rec || !isBlank(rec.data) || index.children.get(id)?.length) return
+      setDropped(true)
+      deleteItem(id, rec.rev, [id]).catch(() => setDropped(false)) // refused (changed on disk meanwhile): it stays
+    },
   })
+  // Cancel leaves the sheet on the card; once it is gone, close.
+  useEffect(() => {
+    if (dropped && !rec) open.close()
+  }, [dropped, rec])
 
   // Docked beside the board, the board switches cards through this guard so a draft is never dropped silently.
   const leaveRef = useRef(ed.leave)
@@ -47,6 +63,23 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   }, [docked])
 
   const [askRetire, setAskRetire] = useState(false)
+  /** What deleting would take with it, worked out when the question is asked and sent back so the server can hold us to it. */
+  const [askDelete, setAskDelete] = useState<DeletePlan | null>(null)
+  const askToDelete = () => {
+    const s = useCatalogue.getState()
+    setAskDelete(planDelete(Object.values(s.items).map((r) => r.data), Object.values(s.questions).map((r) => r.data), id))
+  }
+  const remove = async (plan: DeletePlan) => {
+    if (!rec) return
+    setAskDelete(null)
+    try {
+      await deleteItem(id, rec.rev, plan.doomed.map((i) => i.id))
+      open.close()
+    } catch (e) {
+      if (e instanceof ApiError && e.current) adoptItem(e.current as Rev<Item>)
+      ed.setError((e as Error).message)
+    }
+  }
   /** The body shows the card, or its history timeline (read mode only; a new card opens on the card). */
   const [view, setView] = useState<'card' | 'history'>('card')
   const retire = async () => {
@@ -97,6 +130,7 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
     )
   }
 
+  if (dropped && !rec) return null
   if (!rec || !ed.draft) {
     return (
       <Sheet onClose={open.close} label="Item not found" docked={docked}>
@@ -122,7 +156,9 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
           onCancel: () => setAskRetire(false),
           onConfirm: () => void retire(),
         }
-      : null)
+      : askDelete
+        ? deleteConfirm(rec.data, askDelete, () => setAskDelete(null), () => void remove(askDelete))
+        : null)
 
   return (
     <Sheet onClose={() => ed.leave(open.close)} onKey={ed.onKey} label={`${item.id} ${item.title}`} statusClass={statusClass(item.status)} confirm={confirm} docked={docked}>
@@ -151,6 +187,9 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
                 <Archive size={15} /> Retire
               </button>
             )}
+            <button className="btn ghost danger" onClick={askToDelete}>
+              <Trash2 size={15} /> Delete
+            </button>
             <span className="spacer" />
             <button className="btn primary" onClick={() => ed.startEdit()}>
               <Pencil size={15} /> Edit
@@ -160,6 +199,35 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
       </footer>
     </Sheet>
   )
+}
+
+/** Still as the board made it: no title of its own and nothing written. */
+const isBlank = (it: Item) =>
+  (!it.title.trim() || it.title.trim() === 'Untitled') && ![it.description, it.acceptance, it.technical, it.notes].some((t) => t.trim()) && !it.images.length && !it.related.length
+
+const count = (n: number, one: string) => `${n} ${n === 1 ? one : one === 'story' ? 'stories' : `${one}s`}`
+
+/** The delete question names everything that goes and everything that changes, and points at Retire for keeping a record. */
+function deleteConfirm(item: Item, plan: DeletePlan, onCancel: () => void, onConfirm: () => void): SheetConfirm {
+  const noun = TYPE_LABEL[item.type].toLowerCase()
+  const under = plan.doomed.filter((i) => i.id !== item.id)
+  const features = under.filter((i) => i.type === 'feature').length
+  const stories = under.filter((i) => i.type === 'story').length
+  const kids = [features && count(features, 'feature'), stories && count(stories, 'story')].filter(Boolean).join(' and ')
+  const refs = [plan.items.length && count(plan.items.length, 'other item'), plan.questions.length && count(plan.questions.length, 'outstanding item')].filter(Boolean).join(' and ')
+  const body = [
+    under.length ? `Its ${kids} are deleted with it.` : '',
+    refs ? `Links to ${under.length ? 'them' : 'it'} are removed from ${refs}.` : '',
+    'The files are gone for good: only git can bring them back, and a new card may reuse the ID. To keep a record, retire it instead.',
+  ]
+  return {
+    title: `Delete this ${noun}?`,
+    body: body.filter(Boolean).join(' '),
+    cancelLabel: 'Keep it',
+    confirmLabel: under.length ? `Delete ${count(under.length + 1, 'item')}` : `Delete ${noun}`,
+    onCancel,
+    onConfirm,
+  }
 }
 
 /** Markdown fields go through `tidyText`, like a file read, so a leading code-block indent survives a save. */
@@ -234,14 +302,7 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
           </section>
         )}
 
-        {item.notes && (
-          <section className="section">
-            <h3 className="section-head">Notes</h3>
-            <div className="notes">
-              <Prose text={item.notes} small />
-            </div>
-          </section>
-        )}
+        {item.notes && <NotesSection key={item.id} text={item.notes} />}
 
         {linked.length > 0 && (
           <section className="section">
@@ -325,6 +386,26 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
 }
 
 /** Open questions on this item first, then ones inherited from its feature and epic. Answered ones live in Outstanding items. */
+/** Notes are secondary reading: folded away until asked for. */
+function NotesSection({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <section className="section">
+      <h3 className="section-head">
+        <button className="section-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          <ChevronRight size={14} className="chev" aria-hidden />
+          Notes
+        </button>
+      </h3>
+      {open && (
+        <div className="notes">
+          <Prose text={text} small />
+        </div>
+      )}
+    </section>
+  )
+}
+
 function linkedQuestions(index: Index, item: Item): { q: Question; via?: Item }[] {
   const out: { q: Question; via?: Item }[] = []
   const seen = new Set<string>()

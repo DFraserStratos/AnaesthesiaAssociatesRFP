@@ -168,3 +168,16 @@ describe.skipIf(!hasGit)('git history', () => {
     expect((await gitFileHistory(itemPath('US-01.1.1', root))).versions).toEqual([])
   })
 })
+
+describe('deleting a card', () => {
+  it('sets its journal aside, so a new card given the same ID starts with a clean history', async () => {
+    const a = api()
+    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...rec(a, 'US-01.1.1').data, title: 'Renamed' }, baseRev: rec(a, 'US-01.1.1').rev })
+    expect((await timeline(a, 'US-01.1.1')).length).toBeGreaterThan(0)
+    call(a, 'DELETE', '/api/items/US-01.1.1', { baseRev: rec(a, 'US-01.1.1').rev, ids: ['US-01.1.1'] })
+    const again = call(a, 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'Fresh' }) as Rev<Item>
+    expect(again.data.id).toBe('US-01.1.1')
+    const entries = await timeline(a, 'US-01.1.1')
+    expect(entries.filter((e) => e.type === 'change').map((e) => (e as { kind: string }).kind)).toEqual(['created'])
+  })
+})

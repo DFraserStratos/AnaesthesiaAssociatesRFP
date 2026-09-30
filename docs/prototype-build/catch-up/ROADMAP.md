@@ -19,7 +19,7 @@ migrated, because the prototype is shown in live workshops between phases.
 
 ## Owner decisions before building
 
-These readings shape what a phase delivers, not just its labels. **Ask the owner for all of them
+These readings shape what a phase delivers, not just its labels. Each is a question on the Requirements Board (the OQ named in its row). **Ask the owner for all of them
 before Phase 14 starts.** If an answer has not come in by the time its phase starts, build the
 default and label it provisional in the UI; the phase's drift check confirms the gating answer
 first.
@@ -27,13 +27,13 @@ first.
 | # | Decision | Gates | Default if no answer |
 |---|---|---|---|
 | D1 | Does AA's fee net against the payable at all, and on what basis (OQ-02)? | 16 | The payable equals the receivable. A separate AA-FEE invoice, 5% of amounts collected for the anaesthetist, held as one labelled constant |
-| D2 | Insurer and funding source: on the Booking or on the Patient? | 20 | On the Booking (DM-35) |
-| D3 | Ranged base codes: drop the published-range bound (RV-04, low confidence)? | 19 | Drop the hard bound; an out-of-range entry raises an office review flag |
+| D2 | Insurer and funding source: on the Booking or on the Patient (OQ-55)? | 20 | On the Booking (DM-35) |
+| D3 | Ranged base codes: drop the published-range bound (RV-04, low confidence; OQ-56)? | 19 | Drop the hard bound; an out-of-range entry raises an office review flag |
 | D4 | Child as billable party: block or warn (OQ-54)? | 21 | The OQ-54 recommendation: flag at setup and at review, and block authorising that List until an adult is set |
-| D5 | Keep the hard prepayment completion gate (RV-09: a settled July ruling; the catalogue is silent)? | 27 | Remove the gate and its audited override; the escalating unpaid-prepayment alert is the control. If the gate is kept, it stays, but fires from the derived requirement instead of the patient category |
-| D6 | Who raises the prepayment invoice at setup (FT-08.1 says no engine action before AUTHORISED; US-06.3.1 has the engine raise it)? | 27 | The engine raises it when the estimate is set, recorded as a named exception to FT-08.1. If the office raises it: keep today's manual raise, prompted on the Booking |
+| D5 | Keep the hard prepayment completion gate (RV-09: a settled July ruling; the catalogue is silent; OQ-57)? | 27 | Remove the gate and its audited override; the escalating unpaid-prepayment alert is the control. If the gate is kept, it stays, but fires from the derived requirement instead of the patient category |
+| D6 | Who raises the prepayment invoice at setup (FT-08.1 says no engine action before AUTHORISED; US-06.3.1 has the engine raise it; OQ-58)? | 27 | The engine raises it when the estimate is set, recorded as a named exception to FT-08.1. If the office raises it: keep today's manual raise, prompted on the Booking |
 | D7 | Can an anaesthetist hand a List to a colleague without office confirmation (OQ-39)? | 32 | Office confirms, as US-01.4.3 is written. A direct handover would turn the confirm step into an office notification |
-| D8 | Receivables ageing and an "Overdue" view (RV-19, conflicting evidence)? | 38 | A flat outstanding list, oldest first, with no buckets and no age chips |
+| D8 | Receivables ageing and an "Overdue" view (RV-19, conflicting evidence; OQ-59)? | 38 | A flat outstanding list, oldest first, with no buckets and no age chips |
 | D9 | Do billed Lists vanish from the anaesthetist's view (OQ-31)? | 38 | They stay, shown as "completed, unbilled" and then "billed" |
 | D10 | How an additional invoice is priced (OQ-45)? | 39 | The OQ-45 recommendation: RVG time and modifiers at the anaesthetist's unit value, with the admin free to override the amount and billable party, every override audited |
 | D11 | Can a Booking without an NHI be created (OQ-49)? | 40 | The OQ-49 recommendation: yes, as provisional and on the problem list; its List cannot be authorised until the NHI is added |

@@ -213,7 +213,9 @@ test('a real pinch never zooms the page, and the headers stay whole on screen an
     feature: parseFloat(getComputedStyle(document.querySelector('.feature .card-title')!).fontSize),
   }))
   expect(sizes.lane).toBeLessThanOrEqual(sizes.feature)
-  // Pan right: every header is whole and inside the board, as the visual viewport sees it.
+  // Pan right: every header is whole and inside the board, as the visual viewport sees it. (This far
+  // out the map is narrower than half the board, so the pan limit stops it before its left edge
+  // passes the board's: the headers sit at the map's edge rather than pinned to the board's.)
   await page.evaluate(() => {
     const el = document.elementFromPoint(800, 600)!
     for (let i = 0; i < 20; i++) el.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaX: 150, deltaY: 0, clientX: 800, clientY: 600 }))
@@ -223,13 +225,13 @@ test('a real pinch never zooms the page, and the headers stay whole on screen an
     const b = document.querySelector('.board')!.getBoundingClientRect()
     return [...document.querySelectorAll('.lane-head')].map((h) => {
       const r = h.getBoundingClientRect()
-      return { left: r.left - vv.offsetLeft, right: r.right - vv.offsetLeft, boardLeft: b.left - vv.offsetLeft }
+      return { left: r.left - vv.offsetLeft, right: r.right - vv.offsetLeft, boardLeft: b.left - vv.offsetLeft, boardRight: Math.min(b.right, vv.width) - vv.offsetLeft }
     })
   })
   expect(heads.length).toBeGreaterThan(0)
   for (const h of heads) {
     expect(h.left).toBeGreaterThanOrEqual(h.boardLeft + 8)
-    expect(h.left).toBeLessThanOrEqual(h.boardLeft + 24)
+    expect(h.right).toBeLessThanOrEqual(h.boardRight)
   }
 })
 
@@ -255,4 +257,46 @@ test('opening and closing a card floats the panel over the board without moving 
   await page.keyboard.press('Escape')
   await expect(page.locator('.dock')).toHaveCount(0)
   expect(await node(page, id!).boundingBox()).toEqual(before)
+})
+
+test('the minimap jumps the view to wherever it is pressed, and its zoom row zooms', async ({ page }) => {
+  const minimap = page.getByRole('img', { name: /Minimap/ })
+  await expect(minimap).toBeVisible()
+  await page.getByRole('button', { name: /press for 100%/ }).click()
+  await expect(page.getByRole('button', { name: /Zoom 100%/ })).toBeVisible()
+  const board = (await page.locator('.board').boundingBox())!
+  const inBoard = async (id: string) => {
+    // Cards off screen aren't rendered at all.
+    const b = (await node(page, id).count()) ? await node(page, id).boundingBox() : null
+    return !!b && b.x >= board.x && b.x + b.width <= board.x + board.width
+  }
+  const m = (await minimap.boundingBox())!
+  await page.mouse.click(m.x + m.width - 6, m.y + m.height / 3)
+  await expect.poll(() => inBoard('FT-02.4')).toBe(true)
+  expect(await inBoard('FT-01.1')).toBe(false)
+  await page.mouse.click(m.x + 6, m.y + m.height / 3)
+  await expect.poll(() => inBoard('FT-01.1')).toBe(true)
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await expect(page.getByRole('button', { name: /Zoom 125%/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Zoom out' }).click()
+  await page.getByRole('button', { name: 'Zoom out' }).click()
+  await expect(page.getByRole('button', { name: /Zoom 80%/ })).toBeVisible()
+})
+
+test('panning never takes the map off the board: an edge stops at the middle', async ({ page }) => {
+  const board = (await page.locator('.board').boundingBox())!
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2)
+  // Trackpad-style scrolls (a sideways component), far past the map's right end.
+  for (let i = 0; i < 12; i++) await page.mouse.wheel(4000, 0)
+  await page.waitForTimeout(200)
+  const last = (await node(page, 'US-02.4.3').boundingBox())!
+  expect(last.x + last.width).toBeLessThan(board.x + board.width / 2)
+  expect(last.x + last.width).toBeGreaterThan(board.x)
+  // And back the other way, far past its left end and its top.
+  for (let i = 0; i < 12; i++) await page.mouse.wheel(-4000, -4000)
+  await page.waitForTimeout(200)
+  const first = (await node(page, 'EP-01').boundingBox())!
+  expect(first.x).toBeGreaterThan(board.x + board.width / 2 - 20)
+  expect(first.x).toBeLessThan(board.x + board.width)
+  expect(first.y).toBeLessThan(board.y + board.height)
 })

@@ -2,7 +2,7 @@
  * Node-side access to the catalogue folder: load everything, write one record
  * atomically. Used by the dev-server API and the npm scripts.
  */
-import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkCatalogue } from '../shared/check.ts'
@@ -191,6 +191,17 @@ export function writeQuestion(q: Question, root = CATALOGUE_DIR, opts: { create?
 /** Remove a question's file. Items never point at questions, so nothing else needs rewriting. */
 export function deleteQuestionFile(id: string, root = CATALOGUE_DIR) {
   unlinkSync(questionPath(id, root))
+}
+
+/** Remove an item's file. The caller has already rewritten everything that pointed at it. */
+export function deleteItemFile(id: string, root = CATALOGUE_DIR) {
+  unlinkSync(itemPath(id, root))
+}
+
+/** Remove an item's screenshot folder, `assets/<ID>/`, if it has one. */
+export function deleteItemAssets(id: string, root = CATALOGUE_DIR) {
+  if (!ID_FILE.test(id)) return
+  rmSync(join(root, 'assets', id), { recursive: true, force: true })
 }
 
 export function serialiseLayout(layout: Layout): string {

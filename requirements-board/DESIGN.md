@@ -74,7 +74,9 @@ scrolls) and as the modal elsewhere.
   the children list (name, then status pill), then a quiet "Mentioned in" subhead over the cards
   whose text mentions this one. Outgoing text links are not repeated there, since the text already
   shows them.
-- Footer (read mode): Find on board, **History**, Retire, then Edit on the right. History swaps the
+- Footer (read mode): Find on board, **History**, Retire, Delete, then Edit on the right. Delete asks
+  over the veil, naming what goes with the card (its features and stories) and the records whose links
+  to it are removed, and points at Retire for keeping a record. History swaps the
   body for the card's timeline, read like the chart's time column: times in a left gutter, a
   trace beside them with one mark per change (filled: the board, ring: an edit on disk, square: a
   git commit), commits ruled across like hour lines, day headings on the trace. Changes not
@@ -109,6 +111,9 @@ scrolls) and as the modal elsewhere.
   what an outstanding item affects), starting from the open card, then opens the new card in Edit.
 - Outline and Outstanding items open the same sheet as a centred modal. A question opened from the
   board's panel sits over the panel as a modal and closing it returns to the panel.
+- A question opened from Outstanding items steps `‹ n of N ›` through the list as filtered, in its
+  group order. One answered in the sheet keeps its old place while open, so Next goes to the next
+  question still open.
 - Unsaved edits are never lost silently: every way out of a sheet asks, and drafts survive
   navigation.
 - The board never raises a browser dialog. A sheet asks in its own frame: it veils its content
@@ -120,6 +125,15 @@ scrolls) and as the modal elsewhere.
   board tells them apart itself: `src/board/trackpad.ts`); dragging empty canvas pans. A pinch
   never zooms the page itself, wherever it lands (masthead, panel, list views): only the board
   zooms. Keyboard zoom (Cmd plus, Cmd minus) is left to the browser.
+- **The board is bounded, not an infinite whiteboard.** However it is panned, a map edge comes in no
+  further than the middle of the visible board (right of the docked panel), at every zoom, so the map
+  can never be scrolled off screen (`src/board/panLimits.ts`).
+- **Minimap**, bottom right in both modes (the toolbar's map button hides it): the whole map in a
+  frame that is the map's own bounds, so it holds still while panning, shaped like the map (a strip
+  for Mapped). Cards are blocks in their type colours, lanes faint rules, the open card ringed teal,
+  search misses faded. The part on screen is outlined in teal and the rest lightly veiled. Press
+  anywhere to jump the view there; hold and drag to sweep along. Under it, the zoom row: fit, zoom
+  out, the zoom as a percentage (press for 100%), zoom in.
 - Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion. Stepping
   between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
   in place and skips the entrance, so the page behind never flashes through a re-fading scrim.
@@ -133,8 +147,8 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
   Tidy to put them back.
 - **Mapped** is a user story map, read left to right in one strip, with no grid and no connector
   lines (position shows the hierarchy), except the open card's lineage: while a card is open, teal lines
-  join it to its feature and epic (and to what sits under it), and they drop away during a drag. It is an open, infinite canvas of the same teal-grey chart
-  paper as Freeform, edge to edge, without the ruling: no sheet, no tinted bands, no texture. White
+  join it to its feature and epic (and to what sits under it), and they drop away during a drag. It is an open canvas of the same teal-grey chart
+  paper as Freeform (bounded, like Freeform: see the pan limits under Interaction), edge to edge, without the ruling: no sheet, no tinted bands, no texture. White
   cards lift off the paper; lanes are separated by a thin rule and their headers. The backbone is the epic row, each
   epic spanning its feature columns, with the feature row beneath. Below it the swim lanes run
   across the whole map; every column stacks the stories it has in each lane.
