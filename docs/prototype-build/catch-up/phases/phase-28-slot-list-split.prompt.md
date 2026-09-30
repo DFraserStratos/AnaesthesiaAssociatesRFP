@@ -1,0 +1,57 @@
+Please run catch-up Phase 28 (Slot and List split) of the Anaesthesia Associates prototype. The repo root is /Users/d.fraser/Local Dev/Anaesthesia Associates RFP (the folder names contain spaces, so quote paths); the app is aa-prototype/, and code paths in the phase doc are under aa-prototype/src/ unless they say otherwise.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the sequencing rules (28 opens the Schedule track, which runs strictly 28 to 32; 31 and 32 reuse 17's blacklist helper), the demo-trigger, PWA-parity and demo-guide rules, and the "Confirm before building" row for 28 (OQ-17, OQ-27).
+2. docs/prototype-build/catch-up/phases/phase-28-slot-list-split.md: your detailed plan.
+3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 4, Slot, List and Draft List, and the DM-02, DM-04 and RV-14 rows), then the EP-01 table. Then docs/prototype-build/catch-up/epics/EP-01.md (the header note, FT-01.2, US-01.2.3, US-01.3.3 and US-01.1.4, plus US-01.3.1, US-01.5.4 and US-01.2.1 for what is left to later phases), DM-02, DM-03, DM-04 and DM-05 in docs/prototype-build/catch-up/analysis/domain-model-delta.md, and RV-14 in analysis/reverse-check.md.
+4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+   - requirements/FT-01.2.md, US-01.2.3.md, US-01.3.3.md and US-01.1.4.md;
+   - for context, requirements/EP-01.md, FT-01.1.md, FT-01.3.md, US-01.1.1.md, US-01.3.1.md, US-01.4.1.md (its technical discussion is the reassign mechanism you build), US-01.2.1.md, US-01.2.2.md and US-01.5.3.md;
+   - questions/OQ-17.md, OQ-27.md and OQ-44.md.
+   Also read the "Slot, List and Draft List" section of docs/discovery-reference/Updated Requirements/domain-model.md.
+5. docs/prototype-build/catch-up/analysis/prototype-map-store-seed.md, prototype-map-domain.md, prototype-map-admin.md, prototype-map-apps-mobile-web.md, prototype-map-shared.md and prototype-map-shell-demo-pwa.md: the code index for the files you will change. It was written before Phases 14 to 27, so where a name differs, follow Phase 15's Card to Booking rename map (for example domain/seed/bookings.ts, store/bookingActions.ts) and the Phase 14 names (store/demoActors.ts OFFICE_SIMULATION_ACTOR, store/officeStandIn.ts, src/shared/demoTriggers/, src/pwa/PwaDemoActions.tsx).
+6. docs/design/Design Language.dc.html (the six status colours, the dashed Free and hatched Unavailable treatments, the warning tint), docs/design/Admin Day.dc.html (grid, drawer, header summary), docs/design/Mobile App.dc.html and Mobile Availability.dc.html (Forward Lists rows, the availability strip), and docs/design/Web Dashboard.dc.html and Web Availability.dc.html (week strip, availability grid). These are the AUTHORITATIVE visual reference (convention 17). The colours do not change in this phase; only where the key comes from.
+7. docs/prototype-build/PROGRESS.md:
+   - the binding conventions (especially 4 to 7, 10, 13 to 18);
+   - the Decisions-log entries this phase supersedes or amends: 2026-07-23 "Availability reconciliation, both directions", 2026-07-23 "Deterministic IDs, no UUIDs", 2026-07-23 "Slot-hashed generator randomness", the Phase 06 build decisions (1) advisory conflicts and (5) the grid display-status derivation, and the 4th review #6 reassign mechanism (free target, absorb, regenerate);
+   - handoff item P5 (the phone booking never repainted), which this phase closes;
+   - the Phase 02 entry's note on resolving slots via listForSlot;
+   - the Phase 14, 15 and (if run) 17 entries, for the registry, the Booking names and the blacklist helper.
+
+Then do the drift check in the phase doc:
+- run git diff 1f067a8 over the covered and context catalogue files, OQ-17, OQ-27, OQ-44 and domain-model.md;
+- adjust the work items if anything changed, and drop and log anything now Retired or Future;
+- confirm Phases 14 and 15 are DONE (stop if 15 has not run), and note whether 17 is;
+- note the current PERSIST_VERSION.
+Then enter plan mode, turn the work items into session-sized steps (session 1: model, store, seed and every reader re-pointed, ending green; session 2: the office flows, settings editor, stand-in trigger and docs), and wait for my approval.
+
+While working:
+- Mock backend only. Every new write (assign, move, availability, Slot times, default times, cover marker) is a store action through the audited mutate(), with before/after metas and timestamps from the demo clock. Components never own domain state.
+- One derivation. The displayed status comes only from the pure displayStatusKey(slot, list) in src/domain/slots.ts, which takes no Bookings. Delete displayStatusKeyForList and every other derivation from cards, hospital or surgeon. Mobile, web and admin read the same Slot views, so a session looks the same in all three.
+- Keep the six-colour design language: DisplayStatusKey is the same six keys, and the theme parity test still holds.
+- Determinism first. Before touching the generator, commit a golden fixture of today's canvas and seeded Bookings and prove the split reproduces it exactly. Keep every RNG draw per slot. Projected Lists keep their L-<reg>-<date>-<session> ids (never parsed to find a Slot); runtime Lists take LG####; Slots are S-<reg>-<date>-<session>. Bump PERSIST_VERSION by one and extend the migrate test.
+- Delete listForSlot rather than re-implementing it, so the compiler shows every caller (including the Phase 14 registry entries stage-post-op and ingest-pdf-row). Each caller must handle "no List in this Slot": integrations park instead of silently retiming, the post-op addendum creates its List in today's open Slot (interim until 39), the PDF picker and the Move Booking picker offer Lists only.
+- Session 1 must end green and demoable: the drawer, phone advice, Edit list and Reassign get the minimal re-point the compiler forces (work item 12, "compile-forced minimums"), and session 2 finishes them. Roll-forward and addAnaesthetist read the seed's SEED_LEAVE once masters.availability is gone.
+- Assignment needs a surgeon and a hospital (US-01.3.3). Assigning onto an unavailable or holiday Slot is refused for now and labelled interim (Phase 30 makes it accept-and-flag). If 17 is done, use its SurgeonSelect, BlacklistWarning and partition helpers; warn, never block.
+- Reassign moves the List between Slots: same id, Bookings and history; target Slot open; vacated Slot Available by default. No absorb, no regenerate.
+- Default AM and PM times live in one settings record; per-Slot overrides live on the Slot and travel with a reassigned List. Remove the four hardcoded duplicates.
+- Empty Slots carry no approval state. Show DRAFT as "Open" through one helper; keep "Draft List" free for Phase 31.
+- OQ-17 and OQ-27: if still open, keep today's availability values and the private/public/pre-op kinds, and label the status set provisional on the List statuses master view.
+- Stay in scope: no Draft Lists, pairing enforcement, availability calendar, conflict clearing or colour change, or swap flow.
+- One demo trigger: the PWA-only, badged office stand-in "Office assigns a List to my next free Slot" on Mobile Lists, with its body in src/store/officeStandIn.ts (acting as OFFICE_SIMULATION_ACTOR, "today" from the demo clock) and its entry in the shared registry. Nothing is added to the harness bar or the Control Panel page, because every office action in this phase is demoable through the Admin app in the framed build.
+- Design: teal the only action colour, crimson unused on the new sheets, Admin sheets through useSurface().Overlay, and no en or em dashes in any app copy.
+- Keep npm run build, npm run build:pwa and npx vitest run green as you go. Add Vitest tests for the Slot module, the store actions (refusals, audit, identity, independence from Bookings, three-app parity) and the seed invariants.
+- Do not commit or push.
+
+When done:
+- run the manual test checklist and report each item;
+- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- update PROGRESS.md:
+  - the status row and a phase entry, including the drift-check result, the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the Decisions-log entries listed in the phase doc (three superseded, one amended, the new and interim rulings);
+  - the handoff notes for 29, 30, 31, 32, 33, 38, 39 and 44;
+- patch the demo guide in the same session: S2 Beats 1 to 3 and S4 Beat 2 in 03-demo-script.md, workflow 3 in 02-workflows-and-handoffs.md, the cheat sheet, the same sections of master-demo-guide.html, and the Control Panel S2 scenario text;
+- give me short, clear notes on what changed and anything left open.
+
+Phase goal: the canvas becomes Slots and Lists. Every anaesthetist has a Slot per half-day holding its availability and times, a List is created only when the office assigns one (or a Permanent List projects it), the displayed status never depends on Bookings and matches in all three apps, default times come from one setting, and Reassign moves a List between Slots intact.

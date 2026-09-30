@@ -17,9 +17,13 @@ integrations, a demo control panel).
 
 ## Current state
 
-**The build is finished.** All 14 phases (00 to 13) are DONE, the app runs end to end, and the
-Vitest + Playwright suites are green. Work from here is fixes, polish and demo preparation for the
-vendor workshops — not new phases.
+**The original build is finished.** All 14 phases (00 to 13) are DONE, the app runs end to end, and
+the Vitest + Playwright suites are green.
+
+**The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
+between the prototype and the catalogue (at commit `1f067a8`) and a build plan of phases 14 to 44 to
+close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
+session follows its phase doc and prompt; other work is still fixes, polish and demo preparation.
 
 Routine fixes and polish do not require reading or updating `PROGRESS.md`. Consult its build history,
 open-items handoff and Decisions log only when they are relevant to the task. Consult

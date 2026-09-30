@@ -1,0 +1,53 @@
+Please run catch-up Phase 39 (Additional invoices and credit-and-rebill) of the Anaesthesia Associates prototype.
+
+Before doing anything else, read these in order:
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D10, how an additional invoice is priced), the sequencing rules (39 runs after 36, in any order with 37 and 38; 41 later reuses its credit notes), the demo-trigger and PWA-parity rules ("Create additional invoice" and "Credit in full and rebill" are product actions; "Office raises the additional invoice" is named as the PWA stand-in), the demo-guide rules (39 is a milestone phase), the "Confirm before building" row for 39 (OQ-42, OQ-45, OQ-51) and the Parked US-08.6.4.
+2. docs/prototype-build/catch-up/phases/phase-39-additional-invoices-and-credit.md: your detailed plan.
+3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 8, the money side; the US-08.6.2 entry under "Not represented"; the DM-20, DM-21 and RV-10 rows; the S4 demo-impact line; the demo-trigger section), then the EP-08 table and its structural note. Then docs/prototype-build/catch-up/epics/EP-08.md (FT-08.6, US-08.6.1, US-08.6.2, US-08.6.3) and epics/EP-03.md (US-03.3.6), DM-20 and DM-21 (and DM-18, DM-23) in docs/prototype-build/catch-up/analysis/domain-model-delta.md, and RV-10 in analysis/reverse-check.md.
+4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+   - requirements/FT-08.6.md, US-08.6.1.md, US-08.6.2.md, US-08.6.3.md and US-03.3.6.md;
+   - for context, requirements/US-07.3.2.md (immutable after AUTHORISED), US-08.3.1.md, US-08.4.3.md, US-04.3.2.md, US-13.5.2.md, US-06.4.1.md and US-08.6.4.md (Parked);
+   - questions/OQ-42.md, OQ-45.md, OQ-51.md, OQ-24.md, OQ-28.md and OQ-53.md.
+   Also read the "What changed since the RFP" rows, the Booking section and the "Internal ledger" section of docs/discovery-reference/Updated Requirements/domain-model.md.
+5. docs/prototype-build/catch-up/analysis/prototype-map-admin.md (sections 6 Invoices and 7 Billing monitor), prototype-map-shared.md (the shared Booking detail body and the capture sheets), prototype-map-store-seed.md (billing slices, counters, selectors), prototype-map-domain.md (invoice build, time units, modifiers) and prototype-map-shell-demo-pwa.md ("Stage post-op scenario", the Xero sim pair detail, the PWA): the code index for the files you will change.
+6. docs/design/Design Language.dc.html (tokens, teal action colour, crimson identity only, tints, mono numbers, sheets), docs/design/Admin Review.dc.html and Admin Day.dc.html (admin tables, panels and pills), and docs/design/Mobile App.dc.html (the Booking detail and bottom sheets). These are the AUTHORITATIVE visual reference (convention 17). No mockup covers the invoice document, the Invoices table or the Billing monitor: extend them as they stand.
+7. docs/prototype-build/PROGRESS.md:
+   - the binding conventions (especially 4 to 9, 13 to 18);
+   - the Decisions-log entries this phase supersedes or amends: 2026-07-24 "Phase 09, the four open-question readings" reading (3), the post-op addendum mechanism; the Phase 08 and 09 rulings that a negative invoice is never raised and that the over-prepaid case has no credit-note issuance; the 2026-09-28 ruling that the anaesthetist sees no calculation;
+   - the Phase 08, 09 and 10 entries (the billing run, the monitor and retry, the Xero pair, payments and payables);
+   - the catch-up Phase 14, 15, 16, 20, 21, 22, 24, 25, 27, 28, 35 and 36 entries and handoff notes (and 37 and 38 if they have run), for the registry and the stand-in actors, the renamed addendum fields, the -P rule, the Contract scope rule, the billable party and required inputs, materialiseInvoices and lineage, the adjustment decision, the BookingLock and Regenerate, the balance invoice, the addendum's List helper, the explicit-save rule and the ledger's names.
+
+Then do the drift check in the phase doc:
+- run git diff 1f067a8 over the covered and context catalogue files, the six OQs and domain-model.md;
+- adjust the work items if anything changed, and drop and log anything now Retired or Future (FT-08.6, US-08.6.1 and US-08.6.2 were Verify at plan time, so read those first);
+- confirm whether the owner has answered D10 (default: the OQ-45 recommendation, time units and modifiers at the anaesthetist's own unit value, with the admin free to override the amount and the billable party, every override audited); if not, build the default and label it provisional;
+- if OQ-51 is open, use the ordinary invoice number sequence and show the link; if OQ-42 is open, record the recovery as a trail only;
+- confirm Phase 36 is DONE and note the exact names of its ledger pair, legs and position selectors (planned: LedgerPair, ReceivableLeg / PayableLeg with releasedAmount, newBookingPair, ledgerPosition, handoffPair, retryBillingException, resolveAndRetry; BillingCase, handoffCase and retryBillingCase no longer exist, so read the phase doc's July code entry points through that rename), 25's lock and regenerate names, and 14's office actors (the code's OFFICE_SIMULATION_ACTOR, which some docs call SIMULATED_OFFICE_ACTOR);
+- note the current PERSIST_VERSION.
+Then enter plan mode, turn the work items into ordered steps (session 1: model, pure line and pricing rules, the additional-invoice and notice actions, removal of the addendum, the billing-line kinds, the admin and anaesthetist UI, the stop point; session 2: the credit model, pure credit and rebill rules, the credit action, the Xero correction, the ledger views, the admin UI, triggers, tests and docs), and wait for my approval.
+
+While working:
+- Mock backend only, through store actions and the audited mutate(). The original Booking, its Procedures, its lock and the original invoice are never written: "Credited", "Additional invoices" and every link are derived selectors.
+- Additional invoices are admin only, issue at once with no approval step and no List event, take their Contract only from Phase 20's scope rule, go through 22's materialiseInvoices, and get their own number, ledger pair, Xero pair and payable. Every amount override and a party change need a reason and are audited. The D10 branch lives in one constant. No anaesthetist adjustment on them.
+- Remove, do not hide, the addendum Booking: addPostOpAddendum, bookingType, addendumOfBookingId, the banner, "Add post-op event", the addendum source mapping and its List helper. The anaesthetist gets "Tell the office about a later charge", which never shows an amount or number.
+- Credit in full and rebill is office only (a labelled reading) and is one engine commit (credit note, receivable credit, payable contra, recovery trail if paid out, rebill with its lineage and pair) and one Xero commit (reversal and the rebill's pair together, with the fault path and retry). Each step is its own audit entry. A credit note is its own record, not an invoice kind. Payments on a credited ACCREC, payables over a reversed ACCPAY and a late handoff of a credited invoice are refused. The whole ledger stays in balance, with held credits and recovery due as their own lines.
+- A rebill keeps every uncorrected locked value, including the Contract version; a changed Contract locks at its version in force on the List date.
+- Billing maths is pure and tested in src/domain/billing (otherLines.ts, additionalInvoice.ts, creditNote.ts, rebill.ts, and the credit path added to 36's ledger.ts: applyCredit, and ledgerPosition's equation extended with credits held for payers and recovery due, so a credited ledger shows zero imbalance while 36's pinned uncredited figures do not move). Time from the demo clock only; no Date.now(), new Date() or Math.random().
+- Demo triggers: re-point stage-post-op (authorise only, new copy), the payment entries on Admin · Invoice and the Xero sim pair (disabled on a credited invoice) and regenerate-invoice; add the PWA-only "Office raises the additional invoice" on the mobile Booking screen, badged, acting on the Booking in the URL. Nothing is added to the Control Panel page. Bodies stay in src/shared or src/store so pwaPurity holds.
+- Bump PERSIST_VERSION for the new slices and removed fields, and extend the migrate test. No seeded figure moves; S3's scripted invoices are unchanged.
+- Design and copy: teal the only action colour, crimson unused, the credit note neutral (not red), mono tabular numbers, provisional labels for D10, OQ-42 and the credit-note delivery, and no en or em dashes in any app copy.
+- Keep npm run build, npm run build:pwa and npx vitest run green as you go, and re-green at the session 1 stop point before starting credit and rebill.
+- Do not commit or push.
+
+When done:
+- run the manual test checklist and report each item;
+- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, plus a money-integrity lens, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- update PROGRESS.md:
+  - the status row and a phase entry, including the drift-check result, which D10 branch was built, the OQ-42, OQ-45 and OQ-51 status, the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the Decisions-log entries listed in the phase doc (one superseded, one amended, six new);
+  - the handoff notes for 37, 38, 40, 41, 43, 44 and the Parked US-08.6.4;
+- patch the demo guide in the same session: S4 Beat 2 rewritten, the Direct URLs table and the S4 discovery points in 03-demo-script.md, the post-operative and correction cases and the readiness row in 02-workflows-and-handoffs.md, the cheat sheet's readiness, money-model, phrases and statements sections, the personas' responsibilities, the README readiness row, the same sections of master-demo-guide.html, and the S4 Control Panel scenario text; then, as this is a milestone phase, read master-demo-guide.html against the run sheet for consistency;
+- give me short, clear notes on what changed and anything left open.
+
+Phase goal: late charges are raised by the office as additional invoices on a Procedure, with their own number, ledger pair and Xero pair, linked both ways and with no approval step, replacing the addendum Booking; the anaesthetist tells the office instead; and a wrong invoice is credited in full and rebilled, reversing both the ledger and Xero together, with the paid-out case recorded as a trail.
