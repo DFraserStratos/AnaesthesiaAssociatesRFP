@@ -12,7 +12,8 @@ Before doing anything else, read these in order:
    Also read the "Slot, List and Draft List" section of docs/discovery-reference/Updated Requirements/domain-model.md.
 5. docs/prototype-build/catch-up/analysis/prototype-map-apps-mobile-web.md (the Availability sections), prototype-map-admin.md, prototype-map-domain.md, prototype-map-store-seed.md, prototype-map-shared.md and prototype-map-shell-demo-pwa.md: the code index for the files you will change.
 6. docs/design/Design Language.dc.html (section 02, the six status colours with their hatched and dashed treatments; section 01, teal the only action colour and crimson identity only), docs/design/Mobile Availability.dc.html, docs/design/Web Availability.dc.html, docs/design/Web Dashboard.dc.html (the week strip's AM/PM block pair) and docs/design/Admin Day.dc.html. These are the AUTHORITATIVE visual reference (convention 17). No mockup shows a calendar, a series control or the status editor, so extend these patterns.
-7. docs/prototype-build/PROGRESS.md:
+7. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions (especially 4, 5, 7, 10, 12, 13 to 18);
    - the Decisions-log entries this phase supersedes or amends: 2026-07-21 "Status colour mapping" (a closed six-key set), 2026-07-23 "Availability reconciliation, both directions" (the un-block direction), convention 10 (the legend defined once as a union), and item (2) of the 2026-07-22 external plan review (availability writes a master);
    - the Phase 06 advisory-conflict reading (amber, never a hard block) and the 2026-07-23 mobile navigation entry and the 2026-07-27 real-routing entry that partly supersedes it (one splat route hosting the SlideStack, depth from the URL);
@@ -47,10 +48,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and that pwaPurity.test.ts still passes;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green, and that pwaPurity.test.ts still passes;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.2.1, US-01.2.2, US-01.5.3, US-03.1.4 and US-15.0.2 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result (OQ-64 status and the branch built), the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result (OQ-64 status and the branch built), the PERSIST_VERSION from/to, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc (the status master amending convention 10, one mechanism with series, the series fill rule, the superseded un-block ruling, the clash in one function as the OQ-64 interim, retire-not-delete, one display key space, no emergency status, and the one availability store);
   - the handoff notes for 30, 31, 32, 38, 42 and 44;
 - patch the demo guide in the same session:

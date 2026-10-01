@@ -852,7 +852,8 @@ through item 16.
       as seeded.
 - [ ] No en or em dash in any new copy, no crimson on any new control, teal the only action colour, and
       every outcome pill carries its word.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above (US-13.4.1, US-11.4.1, US-13.4.2 and US-13.4.3) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -893,6 +894,32 @@ In the same session (each phase patches the beats it touches):
   Master data, Demo actions, Go-live data load." No trigger is added to the page.
 - Not a milestone phase, so no full consistency read. Check that the patched sections match the run
   sheet.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 42` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-13.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.1.md) Maintain reference tables | partial · master-data states anaesthetists, contracts, permanent-lists, hospitals-holidays, surgeons, rvg-codes, modifier-codes, list-statuses (several captioned "(view only)") | captured. Re-shoot `master-data` at `/admin/masters` with one state per view in the grouped sub-nav (People and places, Schedule, Billing, Settings, Go-live), keeping the existing state slugs but re-pointing the clicks to the current button names (Recurring bookings for `permanent-lists`, Slot statuses for `list-statuses`) and re-captioning with no "(view only)"; add states `surgeon-groups`, `rvg-groups`, `public-holidays` (`masters-public-holidays`, the master calendar with a national and a Canterbury row), `hospitals-holidays` with Labour Day and a retire refusal (St George's: refused with upcoming List and recurring booking counts), and `retired` (a retired hospital under "Show retired"). Highlight the table or sub-nav group the state is about. Drop the partial reason |
+| [US-11.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.4.1.md) Insurer master data | captured · insurers (the Insurers button, highlight `table`) | stays captured. Re-shoot `insurers` with the rebuilt view (columns Name, Accepts direct claims, Contracts count, Status; hook `masters-insurers`) in place of the bare `table` highlight, and add an `add-insurer` state (InsurerSheet with the direct-claims switch and the caption "Rates and any split with the patient are set on the insurer's Contracts.") and a `retire-refused` state (nib: "Turn off direct claims first") |
+| [US-13.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.2.md) Clean-cut start, not a full migration | none (create it) | create, captured. Admin shot `go-live-load` at `/admin/masters?view=goLive` with states `staged` (run the `go-live-data-load` entry from `[data-shot=demo-actions]` first: "14 Solutions Plus names (5 excluded as junk, 2 not approved)" and the 3 controlled spreadsheets) and `loaded` (after approving names and pressing "Load approved data"; the un-approved and junk names are absent). Caption: "Clean-cut start: only AA-approved data is loaded" |
+| [US-13.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.3.md) Reference data loaded from controlled spreadsheets | none (create it) | create, captured. Admin shot `controlled-load` at `/admin/masters?view=hospitals` with states `sheet` (Load from spreadsheet sheet, `master-load-sheet`, Download template and the required columns), `result` (after the `load-sample-spreadsheet` entry stages hospitals.csv: "7 rows · 4 valid · 3 rejected", each rejected row with its reason; `master-load-result`) and `loaded` ("Loaded 4 rows on 21 Jul 2026 · 3 rejected rows were not loaded", new rows in the table). Caption: "Controlled spreadsheet loaded, with rejected rows listed with reasons" |
+
+**Recipes this phase breaks.**
+
+- About 28 recipes open `/admin/masters` and click a sub-nav button by name; 42 regroups and renames the sub-nav (item 11), so each needs its button names and highlights checked with `--dry`. Found by `grep -l 'admin/masters'`: `FT-04.1`, `FT-05.1`, `FT-13.4`, `US-01.1.2`, `US-01.1.3`, `US-01.2.2`, `US-01.3.2`, `US-01.5.1`, `US-01.5.2`, `US-04.1.1`, `US-04.1.2`, `US-04.2.1`, `US-04.2.2`, `US-04.2.4`, `US-04.2.5`, `US-04.2.9`, `US-04.4.1`, `US-05.1.1`, `US-05.1.3`, `US-05.1.4`, `US-05.1.5`, `US-05.2.1`, `US-09.3.3`, `US-12.1.1`, `US-12.1.2` and `US-12.1.4`. The buttons they use include Contracts, Hospitals & holidays, Recurring bookings, Insurers and RVG codes.
+- `US-01.5.1.json` and `US-01.5.2.json` (hospital holiday calendar and its conflicts): the seeded per-hospital Labour Day and Canterbury Anniversary rows migrate to the master public-holiday calendar, so re-point any hospital-holiday highlight to the new "Public holidays" line or view.
+- Any recipe that lists hospitals or surgeons in a picker (Booking, Contract holder): retired masters leave the pickers (item 16); the seed has none retired, so no change expected.
+- Work item 18 lists the Playwright specs; the `--dry` run is the check for anything else.
+
+**ATLAS.md.** Update "Routes" (the `?view=` Master data views and `/admin/masters?view=goLive`), "Overlays that need clicks" (InsurerSheet, PublicHolidaySheet, Load from spreadsheet, the retire dialogs), "Existing hooks" (`masters-insurers`, `masters-public-holidays`, `master-load-sheet`, `master-load-result` and the sub-nav group hooks) and the line that says Master data tabs include "Hospitals & holidays".
 
 ## Adversarial review (after build)
 
@@ -956,6 +983,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump (from and to);
   - tests added (including the rule-parity and US-13.4.1 coverage tests);
   - the review pass.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Public holidays are one master calendar.** A row applies to every hospital except those
      listed as open that day. Hospital calendars hold only hospital-specific closures. The seeded
@@ -1005,7 +1033,6 @@ review-and-fix pass (PROGRESS convention 18)**:
   - For **43**: `validateSheet` and `commitMasterLoad` are the seams to time on a full-scale sheet.
     `SAMPLE_SHEETS` shows the fixture pattern.
   - For **44**: S5's optional Beat 5; the re-load question in the discovery points; public
-    holidays on the anaesthetist calendars if wanted; the grouped Master data sub-nav in the
-    screenshots.
-  - For the catalogue owners: US-13.4.1's screenshots still caption several masters "(view only)";
-    they can be re-shot.
+    holidays on the anaesthetist calendars if wanted. The grouped Master data sub-nav and the
+    "(view only)" captions on US-13.4.1's screenshots are re-shot in this phase's Catalogue
+    screenshots step.

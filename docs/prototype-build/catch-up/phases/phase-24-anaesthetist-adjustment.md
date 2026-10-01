@@ -86,10 +86,10 @@ data, so this phase adds no rule, report or Contract setting for repeated overri
    - **Ask the owner** whether the anaesthetist should see the before and after figures. If the
      answer is yes, add a read-only "Calculated fee · after your adjustment" row to the adjustment
      card only, not a Card total. Record the answer in the Decisions log.
-   - **Stale catalogue screenshots.** US-03.5.1's images are captioned "Adjustment and charge" and
+   - **Catalogue screenshots.** US-03.5.1's images are captioned "Adjustment and charge" and
      "Dollar adjustment field", and US-05.4.1's show a Booking total. They were shot from today's
-     retired behaviour. Do not edit the catalogue; tell the owner they need re-shooting from this
-     phase's `adjustment-card` shots.
+     retired behaviour. This phase re-shoots them in the Catalogue screenshots step below, from its
+     `adjustment-card` shots. It still never edits the catalogue's text or status.
 4. **Proposed items.**
    - **US-03.5.1** stays Proposed until the reason rule is confirmed. The reason is already
      mandatory; keep it.
@@ -653,7 +653,8 @@ Authorising prices with both layers, and neither touches the adjustment.
 - [ ] **Scripted beats unbroken.** S1 Beat 3, S2 Beat 4, the S3 Beat 1 figures, S4 and S5 Beat 1 run
       as scripted.
 - [ ] No en or em dashes in any new copy; teal on every new action; crimson nowhere new.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green.
+- [ ] Catalogue screenshots: the recipes for US-03.5.1, US-03.5.2, US-05.4.1, US-05.4.2 and US-04.2.2 (plus US-03.5.3 and US-03.3.5, which this phase broke) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -680,6 +681,31 @@ In the same session, patch these files in `docs/demo-guide/`, and the same secti
   `src/apps/demo/DemoControlPanel.tsx` only if it lists the Review contents.
 
 This is not a milestone phase. Phase 25 runs the next master-guide consistency read.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 24` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-03.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason | partial · web-adjustment, mobile-adjustment (none, adjustment) | Captured. The existing recipes start on C0009, a St George's default Booking whose Contract does not allow an adjustment, so move both to `SEED_MARKERS.adjustmentCaptureBooking` (Dr Souter's pinned Mon 27 Jul List, RVG Default Post-paid; take the id from the built seed). Re-shoot web and mobile, highlight `adjustment-card`: state `none` is the "Price adjustment" section with the None, Discount %, Final price control; `adjustment` is a discount typed with its required reason. Add a `not-offered` state (or shot) on the Aria rate x time Booking beside it on the same List: no adjustment section where the Contract does not allow it. Add a `before-btm` state with the caption "once base, time and modifier units are recorded". Caption in the catalogue's words. Drop the partial reason. |
+| [US-03.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.2.md) BTM still recorded in full at a 100% discount | captured · web-full-discount, mobile-full-discount | Stays captured. Same move off C0009 to the adjustment Booking; keep the highlight on `units-row-b` and `units-row-m` and the 100% state, with the caption "Base, time and modifier units stay recorded. Nothing is charged." Keep the shot `name`s. |
+| [US-05.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.1.md) Apply anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (entry, applied) | Captured. Same move off C0009. `entry` shows the reason required; `applied` shows the adjustment applied with no money on the anaesthetist screen (the 2026-09-28 ruling). The old caption "the Booking total shows the fee before it" goes. Add the office side: `admin-adjustment-layers` on the seeded `SEED_MARKERS.adjustedBooking` (Dr Morrison, Mon 20 Jul List `SEED_LIST_IDS.morrisonMon20`) with `booking-total-layers` ("Calculated $360.00 · anaesthetist discount 10% · $324.00") and `review-adjustment-flag` on `/admin/review/<that List>`. Drop the partial reason. |
+| [US-05.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.2.md) Office price override | captured · admin-price-override (entry, applied) | Stays captured. The sheet is renamed "Office price override" and shows "Calculated" and "After the anaesthetist's discount" context lines; the "Price override" button keeps its name. Re-shoot both states (`office-override-sheet`) on a Booking that carries an adjustment so the context line shows. |
+| [US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules | captured · admin-pricing-basis (type-1, type-2, type-3, rate-time) | Stays captured. Re-shoot the four states (Phase 18 rebuilt the sheet) and add `adjustment-rule` highlighting `contract-adjustment-rule` ("Anaesthetist may adjust the price") for RVG Default Post-paid, with a second state on a Contract where it is off. |
+
+**Recipes this phase breaks.**
+- `US-03.3.5`, `US-03.5.2`, `US-03.5.3`, `US-03.5.1` and `US-05.4.1` highlight `[data-shot=capture-adjustment-and-charge]`, which `OverrideCard` carried and `AdjustmentCard` (`adjustment-card`) replaces. `US-03.5.3` (adjustment reason, captured) and `US-03.3.5` (itemise modifiers) are not covered items: re-point their hook to `adjustment-card` and move them off C0009 where they need the field. All five also start on C0009; the field is not offered there.
+- `US-05.4.2` and `US-07.2.3` open the office override sheet by the "Price override" button and, in `US-07.2.3`, click `"$ adjust"`; the button name and the three kinds stay, but check the dialog heading and the `text=/Office billing setup/` ancestor selector in `US-07.2.3` after item 8 adds the Anaesthetist adjustment row.
+- Any recipe that shoots the admin Booking total or the Review Fee cell on a Booking with a layer (`card-calculation` users `US-05.2.1`, `US-05.2.4`, `US-05.2.5`, `US-05.3.4`, `US-05.3.5`) is unaffected unless a layer is seeded on its Booking; the `--dry` run is the check.
+
+**ATLAS.md.** Update Seed data (the adjustment capture Booking, the adjusted Review Booking on Morrison's List, the Post-paid Contract flag), Personas and IDs (`SEED_MARKERS.adjustmentCaptureBooking`, `adjustedBooking`), and Existing hooks (`adjustment-card`, `contract-adjustment-rule`, `review-adjustment-flag`, `office-override-sheet`, `booking-total-layers`; `capture-adjustment-and-charge` removed).
 
 ## Adversarial review (after build)
 
@@ -736,3 +762,7 @@ green, and before writing the PROGRESS entry.
   - **36:** the ledger legs carry the layered total.
   - **39:** decide whether an additional invoice can carry either layer (D10).
   - **44:** re-script the S1 Beat 3 aside and the S2 Beat 4 note into the rewritten run sheet.
+- **Catalogue screenshots.** The step's result: recipes changed (US-03.5.1, US-03.5.2, US-05.4.1,
+  US-05.4.2, US-04.2.2, plus US-03.5.3, US-03.3.5 and any other recipe the step broke), the
+  `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial
+  reason handed to a later phase.

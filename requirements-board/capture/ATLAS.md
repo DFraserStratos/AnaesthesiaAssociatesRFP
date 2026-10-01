@@ -133,6 +133,12 @@ Run these from `requirements-board/`.
 
 ## Rules for agents
 
+These rules are for agents that only write recipes. A catch-up build phase also owns the recipes for
+the items it covers and for any recipe it breaks, and ends with a full capture run: see "Catalogue
+screenshots" in `docs/prototype-build/catch-up/ROADMAP.md`. In a build phase the app changes are the
+phase's own, and the session may start root `npm run dev` itself if the servers are down; every other
+rule below still applies.
+
 - **Never commit.** No git commits, pushes, rebases or PRs.
 - **Prototype changes are `data-shot` attributes only.** No visual or behaviour change.
   - Add a `data-shot` to an existing element.

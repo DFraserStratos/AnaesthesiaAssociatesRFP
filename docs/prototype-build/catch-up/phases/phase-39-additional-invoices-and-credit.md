@@ -112,7 +112,7 @@ so `PERSIST_VERSION` is bumped. No seeded figure moves.
    entry. At plan time (501b0b8) FT-08.6 and US-08.6.1 to US-08.6.4 were all **Verify**; a Verify
    item that AA has reworded is the most likely change. The US-08.6.1 screenshots still show the old
    "Add post-op event" addendum UI: the text wins (admin free-form invoice; the anaesthetist's events
-   are 39b's), and the images are stale.
+   are 39b's), and this phase's Catalogue screenshots step re-shoots them.
 2. **Owner decision D10 (OQ-45) is answered: build the answer, no provisional label.** An additional
    invoice is a free-form invoice: each line is a description, a quantity and an amount, with no
    Contract pricing or unit rules, admin only, no approval step, audited. It is not a split of a
@@ -866,7 +866,8 @@ Session 2 (after **Reset**, stage, and one additional invoice as above):
 - [ ] Xero sim: no NHI on any credit note; pair detail shows allocated and unallocated amounts.
 - [ ] No en or em dash in any new app string; teal is the only action colour on the new sheets and
       rails; no crimson and no red on the credit note or negative invoice.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
+- [ ] Catalogue screenshots: the recipes for US-08.6.1, US-08.6.2, US-08.6.3 and US-08.6.4 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -919,6 +920,31 @@ patch the sections below and spot-check that the master guide's S4 Beat 2 matche
 - **Control Panel scenario text:** the S4 scenario's message (re-homed by 14) replaces "stage
   post-op ... Add post-op event" with "stage post-op, then Create additional invoice and Credit in
   full and rebill on Sarah Mitchell".
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) Additional invoice for late billing lines | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | captured (admin half). The old shots show the retired "Add post-op event" addendum, so rebuild them. Admin `post-op-addendum` becomes the Create additional invoice flow: start at the invoiced Booking's Procedure on Dr Sharma's Tue 14 Jul AM List (run the `stage-post-op` bar action first, then open Sarah Mitchell's Booking), `locked` state highlights `[data-shot=additional-invoice-button]`, `added` state fills `[data-shot=additional-invoice-sheet]` with "Post-op ward review, Wed 15 Jul, 15 min" at $30.00 and issues it, highlighting `[data-shot=invoice-additional-links]`. Keep the shot names `post-op-event` (web, mobile) and `post-op-addendum` (admin). Web and mobile `post-op-event` now show the locked Booking's one-line late-charge caption (`[data-shot=locked-booking-late-charge-caption]`); Phase 39b swaps it for the anaesthetist's Add post-op event. Caption wording: "The office raises an additional invoice on a Procedure after the List is invoiced". Drop the "addendum card" partial reason; any anaesthetist-side remainder is handed to 39b |
+| [US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md) Credit note and re-issue | absent | captured. Replace the absent reason. Admin `/admin/invoices/<id>` for a live invoice: shot `credit-rebill`, `rail` state highlights `[data-shot=credit-rebill-button]`, `sheet` state fills `[data-shot=credit-rebill-sheet]` (reason chip "Wrong PO or reference", the trail preview), `credit-note` state opens `/admin/credit-notes/<id>` highlighting `[data-shot=negative-invoice-card]`, `credited` state shows the original's `[data-shot=invoice-credited-banner]`. Use the `stage-refund-after-payout` bar action to show the paid-out variant with an amount to net. Simulator: `/demo/xero/invoices/<accRecId>` shot `xero-credit-note` highlighting `[data-shot=xero-credit-note]`. Captions in the catalogue's words: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist" |
+| [US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub, no shots | captured. Replace the stub. Admin Booking detail (shared body) on an invoiced Booking: shot `additional-invoice-button` highlighting `[data-shot=additional-invoice-button]`; shot `additional-invoice-document` on the new invoice with `[data-shot=invoice-additional-links]` showing the link both ways (original lists its additional invoices, the new one links back). Caption "A Procedure on an invoiced Booking has a Create additional invoice button" |
+| [US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Replace the stub. Run the `stage-combined-procedure` bar action on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards and the note "Components need not add up to the bundle price"; `result` state shows one split invoice linking back to the Procedure. If the prepaid-combination split stays refused (handed to 41), say so in the caption, not as a reason |
+
+**Recipes this phase breaks.** Work item 4 and the Playwright note in item 15 cover the specs; the capture recipes found at plan time:
+- `US-08.6.1` itself (all three shots click or scroll to the retired "Add post-op event" button and the text "A post-op charge (an HDU review ..."); rebuilt above.
+- `US-03.3.6` and `US-05.1.5` mention post-op or addendum text in their recipes: grep `recipes/` for `post-op|Post-op|addendum|stage-post` and re-point any hit to the locked Booking caption or drop the step. Phase 39b owns `US-03.3.6`'s own shots.
+- Any recipe that opens the admin invoice document or the Invoices table by column position (the new Kind column, the rail's Correct this invoice card): re-run `--dry` and fix by text, not position.
+- Any recipe that opens Dr Sharma's Tue 14 Jul AM List and relies on the old `stage-post-op` freeing a Slot for the addendum (the trigger now only authorises the List).
+
+**ATLAS.md.** Routes: add `/admin/credit-notes/:creditNoteId`. Seed data and Personas and IDs: the staged scenario (Sarah Mitchell's Booking after `stage-post-op`, the `stage-combined-procedure` and `stage-refund-after-payout` results and the invoice and credit note numbers they give). Existing hooks: the `data-shot` hooks named in work items 5 and 14. Overlays: the three new sheets.
 
 ## Adversarial review (after build)
 
@@ -995,6 +1021,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots result:** recipes created or changed (US-08.6.1 to US-08.6.4, plus any recipe the addendum removal broke), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** 2026-07-24 "Phase 09, the four open-question readings", reading (3), the
      post-op addendum as a new linked Card with its own capture, submit, authorise and bill cycle.
@@ -1052,4 +1079,4 @@ review-and-fix pass (PROGRESS convention 18)**:
     takes the rebill through the ledger.
   - For **43**: the credit and additional-invoice rows must stay usable at full scale.
   - For **44**: S4 Beat 2 as rewritten here; the OQ-60, OQ-71 and OQ-72 lines if answered later; the
-    stale US-08.6.1 screenshots need re-shooting by the owner.
+    US-08.6.1 to US-08.6.4 screenshots were re-shot here (see the Catalogue screenshots result in PROGRESS).

@@ -572,8 +572,8 @@ have moved between sessions).
       the Demo actions and PWA sheet sections as finally built, and the Office simulation section.
     - `requirements-board/capture/ATLAS.md`: the "Scenario jumps" table (what each jump stages and its
       story) and the "Events" list (now "Demo actions by screen"). Re-run any capture recipe whose
-      `{ "scenario": "Sn" }` expectations changed only if the owner asks; otherwise check the recipes
-      still resolve their selectors. Run `npm run verify:board` if any board file changed.
+      `{ "scenario": "Sn" }` expectations changed is checked and re-pointed in the Catalogue
+      screenshots final sweep (below). Run `npm run verify:board` if any board file changed.
     - Tell the owner (do not edit without their say-so) that `CLAUDE.md`'s "Current state" paragraph
       and its `PERSIST_VERSION` number are stale after the catch-up, with the suggested wording.
 12. **Full QA pass.**
@@ -608,7 +608,7 @@ have moved between sessions).
     - **Regressions:** fix small ones here, with a test. Log anything larger in the PROGRESS open-items
       handoff for the owner rather than growing this phase.
     - `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
-13. **Close-out:** the adversarial review, then PROGRESS.md (below).
+13. **Close-out:** the adversarial review, the Catalogue screenshots final sweep (below), then PROGRESS.md.
 
 ## Demo triggers
 
@@ -643,7 +643,8 @@ followed by one deep link per beat.
   owning phases' count function, not here.
 - Future-scope items (HL7 v2, FHIR R4, near real time, warning settings US-13.7.4) beyond keeping
   their badges and narration honest.
-- Re-capturing the catalogue's screenshots with the capture tool.
+- Catalogue screenshot work beyond the final sweep in the "Catalogue screenshots" section below (no
+  new stories to cover; the sweep is a check and a correction of what exists).
 - Scenario jumps or a scenario picker on the PWA.
 - Editing `CLAUDE.md` without the owner's approval.
 - Fixing large regressions found in the QA pass (logged, not fixed).
@@ -685,7 +686,8 @@ followed by one deep link per beat.
 - [ ] No en or em dash in any app copy changed by this phase (the copy guard test passes).
 - [ ] `demoGuideSync.test.ts` runs against the rewritten run sheet and master guide with nothing
       skipped.
-- [ ] `npm run verify:board` green if any board file changed.
+- [ ] Catalogue screenshots, final sweep: a full `npm run capture` ends with no failed recipe and no story without a recipe; every remaining `partial` or `absent` reason is true of the built app and names no later phase; every Retired or Future item's recipe is `absent` ("Retired" / "Future") where the prototype no longer shows it; ATLAS.md is read end to end against the app; and `npm run verify:board` is green.
+- [ ] `npm run verify:board` green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
 
 ## Demo guide updates
@@ -703,6 +705,42 @@ This phase **is** the demo guide update. Every file changes:
 
 End with the final consistency read: the master guide against the Markdown, and both against the
 running app.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 44` first: it lists no covered stories.
+
+**Final sweep.** This phase covers no stories of its own, so the step is the closing sweep over the
+whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have settled the app:
+
+- a full `npm run capture` (in `requirements-board/`, after `node scripts/capture.ts --dry`), with
+  root `npm run dev` running;
+- every remaining `partial` or `absent` recipe's `absentReason` is re-read against the built app and
+  made true: no reason may still name a later phase, since none remains, and none may repeat a
+  plan-time claim (for example "no patient view" or "scale is only narrated") that Phases 14 to 43a
+  have made false. A story that is now fully in the prototype becomes `captured` with shots; a
+  genuine gap (a real Hub, usability testing, a Future item) keeps `partial` or `absent` with a reason
+  that says what is missing and why;
+- every Retired or Future item's recipe is set to `absent` ("Retired" or "Future") where the
+  prototype no longer shows it, with the Retired item's removing phase named in the reason; none keeps
+  shots of a screen that is gone;
+- `capture/REPORT.md` ends with no failed recipe and no story without a recipe;
+- `capture/ATLAS.md` is read end to end against the app: Routes, Personas and IDs, Seed data, Overlays,
+  Existing hooks, Demo control panel (the index plus Demo actions by screen, and the rebuilt "Scenario
+  jumps" table from work item 11) and Gotchas, each corrected where a catch-up phase left it stale;
+- `npm run verify:board` is green, and the REPORT.md counts before and after go in the PROGRESS entry
+  and the catch-up closing summary.
+
+**Recipes this phase breaks.** About twenty recipes run `{ "scenario": "Sn" }` in their setup (25
+`S3` and 3 `S5` uses at plan time, for example `US-08.1.1.json`). Work items 2 and 3 rebuild the
+jumps in `demoScenarios.ts` and keep the ids S1 to S5 and the `scenario-s1` to `scenario-s5` and
+`scenario-confirm` hooks, but each jump's staged state may change; the `--dry` run and the full
+capture are the check, and any shot whose expectation moved is re-pointed keeping its `name`.
+
+**ATLAS.md.** Read end to end and corrected as above (work item 11 already rewrites the "Scenario
+jumps" and "Events" sections); record in the PROGRESS entry which sections changed.
 
 ## Adversarial review (after build)
 
@@ -766,6 +804,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - `PERSIST_VERSION` (unchanged, or from and to, with why);
   - the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots (final sweep):** the full-run `capture/REPORT.md` counts before and after (captured, partial, absent, failed, no recipe), the `absentReason`s rewritten and the Retired or Future recipes set to `absent`, the recipes re-pointed for the rebuilt scenario jumps, and the ATLAS.md sections corrected; repeat the final counts in the catch-up closing summary.
 - **Decisions log:**
   1. **Amended:** 2026-07-22 "Time-unit partial-interval rounding = round UP per started interval, a
      named ASSUMPTION". Time units come only from the RVG rule (OQ-50, answered 2026-10-01); the

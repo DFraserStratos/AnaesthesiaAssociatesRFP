@@ -269,14 +269,21 @@ contract right; do not build their triggers here.
      monitor). Add `visual/demo-actions.spec.ts`: the pill is absent on the Day view, present with four
      entries on the Billing monitor, and a half payment from an invoice page moves that invoice's money
      chip (`data-shot="invoice-money-states"`).
+   - Capture runner: the runner hides the whole harness bar with CSS (`HIDE_HARNESS` in
+     `requirements-board/scripts/capture.ts`), so a recipe cannot click the "Demo actions" pill. Add a
+     `{ "trigger": "<id>", "choice"?: "<value>" }` step type: it lifts the hide style, opens
+     `[data-shot=demo-actions]`, sets the row's `select` if `choice` is given, clicks the Run button in
+     `[data-shot=demo-action-<id>]`, waits for the row's `role="status"` line, closes the popover with
+     Esc and restores the hide style, failing the recipe if the row is missing or disabled. Document it
+     in ATLAS.md's recipe format and add it to `validate()`. Recipes then stage every per-screen trigger
+     with this step, never with a `/demo/control` click.
    - Capture recipes: update each of the 18 `requirements-board/capture/recipes/*.json` that clicks a
      Control Panel trigger (scenario jumps, clock and reset steps stay as they are): `goto` the
-     trigger's screen, click `[data-shot=demo-actions]`, then the row's button inside
-     `[data-shot=demo-action-<id>]`; move `highlight` selectors to the new hooks. A recipe that clicked
+     trigger's screen, then a `trigger` step for the entry; move `highlight` selectors to the new hooks. A recipe that clicked
      the Control Panel's "Run payables" clicks the Billing monitor's own button
      (`[data-shot=billing-payables-run]`) instead. Rewrite the "Demo
      control panel" section of `requirements-board/capture/ATLAS.md` to describe the index and the
-     per-screen menu. Re-capturing the catalogue images is not required. Run `npm run verify:board`.
+     per-screen menu. The catalogue images are re-captured in the Catalogue screenshots step. Run `npm run verify:board`.
    - `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` green before session 2.
 
 ### Session 2: the new pieces
@@ -417,6 +424,7 @@ have their PWA entries above. Admin, Xero sim and Integrations sim screens do no
 - [ ] The PWA chip and sheet clear the header avatar, the card dock and the tab bar at the `pwa-device` viewport (393x660) and on a real handset if available; the harness bar never overflows at 1280px.
 - [ ] Keyboard: the bar pill opens with Enter, Esc closes, focus returns to the pill.
 - [ ] No en or em dash in any new app copy (labels, descriptions, messages, badges).
+- [ ] Catalogue screenshots: the recipes for US-13.5.1 and US-13.5.2 are created or updated, the 4 failing recipes (US-03.5.2, US-05.2.1, US-05.3.5, US-05.4.1) are fixed, every live story has a recipe ("No recipe" is 0), every recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green; `npm run verify:board` green after the recipe edits.
 
 ## Demo guide updates
@@ -441,6 +449,58 @@ Patch the beats this phase moves, in the same session, in `docs/demo-guide/` and
 - `README.md` (demo guide): the readiness row for the control panel.
 - `master-demo-guide.html`: the same setup, S1, S4, S5, recovery and readiness passages.
 - Control Panel scenario text (work item 7).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 14` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-13.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.1.md) Role-based access | captured · admin-roles, simulator-role-refused | stays captured. Neither shot touches a trigger, so only confirm they still render; no new shot |
+| [US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md) Audit trail of all actions | captured · admin-audit-viewer | stays captured. Add an admin shot `sign-in-attempts` on `/admin/audit`: open Demo actions, run "Simulate sign-in attempts", highlight the new `account` rows (signed in, sign-in failed, password reset by user). Caption: "Every sign-in attempt is an audit row, with who, role, source and what changed". Keep `audit-viewer` as it is |
+
+**Baseline sweep (Phase 14 only).** This is the first catch-up phase, so it also brings the whole
+capture set to a clean baseline, whatever the stories it covers:
+
+1. **Fix the 4 recipes that fail today** (`requirements-board/capture/REPORT.md`, "Failed recipes":
+   US-03.5.2, US-05.2.1, US-05.3.5 and US-05.4.1). All four highlight
+   `[data-testid=card-calculation]`, which the 2026-09-28 decision removed from the anaesthetist
+   Booking (PROGRESS Decisions log, "Anaesthetist Card shows no calculation"). Each is re-pointed to
+   what the screen shows now, or set partial with a reason. Done at plan time: US-03.5.2 web highlights
+   the Base and Modifier unit rows, US-05.2.1 and US-05.3.5 show the fee on the admin Booking
+   (`/admin/day/<date>/cards/<id>`) instead of web and mobile, and US-05.4.1 highlights the adjustment
+   block and its partial reason now says the anaesthetist sees no total. Confirm each with the
+   `--dry` run and look at the shots; fix any that still fail.
+2. **Every live story has a recipe.** Every story that is not Retired or Future now has one, so the
+   runner's "No recipe" count is 0 from this phase on. 47 placeholder `absent` recipes were added at
+   plan time: "Not built yet: catch-up Phase NN builds this" for the phase that builds the story, and
+   "Not planned: ..." for US-04.3.6, US-14.6.1 and US-14.6.2 (Future Work, in no phase). The phase that
+   builds a story upgrades its placeholder. If the catalogue gained live stories since, add the same
+   kind of placeholder (find them with `node docs/prototype-build/catch-up/tools/recipe-status.mjs`
+   for every phase and look for "none (create it)").
+3. **Then the full capture run**, so `REPORT.md` is a true baseline: record its counts (captured,
+   partial, absent, failed, no recipe) in the PROGRESS entry as the "before" figures that later phases
+   compare against.
+
+**Recipes this phase breaks.** The Control Panel triggers move, so every recipe that clicks one is
+re-pointed. At plan time these recipes use `/demo/control` for a trigger: FT-08.5, US-06.3.4,
+US-06.4.1, US-07.4.1, US-08.3.3, US-08.3.4, US-08.5.1, US-08.5.2, US-08.6.1, US-09.2.1, US-09.2.2,
+US-09.2.3, US-09.2.4, US-10.1.2, US-10.2.1, US-10.2.2, US-10.2.3, US-13.3.2 and US-14.5.1 (US-07.4.1 and
+US-08.3.3 may use the clock only, which does not move). Work item 7 (session 1, "Capture recipes") says
+how: `goto` the trigger's screen, then the new `trigger` step for the entry (the runner lifts its
+harness-bar hide to open `[data-shot=demo-actions]` and run `[data-shot=demo-action-<id>]`); scenario
+jumps, clock and reset steps stay. Keep every shot `name`.
+Recipes that click "Run payables" use `[data-shot=billing-payables-run]`. Re-capture them in this step.
+
+**ATLAS.md.** Rewrite "Demo control panel" (the index and the per-screen "Demo actions" menu with its
+`data-shot` hooks), update the Routes row for `/demo/control`, and add the new hooks under "Existing
+hooks".
 
 ## Adversarial review (after build)
 
@@ -488,3 +548,7 @@ and records the pass in the phase entry. Do not re-raise anything already settle
 - **Binding conventions:** convention 4's "store actions triggered from the demo control panel or demo
   screens" becomes "registered in `src/shared/demoTriggers` and shown on their screen (harness bar or
   PWA sheet)"; convention 13 adds the Demo actions menu and the PWA sheet to the badged surfaces.
+- **Catalogue screenshots:** the baseline sweep (the 4 failing recipes fixed, the placeholder recipes
+  added so "No recipe" is 0), recipes created or changed (the sign-in shot, the re-pointed trigger
+  recipes), the `REPORT.md` counts before and after (captured, partial, absent, failed, no recipe), and
+  any partial reason handed to a later phase.

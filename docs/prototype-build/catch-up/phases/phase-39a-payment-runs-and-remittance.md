@@ -643,10 +643,9 @@ and 37 rewrote the payables code: use the names from the drift check):
     carried-forward panel). Playwright: a new `visual/admin-phase39a.spec.ts` (the payment period
     panel before and after approval, a run detail, a remittance advice with a netted negative, the
     carried-forward panel, a recovery invoice) and a web shot of the Remittances tab and sheet;
-    update any spec that shot the old payables panel. Re-point the US-10.2.1 capture recipe in
-    `requirements-board/capture/recipes/` if it shoots the payables panel, add the new `data-shot`
-    hooks and demo actions to `requirements-board/capture/ATLAS.md`, and run `npm run verify:board`
-    from the repo root. Then the demo guide (below) and PROGRESS.
+    update any spec that shot the old payables panel. The capture recipes, ATLAS.md and
+    `npm run verify:board` are the Catalogue screenshots step below. Then the demo guide (below) and
+    PROGRESS.
 
 ## Demo triggers
 
@@ -766,6 +765,7 @@ Session 2 (after **Reset**):
       Xero-side batch payment).
 - [ ] No en or em dash in any new string; no weekday, "weekly" or "20th" in app copy; negatives read
       "-$X.XX"; teal is the only action colour; crimson unused on the new screens.
+- [ ] Catalogue screenshots: the recipes for US-10.2.5 and US-10.2.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green; `npm run
       verify:board` green.
 
@@ -816,6 +816,29 @@ run of the built app.
 - **Control Panel scenario text:** the S3 and S4 messages, where they mention "Run payables" or the
   payout, gain the approve step. The PWA stand-in's new label, "Office approves and runs payables",
   goes wherever the guide names it.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39a` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) Negative invoices netted in the payment run | absent · stub, no shots | captured. Replace the stub. Stage it with the `stage-payment-period` bar action, choice "19 BCTIs and a credit after payout", on `/admin/billing`, then approve and run. Admin shot `remittance-advice` at `/admin/billing/payables-runs/<runId>/remittance/<anaesthetistId>`, highlight `[data-shot=remittance-advice]` (the 19 BCTIs, the negative invoice netted as "-$X.XX", the net paid). Admin shot `payables-run-detail`, highlight `[data-shot=payables-run-detail]`. Web shots at `/web/accounts/remittances`: `web-remittances` (the table with signed netted amounts) and `web-remittance-sheet` (open a row, highlight `[data-shot=web-remittance-sheet]`). Mobile Balances is unchanged and has no shot. Captions in the catalogue's words: "The payment is the net total; the remittance advice shows the negative invoice netted against the positive ones" |
+| [US-10.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.6.md) Approve the period's BCTIs for payment | absent · stub, no shots | captured. Replace the stub. Admin `/admin/billing` after `stage-payment-period` ("19 BCTIs"): shot `approve-period` with `before` state highlighting `[data-shot=payables-run-draft]` and the disabled "Run payables in Xero" ("Nothing approved to pay"), `approved` state after clicking "Approve period's BCTIs" highlighting `[data-shot=payables-runs]` with the run's Approved pill, and `paid` state after the run. Caption: "BCTIs not yet approved are not in the payment run" |
+
+**Recipes this phase breaks.** Work item 7 replaces the Billing monitor's payables panel with the payment period panel (approve, then run), and item 16 asks for the US-10.2.1 recipe to be re-pointed. Found at plan time, all keyed on `[data-shot=billing-payables-run]` (kept on the run button's container) and the button name `Run payables`:
+- `US-10.2.1` shot `payables-run` (`/admin/billing`, highlight `[data-shot=billing-payables-run]`) and its `paid` state in the simulator; the caption "Authorised payables waiting for the payables run" becomes "Released payables wait for the period's approval" with the highlight on `[data-shot=payables-run-draft]`.
+- `US-09.2.4` (`payables-run`, two states with a click on `[data-shot=billing-payables-run] >> role=button[name="Run payables"]`), `US-10.1.2` (click `role=button[name="Run payables"]`) and `US-08.3.4` (click `Run payables`, highlight `[data-shot=billing-payables-run]`): the button is now "Run payables in Xero" and is disabled until the period is approved. Insert a click on "Approve period's BCTIs" before each run click; keep the shot names.
+- Recipes using the PWA or Xero-sim "Simulate payment and payout" are unaffected in effect (the one-pair staged run approves first); the `--dry` run is the check.
+- Re-grep before capture: `grep -n 'Run payables\|billing-payables-run' requirements-board/capture/recipes/*.json`.
+
+**ATLAS.md.** Routes: `/admin/billing/payables-runs/:runId`, `.../remittance/:anaesthetistId`, `/admin/billing/recovery-invoices/:recoveryInvoiceId` and `/web/accounts/remittances`. Existing hooks: `payables-run-draft`, `payables-runs`, `payables-run-detail`, `remittance-advice`, `carried-forward`, `recovery-invoice`, `web-remittances`, `web-remittance-sheet`, `web-carried-forward`. Demo control panel: the `stage-payment-period` and `stage-departed-anaesthetist` actions, and the reworded "Office approves and runs payables" PWA stand-in. Seed data: the backdrop runs the seeded disbursements are grouped into.
 
 ## Adversarial review (after build)
 
@@ -876,6 +899,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots result:** recipes created or changed (US-10.2.5, US-10.2.6, plus the re-pointed US-10.2.1, US-09.2.4, US-10.1.2 and US-08.3.4), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** 2026-07-24 "Phase 10 build - decisions" item (5), the payables run as an
      unbadged office action, and Phase 37's "Run payables in Xero pays every due bill": a released

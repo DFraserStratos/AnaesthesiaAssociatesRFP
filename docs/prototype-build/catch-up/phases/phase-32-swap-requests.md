@@ -604,12 +604,10 @@ Build in this order: model, helpers, seed tests, store, notices, audit labels, r
       a List into my free Slot", and assert the Moved to you panel and the List on Forward Lists.
       Then move one of Souter's Lists to the office from List detail and assert it has left Forward
       Lists.
-    - `requirements-board/capture/recipes/US-01.4.3.json`: re-point both shots to the move sheet
-      (the own List's Move, not "Open for booking" or "Tap to ask"), and update `absentReason` and
-      `status`. Add a `US-01.4.6.json` recipe for the Booking sheet in the same format. Check that
-      `US-01.4.2.json` still finds its cells, and that `US-01.3.3.json` and `US-02.3.1.json` still
-      find "open for cover". Re-capturing images is not required. Run `npm run verify:board`.
-15. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`.
+    - `data-shot` hooks for the capture recipes (Move affordance, Move sheet, pairing prompt, Moved to
+      you panel, Moved by anaesthetists block, the doer sheet). The recipes, the re-capture and the
+      ATLAS edits are the standing step in "Catalogue screenshots" below, run after the review pass.
+15. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`, then the Catalogue screenshots step (after the review pass) and `npm run verify:board`.
     `persistMigrate.test.ts` covers the bump. `pwaPurity.test.ts` passes: the sheets, helpers,
     selectors and trigger bodies import nothing from `apps/admin`, `apps/demo` or `shell`.
 
@@ -690,7 +688,8 @@ There are no office stand-ins: nothing in this phase waits for the office (D7).
   the blacklist word.
 - [ ] No en or em dash in any new copy. Teal is the only action colour, and there is no crimson on
   any new control, pill or notice.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-01.4.3, US-01.4.5 and US-01.4.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -742,6 +741,33 @@ anaesthetists moving their own Lists to the office or a colleague. S2 is re-scri
   List to a colleague and see it on Admin Day".
 - **Milestone consistency read:** read `master-demo-guide.html` end to end against the run sheet and
   the cheat sheet. Fix any drift the Schedule track (28 to 32) left, not only this phase's.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 32` first: earlier phases may have
+changed these recipes since this plan was written. Work item 14 only re-points the Playwright specs
+and makes sure the `data-shot` hooks exist. The recipes and the capture run belong to this step.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-01.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.3.md) Anaesthetist moves their own List | partial · `cover-request` (web, mobile; the old cover sheet) | captured. Rename the shot to `move-list` (the old name describes the retired cover flow; say so in the PROGRESS entry). Web: `/web/availability`, states `sheet` (the Move sheet from the persona's own List cell) and `done` (the "Moved to Dr ..." tick); highlight the dialog. Mobile: `/mobile/availability`, states `sheet` (the bottom sheet opened from the own List's Move) and `to-office` (the "Move to the office" confirm); highlight `[data-aa-mobile-product] [role=dialog]`. Add an admin state on `/admin/day/2026-07-21` after staging the move with the `Colleague moves a List to the office` trigger, highlighting the Moved by anaesthetists block. Caption in the catalogue's words: "Move your own List to the office or a colleague's free Slot, with no request and no confirmation". Empty `absentReason`, set `status` captured |
+| [US-01.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.5.md) Blacklist warning when an anaesthetist reassigns their own List | none (create it; absent stub) | create, status captured. Shot `move-pairing-prompt` on web and mobile: the Move sheet with a colleague blacklisted with the List's surgeon chosen (the seed test pins the Souter List and colleague), the warning-tint prompt "Check with the office before moving this List to Dr ..." and the "Move List anyway" button. Highlight the prompt. The shot must show no reason, surgeon name or blacklist word. Caption: "The anaesthetist is warned before moving a List to a colleague the office has flagged, and can still go ahead" |
+| [US-01.4.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.6.md) The List's anaesthetist did its procedures | none (create it; absent stub) | create, status captured. Shot `move-to-doer` on web (Booking detail as Souter, the seed test's Booking) and mobile (Booking sheet), states `sheet` ("Move to the anaesthetist who did it", with where it lands and "Dr ... is paid for it") and `after` (the Booking on the colleague's List). Add an admin state on Admin Booking detail. Highlight the sheet, then the Booking row. Caption: "A Booking done by another anaesthetist moves to their List, and the payable and prepayment follow" |
+
+**Recipes this phase breaks.** Found by grep at plan time:
+- `US-01.4.3.json` is the old cover sheet ("Open for booking", "Tap to ask"): rebuilt in the table above.
+- `US-01.4.2.json` (admin, web and mobile finder) clicks free cells and "Free only". The web grid subtitle changes to "Find cover fast. Move one of your Lists into a colleague's free session." and free cells become tappable only with a movable List. Re-check the highlights and captions.
+- `US-01.2.1.json` (web `availability-grid`; mobile `availability-block-pm`), `US-01.5.2.json` and `US-01.5.3.json` (mobile `availability-block-pm`, `my-availability`) sit on the availability screens that gain Move and the Moved to you panel. Check the click targets.
+- `US-01.3.3.json` and `US-02.3.1.json` click "open for cover", which this phase keeps. No change expected.
+- `US-01.1.1.json` (mobile `my-lists`) shows the free row that loses "Offer cover" and gains "Open for bookings": no step to fix, but the image changes.
+The `--dry` run is the final check.
+
+**ATLAS.md.** Update Routes (the Move affordance and the Moved to you panel on `/web/availability`, `/mobile/availability` and the calendar routes), Seed data worth shooting (the pinned movable Souter List, the pairing-prompt List and colleague, and the doer-move Booking from the seed tests) and Existing hooks (new `data-shot` hooks for the Move sheet, the pairing prompt, the Moved by anaesthetists block and the doer sheet).
 
 ## Adversarial review (after build)
 
@@ -801,6 +827,7 @@ review-and-fix pass (PROGRESS convention 18)**:
     the demo guide;
   - the tests added (domain, store, notices, triggers, Playwright);
   - the review pass;
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase;
   - the milestone consistency read of the master guide.
 - **Decisions log:**
   1. **Supersedes** the 2026-07-21 "New interactions the design added" entry's mobile request-cover

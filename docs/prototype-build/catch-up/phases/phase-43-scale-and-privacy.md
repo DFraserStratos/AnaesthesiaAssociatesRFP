@@ -590,7 +590,7 @@ audit lists this phase as "no PWA stand-in required".
 - Hosting, backups, disaster recovery, penetration testing, environments and the AI-tools statement from
   EP-15's technical discussion: presenter talk-track only.
 - Real authentication or role management: the office-only rule is the store guard, as everywhere else.
-- Re-capturing catalogue screenshots; `US-15.0.6`'s two Xero captures stay valid.
+- Catalogue screenshots beyond the "Catalogue screenshots" step below (the covered items and the recipes this phase breaks); `US-15.0.6`'s two Xero captures stay valid.
 
 ## Manual test checklist
 
@@ -632,7 +632,8 @@ audit lists this phase as "no PWA stand-in required".
       line)", shown masked. Run the scan again at full scale: 0 found, with the scan time shown.
 - [ ] No new app copy contains an en or em dash; teal is the only action colour; figures, ids and timings
       are mono with tabular-nums.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
+- [ ] Catalogue screenshots: the recipes for US-15.0.4 and US-15.0.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -669,6 +670,30 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of `m
 
 Not a milestone phase; no full consistency read is required, but re-read every passage touched against the
 running app.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 43` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-15.0.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.4.md) Volumes | absent (not demonstrated; scale only narrated in copy) | partial. Create real shots, then change the reason to: full-scale volumes are generated in memory and timed on screen; formal performance testing belongs to the Testing milestone and is not part of the prototype. Admin shots: `full-scale-day` (`/admin/day/2026-07-21`; setup runs the `load-full-scale` entry from `[data-shot=demo-actions]` and its confirm, then waits for the scale banner; states `banner` showing the 85 anaesthetists, 20,000+ Slots and 27,500 to 28,500 invoices with generation time and the Timings table, and `paged` showing "3 pages of 30"), `full-scale-invoices` (`/admin/invoices`, "Showing 1 to 50 of" about 28,000) and `full-scale-audit` (pages of 100, newest entry "Full-scale data loaded"). Highlight the banner and the pager. Caption: "Demonstration at full practice volume with measured screen timings". Replaces the stale "scale is only narrated" reason |
+| [US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts and xero-pair (simulator, Xero sim) | stays captured; the two Xero shots stay valid. Add admin shots `raw-row` (Matching, an unmatched row: row detail with only needed fields, then View raw row asks for a reason and shows the masked columns, NHI as "ZAA••••" style and DOB as a year, with the provisional masking line; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found outside the core platform, core rows "Held by design"; second state with the planted test leak, one masked hit) and `synthetic-badge` (the "Synthetic data only" marker in the admin side nav, plus a mobile shot of the More card on `/mobile` showing it). Caption: "NHI stays inside the core platform and non-production holds synthetic data only" |
+
+**Recipes this phase breaks.**
+
+- The "Synthetic data only" badge is added to the web top nav, the admin side nav and the mobile More card, so nearly every web, admin and mobile image changes by a few pixels. The full `npm run capture` rewrites them; that is expected, not breakage. Check that no highlight box now overlaps the badge.
+- `US-15.0.4.json` quotes the narrated paging sentence on the Day grid and the Xero simulation; it is rewritten above. Recipes that highlight Admin Day (`US-15.0.1`, `US-13.1.1`, `US-13.1.2` and the many `/admin/day/` recipes) must still resolve with the paging footer; at demo scale there is no pager, so no change expected.
+- `US-13.5.1.json`, `US-07.2.1.json` and `US-07.3.2.json` start on the Data Inspector (`/demo/data`), which gains a Privacy checks panel; `US-02.5.5.json` and `US-13.5.2.json` open the Audit viewer, whose 500-row cap becomes pages of 100. Re-check their highlights with `--dry`.
+- The matching screen's row detail changes (only mapped fields, View raw row); no recipe was found using `/admin/intake/matching`, but the `--dry` run is the check.
+
+**ATLAS.md.** Update "Routes" (the Data Inspector's Privacy checks, Matching raw row), "Overlays that need clicks" (the confirm step for Load full-scale data, the raw-row reason prompt and sheet), "Gotchas" (the Synthetic data badge sits in every shell; full-scale generation takes a moment, so wait for the banner; the loaded set lives in memory and is lost on `goto`) and "Existing hooks" (the scale banner, the pager, the badge and the scan panel).
 
 ## Adversarial review (after build)
 
@@ -717,6 +742,7 @@ anything settled in the Decisions log.
   drift-check result (including OQ-30's state), the shipped names used from Phases 28, 33 to 37 and 42, the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in
   the browser, the checklist item by item, test counts, and the review pass.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   - "Full-scale data is an in-memory demonstration built on the pristine seed; saving pauses and nothing is
     serialised until Reset" (US-15.0.4). The 14 demo anaesthetists are untouched and the 71 generated ones
@@ -732,8 +758,8 @@ anything settled in the Decisions log.
   - "Synthetic data only is an environment marker in neutral styling, not a demo badge."
 - **Handoff notes:** the Future-scope message log still shows the patient name on failed rows (US-14.5.1 is
   Future); US-15.0.4's formal performance testing belongs to the Testing milestone;
-  `requirements-board/capture/recipes/US-15.0.4.json` is `absent` with a reason that says scale is only
-  narrated, which is now false: flag it for recapture (the Load full-scale data banner and the paged Day
-  view) rather than editing the board here; Phase 44's parity audit:
+  `requirements-board/capture/recipes/US-15.0.4.json` was `absent` with a reason that said scale is only
+  narrated; this phase's Catalogue screenshots step rewrites it (the Load full-scale data banner and the
+  paged Day view); Phase 44's parity audit:
   no PWA stand-in required for this phase; the new optional "Full scale" aside and S5 beats for Phase 44's
   rewrite.

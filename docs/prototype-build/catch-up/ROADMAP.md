@@ -171,6 +171,9 @@ Demo         44 demo guide rewrite & final sweep
   - `npm run shots` (Playwright) is green for any phase that touches UI; `data-shot` hooks and specs
     move with the code they follow.
   - The adversarial review pass has run (PROGRESS convention 18).
+  - The catalogue screenshots match the app: the phase's capture recipes are created or updated, a
+    full `npm run capture` has run with no failed recipe, and `npm run verify:board` is green (see
+    "Catalogue screenshots" below, and PROGRESS convention 19).
   - `PERSIST_VERSION` is bumped whenever the seed's shape or content changes.
   - Billing maths stays pure with Vitest tests.
   - The Decisions log is updated wherever a settled July ruling is superseded. Known cases: the
@@ -256,6 +259,49 @@ stays as a signposted scaffold, defaults to OFF and shows a badge when on, and l
   `master-demo-guide.html` in full.
 - **Phase 14 adds a Future-scope caveat to S1** while the HL7/FHIR tooling still carries it; 15a
   turns S4 Beat 1's gate into a warning; 34 rebuilds S1.
+
+### Catalogue screenshots
+
+The catalogue's stories carry screenshots of the prototype, taken by the Requirements Board's capture
+runner from one recipe per item (`requirements-board/capture/recipes/<ID>.json`; format, routes, hooks
+and selector tips in `requirements-board/capture/ATLAS.md`). When a phase is done, the screenshots on
+its stories must show what it built, and no other story's screenshots may be left showing a screen the
+phase changed. Every phase therefore ends with this step, after the review pass and before the
+PROGRESS.md entry:
+
+1. **Recipes for the covered items.** For every story the phase covers (and every feature it covers
+   that has no stories), create the recipe if it is missing and update it if it exists, so it matches
+   what was built:
+   - `status`: `captured` when the story is fully in the prototype, `partial` with an `absentReason`
+     saying exactly what is still missing (and which later phase builds it), `absent` only if the
+     phase built nothing visible for it (say why);
+   - shots for each screen and app the story lives on (web and mobile both, where both have it), with
+     states for the change the story describes (before and after, closed and open, warning and
+     cleared), and the highlight on this story's area;
+   - captions in the catalogue's current words (Booking, not Card), with no en or em dashes.
+   `node docs/prototype-build/catch-up/tools/recipe-status.mjs <phase>` lists the covered items and
+   their current recipes.
+2. **Recipes the phase broke.** Any other recipe whose route, id, text or selector the phase changed
+   is updated to the new screen, keeping its shot `name`s (rename a shot only when the old name
+   describes retired behaviour; the runner deletes the old generated image). A Retired or Future item whose screen the
+   phase removes gets `status: absent` with the reason "Retired: removed in Phase NN" (or "Future").
+   Add `data-shot` hooks rather than brittle selectors, and move hooks with the code they follow.
+   Stage a per-screen demo trigger with the runner's `trigger` step (added in Phase 14, because shots
+   hide the harness bar that holds the "Demo actions" menu); on the PWA, open its Demo sheet instead.
+3. **Capture.** With the prototype on 5173 and the PWA on 5174 (if they are not running, start root
+   `npm run dev` in the background and stop it afterwards), run `node scripts/capture.ts --dry` in
+   `requirements-board/`, fix what fails, then a full `npm run capture`. The full run rewrites only
+   images that changed, links them into the items' `images`, and rewrites `capture/REPORT.md`. It
+   must end with no failed recipe and no story without a recipe.
+4. **Look at the shots.** Open the new and changed images for the covered items and check that each
+   shows the built feature, the highlight lands on it, and the caption is true.
+5. **Keep ATLAS current.** Where the phase changes routes, seed ids, personas, overlays or hooks that
+   recipes rely on, update the matching `ATLAS.md` sections.
+6. `npm run verify:board` from the repo root is green.
+
+The runner, not the agent, writes the catalogue items' `images` and the files under
+`catalogue/assets/`; the phase still never edits a requirement's text or status. This step replaces
+any older advice in a phase doc to leave screenshots stale or for the owner to re-shoot them.
 
 ### Confirm before building
 

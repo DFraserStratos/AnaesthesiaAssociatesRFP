@@ -699,7 +699,9 @@ the guide.
     (the Unmatched filter; set `status` to captured and drop the `absentReason`); US-02.5.1,
     US-02.5.2 and US-02.5.3 (the Modification, Reschedule and Cancellation rows on the matching
     screen, then the applied Booking and its History); US-02.5.4 (a row flagged "List submitted"
-    applied by the office). Replace every caption that says a message was "applied" by itself. Run
+    applied by the office). Replace every caption that says a message was "applied" by itself. This
+    is the short list; the full step, with the rest of the covered items and the recipes this phase
+    breaks, is the Catalogue screenshots section below, run after the review pass. Run
     `npm run verify:board` from the repo root.
 16. **Demo guide** (see Demo guide updates below), in this session.
 17. **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`;
@@ -821,8 +823,8 @@ re-homed "Fire hospital message" and "Replay last message" stay in the bar only,
 - [ ] S1 Beats 1 to 3 run from a reset as patched below; S4 Beat 4 and S5 Beat 2 run as patched.
 - [ ] No en or em dash in any new copy; teal is the only action colour; no crimson on the new nav
   badge, pills, banner or buttons.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green, and
-  `npm run verify:board` after the recipe changes.
+- [ ] Catalogue screenshots: the recipes for US-02.1.1 to US-02.1.5, US-02.3.1 to US-02.3.3, US-02.5.1 to US-02.5.4 and US-02.5.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -884,6 +886,66 @@ makes S1 honest now.
   clean S1 state. Start in Mobile, then import the St George's download on Admin, Matching and create
   Sarah Mitchell's Booking. ..." with the rest unchanged; S4's Beat 4 line points at Admin, Matching,
   Demo actions, Send unmatched row; S5's MSG-STG-1002 line says it is sent to matching.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 33` first: earlier phases may have
+changed these recipes since this plan was written. The harness bar is hidden in shots, so recipes
+stage rows through the product's Import hospital download dialog (the badged sample picker); for the
+bar-only triggers ("Send unmatched row", "Reschedule to a date with no List") use the matching
+`/demo/control` entry in `setup`, as ATLAS.md's Shell notes say. This section is work item 15's full form; work item 15 stays as its short
+list.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-02.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.1.md) Import a hospital booking download | partial · admin-surgeon-pdf-import | captured. Re-shoot on `/admin/matching` (admin): `matching-import` open (the Sample file dialog listing the St George's, Southern Cross and Forte samples) and the landed rows (`matching-table` after importing `SAMPLE_STG`, "5 rows imported from St George's"). Keep the surgeon PDF shot as a second, true analogue. Drop the partial reason. Caption: "Import a hospital booking download; its rows appear on the matching screen" |
+| [US-02.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.2.md) Match rows to Lists and Bookings | partial · admin-pdf-row-matching | captured (admin). Shots on the row panel (`matching-decision`): `match` (Match and apply on the suggested row), `create-booking` (Create a Booking on a List picker), `create-list` (Create a List in a Slot), `create-draft` (Create a Draft List holding the row's Booking), `reject` (reason required, quick reasons). Highlight `matching-decision`. Keep the PDF matching shot as a second. Drop the partial reason |
+| [US-02.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.3.md) Show differences on match | absent | captured (admin). Import `SAMPLE_STG`, open R3 (the `APPT.s14` Modification): `diff` with time, procedure and note in warning tint side by side (`matching-diff`), and `diff-unticked` with the note unticked and the footer label counting 2 changes. Caption: "Field-level differences shown before they are applied". Remove the absent reason |
+| [US-02.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.4.md) Unmatched queue | partial · admin-needs-attention-queue | captured (admin). Import `SAMPLE_FORTE_SHEET`, switch the filter to Unmatched (`matching-unmatched`): R3 waits with its reason "No List at Forte Health ...", and the nav badge is amber. Add a `decided` state after Create Draft List shows the row left the queue with nothing dropped. Retire the old integration-log shot (its S14 manual-intervention message no longer exists). Drop the partial reason |
+| [US-02.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.5.md) Automatic sync from St George's and Southern Cross | none (create it); a placeholder `absent` recipe may exist by now | create it, or update the placeholder, as partial (admin). Shot `rows-wait-for-decision`: after importing `SAMPLE_STG`, the Open table with the "Nothing changes the schedule until you decide" header line and the Booking the row targets unchanged (second state on the Booking). `absentReason`: "Rows arrive and wait for the admin's decision, so No silent apply is shown. The scheduled pull, pull on open, Sync now, and the last-synced and failed-sync display are built in Phase 34." Phase 34 turns it to captured |
+| [US-02.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.2.1.md) Read, correct and ingest a surgeon PDF list | captured · admin-surgeon-pdf[inbox,extracted] | unchanged by this phase: the Surgeon PDFs inbox stays on `/admin/integrations`. Re-check the shot still passes after the Integrations tabs change. Phase 34 moves it and adds upload |
+| [US-02.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.1.md) Create or amend a Booking | partial · admin-phone-advice-booking, admin-amend-booking | stays partial. This phase creates Bookings on booked Lists only through a matched row, shown in the US-02.1.2 `create-booking` shot. Reword the reason: the office adding a Booking to a List that already has one by hand is Phase 35 |
+| [US-02.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.2.md) Save Booking changes explicitly | none (create it); a placeholder `absent` recipe may exist by now | create it if missing, else keep the placeholder, as absent: "No explicit save in the Admin App until Phase 35." No shots |
+| [US-02.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.3.md) Draft a booking update email | none (create it); a placeholder `absent` recipe may exist by now | create it if missing, else keep the placeholder, as absent: "No drafted update email until Phase 35." No shots |
+| [US-02.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.1.md) Add a Booking, manually or from a photo | captured · web-add-card, mobile-add-card | unchanged. Check it still passes (web and mobile) |
+| [US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md) Copy a Booking | captured · web-copy-card, mobile-copy-card | unchanged. Check it still passes (web and mobile) |
+| [US-02.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.1.md) Apply a modification | captured · simulator-inbound-message, admin-card-history | captured, re-shot: the Modification row (R3) on the matching screen before apply (`received`), then after apply the changed Booking and its History line "From hospital row" (admin `card-history`, applied through the store setup, not a replay). Caption "Hospital modification applied by the office". Replace "applied by itself" captions |
+| [US-02.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.2.md) Apply a reschedule | captured · simulator-inbound-message, web-rescheduled-card | captured, re-shot: the Reschedule row (R4) on the matching screen (`received`), then the moved Booking on the web List (`/web/lists/<new list>`) with its History intact (`applied`). Show the "no List there yet" Reschedule as unmatched in a third state |
+| [US-02.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.3.md) Record a cancellation | captured · simulator-inbound-message, web-cancelled-card | captured, re-shot: the Cancellation row (R5) on the matching screen (`received`), then the cancelled Booking kept visible on the web List (`applied`) |
+| [US-02.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.4.md) Changes accepted until the procedure | partial · simulator-change-cutoff | stays partial, re-shot on the matching screen (admin): a row for a submitted or authorised List with its flag and the disabled apply ("This List is authorised and locked"), beside a late row for a DRAFT List that applies. Reword the reason: the cut-off is List submission, not session start; the old "parks for manual intervention" wording is gone |
+| [US-02.5.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.5.md) Append-only change history | captured · admin-card-history, admin-audit-log | unchanged. Check the history now names the hospital row for a Booking created from one; no new shot required |
+| [US-02.5.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.6.md) Concurrent edits | absent | stays absent: "Built in Phase 35." Nothing visible here |
+
+**Recipes this phase breaks.** The Integrations monitor stays, but its messages stage rows instead of
+applying, and `manualIntervention`, the park codes and S14 "Locked target (manual intervention)" are
+retired. Found at plan time, with the re-point for each:
+- `US-02.5.1`, `US-02.5.2`, `US-02.5.3`: their `inbound-message` simulator shots and the `setup`
+  steps of `card-history`, `rescheduled-card` and `cancelled-card` replay S14, S13 and S15 and expect
+  the Booking to change. Re-point as in the table (matching screen, then decide).
+- `US-02.5.4`: `change-cutoff` uses S14 "Locked target (manual intervention)" and the
+  `integrations-schedule-change` pane. Re-point as above.
+- `US-02.1.4`: `needs-attention-queue` uses S12 and S14 and `integrations-attention`. Replaced above.
+- `US-14.1.1`: `hl7-siu-message` state `applied` reads the schedule-change pane, which now says "Sent
+  to matching"; keep the shot, change the caption to "Staged on the matching screen" and highlight the
+  same pane. `message-log` (setup replays one message) keeps working; check the log wording.
+- `US-14.5.1`: `dead-letter` still dead-letters (MSG-CPH-2001); check only. `US-14.2.1`, `US-14.3.1`
+  (the FHIR model and the live feed): check the live-feed result text, which now says rows were sent
+  to matching. Phase 34 moves all of these to the Future-scope surface and re-points them again.
+- `US-02.2.2`, `FT-02.2`, `US-11.1.2` use `/admin/integrations` tabs (Surgeon PDFs, Validators):
+  unchanged here; check they pass.
+- Anything else that opens `/admin/integrations` or `/demo/integrations`: the `--dry` run is the check.
+
+**ATLAS.md.** Update Routes (`/admin/matching`, the Matching nav item and its amber badge), Existing
+hooks (`matching-import`, `matching-stats`, `matching-table`, `matching-row-<n>`, `matching-diff`,
+`matching-decision`, `matching-apply`, `matching-banner`, `matching-unmatched`), Overlays (the
+Import hospital download dialog), the Integration simulator description (messages stage rows; the S14
+locked-target message and "manual intervention" are gone) and a note on the sample files
+(`SAMPLE_STG`, `SAMPLE_SX`, `SAMPLE_FORTE_SHEET`) and the row ids they land as.
 
 ## Adversarial review (after build)
 
@@ -950,7 +1012,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the seeded Bookings the fixtures name, and the dates the two triggers pick on a fresh seed, for
     the demo guide;
   - tests added (matcher, fixtures, store, the no-silent-apply sweep over every canned message,
-    triggers, Playwright) and the capture recipes re-shot;
+    triggers, Playwright);
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured,
+    partial, absent, failed) before and after, and any partial reason handed to a later phase (US-02.1.5
+    to 34; US-02.3.1 to 35);
   - the review pass.
 - **Decisions log:**
   1. **Supersedes** the 2026-07-24 "Phase 11 message-shape and feed decisions" items (5) and (6) in

@@ -923,7 +923,8 @@ need no PWA stand-in.
       with "This patient already has an NHI". (The authorise refusal on the PWA path is pinned by the
       Vitest test in item 8.)
 - [ ] Reset restores the threshold (90), no balance warnings and Noah's provisional record.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are green.
+- [ ] Catalogue screenshots: the recipes for the covered items above (US-11.1.1, US-11.1.4, US-11.1.5, US-11.3.1, US-11.3.2, US-11.3.3, US-13.2.2 and US-03.1.5) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are green.
 
 ## Demo guide updates
 
@@ -970,6 +971,36 @@ Patch these in the same session, and the same sections of `master-demo-guide.htm
   Booking raises a strong balance warning (98-day invoice billed to her)." Add a one-line S5 mention
   of the Missing NHI beat.
 - The Demo Data entity labels (item 10).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 40` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-11.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.1.md) Patient record | partial · patient-record and edit-patient (both on a Booking's patient block, route `/admin/day/.../cards/C0009`) | captured. Re-shoot `patient-record` on the new record, `/admin/patients/PT0005` (Sarah Mitchell), highlighting the identity block (system patient id, NHI as the second unique index, ethnicity shown); re-point `edit-patient` to the record's Edit sheet with the ethnicity field (a code shows as "21111 · Māori"); add a `details-differ` shot on `/admin/patients/follow-up` ("Details to review", with Apply and "Use incoming"). Caption: "One record per patient, matched on NHI". Drop the partial reason |
+| [US-11.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.4.md) Patient without NHI | partial · nhi-pending (admin Booking C0035) | captured, with the D11 default as the built reading (the Booking goes ahead flagged; the story is still Open). Keep the shot `name` `nhi-pending` and re-caption it "Booking without an NHI, shown as NHI missing" on Noah Prescott's Booking (Mon 27 Jul AM, Forte, Dr Souter) in place of C0035; add an `attach-nhi` state on `/admin/patients/missing-nhi` (the Attach NHI sheet with ZAP3016 and the Details differ choice for the phone) and a `list-blocked` state on that Booking's List showing authorise refused for the missing NHI. Drop the partial reason |
+| [US-11.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.5.md) Missing NHI problem list | none (create it) | create, captured. Admin shot `missing-nhi-list` at `/admin/patients/missing-nhi` with states `list` (Noah Prescott, the List, Mr Okafor's rooms email and phone, "6 days" in the mild tone, "Not yet" requested; highlight the row) and `arrived` (run the "Simulate NHI arrival (daily hospital list)" entry from `[data-shot=demo-actions]`, then the row reads "NHI arrived: ZAP3016" with Attach NHI prefilled). Caption: "Missing NHI problem list, with the surgeon's rooms" |
+| [US-11.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.1.md) Patient outstanding bills view | absent (no patient view) | captured. Admin shot `patient-invoices` on `/admin/patients/PT0005`, highlighting the invoice table: every invoice across every anaesthetist (paid under Dr Sharma, unpaid under Dr Souter) with paid, part paid or unpaid pills and the balance. Caption: "All of a patient's invoices across anaesthetists" |
+| [US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) Alert on booking a patient with unpaid bills | partial · prior-balance (billing monitor, `[data-shot=billing-prior-balance]`, scenario S5) | captured. Replace `prior-balance` with `balance-warning`: setup `{ "scenario": "S1" }`; states `preview` (the matching row's preview before Create Booking), `to-do` (after Create Booking, the strong warning on 15a's to-do list: 1 invoice billed to her, unpaid 98 days, $610.00) and `threshold` (Master data, the Patient balance warning field, 90). Admin only: the warning is office-only. Caption in the catalogue's words ("balance warning"). Drop the partial reason |
+| [US-11.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.3.md) Follow-up tools | partial · resend-invoice[ready, sent] | captured. Keep `resend-invoice` (ready, sent) and add a `resent` state that uses 22's Resend after the send; add `follow-up-log` on `/admin/patients/PT0005`: Log call, Add reminder, Resend and the completed entries. Drop the partial reason |
+| [US-13.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.2.2.md) Per-patient balance | absent (no patient profile) | captured. Admin shot `patient-balance` on `/admin/patients/PT0005`, highlighting the balance tiles (patient-billed balance, other payers shown separately). Add a second state on Losa Tuilagi's record for the owing case. Caption: "Per-patient balance on the patient record" |
+| [US-03.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.5.md) Anaesthetist sees the patient's NHI | none (create it) | create, captured. Mobile and web shots `nhi-shown` (a Booking with an NHI, e.g. Sarah Mitchell) and `nhi-missing` (Noah Prescott, Mon 27 Jul AM: the "NHI missing" pill on the List row and on the Booking). Web start `/web/lists/:listId`, mobile `/mobile/lists/:listId` and `.../bookings/:bookingId`; highlight the NHI line. Neither app shows patient money |
+
+**Recipes this phase breaks.**
+
+- `US-11.3.2.json` and `US-11.1.4.json` hold the removed "Prior balance" pill (`[data-shot=billing-prior-balance]`) and "NHI pending" wording; they are rewritten above. `US-11.1.1.json` and `US-11.1.4.json` use `[data-shot=card-patient]` and the `/cards/` routes; confirm the hook survives 15 and 40, else move it.
+- `US-11.1.3.json` (`dedupe-nhi`, web and mobile, NHI CQY9304 on Add a card) shows the returning-NHI match; this phase adds the "Some details differ" prompt, so re-check its caption and highlight.
+- `US-14.4.1.json`, `US-02.4.1.json` and `US-02.4.2.json` start from Add a card with CQY9304 or a seeded patient; re-run them with `--dry`, since the balance preview and the Sarah Mitchell and Losa Tuilagi invoices change. `US-08.5.1.json` highlights Losa Tuilagi in the billing pipeline: the seed appends patient-billed Sharma history invoices, which stay off the office Invoices list and monitor.
+- Work item 17 already lists the specs; the `--dry` run is the check for anything else.
+
+**ATLAS.md.** Update "Routes" (the `/admin/patients` family), "Personas and IDs" (Noah Prescott ZAP3016 and his appended patient id, Sarah Mitchell PT0005, Losa Tuilagi JKL1188), "Seed data worth shooting" (the Mon 27 Jul AM Forte List, the patient-billed history invoices), "Existing hooks" (the new patient, Missing NHI and warning `data-shot` hooks; remove `billing-prior-balance`) and the demo-trigger ids this phase registers.
 
 ## Adversarial review (after build)
 
@@ -1059,6 +1090,7 @@ Run the standard review-and-fix pass (PROGRESS convention 18):
       balance" pill;
   - the `PERSIST_VERSION` bump (from and to);
   - the tests added, the before and after Vitest and Playwright counts, and the review pass.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the 2026-07-22 third external plan review, finding #5 ("`nhi` optional, one
      seeded provisional NHI pending patient; NHI-driven behaviours apply when present"). The patient

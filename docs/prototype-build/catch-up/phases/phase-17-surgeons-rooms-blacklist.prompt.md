@@ -3,7 +3,7 @@ Please run catch-up Phase 17 (Surgeons, rooms and blacklist) of the Anaesthesia 
 The repo root is /Users/d.fraser/Local Dev/Anaesthesia Associates RFP (folder names contain spaces, so quote paths). The app is aa-prototype/. Paths below are relative to the repo root.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the owner-decisions table, the phase list, the sequencing rules (17 opens the Contracts track; 31 and 32 reuse this phase's blacklist helper, 32 for the anaesthetist's own-List move that replaced swap requests), the demo-trigger and demo-guide rules, and the "Confirm before building" row for 17 (OQ-43).
+1. docs/prototype-build/catch-up/ROADMAP.md: the owner-decisions table, the phase list, the sequencing rules (17 opens the Contracts track; 31 and 32 reuse this phase's blacklist helper, 32 for the anaesthetist's own-List move that replaced swap requests), the demo-trigger and demo-guide rules, the "Catalogue screenshots" rule, and the "Confirm before building" row for 17 (OQ-43).
 2. docs/prototype-build/catch-up/phases/phase-17-surgeons-rooms-blacklist.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 11, master data and profiles, and the DM-32 line under "Structural first"), then the EP-13 and EP-01 tables. Then docs/prototype-build/catch-up/epics/EP-13.md (US-13.6.1, US-13.6.2, US-13.6.3, US-13.4.1) and epics/EP-01.md (US-01.3.5), and DM-32 in docs/prototype-build/catch-up/analysis/domain-model-delta.md.
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -13,7 +13,8 @@ Before doing anything else, read these in order:
    Also read the "Surgeon, surgeons' room and blacklist" section of docs/discovery-reference/Updated Requirements/domain-model.md, and items #19 and #26 of catalogue/notes/2026-10-01-aa-meeting-with-greg.md.
 5. docs/prototype-build/catch-up/analysis/prototype-map-admin.md, prototype-map-store-seed.md, prototype-map-domain.md and prototype-map-shared.md: the code index for the files you will change.
 6. docs/design/Design Language.dc.html (the warning tint and on-tint, pills, radii, mono identifiers) and docs/design/Admin Day.dc.html plus Admin Review.dc.html (the Admin chrome, tables, drawer and amber advisory treatment). These are the AUTHORITATIVE visual reference (convention 17). No mockup covers master data, so extend these patterns.
-7. docs/prototype-build/PROGRESS.md:
+7. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions (especially 4, 5, 7, 13 to 18);
    - the Decisions-log entries for the Phase 06 advisory-conflict reading (amber, never a hard block), the Phase 07 build decisions (runtime id prefixes, master-data editing patterns) and the 2026-07-23 contract-holder placements (the COS organisation);
    - the Phase 14 and 15 entries, for the registry and the post-rename names, and the 15a entry if it has landed (its src/shared/warnings/ styling, which BlacklistWarning matches but does not wrap).
@@ -52,10 +53,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-13.6.1, US-13.6.2, US-13.6.3 and US-01.3.5 and every recipe this phase broke (the phase doc's Catalogue screenshots section names US-13.4.1); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result against 501b0b8, OQ-43's status, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result against 501b0b8, OQ-43's status, the PERSIST_VERSION from/to, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc;
   - the handoff notes for 18, 26 and 40a, 28, 30, 31, 32, 35, 27/34/40 and 42;
 - patch the demo guide in the same session: S2 Beat 2, discovery points (OQ-43, not OQ-52) and Direct URLs in 03-demo-script.md; the cheat sheet; the workflows note; and the same sections of master-demo-guide.html;

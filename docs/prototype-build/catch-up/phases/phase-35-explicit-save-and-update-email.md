@@ -875,7 +875,8 @@ and [US-13.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/re
 - [ ] S5 jump: David Chen's History shows a grouped office save among the per-field entries.
 - [ ] No en or em dashes in any new copy (bar, strip, dialog, clash sheet, preview, email, trigger
       labels and messages).
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-02.3.1, US-02.3.2, US-02.3.3, US-02.5.5 and US-02.5.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -926,6 +927,49 @@ and [US-13.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/re
   drift in the same
   session. Finish with a grep of `docs/demo-guide/` for "last-write-wins" and "single-user": none
   should remain.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 35` first: earlier phases may have
+changed these recipes since this plan was written (Phase 33 may have left placeholder `absent`
+recipes for US-02.3.2 and US-02.3.3, and Phase 28 and 31 moved the drawer and the Booking routes).
+The harness bar is hidden in shots, so the concurrent save is staged from the `/demo/control` entry
+for "Someone else saves this Booking now" in `setup` if it is runnable there; otherwise the clash
+sheet is shot from a `setup` that edits and saves in a second browser step (ATLAS.md, Shell).
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-02.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.1.md) Create or amend a Booking | partial · admin-phone-advice-booking[free-list,form] admin-amend-booking | captured (admin). Keep `phone-advice-booking`. Re-shoot `amend-booking` as the draft: an edit on the Admin Booking detail opens the Apply sheet and the unsaved bar (`booking-save-bar`, "3 changes") shows. Add `add-booking-booked-list` (the List drawer on a List that already has Bookings, **Add Booking** highlighted via `list-add-booking`, then the office add-Booking flow open). Drop the partial reason. Caption: "The office creates a Booking on a List, or amends one, and each change is recorded against them" |
+| [US-02.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.2.md) Save Booking changes explicitly | none (create it); a placeholder `absent` may exist | captured (admin). Shots: `save-bar` (unsaved bar listing the changed fields, before/after, `booking-save-bar`), `leave-guard` (the leave-without-saving dialog after navigating away with unsaved edits), `saved-history` (after Save changes: History shows one grouped save with who and when, `booking-as-at` open). Replace the placeholder |
+| [US-02.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.3.md) Draft a booking update email | none (create it); a placeholder `absent` may exist | captured (admin). Shots: `email-offer` (the saved strip with the on-demand button), `email-preview` (`update-email-preview` with To the surgeon's room, subject, boilerplate and the list of changes, "Nothing is sent" visible), and `cover-change-email` (the reassign flow's last step offering the hospital contact email, built from the reassignment). Highlight the preview panel. Captions: "Update email drafted from the saved changes; the office reviews and sends it themselves" |
+| [US-02.5.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.5.md) Append-only change history | captured · admin-card-history, admin-audit-log | captured, re-shot: `card-history` now shows the grouped change sets and the as-at panel (`booking-as-at`, no money shown); `audit-log` shows the change-set column. Keep both shot `name`s |
+| [US-02.5.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.6.md) Concurrent edits | absent | captured (admin). Shots: `merged-notice` (a different-field concurrent save by Tama R. merges on Save, with the admin told) and `clash-sheet` (a same-field clash, `booking-clash-sheet`, "Tama R. saved this Booking while you were editing"), plus on mobile (PWA stand-in "Office edits this Booking") `office-edit-banner` (the "Kirsty W. saved changes to this Booking" banner). Remove the absent reason |
+
+**Recipes this phase breaks.** Admin Booking detail edits are now draft-then-save, History groups by
+change set, and the reassign flow no longer auto-closes. Found at plan time:
+- `US-02.3.1` `amend-booking`: re-shot as above (the Edit sheet now applies to the draft).
+- `US-02.5.5` `card-history` and `audit-log`, and `US-02.5.1` `card-history`: the History tab shows
+  grouped saves and the as-at control; check the `[role=dialog]` highlight still lands.
+- `US-13.5.2` `audit-viewer` (`/admin/audit`): gains the change-set column; check only.
+- `US-01.4.1` `reassign`, state `after`: it waits 2500ms then presses Escape expecting the overlay to
+  auto-close. It now ends on the email step; press Done instead and keep the shot `name`s.
+- Recipes that edit on the Admin Booking detail and then expect the change to be saved by the sheet:
+  `US-04.3.2` `contract-picker`, `US-04.3.4` `billing-setup`, `US-07.2.2` `correct-contract`,
+  `US-11.2.2` `guardian-payer` (the "Edit billing setup" sheet), `US-05.4.2` and `US-07.2.3`
+  `price-override` (its "Save override" button), `US-11.1.1` `edit-patient`. They only open the sheets
+  today, so most keep working; any that now needs the buttons to read **Apply** (draft mode) or a
+  **Save changes** step is updated. The `--dry` run is the check.
+
+**ATLAS.md.** Update Routes (the data-router migration changes no URL; note the Booking route name as
+built), Existing hooks (`booking-save-bar`, `booking-as-at`, `booking-clash-sheet`,
+`update-email-preview`, `list-add-booking`), Overlays (the leave-without-saving dialog, the clash
+sheet, the email preview, the reassign flow's email step) and the Admin selector tips (sheet buttons
+read Apply in draft mode; Save changes in the bar).
 
 ## Adversarial review (after build)
 
@@ -999,6 +1043,8 @@ phase entry. Do not re-raise anything settled in the Decisions log.
   - tests added (changeSets, bookingAsAt, bookingSaveActions, draft store, guard, updateEmail with
     remembered changes and cover detection, the offer-mode component test, concurrentEdit, the
     source-scan, the web immediate-save test, the reassign and move-notice tests, the Playwright spec);
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured,
+    partial, absent, failed) before and after, and any partial reason handed to a later phase;
   - the adversarial review pass and what it fixed.
 - Binding conventions: convention 7 gains "a save groups its audit entries under one change-set id,
   and `mutate()` bumps the Booking and Procedure row versions".

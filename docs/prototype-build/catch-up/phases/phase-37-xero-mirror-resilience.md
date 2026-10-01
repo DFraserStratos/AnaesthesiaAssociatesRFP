@@ -495,7 +495,9 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
     (`billing-xero-queue`, `billing-xero-divergence`, `xero-bank-reconciliation`, `demo-action-<id>` for
     the six new entries) to `requirements-board/capture/ATLAS.md` "Existing hooks", and in its "Demo
     control panel" section replace the handoff-failure and payables wording with the queue and the
-    Xero-side payables run; run `npm run verify:board`. Grep `aa-prototype/src` and
+    Xero-side payables run; run `npm run verify:board`. The full recipe step, with every covered item
+    and the recipes this phase breaks, is the Catalogue screenshots section below, run after the
+    review pass. Grep `aa-prototype/src` and
     `aa-prototype/visual` for `handoffFailure`: zero hits.
 16. **Docs inside the app:** `aa-prototype/README.md` store map gains `xeroQueue.ts`,
     `xeroSimActions.ts`, `disbursementDetection.ts`, `domain/xero/` and `domain/xeroSim/` (with the
@@ -561,8 +563,8 @@ required".
 - Voids or outages on AA fee invoices beyond routing their ACCREC creation through the queue.
 - Buyer-created ACCPAY wording (Phase 22), the Ledger screen and its imbalance indicator (Phase 36;
   this phase must not break them), web Accounts rework (Phase 38).
-- Re-capturing the catalogue screenshots for US-09.2.4 (`admin-payables-run-*.png` show the old
-  engine-side run); list them in the handoff.
+- Nothing about the catalogue screenshots is left for later: the old engine-side US-09.2.4 shots
+  (`admin-payables-run-*.png`) are replaced in the Catalogue screenshots section below, in this phase.
 
 ## Manual test checklist
 
@@ -611,8 +613,8 @@ required".
 - [ ] The Admin Ledger screen (Phase 36) stays in balance through every path above; the PWA sheet lists
       none of the new triggers.
 - [ ] No new app copy contains an en or em dash; teal is the only action colour; crimson unchanged.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green;
-      `npm run verify:board` green after the recipe edit.
+- [ ] Catalogue screenshots: the recipes for US-09.2.4 and US-10.2.4 and the other EP-09 items in the Catalogue screenshots section are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -647,6 +649,47 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of
 
 Not a milestone phase; no full consistency read is required, but re-read every passage touched against
 the running app.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 37` first: earlier phases may have
+changed these recipes since this plan was written (Phase 36 re-points the Xero pair callout and the
+invoice rail, and Phase 22 changes the ACCPAY wording). Work item 15 holds the short list; this
+section is its full form and replaces the old "re-capturing is out of scope" advice. The harness bar
+is hidden in shots, so outage, void, amend, pay-bill and remittance states are staged from the matching
+`/demo/control` entries in `setup` (ATLAS.md, Shell).
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-09.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.1.md) Create the receivable and payable together | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | captured, re-shot. `invoice-xero-ids` (admin invoice rail): the Xero handoff card now also shows Waiting for Xero with attempt count while queued; keep the three `xero-*` testid highlights on the paired state. Add `pair-after-outage` (admin `/admin/billing`, `billing-xero-queue` after Restore Xero: every queued item Sent, exactly one pair per invoice; staged from `/demo/control`'s Simulate Xero outage, an authorise, then Restore Xero in `setup`). Check `pair-detail` (the ACCPAY card layout changes) |
+| [US-09.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.3.md) Prepayment receivable and payable | captured · simulator-prepayment-pair | unchanged. Re-shoot and check the `xero-money-flow-grid` highlight still lands after the ACCPAY card change |
+| [US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md) ACCPAY to the anaesthetist | partial · simulator-accpay-record | stays partial; the buyer-created tax invoice wording is Phase 22 and OQ-29. Re-shoot: `xero-accpay-card` now separates "Paid in Xero" from "Billing Engine: disbursement recorded". Keep the partial reason |
+| [US-09.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.1.md) Payment webhook | captured · simulator-payment-webhook[ready,applied] | captured, re-shot, plus `during-outage` (simulator, `/demo/xero/invoices/<pair>`: with the outage banner on, a payment lands in Xero and the engine shows a queued "Sync payment"). Keep the `ready` and `applied` states and the shot `name` |
+| [US-09.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.2.md) Reconciliation poll | captured · simulator-reconciliation-poll | captured, re-shot, plus `poll-flags-void` (admin `/admin/billing`: after Void this invoice in Xero and Run reconciliation poll, the `billing-xero-divergence` panel flags "Voided in Xero" against "Receivable open") and `poll-flags-amended` (the $20.00 lower total). Caption in the catalogue's words: the poll catches what a webhook missed, and what was changed directly in Xero |
+| [US-09.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.3.md) Idempotent webhook replay | captured · simulator-webhook-replay[first,replayed] | captured, re-shot. Check the replay still records one receipt. Add `restore-no-duplicate` (the queue after Restore Xero: a payment synced once, one receipt) |
+| [US-09.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.4.md) Detect disbursement | captured · simulator-accpay-disbursed[awaiting,disbursed], admin-payables-run[due,run] | captured, re-shot. `accpay-disbursed`: `awaiting` shows "Paid in Xero" with the Billing Engine not yet detecting it; `disbursed` shows "disbursement recorded by webhook"; add `detected-by-poll` (Pay anaesthetist in Xero with Webhook missed, then Run reconciliation poll: the disbursement recorded once, dated at the bill payment). `payables-run` (admin `/admin/billing`): the button reads "Run payables in Xero" with its Simulated Xero badge; states `due` and `run`. Replaces the old engine-side payout shots |
+| [US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md) Xero contacts | captured · simulator-contacts, simulator-pair-contact-ids | unchanged. Check only (the payer contact still exists once after an outage restore) |
+| [US-09.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.3.md) Archive contacts | captured · admin-archive-settings, simulator-archived-contact | unchanged. Check only |
+| [US-09.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.4.md) Reuse and unarchive contacts | captured · simulator-archived-contact-reused, simulator-contact-unarchived | unchanged. Check only |
+| [US-09.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.4.1.md) Xero organisation | partial · simulator-xero-organisation | stays partial: no organisation setup or separation from general accounting is built. The new outage banner appears on this tab, so re-shoot with Xero connected and check |
+| [US-09.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.4.2.md) Duplicate invoice number setting | partial · simulator-duplicate-number-setting | stays partial (OQ-11). The Phase 10 duplicate-number callout now points to the Bank reconciliation tab; re-shoot and check the `xero-duplicate-number-policy` highlight |
+| [US-10.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after Simulate bulk hospital remittance, run from `/demo/control` in `setup`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
+
+**Recipes this phase breaks.** Found at plan time:
+- `US-09.2.4` (`payables-run`, `accpay-disbursed`): the engine-side payout is gone. The Billing monitor button is now "Run payables in Xero" and the pair detail pays through Xero. Rebuilt above.
+- `US-08.3.4` (`money-in-out`), `US-10.1.2` and `US-10.2.1` (`billing-payables-run`, `role=button[name="Run payables"]`): the button label changes and the panel gains the Simulated Xero badge. Re-point the click to "Run payables in Xero" and keep the `billing-payables-run` hook.
+- `US-10.2.1`, `US-10.2.2` (`xero-accpay-card`, `xero-accrec-card`): the ACCPAY card separates the Xero payment from the engine's detection; re-shoot and re-check the highlights.
+- `US-09.2.1`, `US-09.2.2`, `US-09.2.3` (`control-payment-webhook`, `control-scheduled-jobs` on `/demo/control`): the payment and poll entries are re-pointed (the poll also reports voids, amendments and bill payments); keep the hooks, re-shoot, and fix captions that describe the old result messages.
+- `US-06.3.1`, `US-10.1.1`, `US-15.0.6` (`xero-money-flow-grid`): the pair detail layout around the grid changes (outage banner, split ACCPAY card). Check only.
+- `US-08.5.2`, `US-13.3.2` ("Resolve & retry"): kept for billing exceptions but removed for handoff faults, and the status pill reads "Waiting for Xero" instead of "Handoff failed". Check the failed and retried states.
+- `US-13.3.1`, `US-08.3.1`, `US-09.1.1` (the invoice rail's Xero handoff card): see the table; Phase 36 re-points the card first.
+
+**ATLAS.md.** Work item 15 already adds `billing-xero-queue`, `billing-xero-divergence`, `xero-bank-reconciliation` and the six `demo-action-<id>` hooks to Existing hooks and rewrites the Demo control panel wording (the queue and the Xero-side payables run). Also update Routes (`/demo/xero/bank`) and the Integration and Xero notes (an outage banner appears on every Xero tab while an outage is on).
 
 ## Adversarial review (after build)
 
@@ -687,7 +730,9 @@ amends (listed below).
 
 - A catch-up status row for Phase 37 and an entry `### Catch-up Phase 37 · Xero mirror resilience
   (date)`: the drift-check result, the Phase 36 names used, whether 39 had landed, the checklist item by
-  item, test counts, and the review pass.
+  item, test counts, the Catalogue screenshots result (recipes created or changed, the REPORT.md
+  counts for captured, partial, absent and failed before and after, and any partial reason handed to a
+  later phase), and the review pass.
 - **Decisions log:**
   - "The payables run happens in Xero; the engine detects each disbursement by bill-paid webhook or
     poll" (US-09.2.4). Amends the 2026-07-24 Phase 10 decision (5) (payables run as an unbadged office
@@ -708,5 +753,5 @@ amends (listed below).
     (the seeded missed-webhook shape, so `receivePayment` is not reworked), while a bill payment updates
     the Xero ACCPAY at once, because the demo needs Xero to show it paid before the engine knows.
 - **Handoff notes:** the payment-against-credited-invoice divergence case for Phase 39 or 44 (unless
-  39 had landed and it was built here), and richer amendments (line-level diffs, raised totals); the stale US-09.2.4 catalogue screenshots; Phase 44 parity audit: no PWA stand-in required for
+  39 had landed and it was built here), and richer amendments (line-level diffs, raised totals); Phase 44 parity audit: no PWA stand-in required for
   this phase.

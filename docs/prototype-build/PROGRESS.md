@@ -51,6 +51,8 @@ of a session, leave it IN PROGRESS and state exactly what remains.
     - **(b) The orchestrator (this phase's session) independently verifies each finding** against the source docs and the actual code before touching anything — the `REVIEW-KICKOFF-PROMPT.md` discipline: never fix on a paraphrase, never blindly defer, and never re-raise anything already settled in the Decisions log. Dedupe, then fix the confirmed findings (adding a test wherever a bug had none).
     - **(c) Re-green** `npm run build` + `npx vitest run`, then record the pass in the PROGRESS phase entry — findings confirmed/fixed, anything deliberately *not* treated as a defect (with the why), and tests added — in the style of the 2026-07-23 Phase 01/02 review-fix entry. (That entry was this loop piloted retroactively on Phases 01/02; it is a standing step from Phase 05 on.)
 
+19. **Catalogue screenshots match the app after every catch-up phase (Phase 14 onward).** After the review pass and before the PROGRESS entry, the phase creates or updates the capture recipes (`requirements-board/capture/recipes/`) for every item it covers and every recipe its changes broke, runs a full `npm run capture` in `requirements-board/` with no failed recipe, checks the new shots by eye, keeps `capture/ATLAS.md` current and finishes with `npm run verify:board` green. The step is spelled out under "Catalogue screenshots" in `catch-up/ROADMAP.md`; record the REPORT.md counts in the phase entry.
+
 ## Decisions log
 
 Record every deviation from a phase doc, every resolved ambiguity, and every killed idea, with a

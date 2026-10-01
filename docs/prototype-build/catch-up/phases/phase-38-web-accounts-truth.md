@@ -680,7 +680,8 @@ automatically.
       leaves Outstanding and a GST row appears. No other new entries.
 - [ ] No en or em dashes in any new or changed string; teal is the only action colour; crimson unused
       in the new panel and the balance check.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2 and US-07.2.1, plus US-07.4.1, US-08.3.5, US-08.3.2 and US-07.1.1 re-pointed are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -718,6 +719,33 @@ Control Panel scenario text if it names Overdue, ageing, GST activity or the Lis
   rows, S3 Beat 3 Expected and its discovery callout, cheat-sheet cards 2 and 11, the two "GST
   activity" mentions).
 - No S1, S2, S4 or S5 beat changes. Phase 44 rewrites S3 around the ledger and regenerates the guide.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 38` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-12.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.2.1.md) Outstanding balances list | captured · web-outstanding, mobile-outstanding | captured. Re-point the web shot's `start` from `/web/accounts/overdue` to `/web/accounts/outstanding` (the old path now redirects); keep the shot names. Web: the flat table, oldest first, with the Invoice date, Stage and Outstanding to you columns, highlight on `[data-shot=web-accounts-outstanding]`, caption "Flat list of unpaid payables, oldest first, no ageing". Mobile (`/mobile/balances`): total card plus rows with "Invoice date" and no age chips, caption "Outstanding to you, one row per unpaid invoice". Add a web `paid-in` state after the "Payment received · full" demo action (or the Xero simulator payment on AA-2026-0005) showing the row turn "Paid in, due to you" and stay in the list |
+| [US-12.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.2.2.md) GST schedule | captured · web-gst-activity, mobile-gst-activity | captured. Keep the shot names `web-gst-activity` and `mobile-gst-activity` and change the captions. Web `/web/accounts/gst`: the schedule table with the "Period total" footer, highlight on `[data-shot=web-gst-balance-check]`, caption "GST schedule on a cash basis: one row per invoice AA paid you in the period, with the sale, its GST and a balance check". Add a `previous-period` state clicking the stepper's previous button (`[data-shot=web-gst-period-nav]`). Mobile: the recipe's click text `GST this month` becomes `GST this period`; highlight the period header "July 2026 · paid to you" and the balance line |
+| [US-12.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.2.3.md) Dashboard | captured · web-dashboard | captured. Re-shoot `/web`: the week strip, then Financial position (`[data-shot=web-financial-position]`, the highlight) beside Who's free; no Productivity, Leave or ageing panels. Caption "Web dashboard: week calendar, financial position (owed, collected, paid out) and cover". Add a `paid-out` state after "Payment received · full" and Admin Run payables if a recipe step chain can stage it, else leave the single state |
+| [US-12.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.2.md) GST period | partial · admin-gst-period-setting, web-gst-period-view | captured if Phase 26 (anaesthetist sets the period in their profile) is done at build time and this phase removed the "View by" control; check the recipe's `absentReason` against the code first. Web `web-gst-period-view`: the old highlight `[data-sliding-segmented-control]:has-text("Six-monthly")` matches nothing once View by is gone, so re-point to the "Your GST period: Two-monthly · Change in your profile" line and the stepper, and show the period following the saved setting. Admin shot: the Master data Edit sheet must read the shared label (Monthly, Two-monthly, Six-monthly, never `sixMonthly`). Add a web profile shot if Phase 26 left one out. Drop the partial reason; if the mobile app still shows the current period only, say that in the caption, not as a reason |
+| [US-07.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.2.1.md) Anaesthetist loses edit access | captured · web-submitted-list, web-read-only-card, mobile-done-unbilled, mobile-read-only-card, simulator-edit-refused | captured. Re-shoot all five. The List header pill no longer reads "Submitted to office" but `Done · unbilled` (and `Done · billed` once authorised), so re-point the web highlight `span:has-text("Submitted to office")` to the pill by its new text or a `data-shot` hook added in `ListDetailView.tsx`. Add a `billed` state on web and mobile: authorise the List in admin first (use the recipe step chain or the PWA stand-in) and show `Done · billed` with the read-only "Invoiced · AA-2026-..." line. Mobile `done-unbilled` highlight stays `button:has-text("Done · unbilled")`; add a `done-billed` state beside it. Captions in the catalogue's words, using "Booking" for Card |
+
+**Recipes this phase breaks.** Work item 16 lists the Playwright shots; the capture recipes are separate. Found at plan time:
+- `/web/accounts/overdue` is the start of `US-07.4.1` (shot `invoices-in-balances`), `US-08.3.5` (`web-overdue`) and `US-08.3.2` (`web-accounts`). The route redirects to `/web/accounts/outstanding`, so they still load, but re-point each `start` to the new path. The `US-08.3.5` caption "What is still owed to the anaesthetist, aged" is no longer true: reword to "One row per unpaid payable, oldest first".
+- `US-07.4.1` is the main casualty: its shots `list-drops-off` (mobile and web) and `list-drops-off-invoiced` show a List vanishing once invoiced, with captions "List leaves the anaesthetist's view when its invoices are generated". Billed Lists now stay as `Done · billed` (D9, provisional). Keep the shot `name`s, change the captions and the highlight to the `Done · billed` row (mobile Done filter, web Lists Completed segment `[data-shot=web-lists-completed]`). The recipe stays `captured` or `partial`; the item's text and status are not edited here.
+- `US-07.1.1` (`submit-list`, web and mobile) highlights `span:has-text("Submitted to office")`: re-point to the new pill text.
+- `US-12.2.2` mobile click `GST this month` and `US-12.1.2` highlight `Six-monthly` segmented control, covered in the table above.
+- Re-grep before capture: `grep -lE 'accounts/overdue|GST this month|Submitted to office|Receivables|Productivity|Done · unbilled' requirements-board/capture/recipes/*.json`.
+
+**ATLAS.md.** Routes: `/web/accounts/overdue` becomes `/web/accounts/outstanding` (note the redirect) and the GST tab is the GST schedule; `/mobile/balances` description ("Outstanding and GST this period"). Overlays/Existing hooks: add the new `data-shot` hooks (`web-financial-position`, `web-accounts-outstanding`, `web-gst-period-nav`, `web-gst-schedule`, `web-gst-balance-check`, `web-lists-completed`). Seed data: the dashboards seed slice and the Productivity and Leave panels are gone.
 
 ## Adversarial review (after build)
 
@@ -786,6 +814,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots result:** recipes created or changed (US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2, US-07.2.1 and the re-pointed US-07.4.1, US-08.3.5, US-08.3.2, US-07.1.1), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the 2026-07-22 third external plan review, finding #12, and the Phase 08 reading
      that the `billedAtISO` stamp removes the List from the anaesthetist's views (the "billed = gone"

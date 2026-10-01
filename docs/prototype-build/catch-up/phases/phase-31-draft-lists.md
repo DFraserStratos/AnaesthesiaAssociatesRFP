@@ -1031,11 +1031,11 @@ state DRAFT, which "belongs to assigned Lists and is unrelated to a Draft List" 
       List to me", and assert a new booked row on Wed 22 PM showing 2 bookings; mark a booked Slot
       unavailable and see the List leave the schedule with the "gone back to the office" message.
 
-24. **Capture recipes** (`requirements-board/capture/`): re-point only the captions and selectors the
-    change breaks. That is the ATLAS line about "Fitzgerald PM ... surgeon TBC" and the US-01.3.1 and
-    US-13.1.1 recipes (the drawer shows one hospital and one surgeon; the day view gains the band,
-    the rail card and counts). Add recipe stubs for US-01.6.1 to US-01.6.4 only if the owner asks, and
-    do not re-run the captures unless asked.
+24. **Capture hooks** (`requirements-board/capture/`): the recipes themselves, the re-captures and
+    the ATLAS edits are the standing step in "Catalogue screenshots" below, run after the review
+    pass. In this item only make sure the `data-shot` hooks in item 23 exist, and add one on the
+    Day grid block that US-13.1.1's `drill-down` clicks, so the recipes can be written without
+    brittle selectors.
 
 25. **Docs inside the app and close-out.** In `aa-prototype/README.md`'s folder map, add
     `domain/pairing.ts`, `domain/draftLists.ts`, `shared/scheduleTerms.ts`, `store/draftListActions.ts`, `store/draftListDemo.ts`, and one paragraph
@@ -1164,7 +1164,8 @@ screens. In the framed build, the presenter plays the office in Admin, so the st
 - [ ] No en or em dashes in any new copy; teal is the only action colour; crimson unused on the new
       screens, sheets, rail card and band; the nav badge is amber; every Draft List word comes from
       the terms module.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green.
+- [ ] Catalogue screenshots: the recipes for US-01.6.1 to US-01.6.4, US-13.1.1, US-01.3.1, US-01.3.3, US-01.3.5, US-01.4.2, US-01.5.2 and the other EP-01 items in the table are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -1233,6 +1234,55 @@ workflows. Patch, in the same session:
   Draft List to Dr Fitzgerald; optionally open Southern Cross to show Bookings on a Draft List, or
   simulate an incoming request to show the blacklist warning. For illness cover, assign Dr
   Rutherford's returned Wed 22 AM List to Dr Sharma from Conflicts."
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 31` first: earlier phases may have
+changed these recipes since this plan was written. This phase covers all of EP-01, so the table lists
+every EP-01 story; only the Draft List, Day dashboard and pairing stories change much here.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-01.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.1.md) Create a Draft List | none (create it; absent stub) | create, status captured. Admin `new-draft-list` on `/admin/draft-lists`: state `form` (the New Draft List sheet filled: hospital, surgeon, day, session, source, with the "Saving does not change anyone's schedule" line) and state `with-booking` (the new Draft List's drawer after Add Booking). Highlight the sheet, then the Bookings section. Caption: "A Draft List needs no anaesthetist, takes no Slot and can hold Bookings" |
+| [US-01.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.2.md) See Draft Lists flagged in the Admin App | none (create it; absent stub) | create, status captured. Admin shots: `draft-lists` (the Draft Lists page, Unassigned tab, four seeded rows oldest first with the "Unassigned" pill and waiting time; highlight the table and nav badge), `draft-lists-day` on `/admin/day/2026-07-21` (states `band` and `rail`, highlighting `[data-shot=daygrid-draft-band]` and `[data-shot=admin-draft-lists-rail]`). Caption: "Every Draft List is flagged Unassigned, with how long it has waited" |
+| [US-01.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.3.md) Assign a Draft List to an anaesthetist | none (create it; absent stub) | create, status captured. Admin `assign-draft-list`: state `pick` (step 1 with the Free, Not available, Blacklisted and Already has a List groups), state `warning` (step 2 with the stacked warnings and "Assign anyway"; stage it with the Okafor request from the `Simulate incoming request` trigger or the seeded Southern Cross request) and state `assigned` (the band empty and the block in the Slot with its booking count). Highlight the dialog. Caption: "Only the office assigns a Draft List, into the Slot its day and session fix" |
+| [US-01.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.4.md) Remove or re-date an unfilled Draft List | none (create it; absent stub) | create, status captured. Admin `redate-remove` on `/admin/draft-lists`: states `change-date` (the sheet with "Its N Bookings move with it"), `remove` (the Remove sheet with reason chips) and `history` (the History tab row "Removed: Duplicate request"). Highlight the dialog or the history row. Caption: "Remove a cancelled request or change its date" |
+| [US-13.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.1.1.md) One-day dashboard | captured · `day-view` (day, drill-down) | stays captured. Re-shoot `day` on `/admin/day/2026-07-21` with the Draft Lists band, the rail card, the booking count on every block and the "1 Draft List" header summary (highlight the band and a count pill); caption "One-day view of every anaesthetist's Lists, Draft Lists and booking counts". The `drill-down` click `text="Southern Cross" >> nth=0` may now hit the rail card: move it to a `data-shot` on the block |
+| [US-01.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.1.md) Assigned List pairing rule | captured · `list-pairing` (drawer, edit) | stays captured. Keep `drawer` and `edit` (row 34821 Tue 21 AM, St George's, Mr T. Hale is unchanged). Add an `am-pm` state highlighting Souter's AM (St George's, Mr T. Hale) and PM (Southern Cross, Ms K. Patel) rows, for "AM and PM can differ", and an `incomplete` state showing Edit list refusing to clear the surgeon ("Choose the surgeon."). Caption: "Every List has exactly one hospital and one surgeon" |
+| [US-01.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.2.md) Recurring bookings drive most assignments | captured · `permanent-lists` (table, add) | Phase 30 owns the recipe. Here add only an `incomplete` state on the `add` sheet showing a recurring booking refused without a hospital or surgeon (the pairing rule). Stays captured |
+| [US-01.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.3.md) Manual List assignment | captured · `assign-free-list` (drawer, book) | stays captured. Re-point `book` to the changed phone-advice sheet (surgeon now required, no "Not assigned yet", the kind control and AA rooms in the hospital select) and its index-based `select ... nth=0/1` steps; add a state for the Assign List sheet offering Pre-op defaulting to AA rooms. Caption: "Booking a free List needs a hospital and a surgeon" |
+| [US-01.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.5.md) Blacklist warning when assigning a List | none (create it; absent stub) | Phase 17 builds the Slot path and should have replaced the stub; if it is still absent, create it here. Phase 31 adds the Draft List path: `assign-draft-list-blacklist` (admin), states `group` (Dr Sharma under "Blacklisted with Mr C. Okafor", selectable) and `warning` (the warning naming the pairing and "Assign anyway"), staged from the `Simulate incoming request` trigger. Highlight the labelled group, then the warning. Captured when both paths show. Caption: "The warning shows on both paths: a Slot List and a Draft List" |
+| [US-01.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.1.md) Two Slots per anaesthetist per day | captured · `day-grid`, `my-lists` (web, mobile) | stays captured. Re-shoot the admin `day-grid` (band, counts, Fitzgerald Tue 21 PM now Free) with the same highlight. Web and mobile `my-lists` should not change: confirm in the `--dry` run |
+| [US-01.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.2.md) Horizon rolls forward daily | partial · `permanent-lists` | no change here. Stays partial for the same reason (the daily roll-forward has no screen). Phase 30 re-points the nav click to "Recurring bookings"; this phase only keeps the recipe running |
+| [US-01.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.3.md) New anaesthetist gets a populated canvas | partial · `add-anaesthetist` (form, added, listed) | no change here. Stays partial; check the `listed` state still holds after the grid gains the band |
+| [US-01.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.4.md) Slot default times | partial · `list-times` | no change here. Stays partial. Check the Edit list sheet (row 45178) still opens and highlights the time field after the pairing rule makes hospital and surgeon required |
+| [US-01.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.1.md) Anaesthetist sets half-day availability | partial · `my-availability` (before, pm-blocked), `availability-grid` (web) | stays partial for Phase 29's reason. Re-shoot mobile `pm-blocked`: a booked PM marked unavailable now shows the "sends it back to the office" confirm with the provisional badge, and the List leaves the schedule. Caption: "Blocking a booked session returns its List to the office" |
+| [US-01.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.2.md) Slot status master data | partial · `list-statuses` | no change here. Stays partial; a Draft List adds no status value (it is derived), so the table is unchanged |
+| [US-01.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.3.md) Status is independent of bookings | captured · `status-without-bookings` (admin, web) | no change here. Stays captured; Tue 21 Ngata and Beaumont rows are untouched. Confirm in the `--dry` run |
+| [US-01.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.1.md) Reassign a List with its bookings | partial · `reassign` (pick, done, after) | no change here. Stays partial for its audit reason. Check the picker still finds "Hughes, Rawiri" after the seed change |
+| [US-01.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.2.md) Availability finder | captured · `availability-finder` (admin, web, mobile) | stays captured. Re-shoot the admin day grid shot (Fitzgerald PM is now a Free session) and add an admin `draft-list-finder` state: the Assign Draft List sheet as the finder's Draft List view ("Show only free" on). Web and mobile unchanged apart from Fitzgerald's free PM |
+| [US-01.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.3.md) Anaesthetist moves their own List | partial · `cover-request` (web, mobile) | Phase 32 owns this. No change here; Phase 31 only provides `detachListToDraft`, which no screen in this phase calls for it |
+| [US-01.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.5.md) Blacklist warning when an anaesthetist reassigns their own List | none (create it; absent stub) | Phase 32 builds this. No change here |
+| [US-01.4.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.6.md) The List's anaesthetist did its procedures | none (create it; absent stub) | Phase 32 builds this. No change here |
+| [US-01.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.1.md) Hospital holiday calendar | captured · `hospital-holidays` (list, add) | Phase 30 owns it. No change here beyond the check that the Draft List holiday flag does not alter the Hospitals view |
+| [US-01.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.2.md) Conflict flagging | partial · `holiday-conflict`, `unavailable-conflict` (admin, mobile) | Phase 30 leaves it partial because the anaesthetist case should return the List to the office (OQ-27, OQ-64). This phase builds it provisionally, so change to captured: re-shoot `unavailable-conflict` admin on the Conflicts or Draft Lists row "Anaesthetist unavailable · Unassigned, was Dr Rutherford" with the provisional badge, and the mobile shot with the new confirm; drop the Phase 31 part of the partial reason. Caption: "A List the anaesthetist can no longer cover goes back to the office with its Bookings in place" |
+| [US-01.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.3.md) Anaesthetist availability calendar | partial · `my-availability` (before, blocked) | Phase 29 owns it. Re-shoot `blocked` with the new caption ("PM blocked while booked: the List goes back to the office, provisional"). Stays partial for Phase 29's reason |
+| [US-01.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.4.md) Availability conflict dashboard | none at plan time (Phase 30 creates it) | Phase 30 creates `conflicts-screen`. Re-shoot it so Rutherford's Wed 22 AM row reads "Anaesthetist unavailable", "Unassigned · was Dr Rutherford" with its Bookings and the provisional badge, and add a `conflict-assigned` state: open the row's Draft List drawer, assign to Dr Sharma, and the row leaves. Caption: "The List appears as a conflict, Bookings in place, until it is covered" |
+
+**Recipes this phase breaks.** Found by grep at plan time:
+- `US-01.3.3.json` and `US-02.3.1.json` click `open for cover >> nth=0` and then "Book (phone advice)" and pick by `select ... nth=0/1`. Fitzgerald Tue 21 PM becomes a Free Slot and the phone-advice sheet gains a kind control, so the first free session and the select order may change. Re-point to a `data-shot` on a named free session and select by label, keeping shot names.
+- `US-13.1.1.json` (`drill-down`) clicks `text="Southern Cross" >> nth=0`, which the rail card or band can now match first. Add a `data-shot` hook on the block.
+- `US-01.1.4.json` and `US-01.3.1.json` open row `34821` or `45178` and "Edit list": the sheet now requires hospital and surgeon, so check the highlights.
+- `US-01.4.1.json` picks "Hughes, Rawiri" in the reassign picker; check it after the seed change.
+- No recipe names Fitzgerald or "Surgeon TBC". `capture/ATLAS.md` line ~310 does (see below).
+The `--dry` run is the final check.
+
+**ATLAS.md.** Update Seed data worth shooting (Admin day, Tue 21: Fitzgerald PM is Free, not "surgeon TBC"; the four seeded Draft Lists `LD-001` to `LD-004` and Rutherford's Wed 22 AM List now a Draft List), Routes (add `/admin/draft-lists`, `?open=`), Personas and IDs (Draft List ids `LD-` and runtime `LG####`), and Existing hooks (the new `data-shot` hooks: `admin-draft-lists`, `admin-draft-list-drawer`, `admin-draft-lists-rail`, `admin-assign-draft-list`, `admin-assign-draft-list-blacklist`, `daygrid-draft-band`, `daygrid-block-count`).
 
 ## Adversarial review (after build)
 
@@ -1313,6 +1363,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the golden-fixture diff summary;
   - the tests added, and the before and after Vitest and Playwright counts;
   - the review pass.
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase (US-01.4.3, US-01.4.5 and US-01.4.6 to Phase 32; US-01.1.2 to Phase 44).
 - **Decisions log:**
   1. **Superseded:** 2026-07-23 "PermanentList type gains `hospitalId: HospitalId | null`". The pre-op
      clinic is held at the **AA rooms location** (`Hospital.locationType: 'aaRooms'`). Templates

@@ -5,6 +5,7 @@ Before doing anything else, read these in order:
    - the phase list;
    - the sequencing rules (the Contracts track runs 17 to 25 strictly in order, and 25 locks what 18 to 24 built, including this adjustment);
    - the demo-trigger, PWA-parity and demo-guide rules;
+   - the "Catalogue screenshots" rule;
    - the "Confirm before building" row for 24 (US-03.5.1 and US-04.2.2 Proposed, OQ-62).
 2. docs/prototype-build/catch-up/phases/phase-24-anaesthetist-adjustment.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md:
@@ -35,6 +36,7 @@ Before doing anything else, read these in order:
      - the 2026-09-28 "Anaesthetist Card shows no calculation" ruling, which this phase keeps;
      - the Phase 08 invoice-line readings;
    - the Phase 18 to 23 entries, for the real names of the reshaped Contract, the Contract detail panel, 19's base-unit resolver, setProcedureContract and the Contract picker, 22's payment setting (FULL or SPLIT) and the Booking-level engine.
+8. requirements-board/capture/ATLAS.md: the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" and read it for the covered IDs, US-03.5.2, US-05.4.2, OQ-62 and OQ-16 (the 2026-10-01 update that 501b0b8 records changed only US-04.2.2's Notes for this phase: Proposed on OQ-62, and the consistently overridden base unit note);
@@ -42,7 +44,7 @@ Then do the drift check in the phase doc:
 - ask me whether the anaesthetist should see the fee before and after the adjustment. The default is no, which keeps the 2026-09-28 ruling;
 - note that domain-model.md still lists an AMOUNT kind that the stories do not have. Build the stories' reading;
 - record OQ-62's status. If still open, leave 19's and 23's base-unit work and labels as they are; if answered, it is 19's and 23's rework, not this phase's;
-- note that the US-03.5.1 and US-05.4.1 catalogue screenshots show today's retired dollar field and a Booking total. Do not edit the catalogue; tell me they need re-shooting;
+- note that the US-03.5.1 and US-05.4.1 catalogue screenshots show today's retired dollar field and a Booking total. this phase re-shoots them in its catalogue screenshot step (it never edits the catalogue's text or status);
 - confirm Phase 23 is DONE and name its Booking-level engine (planned as bookingFeeFor in src/domain/billing/bookingFee.ts, with bookingFee in shared/capture/feeContext.ts) and how it marks the primary (isPrimary), and name 19's base-unit resolver (planned as resolveBaseUnits in src/domain/billing/baseUnits.ts);
 - confirm Phase 18 seeded CT-RVG-POSTPAID (RVG Default Post-paid), which does not exist at the snapshot;
 - grep for any anaesthetist-written dollar or fixed priceOverride a later phase seeded;
@@ -74,13 +76,14 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18):
   - fan out three Opus review subagents, for quality, bugs and money correctness, and plan and catalogue adherence, steered by the phase doc's bullets;
   - independently verify each finding;
   - fix the confirmed ones and re-green;
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.5.1, US-03.5.2, US-05.4.1, US-05.4.2 and US-04.2.2 and every recipe this phase broke (US-03.5.3, US-03.3.5, and the C0009 starts); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result against 501b0b8 (with OQ-62's status), the PERSIST_VERSION from and to, the real symbol names, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result against 501b0b8 (with OQ-62's status), the PERSIST_VERSION from and to, the real symbol names, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in work item 12;
   - the handoff notes for 25, 27, 36, 39 and 44;
 - patch the demo guide in the same session, and the same sections of master-demo-guide.html:

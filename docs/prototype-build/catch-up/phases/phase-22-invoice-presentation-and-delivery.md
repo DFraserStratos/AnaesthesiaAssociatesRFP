@@ -701,7 +701,8 @@ the store-level tests in item 6 and by checking Admin, Audit after a PWA authori
       shows that List's invoices sent by the Billing run.
 - [ ] No en or em dashes in any new app copy; teal is the only action colour; crimson only in the
       logo and existing identity.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green.
+- [ ] Catalogue screenshots: the recipes for US-04.2.8, US-04.2.12, US-08.4.2, US-08.4.1, US-08.4.3, US-08.4.4, US-08.4.5, US-08.2.3 and US-09.1.4 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -746,6 +747,38 @@ sheet's Split billing and money sections) and the S3 scenario text in `DemoContr
 - **Control Panel S3 text:** "the two-funder Card" becomes "the nib split Booking"; mention the run
   sends the invoices.
 - Not a milestone phase; no full consistency read (Phase 25 closes the "After 25" milestone).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 22` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-04.2.8](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.8.md) Invoice presentation and delivery | absent | Captured. Create a recipe, admin: `contract-invoicing` on Master data, Contracts, the Contract sheet's Invoicing section (layout, delivery, GST treatment; highlight the section); `contracts-table` with the new Delivery and Payment columns; `gst-inclusive` on the invoice raised for `SEED_MARKERS.gstInclusiveBooking` (after authorising its List) showing "Total due, includes GST of $x". Caption: layout, delivery and GST treatment are set on the Contract, not booking by booking. |
+| [US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md) Payment setting: full payment or split | none (create it) | Create, captured. Admin: `contract-payment` states `full` and `split` on the Contract sheet's Payment section (the "Default share for {holder}" field and the "Provisional (OQ-68)" pill); `booking-split-share` on Alan Prentice's Booking (Souter Mon 20 PM, split Contract `CT-NIB-SPLIT`, typed share $132.50) in the office billing setup. Caption in the catalogue's words: full payment invoices one party for the whole line, split invoices each party its share. |
+| [US-08.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice (ready, emailed), admin-portal-upload | Captured. The billing run now sends, so the manual "Email invoice" click goes. Keep the shot `name`s: `admin-email-invoice` states `ready` (the authorise banner "{n} invoices raised. {e} emailed, {q} queued") and `emailed` (the Delivery card "Emailed to {address}", `invoice-delivery`); add a `guardian` state on a guardian-addressed invoice emailed to the Booking's own invoice email (Phase 21's Grace Park Booking); `admin-portal-upload` shows Prentice's nib invoice "Queued for nib provider portal". Drop the partial reason. |
+| [US-08.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.1.md) Two invoice layouts | captured · admin-patient-layout, admin-contract-holder-layout | Stays captured. Re-shoot both: the layout now comes from the Contract and the masthead shows the anaesthetist as supplier with the agent block. Re-check `INV0001` is still the patient-layout invoice and fix the start if numbering moved. |
+| [US-08.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.3.md) Unique invoice numbers | captured · simulator-xero-numbers | Stays captured. Verify only: the numbers (AA-2026-0002, 0005, 0006) must not move; re-shoot if the ACCPAY rows or the first four rows changed. |
+| [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Stays partial. Re-shoot `admin-snapshot-invoice` on the new document (it now stores supplier, agent, GST treatment and delivery on the snapshot). Keep the partial reason, naming Phase 25 as the phase that builds the regenerate action from the locked data and Contract version. |
+| [US-08.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | Captured. Re-point `admin-agent-line` from `invoice-agency-line` to `invoice-agent-block` ("Issued by Anaesthesia Associates Limited as agent for {supplier}") and add `admin-supplier` on `invoice-supplier` (the anaesthetist's name and GST number in the masthead). The "Provisional (OQ-29)" pill sits in the highlight. Drop the partial reason. |
+| [US-08.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | Captured. Re-shoot the three on the Contract-driven split: Prentice's nib share (AA-2026-0005, `invoice-split-note` "nib's share ($132.50) of a fee of $212.00") and the St George's remainder (AA-2026-0006, "Less paid by nib"). Add a `patient-gap` state: switch nib's standard Contract to Split at 60% in Master data, authorise `SEED_MARKERS.nibFullBooking`'s List, and shoot the insurer portion and the patient remainder in the Invoices list (`invoice-list-delivery`, "Share" and "Rest" chips). Drop the partial reason. |
+| [US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md) ACCPAY as buyer-created tax invoice | partial · simulator-accpay-record | Captured, labelled provisional (OQ-29). Re-point `simulator-accpay-record` (`/demo/xero/invoices/XRH01`) to `xero-accpay-buyer-created`: the buyer-created wording with Supplier (name, GST) and Agent (AA, GST). Caption: the ACCPAY is held as a buyer-created tax invoice, one for each invoice and the same value. Drop the partial reason. |
+
+**Recipes this phase breaks.**
+- `US-11.3.3` clicks `role=button[name="Email invoice"]` on `/admin/invoices/INV0002`; the button goes (work item 14). Re-point it to the Delivery card's Resend, or shoot the stamped state the run now leaves, keeping its shot `name`.
+- `US-08.4.2` clicks the same button (covered above).
+- `US-05.2.7` shoots `/admin/invoices/INV0001` for the GST lines; the GST footer and the layout change (work item 10), so re-check its highlight.
+- `US-08.2.1`, `US-08.2.2`, `US-08.3.1` and `US-10.1.2` authorise a List and then pick rows (`tr:has-text("Alan Prentice")`, `"Brian Holt"`, the `invoice-info-rail` "Xero handoff" section) in the Invoices list; the Status column becomes Delivery and Prentice's two rows are now Contract-driven. Re-check the row text and the rail section titles.
+- `FT-08.4`, `US-06.2.2`, `US-06.2.3`, `US-06.3.1`, `US-06.4.1`, `US-09.1.1` start on `/admin/invoices`; the `--dry` run is the check that they still resolve.
+- Every `/demo/xero` recipe that highlights `xero-accpay-card` (`US-08.3.1`, `US-09.1.1`): the card gains the buyer-created block.
+
+**ATLAS.md.** Update Seed data (the `CT-NIB-SPLIT` Contract and Prentice's move onto it, `SEED_MARKERS.nibFullBooking`, `gstInclusiveBooking`, `splitPaymentBooking` replacing `twoFunderCard`), Existing hooks (`invoice-supplier`, `invoice-agent-block`, `invoice-delivery`, `invoice-split-note`, `invoice-list-delivery`, `xero-accpay-buyer-created`; `invoice-agency-line` removed) and the Overlays section where the Contract sheet gains the Invoicing and Payment sections.
 
 ## Adversarial review (after build)
 
@@ -834,5 +867,9 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   it on admin approval (D6) through `materialiseInvoices`' separate send step; Phase 36's ledger legs read `procedureIds` and `lineage`, one
   payable leg per receivable, with its parity test against 16's count; Phase 39 adds credit and
   additional lineage roles; portal upload ownership, the OQ-29 wording and the document's new name,
-  the OQ-68 split basis and BCTI granularity are questions for AA; the stale catalogue screenshots for
-  US-08.2.3, US-08.4.2 and US-09.1.4 need re-shooting by the owner.
+  the OQ-68 split basis and BCTI granularity are questions for AA.
+- **Catalogue screenshots.** The step's result: recipes created (US-04.2.12) and changed (US-04.2.8,
+  US-08.4.2, US-08.4.1, US-08.4.3, US-08.4.4, US-08.4.5, US-08.2.3, US-09.1.4, plus US-11.3.3,
+  US-05.2.7 and any other recipe the step broke), the `capture/REPORT.md` counts (captured, partial,
+  absent, failed) before and after, and any partial reason handed to a later phase (US-08.4.4 stays
+  partial until Phase 25).

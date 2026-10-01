@@ -1,7 +1,7 @@
 Please run catch-up Phase 30 (Conflicts, holidays and the conflict dashboard) of the Anaesthesia Associates prototype. The repo root is /Users/d.fraser/Local Dev/Anaesthesia Associates RFP (paths below are relative to it; folder names contain spaces, so quote them). The app is aa-prototype/.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the sequencing rules (the Schedule track runs strictly 28 to 32; 30 comes after 29 and before 31), and the demo-trigger and demo-guide rules.
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the sequencing rules (the Schedule track runs strictly 28 to 32; 30 comes after 29 and before 31), and the demo-trigger, demo-guide and Catalogue screenshots rules.
 2. docs/prototype-build/catch-up/phases/phase-30-conflicts-and-holidays.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 1, Schedule rebuilt on Slot, List and Draft List, the "Demo-trigger buttons" list with "Apply to canvas now", and the stale-copy line on "Permanent lists" under "Remove or rework"; "Simulate sickness" comes from US-01.5.4's gap entry), then the EP-01 table. Then docs/prototype-build/catch-up/epics/EP-01.md (FT-01.5, US-01.5.1, US-01.5.2, US-01.5.4 and US-01.3.2), plus DM-04 and DM-32 in analysis/domain-model-delta.md.
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -16,6 +16,7 @@ Before doing anything else, read these in order:
    - the binding conventions (especially 4, 5, 7, 10, 13 to 18);
    - the Decisions-log entries this phase supersedes or amends: 2026-07-23 "Availability reconciliation, both directions" (per-path conflict stamping), the 2026-07-23 "Phase 06 admin build" decision (1) (advisory amber border and badge, and the applyPhase06Conflicts seeding) and (6) (the needs-attention flag on the warning token), the Phase 07 Permanent List reading (edits apply only to future generated days, no retro-regeneration), and catch-up Phase 29's decision 5 (the clash in one function, availabilityClash), which the mutate() reconcile replaces;
    - the catch-up Phase 14, 15a, 17, 28 and 29 entries and their handoff notes for 30: the trigger registry, useDemoTriggerContext, store/demoActors.ts (OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR) and store/officeStandIn.ts, 15a's To-do rail card (ListConflict stays out of its warning routine), the Master data ?view= param, the Slot model's actual names (assignListToSlot's interim slotNotAvailable refusal, moveListToSlot with vacatedStatus and targetNotOpen, placeListOnSlot and its closedHospitalConflict stamp, isOpenSlot, generateCanvasForDates, 'adminDay.selectedSlotId'), and 29's slotStatus helpers (isClosed, isOpenForBooking), availabilityClash, setAvailabilityRange, clearAvailability and the series actions.
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 over the covered catalogue files, FT-01.6, OQ-09, OQ-17, OQ-27, OQ-64 and domain-model.md;
@@ -46,10 +47,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and that pwaPurity.test.ts still passes;
+- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, that npm run verify:board is green, and that pwaPurity.test.ts still passes;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.5.1, US-01.5.2, US-01.5.4 and US-01.3.2 (check US-01.5.3) and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result against 501b0b8, the flagged-List set before and after, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result against 501b0b8, the flagged-List set before and after, the PERSIST_VERSION from/to, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc (derived conflicts reconciled in mutate(), the colour change, "booked List" means any assigned List, clear semantics, accept-and-flag superseding 28's refusal, keep-as-is on reassign, the real Wed 22 facts, the rename to recurring bookings, projection through "Apply to canvas now", holiday edit and delete, unavailability flags here with OQ-64's Draft Lists left to 31);
   - the handoff notes for 31, 32, 33, 35, 42 and 44;
 - patch the demo guide in the same session:

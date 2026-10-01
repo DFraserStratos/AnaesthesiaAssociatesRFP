@@ -632,8 +632,9 @@ AUTHORISED, the balance invoice deducts what was prepaid and names the prepaymen
       the new panel, the rail card, the approval strip and the mild-then-strong triangle.
     - Add a mobile shot of the part-paid panel and a PWA shot of the stand-in.
     - Run `node requirements-board/scripts/capture.ts --only US-06.2.1,US-06.2.2,US-06.2.3,US-06.3.1,US-06.3.2,US-06.3.4,US-06.3.5,US-06.4.1 --dry`
-      and record the recipes that break (US-06.2.2's deposit shot, US-06.3.1's raise button and
-      US-06.3.5's category captions will). Do not edit catalogue files.
+      to see the recipes that break (US-06.2.2's deposit shot, US-06.3.1's raise button and
+      US-06.3.5's category captions will). Fixing them and re-capturing is the "Catalogue
+      screenshots" step below, after the review pass. Never edit a requirement's text or status.
     - Patch the demo guide (below).
 
 ## Demo triggers
@@ -730,7 +731,8 @@ sample is added (this phase changes a rule, it does not add one).
       to 2 days before procedure" (strong triangle). Sheets are bottom sheets with teal actions and no
       crimson.
 - [ ] No en or em dashes in new copy; amounts in mono with tabular-nums.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -774,6 +776,71 @@ Pre-payment case and the status table):
 - The Control Panel S4 scenario text (item 15).
 - **Milestone:** end with a consistency read of `master-demo-guide.html` against the edited Markdown:
   S4 beat numbering, figures and trigger labels agree.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 27` first: earlier phases may have
+changed these recipes since this plan was written. Item 16's `--dry` run finds what is broken; this
+step fixes it and takes the final shots. Some admin shots start from a held or sent prepayment
+invoice. The capture runner hides the harness bar, so stage them with real clicks (enter the
+duration, Approve and send) or the `/demo/control` payment recorder, never with a bar trigger.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-06.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.1.md) Tick codes or groups  | absent (Phase 26 creates it as captured) | No new work. Phase 26 owns these shots. Re-run `recipe-status.mjs 27`; if the recipe is captured, confirm it still passes `--dry` and that its caption matches the prepaid list now driving the Booking panel. |
+| [US-06.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.2.md) Admin can maintain on behalf  | absent (Phase 26 creates it as captured) | No new work, as for US-06.1.1. |
+| [US-06.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.1.md) Detect prepayment requirement  | partial · mobile-prepayment-flag, web-prepayment-flag | captured. Replace the payment-category flag shots with the Booking panel on Annette Riley (Souter Fri 24 AM) on mobile (`/mobile/lists/L-34821-2026-07-24-AM`, open Riley), web and admin (`/admin/day/2026-07-24` Booking detail): state `needed` ("Pre-payment needed · estimate incomplete", "Rhinoplasty is on Dr Souter's pre-paid list"), highlight `[data-shot=booking-prepayment]`. Add a Nair state (Souter Fri 24 PM) showing the requirement found across the whole Booking (the rhinoplasty is the second Procedure). Caption: "A Booking needs prepayment when a Procedure is on the anaesthetist's prepaid list". Drop the partial reason. |
+| [US-06.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.2.md) Set the prepaid amount  | partial · admin-deposit-invoice, admin-full-fee-invoice | captured. Delete the `deposit-invoice` shot (no deposit exists after this phase). Keep `full-fee-invoice` at `/admin/invoices/INV0001` (Nair) and add an admin and a mobile `prepayment-estimate` shot of the Booking panel on Riley showing the stored "Estimate", read-only for the anaesthetist, with no amount input. Caption: "The prepaid amount is always the full estimate, set by the calculation". Drop the partial reason. |
+| [US-06.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.3.md) Prepayment is an estimate  | partial · admin-estimated-full-fee | partial (final above or below the estimate still to be shown in full). Keep `estimated-full-fee` at `/admin/invoices/INV0001`, highlight the new note "This pre-procedure invoice is an estimate of the anaesthetic fee. The final fee is calculated after the procedure and may be higher or lower". Add state `balance` on the balance invoice for Nair after authorising Souter Fri 24 PM (the final exceeds the estimate by a one-unit top-up). The estimate-above-final case is recorded and flagged (see US-06.4.2) but its settlement surfaces and the letter wording are Phase 41, so name that in the reason. |
+| [US-06.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.4.md) Calculate the prepayment estimate  | none (create it) | captured. Create the recipe. Admin Booking detail for Riley: state `breakdown` after entering 90 minutes, with the breakdown open (base units, 6 time units, 2 contingency units with the OQ-38 caption, total units, x unit value, amount; highlight `[data-shot=prepayment-estimate]`). Add admin Master data, Pre-payment section (contingency units stepper, "Provisional (OQ-38)"), state `setting`. Caption: "Estimate: base and time units plus contingency, at the anaesthetist's own unit value". |
+| [US-06.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.5.md) Estimated duration from the surgeon's rooms  | none (create it) | captured. Create the recipe. Admin Booking detail for Riley: states `empty` (no duration, the stepper) and `entered` (90 minutes recorded, the held invoice appears). Mobile (Souter Fri 24 AM, Riley): state `read-only` showing "From the surgeon's rooms" and, before entry, "The office records the estimated duration from the surgeon's rooms." Caption: "Estimated duration recorded by the office from the surgeon's rooms". |
+| [US-06.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.1.md) Raise the prepayment invoice  | captured · admin-raise-prepayment-invoice, admin-prepayment-invoice, simulator-prepayment-xero-pair | captured. Re-shoot `raise-prepayment-invoice` with new states: `awaiting-approval` (Riley, 90 minutes entered, the held invoice and a teal "Approve and send") and `sent` (after Approve and send). The old "Raise pre-procedure invoice" click is gone. Keep `prepayment-invoice` at `/admin/invoices/INV0001`. In `prepayment-xero-pair` (`/demo/xero/invoices/XRB0`) keep the sent pair and add a `held` state for the draft ACCREC of a held invoice. Add admin `invoices-awaiting-approval` (Invoices strip) and `rail-prepayments` (the right-rail card with Approve and send). Caption: "Prepayment invoice generated at setup and held until the office approves and sends it". |
+| [US-06.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.2.md) Track prepayment status and alert when outstanding  | partial · admin-day-grid-flag, admin-card-status | captured. Re-shoot `day-grid-flag` (the amber triangle from 15a, not the old "Pre-payment flagged" button; re-point the click) and `card-status` with states `estimate-needed`, `unpaid`, `part-paid` and `received` (Nair, paid). Add admin `rail-prepayments` (all upcoming prepaid Bookings with status pills, which closes the missing list) and a mobile shot of Riley's row with the warning triangle and the panel. Add state `strong` after "Move to 2 days before procedure" where the runner can reach it (the PWA demo-actions sheet on :5174; the harness bar is hidden in captures), otherwise note in the caption that the mild state is shown. Caption: "Pre-payment status per upcoming Booking, with a warning that strengthens as the date nears". Drop the partial reason. |
+| [US-06.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.4.md) Re-check after each receipt  | captured · admin-recheck-after-payment | captured. Re-shoot `recheck-after-payment`: states `part-paid` and `paid` now start from Riley's generated invoice (enter 90 minutes, Approve and send, then record half or full through `/demo/control` as US-06.4.1's setup does), not the Raise button. Highlight `[data-shot=booking-prepayment]`. Caption: "Half the estimate received, pre-payment part paid" and "Estimate paid in full, pre-payment received". |
+| [US-06.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.5.md) Re-check when the Booking changes  | partial · admin-recheck-on-change | captured. Replace the payment-category shots. `recheck-on-change` states `before` (Riley, held invoice at the 90-minute estimate) and `after` (duration changed to 120 minutes: the held invoice amount changed in place and the confirmation reads "Pre-payment re-checked: estimate updated"). Add a `moved` state: reassign a sent Booking to a colleague and show "Agreed with Dr Souter" and "agreed amount kept". Caption: "The requirement and amount are re-checked when the Booking changes or moves". Drop the partial reason. |
+| [US-06.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.6.md) Prepayment letter templates  | none (create it) | absent. Create the recipe with no shots. Reason: "No prepayment letter templates; Phase 41 adds the letter picker beside Approve and send." |
+| [US-06.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.1.md) Invoice the remaining balance  | captured · admin-balance-invoice | captured. Re-shoot `balance-invoice`: the setup that raised the deposit invoice is replaced by authorising Souter Fri 24 PM (`/admin/review/L-34821-2026-07-24-PM`, Nair); the balance invoice (its id is the first runtime invoice, check it) shows "Less pre-payment INV0001 already invoiced" and "Balance after pre-payment INV0001". Caption: "Balance invoice after the procedure: final fee less the pre-payment already invoiced". |
+| [US-06.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.2.md) No refund when prepaid exceeds final  | absent | captured if the excess can be staged in the recipe's setup (a long estimated duration, approve and send, short recorded times, authorise), which the seed does not stage. Shots: admin Review chip "Pre-paid more than the final fee: $X" and the Billing monitor excess line; caption "Prepaid above the final amount: no credit or refund, the difference is accepted". If the runner cannot stage it reliably, keep `absent` with the reason updated to "Recorded and flagged (Phase 27); not seeded, so not capturable. See the manual test", and say so in the PROGRESS entry. Settlement surfaces are Phase 41. |
+| [US-06.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.1.md) Trust account  | none (create it) | absent. Create the recipe with no shots. Reason: "No trust account hold; Phase 41 holds and releases the prepayment payable." This phase leaves the ACCPAY draft until a receipt authorises it, as today. |
+| [US-06.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.2.md) Refund a prepayment on cancellation  | none (create it) | absent. Create the recipe with no shots. Reason: "No refund path; a sent prepayment whose Procedure is removed is flagged 'no longer needed' (Phase 27) and Phase 41 builds the refund." |
+| [US-06.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.3.md) Prepayment for a replacement anaesthetist  | none (create it) | absent. Create the recipe with no shots. Reason: "A rebooked Booking derives its own prepayment at the new anaesthetist's rate through the normal sync, but the cancel, refund and rebook sequence is Phase 41." If the new anaesthetist's estimate is visible on a rebooked Booking in the build, upgrade to partial with that shot. |
+| [US-06.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.4.md) Prepaid Booking moved to another anaesthetist  | none (create it) | partial. Create the recipe. Shoot reassigning Riley (sent) to a colleague: the confirmation "Pre-payment re-checked: agreed amount kept" and the Booking panel "Agreed with Dr Souter", no new invoice raised. Reason: "The agreed amount stands and no second invoice is raised, but the draft payable is not repointed to the new anaesthetist until Phase 41." |
+| [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract  | captured · admin-authorise-list, admin-billing-run | captured. Keep the recipe. Re-check `billing-run` and add a state for Souter Fri 24 PM (Nair) so the pipeline shows a balance invoice naming INV0001; a held prepayment invoice is withdrawn at authorise, not billed. No wording change. |
+
+**Recipes this phase breaks.**
+- The Booking panel hook: the code has `data-shot="card-prepayment"` and this doc keeps
+  `booking-prepayment`. Re-point every recipe to whichever exists after Phase 15, in one pass:
+  `grep -l 'card-prepayment' requirements-board/capture/recipes/*.json` lists US-06.2.1, 06.2.2,
+  06.3.1, 06.3.2, 06.3.3, 06.3.4 and 06.3.5.
+- Every recipe that clicks "Raise pre-procedure invoice" (button gone, the invoice is generated at
+  setup): besides the covered items, `US-08.2.2` (`deposit-invoice`, `balance-invoice`), `US-09.2.1`
+  (`payment-webhook`), `US-09.2.3` (`webhook-replay`), `US-09.2.4` (`accpay-disbursed`,
+  `payables-run`) and `US-09.3.4` (`archived-contact-reused`, `contact-unarchived`). Replace the
+  click with: enter 90 minutes on Riley, then Approve and send, keeping each shot `name`. `US-08.2.2`
+  also loses its deposit shot with the deposit wording.
+- `daygrid-block-prepayment` (the old day-grid flag, used by `US-06.3.3` and the setups of
+  `US-06.2.2`, `US-06.3.1`, `US-06.3.2`, `US-06.3.4`, `US-06.3.5`, `US-06.4.1`): re-point to 15a's
+  triangle hook, or open Riley by URL. `US-06.3.3` (the gate and alert; check its status with
+  `recipe-status.mjs`) shows a payment-category gate that no longer exists: re-point or mark it
+  per the ROADMAP rule.
+- `INV0001` recipes (`US-05.2.7`, `US-08.4.1`, `US-09.1.1`) and `XRB0` recipes (`US-08.3.1`,
+  `US-09.1.3`, `US-10.1.1`, `US-10.3.1`, `US-15.0.6`): Nair's prepayment is now the estimate
+  (6 units at the July rate) and is seeded `approved` and sent. Their routes are unchanged; check the
+  captions and highlights that name an amount. `US-11.3.3` uses `INV0002`; confirm it is still the
+  first runtime invoice.
+- Work item 16 asks for a `--dry` run of the covered recipes; the full `--dry` is the real check.
+
+**ATLAS.md.** Seed data and Personas and IDs: Riley seeded with no duration (estimate needed) and
+Nair's paid INV0001 as the estimate. Routes: the Booking detail routes after Phase 15 if ATLAS still
+shows the Card routes. Existing hooks: add `booking-prepayment` (or the renamed `card-prepayment`),
+`prepayment-estimate`, `rail-prepayments`, `invoices-awaiting-approval`; drop
+`daygrid-block-prepayment` if it goes. Overlays: the duration editor sheet and Approve and send
+confirmation. Demo control panel section: the S4 scenario text.
 
 ## Adversarial review (after build)
 
@@ -842,9 +909,12 @@ anything settled in the Decisions log except the rulings this phase explicitly s
   - the tests added (estimator, status, sync, approval, escalation, balance link, excess, parity);
   - `PERSIST_VERSION` old to new;
   - Riley's and Nair's re-pinned figures;
-  - the broken capture recipes;
-  - the stale "payment category" wording in US-06.3.5's body and images, for the owner (do not edit
-    the catalogue);
+  - the Catalogue screenshots result: the recipes created or changed, the recipes this phase broke
+    and how each was re-pointed, the REPORT.md counts (captured, partial, absent, failed) before and
+    after, and any partial reason handed to a later phase (Phase 41 for the letters, trust hold,
+    refund and moved-Booking payee);
+  - the stale "payment category" wording in US-06.3.5's body text, for the owner (do not edit the
+    catalogue text; its images are re-shot by the screenshot step);
   - for Phases 28, 32, 34, 36 and 41: `syncPrepayment` (Phase 32's plan calls it `recheckPrepayment`)
     with its `PrepaymentSyncCause` values `listMoved` and `bookingMoved`, `setEstimatedDuration`, the
     `approval` record, the `draft` ACCREC, and `excessAboveFinal` on the prepayment invoice's case.

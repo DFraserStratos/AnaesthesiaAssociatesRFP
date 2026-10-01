@@ -654,7 +654,8 @@ with a Vitest test.
       before and after values.
 - [ ] No en or em dash in any new app copy (grep the diff). Actions are teal, pills neutral, and no
       crimson.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
+- [ ] Catalogue screenshots: the recipes for US-05.1.1, US-05.1.3, US-05.1.5, US-05.1.6 and US-03.3.1 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -686,6 +687,51 @@ No scripted figure changes. Patch the wording these sections carry, and the matc
   - Confirm S3 reads unchanged.
 - Control Panel scenario text: none expected. Grep `src/apps/demo` for "post-op", "RVG code" and modifier
   wording to confirm.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 19` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-05.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.1.md) RVG code master data | captured · admin-rvg-codes | Stays `captured`. Re-shoot `admin-rvg-codes` with the Source pill (NZSA or AA), Groups and Body heading columns, and add an `add-aa-code` state with `RvgCodeSheet` open (for example AA205, "Also add to the master procedure list" on). Highlight the Source column, then the sheet. Caption "AA-added codes are marked AA-sourced" |
+| [US-05.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.3.md) Group codes | partial · admin-rvg-sites, web-code-picker, mobile-code-picker | `captured`. Re-shoot `admin-rvg-sites` (Groups pills plus the group filter) and add an `rvg-groups` state on the new RVG groups tab (`masters-rvg-groups`). Re-shoot `code-picker` on web and mobile as the procedure picker with the body-heading chips and grouped rows (keep the shot name; caption "Procedure picker grouped by RVG body heading"). Drop the partial reason. Selecting a group as a set is by the group filter and Contract scope chips; the prepaid tick list is Phase 26, so if the review judges that gap material keep `partial` and say so |
+| [US-05.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.5.md) Modifier code master | partial · admin-modifier-codes | `captured`. Re-shoot `admin-modifier-codes` showing the full set (VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3, NC1 to NC2 present, PO1 and PO2 gone) with the Selection column, plus an `edit` state with `ModifierCodeSheet` open on TTE1 (units, description, Selection). Highlight the table, then the sheet. Admin only. Drop the partial reason |
+| [US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md) Procedure master mapped to RVG codes | absent · placeholder, no shots | Add the shots, `partial`. `absentReason`: "The Contract base unit override is built in Phase 23; the resolver has the slot but no screen sets it." Admin shots: `procedure-list` (`masters-procedure-list`: the two 45030 entries at 4 and 6 beside the guide "4 to 6", the OQ-62 provisional badge, highlight the Base units and RVG guide columns) and an `edit` state with `ProcedureTypeSheet` open ("RVG guide: N" beside the stepper). Caption "Each procedure holds its own base units, mapped to an RVG code or group". Phase 23 turns it `captured` |
+| [US-03.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.1.md) Select an RVG code (with ranged override) | captured · web-rvg-picker[closed,open,search], mobile-rvg-picker[closed,open,search] | `partial`. `absentReason`: "The procedure is picked and seeds its base units, but picking a Contract after it is built in Phase 20." Re-shoot `rvg-picker` on web and mobile (Booking `C0009`): `closed` (the "Procedure" card with name, mono code and "Base N units · from the procedure list"), `open` (body-heading chips, rows grouped under headings), `search` ("skin"). Add `ranged` and `outside-guide` states on both apps with a typed value outside the range and the warn caption "Outside the guide range. The office will see a warning after the procedure." Captions in the catalogue's words (Procedure, Booking). Phase 20 turns it `captured` |
+
+**Recipes this phase breaks.**
+- `US-03.3.2` (Retired, merged into US-03.3.1, still `captured`): it clicks
+  `[data-shot=capture-procedure-code] >> text="Change"` and fills
+  `input[placeholder="Search code or name"]`. `ProcedurePickerSheet` replaces `CodePickerSheet` with
+  the placeholder "Search procedure, code or group" and a "Choose" prompt on an unlinked Procedure
+  (work items 10a and 10b). Re-point it, or set it `absent` with "Retired: merged into US-03.3.1" and
+  move its ranged states to the US-03.3.1 recipe.
+- `US-03.3.1` and `US-05.1.3` use the same `Change` click and `capture-procedure-code` hook: keep
+  that hook on the new `ProcedureCodeCard`, or re-point them.
+- `US-13.4.1` (also Phase 42): the `rvg-codes` and `modifier-codes` states are captioned "(view only)"
+  and its `absentReason` lists RVG and modifier codes as view only. Re-caption and trim the reason,
+  leaving what is still true.
+- `US-05.1.2` (Retired, `absent`): its `absentReason` says the RVG master is view only with no
+  AA-sourced marker, which is no longer true. Reword it to "Retired: merged into US-05.1.1".
+- `US-05.1.4`, `US-05.2.3`, `US-03.3.5` (modifier chips: `capture-modifiers` with "Positioning",
+  "Emergency" and the "/already includes P1/" text) and `US-03.3.4` (`capture-asa-status`):
+  `ModifierChips` is now derived from the store master and the new groups sit under "More
+  modifiers". The PA, A, OB, ASE, P and AI groups render as before, so these should still match;
+  the `--dry` run is the check.
+- Recipes on the Contract detail panel (`US-04.2.1`, `US-04.2.2`, `US-04.2.4`): the Scope section
+  gains "RVG groups" and "Procedures" chip selects. Check any `[role=dialog]` highlight.
+
+**ATLAS.md.** Overlays (the procedure picker replaces the code picker, and the "More modifiers"
+disclosure), Existing hooks (`masters-rvg`, `masters-rvg-groups`, `masters-procedure-list`,
+`masters-modifiers`, and `capture-procedure-code` if it moved) and Seed data (the master procedure
+list entries, the AA groups, the new modifier codes). Routes are unchanged.
 
 ## Adversarial review (after build)
 
@@ -734,6 +780,7 @@ settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **Catalogue screenshots result:** the recipe filled in (US-05.1.6) and changed (the other four covered items, plus the broken ones such as US-03.3.2 and US-13.4.1), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reasons handed on: US-05.1.6 to Phase 23 (Contract base unit override) and US-03.3.1 to Phase 20 (the Contract pick).
 - Status row for catch-up Phase 19, and a phase entry: what was built, the parity result, the review
   pass (findings confirmed and fixed, anything not treated as a defect and why), tests added, and the
   `PERSIST_VERSION` bump. Record that US-05.5.2 left for 39b.

@@ -4,7 +4,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md. Read these parts:
    - the owner-decisions table and the open-questions working rule (an open question with a recommendation is built as that recommendation, labelled provisional and kept in one place);
    - the phase list and the sequencing rules (the Schedule track runs strictly 28 to 32; 31 and 32 reuse 17's blacklist helper; 32 needs 31 because a List moved to the office becomes a Draft List; Intake 33 to 35 runs after 31);
-   - the demo-trigger, PWA-parity and demo-guide rules;
+   - the demo-trigger, PWA-parity, demo-guide and Catalogue screenshots rules;
    - the "Confirm before building" row for 28 to 31 (FT-01.6, US-01.6.1, US-01.6.3, US-01.6.4 and FT-01.3 Verify; OQ-64).
 2. docs/prototype-build/catch-up/phases/phase-31-draft-lists.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic". Look especially at:
@@ -38,6 +38,7 @@ Before doing anything else, read these in order:
    - the binding conventions (especially 4 to 7, 10, 13 to 18);
    - the Decisions-log entries this phase supersedes: 2026-07-23 "PermanentList type gains hospitalId: HospitalId | null" (the pre-op clinic with no hospital), the Phase 02 and 06 "surgeon TBC" design state (Fitzgerald Tue 21 PM with the amber "Surgeon not yet assigned" flag), Phase 28's interim "pre-op Lists come only from Permanent Lists", and the Phase 06 / 28 / 30 ruling that marking a booked Slot unavailable keeps the List and flags a conflict;
    - the catch-up entries for 14, 15, 15a, 17, 20, 27, 28, 29 and 30. Use them for the names they actually built: the registry and OFFICE_SIMULATION_ACTOR (store/demoActors.ts; some plans call it SIMULATED_OFFICE_ACTOR, use the name the code has), the Booking names, the warning routine and To-do card, the blacklist helper and SurgeonSelect, the default-Contract resolver, the prepayment sync (planned as syncPrepayment(api, bookingId, cause)), placeListOnSlot, moveListToSlot, setAvailability and the Slot views, the Slot status helpers (isOpenForBooking, isClosed, isOpenSlot, availabilityClash) and the calendar's range and series actions (setAvailabilityRange, createAvailabilitySeries), Phase 28's PWA stand-in assignNextFreeSlotAsSimulatedOffice, the conflict path (Phase 30 reconciles conflicts inside mutate(), in store/conflictReconcile.ts; conflictRows and the Conflicts screen; simulateSickness; office-reassigns-list), Phase 30's seeded Rutherford Wed 22 AM sickness, and Phase 30's rename of Permanent Lists to recurring bookings (RecurringBooking, recurringBookings.ts, addRecurringBooking / editRecurringBooking, RecurringBookingSheet, List.recurringBookingId).
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on; line ~310 still describes the Fitzgerald "surgeon TBC" block) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 over the covered and context catalogue files, OQ-44, OQ-64, OQ-27, OQ-17, OQ-43 and domain-model.md;
@@ -111,13 +112,14 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass. This is convention 18:
   - fan out three Opus review subagents, for quality, bugs and plan adherence, steered by the phase doc's bullets;
   - independently verify each finding;
   - fix the confirmed ones and re-green.
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry. Include the drift-check result, the owner's answers, the name map for later phases, the PERSIST_VERSION from and to, the golden-fixture diff summary, the tests added and the review pass;
+  - the status row and a phase entry. Include the drift-check result, the owner's answers, the name map for later phases, the PERSIST_VERSION from and to, the golden-fixture diff summary, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc: four superseded (one of them provisional, OQ-64), plus the new rulings;
   - the handoff notes for 32, 33, 34, 35, 41, 42, 43, 43a and 44;
 - patch the demo guide in the same session. That covers:

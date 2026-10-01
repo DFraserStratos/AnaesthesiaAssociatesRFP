@@ -1,7 +1,7 @@
 Please run catch-up Phase 38 (Web accounts, outstanding list and GST schedule) of the Anaesthesia Associates prototype. It is estimated at 2 sessions: session 1 is work items 1 to 8 (the pure modules, the outstanding rework, ageing and seed removal, the dashboard and the Outstanding tab), ending green; session 2 is items 9 to 16.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D8 answered: a flat outstanding list, oldest first, no buckets, no age chips, no Overdue view; D9 still open: whether billed Lists vanish), the sequencing rules (38 runs after 28 and 36, in any order with 37 and 39; it may run straight after 36 if AA needs the GST schedule early), the "BCTI granularity" paragraph, the demo-trigger, PWA-parity and demo-guide rules, and the "Confirm before building" row for 38 (D9, US-12.2.2 Verify, OQ-31).
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D8 answered: a flat outstanding list, oldest first, no buckets, no age chips, no Overdue view; D9 still open: whether billed Lists vanish), the sequencing rules (38 runs after 28 and 36, in any order with 37 and 39; it may run straight after 36 if AA needs the GST schedule early), the "BCTI granularity" paragraph, the demo-trigger, PWA-parity, demo-guide and Catalogue screenshots rules, and the "Confirm before building" row for 38 (D9, US-12.2.2 Verify, OQ-31).
 2. docs/prototype-build/catch-up/phases/phase-38-web-accounts-truth.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 11, "Remove or rework", and the DM-29, DM-36, RV-18 and RV-19 rows), then the EP-12 and EP-07 tables. Then docs/prototype-build/catch-up/epics/EP-12.md (FT-12.2, US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2) and epics/EP-07.md (US-07.2.1, US-07.4.1), DM-29 and DM-36 (and DM-22, DM-23 for the ledger you read) in docs/prototype-build/catch-up/analysis/domain-model-delta.md, and RV-18, RV-19 and the dropped RV-16 note in analysis/reverse-check.md.
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -17,6 +17,7 @@ Before doing anything else, read these in order:
    - the Decisions-log entries this phase supersedes or amends: the 2026-07-22 third external plan review finding #12 and the Phase 08 build reading that billedAtISO removes a List from the anaesthetist's views (M10); 2026-07-23 "Seeded anaesthetist-dashboard figures"; the 2026-07-22 seventh external plan review A17/B16 (the GST report as a list of amounts received); 2026-07-21 "Navigation structures from the design" (Accounts houses Overdue and the GST summary); the Phase 05 entry's Overdue anatomy;
    - the Phase 10 entries (the billing mirror, receipts, payables runs, next-day handover);
    - the catch-up Phase 14, 16, 21, 22, 26, 28 and 36 entries and handoff notes, for the registry's payment entries and "Office authorises this List", the AA fee invoice and AA fees tab, the billable party, the invoice's GST, gstPeriodLabel and the profile, the Slot views and approvalStateLabel, and the ledger (payable legs, LedgerDisbursement entries, the per-anaesthetist position selector, the "Office runs payables" PWA stand-in). If 39 or 39a has run, their entries too (credit legs, negative invoices, netting).
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in ROADMAP.md; run node docs/prototype-build/catch-up/tools/recipe-status.mjs 38 to see the recipes this phase owns.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 over the covered and context catalogue files, OQ-31, OQ-29, OQ-60 and domain-model.md;
@@ -42,10 +43,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2 and US-07.2.1 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result, D8 built as answered, which D9 branch was built, the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result, D8 built as answered, which D9 branch was built, the name map for later phases, the PERSIST_VERSION from/to, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc (three superseded, one amended, three new);
   - the handoff notes for 37, 38a, 39, 39a, 40, 41, 43 and 44;
 - patch the demo guide in the same session: the Direct URLs table, S3 Beats 1 and 3 and the S3 discovery points in 03-demo-script.md, the billing and balances steps in 02-workflows-and-handoffs.md, the GST and money lines in 01-personas-and-responsibilities.md, cheat-sheet sections 2 and 11, its "Built and clickable" line and "What each app is for", the same sections of master-demo-guide.html, and the Control Panel scenario text if it names Overdue, ageing, GST activity or the List vanishing;

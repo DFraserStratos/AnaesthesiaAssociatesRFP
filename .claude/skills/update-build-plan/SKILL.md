@@ -20,6 +20,14 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
   adversarially reviewed. This skill authorises the Workflow tool; load `workflow-authoring` first if you
   need to adapt a script.
 - Phases already built are frozen. Never rewrite them; follow-up work goes to a later phase.
+- **Screenshots match the app after every phase.** The outcome the owner wants is that, when a phase is
+  done, the screenshots on its user stories show what was built. So every unbuilt phase doc and prompt
+  carries the Catalogue screenshots step (see "Catalogue screenshots in the plan" below), and any phase
+  you add, change or re-scope has that section brought in step with its new covered items.
+- The plan edits plan files only. Never create, edit or delete capture recipes
+  (`requirements-board/capture/recipes/`), catalogue images or `capture/REPORT.md` while updating the
+  plan: the build phases do that, and they verify it with a capture run. Tell any agent you start the
+  same.
 - Do not commit or push.
 
 ## Stage 0: scope (yourself)
@@ -89,12 +97,17 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    rebuilds `plan.json` exactly from the run, moves the drift-check baseline in the plan docs (built
    phases keep theirs), and regenerates `index.html`. Its output must show no `indexWarnings`.
 2. Run `node CU/tools/plan-state.mjs --coverage`. It must pass.
+   Then `node CU/tools/recipe-status.mjs --check`. It must pass: every unbuilt phase doc has a
+   `## Catalogue screenshots` section naming each story it owns screenshots for, and every kick-off
+   prompt runs `npm run capture` (the standing step in `CU/ROADMAP.md`, "Catalogue screenshots").
 3. **Final consistency check (one fresh Opus agent).** It fixes problems in place:
    - every relative link in `CU/` resolves;
    - the `ROADMAP.md` table, `plan.json` and the phase doc headers agree;
    - no unbuilt phase still names the old baseline, or builds a default for a decision `ROADMAP.md`
      records as answered;
    - kick-off prompts reference files that exist;
+   - each updated phase's "Catalogue screenshots" rows match its covered items and say what the
+     recipe must show once built (`node CU/tools/recipe-status.mjs <num>` lists them);
    - `node CU/tools/build-index.mjs` is re-run if it changed anything.
 4. Update records:
    - add a line to an "Update history" section at the end of `CU/README.md`: date, `old..new` commit,
@@ -104,15 +117,71 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
 5. Report briefly:
    - items re-graded, and how the verdicts moved;
    - phases changed (one line each, with why), and phases added or merged;
+   - that `recipe-status.mjs --check` passes, and any phase whose screenshot rows changed;
    - decisions now built as answered;
    - the new session estimate;
    - anything left for the user.
    Remind them to commit.
+
+## Catalogue screenshots in the plan
+
+The screenshots on catalogue stories come from the Requirements Board's capture runner
+(`requirements-board/scripts/capture.ts`). It works from one recipe per item
+(`requirements-board/capture/recipes/<ID>.json`; the format, routes, seed ids and hooks are in
+`requirements-board/capture/ATLAS.md`). `npm run capture` in `requirements-board/` drives the prototype
+(5173) and the PWA (5174) and writes `catalogue/assets/<ID>/<app>-<name>[-<state>].png`. It links the
+images into each item's `images`, rewrites only the images that changed, and writes `capture/REPORT.md`.
+
+The standing rule is "Catalogue screenshots" in `CU/ROADMAP.md` (PROGRESS convention 19). Keep it in
+`ROADMAP.md` when the architect rewrites it, including the bullet in "Every phase closes the same way".
+Each unbuilt phase must carry it in four places:
+
+1. **A `## Catalogue screenshots` section** in the phase doc, after "Demo guide updates":
+   - one table row per item that `node CU/tools/recipe-status.mjs <num>` lists, each ID linked, giving
+     its recipe at plan time and what it must be when the phase is done (status; shots and states per
+     app, web and mobile both where both have it; what the highlight boxes; caption in the catalogue's
+     words);
+   - "Recipes this phase breaks": other recipes whose route, seed id, text or selector the phase changes,
+     found by grepping the recipes for what it renames or removes;
+   - the `ATLAS.md` sections to update.
+2. **A Manual test checklist item**: a full `npm run capture` with no failed recipe and no story without
+   a recipe, the new shots checked by eye, and `npm run verify:board` green.
+3. **A PROGRESS.md updates bullet**: recipes created or changed, and the REPORT.md counts before and
+   after.
+4. **The kick-off prompt**:
+   - `requirements-board/capture/ATLAS.md` and the ROADMAP rule in the read-first list;
+   - a "When done:" bullet after the adversarial review that runs the step. In `requirements-board/`, run
+     `node scripts/capture.ts --dry`, then a full `npm run capture`, starting root `npm run dev` in the
+     background if a server is down;
+   - `npm run verify:board` in the green line.
+
+Rules to keep when re-planning:
+- An item that moves to another phase takes its row with it. A new story with no recipe gets a "create"
+  row, because Phase 14's baseline sweep gives every live story a recipe.
+- An item the phase builds only in part stays `partial`, and its reason names the later phase that
+  finishes it. Phase 44's final sweep leaves no reason naming a later phase.
+- When a phase removes a screen that a Retired or Future item's recipe shoots, that recipe becomes
+  `absent`.
+- Shot `name`s stay stable when a recipe is re-pointed. Rename a shot only when the old name describes
+  retired behaviour; the runner deletes the old generated image, so nothing goes stale.
+- Shots hide the harness bar, so recipes stage demo triggers with the runner's `trigger` step
+  (Phase 14 adds it), not by clicking the hidden bar. Anything that would appear in every fresh browser
+  context, such as a first-run welcome card, needs the runner to preset it (Phase 43a).
+- Earlier advice in a phase doc to leave screenshots stale, or for the owner to re-shoot them, is
+  replaced by the step.
+
+`node CU/tools/recipe-status.mjs --check` is the mechanical guard: it fails if an unbuilt phase lacks
+the section, if the section misses one of its stories, or if the prompt never runs `npm run capture`.
+The workflows' writer and reviewer prompts (`tools/workflow-plan-update.js`, `tools/workflow-dev-plan.js`)
+already ask for the section, so check that their output does too. If `--check` fails, fix the named
+phases yourself (or with one Sonnet agent per few phases) before Stage 3's final consistency check.
 
 ## Small updates
 
 If only a few items changed and they touch one or two phases, you can skip the Stage 2 workflow:
 1. Re-grade the items as in Stage 1.
 2. Update `ROADMAP.md` and those phase docs and prompts yourself, each with one fresh reviewer subagent.
+   Keep each phase's "Catalogue screenshots" section in step with its covered items (see "Catalogue
+   screenshots in the plan"), then run `node CU/tools/recipe-status.mjs --check`.
 3. Update `plan.json` by hand (or with a short node script), not by retyping it.
 4. Run `CU/tools/build-index.mjs`, then the Stage 3 checks.

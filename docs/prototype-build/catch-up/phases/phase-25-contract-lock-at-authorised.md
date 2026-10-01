@@ -609,7 +609,8 @@ Model, lock and engine first, re-greened before any UI.
     - Playwright: re-point `visual/admin-phase09.spec.ts` to the new failure and the inline "Add and
       retry"; extend `visual/admin-phase08.spec.ts` with the locked-record card and a regenerate run;
       add shots for `contract-versions`, `booking-lock-badge` and `authorise-lock-blocked`.
-    - Capture recipes in `requirements-board/capture/recipes/`:
+    - Capture recipes in `requirements-board/capture/recipes/` (done in the Catalogue screenshots step
+      below, which owns the recipe list, the `--dry` check and the full capture):
       - Re-point the three that stage the old failure and click "Resolve & retry" (`US-08.5.1.json`
         shot `failure-reason`, `US-08.5.2.json`, `US-13.3.2.json`) to the re-based trigger and the
         inline "Add and retry" (14 will already have moved them off `/demo/control`). The
@@ -622,8 +623,8 @@ Model, lock and engine first, re-greened before any UI.
         `status` and `absentReason`, and the now-stale "editing changes the contract in place" sentence
         in `US-04.1.2.json`'s `absentReason`.
       - Run `npm --prefix requirements-board run capture -- --only US-04.1.2,US-04.1.3,US-04.3.5,US-08.4.4,US-08.5.1,US-08.5.2,US-13.3.2 --dry`
-        and list any broken recipe in PROGRESS. Re-capture (it rewrites catalogue images) only if the
-        owner asks. Then `npm run verify:board`.
+        while building, to find broken recipes early. The full `npm run capture` and `npm run
+        verify:board` run in the Catalogue screenshots step.
     - Grep new copy for en and em dashes; teal on every new action; crimson nowhere new.
 
 ## Demo triggers
@@ -730,8 +731,8 @@ payee, and that a `contractNotInForce` blocker makes them refuse quietly with no
 - [ ] **PWA.** On the installed PWA, submit a List and use "Office authorises this List": it authorises
       and bills; the Booking (while visible) shows the locked badge with no money.
 - [ ] No en or em dashes in any new UI copy; teal on every new action; crimson nowhere new.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green;
-      `npm run verify:board` green if any capture recipe changed.
+- [ ] Catalogue screenshots: the recipes for US-04.1.3, US-04.3.5, US-07.3.1, US-08.1.1, US-08.4.4 and US-15.0.3 (plus US-04.1.2, US-08.5.1, US-08.5.2 and US-13.3.2, which this phase re-points) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -773,6 +774,34 @@ Panel scenario text:
   against the run sheet and the cheat sheet, and fix any beat still describing contract fallback,
   "Resolve & retry restores the contract", effective-dating as the reason invoices stay fixed, or
   failure isolation as an open question.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 25` first: earlier phases may have
+changed these recipes since this plan was written. This step absorbs work item 16's "Capture recipes"
+bullets; do them here, not twice.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-04.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.3.md) Contract audit and versioning | absent | Captured. Create a recipe: `admin-contract-versions` on `/admin/masters`, the Contract sheet's "Version history" (`contract-versions`, newest first with "Current" and "N invoices"), with states for an edit that adds v2 (end-date Health NZ to 16 Jul) and `view` opening an earlier version read-only. Caption in the catalogue's words: edits are audited and an earlier version can be viewed. |
+| [US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md) Contract locked at AUTHORISED | captured · admin-contract-before, admin-locked-contract | Stays captured. Both start on C0012 (`/admin/day/2026-07-20/cards/C0012`) and highlight `office-billing-setup-1`. Re-shoot: `before` on a DRAFT Booking (no badge, re-prices live), `locked-contract` after authorise with the `booking-lock-badge` "Contract vN locked at authorise" highlighted. Re-check the start id after 21 and 22 seed more Bookings. |
+| [US-07.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.1.md) Authorise the List | captured · admin-authorise (confirm, authorised) | Stays captured. Re-shoot both states on `/admin/review/L-25490-2026-07-20-AM`: `confirm` notes the lock, and `authorised` shows the banner plus the lock glyph and version in the Contract column. Add an `authorise-lock-blocked` state: with Health NZ end-dated, a CPH List's Review shows the `contractNotInForce` blocker instead of the button. Keep the shot `name`s. |
+| [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract | captured · admin-authorise-list (confirm, authorised), admin-billing-run | Stays captured. Re-shoot `admin-authorise-list` on `/admin/review/L-34821-2026-07-20-AM` and `admin-billing-run` on `/admin/billing` (the pipeline row now prices from the locked record). Add `admin-billing-supply-input`: the Tuilagi row with "Held back: none of this Booking's invoices was issued", the inline claim reference field and "Add and retry" (`billing-supply-input`), staged by the re-pointed `billing-failure` trigger. |
+| [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Captured. Re-shoot `admin-snapshot-invoice` on `/admin/invoices` and add `admin-locked-record` (`invoice-locked-record`: Contract, version, payee, payment setting, rate) with a `regenerated` state after the "Regenerate from locked data" trigger ("Regenerated from locked data: identical"). Drop the partial reason (Phase 22 left it naming this phase). |
+| [US-15.0.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.3.md) Enter once | captured · web-entered-by-anaesthetist, admin-seen-by-office | Stays captured. Verify both still resolve on C0009 (web and admin, `time-capture-track`). Add `admin-billing-exception`: the office supplies the missing input on the held-back Booking in the Billing monitor and the Booking bills, with no re-keying of anything else. |
+
+**Recipes this phase breaks.** Work item 16 already names the four to re-point; they are done in this step:
+- `US-08.5.1` (shot `failure-reason`), `US-08.5.2` (`card-failure`, states `failed` and `retried`) and `US-13.3.2` (`resolve-retry`, highlight `tr:has(button:has-text("Resolve & retry"))`) stage the old end-dated COS ACC failure and click "Resolve & retry". Re-point them to the re-based trigger and the inline "Add and retry". `US-08.5.2`'s captions change to a failed Booking being held back whole while the List bills (OQ-05), with "Booking" for "card".
+- `US-04.1.2` (shots `contracts` and `edit-contract`): its `absentReason` still says editing changes the Contract in place; rewrite it, and re-check the `edit-contract` highlights on the date inputs and "Delete contract" in the sheet that gains Version history. Re-run `--dry` for it.
+- `US-02.4.2`, `US-04.1.2` and `US-08.4.4` mention Whitaker, Tuilagi or Health NZ: re-check any seed id or row text that Phase 25's seed changes (Whitaker's List now authorises into Health NZ v1).
+- Recipes on authorised Bookings that read the rate or total (`card-calculation` users) may show "(locked)" and the badge; the `--dry` run is the check.
+
+**ATLAS.md.** Update Seed data (migrated locks on seeded AUTHORISED Lists, v1 Contract versions), Existing hooks (`contract-versions`, `booking-lock-badge`, `invoice-locked-record`, `billing-supply-input`, `authorise-lock-blocked`) and the Demo control panel section (the re-pointed "Trigger billing failure" and the new "Regenerate from locked data").
 
 ## Adversarial review (after build)
 
@@ -876,3 +905,7 @@ re-raise anything settled in the Decisions log.
     never a lock.
   - 42: loaded masters must go through the version helper, so a load appends versions.
   - 44: S4 Beat 3 and S5 Beat 4 as rewritten here.
+- **Catalogue screenshots.** The step's result: recipes created (US-04.1.3) and changed (US-04.3.5,
+  US-07.3.1, US-08.1.1, US-08.4.4, US-15.0.3, plus US-04.1.2, US-08.5.1, US-08.5.2, US-13.3.2 and any
+  other recipe the step broke), the `capture/REPORT.md` counts (captured, partial, absent, failed)
+  before and after, and any partial reason handed to a later phase.

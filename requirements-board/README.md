@@ -148,6 +148,9 @@ gallery has one tab per app present, in that order; untagged images fall back to
   (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.
   A file counts as generated when its name starts with an app and a dash (`scripts/captureFiles.ts`),
   so give hand-added screenshots another prefix (`hand-dashboard.png`, not `web-dashboard.png`).
+- Every prototype catch-up phase ends by updating the recipes for the items it covers (and any it
+  broke) and running a full capture, so the stories' screenshots match the app ("Catalogue
+  screenshots" in `docs/prototype-build/catch-up/ROADMAP.md`).
 
 ### Linking requirements
 

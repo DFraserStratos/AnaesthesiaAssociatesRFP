@@ -803,7 +803,8 @@ handset at once and 31 retires or re-points this stand-in (handoff).
 - [ ] S2 Beats 1 to 4 still run (Beat 3 now resolves a visible conflict).
 - [ ] No en or em dash in any new copy, no crimson on any new control, teal the only action colour,
   and every conflicted block still carries its label.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-01.5.1, US-01.5.2, US-01.5.4 and US-01.3.2 are created or updated (US-01.5.3 checked), any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -851,6 +852,35 @@ In the same session (each phase patches the beats it touches):
   the page.
 - Not a milestone phase, so no full consistency read. Check the patched sections match the run sheet,
   and `grep -rni "permanent list" docs/demo-guide` returns nothing.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 30` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-01.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.1.md) Hospital holiday calendar | captured · `hospital-holidays` (list, add) | stays captured. Re-shoot `list` on the new Hospitals view (pills are buttons, new subtitle); keep `add` and click the "Add holiday" button as before. Add a `calendar` state (Calendar mode, Southern Cross, a month with a closure block and its conflict count) and an `edit` state (the holiday sheet in edit mode with "Delete holiday"). Highlight the calendar grid and the sheet. Captions: "Each hospital keeps its own closure calendar", "Edit or delete a closure and its flags clear" |
+| [US-01.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.2.md) Conflict flagging | partial · `holiday-conflict` (grid, reason), `unavailable-conflict` (admin and mobile) | stays partial: the anaesthetist case should turn the List into a Draft List (OQ-27, OQ-64), which is Phase 31, so rewrite the reason to say so and drop the OQ-09 and "web shows no conflict" wording. Re-shoot `holiday-conflict` `grid` to show the amber conflict colour, "!" and reason line (the seeded Wed 22 Southern Cross closure is now real, so drop the add-holiday setup or add a second closure on another date), and `reason` on the drawer's conflict text. Re-point both `unavailable-conflict` admin and mobile shots to the new conflict drawer text and 29's calendar. Add a web `unavailable-conflict` shot of 29's web calendar "!" and an admin `phone-advice-warning` shot (inline "will be flagged" warning on an unavailable Slot). Caption in the catalogue's words: "Booking accepted, List flagged as a conflict" |
+| [US-01.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.3.md) Anaesthetist availability calendar | partial · `my-availability` (before, blocked) | Phase 29 owns this recipe. Here only check that the `blocked` state still shows the conflict "!" from the reconcile and that its caption is true. Stays partial for Phase 29's reason |
+| [US-01.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.4.md) Availability conflict dashboard | none | create it, status captured. Admin shots on `/admin/conflicts`: `conflicts-screen` (default filter, grouped by day, rows with reason, anaesthetist, hospital, Slot status, Bookings; highlight the table), `conflict-clear` (the Clear sheet from a row), `conflict-reassigned` (after Reassign, the row has left and the count dropped), and a `simulate-sickness` state staged by the Demo actions menu or by the seeded Wed 22 rows. Add a `data-shot` hook on the Conflicts table and the side-nav badge. Captions: "Booked Lists in conflict, Bookings still in place", "Reassign to an available anaesthetist and the conflict clears" |
+| [US-01.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.2.md) Recurring bookings drive most assignments | captured · `permanent-lists` (table, add) | stays captured. Keep the shot `name` `permanent-lists`; re-point the clicks to the "Recurring bookings" nav label and "Add recurring booking" button, and rewrite captions ("Recurring bookings: hospital, day, anaesthetist, session and surgeon"). Add an `apply` state (sheet with the live preview line and the "Apply to canvas now" result line, with "Show on day grid") and an `ended` state if a seeded one shows. Highlight the table, then the sheet |
+
+**Recipes this phase breaks.** Found by grep at plan time:
+- `US-01.1.2.json` and `US-13.4.1.json` click the "Permanent lists" nav label (and `US-13.4.1` the "Permanent Lists" caption and `absentReason`): re-point to "Recurring bookings", keep shot and state names. `US-01.1.2` keeps its partial reason (the roll-forward has no screen).
+- `US-13.4.1.json` and `US-04.4.1.json` click "Hospitals & holidays" (`role=button`): check the label survives the Hospitals view change.
+- `US-01.4.1.json` (`reassign`) drives `ReassignListFlow` from `/admin/day/2026-07-21`; the new collapsed "Not available" group sits after the open Slots, so "Hughes, Rawiri" should still resolve. Confirm in the `--dry` run.
+- `US-01.2.1.json` and `US-01.5.3.json` (mobile, `availability-block-pm`) show the conflict "!" via 29's calendar: re-check the highlight and captions after the reconcile moves into `mutate()`.
+- Any recipe that opens a Wed 22 List drawer or highlights its "Needs attention" box (`US-01.5.2`) needs the drawer's new conflict lines and Clear link; add a `data-shot` hook on the attention box rather than the text selector.
+- `US-01.2.3.json` uses Tue 21 rows only and is not affected.
+The `--dry` run is the final check.
+
+**ATLAS.md.** Update Routes (add `/admin/conflicts`), Seed data worth shooting (Wed 22 now has real facts: Rutherford AM Unavailable and the Southern Cross closure `HH900`, not advisory stamps), the Master data tab labels ("Recurring bookings") and Existing hooks (new `data-shot` hooks added for the Conflicts table, nav badge, drawer attention box, hospital calendar and holiday sheet).
 
 ## Adversarial review (after build)
 
@@ -910,6 +940,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump (from and to);
   - tests added (including the invariant test);
   - the review pass.
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase (US-01.5.2 to Phase 31).
 - **Decisions log:**
   1. **Conflicts are derived from facts and reconciled inside `mutate()`.** `ListConflict` holds a
      cause and references, not a message. This supersedes the per-path stamping of the 2026-07-23

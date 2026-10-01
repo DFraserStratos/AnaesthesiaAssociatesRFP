@@ -477,7 +477,8 @@ enough.
       has a readable label.
 - [ ] No en or em dashes in any new string; teal the only action colour; no crimson in the calendar or
       results; the Provisional pill shows once per app.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-03.1.6 and US-03.1.7 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -504,6 +505,25 @@ Patch in the same session (`docs/demo-guide/`, the same sections of `master-demo
 - `master-demo-guide.html`: the same passages (the Direct URLs tables, S3's closing moment and
   discovery callout, the cheat-sheet app cards and readiness list).
 - Control Panel scenario text: no change.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 38a` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-03.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.6.md) Find past work from a calendar | absent · stub, no shots | create the shots in `recipes/US-03.1.6.json` (replace the stub), status `captured` (Proposed in the catalogue, but fully built on both apps; the admin app is not in scope per the story's note). Mobile `/mobile/lists`: shot `lookback-calendar`, open the calendar sheet (`[aria-label="Go to a day"]`, or its text) and highlight `[data-shot=mobile-lookback-calendar]`; a second state taps the title, picks March 2026 and Fri 13 Mar, and shows the day chip with that day's `Done · billed` List. Web `/web/lists?view=calendar&month=2026-03&day=2026-03-13` (or click the Calendar segment): shot `lookback-calendar`, highlight `[data-shot=web-lookback-calendar]` with the day rail beside it. A `drill` state on each opens the history List, then a Booking and its Procedures. Captions: "Calendar jumps to any day back to January 2026" and "Pick a past day to see its Lists, then a Booking and its Procedures" |
+| [US-03.1.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.7.md) Search Bookings by NHI or patient name | absent · stub, no shots | create the shots in `recipes/US-03.1.7.json` (replace the stub), status `captured`. Mobile `/mobile/lists?q=mitchell` (or fill the search field, placeholder "Search patient name or NHI"): shot `lookback-search`, highlight `[data-shot=mobile-lookback-search]` with the Upcoming and Past headings and the "3 Bookings for Mitchell" line; a state typing the NHI `CQY9304` shows the same three. Web `/web/lists?q=mitchell`: shot `lookback-search`, highlight `[data-shot=web-lookback-search]`, the results table with the NHI and Progress columns. Captions: "Search finds a patient's Bookings by NHI or part of a name" |
+
+**Recipes this phase breaks.** None found at plan time; the `--dry` run is the check. The Lists page and the mobile Lists tab gain a search field, a calendar button and a Calendar segment, and the seed gains Jan to Mar 2026 backdrop Lists, but no recipe depends on text those change: `US-03.1.1` (`drill-down`, `/web/lists` and `/mobile/lists`), `US-07.4.1` and `US-07.2.1` click rows by hospital or surgeon text and fill the first date input, which stay. Their new shots will show the extra header controls on the next full capture; look at them once. If Phase 38's `?view=` change moved Upcoming and Completed to the URL, re-check any recipe that clicks those segments.
+
+**ATLAS.md.** Routes: add `?day=`, `?q=` (mobile and web Lists) and `?view=calendar&month=` (web Lists). Personas and IDs / Seed data: the new Dr Souter backdrop Lists, the pinned `SEED_LOOKBACK` List (Fri 13 Mar 2026) and the search examples (Mitchell, `CQY9304`, Prescott). Existing hooks: the four `data-shot` hooks `mobile-lookback-calendar`, `mobile-lookback-search`, `web-lookback-calendar`, `web-lookback-search`.
 
 ## Adversarial review (after build)
 
@@ -553,6 +573,7 @@ re-raise anything settled in the Decisions log.
   - the `PERSIST_VERSION` bump (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots result:** recipes created (US-03.1.6, US-03.1.7) or changed, the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** the Phase 10 entry on the seeded historical backdrop ("office surfaces exclude
      them"). The backdrop is also the anaesthetist's browsable history (January to June 2026 for

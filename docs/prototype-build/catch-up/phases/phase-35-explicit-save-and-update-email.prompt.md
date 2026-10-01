@@ -1,7 +1,7 @@
 Please run catch-up Phase 35 (Explicit save and the update email) of the Anaesthesia Associates prototype.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the owner-decisions table (D7: the anaesthetist moves their own List, with OQ-65's recommendation), the phase list, the sequencing rules (Intake 33 to 35 runs after 31 and 20; 35 also needs 25 and 32), the demo-trigger, PWA-parity and demo-guide rules (35 is a milestone phase), and the "Confirm before building" row for 35 (OQ-69, OQ-65).
+1. docs/prototype-build/catch-up/ROADMAP.md: the owner-decisions table (D7: the anaesthetist moves their own List, with OQ-65's recommendation), the phase list, the sequencing rules (Intake 33 to 35 runs after 31 and 20; 35 also needs 25 and 32), the demo-trigger, PWA-parity, demo-guide (35 is a milestone phase) and "Catalogue screenshots" rules, and the "Confirm before building" row for 35 (OQ-69, OQ-65).
 2. docs/prototype-build/catch-up/phases/phase-35-explicit-save-and-update-email.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 9, intake with explicit save and the mailto update email, and theme 2, the anaesthetist's own move with the email offer after; the DM-35 row; "Demo-trigger buttons"; "Uncertainty"), then the EP-02 table and its structural note. Then docs/prototype-build/catch-up/epics/EP-02.md (US-02.3.1, US-02.3.2, US-02.3.3, US-02.5.5, US-02.5.6), EP-01.md (US-01.4.1, US-01.4.3), and DM-35 (with DM-32 for the contact emails, DM-05 for the own-List move and DM-31 for derived warnings) in docs/prototype-build/catch-up/analysis/domain-model-delta.md.
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -11,8 +11,9 @@ Before doing anything else, read these in order:
    - notes/2026-10-01-aa-meeting-with-greg.md items #22 and #60.
    Also read docs/discovery-reference/Updated Requirements/domain-model.md: the section 1 row "No path for telling hospitals about Booking changes", and the "Booking" and "Surgeon, surgeons' room and blacklist" sections.
 5. docs/prototype-build/catch-up/analysis/prototype-map-shared.md (surface seam, Booking detail body, flows, audit presentation), prototype-map-admin.md (List drawer, Booking flows, Audit viewer), prototype-map-store-seed.md (mutate and the lifecycle guards) and prototype-map-shell-demo-pwa.md (harness bar, router, PWA demo sheet, pwaPurity): the code index for the files you will change.
-6. docs/design/Design Language.dc.html (warning, success and neutral tints, e-2, the sheet-in motion, mono tabular-nums, teal as the only action colour) and docs/design/Admin Day.dc.html plus Admin Review.dc.html (the Admin chrome, the List drawer, and the authorised banner that the save strip follows). These are the AUTHORITATIVE visual reference (convention 17). No mockup covers the save bar, clash prompt, as-at panel or email preview, so extend these patterns. Mobile App.dc.html only for the one-line mobile banner.
-7. docs/prototype-build/PROGRESS.md:
+6. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the phase doc's "Catalogue screenshots" section.
+7. docs/design/Design Language.dc.html (warning, success and neutral tints, e-2, the sheet-in motion, mono tabular-nums, teal as the only action colour) and docs/design/Admin Day.dc.html plus Admin Review.dc.html (the Admin chrome, the List drawer, and the authorised banner that the save strip follows). These are the AUTHORITATIVE visual reference (convention 17). No mockup covers the save bar, clash prompt, as-at panel or email preview, so extend these patterns. Mobile App.dc.html only for the one-line mobile banner.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions (especially 4, 5, 7, 13 to 18);
    - the Decisions-log entry of 2026-07-22 (fourth external review, finding #8: the "single-user by design, audited last-write-wins" concurrency stance), which this phase supersedes;
    - the Decisions-log entry of 2026-07-27 on audit history presentation (the change ledger and view-only coalescing), which this phase extends;
@@ -50,10 +51,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out Opus review subagents for quality, bugs and plan adherence, plus one on the draft-store refactor, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-02.3.1, US-02.3.2, US-02.3.3, US-02.5.5 and US-02.5.6 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result, OQ-46 built as answered, the OQ-69 and OQ-65 status, the write inventory, the PERSIST_VERSION from/to, the router migration, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result, OQ-46 built as answered, the OQ-69 and OQ-65 status, the write inventory, the PERSIST_VERSION from/to, the router migration, the tests added, the catalogue screenshot result (REPORT.md counts before and after) and the review pass;
   - convention 7's new wording on change sets and row versions;
   - the Decisions-log entries listed in the phase doc (superseding the last-write-wins stance; extending the audit-presentation decision; drafted edits versus commands; the email allowlist and the OQ-46 recipients; the on-demand button and drafted-not-sent mark as OQ-69's provisional recommendation; the cover email after an anaesthetist's move as OQ-65's; a reassignment as its own event);
   - the handoff notes for 40, 41, 43 and 44;

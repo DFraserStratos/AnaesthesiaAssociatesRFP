@@ -1,7 +1,7 @@
 Please run catch-up Phase 19 (RVG, modifier and procedure masters) of the Anaesthesia Associates prototype.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D3, answered, applies to this phase), the Contracts track sequencing rules, the placement notes for the 2026-10-01 update, and the open-questions row for 19 (OQ-62).
+1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D3, answered, applies to this phase), the Contracts track sequencing rules, the "Catalogue screenshots" rule, the placement notes for the 2026-10-01 update, and the open-questions row for 19 (OQ-62).
 2. docs/prototype-build/catch-up/phases/phase-19-rvg-and-procedure-masters.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the "EP-05 · RVG master data and fee calculation rules" section and the US-03.3.1 row of the EP-03 section. Then docs/prototype-build/catch-up/epics/EP-05.md (US-05.1.1, 05.1.3, 05.1.5, 05.1.6), docs/prototype-build/catch-up/epics/EP-03.md (US-03.3.1), and docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-13 and DM-31) and reverse-check.md (RV-04).
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -12,11 +12,12 @@ Before doing anything else, read these in order:
    - notes/2026-10-01-aa-meeting-with-greg.md items 4, 27, 30, 47, 53, 55 and 59.
 5. The analysis maps for the code you will change: docs/prototype-build/catch-up/analysis/prototype-map-domain.md (billing maths), prototype-map-shared.md (capture suite), prototype-map-admin.md section 9 (Master data) and prototype-map-store-seed.md.
 6. Design: docs/design/Design Language.dc.html (tokens, pills, badges, the warn tint) and Admin Review.dc.html (table anatomy for the Master data tabs). Mobile App.dc.html screen 3 is for the procedure card, the picker sheet and the modifier chips.
-7. docs/prototype-build/PROGRESS.md:
+7. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions;
    - the Decisions log entries this phase supersedes or must honour: 2026-07-22 (modifier table in code, ASA seeding values), 2026-07-23 (modifier semantics, A1 and the Ellison fee), 2026-07-27 (modifier bands), 2026-07-28 (modifier picker shape) and 2026-09-28 (the anaesthetist's Booking shows no calculation);
    - the PROGRESS entries for catch-up Phases 15, 15a, 17 and 18, for what they renamed and built. From 15a: where warning rules live and how one is registered (rule file, WARNING_RULES entry, WarningRuleId, WarningFacts, the appSettings default), the Warning shape (after-procedure timing, mild strength, per-Procedure key), when after-procedure warnings surface and re-raise, and how WARNING_SAMPLES and the pinned sample Bookings (including multiWarning) feed "Raise sample warnings". From 18: ContractScope (procedureTypeIds as string[], its rvgCodes and funding-source arrays), SCOPE_NARROWING_DIMENSIONS, the feeParity.test.ts harness and its __parity__ fixture, and ContractEditSheet's Scope chips.
-8. docs/prototype-build/catch-up/phases/phase-18-contract-model.md, its handoff list: "RVG groups in scope" and the procedure scope's type and editor chips are handed to this phase. Also docs/prototype-build/catch-up/phases/phase-15a-warnings-and-to-do-list.md work items 1, 2, 5 and 14 (rule shape, facts, samples).
+9. docs/prototype-build/catch-up/phases/phase-18-contract-model.md, its handoff list: "RVG groups in scope" and the procedure scope's type and editor chips are handed to this phase. Also docs/prototype-build/catch-up/phases/phase-15a-warnings-and-to-do-list.md work items 1, 2, 5 and 14 (rule shape, facts, samples).
 
 Then do the drift check in the phase doc:
 - Run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
@@ -56,9 +57,10 @@ While working:
 
 When done:
 - Run the manual test checklist and report each item.
-- Run npm run build, npm run build:pwa, npx vitest run and npm run shots, all green, with the parity fixture unchanged.
+- Run npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board, all green, with the parity fixture unchanged.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): fan out Opus review subagents for quality, bugs/correctness, plan adherence and billing maths, using the phase doc's steer list. Independently verify each finding, fix the confirmed ones with tests, and re-green.
-- Update PROGRESS.md: status row, phase entry with the review pass and the parity result, the Decisions-log entries listed in the phase doc, and the handoff notes for 20, 23, 25, 26, 39b and 42 and the OQ-62 follow-up.
+- Run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section (US-05.1.1, US-05.1.3, US-05.1.5, US-05.1.6, US-03.3.1) and every recipe this phase broke (US-03.3.2 and the other capture-picker and modifier-chip recipes); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green.
+- Update PROGRESS.md: status row, phase entry with the review pass, the parity result and the catalogue screenshot result (REPORT.md counts before and after), the Decisions-log entries listed in the phase doc, and the handoff notes for 20, 23, 25, 26, 39b and 42 and the OQ-62 follow-up.
 - Patch the demo guide sections the phase doc names (the cheat sheet's fee calculation bullets and item 10, the workflow capture steps 3 and 8, S1 Beat 3's Expected text and the S5 discovery points) and the same sections of master-demo-guide.html.
 - Do not commit. Give me short, clear notes on what changed, what is still provisional (OQ-62), and anything you need me to decide.
 

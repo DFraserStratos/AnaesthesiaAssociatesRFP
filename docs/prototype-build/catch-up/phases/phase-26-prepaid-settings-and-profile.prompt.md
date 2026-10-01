@@ -12,8 +12,9 @@ Before doing anything else, read these in order:
    - questions/OQ-14.md, OQ-25.md and OQ-52.md (all answered; OQ-52 at the 2026-10-01 meeting: the HPI number and the CPN are one identifier, called the HPI CPN), and OQ-73.md (open, Phase 27's; it shapes only the seed coherence test);
    - in ../domain-model.md, the entity diagram in section 2 (PREPAID_SETTING, PROFILE), the HPI CPN glossary row and the Prepayment rule in section 3.
 5. The analysis maps for the code you will change: docs/prototype-build/catch-up/analysis/prototype-map-apps-mobile-web.md (More tab, web routes, Accounts GST tab), prototype-map-admin.md section 9 (Master data), prototype-map-store-seed.md (masters and the seed cast) and prototype-map-shell-demo-pwa.md (the PWA More panel and pwaPurity).
-6. Design: docs/design/Design Language.dc.html (tokens, pills, mono data), Mobile App.dc.html (card and row anatomy, bottom sheets, sticky primary action), Web Dashboard.dc.html (top nav, panels, desktop grid) and Admin Review.dc.html (table anatomy for the Master data columns). No mockup has a profile screen: extend these patterns, do not invent new ones.
-7. docs/prototype-build/PROGRESS.md:
+6. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
+7. Design: docs/design/Design Language.dc.html (tokens, pills, mono data), Mobile App.dc.html (card and row anatomy, bottom sheets, sticky primary action), Web Dashboard.dc.html (top nav, panels, desktop grid) and Admin Review.dc.html (table anatomy for the Master data columns). No mockup has a profile screen: extend these patterns, do not invent new ones.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions;
    - the Decisions log entries this phase supersedes or must honour: 2026-07-21 (navigation structures: the web app keeps its four tabs), 2026-07-23 Phase 07 build decisions (office-only master data), 2026-07-24 Phase 13 (the persona avatar treatment on More) and 2026-09-28 (the anaesthetist Card shows no calculation; the profile shows the rate as a setting, never a fee on the Card);
    - the PROGRESS entries for catch-up Phases 17, 19, 20, 21, 22 and 25: the HPI CPN helpers, label and duplicate refusal (17), the RVG group shapes (19), the interim Booking prepayment flag (20), the effective billable party selector billablePartyForProcedure and isPersonParty (21), Anaesthetist.gstNumber with its validator, format and invoice supplier snapshot (22), and the AUTHORISED lock (25), as actually built.
@@ -47,9 +48,10 @@ While working:
 
 When done:
 - Run the manual test checklist and report each item.
-- Run npm run build, npm run build:pwa, npx vitest run and npm run shots, all green, with no S1 to S5 figure moved and PERSIST_VERSION bumped once.
+- Run npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board, all green, with no S1 to S5 figure moved and PERSIST_VERSION bumped once.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): fan out Opus review subagents for quality, bugs/correctness and plan adherence, using the phase doc's steer list. Independently verify each finding, fix the confirmed ones with tests, and re-green.
-- Update PROGRESS.md: status row, phase entry with the drift-check result and the review pass, the Decisions-log entries listed in the phase doc, and the handoff notes for 27, 28, 36, 37, 38, 40a and 42.
+- Run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-06.1.1, US-06.1.2, US-12.1.1, US-12.1.3 and US-12.1.4 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green.
+- Update PROGRESS.md: status row, phase entry with the drift-check result, the review pass and the catalogue screenshot result (REPORT.md counts before and after), the Decisions-log entries listed in the phase doc, and the handoff notes for 27, 28, 36, 37, 38, 40a and 42.
 - Patch the demo guide sections the phase doc names (personas and permissions with "HPI CPN", the cheat sheet permission matrix row, the workflows profile case, the optional S4 Beat 1 pointer, cheat sheet section 8 and the payables note, the README feature row) and the same sections of master-demo-guide.html.
 - Do not commit. Give me short, clear notes on what changed, anything still provisional, and anything you need me to decide.
 

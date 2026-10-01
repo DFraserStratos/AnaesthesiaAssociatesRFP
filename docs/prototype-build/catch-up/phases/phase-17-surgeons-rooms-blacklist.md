@@ -617,7 +617,8 @@ one is ever needed.
 - [ ] The Day grid and every seeded List look identical to before the phase (the canvas is
   unchanged).
 - [ ] No en or em dash in any new copy, and no crimson on any new control or warning.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-13.6.1, US-13.6.2, US-13.6.3 and US-01.3.5 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -645,6 +646,45 @@ In the same session, following the ROADMAP's rule that each phase patches the be
   Mention the optional blacklist moment only if the blurb lists the beats' content.
 - This is not a milestone phase, so no full consistency read is needed. Do check that the patched
   sections of the master guide match the run sheet word for word.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 17` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-13.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.6.1.md) Surgeons' rooms master record | absent · placeholder, no shots | Add the shots, `captured`. Admin shots: `surgeons-rooms` (Master data, "Surgeons' rooms" tab: name, contact email, phone and the derived Surgeons column), highlight the table, caption "Each room holds its contact email, phone and surgeons"; and a `room-card` state on the surgeon profile (`/admin/masters/surgeons/S-REID`) highlighting the Room card. Add a state with `SurgeonRoomSheet` open if it fits |
+| [US-13.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.6.2.md) Surgeon profile | absent · placeholder, no shots | Add the shots, `captured`. Admin shots: `surgeons-table` (Surgeons tab with Room, HPI CPN and the blacklist-count pill), and `surgeon-profile` at `/admin/masters/surgeons/S-REID` with states `profile` (header HPI CPN chip, Identifiers card with the registration number marked "For information") and `edit` (`SurgeonEditSheet` with the required HPI CPN field). Highlight the HPI CPN chip and Identifiers card. Caption "One identified record per surgeon, keyed on the HPI CPN" |
+| [US-13.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.6.3.md) Blacklist of anaesthetist and surgeon pairings | absent · placeholder, no shots | Add the shots, `captured`. Admin shots on `/admin/masters/surgeons/S-REID`: `blacklist` with states `active` (active entry, its reason, "Kept by the office."), `ended` (the "Ended entries" disclosure opened) and `add` (`BlacklistAddSheet` with the already-listed anaesthetist disabled). Highlight the Blacklist section. Caption "Admin keeps the pairings the office holds in its head today". Admin only: no mobile or web shot, because OQ-43 keeps the list off those apps. Build the labels from `BLACKLIST_TERM`, so a rename needs the captions checked |
+| [US-01.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.5.md) Blacklist warning when assigning a List | absent · placeholder, no shots | Add the shots, `partial`. `absentReason`: "The warning and the separated picker group work when assigning a List in a Slot (edit list, reassign, phone advice booking, recurring booking). Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot." Admin shots: `edit-list-warning` (Dr Sharma's Tue 21 AM List, the "Blacklisted with Dr Sharma" group, the "Ms A. Reid · blacklisted" option selected, the amber warning and "Save list anyway"; highlight the warning) and `reassign-picker` (Dr Chen's Tue 21 PM Christchurch Eye Surgery List, Dr Sharma under "Blacklisted with Ms A. Reid"; open the picker only and never confirm). Caption "A blacklisted pairing is grouped apart and warns, it never blocks". Phase 31 turns it `captured` |
+
+**Recipes this phase breaks.**
+- `US-13.4.1` (also covered by Phase 42): its `surgeons` state clicks `role=button[name="Surgeons"]`
+  and is captioned "Master data, surgeons (view only)". The new tabs "Surgeons' rooms" and "Surgeon
+  groups" make that name ambiguous, so make the click exact, and re-caption the state (editable
+  surgeons with room and HPI CPN). The `absentReason` still lists surgeons as view only and having no
+  surgeon groups: update it, leaving what is still true (insurers, organisations and the rest are
+  view only until Phase 42).
+- `US-04.4.1` (add hospital): it fills `[role=dialog] input`, the first input. Keep the hospital name
+  as the first field of `AddHospitalSheet` when the contact email field is added, or point the recipe
+  at the named field.
+- Other recipes that open `/admin/masters` (`FT-13.4`, `US-04.1.1`, `US-04.1.2`, `US-04.2.1`,
+  `US-05.1.1`, `US-12.1.1` and similar): the split of `MasterData.tsx` into `masters/` and the
+  `?view=` param keep the tab button names, so the `--dry` run is the check. Re-point any that fail.
+- `US-01.3.1` (edit list, list drawer) and `US-12.1.1`, `US-12.1.4` (edit anaesthetist sheet): the
+  surgeon select gains a group, the drawer's surgeon row becomes a link and the sheet gains a
+  "Blacklisted with" line. Their selectors should still match; check the highlights by eye.
+
+**ATLAS.md.** Routes (`/admin/masters?view=...` views and `/admin/masters/surgeons/:surgeonId`),
+Personas and IDs (surgeon ids such as `S-REID`, the seeded `BLK-` entries, room and group ids),
+Seed data (the seeded Sharma and Reid pairing and its ended entry), Overlays (the new Admin sheets)
+and Existing hooks (the Phase 17 `data-shot` hooks).
 
 ## Adversarial review (after build)
 
@@ -691,6 +731,7 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **Catalogue screenshots result:** the recipes filled in (US-13.6.1, US-13.6.2, US-13.6.3, US-01.3.5) and changed (US-13.4.1 and any other recipe re-pointed), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reason handed to Phase 31 (US-01.3.5, Draft List path).
 - **Status row** for catch-up Phase 17, and a phase entry with:
   - the drift-check result against 501b0b8 (items changed or not; OQ-43 status);
   - what was built;

@@ -27,7 +27,7 @@ Read alongside (not closed here):
 the meeting note [2026-10-01 · AA meeting with Greg](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md) (#9, #13, #42), and the
 "Slot, List and Draft List" section of [domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
 **Depends on:** 14 (the demo-trigger registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts`, `store/officeStandIn.ts` and the PWA sheet `src/pwa/PwaDemoActions.tsx`) and 15 (Booking vocabulary: `bookingsForList`, `createBooking`, `schedule.bookings`). By the roadmap order 15a and 16 to 27 have also run; if 17 has, reuse its blacklist helper and `SurgeonSelect` in every picker this phase rewrites, and if 17 and 27 have, keep the blacklist acknowledgement and the prepayment re-check they hung on `reassignList` (work item 9). First phase of the Schedule track; 29 to 32 build on it.
-**Estimated:** 2 sessions, and full ones: this is the largest structural change on the schedule side. Session 1 is the model, store and seed with every reader re-pointed (work items 1 to 12), re-greened and demoable with no visible change except the fixed behaviours. Deleting `listForSlot`, `List.statusKey` and `ListPatch`'s times forces a minimal re-point of the drawer, phone advice, Edit list and Reassign in session 1 (work item 12, "compile-forced minimums"); session 2 finishes them. Session 2 adds the new office flows, the settings editor and start-date fields, the stand-in trigger and the demo guide (work items 13 to 23). If session 1 runs long, keep the golden test and the green gate and move the README paragraph (23) and the capture-recipe edits (22) to the end of session 2 rather than cutting tests.
+**Estimated:** 2 sessions, and full ones: this is the largest structural change on the schedule side. Session 1 is the model, store and seed with every reader re-pointed (work items 1 to 12), re-greened and demoable with no visible change except the fixed behaviours. Deleting `listForSlot`, `List.statusKey` and `ListPatch`'s times forces a minimal re-point of the drawer, phone advice, Edit list and Reassign in session 1 (work item 12, "compile-forced minimums"); session 2 finishes them. Session 2 adds the new office flows, the settings editor and start-date fields, the stand-in trigger and the demo guide (work items 13 to 23). If session 1 runs long, keep the golden test and the green gate and move the README paragraph (23) and the capture-recipe edits (22, the Catalogue screenshots step) to the end of session 2 rather than cutting tests.
 
 ## Goal
 
@@ -718,16 +718,16 @@ status, times and assignment actions below.
     booked row appears. Keep `pwaPurity.test.ts` green (the stand-in body lives in `src/store`, the
     entry in `src/shared`).
 
-22. **Capture recipes** (`requirements-board/capture/recipes/`): re-point only the selectors and
-    captions the change breaks. Find them by grepping the recipes for the free-session List ids
-    (for example `L-41267-2026-07-21-PM`, `L-47733-2026-07-21-PM`, `L-34821-2026-07-22-PM`),
-    "open for cover", "Offer cover", "Book (phone advice)", "Reassign", "Free only", "Add anaesthetist"
-    and raw "DRAFT" text; at plan review that set is mainly the US-01.x recipes (US-01.1.3, US-01.1.4,
-    US-01.2.1, US-01.2.3, US-01.3.1, US-01.3.3, US-01.4.1, US-01.4.2, US-01.4.3, US-01.5.2, US-01.5.3)
-    plus US-02.3.1. Recipes that only use booked `L-...` ids or `admin-list-drawer` keep working (both
-    are kept). Update the ATLAS id table (Slots `S-...`, projected Lists keep `L-...`, runtime Lists
-    `LG####`). Do not re-run the captures unless the owner asks.
-
+22. **Capture recipes** (`requirements-board/capture/recipes/`): done in the "Catalogue screenshots"
+    step below, after the review pass. Find the recipes this phase breaks by grepping them for the
+    free-session List ids (for example `L-41267-2026-07-21-PM`, `L-47733-2026-07-21-PM`,
+    `L-34821-2026-07-22-PM`), "open for cover", "Offer cover", "Book (phone advice)", "Reassign",
+    "Free only", "Add anaesthetist" and raw "DRAFT" text; at plan review that set is mainly the US-01.x
+    recipes (US-01.1.3, US-01.1.4, US-01.2.1, US-01.2.3, US-01.3.1, US-01.3.3, US-01.4.1, US-01.4.2,
+    US-01.4.3, US-01.5.2, US-01.5.3) plus US-02.3.1. Recipes that only use booked `L-...` ids or
+    `admin-list-drawer` keep working (both are kept). Update the ATLAS id table (Slots `S-...`,
+    projected Lists keep `L-...`, runtime Lists `LG####`). In session 1 only the hooks move with the
+    code (`data-testid` kept), so the recipes need nothing until session 2.
 23. **Docs inside the app and close-out.** `aa-prototype/README.md` folder map: `domain/slots.ts`,
     `store/slotActions.ts`, and one paragraph on the Slot and List model (Slot id and status, the
     start date, projected List id, runtime `LG` ids, the derived display key, the settings record).
@@ -819,7 +819,8 @@ Phase 30.
       one. The chip is absent on More.
 - [ ] No en or em dashes in any new copy; teal is the only action colour; crimson unused on the new
       sheets.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -858,6 +859,54 @@ This phase breaks S2 Beats 1 to 3 and touches S4 Beat 2. Patch, in the same sess
   "vacated slot").
 - **Control Panel** `SCENARIOS` S2 text (`apps/demo/DemoControlPanel.tsx`): "Free Slot", "Assign List",
   and the vacated-Slot default (Free).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 28` first: earlier phases may have
+changed these recipes since this plan was written. This replaces work item 22's capture note: the
+re-pointing described there is part of this step, and the captures are re-run.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-01.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.1.md) Anaesthetist sets half-day availability | partial · mobile-my-availability, web-availability-grid | partial. The Slot now holds the status (one mechanism), but the mobile app still offers Free or Block only, "available for emergency" and "on leave" are not offered, and the web app cannot change availability: Phase 29 builds those. Re-shoot `my-availability` (mobile) with a new state `list-session`: a session that holds a List keeps the List's colour and label when blocked, with the amber flag. Re-shoot `availability-grid` (web) and add a state where a session assigned by the office reads booked, not Free. Update the reason to name Phase 29 and drop the stale "second record" wording. |
+| [US-01.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.2.md) Slot status master data | partial · admin-list-statuses | partial. Re-shoot `list-statuses` (admin Master data, List statuses) with the OQ-64 provisional line in the view header highlighted. Reason: "Still view only: statuses cannot be added or renamed and colour is not editable; Phase 29 turns this view into an editor." |
+| [US-01.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.3.md) Status is independent of bookings | captured · admin-status-without-bookings, web-status-without-bookings | captured. Keep `status-without-bookings` (admin day grid, web Lists) and add: a `list-in-place` state on admin after Assign List (the block turns Private and the drawer shows the List), a web Lists row for the assigned session, and a mobile `mobile-lists-assigned` shot at `/mobile/lists` where the session shows as a booked List row, not "Free session / Offer cover". Stage the mobile state through the PWA "Office assigns a List to my next free Slot" sheet on :5174, or with a seeded assigned Slot if the runner cannot drive the sheet. Caption: "A List shows in place of the Slot's status, on all three apps". |
+| [US-01.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.3.md) Manual List assignment | captured · admin-assign-list | captured. Re-shoot `assign-free-list` (keep the name): the grid text "open for cover" and the "Free List" drawer go. States `drawer` (empty Slot drawer with Assign List, Book (phone advice), Edit times, History; `admin-slot-drawer`), `assign` (the Assign List sheet with hospital, surgeon and kind; `admin-assign-list`), `assigned` (the block turns Private; the drawer shows the List with Open) and `book` (phone advice, times prefilled 13:00 to 17:30). Caption: "Assigning a surgeon and hospital turns a free Slot into a List". Add the mobile and web assigned-row states shared with US-01.2.3. |
+| [US-01.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.4.md) Slot default times | partial · admin-list-times | captured. Keep `list-times` (Edit list, with the Default hint and "Use default" link) and add admin Master data, Session times (`admin-session-times`): states `table` (AM and PM defaults, "Slots with their own times keep them") and `edit` (the sheet changing PM to 13:30). Caption: "Admins set default start and end times for Slots". Drop the partial reason. |
+| [US-01.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.3.md) New anaesthetist gets a populated canvas | partial · admin-add-anaesthetist | captured. Re-shoot `add-anaesthetist` (keep the name): `form` with the required Start date field (`admin-add-anaesthetist-start`, hint "Slots are created from this date across the four-month horizon"), `added` ("N forward Slots generated from 3 Aug"), `listed` (the Anaesthetists table with the Start date column) and a new `day-grid` state at `/admin/day/2026-08-03` showing the new row of Free Slots (and the day before showing none). Fill start date 2026-08-03 in the steps. Drop the partial reason about the new rows not showing. |
+
+**Recipes this phase breaks.** Work item 22 lists how to find them; the plan-time set is:
+- `US-01.3.3` and `US-02.3.1` (`phone-advice-booking`, `amend-booking`): click `[data-day-grid-row]
+  button:has-text("open for cover")` and "Book (phone advice)" on a Free List. Re-point to the empty
+  Slot block and the Slot drawer; the Phone advice flow now needs a surgeon and hospital first and
+  prefills 13:00 to 17:30 for PM. Keep the shot names.
+- `US-01.4.1` (`reassign`): "Reassign list" and its confirm step lose the "free target, absorb and
+  regenerate" wording and gain the vacated-Slot picker (Free default). Re-point and recaption.
+- `US-01.4.2` (`availability-finder`, three states): "Free only" and "Free session" results no longer
+  list a session that holds a List; check the highlights.
+- `US-01.4.3` (`cover-request`) and `US-01.5.2` (`holiday-conflict`, `unavailable-conflict`): they
+  open Lists by `L-...` id and `admin-list-drawer`. Both are kept, but a Slot with no List now has
+  no `L-` id: re-point any recipe that used a free session's List id (for example
+  `L-41267-2026-07-21-PM`, `L-47733-2026-07-21-PM`, `L-34821-2026-07-22-PM`) to the Slot drawer.
+- `US-01.3.1` (`list-pairing`): "Edit list" is kept; check the sheet's new Slot times row.
+- `US-01.5.3` (`my-availability`) and `US-02.5.4` (`change-cutoff`, raw "DRAFT" text, now "Open").
+- `US-12.1.4` (`anaesthetist-record`, state `add`) and `US-12.1.2`: the Add and Edit anaesthetist
+  dialogs gain a required Start date; the steps still pass if the default is accepted, but re-shoot
+  to include the field. Phase 26 also changes these dialogs.
+- Recipes for Lists of the seeded days are unaffected: booked `L-...` ids and the
+  `[data-testid=admin-list-drawer]` hook are kept.
+
+**ATLAS.md.** Personas and IDs: Slot ids `S-<reg>-<date>-<session>`, projected Lists keep `L-...`,
+runtime Lists `LG####`. Seed data: which sessions are now empty Slots rather than Free Lists
+(drop the "open for cover" references). Routes: none expected. Existing hooks: add
+`admin-slot-drawer`, `admin-assign-list`, `admin-session-times`, `admin-add-anaesthetist-start`,
+`mobile-lists-assigned`. Overlays: the Assign List sheet, the Session times sheet, the Edit times
+sheet. Gotchas: the day grid no longer shows "open for cover".
 
 ## Adversarial review (after build)
 
@@ -922,7 +971,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   - tests added (the golden fixture, `slots.test.ts`, `slotActions.test.ts`, the independence,
     one-mechanism, start-date and three-app parity tests) and the before and after Vitest and
     Playwright counts;
-  - the review pass.
+  - the review pass;
+  - the Catalogue screenshots result: the recipes created or changed (US-01.1.3, US-01.1.4, US-01.2.1,
+    US-01.2.2, US-01.2.3, US-01.3.3 and the recipes this phase broke), the REPORT.md counts (captured,
+    partial, absent, failed) before and after, and any partial reason handed to Phase 29.
 - **Decisions log:**
   1. **Superseded:** 2026-07-23 "Availability reconciliation, both directions". Availability is a
      status held on the Slot, the one mechanism the calendar edits (OQ-17 and OQ-27, answered

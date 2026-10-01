@@ -3,7 +3,7 @@ Please run catch-up Phase 21 (Billable party, required inputs and completeness) 
 Paths below are from the repo root (folder names contain spaces, so quote them). The app is aa-prototype/; run npm commands there. CLAUDE.md at the repo root holds the project rules.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D2 and D4 are answered and shape this phase), the "Confirm before building" row for 21 (OQ-67), the sequencing rules (20 leaves "payer is the Contract holder" as the interim this phase replaces; 15a's warning routine hosts the child rule), and the Demo triggers and PWA parity sections.
+1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D2 and D4 are answered and shape this phase), the "Confirm before building" row for 21 (OQ-67), the sequencing rules (20 leaves "payer is the Contract holder" as the interim this phase replaces; 15a's warning routine hosts the child rule), the Demo triggers and PWA parity sections, and the "Catalogue screenshots" rule.
 2. docs/prototype-build/catch-up/phases/phase-21-billable-party-and-required-inputs.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the EP-03, EP-04, EP-07, EP-11 and EP-13 tables. For full evidence, see docs/prototype-build/catch-up/epics/EP-11.md, EP-04.md and EP-07.md, and the DM-11, DM-12, DM-16, DM-28 and DM-37 sections of docs/prototype-build/catch-up/analysis/domain-model-delta.md.
 4. The covered catalogue files in "docs/discovery-reference/Updated Requirements/catalogue/requirements/":
@@ -12,11 +12,12 @@ Before doing anything else, read these in order:
    - questions/OQ-54.md and OQ-55.md (answered) and OQ-67.md (open);
    - the Booking, Contract, "Patient and billable party" and Warnings sections of "docs/discovery-reference/Updated Requirements/domain-model.md".
 5. docs/design/Admin Review.dc.html and docs/design/Mobile App.dc.html, which are the AUTHORITATIVE layout reference (convention 17). Use docs/design/Design Language.dc.html for tokens.
-6. docs/prototype-build/PROGRESS.md:
+6. requirements-board/capture/ATLAS.md: the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on; and the "Catalogue screenshots" rule in ROADMAP.md.
+7. docs/prototype-build/PROGRESS.md:
    - the binding conventions;
    - the Decisions log entries this phase supersedes or must honour: the 2026-07-22 "Type 3 second-procedure fallback" reading, the 7th-review A1/B15 payer reading, and the Phase 07 build decisions (review flags are advisory, no Returned state);
    - the catch-up entries for Phases 14, 15, 15a, 18, 19 and 20. Read 15a closely: the WARNING_RULES registry, the WarningFacts and Warning shapes, how warnings are derived by selectors (only clearances are stored), how Clear and re-opening work, and the WARNING_SAMPLES stage/unstage contract behind "Raise sample warnings". Read 20 closely: where the interim payer (Procedure.billablePartyId), the Contract-change record (stored or derived from audit) and the prepayment amount now live, and where the AIA reimbursement Booking ended up. If an entry is thin, read that phase's plan in docs/prototype-build/catch-up/phases/.
-7. docs/prototype-build/catch-up/analysis/prototype-map-domain.md, prototype-map-shared.md, prototype-map-admin.md, prototype-map-store-seed.md and prototype-map-shell-demo-pwa.md, for the code entry points. Phase 15 renamed Card to Booking, so use the renamed files.
+8. docs/prototype-build/catch-up/analysis/prototype-map-domain.md, prototype-map-shared.md, prototype-map-admin.md, prototype-map-store-seed.md and prototype-map-shell-demo-pwa.md, for the code entry points. Phase 15 renamed Card to Booking, so use the renamed files.
 
 Then do the drift check in the phase doc:
 - git diff 501b0b8 against the catalogue and domain-model.md for the covered IDs, OQ-54, OQ-55 and OQ-67;
@@ -51,9 +52,10 @@ While working:
 
 When done:
 - Run the manual test checklist and report each item.
-- Confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green.
+- Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green.
 - Run the adversarial review-and-fix pass (convention 18: fan out Opus reviewers for quality, bugs, plan adherence and money integrity; independently verify each finding; fix the confirmed ones; re-green).
-- Update PROGRESS.md: status row, catch-up Phase 21 entry with the drift-check result and the review pass, the six Decisions-log entries, and handoff notes for 22, 23, 25, 27 and 40.
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-11.2.1, US-11.2.2, US-11.2.3, US-11.2.4, US-11.4.2, US-04.2.7, US-04.3.7, US-03.6.1, US-03.6.2 and US-07.2.2 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
+- Update PROGRESS.md: status row, catch-up Phase 21 entry with the drift-check result, the review pass and the catalogue screenshot result (REPORT.md counts before and after), the six Decisions-log entries, and handoff notes for 22, 23, 25, 27 and 40.
 - Patch the demo guide in the same session: S1 Beat 3 note, S2 Beat 4 plus the optional child-warning aside, S3 Beat 1 wording, the cheat sheet (payer section and 15a's warnings section), the workflows and personas docs, the matching master-demo-guide.html sections, and the Control Panel S2 text.
 - Give me short, clear notes.
 

@@ -12,7 +12,8 @@ Before doing anything else, read these in order:
    Also read the "Slot, List and Draft List" section of docs/discovery-reference/Updated Requirements/domain-model.md.
 5. docs/prototype-build/catch-up/analysis/prototype-map-store-seed.md, prototype-map-domain.md, prototype-map-admin.md, prototype-map-apps-mobile-web.md, prototype-map-shared.md and prototype-map-shell-demo-pwa.md: the code index for the files you will change. It was written before Phases 14 to 27, so where a name differs, follow Phase 15's Card to Booking rename map (for example domain/seed/bookings.ts, store/bookingActions.ts) and the Phase 14 names (store/demoActors.ts OFFICE_SIMULATION_ACTOR, store/officeStandIn.ts, src/shared/demoTriggers/, src/pwa/PwaDemoActions.tsx).
 6. docs/design/Design Language.dc.html (the six status colours, the dashed Free and hatched Unavailable treatments, the warning tint), docs/design/Admin Day.dc.html (grid, drawer, header summary), docs/design/Mobile App.dc.html and Mobile Availability.dc.html (Forward Lists rows, the availability strip), and docs/design/Web Dashboard.dc.html and Web Availability.dc.html (week strip, availability grid). These are the AUTHORITATIVE visual reference (convention 17). The colours do not change in this phase; only where the key comes from.
-7. docs/prototype-build/PROGRESS.md:
+7. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
+8. docs/prototype-build/PROGRESS.md:
    - the binding conventions (especially 4 to 7, 10, 13 to 18);
    - the Decisions-log entries this phase supersedes or amends: 2026-07-23 "Availability reconciliation, both directions", 2026-07-23 "Deterministic IDs, no UUIDs", 2026-07-23 "Slot-hashed generator randomness", the Phase 06 build decisions (1) advisory conflicts and (5) the grid display-status derivation, and the 4th review #6 reassign mechanism (free target, absorb, regenerate);
    - handoff item P5 (the phone booking never repainted), which this phase closes;
@@ -51,10 +52,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.1.3, US-01.1.4, US-01.2.1, US-01.2.2, US-01.2.3 and US-01.3.3 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them, work item 22 says how to find them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result, the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result, the name map for later phases, the PERSIST_VERSION from/to, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc (three superseded, one amended, the new, provisional and interim rulings);
   - the handoff notes for 29, 30, 31, 32, 33, 35, 38, 39 and 44;
 - patch the demo guide in the same session: S2 Beats 1 to 3 and S4 Beat 2 in 03-demo-script.md, workflow 3 in 02-workflows-and-handoffs.md, the cheat sheet, the same sections of master-demo-guide.html, and the Control Panel S2 scenario text;

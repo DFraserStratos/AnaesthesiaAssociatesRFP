@@ -674,7 +674,8 @@ product actions in the product UI. The old plan's "Stage child billed directly" 
 - [ ] **Scripted beats unblocked.** S1 Beat 3 (Sarah Mitchell), S2 Beat 4 (Morrison) and S4 Beat 1
       (Riley) run exactly as scripted, with no new blocker and no new warning.
 - [ ] No en or em dashes in any new UI copy; teal on every new action; crimson nowhere new.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` all green.
+- [ ] Catalogue screenshots: the recipes for US-11.2.1, US-11.2.2, US-11.2.3, US-11.2.4, US-11.4.2, US-04.2.7, US-04.3.7, US-03.6.1, US-03.6.2 and US-07.2.2 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` all green.
 
 ## Demo guide updates
 
@@ -706,6 +707,39 @@ In the same session, patch `docs/demo-guide/03-demo-script.md`, `04-presenter-ch
   list.
 - **Control Panel S2 text:** mention the optional child aside and that "Raise sample warnings" lives
   on its screen.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 21` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-11.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.1.md) Default billable party | captured · admin-default-payer | Stays captured. The payer row leaves the office billing setup (item 5), so re-point `admin-default-payer` from `office-billing-setup-1` to the new `booking-billing-block` "Invoice to" row on the same admin Booking (`/admin/day/2026-07-21/cards/C0008`), keeping the shot `name`. Caption: the default party comes from the Procedure's Contract. |
+| [US-11.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.2.md) Guardian or other override | partial · admin-guardian-payer (set, edit) | Captured. Re-shoot `admin-guardian-payer`: `set` shows the guardian on Grace Park's Booking in `booking-billing-block`; `edit` opens `billable-party-sheet` (the old step scrolls to a `select` in the office billing setup dialog and goes). Add `web-billable-party` and `mobile-billable-party` (the anaesthetist sets a guardian, the sheet is a dialog on web and a bottom sheet on mobile), and a `hospital-override` state on admin: the default RVG Contract Booking with the hospital as party and the fee unchanged. Highlight the sheet and the "Provisional (OQ-67)" caption. Drop the partial reason. |
+| [US-11.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.3.md) Invoice email required for patient-direct | absent | Captured. Create a recipe with `web-invoice-email-required` and `mobile-invoice-email-required` on the `SEED_MARKERS.invoiceEmailMissingBooking` Booking (Dr Souter, Wed 22 Jul AM Christchurch Eye; take its id from the built seed, see ATLAS "Seed data"): state `blocked` is Mark complete refused with the invoice email row focused and flagged; state `entered` is the email typed and the Booking completing. Highlight the "Invoice email" row. Caption in the catalogue's words: the system requires an invoice email where the patient or their billable party is billed directly. |
+| [US-11.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.4.md) Warn when a child is the billable party | none (create it) | Create, captured. Shots: `admin-todo-child-warning` on `/admin/day/2026-07-21` (the child review List's 15-year-old, highlight `todo-child-warning`, states `raised` and `cleared` after Clear); `booking-child-warning` on the 15-year-old's Booking in admin, web and mobile (the triangle and the "Under 18" chip); `hospital-billed-no-warning` on the 12-year-old's Booking (`SEED_MARKERS.minorHospitalBilled`) with no triangle. Captions: a mild warning, no block, none when a hospital is the party. Find the ids from the built seed (`SEED_LIST_IDS.childPayerReview`). |
+| [US-11.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.4.2.md) Insured patient who forwards the invoice | captured · admin-insured-reimbursement | Stays captured. Re-point `admin-insured-reimbursement` (`/admin/day/2026-07-16/cards/C0030`) from `office-billing-setup-1` to `booking-billing-block` showing the patient as party. Add an `invoice-note` state on the invoice document with "claim this invoice from AIA Health", and a `review-insurer-line` shot on Review ("AIA Health · no direct claims, patient forwards"). Check C0030 still holds the AIA reimbursement Booking after item 8. |
+| [US-04.2.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.7.md) Required booking inputs | absent | Captured. Create a recipe: `admin-required-inputs` on Master data, Contracts, the nib Insurance Contract detail with the "Required on each Booking" checkboxes (member number ticked); `mobile-required-input` and `web-required-input` where Mark complete refuses a nib Booking with "{Contract} needs the insurer member number." and focuses the row. Highlight the checkbox group and the refused row. |
+| [US-04.3.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.7.md) Procedure not on the Contract's schedule | none (create it) | Create, captured. Admin shots on the `SEED_MARKERS.scheduleMissBooking` Booking (Wed 22 Jul AM Christchurch Eye): `picker` (the "Not on this Contract's schedule (to confirm with the hospital)" group), `flagged` (the `schedule-miss-banner` "To confirm with the hospital" with the estimate), `blocked` (`authorise-blocked` on the Review action bar), `confirmed` (after "Confirm with hospital" with default pricing, flag gone). Add a read-only mobile shot for the anaesthetist if the flag shows there. Highlight the banner. |
+| [US-03.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.6.1.md) Mark a Booking complete | captured · web-mark-complete, mobile-mark-complete (blocked, complete) | Stays captured. Mark complete now also checks the Contract, times on every Procedure and the Contract's required inputs. Keep the two shot `name`s and the `blocked` and `complete` states on C0009 (re-check the highlight `capture-times` still lands). Add a `blocked-inputs` state on web and mobile showing the Booking-level failure copy in the Billing block. |
+| [US-03.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.6.2.md) Incomplete Bookings | captured · web-incomplete, mobile-incomplete (list, blocked) | Stays captured. The `blocked` state lists what is missing, which now includes Booking-level inputs. Re-shoot both and check the new wording reads in the "what is missing" line. |
+| [US-07.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.2.2.md) Office review of Contracts and references | captured · admin-review-contracts, admin-correct-contract (setup, edit) | Stays captured. Re-shoot `admin-review-contracts` on `/admin/review/L-25490-2026-07-20-AM`: add states for the Invoice to column (`review-invoice-to`), a changed Contract with Approve (`review-contract-approve`), the neutral flags ("Invoice email missing", "Insurer's Contract?") and the Open link; use the child review List for the age chip. Re-point `admin-correct-contract` off the office billing setup block if item 5 moved what it highlights (its `Edit billing setup` click and the `office-billing-setup` ancestor selector). |
+
+**Recipes this phase breaks.**
+- `US-11.2.1`, `US-11.2.2`, `US-11.4.2` highlight `[data-shot=office-billing-setup-1]` on C0008, C0033 and C0030; the payer row moves into `booking-billing-block` (item 5). Covered in the table.
+- `US-11.2.2` selects the first `select` in the billing setup dialog (the payer picker); that picker is gone. Covered in the table.
+- `US-07.2.3` highlights the office billing setup ancestor and clicks `Edit billing setup`; confirm both still resolve once the payer row and "New guardian" leave `OfficeBillingSetup` and `EditBillingSetupSheet`, otherwise re-point to the Contract row. Same check for `US-04.3.2`, `US-04.3.4` and `US-06.3.5` (they click `Edit billing setup`).
+- `US-07.3.2` and `US-08.1.2` shoot the Review table: re-check their highlights after the new Invoice to column and Open link change the column order.
+- `US-02.5.5` shoots History: the new `booking.billableParty` and `booking.invoiceEmail` labels do not change it, but re-check its highlight.
+- The `--dry` run is the check for anything this list missed.
+
+**ATLAS.md.** Update Seed data (the child review List and its two pinned patients, the schedule-miss and invoice-email-missing Bookings, the AIA Contract), Personas and IDs (the new `SEED_MARKERS` and `SEED_LIST_IDS.childPayerReview`), Existing hooks (`booking-billing-block`, `billable-party-sheet`, `review-invoice-to`, `review-contract-approve`, `schedule-miss-banner`, `authorise-blocked`, `todo-child-warning`) and the Demo control panel section for the child sample under "Raise sample warnings".
 
 ## Adversarial review (after build)
 
@@ -777,3 +811,7 @@ in the Decisions log.
   party, email and `requiredInputValuesFor` with the Contract and adds its blocker to
   `authoriseBlockersFor` (there is no `demoStaging.ts`; create it if 25 still needs one); Phase 27
   decides `prepaidAmount`; Phase 40 adds the missing-NHI blocker".
+- **Catalogue screenshots.** The step's result: recipes created (US-11.2.3, US-11.2.4, US-04.2.7,
+  US-04.3.7) and changed (US-11.2.1, US-11.2.2, US-11.4.2, US-03.6.1, US-03.6.2, US-07.2.2, plus any
+  recipe the step broke), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and
+  after, and any partial reason handed to a later phase.

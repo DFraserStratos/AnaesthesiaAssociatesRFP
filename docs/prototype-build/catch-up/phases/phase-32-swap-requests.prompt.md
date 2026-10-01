@@ -9,6 +9,7 @@ Before doing anything else, read these in order:
    - the sequencing rules (the Schedule track runs strictly 28 to 32; 32 reuses 17's blacklist helper and also needs 31, because a List moved to the office becomes a Draft List, and 27, because a move re-checks the prepayment);
    - the demo-trigger and PWA-parity rules ("Colleague pushes a List into my free Slot" is named there);
    - the demo-guide rules (32 is a milestone phase);
+   - the Catalogue screenshots rule;
    - the placement note "32 becomes the anaesthetist's own move and takes US-01.4.6";
    - the "Confirm before building" row for 32 (OQ-65, OQ-43, OQ-70).
 2. docs/prototype-build/catch-up/phases/phase-32-swap-requests.md: your detailed plan.
@@ -38,6 +39,7 @@ Before doing anything else, read these in order:
      - the availability calendar and its Find cover layers;
      - the conflict rules;
      - the Draft List model, with its List-to-Draft-List conversion and assignDraftList.
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 over the covered catalogue files, OQ-39, OQ-43, OQ-65, OQ-70, OQ-08 and domain-model.md;
@@ -92,10 +94,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and npm run verify:board after the capture-recipe change;
+- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and npm run verify:board;
 - run the adversarial review-and-fix pass. That is convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green;
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.4.3, US-01.4.5 and US-01.4.6 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry: the drift-check result (the OQ-65, OQ-43 and OQ-70 status), the PERSIST_VERSION from and to, the seed-pinned candidates, the tests added and the review pass;
+  - the status row and a phase entry: the drift-check result (the OQ-65, OQ-43 and OQ-70 status), the PERSIST_VERSION from and to, the seed-pinned candidates, the tests added, the review pass and the catalogue screenshot result (REPORT.md counts before and after);
   - the Decisions-log entries listed in the phase doc, marking the 2026-07-21 request-cover entry as superseded;
   - the handoff notes for 35, 41, 38a and 44, and the OQ-65 and OQ-43 switch points;
 - patch the demo guide in the same session:

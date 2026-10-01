@@ -123,7 +123,7 @@ is bumped. No seeded figure moves.
    If an item is now Retired or Future, drop its work items and record that in the PROGRESS entry.
    FT-03.7, US-03.7.1 and US-03.7.2 were **Verify** at plan time (new on 2026-10-01), US-05.5.2 was
    **Open** and US-03.3.6 **Proposed**; the screenshots on US-05.5.2 and US-03.3.6 show the earlier
-   flat-fee billing line and are stale where they differ from the text.
+   flat-fee billing line, and this phase's Catalogue screenshots step re-shoots them.
 2. **Open questions and their safe interims** (each kept in one place, so a different answer stays
    contained):
    - **OQ-63 (model, name, invoice display, approval, "may or may not be billable").** If still open,
@@ -595,11 +595,9 @@ renamed Card to Booking: use the names from the drift check):
     (mobile Booking detail with events, the event sheet, the extended billing line sheet with an add-on
     and a date, the web Booking detail, Admin Review Events tab, the approval sheet, an event invoice
     with its relates-to line) and update any spec that shot 39's caption or the old billing line
-    sheet. Re-point the capture recipes `US-03.3.6.json` and `US-05.5.2.json` in
-    `requirements-board/capture/recipes/` to the new sheets (and add recipes for US-03.7.1 and
-    US-03.7.2 if the board's recipe set covers every story), add the new `data-shot` hooks and the two
-    trigger entries to `requirements-board/capture/ATLAS.md`, and run `npm run verify:board` from the
-    repo root. Then the demo guide (below) and PROGRESS.
+    sheet. The capture recipes (US-03.7.1, US-03.7.2, US-05.5.2, US-03.3.6),
+    ATLAS.md and `npm run verify:board` are the Catalogue screenshots step below. Then the demo guide
+    (below) and PROGRESS.
 
 ## Demo triggers
 
@@ -691,6 +689,7 @@ Session 2 (after **Reset → Confirm reset**):
       edit and remove; office for approve and decline; the simulated office for the stand-in).
 - [ ] No en or em dash in any new string; no computed amount on any anaesthetist surface; teal is the
       only action colour; crimson unused on the new screens; provisional chips for OQ-63 and OQ-12.
+- [ ] Catalogue screenshots: the recipes for US-03.7.1, US-03.7.2, US-05.5.2 and US-03.3.6 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green;
       `npm run verify:board` green.
 
@@ -731,6 +730,31 @@ spot-check the master guide's S4 Beat 2 against the run sheet (the full read is 
   cheat-sheet equivalents, the personas), then the S4 Beat 2 spot-check.
 - **Control Panel scenario text:** the S4 message that names "Stage post-op scenario" gains the Souter
   half.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39b` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-03.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.1.md) Add a pre-op or post-op event to a Procedure | absent · stub, no shots | captured. Replace the stub. Run the `stage-post-op` bar action (Dr Souter's billed ACL reconstruction for Coral Bennett, Thu 16 Jul), then reach the Booking from the search (`?q=Bennett`, Phase 38a), since its ids are staged at runtime. Mobile shots `procedure-events` (highlight `[data-shot=procedure-events]`, the Events card) and `add-event-sheet` (highlight `[data-shot=add-event-sheet]`, Post-op, a time stepper and the Billable switch); web the same on the web Booking detail. States: `sheet` and `added` (the Post-op event with its own date and an "Awaiting office approval" pill), and `not-billable` with the switch off. Captions: "A post-op event is saved against the Procedure with its own date", "No modifiers can be added to an event", "An event can be marked not billable" |
+| [US-03.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.2.md) Bill a pre-op or post-op event | absent · stub, no shots | captured. Replace the stub. Admin `/admin/review?tab=events`: shot `events-queue`, highlight `[data-shot=admin-events-queue]`; `approval` state opens a row and highlights `[data-shot=event-approval-sheet]` (the calculation "45 min · 3 time units x $25.00 = $75.00" and **Approve and invoice**); `invoiced` state opens the new invoice at `/admin/invoices/<id>` highlighting `[data-shot=invoice-event-links]` and its "Post-op event · relates to AA-..." line. Add a `fixed-fee` state for the Contract fixed fee replacing the time. Anaesthetist side: the Events card shows no invoice and no amount until approved (web and mobile `awaiting` state). Simulator or PWA stand-in is not shot. Caption: "An approved event raises its own invoice, traceable to the original Procedure; nothing is invoiced before approval" |
+| [US-05.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.5.2.md) ACC pre-op flat fee codes | partial · web-acc-preop, mobile-acc-preop | stays `partial` unless AA supplies the code rates: reshoot as a pre-op event. Web and mobile (`acc-preop`): open the Booking on St George's ACC, Add pre-op or post-op event, Pre-op, type "ACC pre-op assessment", highlight the code rows ("CS250 · ACC pre-op assessment") in `[data-shot=add-event-sheet]` with the OQ-12 chip, then the added event. The old recipe fills the retired "What this line charges" description with the code; replace those steps. New reason: "CS250, CS260 and CS70 are in the picker with demo prices; AA's real ACC rates are not held (OQ-12)." Caption: "ACC pre-op assessment is a fixed-fee pre-op event, code picked from a list" |
+| [US-03.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.6.md) Other billing lines, including rate x time | partial · web-billing-line[card,sheet], mobile-billing-line[card,sheet] | captured. Keep the shot names and the `card` and `sheet` states; the sheet now has the Type row (Post-op ward review, HDU review, Nerve catheter, Pain consult, Medical transport, Contract add-on fee, Other) and a Date field, so highlight `[data-shot=add-billing-line-sheet]` and add a `typed-dated` state with an HDU review dated the day after the List, and a `late-line` state on a submitted List showing the banner "This line goes to the office for approval and is invoiced on its own." Captions in the catalogue's words ("Billing lines outside the base, time and modifier calculation", "A billing line can carry its own later date"). Drop the partial reason |
+
+**Recipes this phase breaks.** Work item 14 already asks for `US-03.3.6.json` and `US-05.5.2.json` to be re-pointed; reconcile with it as follows. Found at plan time:
+- `US-03.3.7` and `US-05.2.6` (rate x time lines; web and mobile) click `Add billing line` and fill `[placeholder="What this line charges"]` in the sheet this phase extends with a Type row and a Date field. The placeholder and fixed amount and rate x time paths stay, so they should still run, but the `--dry` run decides; if a step breaks, fix by label and keep the shot names. The `[data-shot=capture-billing-lines]` highlight stays.
+- `US-08.6.1` (Phase 39's rebuilt shots): its web and mobile `post-op-event` shots show the locked-Booking caption after Phase 39. This phase replaces that caption with the Add pre-op or post-op event control, so re-point both shots to `[data-shot=procedure-events]` on the staged Bennett Booking (or on a billed Booking), keep the names, and reword the caption to "The anaesthetist adds a post-op event; the office raises a free-form additional invoice".
+- Any recipe that relied on `stage-post-op` building only Dr Sharma's Tue 14 Jul List: the trigger now also stages Dr Souter's Thu 16 Jul List, which adds a Booking to Dr Souter's Lists and search; check list and calendar recipes by the `--dry` run.
+- Re-grep before capture: `grep -lE 'Add billing line|What this line charges|capture-billing-lines|post-op|stage-post' requirements-board/capture/recipes/*.json`.
+
+**ATLAS.md.** Personas and IDs / Seed data: the staged Bennett Booking (Thu 16 Jul AM, St George's, ACC), the seeded `CT-ACC-PREOP` Contract and how to reach the runtime-generated ids (search `Bennett`). Overlays and Existing hooks: `procedure-events`, `add-event-sheet`, `add-billing-line-sheet`, `admin-events-queue`, `event-approval-sheet`, `invoice-event-links`. Routes: `/admin/review?tab=events`. Demo control panel: the re-pointed `stage-post-op` and the PWA-only `office-approves-event`. The ATLAS note for the Procedure picker/Add billing line sheet (placeholders and the removed ACC caption) is updated if the sheet's labels changed.
 
 ## Adversarial review (after build)
 
@@ -788,6 +812,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
+- **Catalogue screenshots result:** recipes created or changed (US-03.7.1, US-03.7.2, US-05.5.2, US-03.3.6, plus the re-pointed US-08.6.1 and any of US-03.3.7 and US-05.2.6 that broke), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** Phase 39's locked-Booking caption ("charges after this List was invoiced are raised
      by the office"): the anaesthetist's own path is now a pre-op or post-op event, approved by the

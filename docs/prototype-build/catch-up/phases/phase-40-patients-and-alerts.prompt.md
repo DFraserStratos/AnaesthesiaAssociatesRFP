@@ -3,7 +3,7 @@ Please run catch-up Phase 40 (Patients: missing NHI, balance warning, patient vi
 Repo root: /Users/d.fraser/Local Dev/Anaesthesia Associates RFP (paths below are relative to it; quote them, the folder names contain spaces). The app is aa-prototype/. Follow CLAUDE.md at the repo root.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D11, whether a Booking can go ahead without an NHI, is still open with the meeting leaning to the default), the sequencing rules (40 runs after 15a, 34 and 36; 15a's warning routine hosts this phase's rule), the demo-trigger, PWA-parity and demo-guide rules, and the "Confirm before building" row for 40 (US-11.1.4 Open, US-11.3.2 Verify, OQ-49, OQ-74).
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D11, whether a Booking can go ahead without an NHI, is still open with the meeting leaning to the default), the sequencing rules (40 runs after 15a, 34 and 36; 15a's warning routine hosts this phase's rule), the demo-trigger, PWA-parity, demo-guide and "Catalogue screenshots" rules, and the "Confirm before building" row for 40 (US-11.1.4 Open, US-11.3.2 Verify, OQ-49, OQ-74).
 2. docs/prototype-build/catch-up/phases/phase-40-patients-and-alerts.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially the DM-30 row and the RV-21 row), then the EP-11, EP-13 and EP-03 tables. Then docs/prototype-build/catch-up/epics/EP-11.md (US-11.1.1, US-11.1.4, US-11.1.5, US-11.3.1, US-11.3.2, US-11.3.3), epics/EP-13.md (US-13.2.2, and FT-13.7 for the routine) and epics/EP-03.md (US-03.1.5); DM-30 (and DM-31 for the warning routine, DM-18 and DM-19 for the ledger you read) in docs/prototype-build/catch-up/analysis/domain-model-delta.md; and RV-21 in analysis/reverse-check.md.
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -18,6 +18,7 @@ Before doing anything else, read these in order:
    - the binding conventions (especially 4, 5, 8, 9, 10, 13 to 18);
    - the Decisions-log entries this phase supersedes or amends: the 2026-07-22 third external plan review finding #5 (NHI optional, the provisional "NHI pending" patient); the Phase 10 entry's WI2a reading (deviation 3, the intake balance banner on the billing monitor row); the 2026-07-27 pre-workshop fix 10.2 ("Prior balance" reads any open prior episode); Phase 07's "authorise is never gated by flags" as Phase 21 amended it;
    - the catch-up Phase 14, 15, 15a, 17, 21, 22, 27, 33, 34, 35 and 36 entries and handoff notes (and 31 for Draft Lists, 38 and 39 if run, for the removed ageing and how a credited invoice reads in the ledger), for the trigger registry and actors, the Booking names, the warning routine (rule registry, WarningFacts, appSettings.warningRules, clearWarning, the to-do list, the triangle, WARNING_SAMPLES and the multiWarning Booking), the surgeons' rooms and hospital emails, Booking.billableParty and authoriseBlockersFor, resendInvoice, the prepayment rule's mild/strong escalation, the import rows and decisions, the sync and daily sheets and the rebuilt S1, the mailto builder, and patientLedgerPosition.
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md (the standing step before the PROGRESS entry). Your phase doc's "Catalogue screenshots" section lists the recipes.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 over the covered and context catalogue files, the five OQs and domain-model.md (the exact command is in the phase doc) (the plan was re-based on 501b0b8, the 2026-10-01 meeting; what that update changed is already in the work items);
@@ -45,10 +46,11 @@ While working:
 
 When done:
 - run the manual test checklist and report each item;
-- confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green;
+- confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md:
-  - the status row and a phase entry, including the drift-check result against 501b0b8, which D11 branch was built, OQ-74's status, the readings flagged for the owner (billable patient only, office-only, the editable threshold), the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
+  - the status row and a phase entry, including the drift-check result against 501b0b8, the catalogue screenshot result (REPORT.md counts before and after), which D11 branch was built, OQ-74's status, the readings flagged for the owner (billable patient only, office-only, the editable threshold), the name map for later phases, the PERSIST_VERSION from/to, the tests added and the review pass;
   - the Decisions-log entries listed in the phase doc (two superseded, one amended, six new);
   - the handoff notes for 40a, 41, 42, 43 and 44;
 - patch the demo guide in the same session:

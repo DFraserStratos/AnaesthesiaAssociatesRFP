@@ -86,11 +86,15 @@ test('undo puts a dropped story back in its feature and lane, and redo drops it 
   await expect.poll(() => onDisk('US-01.1.2').parent).toBe('FT-01.3')
   await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(() => onDisk('US-01.1.2')).toMatchObject({ parent: before.parent, swimlane: before.swimlane, order: before.order })
-  await expect(page.getByRole('button', { name: /^Redo Move/ })).toBeEnabled()
-  await page.keyboard.press('ControlOrMeta+Shift+z')
-  await expect.poll(() => onDisk('US-01.1.2')).toMatchObject({ parent: 'FT-01.3', swimlane: 'Phase 2' })
-  await page.getByRole('button', { name: /^Undo Move/ }).click()
-  await expect.poll(() => onDisk('US-01.1.2').parent).toBe(before.parent)
+  // A step is ignored while the last one is still saving, so press until it takes (an extra press finds nothing to redo).
+  await expect(async () => {
+    await page.keyboard.press('ControlOrMeta+Shift+z')
+    await expect.poll(() => onDisk('US-01.1.2'), { timeout: 1000 }).toMatchObject({ parent: 'FT-01.3', swimlane: 'Phase 2' })
+  }).toPass()
+  await expect(async () => {
+    await page.keyboard.press('ControlOrMeta+z')
+    await expect.poll(() => onDisk('US-01.1.2').parent, { timeout: 1000 }).toBe(before.parent)
+  }).toPass()
 })
 
 test('a card\'s history shows the move that was just made, and Back returns to the card', async ({ page }) => {
@@ -259,28 +263,53 @@ test('opening and closing a card floats the panel over the board without moving 
   expect(await node(page, id!).boundingBox()).toEqual(before)
 })
 
-test('the minimap jumps the view to wherever it is pressed, and its zoom row zooms', async ({ page }) => {
+test('the minimap opens from the map button, jumps the view to wherever it is pressed, and the zoom toggle fits the map then zooms back', async ({ page }) => {
   const minimap = page.getByRole('img', { name: /Minimap/ })
+  const mapButton = page.getByRole('button', { name: 'Minimap' })
+  await expect(minimap).toBeHidden()
+  // The board opens on the whole map, so fitting changes nothing and zooming back goes in to 100%.
+  const zoomOf = async () => Number((await page.locator('.react-flow__viewport').getAttribute('style'))!.match(/scale\(([\d.]+)\)/)![1])
+  await page.getByRole('button', { name: 'Fit the whole map' }).click()
+  await page.getByRole('button', { name: 'Zoom back in' }).click()
+  await expect.poll(zoomOf).toBe(1)
+  // Hover the map button, then slide straight left onto the minimap: it stays open the whole way.
+  await mapButton.hover()
   await expect(minimap).toBeVisible()
-  await page.getByRole('button', { name: /press for 100%/ }).click()
-  await expect(page.getByRole('button', { name: /Zoom 100%/ })).toBeVisible()
+  const btn = (await mapButton.boundingBox())!
+  await page.waitForTimeout(250) // the slide-in
+  let m = (await minimap.boundingBox())!
+  expect(m.x + m.width).toBeLessThanOrEqual(btn.x)
+  await page.mouse.move(m.x + m.width - 6, btn.y + btn.height / 2, { steps: 12 })
+  await page.waitForTimeout(400)
+  await expect(minimap).toBeVisible()
+  m = (await minimap.boundingBox())!
   const board = (await page.locator('.board').boundingBox())!
   const inBoard = async (id: string) => {
     // Cards off screen aren't rendered at all.
     const b = (await node(page, id).count()) ? await node(page, id).boundingBox() : null
     return !!b && b.x >= board.x && b.x + b.width <= board.x + board.width
   }
-  const m = (await minimap.boundingBox())!
   await page.mouse.click(m.x + m.width - 6, m.y + m.height / 3)
   await expect.poll(() => inBoard('FT-02.4')).toBe(true)
   expect(await inBoard('FT-01.1')).toBe(false)
   await page.mouse.click(m.x + 6, m.y + m.height / 3)
   await expect.poll(() => inBoard('FT-01.1')).toBe(true)
-  await page.getByRole('button', { name: 'Zoom in' }).click()
-  await expect(page.getByRole('button', { name: /Zoom 125%/ })).toBeVisible()
-  await page.getByRole('button', { name: 'Zoom out' }).click()
-  await page.getByRole('button', { name: 'Zoom out' }).click()
-  await expect(page.getByRole('button', { name: /Zoom 80%/ })).toBeVisible()
+  // Off the zone, it closes.
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2)
+  await expect(minimap).toBeHidden()
+  // Pressing the map button pins it open; pressing again unpins it.
+  await mapButton.click()
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2)
+  await page.waitForTimeout(400)
+  await expect(minimap).toBeVisible()
+  await mapButton.click()
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2)
+  await expect(minimap).toBeHidden()
+  const before = await page.locator('.react-flow__viewport').getAttribute('style')
+  await page.getByRole('button', { name: 'Fit the whole map' }).click()
+  await page.getByRole('button', { name: 'Zoom back in' }).click()
+  await expect(page.getByRole('button', { name: 'Fit the whole map' })).toBeVisible()
+  await expect.poll(() => page.locator('.react-flow__viewport').getAttribute('style')).toBe(before)
 })
 
 test('panning never takes the map off the board: an edge stops at the middle', async ({ page }) => {

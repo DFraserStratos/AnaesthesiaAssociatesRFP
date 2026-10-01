@@ -528,9 +528,9 @@ Procedure.
       with a holder-code query typed.
     - Edit the Control Panel's existing S1 scenario text (add nothing new to that page) and the
       description of Phase 14's re-homed "Fire hospital message" entry.
-    - Run `npm --prefix requirements-board run capture -- --only US-03.1.2,US-03.2.3,US-03.4.1,US-04.3.1,US-04.3.2,US-04.3.3 --dry`
-      and list the broken recipes in PROGRESS. Re-capture (it rewrites catalogue images) only if the
-      owner asks.
+    - The catalogue screenshots, including re-capturing the recipes this phase breaks, are the
+      standing "Catalogue screenshots" step below: run it after the review pass and list the
+      recipes it re-pointed in PROGRESS.
 
 ## Demo triggers
 
@@ -623,7 +623,8 @@ must still stage and clear on Admin Day and Booking detail.
 - [ ] No "billing route", "payment category", "Reimbursement" category or "None (default pricing)"
       text anywhere in the three apps. No en or em dashes in new copy.
 - [ ] The PWA build shows the Contract chip and picker as bottom sheets, search included.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above (US-04.2.1, US-04.3.1, US-04.3.2, US-04.3.3, US-03.4.1, US-03.1.2 and US-03.2.3 re-shot, the rest of the EP-04 table checked) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -661,6 +662,83 @@ by its text:
   `01-personas-and-responsibilities.md` (lines 194, 204): route and insurer wording becomes Contract
   wording.
 - Control Panel S1 scenario text and the Phase 14 registry entry description (item 18).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 20` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built. The tool lists every story under EP-04 and FT-03.4, so the table also holds
+the stories whose recipe belongs to Phases 18, 21, 22, 23, 24 or 25; for those the cell says what this
+phase leaves alone. Shots are Admin unless an app is named; the anaesthetist apps get the Contract
+row, chip and picker:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) Contract categories | partial · admin-contract-types | Phase 18 owns it and expects `captured`. No new screen here: leave the recipe, and let the `--dry` run catch any selector this phase moved. "RVG Default Post-paid" is now offered as a Contract the picker can choose, so no caption change is needed |
+| [US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) Create, edit, retire Contracts | partial · admin-contracts, admin-edit-contract | Phase 18 owns it; versioning is built in Phase 25, so it stays `partial` with that reason. No change here beyond `--dry` |
+| [US-04.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.3.md) Contract audit and versioning | absent | Stays `absent`. Phase 25 builds versions and the lock; the reason keeps saying so. No change here |
+| [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) AA identifier for every Contract | absent · placeholder (Phase 18 fills it) | Phase 18 owns the recipe. This phase shows the AA code on every picker row, which the new `contract-picker` shots (US-04.3.2) cover, so nothing is added here |
+| [US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder | `captured`. Scope now narrows the picker, so re-shoot `admin-contract-holder` and add a `narrows-picker` state: a Contract scoped to Christchurch Eye Surgery (or to specific anaesthetists) offered on its own List and absent from another hospital's List. Highlight the scope chips, then the picker. Insurer and funding-source scope stay descriptive (OQ-55, OQ-67), so say that in the caption. Drop the partial reason |
+| [US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) Pricing effective from a date | absent · placeholder (Phase 18 fills it) | Phase 18 owns the recipe. No change here |
+| [US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md) Combination Contracts | absent | Stays `absent` with the reason "Phase 23 builds this". The picker rule already offers a Contract set against several procedures, but no combination Contract is seeded until Phase 23, so there is nothing to shoot here |
+| [US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md) Payment setting: full payment or split | absent | Stays `absent`. Phase 22 builds the payment setting; `funderOverride` stays the split here. No change |
+| [US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules | captured · admin-pricing-basis[type-1,type-2,type-3,rate-time] | Stays `captured` for the pricing basis; Phase 24 closes the adjustment half. Nothing here changes the screen, but the Contract list it clicks through changes names, so re-check it with `--dry` (see the broken recipes) |
+| [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | Phase 18 owns it and expects `captured`. No change here |
+| [US-04.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.5.md) Multi-procedure rule per Contract | partial · admin-ordinal-rows | Stays `partial`; Phase 23 builds the per-Contract rule. No change here beyond `--dry` |
+| [US-04.2.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.7.md) Required booking inputs | absent | Stays `absent`. Phase 21 builds required inputs; the reason names it. No change |
+| [US-04.2.8](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.8.md) Invoice presentation and delivery | absent | Stays `absent`. Phase 22 builds layout, delivery and GST on the Contract; the reason names it. No change |
+| [US-04.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.1.md) Exactly one Contract per Procedure | partial · admin-procedure-contract | `captured`. Re-shoot `admin-procedure-contract` on the office Booking detail (`C0009`): the Contract row with name, AA code and category, "Billed to" the holder, and no Route, Category or Insurer rows and no "None". The completion refusal ("Choose a Contract for this procedure.") has no UI path, so it is not shot. Highlight the Contract row. Caption "Every Procedure carries exactly one Contract". Drop the partial reason |
+| [US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md) Filtered Contract list | partial · admin-contract-picker | `captured`. Re-shoot `admin-contract-picker` on `ContractPickerSheet` (`data-shot="contract-picker"`) with states `default` (sections "Default for <hospital>" and "For <procedure> at <hospital>", AA codes, category pills, and the office footer caption with the OQ-66 provisional note) and `holder-code` (type HNZCAT on a Christchurch Eye Surgery eye Booking: "HNZCATall · Cataract, all" as the matched line, the CES default still first). Add `web-contract-picker` and `mobile-contract-picker` for the anaesthetist view (name and AA code only, a Dialog on web and a bottom sheet on mobile) on a DRAFT List. Highlight the search field, then the matched row. Caption "Only the Contracts relevant to this Procedure". Drop the partial reason |
+| [US-04.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.3.md) Default hospital Contract derived from location | partial · admin-default-contract, web-default-contract, mobile-default-contract | `captured`. Re-shoot all three (`C0001`, St George's default) with the Contract chip, and add an `added` state to each app showing a new Booking landing on the List hospital's default: for example the S1 "Fire hospital message" Booking for Sarah Mitchell on Souter Tue 28 Jul St George's AM, or a manual add on a Southern Cross List. Caption "Defaulted from the List's hospital". Drop the partial reason |
+| [US-04.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.4.md) Admin sets Contracts at booking setup | captured · admin-billing-setup[summary,edit] | Stays `captured`. Keep the shot and state names; re-caption `edit` ("Contract and payer", no route or insurer) and re-point the highlights (the Route, Category and Insurer rows are gone) |
+| [US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md) Contract locked at AUTHORISED | captured · admin-contract-before, admin-locked-contract | Stays `captured`; Phase 25 re-points the lock. Only the billing setup rows change here, so re-check the `office-billing-setup-1` highlights with `--dry` |
+| [US-04.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.6.md) Hospital data sets the Contract | absent | Stays `absent`: Future Work, no phase builds it (OQ-22). This phase builds nothing visible for it |
+| [US-04.3.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.7.md) Procedure not on the Contract's schedule | absent | Stays `absent` with the reason "Phase 21 builds this". This phase builds only the "no longer applies" caption, not the to-confirm flag |
+| [US-04.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.1.md) Mandatory default Contract | captured · admin-add-hospital[added,contracts] | Stays `captured`; no change expected. The new default Contract's name comes from Phase 18, so check the `contracts` state caption with `--dry` |
+| [US-03.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.4.1.md) Anaesthetist can change the Contract | partial · web-edit-operation, mobile-edit-operation | `captured`. Re-shoot `edit-operation` on web and mobile (`C0009`, DRAFT): the Contract row with a teal "Change", the reference field, and the caption "The office checks Contract changes when you submit the list". Add a `changed` state after a pick with the "Changed by you" pill. Add an Admin shot `contract-changed-flag` on the Review queue for Dr Morrison Mon 20 showing "Contract changed by anaesthetist" with the from and to names. Caption "Every change is audited and flagged for the office". Office approval is Phase 21 |
+| [US-03.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.2.md) See the Contract on each Procedure | partial · web-procedure-contract, mobile-procedure-contract | `captured`. Re-shoot `procedure-contract` on web and mobile (the Contract name and AA code only, no route or payer) and add a `list` state on the List view (web `ListDetailView`, mobile `ListDetailScreen`) showing the one-line Contract caption before the session. Highlight the Contract caption. Drop the partial reason |
+| [US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md) Add additional Procedures | partial · web-add-procedure[before,copy,added], mobile-add-procedure[before,added] | `captured`. Re-shoot `add-procedure` on both apps; in `added`, procedure 2 shows its own Contract row starting on procedure 1's Contract and changeable by its own "Change". Keep the state names. The Admin add path stays unshot (the admin Booking screen covers it). Drop the partial reason |
+
+**Recipes this phase breaks.**
+- `US-06.3.5` (pre-payment re-checked): its `after` state clicks `role=button[name="Edit billing
+  setup"]` then `[role=dialog] >> role=button[name="Self-funded"]` and "Save billing setup", and its
+  captions say "Payment category". The payment category is gone (work items 2 and 13). Re-point it at
+  the office "Set pre-payment" switch in `PrepaymentFlagSheet` (turn "Pre-payment required" off) and
+  re-caption it, keeping the shot name `recheck-on-change` and the `card-prepayment` hook.
+- `US-07.2.2` (office review): the `edit` state is captioned "choosing the route and Contract", the
+  review table's Route column becomes "Payer" (work item 16) and the `Edit billing setup` button keeps
+  its name only if the sheet keeps it. Re-caption and re-point.
+- `US-11.4.2` (insured reimbursement): the insured-reimbursement invoice wording is retired until
+  Phase 21 (work item 17), and the AIA Booking reads the standard wording. Re-point the shot at what
+  now shows, or set the recipe `partial` with the reason "The reimbursement wording returns with
+  Phase 21's Contract-holder flag".
+- `US-03.4.1`, `US-04.3.1`, `US-04.3.2`, `US-04.3.3`, `US-04.3.4`, `US-04.3.5`: they use
+  `[data-shot=office-billing-setup-1]`, `Edit billing setup`, `label:has-text("Governing contract")`
+  and `[data-testid=procedure-header] >> text="Edit"`. The sheet becomes "Contract and payer" with a
+  Contract row that opens the picker, so `US-04.3.2`'s highlight must move to the picker, and captions
+  naming the "billing route, insurer and governing contract" must change. Reconcile with the recipes
+  already listed in the Reference section above.
+- `US-03.1.2`, `US-03.2.3`: keep `data-shot="procedure-contract"` (work item 18 does) and check
+  `procedure-additional-note`.
+- `US-02.5.5` (Booking history captioned "including billing route and contract"): re-caption without
+  the route.
+- Pre-payment recipes (`US-06.2.1`, `US-06.2.2`, `US-06.2.3`, `US-06.3.1` to `US-06.3.4`, `US-06.4.1`):
+  they click `daygrid-block-prepayment` and read the pre-payment banner, now driven by the Booking
+  flag rather than the category. The seed keeps the same Bookings flagged, so they should still
+  match; the `--dry` run is the check.
+- `US-04.2.1`, `US-04.2.2`, `US-04.2.5`, `US-05.5.1`: they click Contracts by name and read the
+  office billing setup. Phase 18 already re-pointed the names; check them again after the seed
+  remap.
+
+**ATLAS.md.** Seed data and Personas and IDs (how each seeded Booking's Contract, payer and
+pre-payment flag now read, and the notes that say "nib insurer route" or "billing route"), Overlays
+(the Contract picker, the "Contract and payer" sheet and `PrepaymentFlagSheet`), Existing hooks
+(`contract-picker` and any moved `office-billing-setup-*` hooks) and the button-text list for the
+billing setup. Routes are unchanged.
 
 ## Adversarial review (after build)
 
@@ -703,6 +781,7 @@ re-raise anything settled in the Decisions log except the rulings this phase exp
 
 ## PROGRESS.md updates
 
+- **Catalogue screenshots result:** the recipes changed (the seven re-shot items and the broken ones: US-06.3.5, US-07.2.2, US-11.4.2, US-02.5.5), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the reasons handed on: US-11.4.2 to Phase 21 (reimbursement wording), US-04.3.7 and US-04.2.7 to Phase 21, US-04.2.12 and US-04.2.8 to Phase 22, US-04.2.11 and US-04.2.5 to Phase 23, US-04.1.3 and US-04.1.2 to Phase 25.
 - Status row for catch-up Phase 20, and a phase entry: drift-check result against 501b0b8, D2 built
   as answered, OQ-66 built as its recommendation, what 15a, 18 and 19 were found to provide, the
   session 1 and session 2 split, the adversarial pass, the tests added (contract selection and

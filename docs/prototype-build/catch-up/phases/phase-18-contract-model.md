@@ -758,7 +758,8 @@ These Contract fields and behaviours belong to later phases. Do not add fields f
 - [ ] Mobile (framed and PWA) and web Booking detail: fees unchanged. The bariatric fixed line
       reads "BAR-BYP · Laparoscopic gastric bypass".
 - [ ] `npm run shots` green, with the Phase 07 spec updated and the new shots captured.
-- [ ] `npm run build`, `npm run build:pwa` and `npx vitest run` green, with the parity fixture
+- [ ] Catalogue screenshots: the recipes for US-04.1.1, US-04.1.2, US-04.1.4, US-04.2.1, US-04.2.4, US-04.2.10 and US-05.2.5 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run verify:board` green, with the parity fixture
       matched.
 
 ## Demo guide updates
@@ -789,6 +790,56 @@ Mirror each change in the same section of `docs/demo-guide/master-demo-guide.htm
 - **Control Panel scenario text** (`DemoControlPanel.tsx`) and the seed scenario-marker details:
   new Contract names, no "Type n".
 - This is not a milestone phase, but re-read `master-demo-guide.html` §S4 and §S5 after patching.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 18` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built. All are Admin shots (Master data, Contracts); the mobile and web apps get no
+new screen from this phase:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) Contract categories | partial · admin-contract-types | `captured`. Re-shoot `admin-contract-types`: the catalogue with the Category column and category chips, and a `new-contract` state with the six categories offered (no Pre-paid) and the holder list filtered to the category. Highlight the category control. Drop the partial reason. Caption "New contract, choosing the category and holder" |
+| [US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) Create, edit, retire Contracts | partial · admin-contracts, admin-edit-contract | `partial`. Re-shoot both: the catalogue with From, To, Review and Status ("Review due" on Health NZ), and the detail panel dates. Add a `retire` state (Retire contract confirm). Rewrite the reason to the one gap left: "Editing still changes a Contract in place; versioning is built in Phase 25." |
+| [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) AA identifier for every Contract | absent · placeholder, no shots | Add the shots, `captured`. Shots: `aa-code` (catalogue with the mono AA code column, highlight the column), a `search` state typing "HNZVIT" with the matched line "Line HNZVIT60 · Vitrectomy up to 60 min", and the detail header showing "Assigned on save" on a new Contract. Caption "Every Contract has AA's own code; holder codes are references beside it" |
+| [US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder | `partial`. Re-shoot: the detail panel Definition and Scope sections (holder picker filtered to the category, chips for hospitals, surgeons, RVG codes and anaesthetists, "Whole organisation" when empty, and the "Describes" group). Rewrite the reason: "The procedures filter arrives with Phase 19 and the scope narrowing the picker with Phase 20." Phase 19 and Phase 20 move it on |
+| [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | `captured`. Re-shoot as `admin-price-rows` (keep the name) on `[data-shot=fee-schedule-lines]` for the CES HNZ schedule: holder code, description, RVG mapping, time band, add-on, quantity rule, ex GST and inc GST. Drop the partial reason. Caption "Each line keeps the holder's own code and description" |
+| [US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) Pricing effective from a date | absent · placeholder, no shots | Add the shots, `captured`. Shot `upcoming-price`: the Doyle Contract (`BAR-BYP`) line showing "$2,800.00 current" and "Upcoming from 28 Jul 2026 · $2,950.00", highlight that price cell. A second state after the existing clock "+7 days" press (or "Procedure day · 28 Jul") if the recipe can press it, showing $2,950.00 current. Caption "Current and upcoming prices are both visible" |
+| [US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | `captured`. Re-shoot `admin-fixed-price`: office billing setup on a fee-schedule Booking with the "Schedule line" select, the read view showing the RVG code beside the matched line "BAR-BYP · Laparoscopic gastric bypass", add-ons and the B/T/M still shown. Highlight the matched line. Drop the partial reason |
+
+**Recipes this phase breaks.**
+- `US-04.2.2` (pricing basis, covered by Phase 20), `US-04.2.4`, `US-04.2.5`: they select
+  `[data-shot=contract-price-rows]`, which work item 10 replaces with `fee-schedule-lines`, and click
+  rows by name (`tr:has-text("Bariatric fixed prices")`, `"St George's standard units"`,
+  `"Southern Cross Affiliated Provider"`, `"Aria Skin and Laser Clinic"`). The seed renames the
+  Contracts and drops "(Type n)" and "(default Type 1)" from every name, and the new Doyle name is
+  "Bariatric fee schedule, Mr P. Doyle". Re-point each name and the hook, and keep the shot names.
+  `US-04.2.2` also clicks `label:has-text("Agreed unit rate")`: check the basis labels in the rebuilt
+  panel (`PRICING_BASIS_LABEL`) and keep its `type-1`, `type-2`, `type-3` and `rate-time` state names.
+- `US-04.1.2` and `US-04.2.1` click `tr:has-text("Health NZ agreed rate")` and
+  `tr:has-text("ACC orthopaedic services")` with `role=button[name="Edit"]`: keep an Edit button on
+  each catalogue row or point them at the row click. Check the second name against the new seed.
+- `US-04.3.2` (governing contract picker): the option labels become "<AA code> · <name> · <category>"
+  and the `[role=dialog] label:has-text("Governing contract")` highlight must still match.
+- `US-05.5.1` (ACC contract, hook `office-billing-setup-1`) and `US-05.5.2`: ACC loses its flag, chip
+  and column (work item 12) and the Contract names change. Re-check the captions. The ACC pre-op
+  help text is kept.
+- The Admin Master data recipes that open the Contracts tab (`FT-04.1`, `US-04.2.3`, `US-04.2.6`,
+  `US-04.4.1` and similar): the wide detail panel replaces the old sheet, so re-point any
+  `[role=dialog]` selector the `--dry` run fails on.
+- The Phase 07 Playwright spec (`visual/admin-phase07.spec.ts`) is separate from the capture
+  recipes, and work item 13 already updates it.
+
+**ATLAS.md.** Personas and IDs (Contract names, AA codes, the new `CT-RVG-POSTPAID` and
+`CT-CES-HNZ`), Seed data (the Doyle Upcoming price, the Health NZ review date), Overlays (the wide
+Contract detail panel instead of the sheet) and Existing hooks (`contract-catalogue`,
+`contract-search`, `contract-detail`, `fee-schedule-lines`; `contract-price-rows` is gone). Routes
+are unchanged.
 
 ## Adversarial review (after build)
 
@@ -857,6 +908,7 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
 
 ## PROGRESS.md updates
 
+- **Catalogue screenshots result:** the recipes filled in (US-04.1.4, US-04.2.10) and changed (the other five covered items, plus the broken ones such as US-04.2.2 and US-04.2.5), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reasons handed on: US-04.1.2 to Phase 25 (versioning) and US-04.2.1 to Phases 19 and 20 (procedures filter, picker narrowing).
 - **Status row:** add Phase 18 (Contract model) as DONE with the date, or IN PROGRESS after session 1
   with what remains.
 - **Phase entry** in the template:

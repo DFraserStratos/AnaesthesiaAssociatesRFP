@@ -516,7 +516,8 @@ registers the prepayment triggers.
       demo panel, and the prepaid sheet saves.
 - [ ] Teal is the only action colour; crimson only on the avatar and nav underline; "via" and "Not on
       file" pills are neutral or warning tone; GST number, HPI CPN and account numbers are mono.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green.
+- [ ] Catalogue screenshots: the recipes for `US-06.1.1`, `US-06.1.2`, `US-12.1.1`, `US-12.1.3` and `US-12.1.4` are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -545,6 +546,44 @@ No scripted figure changes. Patch these in the same session, and the matching se
 - `README.md` feature table: a row for "Anaesthetist profile and prepaid procedures".
 - Control Panel scenario text: none expected. Grep `src/apps/demo` for "unit value", "master data" and
   "HPI" wording to confirm.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 26` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-06.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.1.md) Tick codes or groups | absent | captured. Create the recipe. Shots: mobile `mobile-prepaid-sheet` (More, Change, the sheet with Cosmetic ticked, members showing "via Cosmetic"; states `summary` on the Prepaid procedures card, `sheet` open), and web `web-prepaid-panel` at `/web/profile` (highlight the tick list panel). Caption: "Anaesthetist ticks the RVG codes or groups that need prepayment". Drop the absent reason. |
+| [US-06.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.2.md) Admin can maintain on behalf | absent | captured. Create the recipe. Admin shot from `/admin/masters`: states `table` (highlight the Prepaid column), `editor` (Edit Dr Souter, Prepaid procedures tab, highlight the tick list) and `on-behalf` (header "Changes are recorded as the office acting for Dr Melanie Souter"). Caption: "Office maintains an anaesthetist's prepaid procedures on their behalf". |
+| [US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md) Dollar value per unit | partial · admin-unit-value | captured. Keep `admin-unit-value` (`list`, `edit`). Add a mobile `mobile-profile` shot at `/mobile/more` (states `profile` with the Rate per unit row highlighted, `rate-sheet` after tapping it) and a web `web-profile` shot at `/web/profile` (Billing panel highlighted). Caption: "Anaesthetist sets their own dollar value per RVG unit". Drop the partial reason. |
+| [US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) Anaesthetist identity, contact and bank details | captured · admin-anaesthetist-record | captured. Keep `admin-anaesthetist-record` (`edit`, `add`) and add state `details` showing the HPI CPN, bank account and GST number fields on the Details tab, plus the mobile `mobile-profile` identity and bank rows (read-only, lock glyph, bank masked). Caption wording: "Anaesthetist identity, contact and bank details; one HPI CPN". |
+| [US-12.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.3.md) Prepaid procedures | absent | captured. Create the recipe. Reuse the admin `table` and `editor` states from US-06.1.2 and the mobile `mobile-prepaid-sheet` shot, highlighting the stored list. Caption: "Prepaid procedures stored on the anaesthetist profile". Phase 27 derives from it and keeps the shots. |
+
+**Recipes this phase breaks.**
+- `US-12.1.2` (`gst-period-setting`, `gst-period-view`): the Edit dialog becomes two tabs and the
+  anaesthetist can now set the GST period in their profile. The `[role=dialog] div:has(> div:text-is("GST period"))`
+  highlight is on the Details tab, which opens first, so re-check it; update the partial reason (the
+  period is no longer office-only; the aligned schedule is Phase 38's) and add a mobile or web profile
+  state for the GST row.
+- `US-01.1.3` (`Add anaesthetist` flow): the "HPI id (optional)" label becomes "HPI CPN (optional)" and
+  two optional bank fields are added. The recipe highlights `[role=dialog]`, so it should still pass;
+  re-shoot to pick up the new fields and check the caption.
+- `US-08.3.4`, `US-09.2.4`, `US-10.1.2`, `US-10.2.1` (Payables run, `[data-shot=billing-payables-run]`):
+  the card gains a destinations list. The hook is unchanged, so the recipes pass; look at the shots
+  and caption the destination account where the story is about the payout.
+- Every recipe that shoots `/admin/masters` with `table th:nth-child(3)` (`US-12.1.1`) stays valid only
+  while Unit $ stays the third column; keep it third or re-point the highlight to a `data-shot`.
+  The `--dry` run is the check for the rest.
+
+**ATLAS.md.** Routes: add `/web/profile`. Existing hooks: add `mobile-profile`, `mobile-prepaid-sheet`,
+`web-profile`, `web-prepaid-panel` (and any Admin editor hook added). Seed data: Dr Souter's prepaid
+set (Cosmetic group plus one explicit code), bank account and the two colleagues with a set.
 
 ## Adversarial review (after build)
 
@@ -590,6 +629,9 @@ Do not re-raise anything settled in the Decisions log.
 - Status row for catch-up Phase 26, and a phase entry: the drift-check result (including whether 25 had
   landed), what was built, the review pass (findings confirmed and fixed, anything not treated as a
   defect and why), tests added, and the `PERSIST_VERSION` bump.
+- Catalogue screenshots result: the recipes created or changed (US-06.1.1, US-06.1.2, US-12.1.1,
+  US-12.1.3, US-12.1.4 and any re-pointed), the REPORT.md counts (captured, partial, absent, failed)
+  before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. The anaesthetist edits their own rate per unit, GST period, GST number, contact details and
      prepaid set; bank details, HPI CPN, registration and active stay office-only. This supersedes the July reading that the

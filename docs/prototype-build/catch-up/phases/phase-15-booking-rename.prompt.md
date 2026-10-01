@@ -32,7 +32,7 @@ Before doing anything else, read these in order:
      - 2026-07-27 "Paired capture cards match heights; attachments can be removed" (the component-side attachment id fix);
      - 2026-07-27 "The web card detail and List detail are now DESKTOP layouts";
    - the Phase 14 entry, if 14 has run.
-8. requirements-board/capture/ATLAS.md: the "Personas and IDs", "Routes", "Overlays that need clicks" and "Existing hooks" sections. The catalogue's screenshot recipes hard-code this app's routes, ids, text and test hooks.
+8. requirements-board/capture/ATLAS.md: the "Personas and IDs", "Routes", "Overlays that need clicks" and "Existing hooks" sections. The catalogue's screenshot recipes hard-code this app's routes, ids, text and test hooks. Also the "Catalogue screenshots" rule in ROADMAP.md.
 
 Then do the drift check in the phase doc:
 - git diff 501b0b8 over the covered and read-alongside catalogue files and domain-model.md (the plan's snapshot; the 2026-10-01 update is already folded into the phase doc);
@@ -59,13 +59,14 @@ While working:
 - Bump PERSIST_VERSION once per step that changes the seed (step A rename, step B fields), each with a comment line. Determinism holds: the demo clock only, no Date.now, new Date or Math.random.
 - This phase adds no demo triggers. If Phase 14 has run, re-point its registry's route patterns, labels and context key; do not add entries.
 - Session 2 also carries work items 14 to 16: the demo guide and Control Panel wording, the README folder map and analysis-map pointers, and the recipe sweep.
-- Keep the requirements-board recipes working. Update their routes, ids, text and selectors, never a shot name field. Do not edit catalogue files or re-capture catalogue images.
+- Keep the requirements-board recipes working. Update their routes, ids, text and selectors, never a shot name field. Do not edit catalogue requirement files; the capture runner re-captures the images in the catalogue screenshot step at the end.
 - Do not commit or push.
 
 When done:
 - Run the manual test checklist and report each item.
 - Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are all green.
 - Run the adversarial review-and-fix pass (convention 18). Fan out Opus review subagents for quality, bugs/correctness, plan adherence and rename completeness. Independently verify each finding, fix the confirmed ones, and re-green all suites.
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.1.3 and every recipe this phase broke (all the card-named recipes, notably US-02.4.3, US-03.2.3 and US-07.3.2); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - Update PROGRESS.md:
   - the status row and phase entry;
   - the drift-check result;
@@ -74,7 +75,7 @@ When done:
   - both PERSIST_VERSION bumps;
   - the review pass;
   - the Decisions-log entries: vocabulary (amends convention 10; reassign or move, never swap; no timesheet), Copy (supersedes the two July rulings, "references" reading), Booking.source optional and display-only with its interims, and store-allocated attachment ids;
-  - "Discovered for later": the stale catalogue images and captions for US-02.4.3, US-03.2.3 and US-03.1.3.
+  - the catalogue screenshot result (REPORT.md counts before and after).
 - Confirm the demo guide updates listed in the phase doc are applied (the four docs, README, the same sections of master-demo-guide.html and the Control Panel scenario text), as are the one-line rename pointer at the top of each analysis/prototype-map-*.md and the aa-prototype/README.md folder map.
 - Give me short, clear notes.
 

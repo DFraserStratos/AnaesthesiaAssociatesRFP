@@ -711,7 +711,8 @@ needs one.
   sheet, "Add days off" and the series controls work and clear the insets and tab bar.
 - [ ] No en or em dash in any new copy, no crimson on any new control, and teal is the only action
   colour.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -757,6 +758,47 @@ after Phase 32, so keep these edits small:
   optional days-off moment only if the blurb lists beat content. No trigger is added.
 - This is not a milestone phase, so no full consistency read. Check the patched sections match the run
   sheet.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 29` first: earlier phases may have
+changed these recipes since this plan was written (Phase 28 re-points several of them).
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built. Name the new `data-shot` hooks from item 16 (suggested:
+`mobile-availability-calendar`, `mobile-availability-sheet`, `web-availability-mine`,
+`admin-slot-statuses`) and use them in the highlights.
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-01.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.1.md) Anaesthetist sets half-day availability | partial · mobile-my-availability, web-availability-grid | captured. Re-shoot `my-availability` (mobile, `/mobile/availability`): the Find cover screen with the "My availability" card, the day's AM and PM chips and a "Change" button. Add a mobile `calendar` shot at `/mobile/availability/calendar` (July, Souter's seeded leave 24 to 26 Jul) and a state `sheet` with Holiday and "1 week" selected. Re-shoot `availability-grid` (web) and add web `my-availability` at `/web/availability/mine` with a range selected and the rail form showing; add an admin state where the Day grid shows the change at once (open the anaesthetist's day after saving). The Free and Block buttons and the `availability-block-*` hooks are gone. Caption: "Anaesthetist marks a half-day Free, Holiday or Unavailable, with an optional note". Drop the partial reason. |
+| [US-01.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.2.md) Slot status master data | partial · admin-list-statuses | captured. Re-shoot `list-statuses` (keep the name; the nav entry is now "Slot statuses", so the `text="List statuses"` click changes) with states `table` (live chips, Open for bookings, Anaesthetists can set, Default, Retired rows, the OQ-64 provisional line) and `sheet` (Add status or Edit: key, label, six colour swatches, treatment, live preview). Caption: "Admins add, rename and recolour Slot statuses without code". Drop the partial reason. |
+| [US-01.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.3.md) Anaesthetist availability calendar | partial · mobile-my-availability | captured. Re-shoot `my-availability` (keep the name) as the calendar: states `month` (mobile `/mobile/availability/calendar`), `series-sheet` (the form with "Every 2 weeks", Friday and PM selected), `instance` (a series instance's panel: Change this one, Delete this one, Delete the series; stage the series with the form's steps, not a store call). Web: `/web/availability/mine` with the "Your series" list. The calendar edits the Slot status directly, so the "separate calendar independent of Lists" reason (OQ-27) goes. Caption: "Days off marked weeks ahead, a repeating series, and one instance changed or deleted". |
+| [US-03.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.4.md) Web app parity | captured · web-card-capture, mobile-card-capture | captured. Keep `card-capture` (web and mobile) as Phase 15 left it. Add a `my-availability` pair showing the same capability on both apps: mobile `/mobile/availability/calendar` and web `/web/availability/mine`, no highlight. Caption: "The same availability calendar on web and on mobile". |
+| [US-15.0.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.2.md) Mobile-first for anaesthetists | captured · mobile-lists-home, web-lists | captured. Keep `lists-home` and `lists`. Add a mobile shot of the Add days off bottom sheet (chips and segmented controls, a sticky teal action, no dropdown, no centred modal) at `/mobile/availability/calendar`, highlighting the sheet. Caption: "Availability is set from a bottom sheet with chips, built for one-handed use". |
+
+**Recipes this phase breaks.**
+- `US-01.5.2` (`unavailable-conflict`, mobile): clicks `[data-shot=availability-block-pm]`, which is
+  removed with the Free and Block buttons. Re-point to the calendar: tap the day, choose Unavailable,
+  Save, and show the amber flag; keep the shot name.
+- `US-01.2.1` and `US-01.5.3` (`my-availability`): both click `availability-block-pm`; re-pointed
+  above.
+- `US-13.4.1`: clicks `role=button[name="List statuses"]`; the nav entry is now "Slot statuses".
+  Re-point the click and the caption.
+- `US-01.4.2` (`availability-finder`) and `US-01.4.3` (`cover-request`): start at the bare
+  `/mobile/availability` and `/web/availability`, which stay the Find cover screens, and use "Free only";
+  the page gains the "Find cover / My availability" segmented control. The recipes should pass; look
+  at the shots, and check that the free counts use `isOpenSlot` (a session holding a List is not free).
+- Keep the `availability-mine` hook and the "My availability" card title; recipes rely on them
+  (`mobile-insets.spec.ts` does too).
+
+**ATLAS.md.** Routes: add `/mobile/availability/calendar` and `/web/availability/mine`, and note that
+the bare availability routes are Find cover. Existing hooks: drop `availability-block-am` and
+`availability-block-pm`; add the new calendar, sheet and statuses hooks. Overlays: the availability
+bottom sheet, the series-instance panel and the Slot status sheet. Seed data: Souter's leave 24 to 26
+Jul on the calendar; no series is seeded.
 
 ## Adversarial review (after build)
 
@@ -811,7 +853,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   - what was built, per work item;
   - the `PERSIST_VERSION` bump (from and to);
   - tests added;
-  - the review pass.
+  - the review pass;
+  - the Catalogue screenshots result: the recipes created or changed (US-01.2.1, US-01.2.2, US-01.5.3,
+    US-03.1.4, US-15.0.2 and the recipes this phase broke), the REPORT.md counts (captured, partial,
+    absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **The Slot status set is master data** (`masters.slotStatuses`, `SlotStatus`), availability values
      only. This amends convention 10 and supersedes the 2026-07-21 "Status colour mapping" as a closed

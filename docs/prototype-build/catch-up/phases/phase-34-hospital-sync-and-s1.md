@@ -636,8 +636,10 @@ items #7 and #56 (the download is not comprehensive; PDFs still needed).
     tabs (FT-02.2, US-02.2.1, US-02.2.2, US-11.1.2) and those Phase 33 aimed at `/admin/matching`
     (US-02.1.1 to US-02.1.4, US-02.5.1 to US-02.5.4) at the Intake routes, and those that show the
     message log or mapping (US-14.1.1, US-14.2.1, US-14.3.1, US-14.5.1) at the Future-scope routes;
-    add a `US-02.1.5.json` recipe (the two sync tiles after the pull on open, and a failed tile) in the
-    format of `US-02.1.2.json`; update ATLAS.md; run `npm run verify:board`. Update `aa-prototype/README.md` (the Intake routes, the Future-scope surface, the
+    complete the `US-02.1.5.json` recipe (Phase 33 leaves it partial; the two sync tiles after the pull
+    on open, and a failed tile) and the US-14.6.1, US-14.6.2 and US-02.2.1 recipes, as the Catalogue
+    screenshots section below sets out, run after the review pass; update ATLAS.md; run
+    `npm run verify:board`. Update `aa-prototype/README.md` (the Intake routes, the Future-scope surface, the
     sync job among the wired jobs, the demo settings). Add every new audit code to `ACTION_LABELS`
     ("Hospital sync", "Hospital sync failed", "Next sync set to fail (demo)", "Daily sheet imported",
     "Surgeon PDF uploaded", "Auto-match switched (demo)"); `auditNarrative.test.ts` enforces it.
@@ -709,7 +711,8 @@ PWA.
 - [ ] PWA (`npm run dev:pwa`, fresh storage): on the Tue 28 Jul AM List the Demo chip offers "Hospital sync delivers my booking"; running it adds Sarah Mitchell as a fourth booking; a second run is disabled "Nothing new from the hospitals for your Lists".
 - [ ] S1 walked end to end from the run sheet in the framed build; S4 Beat 4 and S5 Beat 2 walked as patched.
 - [ ] No en or em dash in any new app copy; teal only on Sync now, Upload PDF and Run buttons; no crimson on tiles, pills or banners.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green; `npm run verify:board` green after the recipe edits.
+- [ ] Catalogue screenshots: the recipes for US-02.1.5, US-14.6.1, US-14.6.2 and US-02.2.1 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
 
@@ -763,6 +766,52 @@ block, the workflows, the personas, the readiness snapshot and the Direct URLs):
 - Control Panel scenario text: S1 (work item 10), and S4 and S5 where patched.
 - Finish with a consistency read of the S1, S4 Beat 4 and S5 Beat 2 sections of `master-demo-guide.html`
   against the run sheet (S1 is the headline; do not leave it for 44).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 34` first: earlier phases may have
+changed these recipes since this plan was written (Phase 33 turns US-02.1.5 from a placeholder
+`absent` recipe into a `partial` one, and re-points the matching shots this phase moves). Work item 17
+holds the short list of recipes to re-point; this section is its full form. The harness bar is hidden in
+shots, so the failed-sync and other bar-only states are staged from the matching `/demo/control` entry
+in `setup` (ATLAS.md, Shell).
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-02.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.5.md) Automatic sync from St George's and Southern Cross | none (create it); Phase 33 leaves it partial, a placeholder `absent` may exist | captured (admin, `/admin/intake/matching`). Shots: `sync-tiles` (`sync-tile-<hospitalId>` for both hospitals reading "Last synced 08:00" after the pull on open, highlight both tiles), `sync-now` (after Sync now, "up to date", `sync-history` open), `sync-failed` (set up with Fail next sync on St George's then Simulate scheduled pull from `/demo/control`: the tile reads "Last sync failed 09:00" in error tint while Southern Cross synced; highlight the failed tile), `rows-wait` (the new rows still New, none applied). Captions in the catalogue's words: "Last synced time per hospital, and a failed sync shown rather than hidden". Drop the partial reason. Cadence tiles keep the "provisional (OQ-13)" label |
+| [US-14.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.6.1.md) Feeds from the other Christchurch providers | absent (placeholder: Future Work swimlane) | partial (admin). The five providers' daily sheets are delivered and imported by hand onto the same matching screen: shot `other-providers` (the strip with each provider's last import, `other-providers`) and `forte-sheet` (after Deliver hospital sheet from `/demo/control`, Forte's rows: matched with a time difference, and new). `absentReason`: "The five other providers arrive as daily sheets imported by hand, not as feeds. An automatic feed per provider is Future Work (OQ-13, OQ-22)." Never caption it a feed |
+| [US-14.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.6.2.md) Automatic matching and updates | absent (placeholder: Future Work swimlane) | partial (admin). Shots: `auto-match-banner` (the matching screen with Auto-match on, the Future scope badge and its banner) and `applied-by-auto-match` (Decided filter, the St George's time change reading "Applied by auto-match" beside the cancellation still waiting). `absentReason`: "Only a demo-only toggle for routine time changes is built, badged Future scope. Real automatic matching of incoming rows is Future Work (OQ-13, OQ-22)." |
+| [US-02.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.2.1.md) Read, correct and ingest a surgeon PDF list | captured · admin-surgeon-pdf[inbox,extracted] | captured, re-pointed to `/admin/intake/pdfs` with shot `name` `surgeon-pdf` and states `inbox` and `extracted` kept. Add `upload` (the Upload PDF picker headed "Simulated upload · sample PDFs") and `correct-fields` (the review with DOB, ethnicity and the estimated duration editable: Doyle's missing DOB flagged and the mis-read 900 minutes shown as an error). Caption: "Read, correct and ingest a surgeon PDF list, including DOB, ethnicity and estimated duration" |
+
+**Recipes this phase breaks.** Work item 17 lists them; found at plan time (Phase 33's changes land
+first, so re-run the status tool and the `--dry` run):
+- Admin tabs moved to Intake routes, with tabs as URL-routed links rather than buttons (the
+  `role=button[name="Surgeon PDFs"]` and `"Validators"` clicks break): `FT-02.2`, `US-02.2.1`,
+  `US-02.2.2`, `US-11.1.2`. Point each `start` at `/admin/intake/pdfs` or `/admin/intake/validators`
+  and drop the tab click.
+- Phase 33's `/admin/matching` recipes: `US-02.1.1`, `US-02.1.2`, `US-02.1.3`, `US-02.1.4`,
+  `US-02.5.1` to `US-02.5.4` move to `/admin/intake/matching` (the redirect keeps them working, but
+  re-point them). Their screens now also show the sync tiles; the first import of `SAMPLE_STG` reports
+  R1 as already imported after the pull on open, so each recipe that imports it must expect that, and
+  `US-02.1.1`'s landed-rows shot must use the Southern Cross or Forte sample instead (or reset the
+  batch).
+- Message log and mapping moved to the Future-scope routes: `US-14.1.1` (`message-log`),
+  `US-14.5.1` (`dead-letter`), `US-14.2.1` and `US-14.3.1` (the simulator, now headed Future scope;
+  the Live drip no longer offers Christchurch Public). Point the log shots at `/demo/integrations/log`.
+- Any recipe that clicks the Admin side nav's "Integrations" or "Matching" item: they are now one
+  "Intake" item. None found at plan time; the `--dry` run is the check.
+
+**ATLAS.md.** Update Routes (`/admin/intake/*`, the redirects, `/demo/integrations/log` and `/mapping`,
+the Future-scope header), Personas and IDs / Seed data (the three appended hospitals, the sample sheets
+and PDFs, the seeded sync state), Existing hooks (`sync-tile-<hospitalId>`, `sync-now`,
+`sync-history`, `other-providers`, any PDF upload hooks), the Control Panel entries (Simulate
+scheduled pull, Fail next sync, Deliver hospital sheet, Auto-match) and the Integration simulator
+section (Christchurch Public is not integrated today).
 
 ## Adversarial review (after build)
 
@@ -829,7 +878,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the sync fixture rows, sheets and upload samples the seed tests pin (including each PDF row's
     estimated duration and whether the prepaid Doyle row was seeded), for the demo guide;
   - tests added (domain, store, triggers, Playwright) and the review pass;
-  - the S1 consistency read.
+  - the S1 consistency read;
+  - the Catalogue screenshots result: recipes created or changed, the REPORT.md counts (captured,
+    partial, absent, failed) before and after, and any partial reason handed to a later phase (US-14.6.1
+    and US-14.6.2 stay partial, as Future Work).
 - **Decisions log:**
   1. **Supersedes** the Phase 11 reading that the Integrations monitor is "proposed product UI, not
      demo-badged" (and convention 13's integration-monitor wording): the message log, retries,

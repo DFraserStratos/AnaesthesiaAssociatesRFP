@@ -68,6 +68,7 @@ The tools the second skill drives, all run from the repo root:
 | `tools/workflow-plan-update.js` | Opus planners for an update: outline, coverage, critic, affected phase docs and prompts. |
 | `tools/apply-plan-update.mjs <journal> <commit> [--built ..]` | Rebuilds `plan.json` exactly from an update run, moves the baseline, regenerates `index.html`. |
 | `tools/build-index.mjs` | Renders `index.html` from `plan.json`, `gaps.json` and the prompt files. |
+| `tools/recipe-status.mjs [<phase> ...] [--check]` | The capture recipes behind each phase's catalogue screenshots; `--check` confirms every unbuilt phase doc and prompt carries the Catalogue screenshots step (ROADMAP.md). |
 
 ## Update history
 

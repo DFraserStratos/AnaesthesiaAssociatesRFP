@@ -854,10 +854,11 @@ read the same after the change, and a parity test proves it.
       trigger, back in balance after allocation, and the anaesthetist scope.
     - Update `xero-pair.spec.ts` (the ledger pair callout), `admin-phase09.spec.ts` (the monitor and
       invoice rail), the web Accounts shot (position strip) and the mobile Balances shot.
-    - Run
-      `node requirements-board/scripts/capture.ts --only US-08.3.1,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-09.1.4 --dry`
-      and record which recipes break or can now move from "absent" to real shots (US-13.2.1). Do not
-      edit catalogue files.
+    - Run (from `requirements-board/`)
+      `node scripts/capture.ts --only US-08.3.1,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-09.1.4 --dry`
+      to see which recipes this phase breaks. Fixing them and moving US-13.2.1 from "absent" to real
+      shots is the Catalogue screenshots section below, run after the review pass (the capture runner
+      writes the items' `images`; never edit a requirement's text or status).
     - Patch the demo guide (below).
 
 ## Demo triggers
@@ -964,7 +965,8 @@ PWA entry is needed. The office-only allocation and refund are product actions i
       stand-in badge). Collected, then Paid out, move. The stand-in is disabled when nothing is due.
 - [ ] Grep gates in items 8 and 16 are clean. Teal is the only action colour, crimson appears only in
       the nav, amounts are in mono with tabular-nums, and there are no en or em dashes in new copy.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-13.2.1, US-08.3.1 to US-08.3.5 and the other EP-08 items listed in the Catalogue screenshots section are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -1006,6 +1008,57 @@ Patch these in the same session, in `docs/demo-guide/` and the matching sections
 - The Control Panel S3 scenario text (item 17).
 - This is not a milestone phase. Still reread the S3 section of `master-demo-guide.html` against the
   edited Markdown so beat numbers and trigger labels agree.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 36` first: earlier phases may have
+changed these recipes since this plan was written (Phases 22, 25 and 27 change several of the
+invoice and billing shots below, and other agents may have left placeholder `absent` recipes). Work item 19 holds the
+short list; this section is its full form and replaces its "do not edit" wording. The harness bar is hidden
+in shots, so "Inject unmatched receipt" and the payment entries are staged from the matching
+`/demo/control` entries in `setup` (ATLAS.md, Shell). The Xero rows below overlap Phase 37's: that phase
+re-shoots the Xero simulator shots again.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built. Most EP-08 stories belong to other phases; this phase only re-checks them,
+because the ledger changes what the monitor, invoice rail and balance screens read:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) Authorise a List for billing | captured · admin-authorise-list[confirm,authorised], admin-billing-run | unchanged here (Phase 25 owns it). `billing-run` stays: the monitor now reads the ledger and shows an Open the ledger link, so re-shoot and check the `billing-pipeline-<listId>` highlight still lands. Keep the shot `name`s |
+| [US-08.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.1.md) Invoice by billable party | captured · admin-invoices-by-party, admin-grouped-invoice | unchanged here. Re-shoot only if the invoice document's money chips or rail changed what the highlight shows (the Xero card becomes a Ledger card); check `invoice-lines` still lands |
+| [US-08.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.2.md) Deposit and balance invoices | captured · admin-deposit-invoice, admin-balance-invoice | unchanged here. Check only (as US-08.2.1) |
+| [US-08.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | stays partial; Phase 22 owns the split basis. This phase adds two pairs for a split in the ledger but changes nothing the shots show. Check only |
+| [US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md) Linked receivable and payable | captured · simulator-xero-pair, admin-invoice-handoff | captured, re-shot. `xero-pair` (`/demo/xero/invoices/XRB0`): the callout is now "Ledger pair (the system of record)" with the "Matches the ledger" chip; highlight `xero-ledger-pair` beside `xero-engine-link`. `invoice-handoff`: the rail's "Xero handoff" section is now the Ledger card; re-point the highlight to it (add a `data-shot="invoice-ledger-card"` rather than the `h2:text-is("Xero handoff")` selector). Caption: "Receivable and payable created together and linked in the ledger" |
+| [US-08.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.2.md) Ledger is the system of record | captured · web-web-accounts, mobile-mobile-balances | captured, re-shot with highlights (both have none today): web `web-accounts` on `/web/accounts/overdue` with `web-accounts-position` boxed; mobile `mobile-balances` with the "Collected $X · Paid out $Y" line boxed (add a `data-shot` for it). Add an admin shot `ledger-system-of-record` (`/admin/ledger` header and `ledger-pairs`). Caption: "Balances come from the ledger, not from Xero" |
+| [US-08.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.3.md) Patient-linked history survives Xero archiving | partial · simulator-archived-contacts, web-history-kept | stays partial. Add admin `ledger-archived-contact` (`/admin/ledger`, All filter: a pair whose payer's Xero contact is archived keeps its row, with the neutral "Contact archived in Xero" note). `absentReason` keeps only: "Purging a contact is not shown." Keep the two existing shots |
+| [US-08.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.4.md) Money in and money out | partial · admin-money-in-out | captured for AA overall and per anaesthetist (admin): `ledger-balance` and `ledger-tiles` on `/admin/ledger` (In balance, receivables outstanding, receipts held, payables due, disbursed), `ledger-out-of-balance` (after Inject unmatched receipt from the matching `/demo/control` entry: "Out of balance by $120.00" with `ledger-unmatched`) and `ledger-allocated` (back in balance after Allocate to invoice). Keep `money-in-out`. The per-patient position is Phase 40's patient screen: if the story's per-patient drill-down is still judged missing, leave `partial` with "Per-patient position arrives with the patient screen (Phase 40)" |
+| [US-08.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.5.md) Per-anaesthetist ledger position | partial · web-web-overdue, web-web-payments, mobile-mobile-balances | captured. Admin `anaesthetist-ledger` (`/admin/ledger/anaesthetists/<id>`: owed to them, collected, paid out, they owe AA, scoped balance indicator); web `web-overdue` and `web-payments` with the "Your position" strip boxed (`web-accounts-position`); mobile `mobile-balances` with the Collected and Paid out line. Drop the partial reason |
+| [US-08.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.1.md) Invoice layout by party | captured · admin-patient-layout, admin-contract-holder-layout | unchanged here (Phase 22). Re-shoot only: the invoice rail's Xero card becomes a Ledger card. Check only |
+| [US-08.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice[ready,emailed], admin-portal-upload | stays as it is; Phase 22 owns the invoice email address. The `Delivery` rail section is not touched. Check only |
+| [US-08.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.3.md) Xero invoice numbers | captured · simulator-xero-numbers | unchanged. Check only: the Xero numbers are still the ledger legs' numbers |
+| [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | unchanged here (Phase 25). Check only |
+| [US-08.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | unchanged here (Phase 22). Check only |
+| [US-08.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.1.md) Billing processing status | captured · admin-processing-status, admin-failure-reason | captured, re-shot: the monitor reads `pairStatusLabel` and the exceptions, adds the Open the ledger link and the intro line "Money in and out is recorded in the ledger first; Xero mirrors it." Keep the `billing-pipeline-<listId>` highlights |
+| [US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md) Retry a failed billing | captured · admin-card-failure[failed,retried] | captured, re-shot: the Resolve & retry button now calls `retryBillingException` then `handoffPair`. Check the `retried` state still clears the exception |
+| [US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) Post-op charge after invoicing | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | unchanged here (Phase 39 builds the additional invoice). Check only |
+| [US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md) Credit and re-issue | absent | stays absent: "Built in Phase 39." Nothing visible here |
+| [US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md) Create an additional invoice on a Procedure | none (create it); a placeholder `absent` may exist | create it if missing, else keep the placeholder, as absent: "Built in Phase 39." No shots |
+| [US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md) Split a combined Procedure into additional invoices | none (create it); a placeholder `absent` may exist | create it if missing, else keep the placeholder, as absent: "Built in Phase 39." No shots |
+| [US-13.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.2.1.md) Ledger balance views | absent | captured (admin). Shots: `whole-ledger` (`/admin/ledger`, `ledger-balance` and `ledger-tiles` in balance, `ledger-pairs` open), `anaesthetist-scope` (`/admin/ledger/anaesthetists/<id>`, the same balance view scoped) and `imbalance` (after Inject unmatched receipt, `ledger-unmatched` held). Caption: "The ledger's position at the whole-ledger and single-anaesthetist scopes". Remove the absent reason |
+
+**Recipes this phase breaks.** Found at plan time:
+- `US-08.3.1` `invoice-handoff` and `US-13.3.1` (both select the invoice rail's `h2` "Xero handoff"): the rail card is now the Ledger card. Re-point both to a `data-shot` hook on it.
+- `US-09.1.1` (`xero-handoff-status`, `xero-accrec-reference`, `xero-accpay-reference`): the invoice rail's Xero ids now sit in the Ledger card; keep the `data-testid`s on the same values if the card keeps them, otherwise re-point.
+- `US-09.1.2`, `US-10.2.3` (`xero-engine-link`): the hook stays, but the callout is renamed and shows the ledger amounts; re-shoot and fix captions that say "engine" or "mirror".
+- `US-08.3.4`, `US-09.2.4`, `US-10.2.1` (`billing-payables-run`, "Run payables") and `US-10.1.2`: the payables panel reads `payablesDue(state)` and gains the Open the ledger link; the button and hook are kept, so check only.
+- `US-08.5.2`, `US-13.3.2` ("Resolve & retry"): behaviour as before; check only.
+- Web Accounts and Mobile Balances recipes: `US-07.4.1`, `US-10.3.2`, `US-12.1.2`, `US-12.2.1`, `US-12.2.2` (and `US-10.2.3`): the "Your position" strip sits above the Accounts sub-tabs, the aging panel is re-pointed, and the empty-state wording changes ("from the billing MIRROR" and the ACCPAY captions are removed). Re-shoot and fix captions or highlights that quote the old words. Phase 38 later replaces the aging panel.
+- Any caption that says the Billing Engine is a mirror of Xero or names ACCREC or ACCPAY on an anaesthetist screen: sweep the recipes with `grep -il mirror requirements-board/capture/recipes/*.json`.
+
+**ATLAS.md.** Update Routes (`/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId`, the Ledger nav item and its amber badge), Existing hooks (`ledger-balance`, `ledger-tiles`, `ledger-unmatched`, `ledger-pairs`, `web-accounts-position`, `xero-ledger-pair`, the invoice Ledger card hook), the Xero simulator and Control Panel notes (Inject unmatched receipt, the re-pointed payment entries) and Seed data (the seeded ledger is in balance; the $120.00 unmatched receipt reference).
 
 ## Adversarial review (after build)
 
@@ -1090,7 +1143,10 @@ explicitly supersedes.
   - `PERSIST_VERSION` old to new;
   - any shift in case references;
   - whether item 18 was built;
-  - the capture recipes that can now be shot (US-13.2.1) or broke (US-08.3.1, US-09.1.4).
+  - the Catalogue screenshots result: recipes created or changed (US-13.2.1 now shot; US-08.3.1,
+    US-08.3.2, US-08.3.4, US-08.3.5 and the Xero and Accounts recipes re-pointed), the REPORT.md counts
+    (captured, partial, absent, failed) before and after, and any partial reason handed to a later
+    phase (US-08.3.3 purge; per-patient position to Phase 40).
 - Decisions log:
   - **Superseded:**
     - The 2026-07-24 Phase 10 build decision (1): money source of truth as three cumulative amounts on

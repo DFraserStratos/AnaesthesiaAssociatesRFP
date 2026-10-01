@@ -248,7 +248,7 @@ Finish the prepayment story. Most of it is Verify, so keep it thin, but build th
     `DemoXero.test.tsx`, `mastersActions.test.ts`, `ReassignListFlow.test.tsx`. Shots:
     `visual/admin-phase09.spec.ts` and 27's prepayment specs, 36's `admin-ledger.spec.ts`,
     `xero-pair.spec.ts`. Capture recipes: `requirements-board/capture/recipes/US-06.4.1.json`,
-    `US-06.4.2.json`, `US-02.5.3.json` (no recipe exists for US-06.3.6 or US-06.5.x).
+    `US-06.4.2.json`, `US-02.5.3.json` (no recipe existed at plan time for US-06.3.6 or US-06.5.x; the "Catalogue screenshots" step creates them).
 
 ## Work items
 
@@ -744,11 +744,9 @@ Finish the prepayment story. Most of it is Verify, so keep it thin, but build th
       prepayment history. Update `xero-pair.spec.ts` (the held ACCPAY and the refund row) and 36's
       `admin-ledger.spec.ts` (the third scope). Add a mobile shot of a refunded cancelled Booking, a
       mobile shot of 32's move sheet with the prepayment line, and a PWA shot of each stand-in.
-    - Run
-      `node requirements-board/scripts/capture.ts --only US-02.5.3,US-06.4.1,US-06.4.2 --dry`
-      and record which recipes break or can now show real shots (US-06.4.2's recipe may still stage a
-      credit, which no longer exists). Note that US-06.3.6 and US-06.5.1 to US-06.5.4 have no recipe.
-      Do not edit catalogue files or add recipes.
+    - The recipes are the "Catalogue screenshots" step below (create the missing ones for US-06.3.6 and
+      US-06.5.1 to US-06.5.4, rewrite US-06.4.2's, re-point the ones this phase breaks). Do not edit
+      catalogue files' text or status; the capture runner writes their `images`.
     - Patch the demo guide (below).
     - Run `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`, all green.
 
@@ -873,7 +871,8 @@ letter.
 - [ ] Teal is the only action colour, crimson only in the nav, amounts and numbers in mono with
       tabular-nums, no NHI in letters or the Xero sim, and no en or em dashes in any new copy or
       seeded template.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for the covered items above (US-06.3.6, US-06.4.1, US-06.4.2 and US-06.5.1 to US-06.5.4) are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -923,6 +922,36 @@ Phases 27, 36, 39 and 39a left them):
 - The Control Panel S4 scenario text (item 20).
 - This is not a milestone phase. Still reread the S4 section of `master-demo-guide.html` against the
   edited Markdown so beat numbers, figures and trigger labels agree.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 41` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-06.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.6.md) Prepayment letter templates | none (create it) | create, captured. Admin shots: `letter-templates` (Master data, Pre-payment letters, `data-shot=letter-templates`: three templates, one default per kind), `letter-picker` (27's Approve and send Dialog on Riley's Fri 24 Jul AM Booking, `prepayment-letter-picker`, with the preview open), `letter-on-invoice` (the invoice document with the letter as its cover section, `prepayment-letter`) and `reminder` (the Send pre-payment reminder dialog and the "Reminder sent" line, `prepayment-reminder`). Caption: "Prepayment letter chosen when the invoice is approved" |
+| [US-06.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.1.md) Invoice the remaining balance | captured · balance-invoice (admin, INV0003, long S4 setup that clicks "Raise pre-procedure invoice") | stays captured. Re-point the setup to 27's "Approve and send" plus this phase's letter picker click; keep the shot `name`, and add a `released` state on the Booking panel ("Released to Dr Souter") showing the held prepayment released at authorise and named on the balance invoice |
+| [US-06.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.2.md) No refund when prepaid exceeds final | absent (no credit or refund path; reason names OQ-03) | captured. Admin shot `overpaid-kept` reusing the US-06.4.1 setup to a SUBMITTED List, then the "Stage overpaid prepayment" entry (`[data-shot=demo-actions]`, then its `demo-action-stage-overpaid-prepayment` row) on `/admin/review/:listId` and Authorise: the panel reads "Pre-paid more than the final fee · $X kept. No refund or credit." (`prepayment-overpaid`), with no balance invoice. Caption: "Prepaid amount above the final fee is kept; no refund or credit" |
+| [US-06.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.1.md) Trust account | none (create it) | create, captured. Admin shots `trust-account` at `/admin/ledger/trust` (tiles and the held rows, Nair's INV0001 held until Fri 24 PM is authorised; highlight `trust-account`) and `payables-trust-held` (the payables view row "Held in trust until the procedure", never offered to Run payables). Web Accounts and mobile Balances shot `held-in-trust` for Dr Souter: "Pre-payments held in trust · $X · paid after the procedure". Caption: "Prepayment held in trust until the procedure" |
+| [US-06.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.2.md) Refund a prepayment on cancellation | none (create it) | create, captured. Admin shots `cancel-prepayment-refund` (the cancel dialog's "Pre-payment refund" section with "Cancel and refund pre-payment") and `trust-refunds` with states `to-action`, `due` (after the refund), `awaiting-bank` (after Record refund payout) and `paid` (after "Pay out trust refund" from the Xero sim bar entry); a simulator shot `xero-refund` at `/demo/xero/invoices/:accRecId` for the refund row; a mobile shot `cancel-note` (Dr Souter cancelling a prepaid Booking sees "The AA office refunds it in full from the trust account"). Highlights on the refund section and rows. Caption: "Prepayment refunded in full from the trust account on cancellation" |
+| [US-06.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.3.md) Prepayment for a replacement anaesthetist | none (create it) | create, captured, with the OQ-70 caption visible. Admin shots `rebook-dialog` (`rebook-dialog`: Dr Beaumont, her List on the same date, "New pre-payment estimate at Dr Beaumont's unit value: $403.00") and `prepayment-history` (both Bookings: "Earlier estimate · Dr Souter · $344.50 · refunded" and "This estimate · Dr Beaumont · $403.00"). Caption: "Rebooked with another anaesthetist, with a fresh prepayment at their own rate" |
+| [US-06.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.4.md) Prepaid Booking moved to another anaesthetist | none (create it) | create, captured, with the "To confirm with AA (OQ-70)" caption visible. Admin shots `move-confirm` (the Booking move confirm step: "The pre-payment keeps its agreed amount of $X. Dr Beaumont becomes the payee.") and `prepayment-repointed` (the panel "Pre-payment kept at the agreed amount · payee now Dr Beaumont"); a simulator shot `xero-payee` (the draft ACCPAY contact); web and mobile shots `move-sheet` of 32's move sheet with the prepayment line. Caption: "Moved prepaid Booking keeps the agreed amount; the payee changes" |
+
+**Recipes this phase breaks.**
+
+- Ten recipes click "Raise pre-procedure invoice" in their setup, a button Phase 27 replaces with "Approve and send" and this phase puts behind the letter picker (grep `Raise pre-procedure`): `US-06.2.2`, `US-06.3.1`, `US-06.3.2`, `US-06.3.4`, `US-06.4.1`, `US-08.2.2`, `US-09.2.1`, `US-09.2.3`, `US-09.2.4` and `US-09.3.4`. Re-point each to the Approve and send click plus the picker's own "Approve and send", keeping shot names.
+- Nair's INV0001 is no longer disbursed on 16 Jul (held in trust until Fri 24 PM is authorised): re-check `US-05.2.7`, `US-06.2.2`, `US-06.2.3`, `US-06.3.1`, `US-08.4.1` and `US-09.1.1` (all name INV0001), and the Xero-sim pair shots that show its ACCPAY.
+- The payables run excludes held prepayments: re-check the "Run payables" recipes `US-08.3.4`, `US-09.2.4` and `US-10.1.2`, and `US-06.4.1`/`US-06.3.4` (payment webhook on XR0001).
+- `US-02.5.3.json` (cancelled Booking) opens the cancelled-card view; confirm it still resolves with the cancel dialog and panel changes.
+- Work item 21 asks only for the `--dry` check of `US-02.5.3`, `US-06.4.1` and `US-06.4.2`; the full list above is the real scope.
+
+**ATLAS.md.** Update "Routes" (`/admin/ledger/trust`, the Master data Pre-payment letters view), "Personas and IDs" (Riley, Nair and Dr Beaumont's Fri 24 Jul Bookings and their invoice ids), "Seed data worth shooting" (the held and released prepayments, the refund Booking), "Overlays that need clicks" (the letter picker, cancel dialog, rebook dialog, move confirm) and "Existing hooks" (the new `data-shot` hooks listed in work items 10 and 18, and the two new demo-action rows).
 
 ## Adversarial review (after build)
 
@@ -984,7 +1013,8 @@ readings this phase explicitly supersedes.
   - `PERSIST_VERSION` old to new (each bump);
   - the re-pinned figures after items 9 and 17 (Nair's prepayment no longer disbursed on 16 Jul, the
     seeded payables run, the ledger's held total), and the refund Booking's and the rebook's figures;
-  - the capture recipes checked, and the missing recipes for US-06.3.6 and US-06.5.x, for the owner.
+  - the recipes created for US-06.3.6 and US-06.5.x and re-pointed elsewhere (see the Catalogue screenshots bullet).
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - Decisions log:
   - **Superseded:**
     - The Phase 10 payment rule that a received prepayment authorises its ACCPAY pro rata at once:

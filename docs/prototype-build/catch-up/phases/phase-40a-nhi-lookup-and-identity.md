@@ -529,7 +529,8 @@ is expected.
 - [ ] PWA (`npm run build:pwa`, then preview): Add booking on an Open List; the demo chip offers the
       Hub entry; Unavailable shows the fallback.
 - [ ] Reset restores Available and Fiona Gray's name and empty address.
-- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are green.
+- [ ] Catalogue screenshots: the recipes for US-14.4.1 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are green.
 
 ## Demo guide updates
 
@@ -565,6 +566,29 @@ Patch these in the same session, and the same sections of `master-demo-guide.htm
   The anaesthetist's NHI lookup checks the number as they type.
 - The Control Panel's S2 and S5 scenario text (`DemoControlPanel.tsx`): one line each for the Hub
   states and the optional refresh beat.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 40a` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · nhi-lookup (web), nhi-lookup (mobile): Add a card, Enter manually, NHI CQY9304, Look up | captured as a simulation (the Hub is a badged stand-in over a synthetic register; keep the real-Hub gap in the story's own words, not the recipe). Keep both `nhi-lookup` shots (web `/web/lists/L-34821-2026-07-21-PM`, mobile `/mobile/lists/L-34821-2026-07-21-PM`) and give each states: `invalid` (type ZAA0068: the check-digit reason shows, Look up disabled), `found` (ZBR4417, Look up: "Found Mereana Tipene" with the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient"; highlight the status line and note, not the whole dialog), `not-on-register` (ZBW6638) and `hub-unavailable` (run the `nhi-hub-mode` entry from `[data-shot=demo-actions]`, or the PWA Demo sheet on mobile, choose Unavailable, then Look up: warning line with Retry, amber "Hub simulated as Unavailable" badge). Add an admin shot `register-refresh` on `/admin/patients/PT0018` (Fiona Gray): the Refresh from NHI register panel with Name differs and Address "Will be added", then the "Last refreshed 21 Jul 2026, 08:00" state. Captions in the catalogue's words ("HPI CPN", "NHI register"). Drop the partial reason, or reduce it to "The Hub is simulated; no real NHI FHIR call" if the owner wants the gap kept |
+
+**Recipes this phase breaks.**
+
+- `US-11.1.3.json` (`dedupe-nhi`, web and mobile, four states) fills the NHI placeholder `ABC1234` and clicks "Look up" with CQY9304 (Sarah Mitchell); the register mirrors every seeded patient, so the answer should still be found, but Look up is now disabled until the NHI is valid and the dialog gains the status line and purpose note. Re-run with `--dry` and re-check its highlights.
+- `US-02.4.1.json` and `US-02.4.2.json` open Add a card; confirm their selectors still resolve.
+- `US-12.1.4.json` (`anaesthetist-record`, `/admin/masters`) shows the HPI field, now labelled "HPI CPN" everywhere: check its highlight.
+- Work item 14 already lists the Playwright specs; the `--dry` run is the check for the rest.
+
+**ATLAS.md.** Update "Existing hooks" (the Hub status line, purpose note, refresh panel and `nhi-hub-mode` trigger hooks), "Personas and IDs" (the register-only NHIs ZBR4417, ZBT2253, ZBX41AL, ZBW6638 and Fiona Gray PT0018 with her register update) and "Gotchas" (the Look up button is disabled until the NHI validates; the visible wait is a short real timer).
 
 ## Adversarial review (after build)
 
@@ -624,6 +648,7 @@ re-raise anything settled in the Decisions log.
   - the reading of the "delays on the demo clock" risk, and the PWA chip outcome from item 13;
   - `PERSIST_VERSION` (bumped or not, and why);
   - tests added, the before and after Vitest and Playwright counts, and the review pass.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the Phase 01 simulated NHI lookup (2nd review #7: six canned patients, "Not found
      in this demo's records", validation only at Save). The lookup validates as the NHI is typed, never

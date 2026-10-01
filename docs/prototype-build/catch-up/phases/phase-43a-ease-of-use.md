@@ -528,8 +528,9 @@ gains nothing; Phase 14's index lists the trigger under its screen.
       "About {title}".
 - [ ] No en or em dashes in any new string; teal the only action colour; no crimson in tips or cards;
       the Provisional pill shows only on a topic marked provisional.
-- [ ] `PERSIST_VERSION` unchanged; `npm run build`, `npm run build:pwa`, `npx vitest run` and
-      `npm run shots` are all green.
+- [ ] Catalogue screenshots: the recipes for US-15.0.1 are created or updated, any recipe this phase broke is re-pointed, the capture runner presets the three first-run dismissals, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] `PERSIST_VERSION` unchanged; `npm run build`, `npm run build:pwa`, `npx vitest run`,
+      `npm run shots` and `npm run verify:board` are all green.
 
 ## Demo guide updates
 
@@ -557,6 +558,29 @@ Patch in the same session (`docs/demo-guide/`, the same sections of `master-demo
   anaesthetist, deals with Contract pricing.
 - `master-demo-guide.html`: the same passages.
 - Control Panel scenario text: no change.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 43a` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-15.0.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.1.md) Ease of use | partial · card-capture (mobile Booking capture, C0009) and day-view (admin Day, 21 Jul); both have an empty highlight | partial, with a rewritten reason: the shots show the calm, plain screens and the help, but whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had (no later phase builds it). Keep both shot names and re-shoot: `card-capture` (mobile, `/mobile/lists/L-34821-2026-07-21-PM/bookings/:bookingId`, Sarah Mitchell or the C0009 Booking) with states `plain-contract` (the Contract line shows only its plain name and "Change", highlight it; no route, insurer, holder or rate) and `tip-open` (tap `[data-shot=info-tip-capture-units]`: the bottom sheet with the Units copy and "Got it"); `day-view` (admin, `/admin/day/2026-07-21`) with states `day` (highlight the grid and to-do list) and `tip-open` (open `info-tip-day-statuses`: the popover beside the legend). Add shots `first-run-hint` for mobile Lists, web Dashboard and Admin Day (`first-run-hint-mobile`, `-web`, `-admin`: the welcome card, reached with the "Show first-run hints again" entry because the capture preset hides it) and `review-tip` (admin `/admin/review/:listId`, the Contract popover whole inside the viewport, `info-tip-review-contracts`). Add a web Booking shot with the same tip as a popover. Captions: "Plain Booking capture", "Help at the point of need", "Welcome card shown on first visit" |
+
+**Recipes this phase breaks.**
+
+- **First-run welcome cards appear in every fresh context.** Each capture state starts from empty browser storage, so the new welcome card shows on mobile Lists (`/mobile/lists`), the web Dashboard and the Admin Day view in the shots of every recipe that opens them. Do what the Playwright specs do: make `requirements-board/scripts/capture.ts` start each context with the three dismissal keys (`aa-first-run-hint-mobile`, `-web`, `-admin`, set as in `visual/storage/hints-dismissed.json`) on both origins, and have the `first-run-hint` states above bring the card back with the "Show first-run hints again" entry. Check one image per app by eye. Roughly seven recipes start on a bare app root or Lists page, and the many `/admin/day/` recipes (about fifty) start on the Day view.
+- The Contract row on the anaesthetist's capture block shows the plain name only: recipes that highlight a Contract line or picker on mobile or web (`US-03.4.1` and the Contract recipes under FT-03.4, `US-04.3.x`, `US-11.2.x`, if present) must still resolve; the office view in Admin keeps category, basis and "Bills ...".
+- `CaptureSection` gains an info tip in its label row, so recipes selecting by a section label's exact text (for example `text="Times"`) may now match the tip's accessible name too; re-run with `--dry`.
+- Work item 11 keeps the existing Playwright specs green with a storage preset; the capture runner needs the same, which is the one non-doc change this step makes outside `aa-prototype/`.
+
+**ATLAS.md.** Update "Gotchas" (the first-run welcome card and the dismissal preset the runner now applies), "Existing hooks" (`info-tip-*`, `first-run-hint-*`) and "Overlays that need clicks" (the info tip as a bottom sheet on mobile and an anchored popover on web and admin).
 
 ## Adversarial review (after build)
 
@@ -603,6 +627,7 @@ records the pass. Do not re-raise anything settled in the Decisions log.
   - `PERSIST_VERSION` unchanged (state it);
   - tests added and the before and after Vitest and Playwright counts, and the `storageState` preset;
   - the review pass.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **New:** anaesthetist screens show a Contract by its plain name (and its AA code in the picker),
      with Phase 20's "Change"; pricing basis, category, holder, payment setting, split share, rule

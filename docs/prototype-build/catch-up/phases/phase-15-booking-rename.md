@@ -596,15 +596,15 @@ images (a web and a mobile "Add photo") show today's UI.
     - `recipes/US-07.3.2.json` types the history id `HC05`: it becomes `HBK05` (item 5).
     - **Do not change any shot `name` field**: those name the catalogue's asset files.
     - Run `npm run verify:board` from the repo root, green.
-    - Re-capturing the catalogue images is not part of this phase (work item 17 flags it).
+    - The images are re-captured in this phase's Catalogue screenshots step (after the review pass), not here; this item only keeps the recipes pointing at real screens.
 
 17. **Finish and flag.**
     - Final `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`, all
       green.
-    - Record in PROGRESS "Discovered for later" that the catalogue's US-02.4.3 and US-03.2.3
-      images and captions ("Copy for an additional procedure") and US-03.1.3's ("Add photo") now
-      show retired UI. They need a re-capture and a caption edit by the catalogue owner (through
-      the catalogue, `npm run check`). Do not edit catalogue files in this phase.
+    - The stale catalogue images and captions for US-02.4.3, US-03.2.3 and US-03.1.3 ("Copy for an
+      additional procedure", "Add photo") are re-shot and re-captioned by the Catalogue screenshots
+      step below. Do not edit catalogue files in this phase; the capture runner writes the items'
+      `images`.
 
 ## Demo triggers
 
@@ -644,7 +644,7 @@ the map. The Control Panel index lists them under the renamed screens.
   pre-op and post-op events in 39b). Only its names change here.
 - A real camera or file input, an attachment viewer or download beyond the thumbnail, OCR, and
   attaching from Admin.
-- Re-capturing or re-captioning the catalogue's screenshots, and any edit to catalogue files.
+- Any edit to a catalogue requirement's text or status (the capture runner writes the screenshots and the items' `images`; that is the Catalogue screenshots step).
 - The design mockups' own "Card" labels, the RFP reference docs, and the historical planning docs
   and PROGRESS entries.
 - Renaming visual-card components and design tokens (item 2, class 2).
@@ -665,6 +665,7 @@ the map. The Control Panel index lists them under the renamed screens.
 - [ ] The PWA (`npm run dev:pwa`) shows the renamed copy, the List attachments section, the attach sheet and Copy. An old `/cards/` URL redirects there too.
 - [ ] The before and after screenshots from `npm run shots` differ only in wording and the new attachment sections.
 - [ ] `npm run verify:board` green after the recipe sweep.
+- [ ] Catalogue screenshots: the recipes for US-03.1.3 are created or updated, any recipe this phase broke is re-pointed (the Copy recipes US-02.4.3 and US-03.2.3, US-07.3.2 and the `card-calculation` ones), a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa` and `npx vitest run` green, and `npm run shots` green.
 
 ## Demo guide updates
@@ -694,6 +695,39 @@ the physical card) and route tables (`/cards/` to `/bookings/`). Specific beats:
 
 This is not a milestone phase, so no full consistency read is required. Patch the same sections of
 `master-demo-guide.html` in the same session.
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 15` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-03.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.3.md) Attachments | partial · web-attachments[empty,added], mobile-attachments[empty,added] | captured (a Booking and a List both take attachments, other file types included, as a badged simulation); drop the partial reason. Keep the `attachments` shots on web and mobile with states `empty` and `added`, now on `/bookings/BK0009`, highlight `[data-shot=booking-attachments]`, click "Add attachment" and pick a sample in the sheet; captions "Attachments section with Add attachment" and "A photo attached to the Booking". Add a state `sheet` showing the "Simulated file picker" badge. Add a new shot `list-attachments` on web and mobile at the Tue 28 Jul AM List (the seeded "Theatre list · St George's" PDF), highlight `[data-shot=list-attachments]`, caption "Attachments on the whole List" |
+
+**Recipes this phase breaks.** Nearly all of them: about 96 recipes name "card" in a route, id, button
+text or hook, and 57 use a `/cards/` start route. Work item 16 is the scripted, reviewed replace
+(routes to `/bookings/BK####`, `C####` and `HC##` ids, "Add a card", "Cancel card", "Card history",
+`slide-card`, `mobile-card-*`, `card-calculation` to `booking-calculation`, `data-shot=card-*`). The
+named ones are:
+- `US-02.4.3` and `US-03.2.3`: click "Copy for an additional procedure" (to "Copy booking", the
+  "copied" step now expects the new Booking), and their captions say "on a Card" and "copy the card
+  for an additional procedure". Reword to the new Copy: a skeleton Booking with its own primary
+  Procedure; `US-03.2.3`'s "Add another procedure" shot stays the additional-procedure path.
+- `US-07.3.2`: types the history id `HC05`, now `HBK05`.
+- The four recipes fixed in Phase 14's baseline sweep (US-03.5.2, US-05.2.1, US-05.3.5, US-05.4.1)
+  and every recipe on `card-calculation`: now `booking-calculation`.
+- Any recipe whose caption still says "Card" for a Booking: reword to Booking. Keep every shot `name`.
+
+**ATLAS.md.** Routes (`/cards/` to `/bookings/`), Personas and IDs (`C####` to `BK####`, `HC##` to
+`HBK##`), Seed data worth shooting (Margaret Ellison's `BK0009`, the new List attachment on Tue 28 Jul
+AM), Overlays (the attach sheet) and Existing hooks (`slide-booking`, `mobile-booking-*`,
+`booking-calculation`, `booking-attachments`, `list-attachments`).
 
 ## Adversarial review (after build)
 
@@ -746,7 +780,7 @@ supersedes.
 - **Copy rules:** no en or em dashes in any new or changed string; teal only for the new actions;
   the simulated picker is badged.
 - **Tooling:** the requirements-board recipes point at real routes and selectors, no shot `name`
-  changed, and `npm run verify:board` passes.
+  changed, `npm run verify:board` passes, and the full capture run ends with no failed recipe.
 
 ## PROGRESS.md updates
 
@@ -782,5 +816,6 @@ supersedes.
   4. **Attachment ids** are store-allocated (`AT####`) through `addAttachment` and
      `removeAttachment`, superseding the 2026-07-27 component-side index fix. Audit entries carry
      metadata only.
-- **Discovered for later:** the catalogue images and captions for US-02.4.3, US-03.2.3 and
-  US-03.1.3 show retired UI and need a re-capture and caption edit by the catalogue owner.
+- **Catalogue screenshots:** the recipes created or changed (US-03.1.3, the Copy and history recipes, the
+  hook sweep), the `REPORT.md` counts before and after (captured, partial, absent, failed), and any
+  partial reason handed to a later phase.

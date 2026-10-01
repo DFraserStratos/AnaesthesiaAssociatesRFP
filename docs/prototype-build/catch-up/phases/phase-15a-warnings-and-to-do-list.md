@@ -388,7 +388,8 @@ line numbers at the snapshot, names after 15).**
     the drawer row shows the triangle and outline, Clear empties a row; mobile Riley row triangle
     opens the sheet; submit shows the confirm step and submits) with the four `data-shot` hooks.
     Update the capture recipes that clicked `daygrid-block-prepayment` or "Override gate" to the new
-    hooks and steps, update ATLAS.md's Fri 24 text, and run `npm run verify:board`. Copy sweep: no
+    hooks and steps (the list is in "Catalogue screenshots"), update ATLAS.md's Fri 24 text, and run
+    `npm run verify:board`; the images are re-captured in the Catalogue screenshots step. Copy sweep: no
     en or em dash in any new string.
 
 ## Demo triggers
@@ -468,6 +469,7 @@ lists them under their screens.
       warnings.
 - [ ] No new app copy contains an en or em dash; teal is the only action colour; mild amber, strong
       red, never a status colour or crimson.
+- [ ] Catalogue screenshots: the recipes for US-13.7.1, US-13.7.2 and US-13.7.3 are created or updated, the prepayment recipes this phase broke (US-06.2.1, US-06.2.2, US-06.3.1 to US-06.3.5, US-06.4.1, US-08.2.2) are re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and
       `npm run verify:board` green.
 
@@ -496,6 +498,44 @@ lists them under their screens.
 - `DemoControlPanel.tsx` S4 scenario text (~421): "(1) Mobile, Souter Fri 24 AM, Annette Riley:
   read the prepayment warning, complete and submit, then clear it from the Admin to-do list".
 - `requirements-board/capture/ATLAS.md` Fri 24 text (~312).
+
+## Catalogue screenshots
+
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
+run after the review pass and before the PROGRESS.md entry. Re-run
+`node docs/prototype-build/catch-up/tools/recipe-status.mjs 15a` first: earlier phases may have
+changed these recipes since this plan was written.
+
+**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+matches what was built:
+
+| Item | Recipe at plan time | When this phase is done |
+|---|---|---|
+| [US-13.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.1.md) Warning routine | none (Phase 14 adds an `absent` placeholder, "Not built yet: catch-up Phase 15a builds this") | create. Status partial: only the unpaid prepayment rule exists; the base-units rule (Phase 19), child billable party (21) and patient balance owing (40) add theirs, and say so in the reason. Admin shot `warning-text` at `/admin/day/2026-07-24/bookings/BK0038` (Annette Riley), highlight `[data-shot=booking-warnings]`, caption "One routine raises each warning, with its text, kind and strength". Mobile shot `warning-sheet` at `/mobile/lists/L-34821-2026-07-24-AM`: tap `[data-shot=booking-warning]`, highlight the sheet, caption "Tapping the triangle shows the warning text, before or after the procedure, mild or strong" |
+| [US-13.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.2.md) Warnings on the dashboard to-do list | none (placeholder as above) | create. Status captured (the placement and the recording of clearing are labelled provisional in the app). Admin shot `todo-list` at `/admin/day/2026-07-24`, highlight `[data-shot=admin-warnings-todo]`, states `open` ("Open warnings on the to-do list") and `cleared` (click the row's Clear: "A cleared warning leaves the to-do list"). Add a state `samples` that runs Demo actions, "Raise sample warnings" on `/admin/day/2026-07-21` so the list shows several rows |
+| [US-13.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.3.md) Warning flag on a Booking | none (placeholder as above) | create. Status captured (the confirm step at List submit is a provisional reading). Shots `warning-triangle` on mobile (`/mobile/lists/L-34821-2026-07-24-AM`, Riley's row) and web (`/web/lists/L-34821-2026-07-24-AM`, the triangle cell), states `closed` and `open` (popover or sheet with the text), highlight `[data-shot=booking-warning]`; admin shot `outline-down` at `/admin/day/2026-07-24` with the List drawer open, highlight the outlined Booking row ("The Day view outline extends down to the Booking"); mobile and web shot `submit-confirm` (complete Riley, open the submit sheet, highlight the warnings section and "Submit anyway": "A short confirm step before a Booking with a warning is submitted") |
+
+**Recipes this phase breaks.** Work item 15 already says to re-point the prepayment recipes; this
+section is the list. The gate and override are removed and `daygrid-block-prepayment` becomes
+`daygrid-block-warnings` (the "Pre-payment flagged" filter button becomes "Has warnings"), while
+`booking-prepayment` stays (Phase 15 renames `card-prepayment` first, so read the post-15 hook name):
+- `US-06.2.1` (`prepayment-flag`, mobile and web): caption "Card flagged Pre-payment required";
+  keep the hook, reword the caption to the warning.
+- `US-06.2.2`, `US-06.3.1`, `US-06.3.4`, `US-06.3.5`, `US-06.4.1`: click
+  `[data-shot=daygrid-block-prepayment]` to open the List; point them at `daygrid-block-warnings`.
+- `US-06.3.2`: clicks "Pre-payment flagged" and highlights `daygrid-block-prepayment`; use "Has
+  warnings" and the new hook. Its `card-status` shot keeps the prepayment row hook.
+- `US-06.3.3`: both shots (day-grid flag; mobile `card-gate`, caption "The anaesthetist sees the
+  unpaid pre-payment on the card") now show the warning, not a gate; reword captions, and drop the
+  "completion is blocked" text from its `absentReason` (it stays partial: no date escalation until 27).
+- `US-08.2.2`: clicks "Override gate" twice (deposit and balance invoice shots); remove those steps.
+- Every recipe that clicks "Raise pre-procedure invoice" (US-09.1.3, US-09.2.1, US-09.2.3, US-09.2.4,
+  US-09.3.4) keeps working because the button stays beside the warning; the `--dry` run is the check.
+
+**ATLAS.md.** Seed data worth shooting (the "Fri 24: the pre-payment gate" paragraph and Annette
+Riley's Booking, now a warning with no gate), Routes if the to-do rail changes the Day view row, and
+Existing hooks (`booking-warning`, `booking-warnings`, `admin-warnings-todo`,
+`daygrid-block-warnings`). Work item 15 also names the Fri 24 text.
 
 ## Adversarial review (after build)
 
@@ -542,9 +582,11 @@ completion gate and override this phase supersedes.
   - "The confirm step sits at List submit, not at Mark complete" (provisional reading of US-13.7.3).
 - **Binding conventions:** add one line: a check that should alert, not stop, is a warning rule in
   `src/domain/warnings` with a sample in `src/store/warningSamples.ts`; it never becomes a blocker.
+- **Catalogue screenshots:** the recipes created or changed (US-13.7.1 to US-13.7.3 and the prepayment
+  recipes), the `REPORT.md` counts before and after (captured, partial, absent, failed), and the
+  partial reason on US-13.7.1 handed to Phases 19, 21 and 40.
 - **Handoff notes:** 19, 21, 27 and 40 each add a rule, its facts, its params and its sample (the
   `multiWarning` Booking then shows two warnings); 20 removes the fields the prepayment sample
   stages and re-points the sample at the Booking's prepayment flag, and 27 re-points the sample and
   the rule at the prepaid set and adds date escalation;
-  31's Draft Lists panel must not displace the to-do rail card; the catalogue screenshots of the old
-  gate (US-06.3.x recipes) need re-capturing by the owner.
+  31's Draft Lists panel must not displace the to-do rail card.

@@ -3,7 +3,7 @@ Please run catch-up Phase 40a (NHI lookup and identity standards) of the Anaesth
 Repo root: /Users/d.fraser/Local Dev/Anaesthesia Associates RFP (paths below are relative to it; quote them, the folder names contain spaces). The app is aa-prototype/. Follow CLAUDE.md at the repo root. Do not commit or push.
 
 Before doing anything else, read these in order:
-1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D11, a Booking without an NHI, is still open; nothing here changes it), the sequencing rules (40a runs after 26 and 40), and the Demo triggers, PWA parity and Demo guide sections.
+1. docs/prototype-build/catch-up/ROADMAP.md: the phase list, the owner decisions table (D11, a Booking without an NHI, is still open; nothing here changes it), the sequencing rules (40a runs after 26 and 40), and the Demo triggers, PWA parity, Demo guide and "Catalogue screenshots" sections.
 2. docs/prototype-build/catch-up/phases/phase-40a-nhi-lookup-and-identity.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (Summary theme 9, the "Demo-trigger buttons" list with Hub Available, Slow and Unavailable, and "Remove or rework"), then the EP-14 table rows for US-14.4.1 and FT-14.4. Then docs/prototype-build/catch-up/epics/EP-14.md (the US-14.4.1 and FT-14.4 entries) and DM-30 in docs/prototype-build/catch-up/analysis/domain-model-delta.md (only its sentence "The NHI can be refreshed from the central register" is this phase's; the rest is Phase 40's).
 4. The catalogue files, in docs/discovery-reference/Updated Requirements/catalogue/:
@@ -18,6 +18,7 @@ Before doing anything else, read these in order:
    - the binding conventions (especially 4, 5, 9, 13 to 18);
    - the Decisions-log entry this phase supersedes: the Phase 01 simulated NHI lookup (2nd review #7: six canned patients, "Not found in this demo's records", validation only at Save);
    - the catch-up Phase 14, 15, 17, 26, 34, 38a and 40 entries and handoff notes, for the trigger registry (DemoTrigger, DemoContextValues, useDemoTriggerContext, demoTriggersFor, OFFICE_ACTOR, DEMO_ACTOR, the PWA sheet), ManualBookingForm, AddBookingFlow and createBooking, normaliseHpiCpn and isPlausibleHpiCpn and every HPI CPN display site, the anaesthetist Profile screens, failNextSync and its setter, the Future-scope surface and the reworded Hub callout, 38a's search fields and parseBookingQuery, and 40's patient record, Attach NHI sheet, detailDifferences, applyNhiAttach, buildNhiIndex, mergedPatientTarget, pendingDetails and the appended Noah Prescott record (ZAP3016).
+8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md (the standing step before the PROGRESS entry). Your phase doc's "Catalogue screenshots" section lists the recipes.
 
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" and re-read any covered or context item that changed; drop and log anything now Retired or Future (if only US-14.4.1 went Future, keep validation as typed and the HPI CPN pass);
@@ -43,9 +44,10 @@ While working:
 
 When done:
 - Run the manual test checklist and report each item.
-- Run npm run build, npm run build:pwa, npx vitest run and npm run shots in aa-prototype/, all green.
+- Run npm run build, npm run build:pwa, npx vitest run and npm run shots in aa-prototype/, all green, and npm run verify:board at the repo root.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): three Opus review subagents for quality, bugs/correctness and plan adherence, steered by the phase doc's bullets; independently verify each finding, fix the confirmed ones (with a test where a bug had none), and re-green.
-- Update PROGRESS.md: the catch-up status row and a phase entry (the drift-check result against 501b0b8, the provisional refresh reading, the reading of "delays on the demo clock", the PWA chip outcome, the name map for later phases, what was removed, PERSIST_VERSION bumped or not, test counts, the review pass), the four Decisions-log entries in the phase doc, and the handoff notes for 42, 43 and 44.
+- Run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-14.4.1 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green.
+- Update PROGRESS.md: the catch-up status row and a phase entry (the drift-check result against 501b0b8, the catalogue screenshot result (REPORT.md counts before and after), the provisional refresh reading, the reading of "delays on the demo clock", the PWA chip outcome, the name map for later phases, what was removed, PERSIST_VERSION bumped or not, test counts, the review pass), the four Decisions-log entries in the phase doc, and the handoff notes for 42, 43 and 44.
 - Patch the demo guide in the same session: S2 Beat 2 (lookup line, optional Hub step), S5 Beat 2 (the lookup path), the new optional S5 refresh beat, Direct URLs, the script's NHIs and Recovery in docs/demo-guide/03-demo-script.md; the demo-only and identity-standards lines and two discovery points in 04-presenter-cheat-sheet.md; 02-workflows-and-handoffs.md and 01-personas-and-responsibilities.md; the same sections of master-demo-guide.html; and the Control Panel's S2 and S5 scenario text.
 - Give me short, clear notes on what changed and anything left open.
 
