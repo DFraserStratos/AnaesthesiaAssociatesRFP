@@ -1,16 +1,16 @@
 # Phase 15 · Card becomes Booking
 
 **Requirements covered:** [US-03.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.3.md) Attachments;
-[DM-01](../analysis/domain-model-delta.md#dm-01) Card becomes Booking (the rename and `source` only; its booking-level billing fields land in 20, 21 and 27);
-[DM-34](../analysis/domain-model-delta.md#dm-34) Booking source, List-level attachments and Copy a Booking;
+[DM-01](../analysis/domain-model-delta.md#dm-01) Card becomes Booking (the rename only; the booking-level state DM-01 also names lands later: warnings in 15a, billable party and invoice email in 21, prepayment in 27);
+[DM-39](../analysis/domain-model-delta.md#dm-39) List-level attachments, Copy a Booking as a skeleton, and an optional stored Booking source;
 [RV-12](../analysis/reverse-check.md#rv-12-vocabulary-card-for-a-booking) "Card" used for a Booking throughout the UI;
 [RV-03](../analysis/reverse-check.md#rv-03-card-copy-is-used-as-the-additional-procedure-mechanism) Card Copy used as the additional-procedure mechanism.
 Read alongside (not closed here): [US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md) Copy a Booking,
 [US-02.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.1.md) Add a Booking manually or from a photo,
 [FT-03.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.2.md) Booking structure,
 [US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md) Add additional Procedures, and
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md) section 2 "Booking" and the glossary.
-**Depends on:** none. Runs first with Phase 14, in either order. It must run before any phase that edits booking code (16 onward). If 14 ran first, this rename also covers the demo-trigger registry's route patterns, labels and context keys.
+[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md) section 2 "Booking" and section 4, the glossary (Booking, Card, Recurring booking, Timesheet).
+**Depends on:** none. Runs first with Phase 14, in either order. It must run before any phase that edits booking code (15a onward). If 14 ran first, this rename also covers the demo-trigger registry's route patterns, labels and context keys.
 **Estimated:** 2 sessions. Session 1 is the mechanical rename (work items 1 to 9), re-greened and demoable. Session 2 adds the fields and reworks Copy (work items 10 to 17).
 
 ## Goal
@@ -20,12 +20,21 @@ The catalogue replaced "Card" with **Booking**: an appointment for one patient w
 throughout: in types, ids, store actions, selectors, audit strings, seed, routes, test hooks and
 the copy of all three apps, the Control Panel and the demo guide. This phase renames all of it.
 
-It also adds the first two Booking-level facts the catalogue asks for:
+The renamed Booking is where later phases add the booking-level state the domain model now names
+(DM-01): warnings (15a), billable party and invoice email (21) and prepayment state (27). This
+phase adds none of it, and adds no insurer or funding source either: the catalogue holds those on
+neither the Booking nor the Patient (OQ-55, built in 20).
 
-- **`Booking.source`** records how every Booking entered the system (hospital download, surgeon
-  PDF, admin, anaesthetist ad hoc, anaesthetist photo, copy).
+It does add two small things:
+
 - **List-level attachments** sit beside Booking attachments, with a badged, simulated file attach
-  in place of today's canned "Add photo".
+  in place of today's canned "Add photo" (US-03.1.3).
+- **An optional `Booking.source`** says how a Booking entered the system (hospital download,
+  surgeon PDF, admin, anaesthetist ad hoc or photo, copy). The catalogue lists the sources only
+  descriptively (domain-model "Booking > Sources"); no story requires a stored field and the audit
+  trail already records where each change came from (DM-39). So it is a thin, optional,
+  display-only field: stamped where a creation path knows it, shown as one quiet line, and read
+  by no rule, validation or billing code.
 
 Finally, **Copy becomes what the catalogue says it is**: a new Booking with only the skeleton
 (patient, List and references) and a fresh **primary** Procedure, inheriting nothing else.
@@ -36,43 +45,60 @@ is superseded.
 The rename is the widest diff of the catch-up by file count (about 180 files use the word). It
 has to be mechanical, reviewable and re-greened on its own before anything changes behaviour.
 
+The wording sweep also applies the glossary's other rules to every string it touches, in the app
+and the demo guide: a List is **reassigned** or **moved**, never "swapped", and "timesheet" is
+never used (say a completed or submitted Booking). Renaming "Permanent List" to "recurring
+booking" is Phase 30's, so leave it alone here, and never let the Booking rename produce
+"Permanent Booking".
+
 ## Before you start: drift check
 
-1. Diff the covered and read-alongside items against the plan's catalogue snapshot:
+1. Diff the covered and read-alongside items against the plan's catalogue snapshot, `501b0b8`:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-03.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.2.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-02.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-03.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-03.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.2.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-02.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-03.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Also run the whole-catalogue diff from ROADMAP.md "When the catalogue changes" and scan it for
    any new item that names Booking, Copy, source or attachments.
-2. If an item changed, re-read it and adjust the work items. Specific things to look for:
+
+   For reference, the 2026-10-01 update (the meeting with Greg, now `501b0b8`) already folded
+   into this doc changed none of the covered stories. US-02.4.1 gained a note only (the anaesthetist must still be able
+   to create a Booking on the fly in theatre). The domain model's Booking section now names the
+   booking-level state (warnings, billable party and invoice email, prepayment) and says the
+   Booking holds no insurer or funding source; its Sources list is unchanged. The glossary added
+   "Recurring booking" (not a Booking for one patient) and "Timesheet: not used", and the
+   reassignment wording moved from "swap" to "move". The gap re-grade made the stored source
+   optional (DM-01, DM-39), and the old DM-34 is now DM-39.
+2. If an item changed since `501b0b8`, re-read it and adjust the work items. Specific things to
+   look for:
    - **Booking sources** (domain-model "Booking > Sources"). If the list of sources changed, the
-     `BookingSource` union in work item 10 follows the catalogue.
-   - **Copy** (US-02.4.3). If "references" is now defined, carry exactly those. The default
-     reading is below.
+     `BookingSource` union in work item 10 follows the catalogue. If a story now requires a stored
+     source or reads it in a rule, make the field required and say so in PROGRESS.
+   - **Copy** (US-02.4.3). If "references" is now defined, carry exactly those. The reading used
+     here is below.
    - **Attachments** (US-03.1.3, Proposed). If it moved to Future or Retired, drop work items 11
      and 12, keep today's Booking photo attach under the new names, and note the drop in PROGRESS.md.
    - **Vocabulary** (glossary). If "Booking" was renamed again, stop and ask the owner before
      renaming 180 files.
 3. If US-03.1.3 is now Retired or Future, remove it from this phase's covers and record that in the
-   PROGRESS entry. DM-01, DM-34, RV-03 and RV-12 are model findings: they stand unless the
+   PROGRESS entry. DM-01, DM-39, RV-03 and RV-12 are model findings: they stand unless the
    domain-model's Booking section changes.
 4. **Check whether Phase 14 has run** (look for `aa-prototype/src/shared/demoTriggers/`, with
    `registry.ts` and the `useDemoTriggerContext` hook, and for a Phase 14 PROGRESS entry). If it has,
    work item 7 includes the registry.
-5. **Open questions.** None block this phase. Two sit nearby, and neither needs a provisional label:
-   - [OQ-34](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-34.md)
-     asks whether the surgeon PDF is the main pathway by volume. It affects nothing built here: the
-     source is recorded either way.
-   - [OQ-53](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-53.md)
-     (combined procedures) is parked, so leave the Procedure structure alone.
-   - **Default reading of "references" in Copy:** the Booking's billing reference (the hospital or
-     PO reference, stored today as `Procedure.billingReference` on the primary Procedure). It is
-     **not** the hospital appointment correlation (`correlationRef`). A copy is a different
-     appointment, and sharing the correlation would let a hospital change message hit two
-     Bookings. Label this reading in the Decisions log. The gap analysis flagged US-02.4.3's
-     "references" as ambiguous.
+5. **Open questions.** None block this phase, and nothing here is provisional:
+   - [OQ-34](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-34.md) is
+     answered: the hospital download carries most bookings today. It changes nothing built here.
+   - [OQ-53](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-53.md) is
+     answered: a combination is a Contract set against each parent procedure (US-04.2.11), built in
+     23. Leave the Procedure structure alone here.
+   - **Reading of "references" in Copy** (US-02.4.3 leaves the word undefined, and the gap
+     analysis grades it Matches at low confidence on that point): the Booking's billing reference
+     (the hospital or PO reference, stored today as `Procedure.billingReference` on the primary
+     Procedure). It is **not** the hospital appointment correlation (`correlationRef`). A copy is a
+     different appointment, and sharing the correlation would let a hospital change message hit
+     two Bookings. Record it in the Decisions log as the reading used.
 
 ## Reference
 
@@ -98,11 +124,14 @@ images (a web and a mobile "Add photo") show today's UI.
 **Analysis files:**
 
 - `docs/prototype-build/catch-up/gaps.json`: the items `US-03.1.3` and `US-02.4.3`
-  (Matches, with the "references" ambiguity), `dataModelDeltas` DM-01 and DM-34, and
+  (Matches, with the "references" ambiguity), `dataModelDeltas` DM-01 and DM-39, and
   `reverseFindings` RV-03 and RV-12.
 - `docs/prototype-build/catch-up/epics/EP-03.md#us-03.1.3`.
-- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: Themes 5 and 6, "Structural first" item 1, and
-  "Remove or rework".
+- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: Theme 4 (only its Copy-a-Booking-as-skeleton part; the
+  multi-procedure and primary-Procedure rest is 23's),
+  "Structural first" item 1, "Remove or rework" (the stale "Card" copy and the post-op addendum
+  Card), and the DM-01 and DM-20 correction under "Structural changes" (the stored source is
+  optional).
 - `docs/prototype-build/catch-up/analysis/prototype-map-store-seed.md` (sections 1 to 3, 6 and 7),
   `prototype-map-domain.md` (section 2, Card, Procedure, Invoice and BillingCase, and section 5,
   the billing modules), `prototype-map-shared.md` (sections 2, 3 and 5) and
@@ -194,6 +223,7 @@ images (a web and a mobile "Add photo") show today's UI.
    | `Procedure.cardId`, `Invoice.cardId`, `BillingCase.cardId`, `IntegrationMessage.resultCardId` | `bookingId`, `resultBookingId` |
    | `copiedFromCardId`, `cardType`, `addendumOfCardId` | `copiedFromBookingId`, `bookingType`, `addendumOfBookingId` |
    | `schedule.cards`; id kind `card`, prefix `C` | `schedule.bookings`; id kind `booking`, prefix `BK` (`BK0001`) |
+| seeded history Booking ids `HC01` to `HC14` (`history.ts`) | `HBK01` to `HBK14` (history Procedures `HP` and cases `HBC` keep their ids) |
    | `store/cardActions.ts`: `createCard`, `copyCard`, `CreateCardInput`, outcome `{ cardId }` | `store/bookingActions.ts`: `createBooking`, `copyBooking`, `CreateBookingInput`, `{ bookingId }` |
    | `getCard` (returns `{ card, list }`), `completeCard`, `uncompleteCard`, `cancelCard`, `editCard`, `CardPatch`, `reassignCard` | `getBooking` (returns `{ booking, list }`), `completeBooking`, `uncompleteBooking`, `cancelBooking`, `editBooking`, `BookingPatch`, `reassignBooking` |
    | `stampCardId` (mutate meta) | `stampBookingId` |
@@ -214,6 +244,10 @@ images (a web and a mobile "Add photo") show today's UI.
    ("M6; 3rd review #2") intact. Work item 13 rewrites the comments that call Copy the
    additional-procedure mechanism.
 
+   Out of the map on purpose: "Permanent List" and its code (`permanent*`) stay for Phase 30's
+   "recurring booking" rename, and "Draft List" is Phase 31's. A recurring booking is not a
+   Booking for one patient, so no identifier or string this phase writes may blur the two.
+
 3. **Domain layer.** Rename in `domain/types.ts`, then `domain/billing/` (file rename
    `validateCardForBilling.ts` becomes `validateBookingForBilling.ts`, with its test),
    `invoiceBuild.ts`, `fixtures.ts` and `domain/integrations/` where it names the entity.
@@ -231,7 +265,10 @@ images (a web and a mobile "Add photo") show today's UI.
    - `git mv store/cardActions.ts store/bookingActions.ts`, with its test.
    - Rename the entity names in `lifecycle.ts`, `selectors.ts`, `billingRun.ts`,
      `prepaymentActions.ts`, `integrationActions.ts` and `intake.ts` (`viaCardId` becomes
-     `viaBookingId`), and in the `store/index.ts` barrel.
+     `viaBookingId`), and in the `store/index.ts` barrel. The other store modules that name the
+     entity follow too (`billablePartyActions`, `billingLineActions`, `dayNoteActions`,
+     `contractActions`, `mastersActions`, `paymentActions`, `persistStorage`, `xeroHandoff`); let
+     `tsc -b` and a grep find them.
    - Every audit `entityType` and action string, and every refusal message and code, follows the
      map. The `storeDiscipline` test in `store/mutate.test.ts` still passes: all writes go through
      `mutate()`.
@@ -239,16 +276,21 @@ images (a web and a mobile "Add photo") show today's UI.
 5. **Seed.**
    - `git mv domain/seed/cards.ts domain/seed/bookings.ts` and rename its helpers and scenario
      ids. The seed builds ids by hand, not through `allocateId`: change the `C${…padStart(4)}`
-     formatter in `bookings.ts` (`addCard`, about L175) and the generated history Bookings in
-     `history.ts` (`build.cards[cardId]`, about L212) to `BK`, and rename the `counters.card` key
+     formatter in `bookings.ts` (`addCard`, about L175) to `BK`, rename `build.cards` in
+     `history.ts` (about L212) to `build.bookings`, and rename the `counters.card` key
      in `domain/seed/index.ts` (about L434) to `counters.booking`, so the store's allocator
      continues from the seed.
    - `audit.ts`, `history.ts`, `billing.ts` and `index.ts` (`SEED_MARKERS` entity types,
      `SEED_PREPAID_BOOKING_ID`) follow.
+   - The 14 seeded history Bookings in `history.ts` are not `C####`: they are built as
+     `HC${n}` (about L196). Rename them to `HBK${n}` (`HC05` becomes `HBK05`), and follow in
+     `seed.test.ts` (the `HC01` audit assertion, about L112) and the requirements-board recipe
+     that types `HC05` (item 16).
    - **Do not add, remove or reorder any RNG draw.** Add a Vitest seed test that pins `BK0001`
      to Hemi Walker (Souter Tue 21 AM) and `BK0009` to Margaret Ellison (Souter Tue 21 PM). It
      proves the numbering and the redirect mapping in item 7.
-   - **Bump `PERSIST_VERSION`** by one from its current value (13 at `1f067a8`), with a comment
+   - **Bump `PERSIST_VERSION`** by one from its current value (13 when this plan was written; 14
+     may have bumped it if it ran first), with a comment
      line: "Card renamed to Booking: `schedule.bookings`, BK ids, `booking.*` audit".
 
 6. **Shared UI.**
@@ -272,7 +314,8 @@ images (a web and a mobile "Add photo") show today's UI.
      Phase 14 registry if present.
    - **Legacy redirects.** Old `/cards/` URLs redirect, with `replace`, to the matching
      `/bookings/` URL, mapping a legacy id with a pure helper, `legacyBookingId('C0009')` giving
-     `'BK0009'`. Anything already in `BK` form passes through. This covers the framed web and
+     `'BK0009'` and `legacyBookingId('HC05')` giving `'HBK05'`. Anything already in `BK` or
+     `HBK` form passes through. This covers the framed web and
      admin routes, the mobile splat (handled in `listsStackLocation` or `MobileListsRoute`, so it
      also works in the PWA) and presenters' bookmarks. Put the helper in `src/shared/` (not
      `src/shell/AppShell.tsx`), so `pwaPurity.test.ts` holds. `RequireEntity` then bounces a
@@ -307,7 +350,10 @@ images (a web and a mobile "Add photo") show today's UI.
 
    Gate: `grep -rniE "\bcards?\b" aa-prototype/src aa-prototype/pwa` must return only visual-card
    and physical-card hits (class 2 and 3 in item 2). List any remaining hits in the PROGRESS entry
-   with their class. No en or em dash is introduced: grep for `–` and `—` in changed files.
+   with their class. No en or em dash is introduced: grep for `–` and `—` in changed files. No
+   user-visible string says "swap" for a List changing hands or "timesheet" at all (`grep -rniE
+   "swap|timesheet"` over the same folders; today the hits are code comments and CSS
+   `font-display: swap`, which stay).
 
 9. **Tests and Playwright, then re-green (end of session 1).**
    - Rename the test and spec files: `card-attachments.spec.ts` becomes
@@ -316,7 +362,8 @@ images (a web and a mobile "Add photo") show today's UI.
    - Update string, route and test-id assertions.
    - Add a `routing.spec.ts` case: open `/web/lists/L-34821-2026-07-21-PM/cards/C0009` and land on
      `/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`. Add the same for admin and mobile.
-   - Add a Vitest test for `legacyBookingId`.
+   - Add a Vitest test for `legacyBookingId` (`C0009`, `HC05`, an already-new id, and an
+     unknown string that passes through for `RequireEntity` to bounce).
    - Run `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots`, all green.
      Compare screenshots with the baseline: only wording differs.
    - Walk S1 to S5 quickly in the browser. **Stop here if the session ends.** The app is
@@ -325,17 +372,21 @@ images (a web and a mobile "Add photo") show today's UI.
 
 ### Session 2 · Step B: source, attachments and Copy
 
-10. **`Booking.source`** (DM-01, DM-34).
+10. **Optional `Booking.source`** (DM-01, DM-39). Keep it thin: a descriptive field, not a
+    workflow input.
     - Add
       `export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc' | 'anaesthetistPhoto' | 'copy'`
-      to `domain/types.ts` and a **required** `source: BookingSource` on `Booking`. It sits
-      beside `correlationRef`, which stays as the integration key.
-    - `createBooking` takes a required `source` in `CreateBookingInput` and records it in the
-      `booking.create` audit `after`. Its only UI caller is `ManualBookingForm.save()` (both
-      prongs: the photo prong pre-fills the same form), so add a required `source` prop to
+      to `domain/types.ts` and an **optional** `source?: BookingSource` on `Booking`. It sits
+      beside `correlationRef`, which stays as the integration key. Absent means "not recorded"
+      and renders nothing. No validator, lifecycle guard, selector filter, billing module or
+      review flag reads it, and later phases must not start to: the audit trail stays the record
+      of where each change came from.
+    - `createBooking` takes an optional `source` in `CreateBookingInput` and, when given, records
+      it in the `booking.create` audit `after`. Its only UI caller is `ManualBookingForm.save()`
+      (both prongs: the photo prong pre-fills the same form), so add an optional `source` prop to
       `ManualBookingForm`, passed by `AddBookingFlow` from the prong and the actor. `copyBooking`
       and `addPostOpAddendum` build the Booking literal directly, so they set `source` there.
-      Stamp it on every creation path:
+      Stamp it on each creation path that knows it:
 
       | Path | Source |
       |---|---|
@@ -345,15 +396,19 @@ images (a web and a mobile "Add photo") show today's UI.
       | `processMessage` S12 create (HL7/FHIR simulator) | `hospitalDownload`. This is interim: it stands in for the hospital download until 33 routes it through the matching screen |
       | `ingestPdfRow` create | `surgeonPdf` |
       | `copyBooking` | `copy` |
-      | `addPostOpAddendum` | `admin` for an office actor, `anaesthetistAdHoc` otherwise. This is interim: RV-10 replaces the addendum in 39 |
+      | `addPostOpAddendum` | `admin` for an office actor, `anaesthetistAdHoc` otherwise. This is interim: the addendum is replaced by the additional invoice in 39 and post-op events in 39b |
 
-    - **Seed rule** (deterministic, no RNG draw). A Booking with a `correlationRef`, or on a List
-      at a hospital with a seeded feed (St George's, Southern Cross, Christchurch Public), gets
-      `hospitalDownload`. A Booking at Forte Health or Christchurch Eye Surgery gets
-      `surgeonPdf`: those are the surgeon-PDF hospitals in `pdfSamples.ts`. Scenario Bookings
-      that the script describes as phoned in or added by the anaesthetist get the explicit value.
-      The generated history Bookings in `history.ts` follow the same hospital rule. A Booking on a
-      List with no hospital gets `admin`. Nothing is left unset.
+    - **Seed rule** (deterministic, no RNG draw), for the scenario Bookings in
+      `domain/seed/bookings.ts` only, applied in this order:
+      1. Scenario Bookings that the script describes as phoned in or added by the anaesthetist
+         get that explicit value.
+      2. A Booking with a `correlationRef`, or on a List at a hospital with a seeded feed (St
+         George's, Southern Cross, Christchurch Public), gets `hospitalDownload`.
+      3. A Booking at Forte Health or Christchurch Eye Surgery gets `surgeonPdf`: those are the
+         surgeon-PDF hospitals in `domain/integrations/pdfSamples.ts`.
+      4. Anything left (a List with no hospital) gets `admin`, so every scenario Booking has one.
+      The generated history Bookings in `history.ts` stay unset: the field is optional, and
+      leaving them alone keeps the history generator untouched and the persisted size flat.
     - **Display.** Add a `BOOKING_SOURCE_LABELS` map in `shared/format.ts`:
       - `hospitalDownload`: "Hospital download"
       - `surgeonPdf`: "Surgeon PDF"
@@ -362,16 +417,19 @@ images (a web and a mobile "Add photo") show today's UI.
       - `anaesthetistPhoto`: "Added from a photo of the booking card"
       - `copy`: "Copy of another Booking"
 
-      Show it as one quiet micro-cap line in the Booking detail context block ("SOURCE · Surgeon
-      PDF"), on all three surfaces via `BookingDetailBody`. Add a `FIELD_LABELS` entry for
-      `source`.
+      Show it, when set, as one quiet micro-cap line in the Booking detail context block
+      ("SOURCE · Surgeon PDF"), on all three surfaces via `BookingDetailBody`. When unset, show
+      nothing (no "Unknown" placeholder). Add a `FIELD_LABELS` entry for `source`. No list,
+      table, filter or column shows it.
     - **Tests:**
       - each creation path stamps its source (bookingActions, integrationActions, intake/PDF,
         addendum);
-      - every seeded Booking has a valid source;
+      - every seeded source that is set is a valid `BookingSource`, and every scenario Booking
+        has one;
+      - a Booking with no source renders no source line;
       - `buildSeed()` is still deterministic (two builds deep-equal).
 
-11. **Attachments model** (US-03.1.3, DM-34).
+11. **Attachments model** (US-03.1.3, DM-39).
     - `Attachment` (renamed from `CardAttachment`: `id`, `name`, kind `photo`, `pdf` or `other`,
       optional `dataUrl`) is shared by `Booking.attachments` and a new optional
       **`List.attachments?: Attachment[]`**. It is optional so the roughly 3,900 generated Lists
@@ -408,7 +466,7 @@ images (a web and a mobile "Add photo") show today's UI.
     - **Samples.** Add a new `src/assets/sampleAttachments.ts`:
       - "Photo of the booking card" (photo, reusing `PAPER_CARD_A` and `PAPER_CARD_B`);
       - "Surgeon's letter" and "Consent form" (pdf, each a small inline SVG facsimile in the
-        style of `samplePaperCards.ts` and the `pdfSamples.ts` facsimile);
+        style of `samplePaperCards.ts` and the `domain/integrations/pdfSamples.ts` facsimile);
       - "Theatre list" (pdf).
 
       All are data URLs of a few KB. There is no real file input: data URLs persist to
@@ -446,24 +504,30 @@ images (a web and a mobile "Add photo") show today's UI.
       - has `completed: false`, and no notes, attachments, `scheduledTime`, `correlationRef` or
         `cancellation`;
       - has **one fresh primary Procedure** with `isAdditional: false`, an empty description and
-        no RVG code, times, ASA, modifiers, billing lines, override, billing route, insurer,
-        payer, payment category or governing Contract;
+        no RVG code, times, ASA, modifiers, billing lines, override, insurer, billable party
+        (`billablePartyId`), payment category or governing Contract;
       - carries the source's primary `billingReference`, which is the "references" reading from
-        the drift check.
+        the drift check;
+      - gets `billingRoute: 'hospital'` as a **default, not an inheritance**: the same starting
+        value `ManualBookingForm` offers any new Booking. Without it the anaesthetist could not
+        complete the copy (the validator demands a route and only the office's
+        `OfficeBillingSetup` can set one), so a copy made on mobile would block its List's
+        submit until the office stepped in. This is interim: 20 removes the route and puts the
+        default hospital Contract in its place.
 
       Delete the "inherit the funding context" block and the doc comment that calls Copy the
       additional-procedure mechanism. The audit stays `booking.copy` plus `procedure.create`,
-      with `after: { isAdditional: false }`.
+      with `after: { isAdditional: false, billingRoute: 'hospital' }`.
     - The source Booking is untouched. The copy is incomplete and fails validation until it is
-      captured ("billing route not set" and the RVG or line failures). That is correct: 20
-      replaces the route with a default Contract.
+      captured (the RVG code and times). Once captured, the anaesthetist completes it unaided,
+      and the office can change the route in review as for any Booking.
     - **UI.** The button "Copy for an additional procedure" becomes **"Copy booking"**, with a
       one-line caption under the actions: "Starts a new Booking for this patient on this List.
       To add a procedure to this Booking, use Add another procedure."
     - `onCopied` becomes `onCopied(newBookingId)`, and all three wrappers open the new Booking,
       not the List:
-      - mobile `/mobile/lists/:listId/bookings/:newId`, checking that the slide stack swaps its
-        top layer cleanly;
+      - mobile `/mobile/lists/:listId/bookings/:newId`, checking that the slide stack replaces
+        its top layer cleanly;
       - web `/web/lists/:listId/bookings/:newId`;
       - admin `/admin/day/:dateISO/bookings/:newId`.
     - "Add another procedure" (`addProcedure`) is now the only way to add an additional Procedure.
@@ -482,8 +546,10 @@ images (a web and a mobile "Add photo") show today's UI.
       procedure" and expects to land on the List. Rework it for "Copy booking" landing on the new
       Booking. Update the `copyCard` comment in `store/captureActions.test.ts` (about L295).
     - **Tests** (rework the existing Copy tests):
-      - the copy's Procedure is primary (`isAdditional: false`), and none of the listed fields is
-        inherited;
+      - the copy's Procedure is primary (`isAdditional: false`), none of the listed fields is
+        inherited, and the route is `'hospital'` even when the source's was `insurer` or
+        `billableParty`;
+      - an anaesthetist actor can capture and `completeBooking` the copy with no office step;
       - `billingReference` is carried and `correlationRef` is not;
       - `source` is `'copy'`;
       - `feeFor` on a captured copy charges base and modifier units (not time-only);
@@ -498,6 +564,12 @@ images (a web and a mobile "Add photo") show today's UI.
       tables change `/cards/<cardId>` to `/bookings/<bookingId>`.
     - Persona item 10 ("Copy a Card skeleton when recording an additional procedure, with
       time-only charging rules") becomes the new Copy plus "Add another procedure".
+    - Vocabulary in the same sweep: `01-personas-and-responsibilities.md` "See availability for
+      possible cover or swaps" becomes "possible cover or reassignment". The modifier-picker lines
+      that say a sibling "swaps it in" (02 workflows, 04 cheat sheet and the matching
+      `master-demo-guide.html` paragraphs) become "replaces it", so a `swap` grep of the guide
+      comes back clean. Nothing in the guide says "timesheet"; keep it that way. "Permanent
+      lists" stays for Phase 30.
     - Add an optional aside in S1 Beat 2 on the List's attachments (the seeded theatre-list PDF).
     - Update `DemoControlPanel.tsx`: the `SCENARIOS` text and trigger result messages ("a fourth
       Booking", "the split-billing Booking", "open its booking").
@@ -515,12 +587,13 @@ images (a web and a mobile "Add photo") show today's UI.
 
 16. **Keep the catalogue's screenshot tooling working.**
     - `requirements-board/capture/recipes/*.json` (about 96 files) and `capture/ATLAS.md`
-      hard-code `/cards/C0009`-style routes, `C####` ids, "Add a card", "Cancel card", "Card
+      hard-code `/cards/C0009`-style routes, `C####` and `HC##` ids, "Add a card", "Cancel card", "Card
       history", `slide-card`, `mobile-card-*`, `card-calculation` and `data-shot=card-*`.
       Update them with a scripted, reviewed replace to the new routes, ids, text and hooks.
     - `recipes/US-02.4.3.json` and `US-03.2.3.json` click "Copy for an additional procedure".
       Point them at "Copy booking", and make the "copied" step expect the new Booking (item 13),
       not the List.
+    - `recipes/US-07.3.2.json` types the history id `HC05`: it becomes `HBK05` (item 5).
     - **Do not change any shot `name` field**: those name the catalogue's asset files.
     - Run `npm run verify:board` from the repo root, green.
     - Re-capturing the catalogue images is not part of this phase (work item 17 flags it).
@@ -540,7 +613,7 @@ None. Everything in this phase demos through normal use:
 - the attach sheet and "Copy booking" are product actions in the product UI;
 - the attach sheet's file picker is a simulation, so it carries a `DemoBadge` inside the sheet,
   not a harness-bar button;
-- `Booking.source` is visible on every Booking.
+- `Booking.source`, where set, is visible on the Booking itself.
 
 **PWA:** no stand-in is needed. The attach sheet, the List attachments section and Copy live on
 the mobile screens, so they ship in `dist-pwa` unchanged. Check them under `npm run dev:pwa`.
@@ -551,16 +624,24 @@ the map. The Control Panel index lists them under the renamed screens.
 
 ## Out of scope
 
-- The other Booking-level billing fields of DM-01:
+- The booking-level state DM-01 names:
+  - warnings and the warning triangle (15a);
   - billable party and invoice email (21);
-  - insurer and funding source (20);
-  - prepayment state and estimated duration (27).
+  - prepayment state (27). Estimated duration is per Procedure (DM-40), also 27.
+  - Insurer and funding source are held on neither the Booking nor the Patient (OQ-55); 20
+    removes the Procedure's insurer. Do not add either here.
+- Any rule, filter, report or warning that reads `Booking.source`.
+- Moving a Booking to the List of the anaesthetist who did it (US-01.4.6, 32), and anaesthetists
+  moving their own Lists (32).
+- Search by NHI or name and the past-day calendar (US-03.1.6, US-03.1.7, which DM-39 also
+  mentions): 38a.
+- The "Permanent List" to "recurring booking" rename (30) and Draft Lists (31).
 - Exactly one primary Procedure, "Make primary", the 3/2/2 modifier split and the multi-procedure
   rule (23). Time-only additional Procedures stay as they are until then.
 - Routing hospital messages through a matching screen: `hospitalDownload` is stamped by today's
   HL7/FHIR path as an interim (33). Surgeon PDF upload (34).
-- The post-op addendum Booking itself (RV-10, replaced by additional invoices in 39). Only its
-  names change here.
+- The post-op addendum Booking itself (RV-10, replaced by free-form additional invoices in 39 and
+  pre-op and post-op events in 39b). Only its names change here.
 - A real camera or file input, an attachment viewer or download beyond the thumbnail, OCR, and
   attaching from Admin.
 - Re-capturing or re-captioning the catalogue's screenshots, and any edit to catalogue files.
@@ -574,11 +655,12 @@ the map. The Control Panel index lists them under the renamed screens.
 - [ ] Old bookmarks redirect: `/web/lists/L-34821-2026-07-21-PM/cards/C0009`, `/mobile/lists/L-34821-2026-07-21-PM/cards/C0009` and `/admin/day/2026-07-21/cards/C0009` each land on Margaret Ellison's Booking under `/bookings/BK0009`.
 - [ ] After Reset, S1 to S5 run as scripted in the updated guide, and every figure is unchanged, including Holt's $396.18 in S3.
 - [ ] The Audit viewer and every History sheet read "Booking created", "Booking completed" and so on, and filter by Booking. There are no raw `card.*` codes.
-- [ ] A new manual Booking on mobile shows "Added by anaesthetist". A photo Booking shows "Added from a photo of the booking card". An Admin phone-advice Booking shows "Office entry". A fired MSG-STG-1001 shows "Hospital download". An ingested PDF row shows "Surgeon PDF". A seeded Forte Booking shows "Surgeon PDF".
+- [ ] A new manual Booking on mobile shows "Added by anaesthetist". A photo Booking shows "Added from a photo of the booking card". An Admin phone-advice Booking shows "Office entry". A fired MSG-STG-1001 shows "Hospital download". An ingested PDF row shows "Surgeon PDF". A seeded Forte scenario Booking shows "Surgeon PDF". A generated history Booking shows no source line and no placeholder, and nothing else on screen (lists, tables, filters, review flags) changes with the source.
+- [ ] No app screen or demo-guide page says "swap" for a List changing hands, or "timesheet". "Permanent list" wording is unchanged (Phase 30's).
 - [ ] On a DRAFT Booking, "Add attachment" opens the sheet (bottom sheet on mobile, dialog on web) with the "Simulated file picker" badge. A photo and a PDF both attach, show as thumbnails and remove. Each add and remove appears in History.
 - [ ] On Dr Souter's Tue 28 Jul AM List, the seeded "Theatre list · St George's" PDF shows under List attachments on mobile and web. A second file can be attached to the List. The Admin List drawer shows both read-only.
 - [ ] On a SUBMITTED List, the anaesthetist sees no attach or remove controls on the List or its Bookings; the office can still attach to a Booking. On an AUTHORISED List, nobody can.
-- [ ] "Copy booking" on Ellison opens a new Booking. It has the same patient and List, a blank primary procedure with base and modifier capture enabled (not the additional-procedure note) and the source's billing reference. It shows "Copy of another Booking", with no route, contract or attachments. The original Booking is unchanged, and the List's submit is blocked until the copy is completed.
+- [ ] "Copy booking" on Ellison opens a new Booking. It has the same patient and List, a blank primary procedure with base and modifier capture enabled (not the additional-procedure note) and the source's billing reference. It shows "Copy of another Booking", with the default hospital route and no contract, insurer or attachments. The anaesthetist captures and completes it on mobile with no office step. The original Booking is unchanged, and the List's submit is blocked until the copy is completed.
 - [ ] "Add another procedure" on a Booking still adds a time-only additional Procedure, as before.
 - [ ] The PWA (`npm run dev:pwa`) shows the renamed copy, the List attachments section, the attach sheet and Copy. An old `/cards/` URL redirects there too.
 - [ ] The before and after screenshots from `npm run shots` differ only in wording and the new attachment sections.
@@ -603,7 +685,9 @@ the physical card) and route tables (`/cards/` to `/bookings/`). Specific beats:
   Booking".
 - **S5:** "the audit trail of a much-edited Booking".
 - **Personas** (01) item 10 and the web-parity line: the new Copy, and "Add another procedure" for
-  additional procedures.
+  additional procedures. "Cover or swaps" becomes "cover or reassignment".
+- **Vocabulary, all docs:** a List is reassigned or moved, never swapped; the modifier-picker
+  "swaps it in" lines become "replaces it"; no "timesheet". "Permanent lists" stays for Phase 30.
 - **Workflows** (02): manual and photo "Booking creation"; "photographs a paper booking card".
 - **Cheat sheet** (04): "Add, copy or missing Booking"; the time-only line points at Holt.
 - **Control Panel:** the `SCENARIOS` text and the trigger result messages.
@@ -634,16 +718,25 @@ supersedes.
   or 3.
 - **Behaviour parity of step A.** Every billing figure, validation message (apart from the word),
   lifecycle guard and seed value is identical before and after. The id numbering is preserved
-  (`BK0009` is Ellison). No RNG draw was added or reordered.
+  (`BK0009` is Ellison, `HBK05` the old `HC05`). No RNG draw was added or reordered.
 - **Redirects.** Every legacy `/cards/` URL, including the mobile splat, the PWA and admin day
   URLs, resolves to the right Booking or bounces cleanly through `RequireEntity`. The helper lives
   outside the PWA-forbidden closure.
-- **Copy.** The new Booking inherits exactly patient, List and billing reference. There is no
-  route, insurer, payer, category, Contract, time, correlation, note or attachment. Its Procedure
-  is primary and its fee charges base units. The source Booking and the correlation lookup are
-  unaffected.
-- **Source.** Every creation path, including integration, PDF, addendum, copy and seed, stamps
-  the right value. None is left unset, and the seed rule uses no randomness.
+- **Copy.** The new Booking inherits exactly patient, List and billing reference. Its route is
+  the `'hospital'` default, never the source's; there is no insurer, billable party, category,
+  Contract, time, correlation, note or attachment. Its Procedure is primary, its fee charges base
+  units, and an anaesthetist can complete it unaided. The source Booking and the correlation
+  lookup are unaffected.
+- **Source.** It is optional and display-only: every creation path that knows its source
+  (integration, PDF, addendum, copy, the add flow and the scenario seed) stamps the right value,
+  absent renders nothing, and no validator, guard, selector, billing module, review flag or test
+  fixture depends on it being set. The seed rule uses no randomness and leaves the history
+  generator untouched.
+- **Scope.** The rename adds no booking-level state (no warnings, billable party, invoice email,
+  prepayment, insurer or funding source on the Booking), and does not touch "Permanent List" or
+  Draft List code.
+- **Vocabulary.** No new or changed user-visible string says "swap" for a List or "timesheet",
+  and no rename produced "Permanent Booking".
 - **Attachments.**
   - All writes go through `addAttachment` and `removeAttachment` under `mutate()`, with the
     rights matrix honoured; `editBooking` can no longer write them.
@@ -661,11 +754,11 @@ supersedes.
   Phase 14 adds if it ran first). Mark it IN PROGRESS at the session 1 checkpoint and DONE at the
   end.
 - **Phase entry:**
-  - the drift-check result, and whether Phase 14 had run;
+  - the drift-check result against `501b0b8`, and whether Phase 14 had run;
   - the rename rules (item 2) and the **full old-to-new name map**, for later phases whose docs
     use Card names;
   - the grep gate's accepted leftovers;
-  - the `BookingSource` values and the seed rule;
+  - the `BookingSource` values, that the field is optional and display-only, and the seed rule;
   - the attachment model and id prefix;
   - both `PERSIST_VERSION` bumps;
   - test and spec counts before and after;
@@ -675,13 +768,17 @@ supersedes.
      well as copy. This amends convention 10 ("RFP vocabulary" becomes the catalogue's
      vocabulary, which supersedes the RFP) and goes beyond RV-12's "identifiers may stay",
      because later phases write new Booking code. "Card" means only the physical booking card.
+     Lists are reassigned or moved, never swapped, and "timesheet" is not used.
   2. **Copy supersedes two July rulings:** the 2026-07-22 Third external plan review #2 ("Card
      Copy is the RFP's additional-procedure mechanism") and the `copyCard` part of the 2026-07-23
      Phase 03 store-additions entry. Copy is now a skeleton-only new Booking with a primary
-     Procedure. "References" is read as the billing reference, not the correlation ref (label it
-     as a reading).
-  3. **`Booking.source`** is required. HL7/FHIR creates stamp `hospitalDownload` as an interim
-     until 33, and the addendum source follows the actor until 39.
+     Procedure. "References" is read as the billing reference, not the correlation ref (recorded
+     as the reading used, since US-02.4.3 does not define the word). The copy's route is the
+     add-flow default `'hospital'`, not the source's, as an interim until 20.
+  3. **`Booking.source`** is optional and display-only (DM-39: no story requires it; the audit
+     trail records each change's source). No rule reads it. HL7/FHIR creates stamp
+     `hospitalDownload` as an interim until 33, and the addendum source follows the actor until
+     39 replaces the addendum.
   4. **Attachment ids** are store-allocated (`AT####`) through `addAttachment` and
      `removeAttachment`, superseding the 2026-07-27 component-side index fix. Audit entries carry
      metadata only.

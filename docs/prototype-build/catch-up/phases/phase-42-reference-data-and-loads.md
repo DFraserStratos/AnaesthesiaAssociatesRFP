@@ -1,21 +1,25 @@
 # Phase 42 · Reference data and controlled loads
 
 **Requirements covered:**
-[US-13.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.1.md) Maintain reference tables (Confirmed; closes the rows Phases 17, 18, 19, 29 and 30 did not: hospital retire, insurers, the master public-holiday calendar, and one consistent pattern across every master) ·
-[US-11.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.4.1.md) Insurer master data (Confirmed) ·
+[US-13.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.1.md) Maintain reference tables (Confirmed; closes the rows Phases 17, 18, 19, 29 and 30 did not: hospital retire, insurers, the master public-holiday calendar, and one consistent pattern across every master; its "recurring bookings" row is Phase 30's rename and editor, refitted here) ·
+[US-11.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.4.1.md) Insurer master data (Confirmed; add, rename, retire and the accepts-direct-claims flag here. Its cover split between insurer and patient is the Contract's payment setting, built in Phase 22, so the insurer row carries no split) ·
 [US-13.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.2.md) Clean-cut start, not a full migration (Proposed) ·
 [US-13.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.3.md) Reference data loaded from controlled spreadsheets (Proposed) ·
-[DM-32](../analysis/domain-model-delta.md#dm-32) Reference data: master public-holiday calendar, controlled-spreadsheet load, editable masters (the statutory calendar and loads; Phase 30 built the hospital-calendar half).
+[DM-38](../analysis/domain-model-delta.md#dm-38) Reference data: master public-holiday calendar, controlled-spreadsheet load, editable masters (the statutory calendar and loads; Phase 30 built the hospital-calendar half and the recurring-booking rename).
 Also touches, without closing:
 [FT-13.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.4.md) (the feature; its RFP-response ETL migration is narrowed to the clean cut),
 [US-01.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.1.md) (each hospital keeps its own calendar; public holidays move out of it),
-[US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md), [US-05.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.5.md) and [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) (their masters become load targets; Phases 18, 19 and 23 built them).
-No RV finding is closed here. **Open questions:**
-[OQ-51](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-51.md) (the Solutions Plus three- and six-number identifiers) is Open. It does not gate the build: this phase carries no Solutions Plus identifier at all, only operation names (see the drift check).
-**Depends on:** Phase 17 (surgeon profile, surgeons' rooms, surgeon groups, hospital contact email, `editHospital`, `isPlausibleEmail`, the `apps/admin/screens/masters/` split and the `?view=` search param), Phase 18 (the Contract record, `FeeScheduleLine`, Contract retire, the protected RVG Default Hospital and insurer defaults minted by `createHospital` and `setInsurerDirectClaims`), Phase 19 (the editable RVG, RVG group, modifier and Procedure masters, `ProcedureType`, `allocateId` kinds), Phase 29 (the Slot status master) and Phase 30 (derived conflicts reconciled in `mutate()`, `conflictFactsFor`, `describeConflict`, `HolidaySheet`, `editHospitalHoliday`, `deleteHospitalHoliday`, the hospital month calendar). Also relies on 14 (the demo-trigger registry, `useDemoTriggerContext`, the shared actor constants), 23 (Contract base-unit overrides, if built), 25 (Contract versions) and 34 (the three hospitals it appended).
+[US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md) (Verify: where base units live is [OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md)), [US-05.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.5.md) and [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) (their masters become load targets; Phases 18, 19 and 23 built them),
+[US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md) (the Contract payment setting the Insurers view points at; Phase 22 built it).
+No RV finding is closed here. **Open questions:** none gates this phase. OQ-51 (the Solutions Plus
+identifiers) was deleted on the board unanswered on 2026-10-01; the clean cut takes operation names
+only (US-13.4.3), so no identifier is carried. OQ-62 (where base units live) is Open and built by
+Phase 19 as its recommendation; the master procedure list sheet loads base units wherever 19 holds them
+(see the drift check).
+**Depends on:** Phase 17 (surgeon profile with its one HPI CPN, surgeons' rooms, surgeon groups, hospital contact email, `editHospital`, `isPlausibleEmail`, the `apps/admin/screens/masters/` split and the `?view=` search param), Phase 18 (the Contract record with its AA identifier, `FeeScheduleLine`, Contract retire, the organisations master behind surgeon groups, the protected RVG Default Hospital and insurer defaults minted by `createHospital` and `setInsurerDirectClaims`), Phase 19 (the editable RVG, RVG group, modifier and master procedure list, `ProcedureType`, the base-unit resolver and the master procedure list's validator (a positive whole number, no RVG guide range check), `allocateId` kinds), Phase 29 (the Slot status master) and Phase 30 (derived conflicts reconciled in `mutate()`, `conflictFactsFor`, `describeConflict`, `HolidaySheet`, `editHospitalHoliday`, `deleteHospitalHoliday`, the hospital month calendar, and the rename of Permanent Lists to recurring bookings with their projection). Also relies on 14 (the demo-trigger registry, `useDemoTriggerContext`, the shared actor constants), 20 (the Contract picker; `Procedure.insurerId` removed with nothing in its place, per D2), 21 (the Booking's billable-party override), 22 (the Contract payment setting), 23 (Contract base-unit overrides and `addContractBaseUnitOverride`'s guards, if built), 25 (Contract versions), 31 (the Draft List holiday warning), 33 (the matching screen's create actions) and 34 (the three hospitals it appended).
 **Estimated:** 2 sessions. Session 1 is the model, seed, pure rules and store (work items 1 to 10) and stops green with every existing screen still rendering. Session 2 is the screens, the go-live view, the triggers, the shots and the demo guide (items 11 to 19).
 **Size warning:** this is a roll-up and sits at the top of two sessions; session 1 in particular is
-heavy (ten loader specs, the planner refactor and the holiday migration). If session 1 runs long, end
+heavy (seven loader specs, the planner refactor and the holiday migration). If session 1 runs long, end
 it green after item 7 and start session 2 with items 8 to 10; do not drop a covered target. Within
 session 2, trim in this order if needed, and log each trim for Phase 44: the Insurers "Contracts"
 link-through (keep the count), the collapsible `LoadResultBanner` (keep it static), the public-holiday
@@ -24,7 +28,8 @@ link-through (keep the count), the collapsible `LoadResultBanner` (keep it stati
 ## Goal
 
 Master data has grown one phase at a time. Surgeons, rooms and groups came in 17, Contracts in 18,
-RVG, modifier and Procedure masters in 19, Slot statuses in 29, holiday editing in 30. What is left
+RVG, modifier and master procedure lists in 19, Contract payment settings in 22, Slot statuses in
+29, holiday editing and recurring bookings in 30. What is left
 is the part US-13.4.1 names and nobody owns yet, and a single pattern that makes the whole area feel
 like one tool:
 
@@ -33,20 +38,25 @@ like one tool:
   reflected everywhere" holds.
 - **Insurers** can be **created, renamed, retired and reinstated**, each with the accepts-direct-claims
   flag. Creating a direct-claim insurer mints its protected insurer default Contract in the same
-  commit, by the rule 18 set (US-11.4.1).
+  commit, by the rule 18 set (US-11.4.1). Special rates and the cover split between insurer and
+  patient are Contracts and their payment setting (22), never fields on the insurer row. Insurers
+  sit on neither the Booking nor the Patient (D2): an insurer is reached through the Contract a
+  Procedure selects, or a Booking's billable-party override (21).
 - A **master public-holiday calendar**. One row per statutory or regional holiday, applying to every
   hospital unless a hospital is listed as open that day. The seeded per-hospital Labour Day and
   Canterbury Anniversary rows migrate into it, so each hospital's own calendar holds only its own
   closures (US-13.4.1, US-01.5.1). Public holidays raise conflicts through 30's derived rule.
-- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms, groups and
-  insurers retire with a stated reason when nothing upcoming depends on them. Pickers stop offering
+- **Retire, never delete, anything referenced by identity.** Hospitals, surgeons, rooms, groups,
+  insurers and organisations retire with a stated reason when nothing upcoming depends on them. Pickers stop offering
   them, and every existing reference keeps resolving.
 - **One consistent pattern across every view:** grouped sub-nav, the same header, "Show retired", edit
   sheet, retire and reinstate, and a "Load from spreadsheet" action. It is driven by one registry of
   views, with a test that maps every US-13.4.1 row to a view that can add and edit.
-- **A controlled-spreadsheet loader** for hospitals, hospital holidays, surgeons' rooms, surgeons,
-  insurers, public holidays, the Procedure master, modifier codes, fee-schedule lines and (if 23 built
-  them) Contract base-unit overrides. A load is checked first: every row is validated with the same
+- **A controlled-spreadsheet loader** for exactly the catalogue's spreadsheet list (US-13.4.3):
+  hospitals, surgeons' rooms, surgeons, the master procedure list (with RVG mapping and base units),
+  modifier codes, fee-schedule lines and Contract base-unit overrides (23's "Contract-specific
+  overrides"). Insurers, hospital holidays and public holidays are not on that list and stay
+  hand-maintained (a few rows each). A load is checked first: every row is validated with the same
   rules as the manual add, and a result panel lists valid rows and rejected rows with reasons. Then
   the admin loads it: one audited `mutate()` loads exactly the valid rows, and rejected rows never
   touch master data (US-13.4.3 AC1).
@@ -62,21 +72,27 @@ mobile, so there is no PWA stand-in.
 
 ## Before you start: drift check
 
-1. Diff the catalogue for this phase's items against the plan's snapshot:
+1. Diff the catalogue for this phase's items against the plan's snapshot (501b0b8, the 2026-10-01
+   requirements update):
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-11.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-13.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-05.1.6.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-05.1.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-04.2.4.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-51.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-11.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.4.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-13.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-05.1.6.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-05.1.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-04.2.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-04.2.12.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-62.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
-   If an item changed, re-read it and adjust the work items before planning. If a covered item is now
-   Retired or Future, drop it from this phase and say so in the PROGRESS entry. Watch in particular
-   for:
+   At 501b0b8 this plan already reflects: US-13.4.1's "Permanent Lists" row renamed "recurring
+   bookings" (Phase 30's rename; this phase only refits its view); US-11.4.1's cover split moved onto
+   the Contract's payment setting (US-04.2.12, built in 22; split basis OQ-68 is 22's); US-05.1.6 at
+   Verify with base-unit placement disputed (OQ-62); US-04.2.4's holder code kept searchable (18 and
+   20 built it; the fee-schedule loader carries the holder code as today); OQ-51 deleted. If an item
+   changed after 501b0b8, re-read it and adjust the work items before planning. If a covered item is
+   now Retired or Future, drop it from this phase and say so in the PROGRESS entry. Watch in
+   particular for:
    - **Re-loading after go-live** (US-13.4.3: "Whether admins can re-load it later is to be
-     decided"). The interim is that the per-view loader is available at any time, but it only adds and
-     never overwrites (work item 6). If AA decides no re-load, keep the loader only inside the
-     Go-live load view and remove the per-view "Load from spreadsheet" action. If AA decides re-load
-     may update existing rows, add an "update" row outcome that shows a field diff and goes through
-     the entity's edit action, and record it in the Decisions log.
+     decided"; still open at 501b0b8). The interim is that the per-view loader is available at any
+     time, but it only adds and never overwrites (work items 4 and 7). If AA decides no re-load, keep the
+     loader only inside the Go-live load view and remove the per-view "Load from spreadsheet" action.
+     If AA decides re-load may update existing rows, add an "update" row outcome that shows a field
+     diff and goes through the entity's edit action, and record it in the Decisions log.
    - **The spreadsheet list** in US-13.4.3 and the domain model's "Reference data and go-live"
      section. A new target joins the loader only if its master already exists; otherwise note it for
      Phase 44.
@@ -84,29 +100,42 @@ mobile, so there is no PWA stand-in.
      opt-out). The interim is "applies to every hospital unless listed as open".
    - **US-13.4.2 / 13.4.3 moving to Confirmed** with new acceptance criteria, for example a sign-off
      step or a named approver. Add it to the go-live batch as a field, not a new workflow.
-2. **OQ-51 (Solutions Plus identifiers).** If still Open, build the interim: the Solutions Plus
-   candidate list carries operation names only, plus the row number of the printed and scanned list
-   for traceability ("Scan row 14"). No Solutions Plus identifier is imported, displayed or mapped.
-   If OQ-51 is answered, check whether the answer says any Solutions Plus identifier should follow an
-   operation name into the new system. If it does, add it as an optional, display-only "Solutions
-   Plus ref" column on the candidate list; nothing else changes. Additional-invoice numbering stays
-   Phase 39's.
+2. **OQ-62 (where base units live).** Open at 501b0b8; Phase 19 built its recommendation (base
+   units on the master procedure list, picked by operation name). Build the Procedure sheet against
+   what 19 built: its Base units column loads into `ProcedureType` through 19's validator. If OQ-62
+   has since been answered the other way and 19's follow-up moved base units onto the RVG code
+   master, drop the Base units column from the Procedure sheet (names and RVG mapping only), point
+   the go-live "units come only from the controlled sheet" test at the RVG code's value, and record
+   it. Either way a loaded base-unit value obeys exactly the manual add's rule (19's
+   `createProcedureType`, 23's `addContractBaseUnitOverride`: a positive whole number) and is never
+   checked against the RVG guide's range: these are AA's own figures, which may depart from the
+   guide by design (US-05.1.6, domain model "RVG code and modifier master"). They raise no warning
+   either, because 19's `outsideGuide` is false for `'procedureList'` and `'contract'` sources. D3's
+   after-procedure warning is about an anaesthetist's entry on a Procedure, not master data. No Solutions Plus identifier is carried (OQ-51 deleted; US-13.4.3 takes names only):
+   the candidate list holds operation names plus the scan-row number for traceability ("Scan row
+   14"). Additional-invoice numbering is Phase 39's.
 3. **Baseline.**
-   - Confirm Phases 17, 18, 19, 29 and 30 are DONE in PROGRESS.md, and note whether 23, 25 and 34 are
-     DONE.
+   - Confirm Phases 17, 18, 19, 29 and 30 are DONE in PROGRESS.md, and note whether 20, 21, 22, 23,
+     25, 31, 33 and 34 are DONE.
    - From their entries and Decisions-log rows, note the names actually chosen:
      - the view ids in `?view=` and the `NAV` shape (17, 19, 29);
-     - the `SurgeonRoom`, `SurgeonGroup` and `Surgeon` fields and their sheets (17);
-     - `Contract.category`, `holder`, `retiredAtISO`, the protected-default minting helpers, the
-       `FeeScheduleLine` shape and `addFeeScheduleLine` (18);
-     - `ProcedureType`, `procedureTypes`, `rvgGroups`, `MODIFIER_GROUPS`, `ModifierCodeSheet` and
-       `ProcedureTypeSheet` (19);
+     - the `SurgeonRoom`, `SurgeonGroup` and `Surgeon` fields (including the HPI CPN field, its
+       normaliser and duplicate check across surgeons and anaesthetists) and their sheets (17);
+     - `Contract.category`, `holder`, the AA identifier, `retiredAtISO`, the protected-default minting
+       helpers, the `FeeScheduleLine` shape and `addFeeScheduleLine` (18);
+     - `ProcedureType`, `procedureTypes`, `rvgGroups`, `MODIFIER_GROUPS`, `ModifierCodeSheet`,
+       `ProcedureTypeSheet`, the base-unit validator and where base units live (19, OQ-62);
+     - the Contract picker's filter and the default hospital Contract (20); the Booking's
+       billable-party override field and its picker (21);
+     - `Contract.paymentSetting` and its default for a newly minted insurer default (22);
      - `ContractBaseUnitOverride` and `addContractBaseUnitOverride`, if 23 built them;
      - what a Contract version records and which actions write one (25);
      - `masters.slotStatuses` (29);
      - `ListConflict.cause`, `conflictFactsFor`, `holidaysByDateHospital`, `reconcileAllConflicts`,
-       the reconcile trigger list in `store/conflictReconcile.ts`, `HolidaySheet` and the hospital
-       month calendar (30);
+       the reconcile trigger list in `store/conflictReconcile.ts`, `HolidaySheet`, the hospital
+       month calendar, and the recurring-booking names (`RecurringBooking`,
+       `masters.recurringBookings`, `recurringBookingProjection.ts`, `applyRecurringBookingsToCanvas`,
+       the view id) (30);
      - the hospitals 34 appended, their `HOSPITAL_HOLIDAYS` rows, and `INTEGRATED_HOSPITALS` /
        `HOSPITAL_SYNC_SCHEDULE` (34's `syncSchedule.ts`);
      - `validateSlotStatusDraft` (29), the precedent for item 4's pure validators.
@@ -116,20 +145,32 @@ mobile, so there is no PWA stand-in.
      public-holiday migration can prove the set does not move (work item 3).
    - Grep every picker that offers hospitals, surgeons, rooms, groups or insurers
      (`grep -rn "masters.hospitals\|masters.surgeons\|masters.insurers\|surgeonRooms\|surgeonGroups" src --include=*.tsx`)
-     and list them. Work item 16 routes each one through the active-only selectors.
+     and list them, together with 20's Contract picker (which must hide Contracts whose holder is
+     retired) and 21's billable-party override picker (which can name an insurer or hospital). Work
+     item 16 routes each one through the active-only selectors.
+   - From 18's entry, note the organisations master (`masters.organisations`, kept as the
+     counterparty behind a surgeon group's `billingOrganisationId`) and 18's Decision (g), which hands
+     its retire and reinstate to this phase.
    - Grep every reader of hospital holidays
      (`grep -rn "masters.holidays\|holidaysByDateHospital\|HospitalHoliday" src --include=*.ts --include=*.tsx`).
      At the snapshot: the canvas generator (`domain/seed/canvas.ts:91`), the horizon advance
-     (`store/clockActions.ts:45`), the Permanent List regenerate (`store/mastersActions.ts:278`) and
-     the Hospitals view (`MasterData.tsx:280`); 30 and 31 add `conflictFactsFor`, the conflict preview
-     and the Draft List assignment warning. List them; work item 2 routes each through `closuresIndex`,
+     (`store/clockActions.ts:45`), the new-anaesthetist canvas generation in `addAnaesthetist`
+     (`store/mastersActions.ts:278`) and the Hospitals view (`MasterData.tsx:280`); 30 and 31 add
+     `conflictFactsFor`, the recurring-booking projection, the conflict preview and the Draft List
+     assignment warning. List them; work item 2 routes each through `closuresIndex`,
      so no reader silently loses Labour Day when the per-hospital rows go.
    - Grep for stored copies of a master's name (for example a Contract name built from a hospital
      name, or a `hospitalName` on a record). List them; work item 5 handles the protected defaults,
      and anything else is noted for the reviewers.
    - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (13 at the snapshot; 14 to 41 will
      have bumped it) and bump it by one from whatever it is now.
-4. **Owner decisions.** None of D1 to D11 gates this phase.
+4. **Owner decisions.** None of D1 to D11 gates this phase. D2 (answered: insurer and funding
+   source on neither the Booking nor the Patient) shapes it: an insurer is referenced only as a
+   Contract holder and as a Booking's billable-party override, so the insurer retire blockers and
+   pickers read those (work items 2 and 16), never a Booking insurer field. D3 (answered: an
+   anaesthetist may enter base units outside a code's range, with an after-procedure office
+   warning) does not apply to master data: the Procedure and override loaders follow 19's and 23's
+   manual-add rules, with no guide-range check and no warning (step 2).
 
 ## Reference
 
@@ -146,16 +187,20 @@ the admin's own patterns, and do not invent new chrome:
   Public holidays show in it as closures.
 
 **Catalogue:** the covered items above; `domain-model.md` sections "1. What changed since the RFP"
-(the clean-cut row), "Surgeon, surgeons' room and blacklist", "RVG code and modifier master" and
-"Reference data and go-live".
+(the clean-cut and "Permanent Lists and List templates" rows), "Surgeon, surgeons' room and
+blacklist", "RVG code and modifier master", "Reference data and go-live" and the glossary's
+"Recurring booking" and "HPI CPN" entries. The 2026-10-01 note
+(`catalogue/notes/2026-10-01-aa-meeting-with-greg.md`) points 12, 44 and 64 (insurer cover split,
+recurring bookings, plain-RVG insurance jobs).
 
 **Analysis:**
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 9 (master data and surgeon model), the
   "Oversight/NFR" demo-trigger line (Go-live load, Load sample spreadsheet), and the EP-13 and EP-11
   tables.
 - `docs/prototype-build/catch-up/epics/EP-13.md` (US-13.4.1, 13.4.2, 13.4.3) and `epics/EP-11.md`
-  (US-11.4.1).
-- `analysis/domain-model-delta.md` DM-32 (and DM-26, DM-11 and DM-08 for the load targets).
+  (US-11.4.1: re-graded Partial, size S; add, edit and retire are this phase's, the split is 22's).
+- `analysis/domain-model-delta.md` DM-38 (and DM-32, DM-13 and DM-09 for the load targets; DM-12
+  for D2 and DM-28 for the payment setting).
 - `analysis/prototype-map-admin.md` section 9 (Master data), `prototype-map-store-seed.md`
   (`mutate`, `allocateId`, masters actions, seed), `prototype-map-shell-demo-pwa.md` (the trigger
   registry and the PWA closure).
@@ -195,11 +240,13 @@ the admin's own patterns, and do not invent new chrome:
 Build in this order: types, pure rules, seed, store, then screens. **Session 1 ends after item 10,
 green.**
 
-1. **Types** (`src/domain/types.ts`; DM-32, US-13.4.1, US-11.4.1):
+1. **Types** (`src/domain/types.ts`; DM-38, US-13.4.1, US-11.4.1):
    - `Hospital`, `Surgeon`, `SurgeonRoom`, `SurgeonGroup` and `Insurer` gain
      `retiredAtISO?: IsoDate` and `retiredReason?: string`. Anaesthetists keep their existing
      `active` flag ("Inactive"), which is already maintained; say so in the Decisions log rather than
-     migrating it. If 18 kept `ContractHolderOrganisation`, it gains the same two fields.
+     migrating it. The organisations master that 18 keeps behind surgeon groups (its record type,
+     whatever 18 named it) gains the same two fields: 18's Decision (g) hands its retire and
+     reinstate to this phase.
    - New `PublicHoliday { id: PublicHolidayId; dateISO: IsoDate; name: string; kind: 'national' | 'regional'; region?: string; openHospitalIds: HospitalId[] }`.
      `openHospitalIds` lists hospitals that run as normal that day; every other hospital is closed.
      The `region` is a label ("Canterbury"), not a filter, because every AA hospital is in
@@ -218,16 +265,19 @@ green.**
      keeps a retired record only when it is the current value, so an edit form never silently drops
      a stored hospital; `retireBlockers(kind, id, facts)` returns readable blocker sentences with
      counts. The caller fills `facts` from the store (the domain does not import the store):
-     - **hospital:** upcoming non-AUTHORISED Lists on or after the demo clock's today; active
-       Permanent Lists; membership of the generator's ad hoc set (`ADHOC_HOSPITALS`), worded as "New
+     - **hospital:** upcoming non-AUTHORISED Lists and Draft Lists on or after the demo clock's
+       today; active recurring bookings; membership of the generator's ad hoc set (`ADHOC_HOSPITALS`), worded as "New
        days are still scheduled here"; non-retired Contracts other than its protected default;
        membership of 34's `INTEGRATED_HOSPITALS`, worded as "Hospital sync is set up here".
-     - **surgeon:** upcoming Lists; active Permanent Lists; the generator's ad hoc set if it has one.
+     - **surgeon:** upcoming Lists and Draft Lists; active recurring bookings; the generator's ad hoc
+       set if it has one.
      - **room:** active surgeons linked to it (17 makes `roomId` required).
      - **group:** non-retired Contracts it holds (18's surgeon-group holder).
+     - **organisation:** non-retired surgeon groups whose `billingOrganisationId` names it (18).
      - **insurer:** `acceptsDirectClaims` on ("Turn off direct claims first"); non-retired Contracts
-       it holds other than its protected default; non-AUTHORISED Bookings naming it (20's
-       `Booking.insurerId`).
+       it holds other than its protected default; non-AUTHORISED Procedures whose selected Contract
+       it holds, its protected default included (20); non-AUTHORISED Bookings whose billable-party
+       override names it (21). There is no Booking or Patient insurer field to count (D2).
      Protected defaults are never retired by this phase: they stay for locked and past Bookings, and
      stop being chosen because their holder can no longer be picked.
    - `src/domain/holidays.ts`: `closuresFor(dateISO, hospitalId, { hospitalHolidays, publicHolidays })`
@@ -242,12 +292,12 @@ green.**
      reads "St George's is closed: Labour Day (public holiday)." Lists with no hospital (AA rooms)
      still raise no holiday conflict, as today; record that reading. Extend `conflicts.test.ts`.
    - **Every other holiday reader moves too.** Route each reader from the drift-check grep (the canvas
-     generator, the horizon advance, the Permanent List regenerate, 30's conflict preview, 31's Draft
-     List assignment warning, and any other) through `closuresFor` / `closuresIndex` instead of
+     generator, the horizon advance, `addAnaesthetist`'s canvas generation, 30's recurring-booking
+     projection and conflict preview, 31's Draft List assignment warning, and any other) through `closuresFor` / `closuresIndex` instead of
      `masters.holidays` alone. 31's warning reads "St George's is closed that day (Labour Day, public
      holiday)." for a public closure. A test per reader: with the per-hospital Labour Day rows gone,
      Labour Day still closes the hospital for that reader.
-3. **Seed** (`domain/seed/availabilityAndHolidays.ts`, `domain/seed/index.ts`; DM-32):
+3. **Seed** (`domain/seed/availabilityAndHolidays.ts`, `domain/seed/index.ts`; DM-38):
    - New `PUBLIC_HOLIDAYS`: `PH001` Labour Day Mon 26 Oct 2026 (national); `PH002` Canterbury
      Anniversary Day Fri 13 Nov 2026 (regional, "Canterbury"); `PH003` Christmas Day Fri 25 Dec 2026;
      `PH004` Boxing Day (observed) Mon 28 Dec 2026; `PH005` New Year's Day Fri 1 Jan 2027; `PH006`
@@ -262,8 +312,8 @@ green.**
      public holiday after. Only the cause key changes (`holiday:HH001` to `publicHoliday:PH001`).
      Regenerate the golden canvas fixture's conflicts column only, and assert that the flagged-id set
      equals the baseline from the drift check.
-   - Insurers: the seed keeps nib and AIA Health. More insurers arrive through the insurer sample
-     spreadsheet (item 8), so the seed does not grow.
+   - Insurers: the seed keeps nib and AIA Health. More insurers are added by hand in the demo (the
+     checklist's Southern Health Cover), so the seed does not grow.
    - Seed tests: the public holidays are present and sorted; no hospital holiday is named Labour Day
      or Canterbury Anniversary Day; the flagged set is unchanged; two builds deep-equal.
    - Bump `PERSIST_VERSION` by one, with a comment line ("Phase 42: master public-holiday calendar
@@ -274,8 +324,8 @@ green.**
      It handles quoted cells, embedded commas and quotes, CRLF, a leading BOM, and blank trailing
      lines. `rowNumber` is the spreadsheet row, with the header as row 1. Tests for each case.
    - `types.ts`:
-     - `LoadEntity` = `'hospitals' | 'hospitalHolidays' | 'surgeonRooms' | 'surgeons' | 'insurers' | 'publicHolidays' | 'procedureMaster' | 'modifierCodes' | 'feeScheduleLines' | 'contractBaseUnitOverrides'`
-       (drop the last if 23 did not build overrides).
+     - `LoadEntity` = `'hospitals' | 'surgeonRooms' | 'surgeons' | 'procedureMaster' | 'modifierCodes' | 'feeScheduleLines' | 'contractBaseUnitOverrides'`,
+       the US-13.4.3 list (drop the last if 23 did not build overrides).
      - `RowResult` = `{ rowNumber; cells; status: 'valid' | 'rejected'; reasons: string[]; key: string; fields? }`.
      - `MasterLoad` = `{ id; entity; source: { kind: 'sample'; sampleId } | { kind: 'file'; fileName }; targetContractId?; header; headerErrors: string[]; rows: RowResult[]; status: 'staged' | 'loaded' | 'discarded'; stagedAtISO; stagedBy; loadedAtISO?; loadedRecordIds?: string[]; goLiveBatchId? }`.
      - `LoaderSpec<F>` = `{ entity; label; columns: { key; header; required; hint }[]; parseRow(cells, ctx): { fields: F } | { reasons: string[] }; keyOf(fields): string; existing(fields, masters): string | null; references?(fields, ctx): string[] }`.
@@ -293,9 +343,9 @@ green.**
      - Every reason for a row is collected, not only the first.
    - **One set of rules.** Each spec's `parseRow` calls the same pure field validator the entity's
      manual create action uses. Extract those validators into `src/domain/masterValidation.ts` where
-     they are not already pure (hospital name and email; room; surgeon; insurer; public-holiday date
-     and name; hospital-holiday date and name; `ProcedureType` mapping and base units; modifier code,
-     group and units; `FeeScheduleLine` fields; base-unit override target). The store actions call
+     they are not already pure (hospital name and email; room; surgeon; `ProcedureType` mapping and
+     base units; modifier code, group and units; `FeeScheduleLine` fields and prices; 23's base-unit
+     override target, units and `overrideOverlap`). The store actions call
      them too, so a rejected row's reason is word for word the refusal the Add sheet shows. A parity
      test drives both paths for each refusal.
 5. **Store: hospitals, insurers and retirement** (`src/store/mastersActions.ts`, 17's
@@ -304,8 +354,10 @@ green.**
    - `createInsurer(api, actor, { name, acceptsDirectClaims })`:
      - it refuses a blank or duplicate name (case-insensitive);
      - when `acceptsDirectClaims` is true, the same commit mints the protected insurer default
-       Contract, using the helper `setInsurerDirectClaims` uses (18's rule and name), so there is one
-       minting path;
+       Contract, using the helper `setInsurerDirectClaims` uses (18's rule, name and AA identifier,
+       and 22's default payment setting), so there is one minting path;
+     - it takes no cover-split or rate field: the split is the Contract's payment setting (22) and
+       special rates are Contracts (US-11.4.1);
      - it audits `insurer.create`, plus `contract.create` for the default.
    - `editInsurer(api, actor, id, { name })` refuses a blank or duplicate name, and audits
      `insurer.update`. The direct-claims flag stays on `setInsurerDirectClaims`, whose behaviour is
@@ -315,22 +367,25 @@ green.**
      name. The rename happens in the same commit and audits `contract.update`, or writes a version if
      25 versions Contract names. A default the office has renamed by hand is left alone.
    - `retireMaster(api, actor, kind, id, reason)` and `reinstateMaster(api, actor, kind, id)` for
-     `hospital | surgeon | surgeonRoom | surgeonGroup | insurer` (and `organisation` if it survives
-     18):
+     `hospital | surgeon | surgeonRoom | surgeonGroup | insurer | organisation` (18 keeps the
+     organisations master and hands its retire here):
      - retire refuses `notFound`, `alreadyRetired`, `reasonRequired`, and `inUse` with
        `retireBlockers`' sentences joined;
      - reinstate refuses `notFound` and `notRetired`;
      - they audit `<kind>.retire` and `<kind>.reinstate`.
      No delete action is added for these masters.
-   - Every create and edit action for these masters, and the Booking and List write paths that take a
-     hospital, surgeon or insurer, refuse a retired id ("St George's is retired"). The exception is
-     when the value is unchanged, so editing an old List at a retired hospital still saves.
+   - Every create and edit action for these masters, the List, Draft List and Booking write paths
+     that take a hospital or surgeon, the Contract holder and scope writes (18), and the
+     billable-party override (21, which can name an insurer or hospital) refuse a retired id ("St
+     George's is retired"). The exception is when the value is unchanged, so editing an old List at a
+     retired hospital still saves.
    - Tests (extend `mastersActions.test.ts` and `surgeonActions.test.ts`): the anaesthetist actor is
      refused everywhere; each refusal; `createInsurer` with and without direct claims (the default is
      minted once, with the right category and holder); the rename follow-through with a generated and
-     a hand-edited default name; each kind's retire blockers and reinstate; a retired hospital
+     a hand-edited default name; each kind's retire blockers and reinstate (an insurer held by an
+     open Procedure's Contract or named by a billable-party override is refused); a retired hospital
      refused by the List and Booking write paths but tolerated when unchanged.
-6. **Store: the public-holiday calendar** (`src/store/mastersActions.ts`; DM-32, US-13.4.1):
+6. **Store: the public-holiday calendar** (`src/store/mastersActions.ts`; DM-38, US-13.4.1):
    - `addPublicHoliday(api, actor, { dateISO, name, kind, region?, openHospitalIds })` refuses
      `nameRequired`, `dateRequired`, `duplicatePublicHoliday` (same date) and `unknownHospital`.
      `editPublicHoliday(api, actor, id, patch)` has the same refusals plus `notFound`.
@@ -340,7 +395,9 @@ green.**
      a public holiday changes, reconcile the Lists on its old and new dates at every hospital. A
      change to `openHospitalIds` therefore raises or clears exactly the right flags. The actions return
      `{ flagged, resolved }` from the mutation result, in 30's `HolidaySheet` result-line shape.
-   - Tests: add Christmas Day with the clock rolled into range, and it flags the Lists; mark one
+   - Tests: with the clock rolled into range, the seeded Christmas Day (`PH003`) flags that day's
+     Lists, and adding a second public holiday on the same date is refused
+     (`duplicatePublicHoliday`); add a public holiday on a canvas weekday, and it flags the Lists; mark one
      hospital open, and its flags clear while the others stay; move the date, and the old flags clear
      and the new ones raise; delete, and everything clears; an office clear (30) on a public-holiday
      conflict holds only while the cause stands.
@@ -350,8 +407,9 @@ green.**
      - it parses and validates against current masters and writes a `staged` `MasterLoad`;
      - it audits `masterLoad.stage` with `after: { entity, rows, valid, rejected, source }`;
      - it never writes `masters` (a test deep-equals `masters` before and after);
-     - it refuses `officeOnly`, an unknown entity, a missing or non-fixed-schedule target Contract
-       for fee lines or overrides, and an empty sheet;
+     - it refuses `officeOnly`, an unknown entity, a missing or retired target Contract for fee
+       lines or overrides, a fee-line target whose pricing basis is not `fixedSchedule`, and an
+       empty sheet (overrides go into any Contract 23's `addContractBaseUnitOverride` accepts);
      - staging a new load for an entity discards any earlier staged load for that entity
        (`masterLoad.discard`), so each view shows one live result.
    - `commitMasterLoad(api, actor, loadId)`:
@@ -376,18 +434,25 @@ green.**
    `src/domain/masterLoad/samples.ts`; US-13.4.3):
    - One spec per `LoadEntity`, each small. The columns are:
      - hospitals: Hospital name, Contact email;
-     - hospital holidays: Hospital, Date, Name;
      - surgeons' rooms: Room name, Contact email, Phone;
-     - surgeons: Name, Specialty, Room, NZ registration number, HPI number (CPN);
-     - insurers: Insurer name, Accepts direct claims (Yes/No);
-     - public holidays: Date, Name, Kind, Region, Open hospitals (semicolon-separated names);
-     - Procedure master: Operation name, RVG code or group, Base units;
-     - modifier codes: Code, Group, Units, Description, Selection;
+     - surgeons: Name, Specialty, Room, HPI CPN, NZ registration number (for information), keyed
+       on the HPI CPN (17's handoff), with 17's HPI CPN normaliser, shape check and duplicate check
+       across surgeons and anaesthetists;
+     - master procedure list: Operation name, RVG code or group, Base units (19's rule: a positive
+       whole number, with no RVG guide range check; see drift-check step 2 for OQ-62);
+     - modifier codes: Code, Group, Units, Description, Selection (19's rules: an existing group, a
+       unique code, units a non-negative whole number);
      - fee-schedule lines, into one target Contract: 18's line fields (holder code, description,
-       mapped RVG codes, price ex GST, price incl GST, effective from, time band from and to, add-on);
-     - Contract base-unit overrides, into one target Contract: RVG code or group, Base units.
-     Dates are ISO `YYYY-MM-DD` or `d/m/yyyy` (both parsed, and anything else rejected with "Date
-     must be a real date, for example 2026-12-25").
+       mapped RVG codes, price ex GST, price incl GST, effective from, time band from and to, add-on),
+       with 18's rules (holder code unique within the Contract, both prices above zero and agreeing at
+       ex x 1.15 to the cent);
+     - Contract base-unit overrides, into one target Contract: Operation name, RVG code or RVG group
+       (exactly one, 23's three target kinds), Base units (23's rule: a positive whole number, no
+       guide range check; a duplicate target or an `overrideOverlap` is rejected with 23's sentence).
+     Insurers, hospital holidays and public holidays have no sheet (not on US-13.4.3's list); they
+     are maintained by hand.
+     Dates (effective from) are ISO `YYYY-MM-DD` or `d/m/yyyy` (both parsed, and anything else
+     rejected with "Date must be a real date, for example 2026-12-25").
    - `samples.ts`: `SAMPLE_SHEETS`, one bundled CSV string per entity, each `{ id, entity, fileName, label, csv, targetContractId? }`.
      Each sample has two to six valid rows and three to five invalid ones, and every invalid row
      exercises a different refusal from that entity's validator. For example, the hospitals sample:
@@ -397,22 +462,24 @@ green.**
      - rejected, name required: a blank name;
      - rejected, implausible email: "Timaru Surgical, not-an-email";
      - rejected, duplicate: a second Rangiora row.
-     Use `.example` domains only. The insurers sample adds Accuro and Partners Life and rejects "nib"
-     (duplicate) and "Maybe" (direct-claims flag). The fee-schedule sample targets a seeded
-     fixed-schedule Contract (from 18), with one holder code that already exists on it. The modifier
-     sample includes an unknown group and a non-numeric unit. Write the fixture rows against the
+     Use `.example` domains only. The fee-schedule sample targets a seeded fixed-schedule Contract
+     (from 18), with one holder code that already exists on it. The overrides sample targets a seeded
+     hospital Contract and rejects an unknown operation name and a zero value. The modifier sample
+     includes an unknown group and a non-numeric unit. The surgeons sample rejects a malformed HPI
+     CPN, a duplicate HPI CPN and an unknown room. The Procedure sample includes one base-unit value
+     outside its RVG guide, which loads (AA's own figure, as in 19's manual add) and is pinned as
+     valid, and one zero value, rejected with 19's sentence. Write the fixture rows against the
      masters as 17 to 34 left them, and pin each sample's valid and rejected counts in a test.
    - The samples live in `src/domain` so the trigger registry (inside the PWA import closure) can
      import them. They are demo fixtures, not seed: nothing loads them at build time.
 9. **Create planners, one path** (store; the refactor that keeps loads inside the guards):
    - Extract the body of each create action the loader targets into a pure planner:
-     `planHospitalCreate(state, fields)`, `planHospitalHolidayCreate`, `planSurgeonRoomCreate`,
-     `planSurgeonCreate`, `planInsurerCreate`, `planPublicHolidayCreate`,
+     `planHospitalCreate(state, fields)`, `planSurgeonRoomCreate`, `planSurgeonCreate`,
      `planProcedureTypeCreate`, `planModifierCodeCreate`, `planFeeScheduleLineCreate` and
      `planContractBaseUnitOverrideCreate`.
    - Each returns `{ state: nextSlices, metas }` or a refusal. It includes the id allocation, the
-     protected-default minting for hospitals and direct-claim insurers, and 25's Contract version
-     write for fee lines and overrides.
+     protected-default minting for hospitals, and 25's Contract version write for fee lines and
+     overrides.
    - The single-record actions become `validate, plan, mutate`, with behaviour and audit unchanged
      (their existing tests prove it). `commitMasterLoad` folds the same planners.
    - A load into one Contract writes **one** Contract version labelled "Loaded from spreadsheet" for
@@ -429,18 +496,18 @@ green.**
         - "Test op";
         - "Misc";
         - an upper-case, trailing-space duplicate of "Laparoscopic cholecystectomy";
-        - one name already in 19's Procedure master.
+        - one name already in 19's master procedure list.
       - `junkReason(name)` returns "Looks like a pricing note, not an operation" for a percent sign or
         the word discount, and "Marked not for use" or "Not an operation" for the other patterns.
       - `normaliseOperationName(name)` folds case, whitespace and punctuation. A candidate whose
         normalised name repeats an earlier scan row is junk with the reason "Duplicate of scan row N".
       - Fixture counts, pinned in a test and quoted by the trigger message and the checklist: 14
         rows, 5 junk ("10% discount", "DO NOT USE - old code", "Test op", "Misc", the duplicate), 2
-        not approved, 1 already in the Procedure master, and the rest approved.
+        not approved, 1 already in the master procedure list, and the rest approved.
       - Tests for each pattern and for the duplicate.
     - `goLive.ts`:
       - `GO_LIVE_PACK` = the Solutions Plus list plus three controlled sheets, in load order:
-        surgeons' rooms, surgeons (referencing those rooms) and the Procedure master sheet (Operation
+        surgeons' rooms, surgeons (referencing those rooms) and the master procedure list sheet (Operation
         name, RVG code or group, Base units, as AA fills it from the approved names).
       - `GoLiveCandidate` = `{ scanRow; name; spUnits; decision: 'approved' | 'notApproved' | 'junk'; reason? }`.
         The fixture carries AA's recorded decisions: most approved, two not approved ("No longer
@@ -471,7 +538,7 @@ green.**
       - `discardGoLiveLoad(api, actor)`.
     - Tests (`goLive.test.ts`, `goLiveActions.test.ts`):
       - each outcome;
-      - an unapproved candidate never appears in the Procedure master (US-13.4.2 AC1);
+      - an unapproved candidate never appears in the master procedure list (US-13.4.2 AC1);
       - loaded fields come only from the controlled sheets (US-13.4.2 AC2);
       - "10% discount" is excluded and cannot be approved (US-13.4.3 AC2);
       - un-approving a row before commit removes it from the load;
@@ -486,9 +553,9 @@ green.**
       `{ view; label; group: 'People and places' | 'Schedule' | 'Billing' | 'Settings' | 'Go-live'; catalogueRows: string[]; add: boolean; edit: boolean; retire: boolean; remove: boolean; load?: LoadEntity[] }`.
     - The groups:
       - People and places: Anaesthetists, Hospitals & holidays, Surgeons, Surgeons' rooms, Surgeon
-        groups, Insurers, and Organisations if 18 kept it;
-      - Schedule: Permanent lists, Slot statuses, Public holidays;
-      - Billing: Contracts, Procedure master, RVG codes, RVG groups, Modifier codes;
+        groups, Insurers, and Organisations (18's surviving master);
+      - Schedule: Recurring bookings (30's view and id), Slot statuses, Public holidays;
+      - Billing: Contracts, Master procedure list, RVG codes, RVG groups, Modifier codes;
       - Settings: Xero & archiving;
       - Go-live: Go-live load.
     - The `?view=` param and the existing view ids are kept.
@@ -504,7 +571,7 @@ green.**
       - Drop any remaining "view only" or "read only" subtitle.
       - Views with retire use `RetireSection` in their existing sheet.
       - Rows referenced by nothing keep their delete: hospital holidays, public holidays, and 19's
-        RVG groups and unlinked Procedure master entries.
+        RVG groups and unlinked master procedure list entries.
     - Test (`masterViews.test.ts`): each row of US-13.4.1's list maps to a view with `add` and
       `edit`:
       - hospitals with contact email;
@@ -514,7 +581,7 @@ green.**
       - insurers;
       - anaesthetists;
       - Slot availability statuses;
-      - Permanent Lists;
+      - recurring bookings;
       - the master public-holiday calendar;
       - hospital calendars;
       - RVG codes;
@@ -524,7 +591,7 @@ green.**
       Every masters view that retires declares `retire`.
     - MasterData publishes the current view with `useDemoTriggerContext('masters.view', view)`. Add
       the key to `DemoContextValues`.
-12. **Insurers, Hospitals & holidays, and Public holidays views** (US-11.4.1, US-13.4.1, DM-32):
+12. **Insurers, Hospitals & holidays, and Public holidays views** (US-11.4.1, US-13.4.1, DM-38):
     - **Insurers** (rebuilt):
       - a table with columns Name, Accepts direct claims (Yes / No), Contracts (count of non-retired
         Contracts it holds, linking to Contracts filtered by holder, if 18's view filters), and
@@ -534,7 +601,11 @@ green.**
         `setInsurerDirectClaims` with 18's copy on what it creates. The sheet ends with
         `RetireSection`;
       - the subtitle reads "Insurers that accept direct claims hold Insurance Contracts. Special
-        rates are Contracts, not a separate rate table.";
+        rates are Contracts, and a cover split with the patient is set on the Contract's payment
+        setting.";
+      - `InsurerSheet` has no split, rate or funding field; under the switch, one caption reads
+        "Rates and any split with the patient are set on the insurer's Contracts.", linking to
+        Contracts filtered by this holder;
       - hook: `data-shot="masters-insurers"`.
     - **Hospitals & holidays:**
       - 17's `EditHospitalSheet` gains `RetireSection`, and a rename shows "Its default Contract is
@@ -601,14 +672,14 @@ green.**
         is disabled, with the reason as its tooltip;
       - hook: `data-shot="go-live-candidates"`.
     - **Controlled spreadsheets:** one collapsible card per sheet in pack order (Surgeons' rooms,
-      Surgeons, Procedure master), each with its counts and a `LoadResultPanel` without its own Load
+      Surgeons, Master procedure list), each with its counts and a `LoadResultPanel` without its own Load
       button.
     - Actions: a teal "Load approved data" (`commitGoLiveLoad`) and a secondary "Discard". The result
       line reads, for example, "Loaded 3 rooms, 5 surgeons and 7 operations. 8 Solutions Plus entries
       were not loaded.", with links to each view. The counts are computed, never typed in; the
       fixture's are pinned in `goLive.test.ts` (item 10).
-    - The OQ-51 note, as a caption under the candidate table while OQ-51 is open: "Solutions Plus
-      identifiers are not carried over. Only operation names are used."
+    - A caption under the candidate table states the clean-cut rule (US-13.4.3): "Solutions Plus
+      identifiers and unit values are not carried over. Only operation names are used."
     - Hook: `data-shot="masters-go-live"`.
 15. **Audit labels and narrative** (`shared/audit/actionLabels.ts`, `auditNarrative.ts`, and
     `fieldLabels.ts` where fields are new):
@@ -637,13 +708,18 @@ green.**
     - Add `activeHospitals`, `activeSurgeons`, `activeRooms`, `activeGroups` and `activeInsurers`
       selectors in `store/selectors.ts`, built on `activeOnly(records, keepId)`.
     - Route every picker from the drift-check grep through them: `EditListSheet`, `PhoneAdviceBooking`,
-      the Permanent List sheet, the Draft List and assignment flows (31), the Booking insurer and
-      funding picker (20), the Contract holder and scope chips (18), the surgeon room select (17), the
-      matching-screen create actions (33), and the shared `SurgeonSelect` (17).
+      30's recurring-booking sheet, the Draft List and assignment flows (31), the Contract holder and
+      scope chips (18), 21's billable-party override picker, the surgeon room select (17), the
+      matching-screen create actions (33), and the shared `SurgeonSelect` (17). There is no Booking
+      insurer or funding picker to route (D2: 20 removed it).
+    - 20's Contract picker hides a Contract whose holder is retired (keeping it, labelled, when it is
+      the Procedure's current Contract). That is how a retired hospital's or insurer's protected
+      default stops being chosen without being retired itself.
     - A retired current value shows as "St George's (retired)".
     - Display paths (grid, drawer, invoices, history, profile) keep resolving retired names unchanged.
     - Tests: a retired hospital is absent from a fresh picker and present, labelled, when it is the
-      current value.
+      current value; a retired insurer's Contracts are absent from a fresh Contract picker and from
+      the billable-party override picker.
 17. **Demo triggers** (`src/shared/demoTriggers/registry.ts`; bodies call the item 7 and 10 actions;
     see the table below). Update the registry tests that assert entries per route. Add nothing to the
     Control Panel page; its index lists both entries under "Admin · Master data" automatically.
@@ -668,7 +744,7 @@ green.**
 
 | id | Label | Screen (routes) | Surfaces | Effect | Disabled when |
 |---|---|---|---|---|---|
-| `load-sample-spreadsheet` | Load sample spreadsheet | Admin · Master data (`/admin/masters`) | bar | `when`: the published `'masters.view'` has `load` entries in `masterViews.ts`. `choices`: that view's `SAMPLE_SHEETS`, labelled by file name. There is usually one; Hospitals & holidays offers "hospitals.csv" and "hospital-holidays.csv", and Contracts offers "fee-schedule-<Contract>.csv" and, if built, "base-unit-overrides-<Contract>.csv". `run`: `stageMasterLoad` as the Admin persona actor from 14's shared constants (Kirsty, because in the framed build the presenter is the office choosing the file), with source `{ kind: 'sample', sampleId }` and the sample's `targetContractId`. The view's `LoadResultBanner` opens on the result. It stages and does not load, so the presenter shows the rejected rows and then presses the product's own "Load N valid rows". Message: "hospitals.csv checked: 2 rows valid, 4 rejected. Review the result on Hospitals & holidays and press Load." | a staged load for this entity already exists ("A load is already waiting on this screen; load or discard it first"); the target Contract is retired or missing ("The sample's Contract is not available") |
+| `load-sample-spreadsheet` | Load sample spreadsheet | Admin · Master data (`/admin/masters`) | bar | `when`: the published `'masters.view'` has `load` entries in `masterViews.ts`. `choices`: that view's `SAMPLE_SHEETS`, labelled by file name. There is usually one (Hospitals & holidays offers "hospitals.csv"); Contracts offers "fee-schedule-<Contract>.csv" and, if built, "base-unit-overrides-<Contract>.csv". `run`: `stageMasterLoad` as 14's shared `OFFICE_ACTOR` (Kirsty, because in the framed build the presenter is the office choosing the file), with source `{ kind: 'sample', sampleId }` and the sample's `targetContractId`. The view's `LoadResultBanner` opens on the result. It stages and does not load, so the presenter shows the rejected rows and then presses the product's own "Load N valid rows". Message: "hospitals.csv checked: 2 rows valid, 4 rejected. Review the result on Hospitals & holidays and press Load." | a staged load for this entity already exists ("A load is already waiting on this screen; load or discard it first"); the target Contract is retired or missing ("The sample's Contract is not available") |
 | `go-live-data-load` | Go-live data load (demo) | Admin · Master data (`/admin/masters`, any view) | bar | `run`: `stageGoLiveLoad` as the same actor. The Master data sub-nav's Go-live load item gains a warn dot while a batch is staged, and every view shows a one-line banner, "A go-live load is ready to review", with an "Open" link that sets `?view=goLive`. The presenter approves or un-approves names and presses the product's "Load approved data". Message: "Go-live load prepared: 14 Solutions Plus names (5 excluded as junk, 2 not approved) and 3 controlled spreadsheets. Open Master data, Go-live load." | a batch is already staged ("A go-live load is already waiting; load or discard it first") |
 
 `indexPath`: `/admin/masters?view=hospitals` for the sample loader and `/admin/masters?view=goLive`
@@ -689,15 +765,20 @@ through item 16.
   Mapping arbitrary column names is out too: the template's headers are the contract.
 - **Updating existing records from a load, or deleting by load.** A load only adds. This is the
   US-13.4.3 interim; the drift check says what changes if AA decides.
-- **Loads for anaesthetists, Permanent Lists, Slot statuses, RVG codes, RVG groups and Contracts
-  themselves.** They are not in the catalogue's spreadsheet list. RVG codes keep 19's editor; the
+- **Loads for anaesthetists, insurers, hospital holidays, public holidays, recurring bookings, Slot
+  statuses, RVG codes, RVG groups and Contracts themselves.** They are not in the catalogue's
+  spreadsheet list (US-13.4.3); each is maintained by hand in its view. RVG codes keep 19's editor; the
   full NZSA set is narrated, not loaded.
 - **Editing the modifier groups themselves** (19 deferred it here). The catalogue asks for modifier
   codes, not groups, and the groups are selection-rule structure held in code (`MODIFIER_GROUPS`).
   Note it in PROGRESS as considered and not built.
 - **Loading patients, Bookings, invoices, balances or anything transactional from Solutions Plus.**
   The clean cut excludes them; the go-live view says so in its subtitle.
-- **Any Solutions Plus identifier** (OQ-51), and additional-invoice numbering (Phase 39).
+- **Any Solutions Plus identifier** (US-13.4.3 takes names only; OQ-51 was deleted unanswered),
+  and additional-invoice numbering (Phase 39).
+- **An insurer cover split, rate or funding field on the insurer row.** The split is the Contract's
+  payment setting and its basis (US-04.2.12, OQ-68), built in Phase 22; special rates are insurer
+  Contracts (US-11.4.1). This phase only links an insurer to its Contracts.
 - **Loading Contract rules from spreadsheets** (23's handoff mentions "rules and overrides"). US-13.4.3
   lists fixed fee schedules and "Contract-specific overrides"; this phase reads the overrides as 23's
   base-unit overrides. The per-Contract multi-procedure rule stays a Contract editor field (23). Note
@@ -718,11 +799,13 @@ through item 16.
 - [ ] Insurers: add "Southern Health Cover" with direct claims on. It appears with Yes, and Contracts
       shows its new protected insurer default. Rename it, and the default's generated name follows.
       Try to retire nib: refused with "Turn off direct claims first" and its Contracts listed. Retire
-      the new insurer with a reason: it greys out under "Show retired", and the Booking insurer picker
-      no longer offers it.
+      the new insurer with a reason: it greys out under "Show retired", the Contract picker on a new
+      Booking's Procedure no longer offers its Contracts, and the billable-party override no longer
+      offers it. The Insurer sheet has no split or rate field, and its caption points at the
+      insurer's Contracts, where nib's payment setting (22) shows Full or Split.
 - [ ] Hospitals & holidays: rename a hospital, and the Day grid, List drawer, Booking detail and
       Contracts holder column show the new name, while an already-raised invoice keeps the old
-      addressee. Try to retire St George's: refused, with upcoming List and Permanent List counts.
+      addressee. Try to retire St George's: refused, with upcoming List and recurring booking counts.
       Retire a hospital with no upcoming work: accepted, gone from Edit list and phone advice, and
       still shown on its past Lists. Reinstate it.
 - [ ] Public holidays: seven rows from Labour Day to Waitangi Day (observed). Labour Day shows "Lists
@@ -740,10 +823,13 @@ through item 16.
       shows each rejected row with its reason (already in master data, name required, email, duplicate)
       and the valid rows. Nothing is added yet. Press "Load 2 valid rows": they appear in the list,
       and each one's History reads "Loaded from spreadsheet, row N". The rejected rows are absent.
-- [ ] Repeat on Surgeons' rooms, Surgeons (a row naming an unknown room is rejected), Insurers, Public
-      holidays, Procedure master, Modifier codes and Contracts (fee-schedule sample into its
-      Contract; a duplicate holder code is rejected; if 25 is built, one version "Loaded from
-      spreadsheet" is written).
+- [ ] Repeat on Surgeons' rooms, Surgeons (a row naming an unknown room, a malformed HPI CPN and a
+      duplicate HPI CPN are each rejected with 17's wording), Master procedure list (a base-unit
+      value outside its RVG guide loads and raises no warning; a zero is rejected), Modifier codes
+      and Contracts (fee-schedule sample into its Contract, where a duplicate holder code is
+      rejected; the base-unit overrides sample into its Contract; if 25 is built, one version "Loaded
+      from spreadsheet" is written per load). Insurers and Public holidays show no "Load from
+      spreadsheet" and no sample trigger.
 - [ ] Load from spreadsheet with a real file: download the template, add two rows (one bad) in a text
       editor, save as CSV and choose it. The same result panel appears. A file missing a required
       column is rejected as a whole, with "Missing column: ...".
@@ -755,7 +841,7 @@ through item 16.
       used. Two names show Not approved.
 - [ ] Un-approve one approved name: its Result turns "Not loaded: not approved for go-live" and the
       tiles update. Press "Load approved data": the result line counts rooms, surgeons and operations.
-      The Procedure master shows the new operations with the controlled sheet's base units (not
+      The Master procedure list shows the new operations with the controlled sheet's base units (not
       Solutions Plus's), and the un-approved and junk names are absent.
 - [ ] Audit viewer: filter to masterLoad and goLive. Stage, commit, approvals and each created record
       are present, with who, role and before and after.
@@ -777,13 +863,13 @@ In the same session (each phase patches the beats it touches):
     - Click: Admin, Master data, Hospitals & holidays, Demo actions, Load sample spreadsheet. Point at
       the rejected rows, then Load. Then Demo actions, Go-live data load (demo), and Master data,
       Go-live load. Point at "10% discount" excluded and the struck-through Solutions Plus units.
-      Un-approve one name, then Load approved data, then open the Procedure master.
+      Un-approve one name, then Load approved data, then open the Master procedure list.
     - Say: "AA starts clean. Only data AA has approved is loaded, and it comes from AA's own
       controlled spreadsheets. Every row is checked with the same rules as a manual add, and anything
       that fails is listed and left out. Solutions Plus gives us names, not numbers."
     - Expected: as in the manual checklist.
   - **S5 Discovery points:** add "whether admins can re-load reference data after go-live
-    (US-13.4.3), and the Solutions Plus identifiers (OQ-51)".
+    (US-13.4.3)".
   - **Direct URLs:** add `/admin/masters?view=publicHolidays` and `/admin/masters?view=goLive` (use
     the real view ids).
   - **S2** only if it names a hospital holiday by its old per-hospital row. Labour Day is now a
@@ -795,11 +881,11 @@ In the same session (each phase patches the beats it touches):
   - one "strong phrase": "Nothing comes across because it exists in Solutions Plus."
 - `docs/demo-guide/01-personas-and-responsibilities.md`: Kirsty's duty 9 ("Maintain schedule-related
   master data ...") becomes "Maintain all reference data (hospitals, surgeons and rooms, insurers,
-  public holidays and hospital calendars, codes and Contracts), including loads from AA's controlled
-  spreadsheets".
-- `docs/demo-guide/02-workflows-and-handoffs.md`: in the canvas workflow's triggers (line 70), "A
-  Permanent List or hospital holiday changes" becomes "A Permanent List, hospital holiday or public
-  holiday changes". Add a short "Reference data and go-live" note beside the Source list naming the
+  recurring bookings, public holidays and hospital calendars, codes and Contracts), including loads
+  from AA's controlled spreadsheets".
+- `docs/demo-guide/02-workflows-and-handoffs.md`: in the canvas workflow's triggers (line 70 at the
+  snapshot), "A recurring booking or hospital holiday changes" (Phase 30's wording) becomes "A
+  recurring booking, hospital holiday or public holiday changes". Add a short "Reference data and go-live" note beside the Source list naming the
   clean cut.
 - `docs/demo-guide/master-demo-guide.html`: mirror the same S5 beat, discovery points, Direct URLs,
   cheat-sheet and persona lines, word for word.
@@ -828,19 +914,24 @@ review-and-fix pass (PROGRESS convention 18)**:
   bypasses a planner, such as a spec building a record itself.
 - **One set of rules.** Every rejected-row reason equals the manual action's refusal text for the same
   input. The parity test covers every refusal of every spec. No validator is duplicated between
-  `masterValidation.ts` and a store action.
+  `masterValidation.ts` and a store action. Base units follow 19's and 23's manual rules on every
+  path (a positive whole number): no load refuses a value for being outside its RVG guide, no load
+  raises a warning for it (AA's own figures; D3's warning is for an anaesthetist's entry), and they
+  land on the master 19 holds them on (OQ-62). Surgeon rows use 17's one HPI CPN rule, not a second check.
 - **Clean cut is honest.** Solutions Plus units never reach a loaded record. Junk cannot be approved.
   An unapproved name never loads, even when the controlled sheet has a row for it. The go-live view's
   wording does not claim the masters were emptied.
 - **Retire, never break a reference.** A retired hospital, surgeon, room, group or insurer still
   resolves everywhere it is displayed (grid, drawer, invoices, history, profile, locks). It
-  disappears from every picker (check the drift-check grep list, including 31's, 33's and 20's).
+  disappears from every picker (check the drift-check grep list, including 31's, 33's, 20's
+  Contract picker by holder and 21's billable-party override). No Booking or Patient insurer field
+  has crept back in to support a picker or a blocker (D2).
   Blockers are correct and counted from the demo clock's today. Protected defaults are never retired.
 - **Public holidays through the one conflict rule.** The flagged-List set did not move in the
   migration. Every public-holiday change reconciles through 30's `mutate()` hook with no stamping.
   `openHospitalIds` raises and clears exactly the right flags. An office clear on a public-holiday
   cause behaves like 30's. AA-rooms Lists stay unflagged. No reader of hospital holidays (generator, horizon advance,
-  Permanent List regenerate, conflict preview, Draft List warning) still reads `masters.holidays`
+  `addAnaesthetist`'s generation, recurring-booking projection, conflict preview, Draft List warning) still reads `masters.holidays`
   alone.
 - **Change once, reflected everywhere.** A hospital or insurer rename shows in every live surface.
   The protected default's generated name follows, a hand-edited one does not, and locked or raised
@@ -857,8 +948,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **Status row** for catch-up Phase 42, and a phase entry with:
-  - the drift-check result (items changed or not, OQ-51 status, the re-load question, and the 17 to 34
-    names used);
+  - the drift-check result (items changed since 501b0b8 or not, OQ-62 status and where base units
+    loaded, the re-load question, and the 17 to 34 names used);
   - what was built, per work item;
   - the flagged-List set before and after the public-holiday migration;
   - the stored-name copies the grep found and what was done;
@@ -869,7 +960,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   1. **Public holidays are one master calendar.** A row applies to every hospital except those
      listed as open that day. Hospital calendars hold only hospital-specific closures. The seeded
      per-hospital Labour Day and Canterbury Anniversary rows migrated with the flagged set unchanged.
-     AA-rooms Lists raise no holiday conflict. This amends Phase 30's decision 9 and the original
+     AA-rooms Lists raise no holiday conflict. This amends Phase 30's decision 10 ("Hospital
+     holidays can be edited and deleted") and the original
      seed reading of `HOSPITAL_HOLIDAYS` (statutory days as per-hospital rows).
   2. **Masters referenced by identity retire, never delete.** Retire needs a reason, refuses while
      upcoming work depends on the record, hides the record from pickers, and keeps every reference
@@ -880,8 +972,11 @@ review-and-fix pass (PROGRESS convention 18)**:
      the generated one. Raised and locked invoices keep their snapshot (the catalogue's one
      exception).
   4. **Insurers are maintained in full.** Creating one with direct claims mints its protected insurer
-     default in the same commit, through 18's single minting path. An insurer that accepts direct
-     claims or holds Contracts cannot be retired.
+     default in the same commit, through 18's single minting path (AA identifier and 22's default
+     payment setting included). The insurer row carries no split or rate: a cover split is the
+     Contract's payment setting (US-11.4.1, US-04.2.12). An insurer that accepts direct claims,
+     holds Contracts, or is reached by an open Procedure's Contract or a billable-party override
+     cannot be retired. Insurers sit on neither Booking nor Patient (D2).
   5. **Loads are checked, then committed.** Stage validates and reports without touching masters.
      Commit re-validates and loads exactly the valid rows in one audited `mutate()`, through the same
      planners and validators as a manual add. Each loaded record's audit carries its load and row.
@@ -891,16 +986,25 @@ review-and-fix pass (PROGRESS convention 18)**:
      edit it there".
   7. **Solutions Plus supplies operation names only.** Its units are never read, junk is excluded and
      cannot be approved, AA's approval gates each name, and no Solutions Plus identifier is carried
-     (OQ-51 interim). The go-live demo loads into today's masters and says so.
+     (US-13.4.3; OQ-51 was deleted unanswered). The go-live demo loads into today's masters and says
+     so.
   8. **Modifier groups stay code-held.** 19's deferral was considered and not built, because the
      catalogue asks for modifier codes.
   9. **"Contract-specific overrides" are base-unit overrides.** The multi-procedure rule is edited
      on the Contract (23) and not loaded. The hospital sync set-up (34) stays code-held, and an
      integrated hospital cannot be retired.
+  10. **Loaded base units follow the manual add and OQ-62.** A loaded value obeys 19's and 23's rule
+     (a positive whole number) with no RVG guide range check and no warning, because list and
+     Contract figures are AA's own (19's `outsideGuide` is false for them); D3's after-procedure
+     warning stays with an anaesthetist's entry on a Procedure. They load onto the master procedure
+     list while OQ-62's recommendation stands.
+  11. **The loader covers only US-13.4.3's list** (hospitals, surgeons' rooms, surgeons, the master
+     procedure list, modifier codes, fee-schedule lines, base-unit overrides). Insurers, hospital
+     holidays and public holidays are maintained by hand.
 - **Handoff notes:**
   - For **43**: `validateSheet` and `commitMasterLoad` are the seams to time on a full-scale sheet.
     `SAMPLE_SHEETS` shows the fixture pattern.
-  - For **44**: S5's optional Beat 5; the re-load question and OQ-51 in the discovery points; public
+  - For **44**: S5's optional Beat 5; the re-load question in the discovery points; public
     holidays on the anaesthetist calendars if wanted; the grouped Master data sub-nav in the
     screenshots.
   - For the catalogue owners: US-13.4.1's screenshots still caption several masters "(view only)";

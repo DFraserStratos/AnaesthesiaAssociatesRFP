@@ -7,23 +7,38 @@
 [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) (process an AUTHORISED List using each Procedure's locked Contract; merges the retired US-08.1.2),
 [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) (invoice reproducibility),
 [US-15.0.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.3.md) (enter once: the billing exception half);
-[DM-07](../analysis/domain-model-delta.md#dm-07) (Contract versions and the AUTHORISED snapshot);
+[DM-08](../analysis/domain-model-delta.md#dm-08) (Contract versions and the AUTHORISED snapshot; was DM-07 before the 2026-10-01 update);
 [RV-01](../analysis/reverse-check.md#rv-01-billing-engine-re-resolves-the-contract-and-payer-at-billing-time-no-contract-lock-at-authorised) (the engine re-resolves the Contract at billing time).
-Nearby, not blocking: [OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md) (which date decides the price in force),
-[OQ-05](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-05.md) (Booking-level vs List-level failure).
+Touches, without closing: [DM-06](../analysis/domain-model-delta.md#dm-06) (the payee anaesthetist is
+stamped on the locked record here; the doer's-List move is Phase 32 and the prepaid payee repoint
+Phase 41), [US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md)
+(Phase 22 builds the full or split payment setting; this phase locks it and the split it applied) and
+[US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md)
+(Matches; [OQ-05](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-05.md) is
+answered: failure is per Booking and a List never fails as a whole, which the re-based failure beat
+shows).
+Nearby, not blocking: [OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md)
+(which date decides the price in force; still Open, recommendation the procedure date, which Greg
+leaned to on 2026-10-01) and [OQ-68](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-68.md)
+(the split basis; the lock copies whatever 22 built).
 **Depends on:** Phases 19, 22, 23 and 24, and through them the whole Contracts track: 18's Contract
-shape (category, holder, scope, pricing basis, rate steps, fee schedule lines with dated prices), 19's
-RVG, modifier and Procedure masters and `resolveBaseUnits`, 20's one Contract per Procedure, 21's
-billable party, invoice email, required inputs and `authoriseBlockersFor`, 22's covered amount and
-Contract-driven presentation, 23's primary Procedure, multi-procedure rule and Contract base-unit
-override, and 24's anaesthetist adjustment. Phases 14 (trigger registry) and 15 (Card is Booking) are
-in place.
+shape (category, holder, scope, pricing basis, rate steps, fee schedule lines with dated prices,
+`aaCode`), 19's RVG, modifier and master procedure lists and `resolveBaseUnits` (any base-unit value
+accepted, with an after-procedure office warning when out of range), 20's one Contract per Procedure,
+21's billable party, invoice email, required inputs and `authoriseBlockersFor` (the schedule miss is
+its only blocker; a child billable party is a mild warning, D4), 22's Contract-driven presentation, the
+payment setting (full or split) with its typed share, and the invoice's supplier snapshot, 23's primary
+Procedure, multi-procedure rule, Contract base-unit override and combination Contracts, and 24's
+anaesthetist adjustment. Phases 14 (trigger registry), 15 (Card is Booking) and 15a (warnings, never
+blocks) are in place.
 **Estimated:** 1 session on the outline, but realistically 2: sixteen work items touching the engine,
 seed, three apps and the demo guide. Plan for the split after work item 9 (model, lock, engine, seed
 and tests green; the UI still reads live figures) and do items 10 to 16, the demo guide and the
 review pass in a second session.
-**Phase 16 is not a declared dependency.** Everything below that mentions 16's AA-FEE invoices applies
-only if Phase 16 has run; if it has not, skip those clauses and note it in the PROGRESS entry.
+**Phase 16 is not a declared dependency**, but the planned order runs it straight after 15a, before
+the Contracts track, so its AA-FEE invoices and its BCTI record list (`bctiRecords`, counted only by
+`bctisFor`) should exist. Confirm at the drift check. If 16 has not run, skip every clause below that
+mentions them and note it in the PROGRESS entry.
 
 ## Goal
 
@@ -35,22 +50,28 @@ every non-cancelled Booking, in the same commit that flips the List to AUTHORISE
 everything the price and the invoice depend on:
 
 - the Contract id and version, with a copy of that whole version (terms and schedule lines);
-- the pricing date, and the rate used: the anaesthetist's unit value, the Contract rate step or
-  discount, or the schedule line price;
-- base units and their source (Procedure master, Contract override, RVG guide, chosen range value or
-  manual override), time units and the captured times, and each modifier with its unit value;
+- the pricing date (the procedure date, which is the List date), and the rate used: the
+  anaesthetist's unit value, the Contract rate step or discount, or the schedule line price;
+- base units and their source (master procedure list, Contract override, RVG guide, chosen range
+  value or manual override, including a value outside the guide range that the anaesthetist kept),
+  time units and the captured times, and each modifier with its unit value;
 - the schedule line and add-ons used, the primary flag, the multi-procedure rule and this
   Procedure's share of the modifier split;
-- the anaesthetist adjustment and the office override, each with its reason;
-- at Booking level: the billable party with the details printed on the invoice (name, email,
-  address or contact as the invoice shows them), invoice email, required-input values, covered
-  amount, presentation (layout, delivery, GST treatment), the GST rate, and any pre-payment already
-  invoiced.
+- the payment setting (full or split) and, for a split, the share and the amount each party pays;
+- the anaesthetist adjustment, the permission it was applied under and its before and after amounts,
+  and the office override, each with its reason;
+- at Booking level: the **payee anaesthetist** (the List's anaesthetist at authorise, who did its
+  procedures, US-01.4.6) with the supplier details the invoice and the BCTI print (name, GST number);
+  the billable party with the details printed on the invoice (name, email, address or contact as the
+  invoice shows them), invoice email, required-input values, presentation (layout, delivery, GST
+  treatment), the GST rate, and any pre-payment already invoiced.
 
 The billing run then prices **only** from that record. There is no effective-date fallback, no route
 or payer resolution, and no "Resolve & retry" that edits the Contract master. A Contract that is not
 in force on the List date is caught before authorise, as a blocker on the Review screen, instead of
-being silently swapped for a default at billing time.
+being silently swapped for a default at billing time. The payee is read from the record too: the
+ACCPAY, the receipts and the anaesthetist's accounts stop joining Booking to List to find who is
+paid.
 
 Locked Bookings display from the snapshot: fees, units, rate and Contract name stop drifting when a
 master changes, and carry a "Contract vN locked at authorise" badge. The Contract editor lists its
@@ -60,56 +81,80 @@ after a Contract or unit-value edit.
 
 The S4 Beat 3 billing failure no longer works (a dated-out Contract cannot fail a locked Procedure),
 so the re-homed **Trigger billing failure** is re-based on a cause that still fails under a lock: a
-claim reference that the locked Contract version requires and the Booking lacks. The office supplies
-it in the Billing monitor and retries, once.
+claim reference that the locked Contract version requires and the Booking lacks. Failure stays per
+Booking, as OQ-05's answer says: the List never fails as a whole, the failed Booking raises none of
+its invoices, and its siblings bill. The office supplies the reference in the Billing monitor and
+retries, once.
 
 ## Before you start: drift check
 
 1. Run the drift diff and read it for this phase's items:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    - Check `US-04.1.3`, `US-04.3.5`, `US-07.3.1`, `US-08.1.1`, `US-08.4.4` and `US-15.0.3`.
    - Also check the items this phase leans on: `US-08.1.2` (Retired, merged into US-08.1.1),
      `US-12.1.1` (its technical note on copying the unit value at AUTHORISED), `US-04.2.10`,
-     `US-08.5.1`, `US-08.5.2`, `OQ-48`, `OQ-05`, and the Procedure, "Contract (recommended
-     structure)" and "Procedure billing context" sections of `domain-model.md`.
-   - If an item changed, re-read it and adjust the work items before building. The most likely
-     change is **which fields are frozen** (US-04.3.5, US-07.3.1 and US-15.0.3 all say "to be
-     determined in discovery"). If discovery names the fields, lock exactly those plus whatever the
-     price needs, and record the list in the Decisions log.
+     `US-04.2.12` (payment setting), `US-01.4.6` and `US-06.5.4` (who is paid), `US-08.5.1`,
+     `US-08.5.2`, `US-13.3.2`, `OQ-48`, `OQ-68`, `OQ-70`, and the Booking ("Billing fails per
+     Booking"), Procedure and "Contract (recommended structure)" sections of `domain-model.md`,
+     including its "Procedure billing context" table.
+   - At `501b0b8` (the 2026-10-01 update): US-04.3.5 and US-08.4.4 gained links only; US-08.5.2 was
+     rewritten to OQ-05's answer (Verify, per-Booking failure, the whole Booking held back when any
+     Procedure's billable party fails); US-04.2.12 is new (full or split, basis open as OQ-68);
+     US-01.4.6 and DM-06 put the payee on the record at authorise. **Which fields are frozen** is
+     still not named (US-04.3.5, US-07.3.1 and US-15.0.3 all say "to be determined in discovery"),
+     so the whole-version snapshot stands.
+   - If an item changed after `501b0b8`, re-read it and adjust the work items before building. If
+     discovery names the fields to freeze, lock exactly those plus whatever the price and the payee
+     need, and record the list in the Decisions log.
    - If an item is now Retired or Future, drop it from this phase and say so in the PROGRESS entry.
      US-04.3.5 is Confirmed; if it alone survives, the lock and the engine change still stand.
-2. **OQ-48 (which date decides the price in force).** If it is still open, keep Phase 18's interim:
-   the price in force is the one effective on the **List date**. The lock records that date as
-   `pricingDateISO`, so a later answer changes which step is chosen at lock time, never what a lock
-   holds. If it has been answered with another date, use that date in `buildBookingLock` and update
-   the tests. No provisional UI label is needed here beyond the one 18 added.
-3. **OQ-05 (Booking-level vs List-level failure).** If it is still open, keep the prototype's
-   per-Booking isolation (the Phase 09 reading). If AA answers "the whole List waits", note it for a
-   later phase and do not change the isolation here: this phase re-bases the failure cause only.
-4. **Confirm what Phases 18 to 24 actually delivered** (their PROGRESS entries and handoff lists). The
-   lock must capture every price input they added, under the names they gave. Write down, before
-   touching code:
+2. **OQ-48 (which date decides the price in force).** Still Open at `501b0b8`; its recommendation is
+   the procedure date and Greg leaned to it on 2026-10-01. Build that: the price in force is the one
+   effective on the **List date** (the procedure date, Phase 18's rule). The lock records it as
+   `pricingDateISO`, so a different answer later changes which step is chosen at lock time, never
+   what a lock holds. Phase 18 holds the one provisional label; add none here. If OQ-48 has since
+   been answered with another date, use that date in `buildBookingLock` and update the tests.
+3. **OQ-05 is answered** (failure per Booking; a List never fails as a whole; a Booking with any
+   failed Procedure or billable party is held back whole, for a manual fix by AA admin staff). The
+   prototype already isolates per Booking (the Phase 09 reading), so build nothing new for it: keep
+   the isolation, test it under the lock (work item 6), including a split Booking, and record in the
+   Decisions log that the Phase 09 reading is now confirmed.
+4. **Confirm what Phases 16 and 18 to 24 actually delivered** (their PROGRESS entries and handoff
+   lists). The lock must capture every price, invoice and payee input they added, under the names
+   they gave. Write down, before touching code:
    - every store action that writes `masters.contracts` or the fee schedule (18's `editContract`,
      `retireContract`, rate and line actions, the mint in `createHospital` and
-     `setInsurerDirectClaims`; 21's required inputs; 22's presentation and covered amount; 23's
-     multi-procedure rule and base-unit override; 24's allows-adjustment flag). Every one must append
-     a version (work item 3). Grep `contracts:` and `feeScheduleLines:` writes under `src/store/`.
-   - the Booking-level pricing entry point 23 built (the function that prices a whole Booking and
-     applies the 3/2/2 split) and its context type;
-   - where 24 stores the anaesthetist adjustment (Procedure or Booking) and its type;
+     `setInsurerDirectClaims`; 21's required inputs; 22's invoicing settings and payment setting;
+     23's multi-procedure rule, base-unit overrides and combination Contracts; 24's
+     allows-adjustment flag). Every one must append a version (work item 3). Grep `contracts:` and
+     `feeScheduleLines:` writes under `src/store/`.
+   - the Booking-level pricing entry point 23 built (`bookingFeeFor`) and its context type;
+   - 19's `baseSource` vocabulary (`'captured' | 'contract' | 'procedureMaster' | 'rvgGuide' |
+     'rvgRangeChosen' | 'none'`, plus 23's `'additional'`) and `outOfGuideRange`;
+   - where 24 stores the anaesthetist adjustment and its before and after amounts (its handoff names
+     `anaesthetistAdjustment`, `beforeAdjustment`, `afterAdjustment` and `officeOverride` per
+     Procedure);
+   - where 22 stores the payment setting and the split share (the plan's typed $ or % value, which
+     OQ-68's recommendation sets on the Booking, defaulting from the Contract), the pure split
+     function it built, `Contract.invoicing` and the `Invoice.supplier` snapshot;
    - where 21 stores required-input values (it kept the claim reference as the per-Procedure
-     `billingReference`, relabelled "Claim or hospital reference") and that the COS ACC Contract
-     declares `claimReference` required;
-   - whether 21's `authoriseBlockersFor` checks missing required inputs. It should not (21 made them
-     a completion rule and left authorise with two named blockers). If it does, re-base the failure
-     trigger on the handoff path instead (see "Demo triggers", fallback).
+     `billingReference`, relabelled "Claim or hospital reference"), `requiredInputValuesFor`, and that
+     the COS ACC Contract declares `claimReference` required;
+   - that 21's `authoriseBlockersFor` holds the schedule miss only. A child billable party is a mild
+     warning in 15a's routine (D4), never a blocker. If missing required inputs block authorise, re-base
+     the failure trigger on the handoff path instead (see "Demo triggers", fallback).
    - what 20 left in `resolveContractForProcedure`: it kept the stored-Contract branch and its
      expired-holder fallback and `contractIneffective` deliberately for this phase.
-5. Record the current `PERSIST_VERSION` (13 at `1f067a8`; 14 to 24 will have bumped it).
+   - **every place that works out the payee live**: `handoffCase` in `store/xeroHandoff.ts` (~l.168,
+     the ACCPAY contact from `list.anaesthetistId`), the two `anaesthetistIdForCase` helpers
+     (`store/paymentActions.ts` ~l.67 for receipts, `store/selectors.ts` ~l.612 for the web accounts),
+     16's `bctiRecords` (which anaesthetist a BCTI counts against) and 22's `Invoice.supplier`.
+   - whether Phase 16 has run (AA-FEE invoices, `bctiRecords` and `bctisFor`).
+5. Record the current `PERSIST_VERSION` (13 at `501b0b8`; 14 to 24 will have bumped it).
 6. Record the result, including "no drift", in the PROGRESS entry.
 
 ## Reference
@@ -128,25 +173,35 @@ it in the Billing monitor and retries, once.
 - `docs/design/Mobile App.dc.html` only for the badge on the shared Booking billing block (no money
   on mobile).
 
-**Catalogue:** the six covered files above; `domain-model.md` sections "Procedure" ("Exactly one
-Contract. Snapshot of the Contract version taken at AUTHORISED."), "Contract (recommended
-structure)" (`id, name, version, …`: "Versions are kept so old invoices reproduce") and "Procedure
-billing context" (`contractId + contractVersion`: "Locked at AUTHORISED");
+**Catalogue:** the six covered files above; `domain-model.md` sections "Booking" ("Billing fails
+per Booking, not per List"), "Procedure" ("Exactly one Contract. Snapshot of the Contract version
+taken at AUTHORISED."), "Contract (recommended structure)" (`id, aaCode, name, version, …`: "Versions
+are kept so old invoices reproduce"; the `paymentSetting` row) and its "Procedure billing context"
+table (`contractId + contractVersion`: "Locked at AUTHORISED");
 [US-08.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.2.md)
 (Retired, but its text is the confirmed departure quoted in US-08.1.1's acceptance criterion);
-[US-08.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.1.md)
-and [US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md)
-(failure reporting and isolation, which the re-based trigger demonstrates);
+[US-08.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.1.md),
+[US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md)
+and [US-13.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.2.md)
+(failure reporting, per-Booking isolation and the manual fix, which the re-based trigger
+demonstrates);
+[US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md)
+(the payment setting the lock copies);
+[US-01.4.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.6.md)
+and [US-06.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.4.md)
+(the payee follows the Booking to whoever did it; the prepaid repoint is Phase 41's);
 [US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md)
 (its technical note: the unit value is copied to the billing record at AUTHORISED).
 
 **Analysis:**
-- [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 2 "Contract locked at AUTHORISED", the DM-07 row, the
-  RV-01 row, "Demo impact" (S4 Beat 3, S5 Beat 4), and the EP-04, EP-07, EP-08 and EP-15 tables.
+- [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 3 "Contract replaces the billing route" (versions and
+  the payment setting), the DM-06 and DM-08 rows, the RV-01 row, "Demo impact" (S4 Beat 3, S5 Beat
+  4), and the EP-04, EP-07, EP-08 and EP-15 tables.
 - [epics/EP-04.md](../epics/EP-04.md), [EP-07.md](../epics/EP-07.md), [EP-08.md](../epics/EP-08.md),
   [EP-15.md](../epics/EP-15.md).
-- `gaps.json`: the entries for the six covered IDs, `DM-07` and `RV-01`.
-- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-07;
+- `gaps.json`: the entries for the six covered IDs, `US-04.2.12`, `US-08.5.2`, `DM-06`, `DM-08` and
+  `RV-01`.
+- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-08 and DM-06;
   [analysis/reverse-check.md](../analysis/reverse-check.md) RV-01.
 - [analysis/prototype-map-store-seed.md](../analysis/prototype-map-store-seed.md) §2, §4, §7, §8;
   [prototype-map-domain.md](../analysis/prototype-map-domain.md) §5;
@@ -154,8 +209,9 @@ and [US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/re
   [prototype-map-shell-demo-pwa.md](../analysis/prototype-map-shell-demo-pwa.md) for the harness bar
   and the PWA office stand-in.
 
-**Code entry points** (named as at `1f067a8`; use the names Phases 15 and 18 to 24 gave them, for
-example Booking for Card and `FeeScheduleLine` for `ContractPrice`):
+**Code entry points** (named as at `501b0b8`, where the prototype is unchanged since `501b0b8`; use
+the names Phases 15 to 24 gave them, for example Booking for Card and `FeeScheduleLine` for
+`ContractPrice`):
 - `aa-prototype/src/domain/types.ts`: `Contract`, `FeeScheduleLine` (18), `Procedure`
   (`governingContractId`, the 19/23/24 fields), `Invoice`, `InvoiceLine`, `BillingCase`, the
   `masters` and `billing` slice shapes.
@@ -163,26 +219,33 @@ example Booking for Card and `FeeScheduleLine` for `ContractPrice`):
   `resolveContractForProcedure` (the fallback and `contractIneffective` branch 20 left),
   `buildInvoicesForCard` (its Booking name), `InvoiceBuildContext`, the line-description snapshot.
 - `aa-prototype/src/domain/billing/fee.ts` (`feeFor`, `FeeContext`, `FeeResult`, `resolveBtm`), 19's
-  `resolveBaseUnits` and `BtmBreakdown.baseSource`, 23's Booking-level pricing, 24's adjustment step.
+  `baseUnits.ts` (`resolveBaseUnits`, `BtmBreakdown.baseSource`), 23's `bookingFee.ts`
+  (`bookingFeeFor`), 24's adjustment step, 22's payment-setting split and `invoicePresentation.ts`
+  (`supplierFor`, `GST_RATE`).
 - `aa-prototype/src/domain/billing/validateCardForBilling.ts` (`feeContextFor`), 21's
   `requiredInputs.ts` (`requiredInputsFor`, `missingRequiredInputs`).
 - `aa-prototype/src/store/lifecycle.ts`: `authoriseList` (~l.277), 21's `authoriseBlockersFor`.
 - `aa-prototype/src/store/billingRun.ts`: `runBillingForList` (~l.68), `retryBillingCase` (~l.285),
-  `wireBillingRun`; `aa-prototype/src/store/xeroHandoff.ts`: `handoffCase`.
+  `wireBillingRun`; `aa-prototype/src/store/xeroHandoff.ts`: `handoffCase` (the payee lookup at
+  ~l.168); `aa-prototype/src/store/paymentActions.ts`: `anaesthetistIdForCase` (~l.67,
+  `receivePayment`); 16's `bctiRecords` and `bctisFor`.
+- `aa-prototype/src/domain/types.ts`: `BillingCase` (~l.697, no payee field today),
+  `BillingReceipt.anaesthetistId` (~l.745), `XeroAccPay`.
 - `aa-prototype/src/store/contractActions.ts` and `mastersActions.ts` (every Contract write;
   `editAnaesthetist`'s doc comment about re-pricing).
-- `aa-prototype/src/store/selectors.ts`: `billingContextForCard`, `prePaidByProcedure`,
-  `billingMonitor` (~l.429), `invoiceLinesFor`, `isBackdropInvoice`.
+- `aa-prototype/src/store/selectors.ts`: `billingContextForCard`, `prePaidByProcedure` (~l.345),
+  `billingMonitor` (~l.429), `anaesthetistIdForCase` (~l.612, the web accounts), `invoiceLinesFor`,
+  `isBackdropInvoice`.
 - `aa-prototype/src/shared/capture/feeContext.ts`: `procedureFee`, `cardFee` (the live display path).
 - `aa-prototype/src/shared/card/CardDetailBody.tsx`, `OfficeBillingSetup.tsx`, 21's Billing block.
 - `aa-prototype/src/apps/admin/screens/ReviewScreen.tsx` (tiles, CONTRACT column,
-  `@ $x/unit (list rate)` at ~l.109 and ~l.287), `InvoiceDocument.tsx` (the rail),
+  `@ $x/unit (list rate)` at ~l.287), `InvoiceDocument.tsx` (the rail),
   `BillingMonitorScreen.tsx` (`resolveAndRetry` ~l.65), `MasterData.tsx` (Contracts table),
   `apps/admin/flows/ContractEditSheet.tsx`.
 - `aa-prototype/src/shared/demoTriggers/registry.ts` (14's `billing-failure` entry) and
-  `src/store/demoStaging.ts` (21 added it).
+  `src/store/demoStaging.ts` (new here unless an earlier phase created it: 21 seeds its child case and builds no staging file).
 - `aa-prototype/src/domain/seed/`: `contracts.ts`, `cards.ts` (the Ropata Thu 16 failure List and
-  Losa Tuilagi's COS ACC Booking, ~l.905), `history.ts` (the `L-HIST-*` AUTHORISED Lists),
+  Losa Tuilagi's COS ACC Booking, `billingReference` at ~l.926), `history.ts` (the `L-HIST-*` AUTHORISED Lists),
   `billing.ts`, `index.ts` (`SEED_LIST_IDS.billingFailure`, markers).
 - `aa-prototype/src/apps/demo/DemoControlPanel.tsx`: S4 and S5 scenario text; the S5 jump
   authorises `SEED_LIST_IDS.whitakerFri17`.
@@ -196,11 +259,12 @@ example Booking for Card and `FeeScheduleLine` for `ContractPrice`):
 Model, lock and engine first, re-greened before any UI.
 
 1. **Pin the figures before touching anything.** Run 18's `feeParity.test.ts` and record the S3, S4
-   and S5 figures as they stand after Phase 24 (Holt, the Prentice split, the design-day fees, the
-   bariatric $2,800 and second procedure, Aria's rate x time). Add a new
+   and S5 figures as they stand after Phase 24 (Holt, the Prentice split under 22's payment setting,
+   the design-day fees, the bariatric $2,800 and second procedure, Aria's rate x time, and 24's
+   adjustment and override delta lines). Add a new
    `domain/billing/__parity__/phase-25-invoices.json` fixture: for each Booking on the S3 Lists
    (Souter Mon 20 AM and PM) and the S5 List (Whitaker Fri 17), the invoice drafts the current engine
-   produces (party, layout, lines, subtotal, GST, total). Written once with `toMatchFileSnapshot`,
+   produces (party, supplier, layout, lines, subtotal, GST, total). Written once with `toMatchFileSnapshot`,
    never run with `-u`. Every later item must keep it passing: the lock changes where the numbers
    come from, never the numbers.
 
@@ -217,26 +281,37 @@ Model, lock and engine first, re-greened before any UI.
      Procedure"; Booking-level fields sit once on the Booking lock because 23 prices at Booking
      level):
      - Booking level: `bookingId`, `listId`, `lockedAtISO`, `lockedBy`, `origin: 'authorise' |
-       'migrated'`, `pricingDateISO`, `anaesthetist: { id, name, unitValue }`, the effective billable
-       party with a copy of the details the invoice prints (name, email, address or contact; US-07.3.1
-       "party details"), invoice email (21), `gstRate`, required-input values keyed by input (21;
-       per-Procedure inputs such as `claimReference`, which 21 kept as the Procedure's
-       `billingReference`, sit on the `ProcedureLock` instead), the covered amount
-       (22), `presentation: { layout, deliveryMethod, gstTreatment }` (22, from the version),
-       `prePaid` (the pre-payment already invoiced per Procedure, today's `prePaidByProcedure` value
-       with its counterparty), and `expected: { subtotal, gst, total }` as a checksum.
-     - `ProcedureLock`: `procedureId`, `contract: { id, version, name }`, `contractVersion:
+       'migrated'`, `pricingDateISO`, `payee: { anaesthetistId, name, registrationNumber,
+       gstNumber, unitValue }` (the payee anaesthetist: the List's anaesthetist at authorise, who did
+       its procedures under US-01.4.6, with the supplier details 22's invoice and the BCTI print;
+       DM-06, DM-08), the effective billable party with a copy of the details the invoice prints
+       (name, email, address or contact; US-07.3.1 "party details"), invoice email (21), `gstRate`,
+       required-input values keyed by input (21's `requiredInputValuesFor`; per-Procedure inputs such
+       as `claimReference`, which 21 kept as the Procedure's `billingReference`, sit on the
+       `ProcedureLock` instead), `presentation: { invoiceLayout, deliveryMethod, portalName?,
+       gstTreatment }` (22's `Contract.invoicing`, from the version), `prePaid` (the pre-payment
+       already invoiced per Procedure, today's `prePaidByProcedure` value with its counterparty), and
+       `expected: { subtotal, gst, total }` as a checksum.
+     - `ProcedureLock`: `procedureId`, `contract: { id, version, name, aaCode }`, `contractVersion:
        ContractVersion` (the copy), `rate: { source: 'anaesthetistUnitValue' | 'contractRate' |
        'contractDiscount' | 'feeSchedule' | 'rateTime', unitRate?, discountPercent?, stepFromISO? }`,
-       `baseUnits: { units, source, rvgCode?, procedureTypeId?, guideRange? }` (19's `baseSource`
-       vocabulary), `timeUnits: { units, startISO?, handoverISO?, overridden }`, `modifiers: { code,
-       units }[]`, `isPrimary`, `multiProcedureRule`, `modifierShare` (this Procedure's units under
-       the split), `feeSchedule?: { lineId, holderCode, description, priceExGst, priceIncGst,
-       priceFromISO, quantity, addOns[] }`, `billingLines` (copies of the non-RVG lines),
-       `anaesthetistAdjustment?`, `officeOverride?` (the existing `priceOverride`), and `fee` (the
-       per-Procedure result at lock, for display), plus any per-Procedure required input
+       `baseUnits: { units, source, outOfGuideRange, rvgCode?, procedureTypeId?, guideRange? }` (19's
+       `baseSource` vocabulary plus 23's `'additional'`), `timeUnits: { units, startISO?, handoverISO?,
+       overridden }`, `modifiers: { code, units }[]`, `isPrimary`, `multiProcedureRule`,
+       `modifierShare` (this Procedure's units under the 3/2/2 split), `feeSchedule?: { lineId,
+       holderCode, description, priceExGst, priceIncGst, priceFromISO, quantity, addOns[] }`,
+       `billingLines` (copies of the non-RVG lines), `payment: { setting: 'full' | 'split', share?,
+       shareSource?, parties: { party, amountExGst }[] }` (22's payment setting and the typed $ or %
+       share it applied, with where the share came from, Booking or Contract default, and the amount
+       each party pays; US-04.2.12), `anaesthetistAdjustment?` with `adjustmentAllowed` (the
+       version's `allowsAnaesthetistAdjustment` it was applied under), `beforeAdjustment` and
+       `afterAdjustment` (24's handoff), `officeOverride?` (the existing `priceOverride`), and `fee`
+       (the per-Procedure result at lock, for display), plus any per-Procedure required input
        (`claimReference`).
-     - Use the field names 19 to 24 used; the list above is the content, not a naming mandate.
+     - Use the field names 19 to 24 used; the list above is the content, not a naming mandate. If 22
+       put the share on the Contract only (not the Booking), `shareSource` is always the Contract.
+   - `BillingCase.payeeAnaesthetistId`, stamped by the run from `lock.payee` (work item 6), so the
+     ACCPAY, the receipts, the web accounts and 16's BCTI records stop joining Booking to List.
    - `billing.locks: Record<BookingId, BookingLock>`. `lockedAtISO` comes from the demo clock
      (`clockISO(s.clock)` inside the recipe), never `Date.now()`.
    - `Invoice.lockedFrom?: { procedureId, contractId, contractVersion }[]`, stamped by the run, so a
@@ -255,19 +330,30 @@ Model, lock and engine first, re-greened before any UI.
      reference them.
    - Selectors: `contractVersionsFor(state, contractId)`, `contractVersionOf(state, contractId,
      version)`, and `invoicesByContractVersion(state, contractId)` (reads `Invoice.lockedFrom`).
-   - Tests (`contractVersions.test.ts`): each Contract-writing action appends exactly one version; the
-     latest version deep-equals the live Contract and lines; earlier versions never change after
-     later edits; a refused edit appends nothing; `version` equals the array length.
+   - The versioned fields include 22's payment setting and default share, `invoicing`, 23's
+     multi-procedure rule and base-unit overrides, and 24's `allowsAnaesthetistAdjustment`, so each is
+     per version from here on (24's handoff).
+   - Tests (`contractVersions.test.ts`): each Contract-writing action appends exactly one version
+     (including a payment-setting change from full to split); the latest version deep-equals the live
+     Contract and lines; earlier versions never change after later edits; a refused edit appends
+     nothing; `version` equals the array length.
    - Satisfies US-04.1.3 ("keeps every version of a Contract, not just the latest").
 
 4. **The lock builder** (`domain/billing/lock.ts`, new, pure, re-exported from the billing index):
    - `buildBookingLock(input)` returns `{ kind: 'locked', lock }` or `{ kind: 'blocked', blockers }`.
      The input carries the Booking, its non-cancelled Procedures, the List, and the masters and lines
-     the price reads (anaesthetist, Contracts and their current versions, schedule lines, RVG,
-     modifier and Procedure masters, billing lines, pre-payments, parties).
+     the price reads (the List's anaesthetist, Contracts and their current versions, schedule lines,
+     RVG, modifier and master procedure lists, billing lines, pre-payments, parties).
    - It resolves everything **once**, from live data, using the same pure functions the live preview
-     uses (19's `resolveBaseUnits`, 18's `rateInForce` and `matchFeeScheduleLine`, 23's Booking-level
-     pricing, 24's adjustment), so the lock and the preview cannot disagree.
+     uses (19's `resolveBaseUnits`, 18's `rateInForce` and `matchFeeScheduleLine`, 23's
+     `bookingFeeFor`, 24's adjustment, 22's payment-setting split and `supplierFor`), so the lock and
+     the preview cannot disagree.
+   - The payee is the List's anaesthetist at authorise. Phase 32 later moves a Booking done by
+     someone else to the doer's List (US-01.4.6), which can only happen before authorise, so at
+     authorise the List's anaesthetist is who did the work; the lock fixes it from then on.
+   - Warnings never block (15a). An out-of-range base-unit value with 19's after-procedure office
+     warning open, a child billable party (21) or any other open warning locks as entered, with
+     `outOfGuideRange` recorded.
    - Blockers (these replace the engine's fallback, RV-01):
      - `noContract`: a Procedure with no Contract.
      - `contractMissing`: a Contract id that no longer exists.
@@ -277,32 +363,39 @@ Model, lock and engine first, re-greened before any UI.
    - `feeContextFromLock(procedureLock, bookingLock)` and `priceBookingFromLock(bookingLock)` feed the
      same Booking-level engine from the snapshot only, with no masters argument, so the function
      signature itself proves the engine cannot read live data.
-   - `invoiceDraftsFromLock(bookingLock)`: grouping by effective party, the covered-amount split, the
-     pre-payment deduction lines, the "N units at $x per unit" line descriptions and the presentation
-     fields, all from the lock. This replaces the live path in `buildInvoicesForCard`.
+   - `invoiceDraftsFromLock(bookingLock)`: grouping by effective party, the payment-setting split
+     (one invoice per party, from `payment.parties`), 24's adjustment and override delta lines, the
+     pre-payment deduction lines, the "N units at $x per unit" line descriptions, the supplier block
+     from `payee`, and the presentation fields, all from the lock. This replaces the live path in
+     `buildInvoicesForCard` (its Booking name).
    - `compareInvoice(stored, storedLines, draft)` returns `{ identical, differences[] }` over party,
-     layout, delivery, GST treatment, invoice email, every line (description, units, amount),
-     subtotal, GST and total.
+     supplier (payee name and GST number), layout, delivery, GST treatment, invoice email, every line
+     (description, units, amount), subtotal, GST and total.
    - Tests (`lock.test.ts`):
      - **Parity:** for every completed seeded Booking, `priceBookingFromLock(buildBookingLock(...))`
        equals the live price to the cent, and `invoiceDraftsFromLock` equals item 1's fixture.
-     - **Immunity:** after building a lock, change every master the price reads (the anaesthetist's
-       unit value, a Contract rate step, a schedule line price, an RVG base value, a Procedure master
-       entry, a modifier's units, the Contract's base-unit override and multi-procedure rule, its
-       allows-adjustment flag switched off, the Contract name) and the lock still prices and presents
-       identically.
+     - **Immunity:** after building a lock, change every master the price, the invoice or the payee
+       reads (the anaesthetist's unit value, name and GST number, a Contract rate step, a schedule line
+       price, an RVG base value, a master procedure list entry, a modifier's units, the Contract's
+       base-unit override and multi-procedure rule, its allows-adjustment flag switched off, its
+       payment setting switched between full and split and its default share, its invoicing settings,
+       the Contract name) and the lock still prices, splits and presents identically, to the same
+       payee.
      - Each lock field is populated for each pricing basis (anaesthetist rate, contract rate,
-       discount, fixed schedule with an add-on and a quantity, rate x time).
+       discount, fixed schedule with an add-on and a quantity, rate x time), for a full and a split
+       payment setting, for a combination Contract under a parent procedure (23), and for an
+       out-of-range base-unit value.
      - Each blocker, and a Contract retired after the Booking was completed.
 
 5. **`authoriseList` writes the locks** (`store/lifecycle.ts`):
    - `lockBlockersFor(state, listId)` runs `buildBookingLock` for every non-cancelled Booking and
-     returns the blockers per Booking. 21's `authoriseBlockersFor` includes them, so the Review UI and
-     `authoriseList` still share one pure function.
+     returns the blockers per Booking. 21's `authoriseBlockersFor` includes them beside its schedule
+     miss, so the Review UI and `authoriseList` still share one pure function. Warnings stay out of
+     it (15a).
    - `authoriseList` refuses with `authoriseBlocked` when any blocker exists. Otherwise one `mutate()`
      flips the List to AUTHORISED, writes `billing.locks` for every Booking, and audits `list.authorise`
-     plus one `booking.lock` per Booking (`after`: Contract ids and versions, unit value, pricing
-     date, `expected.total`). Then it emits `listAuthorised`, as today.
+     plus one `booking.lock` per Booking (`after`: Contract ids and versions, payee, unit value,
+     payment setting, pricing date, `expected.total`). Then it emits `listAuthorised`, as today.
    - A refused authorise writes nothing. A List with only cancelled Bookings locks nothing and still
      authorises.
    - Add readable labels for every new audit code (`booking.lock`, `lock.supplyInput`, and any
@@ -327,23 +420,40 @@ Model, lock and engine first, re-greened before any UI.
      it. Whatever of `resolveContractForProcedure` 20 left for the preview becomes a plain lookup
      used by the lock builder only. Grep for `contractIneffective` and `defaultContractFor` to zero.
    - **The run re-checks required inputs against the locked version.** For each Booking, 21's
-     `missingRequiredInputs` runs against `lock.contractVersion.contract.requiredBookingInputs` and the
-     locked input values. A missing one fails that Booking as `requiredInputMissing` with the input
+     `missingRequiredInputs` runs against each `ProcedureLock`'s
+     `contractVersion.contract.requiredBookingInputs` and the locked input values (Booking-level and
+     per-Procedure). A missing one fails that Booking as `requiredInputMissing` with the input
      and the version in the message: "COS ACC (v1) needs a claim reference. None was recorded when
-     this List was authorised." Siblings still bill (US-08.5.2). This is the engine's backstop: 21
-     makes inputs a completion rule, and a completed Booking can still lose one on a SUBMITTED List
-     through an office edit or a move.
+     this List was authorised." This is the engine's backstop: 21 makes inputs a completion rule, and
+     a completed Booking can still lose one on a SUBMITTED List through an office edit or a move.
+   - **Failure stays per Booking (OQ-05 answered, US-08.5.2).** A failure on any Procedure or party
+     of a Booking holds the whole Booking back: none of its invoices is issued, including the second
+     invoice of a split payment setting, and the List's other Bookings still bill. The List itself
+     never fails. Today's whole-Card exception already behaves this way; keep it under the lock and
+     test it.
+   - **The payee comes from the lock.** The run stamps `BillingCase.payeeAnaesthetistId` from
+     `lock.payee` and builds 22's `Invoice.supplier` from it. `handoffCase` takes the ACCPAY contact
+     from the case's payee (no `list.anaesthetistId` lookup); both `anaesthetistIdForCase` helpers
+     (receipts in `paymentActions.ts`, web accounts in `selectors.ts`) and 16's `bctiRecords` read the
+     stamped payee. Pre-payment cases, raised at setup before any lock, keep today's join until
+     Phases 27 and 41 give them their own payee (41 repoints a moved prepaid Booking's payable,
+     US-06.5.4); the helper's doc comment says so.
    - Stamp `Invoice.lockedFrom` on every invoice raised.
-   - Tests (`billingRun.test.ts`, `billingRetry.test.ts`):
-     - After authorise, delete or retire the Contract, change the unit value and every rate; the run
-       and a retry produce the fixture's invoices exactly.
+   - Tests (`billingRun.test.ts`, `billingRetry.test.ts`, `xeroHandoff.test.ts`,
+     `paymentActions.test.ts`):
+     - After authorise, delete or retire the Contract, change the unit value, every rate and the
+       payment setting; the run and a retry produce the fixture's invoices exactly.
      - Rework the ~l.454 case: a unit-value change **after** authorise no longer affects the run; a
        change **before** authorise does (the lock is at AUTHORISED, not at completion).
      - The old "$23 vs $28.50 fallback" test becomes a `contractNotInForce` authorise blocker test.
      - `requiredInputMissing` fails exactly one Booking, bills its sibling, and records the reason on
-       the case.
+       the case. On a split Booking it raises neither party's invoice.
+     - Payee: the case, the invoice's supplier, the ACCPAY contact, the receipt's `anaesthetistId`
+       and the BCTI record all name the locked payee. In a test-only state where the List's
+       `anaesthetistId` is altered after authorise, every one still names the locked payee.
+     - 16's `bctisFor` gives the same counts as before this phase for the seeded and S3 months.
    - Satisfies US-08.1.1's acceptance criterion ("the engine does not resolve a billing route or
-     determine a payer"), RV-01.
+     determine a payer"), RV-01, and DM-08's payee stamp (DM-06).
 
 7. **Resolve and retry without touching the master** (`store/billingRun.ts`, new
    `store/lockActions.ts`):
@@ -366,14 +476,15 @@ Model, lock and engine first, re-greened before any UI.
 8. **Regenerate** (store selector, pure):
    - `regenerateInvoiceFromLock(state, invoiceId)` finds the invoice's Booking lock, runs
      `invoiceDraftsFromLock`, picks the draft for the same party, and returns `compareInvoice`'s
-     result plus a summary (Contract name and version, unit value or rate, locked at, lines). It
-     never writes state.
+     result plus a summary (Contract name and version, payee, payment setting, unit value or rate,
+     locked at, lines). It never writes state.
    - It returns a reason instead of a result for invoices with no Procedure lock: pre-payment
      invoices (raised at setup, before the lock; Phase 27 owns them) and, if Phase 16 has run, its
      AA-FEE invoices.
    - Tests: every invoice raised by the S3 and S5 jumps and by the failure-and-retry path regenerates
-     identical, before and after a Contract edit and a unit-value edit; a hand-corrupted stored line
-     reports exactly that difference.
+     identical, before and after a Contract edit, a payment-setting edit and a unit-value edit; both
+     invoices of the Prentice split and an invoice carrying 24's two delta lines regenerate
+     identical; a hand-corrupted stored line or supplier reports exactly that difference.
    - Satisfies US-08.4.4.
 
 9. **Seed, persist, re-green** (end of the engine half):
@@ -387,11 +498,13 @@ Model, lock and engine first, re-greened before any UI.
      backdrop Lists in `history.ts`, whose invoices are stored totals, not priced Procedures. Give
      them `origin: 'migrated'` locks that freeze the stored lines (`HIL*`, one per `HINV*` invoice)
      as fixed lines against the Procedure's Contract v1, so regenerate reproduces them honestly and
-     labels them "Migrated history: locked from the invoice as loaded". At `1f067a8` the `HP*`
+     labels them "Migrated history: locked from the invoice as loaded". Their payee is the List's
+     anaesthetist and their payment setting is full (one stored invoice per party), so the stamped
+     payee on each history case matches what the live join gave before. At `501b0b8` the `HP*`
      Procedures carry no `governingContractId`; use whatever Contract Phase 20 gave them, and if 20
      left them without one, lock them to the List hospital's default Contract v1 (or, for a List with
      no hospital, the payer's default) and record the choice. Build them with a small pure helper in
-     the seed, not with the live pricing path.
+     the seed, not with the live pricing path, and stamp `payeeAnaesthetistId` on their cases.
    - The failure scenario: keep Losa Tuilagi's claim reference `ACC45-118844` in the seed (the trigger
      clears it, so the pristine List still authorises cleanly), and confirm COS ACC v1 requires
      `claimReference` (21 seeded it).
@@ -399,8 +512,10 @@ Model, lock and engine first, re-greened before any UI.
    - **Bump `PERSIST_VERSION` by one** from the value recorded at drift-check step 5, with a comment
      line in the history block.
    - Seed tests (`seed.test.ts`): every AUTHORISED List has a lock for every non-cancelled Booking and
-     Procedure; every Contract's `version` equals its version count; no seeded SUBMITTED List has a
-     lock blocker (S2 Beat 4 and S3 stay non-blocking); the seed is identical across two builds.
+     Procedure; every non-prepayment billing case has a payee equal to its List's anaesthetist; every
+     Contract's `version` equals its version count; no seeded SUBMITTED List has a lock blocker (S2
+     Beat 4, S3 and 21's child review List stay non-blocking); the seed is identical across two
+     builds.
    - `demoScenarios.test.ts`: after each S1 to S5 jump, every AUTHORISED List is fully locked and
      every raised invoice regenerates identical.
    - `npm run build`, `npm run build:pwa`, `npx vitest run` green before any UI.
@@ -422,7 +537,8 @@ Model, lock and engine first, re-greened before any UI.
       ("Locked 21 Jul 10:42 by Kirsty W."). One pill per distinct Contract version on the Booking.
     - Mobile shows the same pill and no money. Web and admin show it beside the fee.
     - `OfficeBillingSetup` on a locked Booking renders read-only from the lock: Contract name as
-      locked, version, rate, base-unit source per Procedure. It never offers a Contract picker.
+      locked, version, rate, base-unit source per Procedure, the payment setting (and the split, office
+      only) and the payee. It never offers a Contract picker or a split editor.
     - `data-shot="booking-lock-badge"`.
 
 12. **Review screen after authorise** (`ReviewScreen.tsx`):
@@ -433,8 +549,11 @@ Model, lock and engine first, re-greened before any UI.
     - Before authorise, `contractNotInForce` shows in the action bar with 21's blocker sentence
       pattern, and the row gets an Open link to fix the Contract. Add `data-shot="authorise-lock-blocked"`.
     - A Booking whose required input is blank shows a warn flag "Claim reference missing: billing will
-      fail this Booking" (`reviewFlags.ts`, pure, from `missingRequiredInputs`). It stays advisory, per
-      the Phase 07 ruling that flags never gate authorise.
+      hold this Booking back" (`reviewFlagsForBooking`, pure, from `missingRequiredInputs`). It is a
+      Review flag like 15a's kept "no billing reference" flag, not a 15a warning and not a blocker:
+      the authorise blockers stay 21's schedule miss and this phase's Contract checks.
+    - After authorise, the row's detail names the payee and, for a split, "Split: {party} {share}"
+      from the lock (office only).
 
 13. **Contract version history** (`ContractEditSheet.tsx`, `MasterData.tsx`):
     - The Contracts table gains a Version column (mono `v3`).
@@ -449,10 +568,13 @@ Model, lock and engine first, re-greened before any UI.
     - `data-shot="contract-versions"`.
 
 14. **Invoice document: the locked record** (`InvoiceDocument.tsx` rail):
-    - A "Locked record" rail card: Contract name and version (linking to that version's panel),
-      locked at and by, pricing date, unit value or rate, and per Procedure the base-unit source
-      ("Procedure master", "Contract override", "RVG guide", "Chosen in range", "Set manually").
-      Migrated invoices say "Migrated history: locked from the invoice as loaded".
+    - A "Locked record" rail card: Contract name, AA code and version (linking to that version's
+      panel), locked at and by, pricing date, payee ("Paid to Dr Souter, GST {number}"), payment
+      setting ("Full" or "Split: {share} to {party}"), unit value or rate, and per Procedure the
+      base-unit source in 19's labels ("Procedure list", "Contract override", "RVG guide", "Chosen in
+      range", "Set manually", and 23's "Additional procedure"), with "Outside the guide range" where
+      `outOfGuideRange` is set. Migrated invoices say "Migrated history: locked from the invoice as
+      loaded".
     - The Regenerate result (from the trigger) shows here as a line under the card: "Regenerated from
       locked data: identical (4 lines, total $396.18)" in success tint, or the difference list in
       warning tint. The trigger's `run` stores the result in 14's non-persisted trigger memory
@@ -463,9 +585,11 @@ Model, lock and engine first, re-greened before any UI.
 
 15. **Billing monitor: resolve without editing the master** (`BillingMonitorScreen.tsx`):
     - Remove the `editContract(... effectiveToISO: undefined)` branch from `resolveAndRetry`.
-    - A `requiredInputMissing` row shows the reason and an inline field for the missing input
-      ("Claim reference") with a teal "Add and retry" button: `supplyLockedInput`, then
-      `retryBillingCase`, then `handoffCase`. The field shows 21's input label.
+    - A `requiredInputMissing` row shows the reason, the line "Held back: none of this Booking's
+      invoices was issued. The rest of the List billed." (OQ-05), and an inline field for the missing
+      input ("Claim reference") with a teal "Add and retry" button: `supplyLockedInput`, then
+      `retryBillingCase`, then `handoffCase`. The field shows 21's input label. This is the manual fix
+      US-08.5.2 and US-13.3.2 describe.
     - Handoff failures keep today's plain "Resolve & retry" (re-invoke `handoffCase`).
     - Any other failure code shows its reason and a "Retry" that rebuilds from the lock, with the note
       "Retry rebuilds from the locked record. A wrong Contract after authorise is corrected by credit
@@ -478,8 +602,8 @@ Model, lock and engine first, re-greened before any UI.
     - `DemoControlPanel.tsx`: rewrite the S4 billing-failure line and the S5 jump description (it no
       longer "raises the Health NZ contract snapshot invoices"; it authorises Whitaker's List, which
       locks Health NZ v1).
-    - Vitest `src/shared/demoTriggers/demoTriggers.test.ts`: the re-based failure fails Tuilagi with `requiredInputMissing`
-      and bills Hemi Walker; its second press says "Already triggered"; `regenerate-invoice` is
+    - Vitest `src/shared/demoTriggers/demoTriggers.test.ts`: the re-based failure fails Tuilagi with `requiredInputMissing`,
+      raises none of her invoices and bills Hemi Walker; its second press says "Already triggered"; `regenerate-invoice` is
       visible only on `/admin/invoices/:invoiceId`, disabled with its reason on pre-payment and AA-FEE
       invoices, and reports identical for S3 invoices.
     - Playwright: re-point `visual/admin-phase09.spec.ts` to the new failure and the inline "Add and
@@ -488,7 +612,10 @@ Model, lock and engine first, re-greened before any UI.
     - Capture recipes in `requirements-board/capture/recipes/`:
       - Re-point the three that stage the old failure and click "Resolve & retry" (`US-08.5.1.json`
         shot `failure-reason`, `US-08.5.2.json`, `US-13.3.2.json`) to the re-based trigger and the
-        inline "Add and retry" (14 will already have moved them off `/demo/control`).
+        inline "Add and retry" (14 will already have moved them off `/demo/control`). The
+        `US-08.5.2.json` captions say a failed Booking is held back whole, none of its invoices
+        issued, while the List bills (OQ-05's answer), in place of today's "A failed card blocks
+        only its own invoice" and "card" wording.
       - Add shots where the gap is now closed: `US-04.1.3.json` (status `absent`) gets a
         `contract-versions` shot; `US-08.4.4.json` (status `partial`) gets the locked-record card and a
         regenerate result; `US-04.3.5.json` `locked-contract` highlights the lock badge. Update their
@@ -503,8 +630,8 @@ Model, lock and engine first, re-greened before any UI.
 
 | Label | Screen (routes) | Surface | Effect |
 |---|---|---|---|
-| **Regenerate from locked data** (new, `regenerate-invoice`) | Admin · Invoice (`/admin/invoices/:invoiceId`) | Harness bar | `regenerateInvoiceFromLock` on the invoice in `ctx.params.invoiceId`. Read-only: the result goes to 14's trigger memory and the rail's result line says "identical" with the line count and total, or lists the differences; the bar message says the same. Works after a Contract edit, a Contract retire or a unit-value edit. Disabled with a reason on pre-payment invoices ("Raised at setup, before the lock") and, if Phase 16 has run, AA-FEE invoices ("Not priced from a Procedure") |
-| **Trigger billing failure** (re-pointed `billing-failure`) | Admin · Billing monitor (`/admin/billing`) | Harness bar | `stageBillingFailure(api)` in `src/store/demoStaging.ts` (21 created the file; create it if absent), replacing the body 14 moved into `registry.ts` verbatim: on `SEED_LIST_IDS.billingFailure` (Ropata Thu 16), submit if DRAFT; as `OFFICE_ACTOR` (14's `src/store/demoActors.ts`), clear Losa Tuilagi's claim reference through the ordinary office Procedure edit (`editProcedure(api, OFFICE_ACTOR, procedureId, { billingReference: undefined })` or 21's renamed field; `editRefusal` allows it on a SUBMITTED List, and at `1f067a8` the edit does not un-complete the Booking: confirm 21 kept that); then `authoriseList`. The run fails her Booking `requiredInputMissing` (COS ACC v1 needs a claim reference) and bills Hemi Walker. Disabled "Already triggered" once the List is billed. The old body (end-dating COS ACC) is deleted |
+| **Regenerate from locked data** (new, `regenerate-invoice`) | Admin · Invoice (`/admin/invoices/:invoiceId`) | Harness bar | `regenerateInvoiceFromLock` on the invoice in `ctx.params.invoiceId`. Read-only: the result goes to 14's trigger memory and the rail's result line says "identical" with the line count and total, or lists the differences; the bar message says the same. Works after a Contract edit, a Contract retire, a payment-setting change or a unit-value edit. Disabled with a reason on pre-payment invoices ("Raised at setup, before the lock") and, if Phase 16 has run, AA-FEE invoices ("Not priced from a Procedure") |
+| **Trigger billing failure** (re-pointed `billing-failure`) | Admin · Billing monitor (`/admin/billing`) | Harness bar | `stageBillingFailure(api)` in `src/store/demoStaging.ts` (new here unless an earlier phase created it; 21 builds none), replacing the body 14 moved into `registry.ts` verbatim: on `SEED_LIST_IDS.billingFailure` (Ropata Thu 16), submit if DRAFT; as `OFFICE_ACTOR` (14's `src/store/demoActors.ts`), clear Losa Tuilagi's claim reference through the ordinary office Procedure edit (`editProcedure(api, OFFICE_ACTOR, procedureId, { billingReference: undefined })` or 21's renamed field; `editRefusal` allows it on a SUBMITTED List, and at `501b0b8` the edit does not un-complete the Booking: confirm 21 kept that); then `authoriseList`. The run holds her Booking back whole as `requiredInputMissing` (COS ACC v1 needs a claim reference), with none of its invoices issued, and bills Hemi Walker (OQ-05). Disabled "Already triggered" once the List is billed. The old body (end-dating COS ACC) is deleted |
 
 **Existing actions that now demonstrate the lock (no new button):**
 - **Master data unit-value edit** (Admin, Master data, Anaesthetists, Dr Souter): after an S3 or S5
@@ -520,24 +647,32 @@ Model, lock and engine first, re-greened before any UI.
 an authorise blocker, the cause above cannot reach the run. Then re-base `billing-failure` on the
 handoff path instead: arm 14's handoff fault and authorise the Ropata List, so Tuilagi's pair fails and
 the sibling's succeeds; retire the separate `arm-handoff-fault` entry into it, and say so in the
-Decisions log.
+Decisions log. Under OQ-05 a Booking whose pairs are partly posted to Xero when another fails is part
+of the manual fix (US-08.5.2), so stage the fault on a one-invoice Booking.
 
 **PWA.** No new PWA entry. Regenerate and the Billing monitor are admin-only surfaces, and the handset
 beat that waits on the office ("Office authorises this List", Phase 14) now writes locks through
 `authoriseList` with nothing else to stand in for. Check in a test (14's office stand-in test
 and `src/pwa/officeSimulation.test.ts`) that
-`authoriseAsSimulatedOffice` and "Play the office" lock the List, and that a `contractNotInForce`
-blocker makes them refuse quietly with nothing half-done.
+`authoriseAsSimulatedOffice` and "Play the office" lock the List with the handset's anaesthetist as
+payee, and that a `contractNotInForce` blocker makes them refuse quietly with nothing half-done.
 
 ## Out of scope
 
 - Correcting a locked Booking's Contract, price or party: credit in full and rebill (Phase 39). Retry
   here never changes pricing.
-- Additional invoices on a Procedure after invoicing (39), and the Parked US-08.6.4.
+- Additional invoices on a Procedure after invoicing, including splitting a combined Procedure
+  (US-08.6.4, unparked into 39 now OQ-53 is answered), and pre-op and post-op event invoices (39b).
 - Locks for pre-payment invoices and the prepayment estimate: the estimate is stored on the Booking in
   27; the lock only snapshots pre-payment already invoiced.
+- Moving a Booking to the anaesthetist who did it (US-01.4.6, Phase 32) and repointing a moved
+  prepaid Booking's payable (US-06.5.4, Phase 41). This phase only fixes the payee at authorise.
+- The split basis itself (OQ-68): the lock copies whatever 22 built.
 - Explicit save, change sets and as-at history of Bookings (35), which will reuse these versions.
-- The internal ledger (36): it reads locked invoices; nothing here changes BillingCase's money fields.
+- The internal ledger (36): it reads locked invoices and the stamped payee; nothing here changes
+  BillingCase's money fields.
+- The manual-fix process for failures beyond a missing input (US-08.5.2 says it is to be supported
+  later) and BCTI period approval (39a).
 - Temporal-table style point-in-time queries over every entity (US-08.4.4's technical discussion): the
   prototype versions Contracts and locks billing only.
 - An anaesthetist-facing unit-value setting (26), hospital rename or edit (42) and surgeon CRUD (17):
@@ -545,7 +680,8 @@ blocker makes them refuse quietly with nothing half-done.
   covered here only for the snapshot of the unit value.
 - Payer derivation from the billing route (RV-08, removed with route in 20 and 21): this phase only
   confirms the engine reads the party from the lock.
-- Any change to per-Booking failure isolation (OQ-05) or to which date decides the price (OQ-48).
+- Any change to per-Booking failure isolation (OQ-05 answered it as built) or to which date decides
+  the price (OQ-48, built as its recommendation by Phase 18).
 
 ## Manual test checklist
 
@@ -555,7 +691,14 @@ blocker makes them refuse quietly with nothing half-done.
       rate.
 - [ ] **Regenerate.** Open one of those invoices; Demo actions, **Regenerate from locked data**: the
       rail says identical, with the line count and total. The Locked record card names the Contract,
-      version, rate and base-unit sources.
+      AA code, version, payee (Dr Souter with her GST number), payment setting, rate and base-unit
+      sources. Both Prentice invoices regenerate identical and their cards read "Split".
+- [ ] **Payee.** In the Xero simulation, the ACCPAY behind the Holt invoice is to Dr Souter, and
+      receiving a payment on it credits her web Accounts. Nothing about who is paid changes when
+      masters are edited.
+- [ ] **Payment setting after authorise.** Switch the Prentice Contract from split to full (or change
+      its share): the authorised Booking keeps its two invoices and Regenerate says identical; the
+      Version history shows the new version.
 - [ ] **Unit value after authorise.** Master data, Dr Souter, change the unit value from $26.50 to
       $28.00. The authorised Bookings and Review still show $26.50 (locked) and the same totals;
       Regenerate still says identical; a DRAFT Souter Booking shows the new rate. Set it back.
@@ -566,15 +709,20 @@ blocker makes them refuse quietly with nothing half-done.
       move a Booking onto one): authorise is blocked with "Health NZ … is not in force on …", and
       there is no silent default.
 - [ ] **Billing failure (S4 Beat 3).** Billing monitor, Demo actions, **Trigger billing failure**.
-      Losa Tuilagi fails with "COS ACC (v1) needs a claim reference…"; Hemi Walker is billed. Enter
+      Losa Tuilagi fails with "COS ACC (v1) needs a claim reference…" and "Held back: none of this
+      Booking's invoices was issued"; she has no invoice; Hemi Walker is billed and the List is not
+      failed. Enter
       `ACC45-118844` and **Add and retry**: one invoice and one Xero pair appear, the row clears, and
       History shows `lock.supplyInput`. Pressing the trigger again says "Already triggered". No
       Contract changed (check the COS ACC Version history).
 - [ ] **Idempotent retry.** After the retry, the case offers no second retry, and the invoice count
       on the List is unchanged by any further click.
 - [ ] **Version on every change.** Add an upcoming rate step, edit a schedule line, tick a required
-      input and toggle allows-adjustment on one Contract: four new versions, each with a summary. A
-      refused edit adds none.
+      input, toggle allows-adjustment and change the payment setting on one Contract: five new
+      versions, each with a summary. A refused edit adds none.
+- [ ] **Warnings do not block the lock.** A Booking with an out-of-range base-unit value (19's office
+      warning open) authorises and bills at the value entered; its Locked record card says "Outside
+      the guide range".
 - [ ] **Seeded history.** Open a historical backdrop invoice by URL: the Locked record card reads
       "Migrated history", and Regenerate says identical.
 - [ ] **Pre-payment and AA-FEE invoices.** Regenerate is disabled with its reason on a pre-payment
@@ -591,33 +739,40 @@ In the same session, patch `docs/demo-guide/03-demo-script.md`, `04-presenter-ch
 `02-workflows-and-handoffs.md`, the matching sections of `master-demo-guide.html`, and the Control
 Panel scenario text:
 - **S3 Beat 1/2 "Expected":** add that each authorised Booking now carries "Contract vN locked at
-  authorise", and the billing run prices from that record. Figures are unchanged.
+  authorise", and the billing run prices from that record, including who is paid (Dr Souter) and the
+  Prentice split. Figures are unchanged.
 - **S4 Beat 3 (billing failure and retry), rewritten:**
   - Click: Admin Billing monitor, Demo actions, **Trigger billing failure**; on Losa Tuilagi, enter
     the claim reference and **Add and retry**.
   - Say: "The engine prices only from what was locked at authorise, so a Contract edit can no longer
-    break a run. What can still fail is data the locked Contract requires and the Booking lacks. The
-    failed Booking blocks only its own invoice; the office supplies the reference and retries once,
-    without touching the Contract."
-  - Expected: Tuilagi fails with the reason; Walker bills; retry raises exactly one invoice.
+    break a run. What can still fail is data the locked Contract requires and the Booking lacks. A
+    List never fails as a whole: the failed Booking is held back with none of its invoices issued,
+    and the rest of the List bills. The office supplies the reference and retries once, without
+    touching the Contract."
+  - Expected: Tuilagi fails with the reason and has no invoice; Walker bills; retry raises exactly
+    one invoice.
 - **S5 staging text:** the jump authorises Whitaker's Fri 17 List, which locks Health NZ v1.
 - **S5 Beat 4, renamed "Contract versions and the lock":** end-date Health NZ, show v2 in the Version
   history with v1's invoices, then **Regenerate from locked data** on the Hemi Walker invoice.
   Say: every change is a new version; an invoice is tied to the version locked at authorise and can
-  be regenerated exactly.
+  be regenerated exactly, with the same payee and the same split.
 - **S5, new optional beat "Unit value after authorise":** change Dr Souter's unit value; the
   authorised Booking keeps its locked rate, Regenerate says identical, a DRAFT Booking takes the new
   rate. Reset the value afterwards.
-- **S4 discovery points:** replace "billing-failure isolation" wording with the per-Booking reading
-  (OQ-05) and add "which fields are frozen at authorise" (US-04.3.5, discovery).
-- **Cheat sheet:** rewrite "Billing failure isolation" and add a "Lock at authorise" entry: what is
-  locked, no fallback, the authorise blocker, regenerate.
-- **Workflows doc:** the authorise step writes the lock; the billing run reads only the lock; failure
-  resolution supplies missing inputs, never edits the master.
+- **S4 discovery points:** replace the "billing-failure isolation" open point with the answered rule
+  (OQ-05: per Booking, a List never fails, the whole Booking is held back for a manual fix) and keep
+  "which fields are frozen at authorise" (US-15.0.3, still to be decided in discovery).
+- **Cheat sheet:** rewrite "Billing failure isolation" to the answered rule and add a "Lock at
+  authorise" entry: what is locked (Contract version, rate inputs, payment setting and split,
+  adjustment, party and payee), no fallback, the authorise blocker, regenerate.
+- **Workflows doc:** the authorise step writes the lock and fixes the payee; the billing run reads
+  only the lock; a failed Booking is held back whole while the List bills; failure resolution
+  supplies missing inputs, never edits the master.
 - **Control Panel:** the S4 and S5 scenario text as above.
 - **Milestone consistency read** (Phase 25 is a milestone): read `master-demo-guide.html` end to end
   against the run sheet and the cheat sheet, and fix any beat still describing contract fallback,
-  "Resolve & retry restores the contract", or effective-dating as the reason invoices stay fixed.
+  "Resolve & retry restores the contract", effective-dating as the reason invoices stay fixed, or
+  failure isolation as an open question.
 
 ## Adversarial review (after build)
 
@@ -634,20 +789,29 @@ re-raise anything settled in the Decisions log.
 - **The engine reads no live master.** `runBillingForList`, `retryBillingCase` and
   `regenerateInvoiceFromLock` take nothing from `state.masters` or live billing lines. The
   `priceBookingFromLock` signature has no masters argument. Try to find a path that still does (a
-  helper that looks up a Contract name, a party email, the GST rate, the pre-payment netting).
+  helper that looks up a Contract name, a party email, the GST rate, the supplier's GST number, the
+  pre-payment netting).
 - **Lock completeness.** Every input 18 to 24 added to the price or the invoice is in the lock: rate
-  step, schedule line price and add-ons, base-unit source and Contract override, modifier unit values,
-  primary flag, multi-procedure rule and split, anaesthetist adjustment and office override, party,
-  invoice email, required inputs, covered amount, presentation, pre-payment deduction. The immunity
-  test changes each one.
-- **Parity.** Item 1's fixture passes unchanged. S3, S4 and S5 figures are identical to Phase 24's.
+  step, schedule line price and add-ons, base-unit source, out-of-range flag and Contract override,
+  modifier unit values, primary flag, multi-procedure rule and 3/2/2 split, payment setting with its
+  share and per-party amounts, anaesthetist adjustment with its permission and before and after
+  amounts, office override, party, invoice email, required inputs, presentation, payee and supplier
+  details, pre-payment deduction. The immunity test changes each one.
+- **The payee is fixed at authorise.** No locked case, invoice supplier, ACCPAY contact, receipt or
+  BCTI record finds its anaesthetist by joining Booking to List. Only pre-payment cases keep the join,
+  and the code says why (27, 41).
+- **Failure per Booking (OQ-05).** A failed Booking issues none of its invoices, both halves of a
+  split included; its siblings bill; the List is never marked failed.
+- **Parity.** Item 1's fixture passes unchanged. S3, S4 and S5 figures are identical to Phase 24's,
+  and 16's BCTI counts are unchanged.
 - **Atomicity and idempotency.** The List flip and its locks are one `mutate()`; a refused authorise
   writes nothing; the event fires after the commit. Retry never duplicates an invoice, a case or a
   Xero pair, and a second retry is refused. `supplyLockedInput` fills only a blank, required input on
   a failed case and touches no pricing field.
 - **No fallback remains.** `contractIneffective` and `defaultContractFor` are gone; a Contract not in
-  force is an authorise blocker with readable copy, never a silent default. No seeded SUBMITTED List
-  has a blocker; S2 Beat 4 and S3 stay non-blocking.
+  force is an authorise blocker with readable copy, never a silent default. No warning (15a) became a
+  blocker. No seeded SUBMITTED List has a blocker; S2 Beat 4, S3 and 21's child review List stay
+  non-blocking.
 - **Versions.** Every Contract-writing action appends exactly one version in the same commit; earlier
   versions are immutable; `version` matches the count; the invoice counts per version are right after
   the S3 and S5 jumps.
@@ -659,9 +823,10 @@ re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
-- Status row for catch-up Phase 25, and a phase entry: the drift-check result (including what 18 to
-  24 were found to provide and any change to the fields to freeze), the lock's field list, the tests
-  added, `PERSIST_VERSION` old to new, and the adversarial pass.
+- Status row for catch-up Phase 25, and a phase entry: the drift-check result against `501b0b8`
+  (including what 16 and 18 to 24 were found to provide, every live payee join replaced, and any
+  change to the fields to freeze), the lock's field list, the tests added, `PERSIST_VERSION` old to
+  new, and the adversarial pass.
 - **Decisions log** (each names the July ruling it supersedes where there is one):
   - **Contract fallback at billing time is removed** (supersedes the 2026-07-23 Phase 08 build
     decision (1), "Contract resolution at billing time", and its "$23 vs $28.50 fallback" test). A
@@ -670,26 +835,44 @@ re-raise anything settled in the Decisions log.
     ACC and restored it in "Resolve & retry"). The cause is a required input missing from the locked
     record; resolution supplies it and retries; the master is never edited from the monitor. Note the
     handoff fallback if it was used.
-  - **What is locked** (a reading while discovery decides the fields, US-04.3.5): the whole Contract
-    version plus every rate input, party, required input and presentation field, per Procedure within
-    a Booking lock.
-  - **A version is every committed Contract change**, including rate steps and schedule lines, and is
-    held in state as append-only records (the prototype's stand-in for temporal tables).
-  - **A third authorise blocker** (`contractNotInForce`), alongside 21's child payer and schedule
-    miss. Other flags stay advisory (the Phase 07 ruling holds).
+  - **What is locked** (US-04.3.5; discovery has not named the fields, US-15.0.3): the whole
+    Contract version plus every rate input, the payment setting and split, the adjustment and
+    override, party, required input, presentation field and the payee, per Procedure within a
+    Booking lock.
+  - **The payee is fixed at authorise** (DM-06, DM-08): the List's anaesthetist at authorise is
+    stamped on the lock and the billing case; the ACCPAY, receipts, web accounts and BCTI records read
+    it, not a live Booking-to-List join (pre-payment cases excepted until 27 and 41).
+  - **A version is every committed Contract change**, including rate steps, schedule lines and the
+    payment setting, and is held in state as append-only records (the prototype's stand-in for
+    temporal tables).
+  - **A second authorise blocker kind** (`contractNotInForce`, with `noContract` and
+    `contractMissing`), alongside 21's schedule miss; Phase 40 adds a missing NHI. The child billable
+    party is a mild warning (D4) and every 15a warning stays a warning; other Review flags stay
+    advisory.
+  - **Failure per Booking is confirmed** (OQ-05 answered; the Phase 09 per-Card reading stands): a
+    List never fails as a whole, and a Booking with any failed Procedure or party issues none of its
+    invoices.
   - **Required inputs are re-checked by the engine** against the locked version, as a backstop to
-    21's completion rule; `supplyLockedInput` is the only post-authorise write to a lock.
+    21's completion rule; `supplyLockedInput` is the only post-authorise write to a lock, as the
+    office's manual fix (US-13.3.2).
   - **Seeded history carries migrated locks** that freeze the stored lines.
-  - **The pricing date** stays the List date (OQ-48 interim) and is stored on the lock.
+  - **The pricing date** is the procedure date (the List date), OQ-48's recommendation and Greg's
+    lean on 2026-10-01, and is stored on the lock.
   - Update the `editAnaesthetist` note: a unit-value change re-prices unlocked Bookings only.
 - **Handoff notes:**
   - 27: the prepayment estimate and invoice at setup are not locks; the lock snapshots pre-payment
-    already invoiced, so the balance invoice nets against a fixed figure.
+    already invoiced, so the balance invoice nets against a fixed figure. Pre-payment cases still
+    find their payee by the live join; 27 stamps one when it builds the prepayment record.
+  - 32: moving a Booking to the anaesthetist who did it must land before authorise; after authorise
+    the payee is locked and only credit and rebill (39) changes it.
   - 35: explicit save and as-at history can show "Contract vN" on a Booking and reuse
     `contractVersionsFor`.
-  - 36: the ledger's receivable legs come from locked invoices; `Invoice.lockedFrom` gives the
-    version lineage.
-  - 39: credit-and-rebill is the only way to change a locked Booking's price; the rebill needs a new
-    lock (decide there whether it re-locks at the current Contract version or the original one).
+  - 36: the ledger's receivable legs come from locked invoices and the payable leg's payee from
+    `lock.payee`; `Invoice.lockedFrom` gives the version lineage.
+  - 39: credit-and-rebill is the only way to change a locked Booking's price, split or payee; the
+    rebill needs a new lock (decide there whether it re-locks at the current Contract version or the
+    original one).
+  - 41: repointing a moved prepaid Booking's payable (US-06.5.4) changes the prepayment's payee,
+    never a lock.
   - 42: loaded masters must go through the version helper, so a load appends versions.
   - 44: S4 Beat 3 and S5 Beat 4 as rewritten here.

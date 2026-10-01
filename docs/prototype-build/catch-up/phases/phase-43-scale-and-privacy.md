@@ -83,7 +83,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 1. Run:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Read the hunks for US-15.0.4, US-15.0.6, FT-01.1, US-09.3.1, US-09.3.3, US-11.1.1, US-02.1.4,

@@ -2,19 +2,31 @@
 
 **Requirements covered:**
 [EP-04](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-04.md) (the route half; billable party lands in 21, the lock in 25),
-[FT-04.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-04.3.md),
+[FT-04.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-04.3.md) (Verify),
 [US-04.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.1.md),
-[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md),
+[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md) (Verify; holder-code search AC),
 [US-04.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.3.md),
-[FT-03.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.4.md) (the flag half; office approval lands in 21),
+[FT-03.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.4.md) (Contradicts; the change-and-flag half, office approval lands in 21),
 [US-03.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.4.1.md),
 [US-03.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.2.md),
 [US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md);
-[DM-09](../analysis/domain-model-delta.md#dm-09), [DM-35](../analysis/domain-model-delta.md#dm-35),
-[DM-31](../analysis/domain-model-delta.md#dm-31); [RV-08](../analysis/reverse-check.md) (route and
-payment category part; the Type 1/2/3 relabel landed in 18).
+[DM-10](../analysis/domain-model-delta.md#dm-10) (one Contract per Procedure, procedure first,
+narrowed by hospital), [DM-12](../analysis/domain-model-delta.md#dm-12) (insurer and funding source
+on neither Booking nor Patient; replaces the old DM-35 "on the Booking"),
+[DM-37](../analysis/domain-model-delta.md#dm-37) (anaesthetist Contract change flagged, derived from
+audit); [RV-08](../analysis/reverse-check.md) (route and payment category part; the Type 1/2/3
+relabel landed in 18).
+**Leans on, not covered:** [US-15.0.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.1.md)
+(keep the anaesthetist's view free of Contract complexity: this phase builds its picker and Contract
+row to that rule; the wider sweep is 43a), [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md)
+(18's AA identifier, shown in the picker), [US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md)
+(combination Contracts: the picker rule offers them, 23 seeds them).
 **Depends on:** Phase 19 (and through it 18's Contract shape: category, holder, scope filters,
-pricing basis; 19's RVG groups and base-unit resolver; 15's Booking vocabulary; 14's trigger registry).
+pricing basis, `aaCode`, fee-schedule lines with holder codes; 19's master procedure list,
+procedure-first capture picker, RVG groups and base-unit resolver; 15a's warning routine; 15's
+Booking vocabulary; 14's trigger registry).
+**Blocked by (open, build the recommendation):** [OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md)
+(how thousands of Contracts are coded and found).
 **Estimated:** 2 sessions. Session 1: work items 1 to 9 (figures pinned, model, engine, store, seed),
 ending green with the UI edited only as far as it must compile. Session 2: items 10 to 18 (picker,
 sheets, review, copy, shots, demo guide). Tight for an XL change: session 1 carries the seed remap
@@ -24,115 +36,156 @@ item 8's label sweep; never defer the parity pin or the seed remap.
 ## Goal
 
 Pricing becomes one decision. `BillingRoute`, `PatientPaymentCategory` and `Procedure.insurerId`
-are removed, and with them the engine's route resolution and route-based payer derivation. Every
-Procedure carries exactly one Contract: the Scheduling Engine defaults it to the RVG Default
+are removed, and with them the engine's route resolution and route-based payer derivation. Per
+owner decision D2 (OQ-55, answered 2026-10-01), insurer and funding source are held on **neither the
+Booking nor the Patient**: the Procedure's Contract says who pays, one Booking can have Procedures on
+different Contracts, and nothing replaces `insurerId`.
+
+Every Procedure carries exactly one Contract. The Scheduling Engine defaults it to the RVG Default
 Hospital Contract for the List's hospital when the Booking is created and again when the hospital
-changes, and a Booking cannot be marked complete without one. Anaesthetists (mobile and web) and the
-office choose it from a picker filtered by hospital, surgeon, insurer, funding source and RVG code,
-with the default always offered and no "None" option. Insurer and funding source move onto the
-Booking (owner decision D2). An anaesthetist's Contract change is recorded and flagged for the office
-at review.
+changes, and a Booking cannot be marked complete without one. After the procedure pick (Phase 19),
+anaesthetists (mobile and web) and the office choose the Contract from a picker that shows the
+Contracts set against that procedure, narrowed by the List's hospital, with the default always
+offered first and no "None". A typed holder code (the catalogue's example is `8942`; in the seed,
+Phase 18's CES HNZ codes such as `HNZCATall`) filters the list, and each row shows the Contract's AA
+identifier. Contracts will number in the
+thousands (OQ-66), so the picker is filtered and searchable, never a flat select.
+
+The anaesthetist's view stays simple (US-15.0.1): the Contract shows as a plain name with a teal
+"Change", with no route chip, insurer, payer or pricing basis. The office sees the full detail. An
+anaesthetist's Contract change is recorded and flagged for the office at review, derived from the
+audit trail (DM-37).
 
 Three interims keep the demo whole until later phases replace them, each labelled in code comments
 and the Decisions log:
 
 - **Payer = the selected Contract's holder** (a patient-direct holder bills the Procedure's guardian
-  override, else the patient) until Phase 21 stores a billable party on the Booking.
-- **`funderOverride` stays the two-funder split** (Prentice, S3) until Phase 22's covered amount.
-- **Prepayment is an office-set flag on the Booking** (full, or split with a deposit) until Phase 27
-  derives it from the anaesthetist's prepaid set. The completion gate and its override are unchanged
-  (D5 is decided in 27).
+  override, else the patient) until Phase 21 stores a billable party with its override.
+- **`funderOverride` stays the two-funder split** (Prentice, S3) until Phase 22's Contract payment
+  setting (full or split) replaces it.
+- **Prepayment is an office-set flag on the Booking** until Phase 27 derives it from the
+  anaesthetist's prepaid set. The office sets it on or off (all or nothing, US-06.2.2); the seeded Riley
+  $800 deposit stays as data so S4's figures hold until 27 retires deposits. The flag feeds 15a's
+  unpaid-prepayment warning, never a completion gate (D5).
 
 S3 figures must not move, and holder-as-payer must reproduce today's payer for every seeded
 Procedure.
 
 > Names below are the July names (`Card`, `createCard`, `cardActions.ts`, `CardDetailBody`).
 > Phase 15 renamed Card to Booking; use the renamed identifiers and files. Likewise use Phase 18's
-> names for the Contract fields (category, holder, scope filters, pricing basis) and its
-> `FundingSource` type if it defined one.
+> names for the Contract fields (category, holder, scope filters, pricing basis, `aaCode`, fee
+> schedule lines) and Phase 19's names for the master procedure list and the Procedure's link to it
+> (planned as `ProcedureType` and `procedureTypeId`).
 
 ## Before you start: drift check
 
 1. Run:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Look for changes to EP-04, FT-04.3, US-04.3.1, US-04.3.2, US-04.3.3, FT-03.4, US-03.4.1,
    US-03.1.2, US-03.2.3, and to the items this phase leans on: US-04.1.1 (categories, especially the
-   RVG Default Post-paid category and the "Booking's billable party" holder), US-04.2.1 (scope
-   filters), US-04.3.4, US-07.2.2, US-11.2.2, US-11.4.2 and the domain model's Contract section.
-   If an item changed, re-read it and adjust the work items. If one is now Retired or Future, drop it
-   from this phase and record that in the PROGRESS entry.
-2. **Owner decision D2** (insurer and funding source on the Booking or on the Patient). No linked
-   OQ. If unanswered, build the default (on the Booking, DM-35) and say so in the Decisions log. If
-   the answer is "on the Patient", put `insurerId` and `fundingSource` on `Patient`, edit them through
-   `editPatient`, and have the picker read them through the Booking's patient; everything else in
-   this plan is unchanged.
-3. **Confirm what 18 and 19 actually delivered** (their PROGRESS entries): the category names, how a
-   patient-direct holder ("the Booking's billable party") is modelled, the scope filter fields, the
-   `FundingSource` values, RVG groups, and whether `Procedure.accRelated` and the ACC review
-   advisory (RV-20) are already gone. The work items below say what to do in either case.
-4. Record the result (including "no drift") in the PROGRESS entry.
-
-There are no open questions blocking this phase. The readings this phase picks where the catalogue
-is silent are listed in work item 3 and go to the Decisions log as provisional.
+   RVG Default Post-paid category and the "Booking's billable party" holder), US-04.1.4, US-04.2.1
+   (scope filters, including procedures), US-04.2.11, US-04.3.4, US-05.1.6, US-07.2.2, US-11.2.2,
+   US-11.4.2, US-15.0.1, OQ-55, OQ-66, OQ-67 and the domain model's Contract and "Selection"
+   sections. If an item changed, re-read it and adjust the work items. If one is now Retired or
+   Future, drop it from this phase and record that in the PROGRESS entry.
+2. **Owner decision D2 is answered** (OQ-55): neither the Booking nor the Patient holds an insurer or
+   funding source. Build that. If OQ-67 (who a Contract belongs to, the fall-through for who pays)
+   has been answered since, read it: an answer that makes insurer or funding source a picker input
+   again changes item 3; record it in the PROGRESS entry.
+3. **OQ-66 is open.** Build its recommendation: the picker filtered by procedure and hospital, with
+   search by AA code and holder code. Label it provisional in one place only (the office picker's
+   footer caption, item 10) and in the Decisions log. If OQ-66 is answered, build the answer instead.
+4. **Confirm what 15a, 18 and 19 actually delivered** (their PROGRESS entries): the category names;
+   how a patient-direct holder ("the Booking's billable party") is modelled; the scope fields and
+   whether a procedure filter exists yet (US-04.2.1 now lists procedures; planned as 18's
+   `scope.procedureTypeIds`, typed by 19, empty meaning all procedures); 18's
+   `SCOPE_NARROWING_DIMENSIONS` constant and its `contractSearch` helper; `aaCode`; holder codes on
+   the fee schedule lines; 19's `scope.rvgGroups` and `scopeCoversProcedure`; the master procedure
+   list, the Procedure's link to it, 19's `pickProcedure` action and the procedure-first capture
+   picker (`ProcedurePickerSheet`); 15a's warning routine, its `WARNING_SAMPLES` prepayment sample
+   (planned to stage the condition through the route and payment-category fields this phase
+   deletes), and that the prepayment completion gate, `overridePrepaymentGate` and
+   `PrepaymentOverrideSheet` are gone (15a deletes them, D5); and whether `accRelated` and the
+   route-keyed ACC review advisory survived 18. The work items below say what to do in either case.
+5. Record the result (including "no drift") in the PROGRESS entry.
 
 ## Reference
 
 - **Design** (convention 17): `docs/design/Design Language.dc.html` (tokens; neutral pills for
   Contract and category chips; teal is the only action colour, so the picker's selected tick and
   "Change" links are teal, never crimson); `docs/design/Mobile App.dc.html` (card detail anatomy:
-  white cards with micro-cap headings, 14px radius, bottom-sheet rows for choices);
-  `docs/design/Admin Review.dc.html` (review table; its mock ROUTE column is anaesthetic technique
-  and its CONTRACT column shows who pays, which is the layout this phase moves to);
-  `docs/design/Admin Day.dc.html` (drawer and card-detail chrome). No mockup covers the picker:
-  extend the mobile bottom-sheet list pattern, rendered as a Dialog on web and admin.
-- **Catalogue:** the covered files above, plus US-04.1.1, US-04.2.1, US-04.3.4, US-07.2.2,
-  US-11.2.2, US-11.4.2 and `domain-model.md` ("Contract", "Selection", "Patient and billable party").
-- **Gap analysis:** `GAP-ANALYSIS.md` (Summary, themes 1 and 5, "Structural first" step 3, the DM-09,
-  DM-31, DM-35 and RV-08 rows); `epics/EP-04.md` and `epics/EP-03.md` for these items;
-  `gaps.json` entries; `analysis/domain-model-delta.md` (DM-06, DM-09, DM-10, DM-24, DM-31, DM-35);
-  `analysis/reverse-check.md` (RV-01, RV-08, RV-20).
-- **Code entry points** (July line numbers, from `analysis/prototype-map-*.md`):
-  - `src/domain/types.ts` 409 to 484 (`BillingRoute`, `PatientPaymentCategory`, `PrepaymentDetail`,
-    `Procedure`), 370 (`Card`), 216 (`Contract`).
-  - `src/domain/billing/invoiceBuild.ts`: `resolveContractForProcedure` 114,
-    `counterpartyForProcedure` 192, `buildPrePaymentInvoiceForCard` 456;
-    `validateCardForBilling.ts` (route, insurer-route, category and prepayment checks,
-    `billingReferenceMissing` 49); `contracts.ts` (`selectContract`); `fixtures.ts`.
-  - `src/store/cardActions.ts` (`createCard` 70, `copyCard`, `addPostOpAddendum`, `addProcedure`
-    394); `lifecycle.ts` (`editCard` 415, `editProcedure` 445, `editList` 498, `reassignCard` 640);
-    `integrationActions.ts` (S12 create 158, `ingestPdfRow` 472); `prepaymentActions.ts`;
-    `selectors.ts` (`cardRequiresPrepayment` 307, `billingContextForCard` 837, receivable rows' ACC
-    flag 634); `mastersActions.ts` (`setInsurerDirectClaims` 101, feeds item 3's direct-claims
-    rule); `contractActions.ts` (the delete guard on `governingContractId` 158, unchanged);
-    `billingLineActions.ts` 77 (reads the stored Contract, unchanged).
+  white cards with micro-cap headings, 14px radius, bottom-sheet rows for choices, the code picker
+  sheet's search field); `docs/design/Admin Review.dc.html` (review table; its mock ROUTE column is
+  anaesthetic technique and its CONTRACT column shows who pays, which is the layout this phase moves
+  to); `docs/design/Admin Day.dc.html` (drawer and card-detail chrome). No mockup covers the
+  Contract picker: extend the mobile bottom-sheet list pattern with the code picker's search field,
+  rendered as a Dialog on web and admin.
+- **Catalogue:** the covered files above, plus US-04.1.1, US-04.1.4, US-04.2.1, US-04.2.11,
+  US-04.3.4, US-05.1.6, US-07.2.2, US-11.2.2, US-11.4.2, US-15.0.1, OQ-55, OQ-66, OQ-67, the note
+  `catalogue/notes/2026-10-01-aa-meeting-with-greg.md` (#10, #27, #29, #51) and `domain-model.md`
+  ("Contract", "Selection", "Patient and billable party").
+- **Gap analysis:** `GAP-ANALYSIS.md` (Summary, themes 1 and 5, "Structural first" step 3, the DM-10,
+  DM-12, DM-37 and RV-08 rows); `epics/EP-04.md` and `epics/EP-03.md` for these items;
+  `gaps.json` entries (FT-03.4 is now Contradicts: the anaesthetist cannot change the Contract at
+  all today); `analysis/domain-model-delta.md` (DM-07, DM-10, DM-11, DM-12, DM-13, DM-20, DM-31,
+  DM-37); `analysis/reverse-check.md` (RV-01, RV-08, RV-20).
+- **Code entry points** (July line numbers, from `analysis/prototype-map-*.md`, re-checked):
+  - `src/domain/types.ts` 409 to 484 (`BillingRoute` 409, `PatientPaymentCategory` 416,
+    `PrepaymentDetail`, `Procedure` 444 with `insurerId` 460 and `accRelated` 477), 370 (`Card`),
+    300 (`List`, `hospitalId` optional), 216 (`Contract`), 645 (`AuditEntry`: who, role, before,
+    after, atISO).
+  - `src/domain/billing/invoiceBuild.ts`: `defaultContractFor` 86 (private, the expiry fallback),
+    `resolveContractForProcedure` 114 (the `noBillingRoute` exception 180), `counterpartyForProcedure`
+    192, `buildPrePaymentInvoiceForCard` 456; `validateCardForBilling.ts` (`billingReferenceMissing`
+    49, the insurer-route direct-claims check 166 to 181, category 188, prepayment 204 to 215);
+    `contracts.ts` (`selectContract`); `fixtures.ts`.
+  - `src/store/cardActions.ts` (`createCard` 70, `copyCard` 179, `addPostOpAddendum` 270,
+    `addProcedure` 394); `lifecycle.ts` (`editRefusal` 48, `editCard` 415, `editProcedure` 445,
+    `editList` 498, `reassignCard` 640); `integrationActions.ts` (S12 create 150, `ingestPdfRow` 431,
+    its `createCard` 464); `prepaymentActions.ts`; `selectors.ts` (`cardRequiresPrepayment` 307,
+    receivable rows' ACC flag 634, `billingContextForCard` 837); 15a's `warningSamples.ts`
+    (`WARNING_SAMPLES`, the prepayment sample); `mastersActions.ts`
+    (`setInsurerDirectClaims` 102, feeds item 3's direct-claims rule); `contractActions.ts` (the
+    delete guard on `governingContractId` 158, unchanged); `billingLineActions.ts` 77 (reads the
+    stored Contract, unchanged).
   - Phase 18 retypes the Contract (`holder` union with kinds `hospital`, `surgeon`, `surgeonGroup`,
-    `insurer`, `bookingBillableParty`; `category`; `scope` arrays; `pricingBasis`) and adds
-    `holderCounterparty`, `holderMatches` and `isRetired` in `domain/billing/contracts.ts`. The July
-    `holderType`/`holderId` fields named in the analysis files no longer exist.
-  - `src/shared/flows/EditProcedureSheet.tsx`, `EditBillingSetupSheet.tsx`, `ManualCardForm.tsx`,
-    `PhotoCaptureFlow.tsx`, `sampleExtractions.ts`; `src/shared/card/OfficeBillingSetup.tsx`,
-    `CardDetailBody.tsx`; `src/shared/capture/BtmCaptureBlock.tsx` (context line, `CONTEXT_FIELDS`),
-    `feeContext.ts`; `src/shared/format.ts` (`ROUTE_LABELS`, `routeLabel`); `src/shared/audit/`
-    (`fieldLabels.ts`, `actionLabels.ts`).
-  - `src/apps/admin/reviewFlags.ts`, `screens/ReviewScreen.tsx` (Route column 78, 244),
-    `screens/BillingMonitorScreen.tsx` (`resolveAndRetry` failure codes 79, unchanged),
-    `screens/InvoiceDocument.tsx` (`PaymentCategoryNote` 496), `flows/PhoneAdviceBooking.tsx` (S2
-    prefill 33); `src/apps/mobile/screens/ListDetailScreen.tsx`, `BalancesScreen.tsx`;
+    `insurer`, `bookingBillableParty`; `category`; `scope` arrays; `pricingBasis`; `aaCode`; fee
+    schedule lines with `holderCode`) and adds `holderCounterparty`, `holderMatches`, `isRetired`,
+    `contractSearch` and `SCOPE_NARROWING_DIMENSIONS` in `domain/billing/contracts.ts` (and
+    `types.ts`). The July `holderType`/`holderId` fields in the analysis files no longer exist.
+    Phase 19 adds the master procedure list (`ProcedureType`, `Procedure.procedureTypeId`),
+    `scope.rvgGroups`, `scopeCoversProcedure(scope, procedure, masters)`, the `pickProcedure` store
+    action and the procedure-first capture picker (`ProcedurePickerSheet`).
+  - `src/shared/flows/EditProcedureSheet.tsx`, `EditBillingSetupSheet.tsx`, `ManualCardForm.tsx`
+    (route state 65, submit 120), `PhotoCaptureFlow.tsx`, `sampleExtractions.ts` (sample B 45);
+    `src/shared/card/OfficeBillingSetup.tsx` (category map 23,
+    `billingReferenceMissing` 47), `CardDetailBody.tsx`; `src/shared/capture/BtmCaptureBlock.tsx`
+    (`ROUTE_LABEL` 17, `CONTEXT_FIELDS` 24, context line 111 to 115 and 186 to 206), `feeContext.ts`;
+    `src/shared/format.ts` (`ROUTE_LABELS`, `routeLabel`); `src/shared/audit/` (`fieldLabels.ts`,
+    `actionLabels.ts`).
+  - `src/apps/admin/reviewFlags.ts` (reference flag 81, ACC advisory 84), `screens/ReviewScreen.tsx`
+    (Route column 78, `routeText` 97), `screens/BillingMonitorScreen.tsx` (`resolveAndRetry` failure
+    codes, unchanged), `screens/InvoiceDocument.tsx` (`PaymentCategoryNote` 149 and 496),
+    `flows/PhoneAdviceBooking.tsx` (S2 prefill 33: route and `I-NIB`);
+    `src/apps/mobile/screens/ListDetailScreen.tsx`, `BalancesScreen.tsx`;
     `src/apps/web/screens/ListDetailView.tsx`, `AccountsScreen.tsx`.
-  - Seed: `src/domain/seed/cards.ts` (`ProcedureSpec` 228, scenario cards 355 to 1000, filler route
-    draw 1150), `contracts.ts`, `history.ts` 227, `audit.ts`, `billing.ts`, `index.ts`.
-  - Tests that name routes today: `reviewFlags.test`, `invoiceBuild.test`, `prePaymentInvoice.test`,
-    `validateCardForBilling.test`, `seed.test`, `billingRun.test`, `captureActions.test`,
+  - Seed: `src/domain/seed/cards.ts` (`ProcedureSpec` 228, Marsh nib insurer route 371, two-funder
+    Prentice 606, Doyle bariatric 682 and 692, Aria 712 and 865, Webb AIA reimbursement 722, Riley
+    split $800 816, Nair full 899, Morrison 417 to 475, filler route draw 1150), `contracts.ts`,
+    `cast.ts` 122 (nib direct claims, AIA not), `history.ts`, `audit.ts`, `billing.ts`, `index.ts`
+    (scenario marker `insuredReimbursementCard` 624).
+  - Tests that name routes today: `reviewFlags.test`, `invoiceBuild.test` (176), `prePaymentInvoice.test`,
+    `validateCardForBilling.test`, `seed.test`, `billingRun.test` (222), `captureActions.test`,
     `cardActions.test`, `postOpAddendum.test`, `btmCapture.test`, `prepayment.test`,
     `mastersActions.test`, `auditNarrative.test`, `demoScenarios.test`.
-  - Shots: `visual/mobile-interactions.spec.ts` (clicks "Billing route"), `admin-phase06.spec.ts`
-    (office billing setup), `admin-phase07.spec.ts` (review table). Catalogue capture recipes:
-    `requirements-board/capture/recipes/US-03.1.2.json`, `US-03.2.3`, `US-03.4.1`, `US-04.3.1` to
-    `US-04.3.5`.
+  - Shots: `visual/mobile-interactions.spec.ts` (146 clicks "Billing route"),
+    `admin-phase06.spec.ts` (office billing setup), `admin-phase07.spec.ts` (review table).
+    Catalogue capture recipes: `requirements-board/capture/recipes/US-03.1.2.json`, `US-03.2.3`,
+    `US-03.4.1`, `US-04.3.1` to `US-04.3.5`.
 
 ## Work items
 
@@ -157,57 +210,84 @@ is silent are listed in work item 3 and go to the Decisions log as provisional.
    context-building code may change; never update a fixture with `-u`.
 2. **Types** (`domain/types.ts`):
    - Delete `BillingRoute`, `PatientPaymentCategory`, `Procedure.billingRoute`,
-     `Procedure.insurerId`, `Procedure.patientPaymentCategory` and `Procedure.prepaymentDetail`. If
-     `Procedure.accRelated` survived Phase 18, delete it too; Booking funding source `ACC` replaces
-     it (DM-35).
-   - Booking (`Card`) gains `insurerId?`, `fundingSource?` (Phase 18's `FundingSource`, else define
-     `'private' | 'SXAP' | 'HNZ' | 'ACC'`) and `prepayment?: PrepaymentDetail`. The prepayment field
-     carries a comment: "INTERIM office-set flag, replaced by Phase 27's derivation". Move the
+     `Procedure.insurerId`, `Procedure.patientPaymentCategory` and `Procedure.prepaymentDetail`.
+     Nothing replaces `insurerId`: no `insurerId` or `fundingSource` goes onto the Booking or the
+     Patient (D2). Leave `accRelated` as Phase 18 left it; it is not this phase's business.
+   - Booking (`Card`) gains `prepayment?: PrepaymentDetail`, commented "INTERIM office-set flag,
+     replaced by Phase 27's derivation". Keep today's `PrepaymentDetail` shape (full, or split with a
+     deposit) only so the seeded Riley deposit keeps its figures; Phase 27 removes the split. Move the
      `PrepaymentDetail` comment accordingly.
    - Procedure keeps `governingContractId`. It stays optional in the type only so that a legacy or
      moved Procedure fails validation as data; every creation path sets it. Procedure gains
-     `contractSelection?: { setBy: 'default' | 'office' | 'anaesthetist'; who: string; atISO: IsoDateTime; anaesthetistChange?: { fromContractId?: ContractId; toContractId: ContractId; atISO: IsoDateTime } }`
-     (DM-31). `billablePartyId` stays on the Procedure as the guardian override, INTERIM until 21.
+     `contractSetBy?: 'default' | 'office' | 'anaesthetist'`, which only tells a re-default which
+     Procedures to move. Who changed it, when, and from what is **not** stored: it comes from the
+     audit trail (DM-37). `billablePartyId` stays on the Procedure as the guardian override, INTERIM
+     until 21.
+   - **Contract procedure scope.** 18 planned `scope.procedureTypeIds` and 19 its type, editor chips
+     and `scopeCoversProcedure`. If the drift check finds either missing, add it here
+     (`ProcedureTypeId[]`, empty = every procedure), with a chip select in 18's Contract editor beside
+     RVG codes and groups, and an audit label. It stays empty on every Contract except where item 7
+     sets it.
 3. **Pure Contract selection** (`domain/billing/contractSelection.ts`, exported from the billing
    index, with `contractSelection.test.ts`):
-   - `ContractSelectionContext`: `hospitalId?`, `surgeonId?`, `insurerId?`, `fundingSource?`,
-     `rvgCode?` (plus its Phase 19 groups), `anaesthetistId`, `dateISO` (the List date).
+   - `ContractSelectionContext`: `hospitalId?` (the List's), `procedure` (its `procedureTypeId`,
+     19's master link, and `rvgBaseCode`), `anaesthetistId`, `dateISO` (the List date). No insurer,
+     funding source or surgeon: neither the Booking nor the Patient holds the first two (OQ-55), and
+     surgeon narrowing is not settled (US-04.3.2). 18's `SCOPE_NARROWING_DIMENSIONS` lists surgeons;
+     remove `surgeons` from it here, with a comment citing US-04.3.2, so the constant and the picker
+     agree (log it).
    - `defaultContractForBooking(contracts, ctx)` (new name: `invoiceBuild.ts` already has a private
-     `defaultContractFor(holderType, holderId, ctx)` for the expiry fallback, which stays): the RVG
-     Default Hospital Contract (Phase 18 category `rvgDefaultHospital`) for `hospitalId`, in effect
-     on `dateISO`. With no hospital (an AA-rooms List), the RVG Default Post-paid Contract (18's
-     `CT-RVG-POSTPAID`). This is a provisional reading (the catalogue names only the hospital
-     default).
-   - `contractOptionsFor(contracts, insurers, ctx)` returns `{ default, others }`. A Contract is
-     offered when it is in effect on `dateISO`, not retired (18's `isRetired`), and for every
-     non-empty scope filter (18's `ContractScope` arrays, plus 19's RVG groups) the Booking's value
-     is inside it. An unset Booking value does not exclude: a surgeon-scoped fixed-price Contract is
-     offered before the code is known, and an ACC-scoped Contract is offered while funding source is
-     still unrecorded. That is also a provisional reading. An insurer-held Contract is not offered
-     while its insurer does not accept direct claims (`Insurer.acceptsDirectClaims`): this replaces
-     the validator's retired insurer-route direct-claims check (6th review #2), so a non-direct-claim
-     insurer is never invoiced (US-11.4.2); provisional. The default is always offered and listed
-     first (US-04.3.2). Order the others by category, then name.
-   - `isContractInScope(contract, insurers, ctx)` uses the same rule, for flags and store guards.
-   - Tests cover the US-04.3.2 example (a St George's Contract is never offered on a Southern Cross
-     List), each filter dimension (surgeon: Doyle bariatric only on Doyle Lists; insurer: nib's
-     Insurance Contract only when the Booking's insurer is nib; funding source: ACC Contracts for ACC
-     or unset, never for Private, SXAP or HNZ, and Health NZ likewise only for HNZ or unset; RVG code
-     or group; anaesthetist scope, Aria only for Souter and Fitzgerald), the direct-claims exclusion
-     (toggle nib off with `setInsurerDirectClaims`: its Contract drops out), effective dates, the
-     unset-value rule, the no-hospital default and deterministic order. Add a seed assertion: every
-     hospital-held Contract lists its holder in its hospitals filter. Phase 18 set `hospitalIds`
-     only on the five defaults, so expect to add it to SXAP, Health NZ, St George's ACC and the CES
-     HNZ schedule in the seed.
+     `defaultContractFor` for the expiry fallback, which stays): the RVG Default Hospital Contract
+     (18's category `rvgDefaultHospital`) for `hospitalId`, in effect on `dateISO`. The catalogue
+     says the hospital is always known; the prototype still has Lists with no hospital, so for those
+     use the RVG Default Post-paid Contract (18's `CT-RVG-POSTPAID`) and log the reading.
+   - `contractOptionsFor({ contracts, feeScheduleLines, insurers, masters, holderNameOf }, ctx, query?)`
+     returns `{ default, others, total }`. A Contract is offered when:
+     - it is in effect on `dateISO` and not retired (18's `isRetired`);
+     - **procedure, code and group:** 19's `scopeCoversProcedure(scope, procedure, masters)` is true
+       (all three arrays empty, or the Procedure's master entry listed, or its RVG code listed, or
+       its code in a listed group). A Procedure with no master entry and no code sees only Contracts
+       with all three empty. A Contract set against several procedures is offered for each (this is
+       how 23's combination Contracts appear, US-04.2.11 AC). Do not write a second procedure or
+       code matcher;
+     - **hospital:** its hospital scope is empty or lists the List's hospital; on a List with no
+       hospital, only hospital-unscoped Contracts;
+     - **anaesthetist:** its anaesthetist scope is empty or lists the List's anaesthetist (US-04.2.1);
+     - an insurer-held Contract is not offered while its insurer does not accept direct claims
+       (`Insurer.acceptsDirectClaims`). This replaces the validator's retired insurer-route check
+       (6th review #2), so a non-direct-claim insurer is never invoiced.
+
+     The scope's insurer, funding-source and surgeon arrays are kept on the Contract (they describe
+     it, OQ-67) but do not narrow the picker. The default is always offered and listed first
+     (US-04.3.2), even when a query is typed. Order the others by category, then name.
+   - **Search** (US-04.3.2 AC, OQ-66): reuse 18's `contractSearch` (AA code, name, holder name,
+     each line's holder code and description), as 18's handoff says; do not add a second matcher.
+     `contractOptionsFor` runs it over the in-scope set only, never across every Contract. A Contract
+     whose holder code equals the trimmed query (case-insensitive) sorts first, and each result
+     carries the matched line (`"HNZCATall · Cataract, all"`) so the UI can show why it matched.
+   - `isContractInScope(contract, { insurers, masters }, ctx)` uses the same rule (no query), for flags and store
+     guards.
+   - Tests cover: the US-04.3.2 example (a St George's Contract is never offered on a Southern Cross
+     List); each dimension (procedure: Doyle's bariatric Contract only for its bariatric entries, and
+     a three-procedure fixture Contract offered for each of the three; hospital; RVG code and group;
+     anaesthetist, Aria only for Souter and Fitzgerald; surgeon scope never narrows); nib's insurer
+     Contract offered at any hospital with no patient input; the direct-claims exclusion (toggle nib
+     off with `setInsurerDirectClaims`: its Contract drops out); effective dates and retired; the
+     no-master-entry rule; the no-hospital default; holder-code search on a Christchurch Eye Surgery
+     context (`HNZCATall` filters to the CES HNZ schedule with its matched line, its `aaCode` too, a
+     miss returns only the default, and the same code on a Southern Cross List finds nothing because
+     search stays in scope); deterministic order. Add a
+     seed assertion: every hospital-held Contract lists its holder in its hospitals scope. Phase 18
+     set `hospitalIds` only on the five defaults, so expect to add it to SXAP, Health NZ, St George's
+     ACC and the CES HNZ schedule in the seed.
 4. **Validator** (`validateCardForBilling.ts` + test; US-04.3.1):
    - Remove the route, insurer-route and payment-category checks.
    - Add `governingContractId` failures: missing ("Choose a Contract for this procedure.") and
      dangling ("The selected Contract no longer exists. Choose another.").
    - Keep the check that `billablePartyId` resolves.
-   - Pre-payment checks move to the Booking (field `prepayment`, no `procedureId`): a split needs a
-     deposit above zero ("Enter the deposit amount for a split pre-payment."). A flag on a Booking
-     none of whose Procedures bills the patient fails with "Pre-payment is set on this booking but no
-     procedure bills the patient."
+   - The pre-payment check moves to the Booking (field `prepayment`, no `procedureId`) and is only
+     the split-deposit check that guards the seeded data ("Enter the deposit amount for a split
+     pre-payment.").
    - `billingReferenceMissing(procedure, contract)` is re-keyed from the route to the Contract
      holder (18's `holder.kind`): a `hospital`, `surgeon` or `surgeonGroup` holder expects a
      reference; an `insurer` or `bookingBillableParty` holder does not. That reproduces today's
@@ -222,16 +302,16 @@ is silent are listed in work item 3 and go to the Decisions log as provisional.
      (effective on the List date; an expired hospital- or insurer-held Contract falls back to that
      holder's default; a surgeon, surgeon-group or Booking-billable-party holder is
      `contractIneffective`). S4 Beat 3's billing-failure trigger (COS, a surgeon-group holder)
-     depends on it, and so does `BillingMonitorScreen`'s `resolveAndRetry` (line 79, unchanged).
-     RV-01's lock is Phase 25.
+     depends on it, and so does `BillingMonitorScreen`'s `resolveAndRetry` (unchanged). RV-01's lock
+     is Phase 25.
    - `counterpartyForProcedure(procedure, contract, patientId)` becomes holder-as-payer, commented
      INTERIM until Phase 21, by dropping the route switch around 18's `holderCounterparty`: a
      `bookingBillableParty` holder (RVG Default Post-paid, Aria) bills `billablePartyId`, else the
      patient; any other holder bills itself (hospital, insurer, surgeon, or the surgeon group's
      billing organisation, so COS stays `{ kind: 'organisation', id: ORG.cos }`). `funderOverride`
      lines behave as today.
-   - `buildPrePaymentInvoiceForCard` reads `card.prepayment` and covers the Booking's patient-direct
-     Procedures:
+   - `buildPrePaymentInvoiceForCard` reads the Booking's `prepayment` and covers the Booking's
+     Procedures that bill the patient (OQ-73: patient billable only):
      - A split raises one deposit line on the first covered Procedure (keeps `prePaidByProcedure`
        keyed as today).
      - A full pre-payment raises each covered Procedure's estimated fee via `feeFor` with that
@@ -243,179 +323,211 @@ is silent are listed in work item 3 and go to the Decisions log as provisional.
      - Checks the rights matrix via `editRefusal` (anaesthetist: own DRAFT only; office: DRAFT and
        SUBMITTED; AUTHORISED refused).
      - Refuses `notFound`, `contractNotInEffect` and `contractOutOfScope` ("That Contract does not
-       apply to this booking's hospital, surgeon, insurer or code.").
-     - Records `contractSelection`. An anaesthetist actor also stamps `anaesthetistChange`
-       (US-03.4.1). An office actor clears a pending `anaesthetistChange`, since the office has now
-       set it; this is interim until Phase 21's explicit approval.
-     - Audited `procedure.contract` with `before`/`after` of the Contract id and `setBy`.
-     - Remove `governingContractId` and every deleted field from `ProcedurePatch`, so
-       `editProcedure` cannot bypass it.
+       apply to this procedure at this hospital.").
+     - Sets `contractSetBy` from the actor's role and writes an audited `procedure.contract` entry
+       with `before`/`after` Contract ids. The audit entry's role is what flags the change (item 6's
+       selector); nothing else is stored.
+     - Remove `governingContractId`, `contractSetBy` and every deleted field from `ProcedurePatch`,
+       so `editProcedure` cannot bypass it.
    - **Default at creation (US-04.3.3):**
-     - `createCard` drops `billingRoute`, `insurerId` (as a Procedure field) and
-       `patientPaymentCategory`.
-     - It gains optional `contractId` (an explicit pick, checked like `setProcedureContract`),
-       Booking `insurerId` and `fundingSource`, and `billablePartyId` (interim).
-     - With no pick, it stores `defaultContractForBooking` for the List with `setBy: 'default'`.
-     - This covers the manual, photo, phone-advice, HL7/FHIR S12 (`integrationActions.ts` 158) and
-       PDF (`ingestPdfRow` 472) paths, and Phase 15's skeleton Copy.
-     - `addPostOpAddendum` copies the original Procedure's Contract and not its pre-payment flag
-       (until 39 replaces it).
+     - `createCard` drops `billingRoute`, `insurerId` and `patientPaymentCategory`.
+     - It gains optional `contractId` (an explicit pick, checked like `setProcedureContract`) and
+       `billablePartyId` (interim).
+     - With no pick, it stores `defaultContractForBooking` for the List with
+       `contractSetBy: 'default'`.
+     - This covers the manual, photo, phone-advice, HL7/FHIR S12 (`integrationActions.ts` 150) and
+       PDF (`ingestPdfRow` 431) paths, and Phase 15's skeleton Copy.
+     - `addPostOpAddendum` copies the original Procedure's Contract and not the Booking's
+       pre-payment flag (until 39 replaces it).
    - **`addProcedure` (US-03.2.3):** the new Procedure starts on the first Procedure's Contract when
-     that Contract is in scope for it, else on the default, with `setBy: 'default'`, and can then
-     select its own. This is a provisional reading; inheriting stops a guardian-paid Booking's second
-     Procedure silently billing the hospital.
-   - **Hospital change:**
-     - `editList` with `hospitalId` re-defaults every Procedure with `setBy: 'default'` on the List's
-       non-cancelled Bookings, in the same commit, one `procedure.contractDefault` audit meta each.
-     - Explicit picks are kept, and item 13's flag shows any that no longer apply.
-     - `reassignCard` onto a List with a different hospital does the same.
-   - **Booking funding:** extend `editCard`'s patch with `insurerId` and `fundingSource` (same rights
-     matrix, audited `card.update`).
-   - **Prepayment flag:** add `setBookingPrepayment(api, actor, cardId, detail | null)` in
+     that Contract is in scope for it, else on the default, with `contractSetBy: 'default'`, and can
+     then select its own. Inheriting stops a guardian-paid Booking's second Procedure silently
+     billing the hospital; log the reading.
+   - **Hospital or procedure change:**
+     - `editList` with `hospitalId` re-defaults every Procedure with `contractSetBy: 'default'` on
+       the List's non-cancelled Bookings, in the same commit, one `procedure.contractDefault` audit
+       meta each. `reassignCard` onto a List with a different hospital does the same.
+     - 19's `pickProcedure`, and `editProcedure` when it changes `rvgBaseCode`, do the same for that
+       one Procedure, in the same commit.
+     - Explicit picks are kept, and item 13's caption shows any that no longer apply.
+   - **Prepayment flag:** add `setBookingPrepayment(api, actor, bookingId, on: boolean)` in
      `prepaymentActions.ts`.
      - Office only; refused on AUTHORISED or billed Lists.
-     - A split needs a positive deposit.
-     - Changing or clearing is refused once a pre-payment invoice exists (new refusal code `prepaymentInvoiced`).
-     - Audited `card.prepayment`.
+     - On sets `{ type: 'full' }` (all or nothing, US-06.2.2); off clears it. There is no deposit
+       input.
+     - Refused when no Procedure on the Booking bills the patient (`noPatientBilled`, "No procedure
+       on this booking bills the patient.").
+     - Changing or clearing is refused once a pre-payment invoice exists (`prepaymentInvoiced`).
+     - Audited `booking.prepayment` (Phase 15 renamed every `card.*` action to `booking.*`).
 
      Also:
-     - `cardRequiresPrepayment` reads `card.prepayment`.
+     - `cardRequiresPrepayment` (15's name) reads the Booking's `prepayment`, and so does 15a's
+       unpaid-prepayment warning rule (repoint its input; its wording and strength do not change).
      - `raisePreProcedureInvoice` refusal copy reads "This booking is not flagged for pre-payment."
-     - `overridePrepaymentGate` is untouched.
+     - Re-point 15a's prepayment entry in `WARNING_SAMPLES` (`warningSamples.ts`), which stages the
+       condition through the route and payment-category fields deleted here: `stage` sets the
+       primary Procedure to the RVG Default Post-paid Contract with `setProcedureContract` and then
+       calls `setBookingPrepayment(on)`, both as the demo office actor; `unstage` restores the
+       Booking's `prepayment` and the Procedure's Contract fields from the pristine seed, as 15a's
+       unstage already does. Phase 27 re-points it at the prepaid set. Update its test.
+     - 15a deleted the completion gate, `overridePrepaymentGate` and `PrepaymentOverrideSheet` (D5).
+       Do not re-introduce a gate. If any of them survived, stop and record it rather than build
+       on it.
    - **Selectors:**
-     - `contractOptionsForProcedure(state, procedureId)` and `payerForProcedure(state, procedureId)`
-       wrap the pure functions for the UI.
-     - The receivable rows' ACC flag (`selectors.ts` 634) reads the Booking's funding source (only
-       if `accRelated` was still there).
+     - `contractOptionsForProcedure(state, procedureId, query?)` and
+       `payerForProcedure(state, procedureId)` wrap the pure functions for the UI.
+     - `anaesthetistContractChange(entries, procedureId)` (pure, in `contractSelection.ts`) reads the
+       audit trail: when the latest `procedure.contract` entry for that Procedure has the
+       anaesthetist role, it returns `{ who, atISO, fromContractId, toContractId }`, else nothing.
+       An office pick after it clears it (interim until Phase 21's explicit approval). The store's
+       `pendingContractChange(state, procedureId)` wraps it.
 7. **Seed** (`seed/cards.ts`, `history.ts`, `audit.ts`, `contracts.ts`, `index.ts`):
-   - `ProcedureSpec` loses the route fields and `addCard` takes `insurerId`, `fundingSource` and
-     `prepayment`. If Phase 18 seeded no RVG Default Post-paid Contract, add one: protected default,
-     patient-direct holder, RVG units at the anaesthetist's rate, organisational scope, effective
-     2020-01-01.
+   - `ProcedureSpec` loses the route, insurer and category fields, and `addCard` takes `prepayment`.
+     If Phase 18 seeded no RVG Default Post-paid Contract, add one: protected default, patient-direct
+     holder, RVG units at the anaesthetist's rate, organisational scope, effective 2020-01-01.
    - Map every seeded Procedure:
 
      | Today | After this phase |
      |---|---|
-     | Hospital route with a stored Contract | Same Contract. Booking funding source from it: Health NZ is HNZ, SXAP is SXAP, St George's ACC and COS ACC are ACC, otherwise private. An informational insurer moves to the Booking |
-     | Insurer route, nib | nib's Insurance default Contract; Booking insurer nib, funding private |
+     | Hospital route with a stored Contract | Same Contract. Any informational insurer is dropped |
+     | Insurer route, nib (Marsh, filler) | nib's insurer Contract |
      | Billable-party route, self-funded, no Contract | RVG Default Post-paid; guardian override stays on the Procedure |
-     | Billable-party route, insured reimbursement (Webb, AIA) | RVG Default Post-paid; Booking insurer AIA, funding private |
+     | Billable-party route, insured reimbursement (Webb, AIA) | RVG Default Post-paid; AIA stays only in the description |
      | Billable-party route, pre-payment (Riley split $800, Nair's rhinoplasty full) | RVG Default Post-paid; Booking `prepayment` {split, 800} and {full}; Nair's septoplasty stays on Forte's default |
      | Billable-party route under the Aria hourly Contract | Same Contract |
      | `history.ts` patient-route history | RVG Default Post-paid; the rest keep their hospital default |
 
    - The filler generator keeps the same `rng()` draw order and count (the route draw becomes the
-     Contract and funding draw), so no other generated data shifts.
-   - Seeded specific Contracts get `setBy: 'office'`; defaults get `setBy: 'default'`.
-   - Run item 3's scope check over every seeded Procedure, and resolve each out-of-scope pick (check
-     the Doyle bariatric Booking (Mills, Fitzgerald Tue 14 Southern Cross / Mr Doyle), the three
-     SXAP picks (Ellison is on Souter Tue 21 PM), Aria's anaesthetist scope, and each ACC or Health NZ
-     pick against the funding source you derive for its Booking first). Prefer
-     correcting the seed's scope filter or the pick in a way that leaves item 1's figures unchanged,
-     and log each call.
+     Contract draw), so no other generated data shifts.
+   - Seeded specific Contracts get `contractSetBy: 'office'`; defaults get `'default'`.
+   - Set the procedure scope where the seed needs it: Doyle's bariatric Contract against the
+     bariatric master entries 19 seeded (add one if none fits), and Aria's against its laser entry if
+     19 seeded one. Leave every other Contract procedure-unscoped.
+   - Run item 3's scope check over every seeded Procedure, and resolve each out-of-scope pick: the
+     Doyle bariatric Booking (Mills, Fitzgerald Tue 14 Southern Cross / Mr Doyle) needs its
+     Procedures linked to those master entries; check the three SXAP picks (Ellison is on Souter
+     Tue 21 PM), Aria's anaesthetist scope, and each ACC and Health NZ pick against its List's
+     hospital. Prefer correcting the seed's scope or the master link in a way that leaves item 1's
+     figures unchanged, and log each call.
    - Seed one anaesthetist change for the review demo, with no figure change: on Dr Morrison's
      submitted Mon 20 St George's List, the Procedure already on St George's ACC (the 10:00
-     "Ureteroscopy with lithotripsy, ACC claim", ref ACC45-118203, `morrisonSpecs` in
-     `seed/cards.ts`) gets `contractSelection` `{ setBy: 'anaesthetist', who: Dr Morrison,
-     anaesthetistChange: { from: St George's default, to: St George's ACC } }` stamped before the
-     List's submit time, and its Booking gets funding source ACC. Its Contract, fee and payer are
-     unchanged, so item 1's fixtures hold. Add a matching `procedure.contract` row to `audit.ts`.
+     "Ureteroscopy with lithotripsy, ACC claim", ref ACC45-118203, `morrisonSpecs`) gets
+     `contractSetBy: 'anaesthetist'` and a `procedure.contract` audit row by Dr Kate Morrison
+     (anaesthetist role) from St George's default to St George's ACC, timed before the List's
+     13:10 submit. Its Contract, fee and payer are unchanged, so item 1's fixtures hold.
    - Regenerate `audit.ts` histories so `procedure.create` and `procedure.update` entries carry
      Contract fields, not routes.
+   - Rename the scenario marker `insuredReimbursementCard` (`index.ts` 624, `billingRun.test` 222;
+     Phase 15 may have renamed it) to `aiaClaimBooking`.
    - Bump `PERSIST_VERSION` by one from its post-19 value, with a comment line.
 8. **Remove the retired vocabulary (RV-08):**
    - `ROUTE_LABELS` and `routeLabel` (`format.ts`); the route and category maps in
      `BtmCaptureBlock`, `OfficeBillingSetup`, `EditProcedureSheet`, `EditBillingSetupSheet`,
-     `ManualCardForm` and `InvoiceDocument`.
-   - The ACC-on-billable-party review advisory, if 18 left it (18 plans to remove it with
-     `accRelated`; it was keyed on the route).
-   - The " (direct claims)" suffix in the insurer selects of `EditProcedureSheet`,
-     `EditBillingSetupSheet` and `ManualCardForm` goes with those selects; the Booking's
-     `EditFundingSheet` insurer select may keep it.
-   - In `shared/audit/`, add labels: fields `governingContractId` "Contract", `insurerId` "Insurer",
-     `fundingSource` "Funding source", `prepayment` "Pre-payment"; actions `procedure.contract`
-     "Contract changed", `procedure.contractDefault` "Contract set to the default",
-     `card.prepayment` "Pre-payment flag set". Drop labels for the removed fields.
-   - Gate:
-     `grep -rnE "billingRoute|BillingRoute|patientPaymentCategory|PatientPaymentCategory|ROUTE_LABELS|noBillingRoute" aa-prototype/src`
-     returns nothing.
-9. **Session 1 exit:** fix all the listed tests (`fixtures.ts` too). Edit the UI only as far as
-   compiling needs: route controls removed, and the Contract shown read-only where the route chip
-   was. Run `npm run build`, `npm run build:pwa` and `npx vitest run`, all green; item 1 passes.
-   Write a short "session 1 done" note in the PROGRESS entry.
+     `ManualCardForm` and `InvoiceDocument`; the insurer selects and their " (direct claims)" suffix
+     in `EditProcedureSheet`, `EditBillingSetupSheet` and `ManualCardForm`.
+   - The ACC-on-billable-party review advisory (`reviewFlags.ts` 84), if 18 left it: it is keyed on
+     the route and goes with it.
+   - In `shared/audit/`, add labels: fields `governingContractId` "Contract", `contractSetBy`
+     "Contract set by", `prepayment` "Pre-payment"; actions `procedure.contract` "Contract changed",
+     `procedure.contractDefault` "Contract set to the default", `booking.prepayment` "Pre-payment flag
+     set". Drop labels for the removed fields.
+   - Gates:
+     `grep -rnE "billingRoute|BillingRoute|patientPaymentCategory|PatientPaymentCategory|ROUTE_LABELS?|routeLabel|noBillingRoute|insuredReimbursement|selfFundedPrepayment|selfFundedPostProcedure" aa-prototype/src`
+     returns nothing, and every remaining `insurerId` hit in `aa-prototype/src` is the Insurer
+     master, a Contract holder or scope, or a `funderOverride`.
+9. **Session 1 exit:** fix all the listed tests (`fixtures.ts` too, and 15a's warning-sample test).
+   Edit the UI only as far as
+   compiling needs: route, insurer and category controls removed, and the Contract shown read-only
+   where the route chip was. Run `npm run build`, `npm run build:pwa` and `npx vitest run`, all
+   green; item 1 passes. Write a short "session 1 done" note in the PROGRESS entry.
 
 **Session 2: UI, review, copy.**
 
 10. **Shared `ContractPickerSheet`** (`src/shared/flows/`, through `useSurface().Overlay`, so a
     bottom sheet on mobile and a Dialog on web and admin; `data-shot="contract-picker"`):
-    - Sections "Default for <hospital>" (or "Default for AA rooms"), then "Also applies to this
-      booking".
-    - Each row shows the Contract name, a neutral category pill, the pricing basis in words ("RVG
-      units at your rate", "Agreed rate $26.50 per unit", "Fixed price list", "Hourly rate") and
-      "Bills <holder>". These captions give US-03.1.2 its pricing-basis half.
+    - A search field at the top, "Search by name, AA code or holder code", feeding
+      `contractOptionsForProcedure`'s query.
+    - Sections "Default for <hospital>" (or "Default for AA rooms"), then "For <procedure> at
+      <hospital>". The heading reads "Other Contracts at <hospital>" while the Procedure has no
+      master entry.
+    - Rows by viewer:
+      - **anaesthetist** (US-15.0.1): the Contract name and its AA code, nothing else;
+      - **office**: also a neutral category pill, the pricing basis in words ("RVG units at your
+        rate", "Agreed rate $26.50 per unit", "Fixed price list", "Hourly rate") and "Bills
+        <holder>".
+      - A holder-code match adds the matched line as a mist caption ("HNZCATall · Cataract, all")
+        for both viewers.
+    - Render at most 50 rows, with "Showing 50 of <n>. Type to narrow." below. The office footer
+      carries the one provisional caption: "Provisional · how Contracts are coded and found is still
+      to confirm (OQ-66)".
     - The selected row carries a teal tick. Tapping a row calls `setProcedureContract` and shows any
-      refusal verbatim. An empty others list reads "No other Contracts apply to this booking." There
-      is no "None".
+      refusal verbatim. Empty states: "No other Contracts for this procedure at <hospital>." and
+      "No Contract matches "<query>"." There is no "None".
 11. **Anaesthetist edit (US-03.4.1, FT-03.4)**, in `EditProcedureSheet` (mobile and web, DRAFT
     only):
-    - The fields are Operation, a Contract row (name + pricing basis, teal "Change" opening the
+    - The fields are 19's procedure pick, a Contract row (plain name, teal "Change" opening the
       picker), and Billing reference (interim, optional).
-    - Caption: "The office reviews Contract changes when you submit the list."
+    - Caption: "The office checks Contract changes when you submit the list."
     - The route segmented control, insurer select and payment category are gone.
 12. **Showing the Contract (US-03.1.2, US-04.3.3):**
     - In `BtmCaptureBlock` the route chip becomes a neutral Contract chip (for example "St George's
-      default"). The context line then reads pricing basis · "Billed to <payer>" (interim, holder
-      derived) · reference.
-    - A pending anaesthetist change adds a small warning-tint pill "Changed by you · office to
-      review" on anaesthetist views, and "Changed by anaesthetist" on the office's.
-    - `CONTEXT_FIELDS` swaps the route fields for `governingContractId`.
+      RVG Default Hospital", 18's name).
+      - On anaesthetist views (mobile and web) the line is that chip, a teal "Change" on a DRAFT List
+        and the billing reference. No route, insurer, payer or pricing basis (US-15.0.1).
+      - On the office's view the line reads chip · AA code · pricing basis · "Billed to <payer>"
+        (interim, holder derived) · reference.
+    - A pending anaesthetist change (item 6's selector) adds a small warning-tint pill "Changed by
+      you · office to check" on anaesthetist views, and "Changed by anaesthetist" on the office's.
+    - `CONTEXT_FIELDS` swaps the route and insurer fields for `governingContractId`.
     - List rows on mobile `ListDetailScreen` and web `ListDetailView` add the primary Procedure's
-      Contract short name as a one-line mist caption, so the Contract is visible before the session.
-13. **Booking funding and prepayment** (`CardDetailBody` context section; DM-35):
-    - A "Funding" row shows Insurer · Funding source ("nib · Private", or "Not recorded") with Edit.
-      Edit opens a new `EditFundingSheet` (`src/shared/flows/`): an insurer select including "None", and funding source as
-      a Segmented control (Private / SXAP / HNZ / ACC).
-    - It is editable by both roles within the rights matrix.
-    - When a Procedure's Contract no longer applies after a funding or List change, it shows the
-      caption "This Contract no longer applies to the booking." with a teal "Choose Contract" link.
-    - The office also sees a "Pre-payment" row (None / Full / Split $x) with "Set pre-payment",
-      which opens a new `PrepaymentFlagSheet` (`src/shared/flows/`, beside `PrepaymentOverrideSheet`) and calls `setBookingPrepayment`. The anaesthetist keeps the
-      existing banner.
+      Contract name as a one-line mist caption, so the Contract is visible before the session.
+13. **Booking Contract checks and pre-payment** (`CardDetailBody`):
+    - When a Procedure's stored Contract no longer applies (after a hospital or procedure change, or
+      the insurer's direct claims turned off), it shows "This Contract no longer applies to this
+      procedure." with a teal "Choose Contract" link, on every editor's view.
+    - The office sees a "Pre-payment" row ("Not required", "Full estimate" or, for the seeded Riley
+      Booking only, "Deposit $800 · seeded") with "Set pre-payment", which opens a new
+      `PrepaymentFlagSheet` (`src/shared/flows/`): one switch, "Pre-payment required", and the line
+      "The full estimate is invoiced before the procedure." It calls `setBookingPrepayment`. The
+      anaesthetist keeps 15a's warning triangle and today's banner.
 14. **Office billing setup** (`OfficeBillingSetup`, `EditBillingSetupSheet`; US-04.3.2 office side):
-    - The rows become Contract (name + category), Payer (holder derived, or the guardian on a
-      patient-direct Contract), Reference, Override and Funders. The Route, Category and Insurer rows
-      are gone.
+    - The rows become Contract (name, AA code, category), Payer (holder derived, or the guardian on
+      a patient-direct Contract), Reference, Override and Funders. The Route, Category and Insurer
+      rows are gone.
     - The sheet becomes "Contract and payer": a Contract row opening the picker, the guardian select
       with "New guardian" shown only on a patient-direct Contract (interim), and the billing
       reference.
     - Save calls `setProcedureContract` when the Contract changed, then `editProcedure` for the rest.
 15. **Creation forms:**
-    - `ManualCardForm`'s "Billing route" block becomes "Funding" (insurer, funding source) plus
-      "Contract", preselected with the List hospital's default and changeable through the picker. The
-      List's hospital and surgeon plus the form's insurer, funding source and RVG code feed the filter.
-    - The payer select shows only for a patient-direct Contract.
-    - `sampleExtractions` sample B prefills insurer nib and nib's Insurance Contract.
-    - `PhoneAdviceBooking`'s S2 prefill drops the route and keeps nib as the Booking insurer, so the
-      booking lands on St George's default exactly as S2 shows today.
-16. **Admin review (DM-31):**
+    - `ManualCardForm`'s "Billing route" block becomes a "Contract" row after 19's procedure pick,
+      preselected with the List hospital's default and changeable through the picker (the List's
+      hospital and anaesthetist plus the picked procedure feed the filter). No insurer or funding
+      field.
+    - The payer select shows only for a patient-direct Contract (office; interim).
+    - `sampleExtractions` sample B prefills nib's insurer Contract instead of insurer nib.
+    - `PhoneAdviceBooking`'s S2 prefill drops `billingRoute` and `insurerId`, so the booking lands
+      on St George's default exactly as S2 shows today.
+16. **Admin review (DM-37):**
     - `ReviewScreen`'s Route column becomes "Payer" (holder derived; "Mixed" when Procedures differ).
     - The Contract column shows the primary Procedure's Contract, "+N" for more, and a marker when
       the anaesthetist changed one.
-    - `reviewFlags.ts` stays pure. Its inputs gain the Contract, its in-scope result and the from/to
-      names. It adds two warn flags, "Contract changed by anaesthetist · <from> to <to>" and
-      "Contract does not apply to this booking", and re-keys "No billing reference".
+    - `reviewFlags.ts` stays pure. Its inputs gain the Contract, its in-scope result and the pending
+      change (from item 6's selector, with from and to names). It adds two warn flags, "Contract
+      changed by anaesthetist · <from> to <to>" and "Contract does not apply to this procedure", and
+      re-keys "No billing reference".
     - Update the tests. Approving the change is Phase 21.
-17. **Invoice wording:** `InvoiceDocument`'s `PaymentCategoryNote` derives its branch from the
-    Booking: the pre-payment flag gives the pre-payment wording; a Booking insurer that does not
-    accept direct claims, on a patient-billed Procedure, gives "You may claim this from <insurer>"
-    (US-11.4.2); otherwise the post-procedure wording. Keep the branch in one small pure helper so
-    Phase 21's `forwardsToInsurer` can replace it; Phase 22 rebuilds the layout.
+17. **Invoice wording:** `InvoiceDocument`'s `PaymentCategoryNote` becomes a note chosen by one small
+    pure helper, `patientInvoiceNote(booking, invoiceKind)`: the Booking's pre-payment flag gives
+    today's pre-payment wording (full or the seeded deposit); otherwise "Payment is due on receipt of
+    this invoice." The insured-reimbursement wording has no trigger once the category and insurer
+    go, so it is retired until Phase 21's Contract-holder flag for US-11.4.2 brings it back; the AIA
+    Booking reads the standard wording meanwhile. Phase 22 rebuilds the layout.
 18. **Shots and demo surfaces:**
     - Update `visual/mobile-interactions.spec.ts`, `admin-phase06.spec.ts` and
-      `admin-phase07.spec.ts`, keeping `data-shot="procedure-contract"`.
+      `admin-phase07.spec.ts`, keeping `data-shot="procedure-contract"`; add a shot of the picker
+      with a holder-code query typed.
     - Edit the Control Panel's existing S1 scenario text (add nothing new to that page) and the
-      description of Phase 14's re-homed "Fire
-      hospital message" entry.
+      description of Phase 14's re-homed "Fire hospital message" entry.
     - Run `npm --prefix requirements-board run capture -- --only US-03.1.2,US-03.2.3,US-03.4.1,US-04.3.1,US-04.3.2,US-04.3.3 --dry`
       and list the broken recipes in PROGRESS. Re-capture (it rewrites catalogue images) only if the
       owner asks.
@@ -423,7 +535,9 @@ is silent are listed in work item 3 and go to the Decisions log as provisional.
 ## Demo triggers
 
 No new harness-bar button. Everything in this phase demos through normal use: the picker, the edit
-sheets and the review screen.
+sheets and the review screen. This phase adds no warning rule, so 15a's "Raise sample warnings"
+needs no new sample, but its existing prepayment sample is re-pointed at the Booking flag (item 6) and
+must still stage and clear on Admin Day and Booking detail.
 
 - **Re-homed "Fire hospital message" (S1)**, Phase 14's `fire-hospital-message` entry (Integrations
   sim, Admin · Integrations and Mobile · Lists; bar and PWA, so S1 fires it on a handset too): the new
@@ -433,91 +547,119 @@ sheets and the review screen.
   stored pick and still dates out to `contractIneffective`. Check it after item 7.
 - **PWA:** no new entry. The anaesthetist's Contract change needs no office step to demo on a
   handset. The office-approval stand-in "Office approves this Contract change" is Phase 21's. Check
-  that any Phase 14 PWA entry touching pre-payment still works against the Booking flag.
+  that any Phase 14 or 15a PWA entry touching pre-payment still works against the Booking flag.
 
 ## Out of scope
 
-- Billable party and invoice email on the Booking, invoice grouping by billable party, the under-18
-  check, required inputs (member number, claim reference, purchase order), the not-on-schedule flag
-  (US-04.3.7), and the office's explicit approval of every Contract at review (US-07.2.2) with its
-  PWA stand-in. All Phase 21.
-- Covered amount replacing `funderOverride`, and Contract-driven invoice layout, delivery and GST:
-  Phase 22.
-- Primary Procedure, the multi-procedure rule and Contract base-unit overrides: Phase 23.
+- Billable party and invoice email on the Booking, invoice grouping by billable party, the child
+  billable-party warning, required inputs (member number, claim reference, purchase order), the
+  not-on-schedule flag (US-04.3.7), the office's explicit approval of every Contract at review
+  (US-07.2.2) with its PWA stand-in, and the Contract-holder flag that brings back US-11.4.2's
+  "claim from your insurer" wording. All Phase 21.
+- Insurer or funding source as a picker input, or held on the Booking or the Patient (OQ-55 says
+  neither; OQ-67 is open on who a Contract belongs to).
+- Narrowing the picker by surgeon (raised in passing, not settled).
+- The Contract payment setting replacing `funderOverride`, and Contract-driven invoice layout,
+  delivery and GST: Phase 22.
+- Seeding combination Contracts, the primary Procedure, the multi-procedure rule and Contract
+  base-unit overrides: Phase 23.
 - The lock at AUTHORISED and removal of the expired-Contract fallback and re-resolution (RV-01):
   Phase 25.
-- Prepayment derived from the prepaid set, the estimator and the D5 gate: Phases 26 and 27.
+- Prepayment derived from the prepaid set, the estimator, removing deposits, and the setup-time
+  invoice held for approval: Phases 26 and 27.
 - A matched hospital row creating a Booking on its default: Phase 33 (it will call the same default
   rule).
-- Contract master editing and categories (18), and hospital data setting the Contract (US-04.3.6).
+- Contract master editing, categories and the AA code scheme (18), the master procedure list and
+  procedure-first picker (19), and hospital data setting the Contract (US-04.3.6).
+- The wider sweep of Contract and fee detail from anaesthetist screens (for example "FIXED CONTRACT
+  PRICE"): Phase 43a.
 
 ## Manual test checklist
 
 - [ ] Reset. Fire MSG-STG-1001 (Phase 14's re-homed trigger), then open Souter Tue 28 Jul
-      St George's AM on mobile:
-      Sarah Mitchell's Booking shows "St George's default" on mobile, web and the Admin card, with
-      "Billed to St George's".
-- [ ] Add a Booking manually on a Southern Cross List: the Contract is preselected to Southern
-      Cross's default. The picker offers SXAP (when funding is SXAP) but never a St George's Contract.
-      There is no "None".
-- [ ] Set the Booking's insurer to nib: nib's Insurance Contract becomes offered. Pick it: "Billed to
-      nib". Change the insurer to AIA: the Contract is flagged "no longer applies".
-- [ ] As Dr Souter on a DRAFT List, change a Procedure's Contract on mobile and on web: the "Changed
-      by you" pill shows, and the audit trail records who, when, from and to. On a SUBMITTED List the
-      sheet is read-only.
+      St George's AM on mobile: Sarah Mitchell's Booking shows "St George's RVG Default Hospital" on
+      mobile, web and the Admin card; Admin also shows "Billed to St George's".
+- [ ] Add a Booking manually on a Southern Cross List: pick the procedure, and the Contract is
+      preselected to Southern Cross's default. The picker offers SXAP and nib's Contract but never a
+      St George's Contract, and there is no "None".
+- [ ] On a Christchurch Eye Surgery List (Souter's Wednesday AM recurring List), open the picker on
+      an eye Booking and type HNZCAT: the list narrows to "Christchurch Eye Surgery HNZ schedule"
+      with "HNZCATall · Cataract, all" shown, and the CES default stays at the top. Type that
+      Contract's AA code: same. Type nonsense: "No Contract matches" with the default still offered.
+      On the Southern Cross List, HNZCAT finds nothing (search stays in scope).
+- [ ] On Fitzgerald Tue 14 (Southern Cross / Mr Doyle), the bariatric procedure offers Doyle's
+      fixed-price Contract; a non-bariatric procedure on the same List does not.
+- [ ] As Dr Souter on a DRAFT List, change a Procedure's Contract on mobile and on web: the rows show
+      only the name and AA code, the "Changed by you" pill shows, and the audit trail records who,
+      when, from and to. No route, insurer, payer or pricing basis appears on the anaesthetist's
+      Booking. On a SUBMITTED List the sheet is read-only.
 - [ ] Add a second Procedure to a guardian-paid Booking: it starts on the same patient-direct
       Contract and can pick its own.
 - [ ] Office: change a DRAFT List's hospital from St George's to Forte. Defaulted Procedures move to
-      Forte's default, with one audit row each. An explicitly picked Contract stays and is flagged.
-- [ ] Demo: Data Inspector shows every seeded Procedure with a Contract. The "Choose a Contract for
-      this procedure." completion refusal is covered by the validator test, because no UI path can
-      clear a Contract any more.
-- [ ] Review queue, Dr Morrison Mon 20: the Payer column replaces Route, and the seeded
-      ureteroscopy (ACC claim) Procedure shows "Contract changed by anaesthetist · St George's
-      default to ACC elective services via St George's". Its fee and payer are as before.
-- [ ] Admin Master Data: turn nib's direct claims off. nib's Insurance Contract drops out of the
-      picker on a nib Booking, and a Procedure already on it shows "This Contract no longer applies
-      to the booking." Turn it back on.
+      Forte's default, with one audit row each. An explicitly picked Contract stays and shows "This
+      Contract no longer applies to this procedure."
+- [ ] Demo: Data Inspector shows every seeded Procedure with a Contract, and no Booking or Patient
+      with an insurer or funding source. The "Choose a Contract for this procedure." completion
+      refusal is covered by the validator test, because no UI path can clear a Contract any more.
+- [ ] Review queue, Dr Morrison Mon 20: the Payer column replaces Route, and the seeded ureteroscopy
+      (ACC claim) Procedure shows "Contract changed by anaesthetist · St George's RVG Default
+      Hospital to ACC elective services via St George's". Its fee and payer are as before. Re-pick it as the office:
+      the flag clears. Reload: the record survives.
+- [ ] Admin Master Data: turn nib's direct claims off. nib's Contract drops out of the picker, and
+      Marsh's Procedure on it shows the "no longer applies" caption. Turn it back on.
+- [ ] Office: set pre-payment on a Booking billed to a hospital: refused ("No procedure on this
+      booking bills the patient."). On a patient-billed Booking the switch sets "Full estimate", and
+      15a's unpaid-prepayment warning appears in both apps. Admin Day Tue 21: "Raise sample
+      warnings" still stages the prepayment sample, and "Clear sample warnings" restores it.
 - [ ] S3: authorise Souter Mon 20 AM and PM. Holt, Prentice nib and Prentice St George's invoices
       match item 1's figures to the cent.
-- [ ] S4 Beat 1: Riley's Booking shows the office pre-payment flag (split $800), completion is blocked
-      until override, and raising the pre-invoice gives $800 + GST. Nair's full pre-payment still
-      nets its balance to $0.
+- [ ] S4 Beat 1: Riley's Booking shows the office flag ("Deposit $800 · seeded"), 15a's warning shows
+      and completion is not blocked, and raising the pre-invoice gives $800 + GST. Nair's full
+      pre-payment still nets its balance to $0.
 - [ ] S4 Beat 3: Billing monitor, Demo actions, "Trigger billing failure" still fails only the COS
       Booking, its sibling bills, and "Resolve and retry" clears it.
-- [ ] Invoice document wording: the AIA reimbursement patient reads "You may claim this from AIA
-      Health", and the pre-payment and post-procedure wordings are unchanged.
-- [ ] No "billing route", "payment category" or "None (default pricing)" text anywhere in the three
-      apps. No en or em dashes in new copy.
-- [ ] The PWA build shows the Contract chip and picker as bottom sheets.
+- [ ] Invoice document wording: pre-payment and post-procedure wordings are unchanged; the AIA
+      Booking reads the post-procedure wording (logged for Phase 21).
+- [ ] No "billing route", "payment category", "Reimbursement" category or "None (default pricing)"
+      text anywhere in the three apps. No en or em dashes in new copy.
+- [ ] The PWA build shows the Contract chip and picker as bottom sheets, search included.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` are all green.
 
 ## Demo guide updates
 
 Patch these in the same session, in `docs/demo-guide/` and the matching sections of
-`master-demo-guide.html`. Line numbers are July's; Phases 15, 18 and 19 edit the same files (18
-drops the ACC advisory wording), so locate each passage by its text:
+`master-demo-guide.html`. Line numbers are July's; Phases 15, 15a, 18 and 19 edit the same files (18
+drops the ACC advisory wording, 15a rewrites S4 Beat 1's gate as a warning), so locate each passage
+by its text:
 
 - `03-demo-script.md`:
-  - **S1 Beat 1 Expected:** add "Sarah's Booking arrives on St George's default Contract (RVG
-    units), shown on mobile, web and Admin".
+  - **S1 Beat 1 Expected:** add "Sarah's Booking arrives on St George's default Contract, shown on
+    mobile, web and Admin".
   - **S2 Beat 2:** the phone booking lands on St George's default. Remove any mention of choosing a
-    billing route.
+    billing route or an insurer.
   - **S2 Beat 4:** add a "Worth pointing at" line on Dr Morrison's "Contract changed by
     anaesthetist" flag (approval arrives in Phase 21).
-  - **S3 Beat 1 Say:** replace "It resolves the explicit payer per Procedure, applies the governing
-    Contract, and groups by counterparty" with "It reads the one Contract on each Procedure, bills
-    that Contract's holder, and groups by counterparty". The figures are unchanged.
-  - **S4 Beat 1 Say:** "The office flagged this booking for pre-payment" instead of "A
-    patient-funded pre-payment".
+  - **S3 Beat 1 Say** (line 237): replace "It resolves the explicit payer per Procedure, applies the
+    governing Contract, and groups by counterparty" with "It reads the one Contract on each
+    Procedure, bills that Contract's holder, and groups by counterparty". The figures are unchanged.
+  - **S4 Beat 1 Say** (line 297, as 15a left it): "The office flagged this booking for pre-payment"
+    instead of "A patient-funded pre-payment", keeping 15a's warning wording.
+  - Add one "Worth pointing at" line where the picker is shown: "Pick the procedure, then its
+    Contract. The hospital narrows the list, and typing a holder's own code finds it among
+    thousands. The anaesthetist sees only the name."
 - `04-presenter-cheat-sheet.md`:
   - Glossary rows "Procedure" (line 18: "each selects exactly one Contract") and "ACC route"
-    (line 31: ACC is a funding source and a holder Contract).
-  - Replace "Three billing routes" (line 82 on) with "One Contract per Procedure": default hospital
-    Contract, filtered picker, anaesthetist change flagged.
-  - Update the myths at lines 172 and 285.
-- `02-workflows-and-handoffs.md` (lines 22, 125, 301 to 302, 340 to 344, 424 to 426) and
-  `01-personas-and-responsibilities.md` (lines 194, 204): route wording becomes Contract wording.
+    (line 31: ACC is a Contract held by a hospital or other holder, not a route).
+  - Replace "Three billing routes" (line 82 on, including the direct-insurer and insured
+    reimbursement bullets 92 to 94) with "One Contract per Procedure": the hospital's default
+    Contract, a picker filtered by procedure and hospital with holder-code search, the Contract
+    says who pays, insurer and funding source held on neither Booking nor Patient, anaesthetist
+    change flagged.
+  - Update the myths at lines 172 and 173 ("Every insured patient is billed to an insurer": the
+    Contract decides) and 285.
+- `02-workflows-and-handoffs.md` (lines 22, 125, 301 to 303, 340 to 344) and
+  `01-personas-and-responsibilities.md` (lines 194, 204): route and insurer wording becomes Contract
+  wording.
 - Control Panel S1 scenario text and the Phase 14 registry entry description (item 18).
 
 ## Adversarial review (after build)
@@ -534,32 +676,38 @@ re-raise anything settled in the Decisions log except the rulings this phase exp
 - **Every creation path stores a Contract:** manual, photo, phone advice, HL7/FHIR S12, PDF row,
   Copy, add procedure and addendum. The only "no Contract" outcome left is a validation failure or
   a `noContract` run exception, never a silent default at billing time.
-- **The filter matches the catalogue:** no out-of-scope Contract is offered or accepted by the store
-  (the UI cannot bypass `setProcedureContract`), the default is always offered, "None" is gone
-  everywhere, and no insurer-held Contract is offered for an insurer that does not accept direct
-  claims.
+- **The filter matches the catalogue:** procedure, then hospital, then code and anaesthetist scope;
+  no insurer, funding-source or surgeon input anywhere; no out-of-scope Contract offered or accepted
+  by the store (the UI cannot bypass `setProcedureContract`); the default always offered, also under
+  a search; "None" gone everywhere; no insurer-held Contract offered for an insurer that does not
+  accept direct claims; search confined to the in-scope set; no flat select of every Contract.
+- **D2 held:** no `insurerId` or `fundingSource` on the Booking or the Patient, in types, seed, store
+  patches or UI.
+- **Simple anaesthetist view:** the anaesthetist's picker rows, Contract row and capture line show
+  name, AA code and Change only; pricing basis, payer and category appear only to the office.
 - **Parity:**
   - Item 1's fixtures pass unchanged.
   - The holder-as-payer interim reproduces every seeded payer.
   - `funderOverride` still splits Prentice.
   - The pre-payment builders give the same deposit and full amounts.
   - `rng()` draw order in the filler generator is unchanged.
-- **Audit completeness:** `procedure.contract`, `procedure.contractDefault` (one per re-defaulted
-  Procedure, in the same commit as the List edit), `card.prepayment` and funding edits all carry
-  before and after. The anaesthetist-change record survives a reload.
+- **Audit completeness:** `procedure.contract` (with role), `procedure.contractDefault` (one per
+  re-defaulted Procedure, in the same commit as the List edit) and `booking.prepayment` all carry
+  before and after. The anaesthetist-change flag is derived from audit only and survives a reload.
 - **Rights:** the anaesthetist changes Contracts only on their own DRAFT Lists; the office on DRAFT
-  and SUBMITTED; nobody on AUTHORISED. `setBookingPrepayment` is office only and locked once a
-  pre-invoice exists.
-- **Leftovers:** no remaining route or category vocabulary in code, copy, audit labels, shots or the
-  demo guide (the item 8 grep). The stored-Contract fallback and `contractIneffective` are
-  deliberately kept for Phase 25.
+  and SUBMITTED; nobody on AUTHORISED. `setBookingPrepayment` is office only, all or nothing,
+  patient-billed Bookings only, and locked once a pre-invoice exists. No completion gate returns.
+- **Leftovers:** no remaining route, category or insurer-on-Procedure vocabulary in code, copy,
+  audit labels, shots or the demo guide (the item 8 greps). The stored-Contract fallback and
+  `contractIneffective` are deliberately kept for Phase 25.
 
 ## PROGRESS.md updates
 
-- Status row for catch-up Phase 20, and a phase entry: drift-check result, D2 answer or default,
-  what 18 and 19 were found to provide, the session 1 and session 2 split, the adversarial pass,
-  the tests added (contract selection, parity, store actions), `PERSIST_VERSION` old to new, and the
-  broken capture recipes.
+- Status row for catch-up Phase 20, and a phase entry: drift-check result against 501b0b8, D2 built
+  as answered, OQ-66 built as its recommendation, what 15a, 18 and 19 were found to provide, the
+  session 1 and session 2 split, the adversarial pass, the tests added (contract selection and
+  search, parity, store actions, audit-derived flag), `PERSIST_VERSION` old to new, the broken
+  capture recipes, and the handoff to 21 (US-11.4.2's Contract-holder flag and wording).
 - Decisions log:
   - **Superseded:**
     - The route model: 3rd review #1 (office route-setting and the mobile initial route); the
@@ -569,13 +717,24 @@ re-raise anything settled in the Decisions log except the rulings this phase exp
     - "The Card-level pre-payment flag is derived, never stored" (7th review B6), now an interim
       office-set flag.
     - The ACC review advisory (6th review #3), if 18 had not already removed it.
-  - **New provisional readings:**
-    - An unset Booking value does not exclude a Contract.
+    - The catch-up plan's earlier default of insurer and funding source on the Booking (old DM-35):
+      withdrawn by D2 before it was built.
+  - **Readings this phase picks where the catalogue is silent:**
+    - Insurer, funding-source and surgeon scope arrays do not narrow the picker (OQ-55; surgeon not
+      settled), so `surgeons` leaves 18's `SCOPE_NARROWING_DIMENSIONS`.
+    - A Procedure with no master entry and no code sees only Contracts with no procedure, code or
+      group scope.
+    - US-03.1.2 ("how a Procedure will be billed") is met on anaesthetist views by the Contract's
+      name and AA code; pricing basis, payer and category stay office-only (US-15.0.1).
     - An insurer-held Contract is not offered while its insurer does not accept direct claims
       (replaces the 6th review #2 validator check).
     - A List with no hospital defaults to RVG Default Post-paid.
     - An added Procedure starts on the first Procedure's Contract when in scope.
-    - A hospital change re-defaults only defaulted Procedures.
-    - An office re-pick clears a pending anaesthetist change until Phase 21's approval.
-    - Holder-as-payer and the Booking pre-payment flag are interims, with the phases that replace
-      them.
+    - A hospital or procedure change re-defaults only defaulted Procedures.
+    - The anaesthetist-change flag is derived from the audit trail; an office re-pick clears it
+      until Phase 21's approval.
+    - The insured-reimbursement invoice wording is retired until Phase 21's Contract-holder flag.
+  - **Provisional (OQ-66, one place):** the picker filtered by procedure and hospital, search by AA
+    code and holder code inside the in-scope set, a 50-row cap.
+  - **Interims, with the phases that replace them:** holder-as-payer (21), `funderOverride` as the
+    split (22), the office-set Booking pre-payment flag and the seeded deposit (27).

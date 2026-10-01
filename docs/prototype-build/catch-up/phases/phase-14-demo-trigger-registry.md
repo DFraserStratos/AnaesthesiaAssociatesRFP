@@ -28,15 +28,15 @@ contract right; do not build their triggers here.
 1. Run:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-13.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.2.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.3.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.6.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-13.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.2.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.3.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.6.md"
    ```
 
-   (At plan time, 2026-09-30, the whole catalogue had no diff against `1f067a8`.)
+   (At plan time, 2026-09-30, the whole catalogue had no diff against `501b0b8`.)
 2. **FT-13.5** (Proposed): if its technical discussion no longer proposes MFA for Admin, self-service
    password reset or logged login attempts, adjust the sign-in trigger's rows to match. If it is now
    Retired or Future, drop work item 9 and note it in PROGRESS.md; the rest of the phase stands (it is
    demo plumbing, not a requirement).
-3. **FT-14.1, 14.2, 14.3, 14.5** (all Future at `1f067a8`): if any came back into scope, remove that
+3. **FT-14.1, 14.2, 14.3, 14.5** (all Future at `501b0b8`): if any came back into scope, remove that
    part of the Future-scope badge and the S1 caveat, and tell the owner, because Phase 34's plan
    changes too.
 4. **US-07.2.2 / US-07.3.1** (office review before authorise): if the catalogue now allows an

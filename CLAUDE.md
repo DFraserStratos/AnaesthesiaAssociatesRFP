@@ -21,7 +21,7 @@ integrations, a demo control panel).
 the Vitest + Playwright suites are green.
 
 **The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
-between the prototype and the catalogue (at commit `1f067a8`) and a build plan of phases 14 to 44 to
+between the prototype and the catalogue (at commit `501b0b8`) and a build plan of phases 14 to 44 (37 phases, some lettered such as 15a) to
 close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
 session follows its phase doc and prompt; other work is still fixes, polish and demo preparation.
 When requirements change, the `/update-requirements` skill records the evidence and updates the

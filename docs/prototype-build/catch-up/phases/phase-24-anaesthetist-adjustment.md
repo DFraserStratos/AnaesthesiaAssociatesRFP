@@ -5,13 +5,13 @@
 [US-03.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason (Proposed) ·
 [FT-05.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-05.4.md) Adjustments and overrides ·
 [US-05.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.1.md) Apply anaesthetist adjustment ·
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules (Proposed, [OQ-06](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-06.md)); this phase closes its last missing part, the allows-adjustment rule ·
-[DM-12](../analysis/domain-model-delta.md#dm-12) the anaesthetist adjustment is its own Contract-gated record, and the office override stays the existing `priceOverride` ·
+[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules (Proposed, [OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md), which replaces the answered [OQ-06](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-06.md)); this phase closes its last missing part, the allows-adjustment rule. Its 2026-10-01 note adds that a base unit overridden consistently means AA fixes its own default data, not a new Contract rule ·
+[DM-14](../analysis/domain-model-delta.md#dm-14) the anaesthetist adjustment is its own Contract-gated record, and the office override stays the existing `priceOverride` ·
 [RV-11](../analysis/reverse-check.md#rv-11-anaesthetist-adjustment-dollar-or-fixed-price-always-offered) the dollar-or-fixed, always-offered, ungated anaesthetist adjustment is reworked.
 Kept as they are and re-tested, not reopened:
 [US-05.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.2.md) Office price override (Matches; the office can always override, [OQ-16](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-16.md) Answered) and
 [US-03.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.2.md) BTM still recorded in full (Matches; must survive a 100% discount).
-**Depends on:** Phase 23 (the Booking-level pricing engine, the 3/2/2 modifier split, the per-Contract multi-procedure rule and the Contract base-unit override). Also relies on 15 (Booking vocabulary), 18 (the reshaped `Contract` and the rebuilt Contract detail panel), 19 (the one base-unit resolver), 20 (one Contract per Procedure, `setProcedureContract`, the Contract picker), 21 (Review's Contract column and approval) and 22 (invoice presentation and the covered-amount split).
+**Depends on:** Phase 23 (the Booking-level pricing engine, the 3/2/2 modifier split, the per-Contract multi-procedure rule and the Contract base-unit override). Also relies on 15 (Booking vocabulary), 15a (the warning routine, which this phase leaves alone), 18 (the reshaped `Contract` and the rebuilt Contract detail panel), 19 (the master procedure list, the one base-unit resolver `resolveBaseUnits`, the procedure-first capture picker, and D3's "any base-unit value accepted, with an after-procedure office warning"), 20 (one Contract per Procedure, `setProcedureContract`, the Contract picker), 21 (Review's Contract column and approval) and 22 (invoice presentation and the Contract payment setting, FULL or SPLIT, with its typed share).
 **Estimated:** 1 session, and a tight one. If it runs over, stop green after work item 6 (model, pure
 rules, engine, validator, store and Contract rule, all tested) and do items 7 to 12 in a second session.
 
@@ -35,30 +35,43 @@ layers.
 The Contract gains **`allowsAnaesthetistAdjustment`**, edited in the Contract detail panel. With it,
 US-04.2.2's pricing and adjustment rules are complete.
 
+The adjustment changes the **price**, never the base units. Base units stay wherever 19 and 23 put
+them (OQ-62 is still open on whether that is the master procedure list or the RVG code master). The
+2026-10-01 meeting said a base unit that is consistently overridden means AA fixes its own default
+data, so this phase adds no rule, report or Contract setting for repeated overrides.
+
 ## Before you start: drift check
 
-1. Diff the catalogue against the snapshot:
+1. Diff the catalogue against the snapshot (catalogue commit 501b0b8):
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    - **What to read.** Read the diff for FT-03.5, US-03.5.1, US-03.5.2, FT-05.4, US-05.4.1, US-05.4.2,
-     US-04.2.2, OQ-06 and OQ-16. In `domain-model.md`, read the Contract table's
-     `allowsAnaesthetistAdjustment` row, the "Procedure billing context" rows `anaesthetistAdjustment`
-     and `officeOverride`, and section 3, "Calculation rules".
-   - **If an item changed**, re-read it and adjust the work items below.
+     US-04.2.2, OQ-62 and OQ-16. In `domain-model.md`, read the Contract table's
+     `allowsAnaesthetistAdjustment` and `baseUnitOverrides` rows, the "Procedure billing context" rows
+     `anaesthetistAdjustment` and `officeOverride`, the Procedure master bullet in section 2, and
+     section 3, "Calculation rules".
+   - **At 501b0b8 (the 2026-10-01 update)**, only US-04.2.2 of this phase's items changed, and only
+     in its Notes: it stays Proposed because where base units live is disputed (OQ-62, opened when
+     OQ-06 was answered), and a consistently overridden base unit means AA changes its own data on
+     the default Contract. Its acceptance criteria and the adjustment wording are unchanged. FT-03.5,
+     US-03.5.1, US-03.5.2, FT-05.4, US-05.4.1, US-05.4.2 and OQ-16 did not change.
+   - **If an item changed since**, re-read it and adjust the work items below.
    - **If an item is now Retired or Future**, drop it and say so in the PROGRESS entry.
    - **Things to look for:**
      - a dollar variant being added to the anaesthetist adjustment;
      - the office being allowed to edit the anaesthetist's adjustment;
      - a cap on the fixed final price;
+     - a rule that detects or reports a consistently overridden base unit (the meeting said AA
+       fixes its data instead; if a story now asks for one, it belongs to 19 or 42, not here);
      - the anaesthetist being shown the fee before and after the adjustment (see item 3 of this
        list).
 2. **Known wording clash, already resolved.** `domain-model.md`'s Procedure billing-context table
-   lists `anaesthetistAdjustment { type: PERCENT, AMOUNT or FIXED_FINAL }`. FT-03.5, US-03.5.1,
-   US-05.4.1 and US-04.2.2 all say "percentage discount or fixed final price", and DM-12 settles on
-   no dollar variant.
+   still lists `anaesthetistAdjustment { type: PERCENT, AMOUNT or FIXED_FINAL }` at 501b0b8. FT-03.5,
+   US-03.5.1, US-05.4.1 and US-04.2.2 all say "percentage discount or fixed final price", and DM-14
+   settles on no dollar variant.
    - **Build:** the stories' reading.
    - **Tell the owner:** in the phase notes, so `domain-model.md` can be corrected. Do not edit the
      catalogue in this phase.
@@ -80,23 +93,30 @@ US-04.2.2's pricing and adjustment rules are complete.
 4. **Proposed items.**
    - **US-03.5.1** stays Proposed until the reason rule is confirmed. The reason is already
      mandatory; keep it.
-   - **US-04.2.2** stays Proposed until OQ-06 is settled.
+   - **US-04.2.2** stays Proposed until OQ-62 is settled (where base units live).
    - Build both as written.
-5. **OQ-06** (base units on a Procedure master, a Contract override, the RVG master keeping the
-   guide's values).
+5. **OQ-62** (where base units live: the master procedure list, as the 2026-10-01 meeting agreed and
+   the recommendation says, or the RVG code master, as the OQ-06 board answer says; both agree a
+   Contract may override them). OQ-06 itself is Answered and no longer gates anything here.
    - **Why it touches this phase.** It gates US-04.2.2's base-unit half, which Phases 19 and 23
-     built. This phase adds nothing to base units.
-   - **If still open:** leave 23's provisional base-unit override and its labels exactly as they
-     are.
-   - **If answered differently** (for example, base units on the RVG code after all): that is
-     rework for 19 and 23, not this phase. Note it in the PROGRESS entry and carry on. The
-     "recorded in full" gate below reads whatever base-unit resolver 19 and 23 left.
+     built. This phase adds nothing to base units and reads them only through `resolveBaseUnits`.
+   - **If still open:** leave 19's master procedure list, 23's Contract base-unit override and
+     whatever OQ-62 label they carry exactly as they are.
+   - **If answered for the RVG code master:** that is rework for 19 and 23, not this phase. Note it
+     in the PROGRESS entry and carry on. The "recorded in full" gate below reads whatever
+     base-unit resolver 19 and 23 left, so it needs no change.
+   - **Consistently overridden base units.** The meeting's answer is that AA changes its own default
+     data. Build nothing for it here: the anaesthetist adjustment is a price change, not a base-unit
+     override, and must not be used or presented as one.
 6. **Read what Phases 18 to 23 actually left.** Check their PROGRESS entries and the code for:
-   - the name and shape of Phase 23's Booking-level engine (for example `bookingFeeFor` over the
-     per-Procedure `feeFor`), and what it returns per Procedure;
+   - the name and shape of Phase 23's Booking-level engine (planned as `bookingFeeFor` in
+     `src/domain/billing/bookingFee.ts` over the per-Procedure `feeFor`), what it returns per
+     Procedure, and how it marks the primary (`isPrimary`);
+   - the base-unit resolver 19 left (planned as `resolveBaseUnits` in
+     `src/domain/billing/baseUnits.ts`, with 23's Contract slot filled) and its "no base" result;
    - the field that holds the Procedure's Contract (`contractSelection`, per Phase 20);
    - the Contract detail panel's section layout (Phase 18);
-   - how the covered amount (Phase 22) is taken from a Procedure's total;
+   - how 22's SPLIT payment setting takes the holder's share from a Procedure's total;
    - how 22's invoice presents override lines.
 
    Then name the real symbols in your plan. Also grep for any `priceOverride` of kind
@@ -127,15 +147,17 @@ US-04.2.2's pricing and adjustment rules are complete.
 [US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md)
 (the locked Contract that US-05.4.1 names; Phase 25 builds the lock) and
 [FT-07.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-07.2.md)
-(SUBMITTED review, where the office overrides). In `domain-model.md`, see section 3's pipeline: "then
-apply anaesthetist adjustment (if allowed), then office override".
+(SUBMITTED review, where the office overrides), and
+[OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md) (where base
+units live; it touches the "B recorded" gate only through 19's resolver). In `domain-model.md`, see
+section 3's pipeline: "then apply anaesthetist adjustment (if allowed), then office override".
 
 **Analysis.**
-- `../GAP-ANALYSIS.md`: theme 6 and the DM-12 and RV-11 rows, then the EP-03, EP-04 and EP-05
-  tables.
+- `../GAP-ANALYSIS.md`: the DM-14 row under "Structural changes" and the RV-11 row under
+  "Prototype behaviour to remove or rework", then the EP-03, EP-04 and EP-05 tables.
 - `../epics/EP-03.md` (FT-03.5, US-03.5.1), `../epics/EP-04.md` (US-04.2.2) and `../epics/EP-05.md`
   (FT-05.4, US-05.4.1).
-- `../analysis/domain-model-delta.md` (DM-12) and `../analysis/reverse-check.md` (RV-11).
+- `../analysis/domain-model-delta.md` (DM-14) and `../analysis/reverse-check.md` (RV-11).
 - The code maps: `../analysis/prototype-map-domain.md`, `prototype-map-shared.md` and
   `prototype-map-admin.md`.
 
@@ -148,6 +170,8 @@ apply anaesthetist adjustment (if allowed), then office override".
   - `feeFor` (~l.180): the override block ~l.254 to 267;
   - `AppliedOverride` and `FeeResult` (~l.146 to 166);
   - Phase 23's Booking-level engine beside it.
+- `src/domain/billing/baseUnits.ts` (Phase 19's `resolveBaseUnits`; it does not exist at the
+  snapshot): read only, for the "B recorded" gate.
 - `src/domain/billing/validateCardForBilling.ts` (`validateBookingForBilling` after 15/21): the
   price-override checks (~l.232 to 243) and the base code and time checks (~l.130 to 160) that the
   "recorded in full" rule must share.
@@ -190,7 +214,7 @@ apply anaesthetist adjustment (if allowed), then office override".
 
 ## Work items
 
-1. **Model** (`domain/types.ts`). Satisfies DM-12.
+1. **Model** (`domain/types.ts`). Satisfies DM-14.
    - **Rename** `PriceOverride` to `OfficeOverride` and `Procedure.priceOverride` to
      `Procedure.officeOverride`. The union is unchanged: `fixedFee`, `dollarAdjustment` or
      `percentAdjustment`, each with a mandatory `reason`. Add `by` and `atISO`, the same shape
@@ -218,15 +242,18 @@ apply anaesthetist adjustment (if allowed), then office override".
      recorded in full". Since Phase 23, B and M belong to the Booking's primary Procedure (an
      additional Procedure has base 0 with `baseSource: 'additional'`, and no ASA of its own), so they
      are read from `primary`; T is read from the Procedure itself. It is true when:
-     - **B:** the Procedure has an RVG code in the master, and the base-unit resolver (19's, with
-       23's Contract override) returns a base for the **primary**, including a selected value where
-       the primary's base is ranged;
+     - **B:** the base-unit resolver (19's `resolveBaseUnits`, with 23's Contract override) returns
+       a base for the **primary**: from its master procedure entry or RVG code, or the value the
+       anaesthetist entered. Under D3 any entered value counts, including one outside a ranged
+       code's published range (that raises 19's after-procedure office warning, never a block, and
+       never hides the adjustment);
      - **T:** this Procedure's start and handover are both recorded, and handover is after start;
      - **M:** the **primary's** ASA class is recorded.
 
      For the primary itself, `primary` is the same Procedure. Test both: an additional Procedure
      passes once its own times and the primary's B and ASA are recorded, and fails while the
-     primary's ASA is blank (this is what makes test G2 reachable).
+     primary's ASA is blank (this is what makes test G2 reachable). Also test that a primary with
+     an out-of-range base value (D3) counts as B recorded.
 
      **Rule for M (a prototype reading).** M counts as recorded once the primary's ASA class is set,
      because the ASA class is the one modifier every anaesthetic carries. Other modifiers can
@@ -237,8 +264,9 @@ apply anaesthetist adjustment (if allowed), then office override".
      checks into a shared predicate that both `validateBookingForBilling` and this helper call. Do
      not copy them, so completion and the adjustment gate cannot disagree.
 
-     A Procedure with no RVG code, such as a rate x time line, is never "recorded in full". The
-     field therefore never shows for it.
+     A Procedure with no base at all, such as a rate x time line with no procedure or RVG code, is
+     never "recorded in full". The field therefore never shows for it. Whichever home OQ-62 settles
+     on, the gate reads only the resolver, so it does not change.
    - **`applyAdjustmentLayers(baseTotal, adjustment, allowed, override)`** returns `{
      beforeAdjustment, adjustment: AppliedAdjustment | null, afterAdjustment, override:
      AppliedOverride | null, total }`. `AppliedAdjustment` is `{ adjustment, permitted: boolean,
@@ -289,11 +317,16 @@ apply anaesthetist adjustment (if allowed), then office override".
    - **Test G2, a multi-procedure Booking under 23's rule.** An adjustment on the additional
      Procedure changes only that Procedure's post-rule fee. The primary's fee and the 3/2/2 unit
      shares are unchanged.
-   - **Covered amount (22).** Confirm the covered split reads the Procedure's **final** total,
-     after both layers. Add a test where a discount takes the total below the covered amount: the
-     patient share never goes negative. If 22 has no rule for this, the validator refuses: "The
-     adjustment takes the fee below the amount {holder} covers. Change the adjustment or the
-     override."
+   - **Payment setting (22).** Confirm a SPLIT Contract's share is taken from the Procedure's
+     **final** total, after both layers, and a FULL Contract bills that final total. 22's planned
+     `splitFee` caps an amount share at the fee (`min(amountExGst, fee)`), so a discount below a
+     fixed holder share gives the holder the whole fee and a zero remainder, which raises no
+     remainder invoice. Add that test: the remainder never goes negative. Only if 22 left no cap,
+     the validator refuses instead: "The adjustment takes the fee below the amount {holder} covers.
+     Change the adjustment or the override."
+   - **23's not-billable rule (a prototype reading).** A Procedure that 23's multi-procedure rule
+     prices as `notBillable` is treated as not allowed by `adjustmentAllowed`'s caller: no field,
+     and a fixed final price can never put a charge on it. Log it.
 4. **Validator** (`validateBookingForBilling`). Every message is verbatim and has no dashes.
    - `anaesthetistAdjustment` reason blank: "Give a reason for the adjustment."
    - Percent out of range: "Enter a discount above 0 and up to 100 percent."
@@ -303,6 +336,9 @@ apply anaesthetist adjustment (if allowed), then office override".
      the new field and computed on the layered total.
    - The failure fields are `anaesthetistAdjustment` and `officeOverride`, so the capture latch
      anchors each to its own card.
+   - These are completion checks on invalid billing data, like 21's required inputs, not 15a
+     warnings. Register no warning rule and add no "Raise sample warnings" sample: the routine and
+     its to-do list are untouched by this phase.
    - Update `validateCardForBilling.test.ts`.
 5. **Store actions** in a new `src/store/adjustmentActions.ts`, exported from `store/index.ts`,
    each through `mutate()` with before and after metas and the demo clock:
@@ -317,6 +353,10 @@ apply anaesthetist adjustment (if allowed), then office override".
        - `btmNotRecorded`: "Record base, time and modifier units before adjusting the price."
        - `reasonRequired`.
        - `percentOutOfRange` and `finalPriceNegative`.
+     - **Clearing.** `adjustmentNotAllowed`, `btmNotRecorded` and the input checks apply only to a
+       non-null input. The anaesthetist may always pass `null` on their own DRAFT List, including
+       for an adjustment the Contract no longer allows, so the validator's "Remove it." (item 4) is
+       always actionable on the phone.
      - **Writes** `by` and `atISO`, and audits `procedure.anaesthetistAdjustment`.
      - Covers FT-03.5, US-03.5.1 AC 1 and AC 2, and US-05.4.1.
    - **`setOfficeOverride(api, actor, procedureId, input | null)`**
@@ -339,7 +379,8 @@ apply anaesthetist adjustment (if allowed), then office override".
        integration;
      - the audit entries;
      - the Contract-change clear, with two metas and one state change;
-     - the office clear of a disallowed adjustment only.
+     - the office clear of a disallowed adjustment only;
+     - the anaesthetist's clear of a disallowed adjustment, and of one with BTM no longer recorded.
 6. **Contract rule: editor and store.** Covers US-04.2.2 AC 5.
    - **Store.** `ContractInput` and `ContractEditPatch` gain `allowsAnaesthetistAdjustment`.
      `createContract` defaults it to false when the caller omits it. Phase 18's "add hospital
@@ -361,9 +402,10 @@ apply anaesthetist adjustment (if allowed), then office override".
    `shared/capture/AdjustmentCard.tsx`, imported directly by `BtmCaptureBlock` as `OverrideCard` is
    today (it is not in `shared/capture/index.ts`). Delete `OverrideCard.tsx`. The same component serves mobile and the anaesthetist web app through
    `useSurface()`.
-   - **Contract does not allow it:** render nothing. The field is not offered at all (US-04.2.2,
-     US-05.4.1). `BillingLinesCard` takes the full row: make `Pair` handle a single child, or mount
-     it alone.
+   - **Contract does not allow it and nothing is stored:** render nothing. The field is not offered
+     at all (US-04.2.2, US-05.4.1). `BillingLinesCard` takes the full row: make `Pair` handle a
+     single child, or mount it alone. A stored adjustment the Contract no longer allows still
+     renders, read-only, as below, so it is never silent.
    - **Allowed, but BTM not recorded in full:** show the section titled "Price adjustment" with a
      single caption, "You can discount the fee or set a final price once base, time and modifier
      units are recorded." Show no inputs. It appears live as capture completes, because it reads the
@@ -387,7 +429,9 @@ apply anaesthetist adjustment (if allowed), then office override".
      `drSurname` from `shared/format.ts`.
      - **If the adjustment is not permitted:** add a warning-tint line "{Contract} does not allow an
        anaesthetist adjustment. It is not applied."
-     - **The office's Remove action:** a teal link that calls the office clear from item 5.
+     - **Remove:** a teal link that clears it. The office's calls the office clear from item 5; the
+       anaesthetist gets the same link on their own DRAFT List (a `null` write). The editable card
+       never offers inputs for a not-permitted adjustment.
    - **Anchors.** Replace `'priceOverride'` in `BtmCaptureBlock`'s anchored set with
      `'anaesthetistAdjustment'`. The card carries `validationTarget` for that field, so "Mark
      complete" scrolls to it and focuses it.
@@ -432,6 +476,8 @@ apply anaesthetist adjustment (if allowed), then office override".
        price, {reason}", with amount `after - before`;
      - then the existing "Price override, {reason}", with amount `total - afterAdjustment`.
    - A not-permitted adjustment raises no line.
+   - **On a SPLIT Contract (22):** the delta lines sit on the remainder invoice with the full fee
+     lines, before "Less paid by {holder}". The holder's single share line quotes the final fee.
    - This follows the Phase 08 pattern, which carries the reason on the line. Do not change that
      pattern here, but raise with the owner whether reasons should print on a customer invoice.
    - A 100% discount gives a $0.00 group, and a $0.00 group raises no invoice (the existing rule).
@@ -448,8 +494,8 @@ apply anaesthetist adjustment (if allowed), then office override".
         Phase 18; it does not exist at the snapshot). The anaesthetist bills their own patient and may
         discount.
       - `false` on every other Contract: each RVG Default Hospital, nib, SXAP, Health NZ, both ACC,
-        Doyle bariatric, the CES HNZ schedule and the Aria rate x time Contract, whose price is
-        already individually arranged.
+        Doyle bariatric, the CES HNZ schedule, 22's nib split Contract, 23's combination Contracts
+        and the Aria rate x time Contract, whose price is already individually arranged.
       - If 18 to 21 seeded an RVG Default Pre-paid-like Contract or another patient-direct RVG
         Contract, it is true there too.
     - **The capture beat.** Dr Souter needs an uncaptured Booking on RVG Default Post-paid on a
@@ -513,10 +559,15 @@ apply anaesthetist adjustment (if allowed), then office override".
         and M from the primary (Phase 23's model);
       - the office does not edit the anaesthetist's adjustment, only overrides on top of it, apart
         from clearing a disallowed one;
-      - a stored, disallowed adjustment is never applied and is always flagged;
+      - a stored, disallowed adjustment is never applied and is always flagged, and the anaesthetist
+        can always remove their own on a DRAFT List;
+      - a Procedure priced `notBillable` by 23's rule is not offered the adjustment;
       - a Contract change clears a disallowed adjustment, with a warning first;
       - the anaesthetist still sees no fee (drift check 3; the owner's answer if one came);
-      - the domain model lists `AMOUNT`, and the stories win (drift check 2).
+      - the domain model lists `AMOUNT`, and the stories win (drift check 2);
+      - the adjustment is a price change only and never stands in for a base-unit override; a base
+        unit overridden consistently is fixed in AA's own default data (US-04.2.2 note, OQ-62), so
+        nothing in the app detects or reports it.
 
 ## Demo triggers
 
@@ -555,7 +606,11 @@ Authorising prices with both layers, and neither touches the adjustment.
   anaesthetist's adjustment. Build none unless the drift check says so.
 - Showing the anaesthetist any fee, unless the owner answers drift check 3 with yes.
 - Any change to base units, the multi-procedure rule or the Contract picker beyond item 5's clear
-  and warning.
+  and warning. Where base units live is OQ-62, and its outcome is 19's and 23's rework.
+- Detecting, reporting or warning on a consistently overridden base unit. The 2026-10-01 answer is
+  that AA fixes its own default data (US-04.2.2 note).
+- A new warning rule. The stored-but-not-permitted adjustment is a completion check (item 4), and
+  15a's routine is untouched.
 
 ## Manual test checklist
 
@@ -564,8 +619,9 @@ Authorising prices with both layers, and neither touches the adjustment.
       Mitchell on Tue 28 Jul).
 - [ ] **Gate on BTM.** On the same List, the RVG Default Post-paid Booking shows only "You can
       discount the fee or set a final price once base, time and modifier units are recorded." Choose
-      the code, Start now, Finish now and ASA I. The Discount % / Final price control appears without
-      a reload.
+      the procedure, Start now, Finish now and ASA I. The Discount % / Final price control appears
+      without a reload. If the procedure's code is ranged, a base value outside the range still
+      opens the field (D3), and only 19's after-procedure office warning follows.
 - [ ] **Reason required.** Choose Discount %, enter 10 and leave the reason blank: Save stays
       disabled with the warning. Add "Courtesy discount" and save. The read-only line reads
       "Discount 10% · Courtesy discount · Dr Souter", and no fee shows anywhere on the phone.
@@ -592,8 +648,8 @@ Authorising prices with both layers, and neither touches the adjustment.
 - [ ] **Contract rule in Master data.** Set "Anaesthetist adjustment: Allowed" on St George's RVG
       Default Hospital. Sarah Mitchell's Booking (after capture) now offers the field. Set it back:
       the saved adjustment shows "Not allowed by …" in Review and on the Booking, is not applied to
-      the fee, blocks Mark complete for a DRAFT Booking with the validator sentence, and the office
-      Remove link clears it.
+      the fee, blocks Mark complete for a DRAFT Booking with the validator sentence, and the Remove
+      link clears it (the anaesthetist's on the phone, or the office's in Admin).
 - [ ] **Scripted beats unbroken.** S1 Beat 3, S2 Beat 4, the S3 Beat 1 figures, S4 and S5 Beat 1 run
       as scripted.
 - [ ] No en or em dashes in any new copy; teal on every new action; crimson nowhere new.
@@ -652,18 +708,21 @@ green, and before writing the PROGRESS entry.
   Contract allows.
 - **Never silent.** A stored, disallowed adjustment is never applied to money, and is flagged on the
   Booking, in Review and by the validator. A Contract change clears one only after warning.
+- **Base units untouched.** The phase reads base units only through 19's `resolveBaseUnits`, never
+  copies a base-unit source, and adds no repeated-override rule (OQ-62 is open; US-04.2.2's note
+  says AA fixes its own data). An out-of-range base value (D3) still counts as B recorded.
 - **US-03.5.2.** A 100% discount leaves B, T and M, `billableUnits` and the audit record intact.
   A $0.00 group raises no invoice and no error.
 - **No regressions.** The office override still works on every Contract, including over a fixed fee.
-  S3's pinned figures and the covered-amount split are unchanged where no layer applies. The
+  S3's pinned figures and 22's payment-setting split are unchanged where no layer applies. The
   "recorded in full" rule shares the validator's predicate rather than copying it. No money appears
   on any anaesthetist surface. `PERSIST_VERSION` is bumped. The generator and canvas are untouched.
 
 ## PROGRESS.md updates
 
 - **Status row** for Phase 24, and a phase entry recording:
-  - the drift-check result, including the owner's answer on drift check 3 if one came, and the
-    domain-model `AMOUNT` note;
+  - the drift-check result against 501b0b8, including OQ-62's status, the owner's answer on drift
+    check 3 if one came, and the domain-model `AMOUNT` note;
   - the `PERSIST_VERSION` from and to;
   - the real names of the engine function and fields used;
   - the tests added;

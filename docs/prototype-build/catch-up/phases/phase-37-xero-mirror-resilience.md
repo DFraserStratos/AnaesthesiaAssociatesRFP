@@ -72,7 +72,7 @@ record.
 1. Run:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Read the hunks for EP-09, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,

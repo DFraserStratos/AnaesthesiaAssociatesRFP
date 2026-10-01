@@ -10,17 +10,20 @@
 [FT-02.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-02.5.md) Change types and audit (Confirmed) ·
 [US-02.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.1.md) Apply a modification (Confirmed) ·
 [US-02.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.2.md) Apply a reschedule (Confirmed) ·
-[DM-28](../analysis/domain-model-delta.md#dm-28) Intake model: import rows, matching decisions, unmatched queue (the row, decision and queue half; per-hospital sync state is Phase 34) ·
+[DM-34](../analysis/domain-model-delta.md#dm-34) Intake: import rows, admin match/create/reject decisions, unmatched queue (the row, decision and queue half; per-hospital sync state is Phase 34) ·
 [RV-13](../analysis/reverse-check.md#rv-13-hospital-messages-apply-straight-to-the-schedule-with-no-admin-review) Hospital messages apply straight to the schedule with no admin review (Rework).
 Also touches, without closing:
 [US-02.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.5.md) (its "No silent apply" criterion is met here for every row that arrives; the sync itself, last-synced time and failed-sync display are Phase 34),
 [US-02.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.3.md) and [US-02.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.5.4.md) (both Matches today; a hospital cancellation or late change now arrives as a row and is applied by the admin, so both must stay Matches),
-[US-01.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.1.md) (a Draft List created from a hospital row; the Draft List itself is Phase 31),
+[US-01.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.6.1.md) (a Draft List created from a hospital row, with hospital, surgeon, day and session, holding the row's Booking; the Draft List itself is Phase 31),
 [US-04.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.3.md) (a created Booking takes the default Contract; the rule is Phase 20's),
-[US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) (the unpaid alert "at Booking create or match"; Phase 40 adds it to this screen),
+[US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) (the unpaid-balance alert "at Booking create or match", mild under and strong over the threshold, never a block; Phase 40 registers it as a rule in Phase 15a's warning routine and shows it on this screen),
+[DM-03](../analysis/domain-model-delta.md#dm-03) (a Draft List can hold Bookings; "a matching-screen row can create one"),
+[DM-12](../analysis/domain-model-delta.md#dm-12) (insurer and funding source on neither the Booking nor the Patient, so a row's payer details are shown, never stored),
 [RV-05](../analysis/reverse-check.md#rv-05-admin-integrations-monitor-presents-future-reliability-tooling-as-product) and [RV-06](../analysis/reverse-check.md#rv-06-hl7-to-fhir-simulator-live-drip-and-scenario-s1-built-on-them) (the HL7/FHIR tooling keeps Phase 14's Future-scope badges; Phase 34 demotes it).
-**Open questions:** [OQ-13](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-13.md) (the download's format, fields and cadence; Open). [OQ-34](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-34.md) is Answered (the hospital download carries the most bookings) and is why this screen is the priority pathway. [OQ-44](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-44.md) (whether a Draft List can hold Bookings) shapes one decision branch; Phase 31 will have settled its reading.
-**Depends on:** Phase 20 (one Contract per Procedure, `defaultContractForBooking` and `createBooking`'s default-at-creation rule, Booking `insurerId` and `fundingSource`) and Phase 31 (Draft Lists, the pairing rule and Phase 30's conflict raising on every path). Through them: Phase 14 (the demo-trigger registry, `useDemoTriggerContext`, `SIMULATED_OFFICE_ACTOR`, the PWA demo sheet and the Future-scope badges), Phase 15 (Booking vocabulary and `Booking.source`, whose `hospitalDownload` value is stamped by the HL7/FHIR path as an interim "until 33"), Phase 17 (the surgeon master and the blacklist warning inside List assignment), Phase 19 (the Procedure master and base-unit resolver, via 20) and Phase 28 (Slots, `assignListToSlot`, `placeListOnSlot`, `slotFor`/`listInSlot`, and the S12/S13 park-on-no-List seam, which this phase replaces, together with Phase 31's interim `pairingIncomplete` park). **Not guaranteed before 33** (outside its dependency chain, though normally done first by number): Phase 23 (the primary Procedure) and Phase 25 (the AUTHORISED lock). Where a work item names them, use them if DONE; otherwise a procedure change edits the Booking's first Procedure and the AUTHORISED refusal is today's `editRefusal` `listAuthorised`. Record which in the drift-check result. First phase of the Intake track; 34 and 35 build on it.
+**Open questions:** [OQ-13](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-13.md) (the download's format, fields and cadence; still Open at 501b0b8, now with Stratos Tech to ask: the 2026-10-01 meeting added that two HL7 hospitals may not send the same shape, that the download is not comprehensive, so the theatre list is still needed for the insurer or Contract, and that the first release may need matching like the current system). [OQ-34](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-34.md) is Answered (the hospital download carries the most bookings) and is why this screen is the priority pathway.
+**Answered and built as answered:** [OQ-44](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-44.md) (2026-10-01: a Draft List is a List with no anaesthetist; hospital, surgeon, day and session are all required; Bookings can be added before an anaesthetist is assigned; an unfilled one is removed or re-dated, US-01.6.4; only the office assigns it), so "Create a Draft List" puts the row's Booking on the new Draft List in the same decision. [OQ-55](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-55.md) (owner decision D2: insurer and funding source are on neither the Booking nor the Patient; the Contract says who pays), so a row's insurer or funder is shown beside the Procedure's Contract and the admin may pick another Contract; nothing is written to a Booking insurer field. [OQ-52](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-52.md) (the HPI CPN is the surgeon's unique index), so a row's surgeon resolves by HPI CPN first, then by name.
+**Depends on:** Phase 20 (one Contract per Procedure, `defaultContractForBooking` and `createBooking`'s default-at-creation rule, `contractOptionsFor` and the guarded `setProcedureContract`; no Booking `insurerId` or `fundingSource`, per D2) and Phase 31 (Draft Lists with the four required fields that hold Bookings, the pairing rule and Phase 30's conflict raising on every path). Through them: Phase 14 (the demo-trigger registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts` (Phase 28's doc calls it `SIMULATED_OFFICE_ACTOR`; use the name the code has), the PWA demo sheet and the Future-scope badges), Phase 15 (Booking vocabulary and `Booking.source`, whose `hospitalDownload` value is stamped by the HL7/FHIR path as an interim "until 33"), Phase 15a (the warning routine: a Booking created or changed from a row shows its warning triangle like any other), Phase 17 (the surgeon master with `hpiId`, the HPI CPN, and the blacklist warning inside List assignment), Phase 19 (the Procedure master and base-unit resolver, via 20) and Phase 28 (Slots, `assignListToSlot`, `placeListOnSlot`, `slotFor`/`listInSlot`, and the S12/S13 park-on-no-List seam, which this phase replaces, together with Phase 31's interim `pairingIncomplete` park if 31 left one). **Not guaranteed before 33** (outside its dependency chain, though normally done first by number): Phase 23 (the primary Procedure) and Phase 25 (the AUTHORISED lock). Where a work item names them, use them if DONE; otherwise a procedure change edits the Booking's first Procedure and the AUTHORISED refusal is today's `editRefusal` `listAuthorised`. Record which in the drift-check result. First phase of the Intake track; 34 and 35 build on it.
 **Estimated:** 2 sessions. Session 1 is the model, the pure matcher, the fixtures, the store actions and the HL7/FHIR re-route, re-greened (work items 1 to 9): after it the demo still works, because the Integrations monitor shows each message as "Sent to matching", and a temporary check in `demoScenarios.test.ts` drives S1 through the store. Session 2 is the Admin matching screen, the triggers and PWA stand-in, Playwright, capture recipes and the demo guide (work items 10 to 17).
 
 ## Goal
@@ -37,8 +40,8 @@ This phase:
 - adds a staged **intake model**: an `ImportBatch` (one hospital download, one manual sheet, or one
   feed message) holding `ImportRow`s, each carrying the hospital's incoming fields, its status
   (open, applied, rejected) and, once decided, the admin's **decision**: match to a Booking and
-  apply, create a Booking on a List, create a List in an anaesthetist's Slot, create a Draft List,
-  or reject;
+  apply, create a Booking on a List, create a List in an anaesthetist's Slot, create a Draft List
+  that holds the row's Booking (OQ-44 answered), or reject;
 - adds one **pure matcher** (`src/domain/intake/`) that, for each open row, finds the Booking or
   List it belongs to, classifies the change in plain language (**New, Modification, Reschedule,
   Cancellation**, or **No change**), lists the **field-level differences**, and suggests a
@@ -50,12 +53,15 @@ This phase:
 - applies a decision only through the existing guarded write paths, as the office actor, with the
   Booking's source (`hospitalDownload`) and a Booking-side history row naming the hospital row, so
   "applied with its source and history recorded" (FT-02.5) is visible on the Booking;
-- widens modifications to patient (name, date of birth), procedure (description and code) and
-  contract fields (insurer, funding source) as well as time and note, and appends a hospital note
-  instead of overwriting the Booking's own notes;
+- widens modifications to patient (name, date of birth), procedure (description and code) and the
+  Contract as well as time and note, and appends a hospital note instead of overwriting the
+  Booking's own notes. Per D2 the hospital's insurer or funder is never stored on the Booking: the
+  row shows it beside the Procedure's current Contract, and the admin may pick another Contract
+  from Phase 20's picker as part of the decision. A row never sets a Contract by itself;
 - makes a reschedule move a Booking to any List at the row's hospital, date, session and surgeon,
   including another anaesthetist's, and **parks** a reschedule to a date with no List rather than
-  silently retiming it in place (US-02.5.2);
+  silently retiming it in place (US-02.5.2); the admin resolves it by creating a List in a Slot or a
+  Draft List there, and the Booking moves onto it;
 - re-routes the HL7/FHIR simulator: a parsed message now lands as a row on the matching screen and
   applies nothing, and `manualIntervention` is retired because every applicable message now waits
   for a decision. Retry, dedupe and dead-letter stay as they are, under Phase 14's Future-scope
@@ -69,68 +75,78 @@ This phase:
 1. Diff the catalogue for this phase's items against the plan's snapshot:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-02.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.6.1.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-13.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-34.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-44.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-02.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.1.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.5.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.6.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.6.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-04.3.6.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-11.3.2.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-13.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-34.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-44.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-55.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    If an item changed, re-read it and adjust the work items before planning. If any covered item is
    now Retired or Future, drop it from this phase and say so in the PROGRESS entry. Dropping
    US-02.1.2 or FT-02.1 drops the screen; the RV-13 re-route (no silent apply) still stands while
    US-02.1.5 or US-02.5.1's note says a hospital change goes through the admin's review. If
-   acceptance criteria have been added to any story (only US-02.1.5 and US-01.6.1 have them at the
-   snapshot), map each to a work item. A new intake item on the same screen (for example bulk
-   apply, or automatic matching moving out of Future Work) comes in only if it is small; otherwise
-   note it for Phase 34 or 44.
-2. **OQ-13 (download format, fields and cadence).** If still Open, build the interim this doc
+   acceptance criteria have been added to any story (at 501b0b8 only US-02.1.5, US-01.6.1 with its
+   four, US-01.6.4 and US-11.3.2, which is Phase 40's, have them), map each to a work item. A new intake item on the same screen
+   (for example bulk apply, or automatic matching moving out of Future Work) comes in only if it is
+   small; otherwise note it for Phase 34 or 44. US-04.3.6 (the hospital sets the Contract) is in the
+   Future Work lane at 501b0b8; if it has left that lane, stop and ask, because this doc never lets
+   a row set a Contract by itself.
+2. **OQ-13 (download format, fields and cadence).** Still Open at 501b0b8. Build what this doc
    describes: the three sample files are **labelled fixtures** (a "Sample file" badge in the picker
    and on each batch, and one line on the screen: "Sample files stand in for each hospital's
    download while the format is confirmed with AA."). The incoming row carries a superset of the
    plausible fields, and **every field except hospital, date, session and patient name is optional**,
-   because OQ-13 records that Contract and patient details sometimes do not come through. A field
-   the hospital did not supply is shown as "Not supplied" and is **never** a change: it can never
-   blank a Booking field. If OQ-13 has been answered, reshape the fixtures and `IncomingBookingFields`
-   to the answer's field list (keep the optional-field rule unless the answer says otherwise), drop
-   the interim line, and record the answer in the Decisions log. Cadence belongs to Phase 34.
+   because OQ-13 records that Contract and patient details sometimes do not come through and that
+   the download is not comprehensive. A field the hospital did not supply is shown as "Not
+   supplied" and is **never** a change: it can never blank a Booking field. If OQ-13 has since been
+   answered, reshape the fixtures and `IncomingBookingFields` to the answer's field list (keep the
+   optional-field rule unless the answer says otherwise), drop the interim line, and record the
+   answer in the Decisions log. Cadence belongs to Phase 34.
 3. **FT-02.1 (Verify).** If it is now Confirmed, drop the Verify note from the PROGRESS entry. If it
    has been reshaped (for example matching becomes partly automatic in the first release), stop and
-   tell the owner before building: this doc assumes every row needs an admin decision.
-4. **OQ-44 (Draft List contents).** Read how Phase 31 settled it (its PROGRESS entry). Two branches
-   for the "Create Draft List" decision (work item 6):
-   - **A Draft List can hold Bookings:** the decision creates the Draft List and the Booking on it.
-   - **It cannot (or OQ-44 is still open and 31 built "no Bookings"):** the decision creates the
-     Draft List and the row stays **open, waiting on that Draft List** (shown "Waiting for Draft List
-     to be assigned"). When the Draft List is assigned and becomes a List in a Slot, the matcher's
-     suggestion becomes "Create a Booking on that List" automatically, because suggestions are
-     derived. Nothing is lost and nothing is applied without a second decision.
-5. **Baseline.** Confirm Phases 14, 15, 17, 19, 20, 28, 30 and 31 are DONE in PROGRESS.md, and note
-   whether 23 and 25 are (they are outside the dependency chain; see Depends on). Then read what they
-   left, because this doc names today's files:
+   tell the owner before building: this doc assumes every row needs an admin decision. OQ-13's
+   2026-10-01 note ("the first release may need matching like the current system") supports that
+   assumption.
+4. **OQ-44 (Draft List contents), Answered at 501b0b8.** Build the answer: "Create a Draft List"
+   creates the Draft List with hospital, surgeon, day and session (all four required) and puts the
+   row's Booking on it in the same decision (a New row's Booking is created there; a Reschedule
+   row's Booking is moved there). The row is then applied; nothing waits on the Draft List. US-01.6.1's
+   note says creation from a matching-screen row "was not settled", but US-02.1.2 (Confirmed) lists
+   it among the row decisions and DM-03 says a row can create one, so build it and list it as a
+   discovery point (S1) rather than a provisional label. If OQ-44 has been reopened, or US-02.1.2
+   drops the Draft List decision, stop and ask.
+5. **Baseline.** Confirm Phases 14, 15, 15a, 17, 19, 20, 28, 30 and 31 are DONE in PROGRESS.md, and
+   note whether 23 and 25 are (they are outside the dependency chain; see Depends on). Then read
+   what they left, because this doc names today's files:
    - Phase 15: `createBooking` and `CreateBookingInput` (with the required `source`),
      `editBooking`/`BookingPatch`, `cancelBooking`, `reassignBooking`, `findBookingByCorrelation`,
      `bookingsOnListByNhi`, `bookingsForList`, `BOOKING_SOURCE_LABELS`, and the Booking detail route
      `/admin/day/:dateISO/bookings/:bookingId`.
-   - Phase 20: `defaultContractForBooking` (pure; `createBooking` stores it when no `contractId` is
-     passed), `contractOptionsFor`, the Booking `insurerId` and `fundingSource` fields (planned as an
-     extension of `editBooking`'s patch) and the flag for a Contract that no longer applies.
+   - Phase 20: `defaultContractForBooking` (pure; `createBooking` stores it with
+     `contractSetBy: 'default'` when no `contractId` is passed), `createBooking`'s optional
+     `contractId`, `contractOptionsFor` and the office Contract picker, the guarded
+     `setProcedureContract`, and the flag for a Contract that no longer applies. Confirm D2 held:
+     there is no Booking or Patient `insurerId` or `fundingSource` to write.
+   - Phase 15a: `evaluateWarnings`, `WARNING_RULES` and how a Booking's warning triangle is derived,
+     so the Booking a decision creates or changes shows its warnings with no extra code here.
    - Phases 19 and 23: the Procedure code path (Procedure master, the base-unit resolver) and the
      primary Procedure, since a procedure change from the hospital edits the primary.
-   - Phase 17: the surgeon master (`masters.surgeons` and any external identifier; OQ-52), the
-     blacklist warning inside `assignListToSlot`, `partitionAnaesthetistsForSurgeon` and
-     `BlacklistWarning`.
+   - Phase 17: the surgeon master (`masters.surgeons`, `Surgeon.hpiId` labelled "HPI CPN"), the
+     blacklist warning inside `assignListToSlot`, `partitionAnaesthetistsForSurgeon`,
+     `SurgeonSelect` and `BlacklistWarning`.
    - Phase 28: `Slot`, `slotFor`, `listInSlot`, `slotViewsForAnaesthetist`, `assignListToSlot`,
      `placeListOnSlot`, `ListKind`, and the integration park rule it added to `integrationActions.ts`
      (S12 and S13 park `noTargetList` when the Slot has no List).
    - Phases 30 and 31: which conflicts `assignListToSlot` raises (an unavailable Slot is accepted and
-     flagged), the Draft List record, its collection and the create and assign actions (planned as
-     `createDraftList(api, actor, { hospitalId, surgeonId?, dateISO, session, note?, source })` and
-     `assignDraftList`; use the names 31's entry records), `DraftList.assignedListId` and
-     `status` (`preparing`, `assigned`, `closed`), `DraftListSource`'s reserved `'hospitalRow'`
-     value, `pairingIssues` (a List needs both hospital and surgeon; a Draft List's surgeon is
-     optional), and whether a Draft List holds Bookings (step 4; 31 planned "no Bookings").
-   - Phase 31's interim `pairingIncomplete` park in `integrationActions.ts` (S12, S13), which goes
-     with the Phase 28 park rule in work item 6.
+     flagged), the Draft List record (31 planned it as a List with no anaesthetist and no Slot, so it has a
+     `ListId` and `isDraftList` tells it apart), its create action (planned as `createDraftList(api,
+     actor, { hospitalId, surgeonId, dateISO, session, kind?, note?, source }, origin)`, every one of
+     the four required, refusing `pairingIncomplete`, `datePassed` and `outsideCanvas`), how a Booking is put on a Draft
+     List (`createBooking` and `reassignBooking` onto it, or 31's own action), the assign, remove
+     and re-date actions (US-01.6.4), `DraftOrigin`'s reserved `'hospitalRow'` value and any
+     source reference, and `pairingIssues`. Use the names 31's entry records.
+   - Phase 31's interim `pairingIncomplete` park in `integrationActions.ts` (S12, S13), if 31 left
+     one, which goes with the Phase 28 park rule in work item 6.
    - Phase 14: `DemoTrigger` (`choices`, `when`, `badge`), `DemoContextValues`, the re-homed
      `fire-hospital-message` and `replay-hospital-message` entries and their routes and surfaces,
-     `src/store/demoActors.ts` (`OFFICE_ACTOR`, `SIMULATED_OFFICE_ACTOR`), `src/pwa/PwaDemoActions.tsx`
+     `src/store/demoActors.ts` (`OFFICE_ACTOR`, `OFFICE_SIMULATION_ACTOR`), `src/store/officeStandIn.ts`, `src/pwa/PwaDemoActions.tsx`
      and `DemoBadge`'s `tone` prop.
    - Phase 25 if DONE: `editRefusal` after the lock (office on DRAFT and SUBMITTED, nobody on
      AUTHORISED). At the snapshot `editRefusal` (`store/lifecycle.ts` :48) already refuses
@@ -163,19 +179,22 @@ This phase:
 **Catalogue:** the covered items above; `domain-model.md` section 1 (the "Hospital HL7 integrations
 exist but are unreliable" row: manual matching review, sync for St George's and Southern Cross only,
 HL7/FHIR Future), "Booking" (sources; mutable from all sources until SUBMITTED, office-only until
-AUTHORISED, then immutable; append-only history), "Slot, List and Draft List", and the glossary's
-"Matching screen". EP-02's technical discussion: every change is validated against the internal data
-model rather than the incoming message.
+AUTHORISED, then immutable; append-only history), "Slot, List and Draft List" (a Draft List holds
+Bookings before assignment), the Contract section (who pays comes from the Contract, not a Booking
+insurer field), and the glossary's "Matching screen". EP-02's technical discussion: every change is
+validated against the internal data model rather than the incoming message.
 
 **Analysis:**
-- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 3 ("Hospital intake becomes admin-decided
-  matching"), structural item 8 (DM-28 needs DM-03), the RV-13 and RV-05/RV-06 lines, "Demo impact"
-  (S1 Beat 1 needs an admin match step; S4 Beat 4 becomes the unmatched queue), the intake line of
-  "Demo-trigger buttons", the OQ-13 line, and the EP-02 table with its structural note;
+- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 9 ("Intake becomes staged matching"), the
+  "Structural first" line for DM-02 then DM-03 (Draft Lists, which this phase creates), the "Remove
+  or rework" line for automatic apply (US-02.1.5, DM-34), the RV-13 and RV-05/RV-06 lines, "Demo
+  impact" (S1 Beat 1 waits for a match decision; S4 Beat 4 needs rethinking once auto-apply goes),
+  the "Intake and drafts" line of "Demo-trigger buttons", the OQ-13 line under "Uncertainty", and the
+  EP-02 table with its structural note;
 - `docs/prototype-build/catch-up/epics/EP-02.md` (#ep-02, #ft-02.1, #us-02.1.1 to #us-02.1.4,
   #ft-02.5, #us-02.5.1, #us-02.5.2);
-- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (#dm-28; also DM-01, DM-02, DM-03,
-  DM-34 and DM-35, which this phase builds on);
+- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (#dm-34; also DM-01, DM-02, DM-03,
+  DM-12 and DM-39, which this phase builds on);
 - `docs/prototype-build/catch-up/analysis/reverse-check.md` (RV-13; RV-05 and RV-06 for what stays
   badged);
 - `analysis/prototype-map-admin.md` section 8 (Integration monitor), `prototype-map-store-seed.md`,
@@ -184,7 +203,7 @@ model rather than the incoming message.
 
 **Code entry points (as at the snapshot; Phases 15 to 32 will have renamed or moved some):**
 - `aa-prototype/src/store/integrationActions.ts`: `applyEffect` (:137-225, removed here),
-  `attemptMessage` (:226-305; the park codes in it go), `processMessage` (:305), `retryMessage`,
+  `attemptMessage` (:226-305; the park codes in it go), `processMessage` (:306), `retryMessage`,
   `reprocessMessage` (:336), `createMessageRow`/`updateMessageRow`, `integrationActor`,
   `timeToSession`, `ingestPdfRow` (:431, unchanged), `wireIntegrationRetry`.
 - `aa-prototype/src/domain/integrations/`: `messages.ts` (`CANNED_MESSAGES`, `APPT`, `STG_LIST`,
@@ -240,7 +259,7 @@ the guide.
 
 ### Session 1 · Model, matcher, store and the re-route
 
-1. **Domain types** (`src/domain/types.ts`) (DM-28; US-02.1.1, US-02.1.2, US-02.1.4):
+1. **Domain types** (`src/domain/types.ts`) (DM-34; US-02.1.1, US-02.1.2, US-02.1.4):
    - Id aliases `ImportBatchId`, `ImportRowId`.
    - `ImportChannel = 'download' | 'manualSheet' | 'feedMessage'`. `feedMessage` is the Future-scope
      HL7/FHIR simulator's channel, kept so its rows are honest about where they came from.
@@ -252,28 +271,37 @@ the guide.
        dateISO: IsoDate                             // required
        session: Session                             // required
        externalRef?: string                         // the hospital's appointment id (SCH-2 or equivalent)
-       surgeon?: { name: string; surgeonId?: SurgeonId }
+       surgeon?: { name: string; hpiId?: string }   // hpiId: the HPI CPN (OQ-52), matched first
        scheduledTime?: WallTime
        patient: { name: string; nhi?: string; dobISO?: IsoDate; ethnicityCode?: string } // name required
        procedure?: { description?: string; rvgCode?: string }
-       insurerId?: InsurerId
-       fundingSource?: FundingSource                // Phase 20's union
+       payer?: { text: string; insurerId?: InsurerId } // the insurer or funder as sent; shown, never stored on the Booking (D2)
        note?: string
        hospitalStatus: 'booked' | 'cancelled'       // default 'booked'
        cancelReason?: string
      }
      ```
 
+     There is no `fundingSource` or Booking insurer to write (D2, DM-12). `payer` exists only so the
+     admin can see what the hospital said about who pays next to the Procedure's Contract; when its
+     text names a seeded insurer, the fixture sets `insurerId` so the panel can show "Contract held
+     by nib" against it (nib is the seeded insurer `I-NIB`).
+
    - `ImportDecision`, a discriminated union recorded once a row is decided:
 
      ```ts
      type ImportDecision =
-       | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[] }
-       | { kind: 'createBooking'; listId: ListId; bookingId: BookingId }
-       | { kind: 'createList'; slotId: SlotId; listId: ListId; bookingId?: BookingId }
-       | { kind: 'createDraft'; draftListId: DraftListId; bookingId?: BookingId }
+       | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[]; contractId?: ContractId }
+       | { kind: 'createBooking'; listId: ListId; bookingId: BookingId; contractId?: ContractId }
+       | { kind: 'createList'; slotId: SlotId; listId: ListId; bookingId: BookingId; contractId?: ContractId }
+       | { kind: 'createDraft'; listId: ListId; bookingId: BookingId; contractId?: ContractId }   // a Draft List is a List (Phase 31)
        | { kind: 'reject'; reason: string }
      ```
+
+     `bookingId` on `createList` and `createDraft` is the Booking created (a New row) or moved (a
+     Reschedule row) onto the new List or Draft List: a Draft List holds Bookings (OQ-44), so neither
+     decision leaves the row waiting. `contractId` is set only when the admin picked a Contract other
+     than the one the Booking has (or would get by default); it is the admin's pick, never the row's.
 
    - `ChangeType = 'new' | 'modification' | 'reschedule' | 'cancellation' | 'noChange'`.
    - `ImportRow`: `id`, `batchId`, `channel`, `receivedAtISO`, `incoming: IncomingBookingFields`,
@@ -292,10 +320,11 @@ the guide.
    React, no store import, PWA-safe; Vitest in `matching.test.ts`) (US-02.1.2, US-02.1.3, US-02.1.4,
    FT-02.5, US-02.5.1, US-02.5.2):
    - Input is a plain `MatchingView` built by a selector (work item 5): Bookings with their patient
-     NHI, name and DOB, primary Procedure description and code, insurer, funding source, notes,
+     NHI, name and DOB, primary Procedure description, code and Contract (id, name, holder), notes,
      scheduled time, correlation ref and cancellation; Lists with hospital, surgeon, date, session,
      anaesthetist, approval state and Slot; open Slots by anaesthetist, date and session with their
-     availability; Draft Lists; and the other open rows (for the duplicate flag).
+     availability; Draft Lists (hospital, surgeon, date, session, still unassigned or not); surgeons
+     with `hpiId`; and the other open rows (for the duplicate flag).
    - `effectiveIncoming(row)`: `incoming` with `corrections` laid over it. Every function below reads
      this, never `incoming` directly.
    - `findMatch(view, fields)`: first by correlation (`externalRef` against the Booking's
@@ -303,11 +332,17 @@ the guide.
      download row share), basis `'appointmentRef'`; else by
      valid normalised NHI on a non-cancelled Booking at the same hospital and date, basis
      `'nhiAndDate'`; else none. Never by name alone.
+   - `resolveSurgeon(view, fields)`: by `hpiId` (the HPI CPN, OQ-52) when the row carries one, else
+     by normalised name; unresolved gives the "Surgeon not recognised" flag.
    - `diffFields(booking, fields)` returns `FieldDiff[]` (`{ key, label, current, incoming }`) for
      date and session, time, List (surgeon), patient name, date of birth, NHI, procedure
-     description, RVG code, insurer, funding source and note. A field the hospital did not supply is
-     skipped (never a change). NHI is compared but flagged, never applied (see work item 6). The
-     surgeon is shown as a difference only when it moves the Booking to a different List.
+     description, RVG code and note. A field the hospital did not supply is skipped (never a
+     change). NHI is compared but flagged, never applied (see work item 4). The surgeon is shown as a
+     difference only when it moves the Booking to a different List. The row's `payer` is not a
+     field diff (no Booking field holds it, D2): it is returned as `payerNote` (`{ text, current:
+     the primary Procedure's Contract name and holder, differs }`), where `differs` is true when
+     `payer.insurerId` is set and is not the Contract's holder. The panel shows it as a Contract line
+     the admin may act on; the classifier ignores it.
    - `classifyChange(match, fields, diffs)`: no match gives `'new'`; `hospitalStatus === 'cancelled'`
      gives `'cancellation'`; a different date, session or List gives `'reschedule'` (other diffs are
      listed as "also changed"); any other diff gives `'modification'`; none gives `'noChange'`.
@@ -316,25 +351,23 @@ the guide.
    - `suggestDecision(view, row)` returns `{ changeType, match?, diffs, suggestion, unmatchedReason?,
      flags }`:
      - `new`: the List in the Slot at the row's hospital, date, session and surgeon gives
-       `createBooking` on it. With no such List, the row is **unmatched**, `unmatchedReason` "No List
-       at St George's for Mr Hale on Thu 6 Aug AM", and the screen offers Create List in a Slot
-       (anaesthetists whose Slot is open that session, via Phase 17's
-       `partitionAnaesthetistsForSurgeon` order) or Create Draft List.
+       `createBooking` on it; failing that, an unassigned Draft List with the same four fields gives
+       `createBooking` on the Draft List (it holds Bookings, OQ-44). With neither, the row is
+       **unmatched**, `unmatchedReason` "No List at St George's for Mr Hale on Thu 6 Aug AM", and
+       the screen offers Create List in a Slot (anaesthetists whose Slot is open that session, via
+       Phase 17's `partitionAnaesthetistsForSurgeon` order) or Create Draft List.
      - `modification`, `cancellation`, `noChange`: `match` on the found Booking with every diff
        ticked. A modification or cancellation whose appointment is not found is **unmatched**: "No
        Booking matches appointment 1661999 at St George's".
      - `reschedule`: the target List at the new hospital, date, session and surgeon, which may be
-       **any anaesthetist's** List. With no target List the row is **unmatched** ("Reschedule to Thu
-       6 Aug AM: no List there yet"); the Booking is not touched and the date change is not dropped.
-     - A Draft List waiting-on case (drift check step 4): a row whose earlier `createDraft` decision
-       left it open shows "Waiting for Draft List to be assigned" while the Draft List is
-       `preparing`; once it is `assigned`, the suggestion is `createBooking` on its
-       `assignedListId`; if it is `closed`, the row returns to **unmatched** ("Draft List closed:
-       <reason>") so it is never stranded.
-     - A row whose surgeon does not resolve can still get `createBooking` on an existing List (the
-       List already has its surgeon) or `createDraft` (surgeon optional), but `createList` needs a
-       surgeon chosen by the admin in the decision panel, because Phase 31's `pairingIssues`
-       requires one.
+       **any anaesthetist's** List, or an unassigned Draft List with those four fields. With no
+       target the row is **unmatched** ("Reschedule to Thu 6 Aug AM: no List there yet"); the
+       Booking is not touched and the date change is not dropped. The admin resolves it with Create
+       List in a Slot or Create Draft List, and the Booking moves onto the new one.
+     - A row whose surgeon does not resolve can still get `createBooking` on an existing List or
+       Draft List (it already has its surgeon), but `createList` and `createDraft` need a surgeon
+       chosen by the admin in the decision panel: a List needs exactly one surgeon (Phase 31's
+       `pairingIssues`) and a Draft List cannot be saved without one (US-01.6.1, OQ-44).
    - `rowFlags` (warning pills, never blocks unless stated): "NHI invalid" (from `validateNhi`;
      **blocks** Apply until corrected), "NHI differs from the Booking's patient", "Surgeon not
      recognised" (the name does not resolve in the surgeon master; proposals ignore the surgeon),
@@ -342,17 +375,23 @@ the guide.
      with a reason or resolve off-line), "Booking cancelled" (a modification to a cancelled Booking
      is not applied; the suggestion becomes reject), "Earlier row for this appointment still open"
      (links the other row; the admin rejects one), "Session has started" (a row for a session whose
-     start time has passed on the demo clock; US-02.5.4 still accepts it).
-   - `matchingQueue(view, rows)`: each open row's queue, `'ready'` (a suggestion exists),
-     `'unmatched'` (no suggestion) or `'waitingOnDraft'`, plus counts by change type for the stats
-     strip.
+     start time has passed on the demo clock; a warning only: US-02.5.4 accepts changes up to the
+     session's start, and after it the office may still apply until AUTHORISED, per the domain
+     model's Booking rule), "No NHI supplied" (never
+     blocks: the Booking proceeds and Phase 40 adds the missing-NHI problem list and the authorise
+     guard, OQ-49), and "Hospital names a different payer" (from `payerNote.differs`; the admin
+     checks the Contract).
+   - `matchingQueue(view, rows)`: each open row's queue, `'ready'` (a suggestion exists) or
+     `'unmatched'` (no suggestion), plus counts by change type for the stats strip. There is no
+     waiting state: a Draft List created from a row already holds its Booking.
    - Tests: each change type; correlation beats NHI and date; NHI and date on another hospital does
-     not match; a missing incoming field is never a diff; a reschedule to another anaesthetist's List;
-     a reschedule to a date with no List is unmatched with the reason and no suggestion; an
-     appointment id that matches nothing is unmatched; the AUTHORISED, cancelled, invalid-NHI and
-     duplicate-row flags; corrections override incoming; a waiting row suggests `createBooking` once its
-     Draft List is assigned and returns to unmatched if it is closed; determinism (same view, same
-     output).
+     not match; surgeon by HPI CPN beats a name that differs; a missing incoming field is never a
+     diff; a payer is never a diff and sets `differs` only against another holder; a reschedule to
+     another anaesthetist's List; a new row and a reschedule both target an unassigned Draft List
+     with the same four fields; a reschedule to a date with no List or Draft List is unmatched with
+     the reason and no suggestion; an appointment id that matches nothing is unmatched; the
+     AUTHORISED, cancelled, invalid-NHI, no-NHI and duplicate-row flags; corrections override
+     incoming; determinism (same view, same output).
 3. **Sample files** (`src/domain/intake/hospitalDownloads.ts`, pure fixtures in the `pdfSamples.ts`
    style; `hospitalDownloads.test.ts` for fixture integrity) (US-02.1.1; OQ-13 interim):
    - `HOSPITAL_DOWNLOAD_SAMPLES`, three entries, each `{ id, channel, hospitalId, label, description,
@@ -375,19 +414,25 @@ the guide.
        (R1) **Priya Nair** (existing patient, NHI `MYY54SL`), Tue 28 PM 14:30, Ms Patel, "Diagnostic
        knee arthroscopy": New on Dr Souter's Tue 28 Jul PM List; (R2) a seeded DRAFT Southern Cross
        Booking after 21 Jul (record which in the PROGRESS entry) with a corrected patient name, a
-       date-of-birth fix, a changed insurer or funding source and a booking-office note: Modification
-       (patient, contract fields and note; the note-append check).
+       date-of-birth fix, a `payer` naming nib (`I-NIB`) where the Procedure is on
+       the hospital's default Contract, and a booking-office note: Modification (patient and note,
+       with the "Hospital names a different payer" Contract line; the note-append and Contract-pick
+       check). Pick an nib-held Contract that Phase 20's `contractOptionsFor` offers for that
+       Procedure and hospital (if none is, use another holder Phase 18 seeded and record which), and
+       pin it in the fixture test.
      - `SAMPLE_FORTE_SHEET` **Forte Health daily sheet, keyed by the office** (channel `manualSheet`),
        three rows: (R1) a New row onto an existing Forte List; (R2) a row with a mistyped NHI check
        digit (flagged "NHI invalid", corrected inline, the manual-keying story); (R3) a row for a
-       session with no Forte List: unmatched, resolved by Create Draft List.
+       session with no Forte List, with a surgeon who resolves: unmatched, resolved by Create Draft
+       List, which holds the row's new Booking.
    - `hospitalSourceKey(hospitalId)`: the seeded feed id (`FEED.stg`, `FEED.sx`) where one exists,
      else `MANUAL-<hospitalId>`, so a download row and a feed message about the same appointment
      correlate to the same Booking through the existing `correlationRef` shape. Keep the field name
      `sourceFeedId`; say in a comment that it is now the hospital's source key.
    - Fixture tests: row keys unique per sample; every row validates except Forte R2; the seeded
-     targets the rows name exist on a fresh seed (R2 to R5 of St George's, R2 of Southern Cross); the
-     unmatched Forte row's Slot holds no List.
+     targets the rows name exist on a fresh seed (R2 to R5 of St George's, R2 of Southern Cross and
+     its Contract pick); the unmatched Forte row's session has no Forte List and no Draft List, and
+     its surgeon resolves.
 4. **Store actions** (new `src/store/matchingActions.ts`, exported from `src/store/index.ts`; every
    write through `mutate()` with before and after metas and clock timestamps; office only unless
    stated; Vitest in `matchingActions.test.ts`):
@@ -411,14 +456,17 @@ the guide.
      `unknownSample`; stages the sample's rows; returns `{ batchId, added, skipped }`. Re-importing
      the same sample adds nothing ("All 5 rows were already imported. Nothing new.").
    - **`correctImportRow(api, actor, rowId, patch)`**: corrections to the incoming data (NHI, name,
-     date of birth, time, procedure description), open rows only, audited `importRow.correct`. The
-     NHI is validated on entry (EP-02: validated against the internal model).
+     date of birth, time, procedure description, surgeon), open rows only, audited
+     `importRow.correct`. The NHI is validated on entry (EP-02: validated against the internal
+     model).
    - **`decideImportRow(api, actor, rowId, decision)`** (US-02.1.2, US-02.5.1, US-02.5.2): the one
      place a row reaches the schedule.
      - Common refusals: `officeOnly`, `notFound`, `alreadyDecided`, `invalidNhi` ("Correct the NHI
-       before applying"), `listLocked` (AUTHORISED target), `hospitalMismatch` (a target List at
-       another hospital), and `staleSuggestion` when the decision's target no longer fits what
-       `suggestDecision` would allow now.
+       before applying"), `listLocked` (AUTHORISED target), `hospitalMismatch` (a target List or
+       Draft List at another hospital), `surgeonRequired` (`createList` or `createDraft` with no
+       resolved or picked surgeon), `contractNotOffered` (a picked Contract that
+       `contractOptionsFor` does not offer for that Procedure and hospital), and `staleSuggestion`
+       when the decision's target no longer fits what `suggestDecision` would allow now.
      - **Pre-check, then apply in refusable-first order, then record.** Validate every guard the
        write paths will apply before the first write (the Phase 11 review-fix rule: a refused move
        must strand nothing). Then call the existing guarded actions as the office actor, and write
@@ -430,10 +478,12 @@ the guide.
      - `match` + `modification`: apply only the ticked `fieldsApplied`: time through `editBooking`;
        patient name and DOB through `editPatient`; procedure description and code on the **primary
        Procedure** (Phase 23 if DONE, else the Booking's first Procedure) through `editProcedure` (the
-       Phase 19 code path, so base units re-resolve as they would for a manual edit); insurer and funding source through `editBooking` (Phase 20 extends its patch
-       with `insurerId` and `fundingSource`), after which Phase 20's flag shows if the current
-       Contract no longer applies. The Contract
-       itself is never set from a hospital row (US-04.3.6 is Future Work). A hospital note is
+       Phase 19 code path, so base units re-resolve as they would for a manual edit). Nothing is
+       written for the row's `payer`: there is no Booking insurer or funding source (D2). When the
+       admin picked a Contract in the panel (`contractId`), it is set on the primary Procedure
+       through Phase 20's `setProcedureContract` as the office actor (`contractSetBy: 'office'`),
+       the same guarded write the Booking detail's picker uses. The row never sets a Contract by
+       itself (US-04.3.6 is Future Work). A hospital note is
        **appended** to the Booking's notes as one line ("St George's, 21 Jul: ...") instead of
        overwriting them (the S14 overwrite in gaps.json). An NHI difference is never applied: the
        admin rejects the row or fixes the patient record (Phase 40 adds attach and merge).
@@ -446,11 +496,18 @@ the guide.
        else.
      - `createBooking`: `createBooking(api, actor, listId, { patient, operation, scheduledTime,
        correlationRef: { sourceFeedId: hospitalSourceKey(hospitalId), externalAppointmentId },
-       source: 'hospitalDownload', insurerId?, fundingSource? })`. No `contractId`, so Phase 20's rule
-       stores `defaultContractForBooking` for the List with `setBy: 'default'` (US-04.3.3). The patient goes
-       through `upsertPatient`, so an existing NHI is reused, not duplicated. Stamp `source:
+       source: 'hospitalDownload', contractId? })` on a List or an unassigned Draft List. With no
+       `contractId` (the usual case), Phase 20's rule stores `defaultContractForBooking` for the List
+       with `contractSetBy: 'default'` (US-04.3.3); with the admin's pick it stores that, checked as
+       `setProcedureContract` checks it. No insurer or funding source is passed (D2). The patient
+       goes through `upsertPatient`, so an existing NHI is reused, not duplicated. Stamp `source:
        'hospitalDownload'` for every channel, including `manualSheet` and `feedMessage`: all three are
        the hospital pathway in `BookingSource`.
+     - **What follows with no code here.** Because every decision goes through the guarded actions,
+       15a's warning routine re-runs, Phase 21's billable party and invoice email follow the
+       Contract's default (if 21 is DONE), and Phase 27's prepayment re-check runs on create, move and
+       procedure change (if 27 is DONE; a moved Booking keeps its agreed amount, OQ-70). A row never
+       sets `Booking.billableParty`, an invoice email or a prepayment itself.
      - `createList`: `assignListToSlot(api, actor, slotId, { hospitalId, surgeonId, kind: 'private'
        unless the row says otherwise })` first, with the row's resolved surgeon or the one the admin
        picked in the panel (refused `surgeonRequired` otherwise) (Phase 17's blacklist warning and acknowledgement,
@@ -459,23 +516,36 @@ the guide.
        onto it for a Reschedule row. A refusal of the second step after the List is created is
        prevented by the pre-check; if it still happens, the List stays (an empty List is a valid
        state), the row stays open and the outcome says so.
-     - `createDraft`: `createDraftList(api, actor, { hospitalId, surgeonId?, dateISO, session, note,
-       source: 'hospitalRow' })` (Phase 31's reserved source; add an `importRowId` source reference
-       to the Draft List if 31 did not, as its handoff invites) with a note built from the row ("From
-       St George's download: Sarah Mitchell, 08:30, appendicectomy"). It takes no Slot (US-01.6.1).
-       Then the OQ-44 branch from the drift check (Booking on it, or, as 31 planned, the row waiting
-       on it).
+     - `createDraft` (US-01.6.1, OQ-44 answered): `createDraftList(api, actor, { hospitalId,
+       surgeonId, dateISO, session, note }, 'hospitalRow')` with all four of hospital, surgeon, day
+       and session (the row's resolved surgeon or the admin's pick; refused `surgeonRequired`
+       otherwise), Phase 31's reserved `'hospitalRow'` origin (its request `source`, phone, email,
+       PDF or other, belongs to origin `'request'` only, so pass none unless 31's signature requires
+       one), 31's `datePassed` and `outsideCanvas` refusals checked in the pre-check, and an
+       `importRowId` source reference on the Draft List if 31 did not add one, with a note built from the row ("From St
+       George's download: Sarah Mitchell, 08:30, appendicectomy"). It takes no Slot and no
+       anaesthetist. Then the row's Booking goes onto it through 31's path for Bookings on a Draft
+       List: `createBooking` for a New row, `reassignBooking` for a Reschedule row (the Booking
+       keeps its id and history). The same pre-check and refusable-first rule applies; if the second
+       step still fails, the Draft List stays (an empty Draft List is valid and shows on Phase 31's
+       page), the row stays open and the outcome says so. When the office later assigns the Draft
+       List, its Bookings come with it (31's rule); 31's `redateDraftList` takes its Bookings
+       with it, and `removeDraftList` refuses while it holds an active Booking (US-01.6.4). Neither
+       reopens the row.
      - `reject`: a reason is required (`reasonRequired`); nothing else changes.
    - **Tests:** import stages rows and a re-import skips them (including a rejected row and a row the
      office corrected); every refusal above; each decision
      kind end to end; a refusal leaves both the row and the schedule unchanged; a created Booking has
-     `source: 'hospitalDownload'`, the default Contract with `setBy: 'default'`, the correlation ref
-     and a reused patient for Sarah Mitchell and Priya Nair; a modification applies only ticked
-     fields and appends the note; a reschedule to another anaesthetist's List keeps the Booking id
-     and history; a reschedule row with no target List stays open and the Booking is untouched;
-     `createList` goes through `assignListToSlot` (a blacklisted pairing is acknowledged, not
-     refused); `createDraft` in the built OQ-44 branch; the two audit metas land in one commit and the
-     Booking's History shows the row.
+     `source: 'hospitalDownload'`, the default Contract with `contractSetBy: 'default'`, the
+     correlation ref and a reused patient for Sarah Mitchell and Priya Nair; a picked Contract lands
+     with `contractSetBy: 'office'` and an unoffered one is refused; no decision writes an insurer or
+     funding source anywhere; a modification applies only ticked fields and appends the note; a
+     reschedule to another anaesthetist's List keeps the Booking id and history; a reschedule row
+     with no target List stays open and the Booking is untouched; `createList` goes through
+     `assignListToSlot` (a blacklisted pairing is acknowledged, not refused); `createDraft` for a New
+     row creates the Draft List holding the new Booking, for a Reschedule row moves the Booking onto
+     it, and with no surgeon is refused; the two audit metas land in one commit and the Booking's
+     History shows the row.
 5. **Selectors** (`store/selectors.ts`, or a `store/matchingSelectors.ts` beside it): `matchingView`
    (built from stable records; components derive with `useMemo`, as the file's header comment
    requires), `importRowViews(state, filter)` (row, effective fields, suggestion, queue, flags,
@@ -483,8 +553,8 @@ the guide.
    side-nav badge). `integrationAttentionCount` now counts dead-letter rows only.
 6. **The HL7/FHIR re-route: no silent apply** (RV-13; US-02.5.1 note; US-02.1.5 "No silent apply"):
    - Delete `applyEffect`, the S12/S13 park rule Phase 28 added and Phase 31's interim
-     `pairingIncomplete` park (a row with no resolvable surgeon now simply stages and shows "Surgeon
-     not recognised"). `attemptMessage` now parses as
+     `pairingIncomplete` park if 31 left one (a row with no resolvable surgeon now simply stages and
+     shows "Surgeon not recognised"). `attemptMessage` now parses as
      today, then validates the extracted NHI with `validateNhi`: an invalid NHI is a feed-mapping
      fault, so it keeps today's path (`retrying`, then `deadLetter` after `MAX_ATTEMPTS`), and
      MSG-CPH-2001 still dead-letters until its mapping is fixed. A clean parse calls
@@ -516,7 +586,8 @@ the guide.
    `importBatch.create` "Hospital download imported", `importRow.receive` "Hospital row received",
    `importRow.correct` "Hospital row corrected", `importRow.decide` "Hospital row decided",
    `booking.fromHospitalRow` "Hospital row applied to this Booking"; field labels for every
-   `IncomingBookingFields` key and for `changeType`, `decision` and `fieldsApplied`. The narrative
+   `IncomingBookingFields` key (`payer` as "Payer (as sent)", the surgeon's `hpiId` as "HPI CPN") and
+   for `changeType`, `decision`, `fieldsApplied` and `contractId`. The narrative
    reads "Kirsty W. applied a St George's row: Modification (time, procedure, note)". Remove the
    `manualIntervention` wording from any label.
 8. **Seed and `PERSIST_VERSION`.** No seeded batches or rows: the screen starts empty on a reset and
@@ -549,8 +620,8 @@ the guide.
       were already imported. Nothing new." and selects the first new row.
     - **Stats strip** in the Admin Review style: OPEN, NEW, MODIFICATIONS, RESCHEDULES,
       CANCELLATIONS, UNMATCHED.
-    - **Filter** (a segmented control): **Open** (default; ready rows first, then unmatched, then
-      waiting on a Draft List, each oldest first), **Unmatched** (the unmatched queue, US-02.1.4) and
+    - **Filter** (a segmented control): **Open** (default; ready rows first, then unmatched, each
+      oldest first), **Unmatched** (the unmatched queue, US-02.1.4) and
       **Decided** (applied and rejected, newest first, with who and when).
     - **Table** (`tableChrome`): Received, Hospital (and "Sample file" or "Feed message" micro-cap
       for the channel), Patient and NHI, Date, session and time, Procedure, Change (the change-type
@@ -568,19 +639,29 @@ the guide.
         "Not supplied" in mist where the hospital sent nothing; the matched Booking named with a
         link to its Booking detail and the match basis ("Matched by appointment id 1661303", "Matched
         by NHI and date"). For a New or unmatched row, the incoming fields alone;
+      - **Contract line** under the diff, for every decision that creates or matches a Booking: "Contract",
+        then the Contract's name and AA identifier as Phase 18 seeded them (the matched Procedure's
+        Contract, or the default a new Booking would get), with "From the hospital: nib" beside it when the row carries a `payer`, the
+        "Hospital names a different payer" pill when they differ, and **Change** opening Phase 20's
+        office Contract picker (`contractOptionsFor` for that Procedure and hospital, default first).
+        Nothing is changed unless the admin picks; the footer label then counts the Contract as a
+        change. The hospital's payer text is never written to the Booking (D2);
       - inline correction for an invalid NHI (and the other correctable fields), reusing `RowField`
         from `PdfReview` (move it to `apps/admin/matching/` or `tableChrome` rather than copying);
       - **Decision** (radio cards, the suggested one preselected and marked "Suggested"): Match and
-        apply; Create a Booking on a List (a picker of Lists at the row's hospital on that date and
-        session, then others that day); Create a List in a Slot (a picker of anaesthetists with an
-        open Slot that session, grouped by Phase 17's partition, showing `BlacklistWarning` if a
-        blacklisted anaesthetist is picked, plus Phase 17's `SurgeonSelect` when the row's surgeon did
-        not resolve); Create a Draft List; Reject (reason required, with three
-        quick reasons: "Not an AA booking", "Duplicate of another row", "Wrong hospital or date");
+        apply; Create a Booking on a List (a picker of Lists and unassigned Draft Lists at the row's
+        hospital on that date and session, then others that day); Create a List in a Slot (a picker
+        of anaesthetists with an open Slot that session, grouped by Phase 17's partition, showing
+        `BlacklistWarning` if a blacklisted anaesthetist is picked); Create a Draft List ("Holds this
+        Booking until the office assigns an anaesthetist"); Reject (reason required, with three quick
+        reasons: "Not an AA booking", "Duplicate of another row", "Wrong hospital or date"). Phase
+        17's `SurgeonSelect` shows under Create a List and Create a Draft List when the row's surgeon
+        did not resolve, because both need one;
       - footer action bar: secondary **Reject** and the teal primary whose label follows the decision
         ("Create Booking", "Apply 3 changes", "Move Booking", "Cancel Booking", "Create List and
-        Booking", "Create Draft List", "Mark as matched"); disabled with the blocking flag's reason
-        shown ("Correct the NHI before applying", "This List is authorised and locked");
+        Booking", "Create Draft List and Booking", "Move to new Draft List", "Mark as matched");
+        disabled with the blocking flag's reason shown ("Correct the NHI before applying", "This
+        List is authorised and locked", "Choose the surgeon first");
       - on success, the Admin Review choreography: a `bannerIn` banner ("Applied: Booking created on
         Dr Souter's Tue 28 Jul AM List · Kirsty W. 09:14", with a link to the Booking), the `tickDraw`
         tick, the row dims into Decided, the badge decrements, and **Next row** moves to the next open
@@ -635,9 +716,9 @@ their screens.
 
 | id | Label | Screen (routes) | Surfaces | Effect | Disabled when |
 |---|---|---|---|---|---|
-| `matching-send-unmatched-row` | Send unmatched row | Admin · Matching (`/admin/matching`) | bar | `choices`: **"New booking, no List yet"** (a Southern Cross row for Ms Patel on the first future session with no Southern Cross Ms Patel List, a synthetic patient) and **"Change for an appointment AA has never seen"** (a St George's modification whose `externalRef` and NHI match nothing). Runs `stageUnmatchedRow`, then selects the new row. Message (the date as picked): "Southern Cross sent a row for Thu 6 Aug PM. No List there yet, so it waits in the unmatched queue." | no qualifying session in the canvas ("No empty session left on the canvas") |
-| `matching-reschedule-no-list` | Reschedule to a date with no List | Admin · Matching | bar | Acts on the Booking matched by the row selected in `matching.selectedRowId` if it has one and is not cancelled or AUTHORISED; otherwise on the seeded `APPT.s13Time` Booking. Stages a Reschedule row moving it to the first future session with no List at its hospital for its surgeon. Runs `stageRescheduleToEmptyDate`. Message (the patient and date as picked): "St George's moved this booking to Thu 6 Aug AM. There is no List there yet, so the row is parked and the Booking has not moved." | no eligible Booking ("Select a row matched to an open Booking"), or no empty session |
-| `matching-office-matches-row` | Hospital row arrives and the office matches it | Mobile · Lists (`/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`) | pwa | `choices`: **"Sarah Mitchell, Tue 28 Jul AM (S1)"** (stages `SAMPLE_STG` R1 alone) and, on a List route whose List is the persona's, DRAFT and at St George's or Southern Cross, **"A new hospital booking on this List"** (a row built from a small fixture pool of three synthetic patients, the next unused one). Then `decideImportRow` as `SIMULATED_OFFICE_ACTOR` with the derived suggestion. Message: "St George's sent Sarah Mitchell's booking and the office matched it. She is now on your Tue 28 Jul AM List." `badge: 'office-stand-in'` | S1 choice: Sarah Mitchell already on that List ("Already on your Tue 28 Jul AM List"); List choice: pool used up, or the List is not DRAFT |
+| `matching-send-unmatched-row` | Send unmatched row | Admin · Matching (`/admin/matching`) | bar | `choices`: **"New booking, no List yet"** (a Southern Cross row for Ms Patel on the first future session with no Southern Cross Ms Patel List or Draft List, a synthetic patient) and **"Change for an appointment AA has never seen"** (a St George's modification whose `externalRef` and NHI match nothing). Runs `stageUnmatchedRow`, then selects the new row. Message (the date as picked): "Southern Cross sent a row for Thu 6 Aug PM. No List there yet, so it waits in the unmatched queue." | no qualifying session in the canvas ("No empty session left on the canvas") |
+| `matching-reschedule-no-list` | Reschedule to a date with no List | Admin · Matching | bar | Acts on the Booking matched by the row selected in `matching.selectedRowId` if it has one and is not cancelled or AUTHORISED; otherwise on the seeded `APPT.s13Time` Booking. Stages a Reschedule row moving it to the first future session with no List or Draft List at its hospital for its surgeon. Runs `stageRescheduleToEmptyDate`. Message (the patient and date as picked): "St George's moved this booking to Thu 6 Aug AM. There is no List there yet, so the row is parked and the Booking has not moved." | no eligible Booking ("Select a row matched to an open Booking"), or no empty session |
+| `matching-office-matches-row` | Hospital row arrives and the office matches it | Mobile · Lists (`/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`) | pwa | `choices`: **"Sarah Mitchell, Tue 28 Jul AM (S1)"** (stages `SAMPLE_STG` R1 alone) and, on a List route whose List is the persona's, DRAFT and at St George's or Southern Cross, **"A new hospital booking on this List"** (a row built from a small fixture pool of three synthetic patients, the next unused one). Then `decideImportRow` as `OFFICE_SIMULATION_ACTOR` with the derived suggestion. Message: "St George's sent Sarah Mitchell's booking and the office matched it. She is now on your Tue 28 Jul AM List." `badge: 'office-stand-in'` | S1 choice: Sarah Mitchell already on that List ("Already on your Tue 28 Jul AM List"); List choice: pool used up, or the List is not DRAFT |
 
 The PWA entry is an office stand-in: it shows only in the installed PWA's demo sheet, never in the
 harness bar, because in the framed build the presenter plays the office in Admin, Matching. The
@@ -657,15 +738,22 @@ re-homed "Fire hospital message" and "Replay last message" stay in the bar only,
   discovery point.
 - **A real file upload and parser.** The format is OQ-13; the sample files stand in.
 - **Applying an NHI change** from a row, and the missing-NHI problem list with attach and merge:
-  Phase 40. **The unpaid-balance alert at match** (US-11.3.2): Phase 40 adds it to the row panel.
-- **A hospital setting the Contract** (US-04.3.6, Future Work lane). A row changes insurer and funding
-  source only; Phase 20's flag handles a Contract that no longer fits.
+  Phase 40. **The unpaid-balance alert at match** (US-11.3.2, mild or strong by the invoice's age,
+  always waved through): Phase 40 registers it in Phase 15a's warning routine and shows it in the
+  row panel.
+- **A hospital setting the Contract** (US-04.3.6, Future Work lane). A row only shows what the
+  hospital said about the payer; the admin picks a Contract or leaves the default. No insurer or
+  funding source is stored on the Booking (D2).
+- **Removing, re-dating or assigning a Draft List** (US-01.6.4, US-01.6.3): Phase 31's actions and
+  pages. This phase only creates one from a row, holding the row's Booking.
 - **Explicit save, the update email to rooms or hospital after a match, and concurrent-edit
   detection** (US-02.3.2, US-02.3.3, US-02.5.6): Phase 35.
 - **Adding a Booking to a List that already has Bookings from admin entry** (EP-02's other admin-entry
   gap): Phase 35. This phase creates Bookings on booked Lists only through a matched row. The four
   intake sources on `Booking.source` are Phase 15's.
 - **Estimated duration** arriving on a row (Phase 27's seam): not carried in this phase.
+- **A refund for a cancelled prepaid Booking** (US-02.5.3's pointer to US-06.5.2, OQ-40): Phase 41.
+  A Cancellation decision calls `cancelBooking`, so whatever 27 and 41 hang on it follows.
 - **Re-deciding a decided row** (undo). A wrong decision is corrected on the Booking through normal
   edits; the row's history stays as it was.
 - The full S1 and S4 rewrites: Phases 34 and 44. This phase patches S1 Beat 1, S4 Beat 4 and S5 Beat 2.
@@ -690,15 +778,18 @@ re-homed "Fire hospital message" and "Replay last message" stay in the bar only,
 - [ ] R4: Reschedule to another day's List; "Move Booking"; the Booking keeps its id and History on
   the new List. R5: Cancellation; "Cancel Booking" soft-cancels it (still visible, excluded from
   billing).
-- [ ] Southern Cross sample: Priya Nair lands on the Tue 28 PM List; R2 shows patient name, DOB,
-  insurer or funding source and note diffs; applying them updates the patient and the Booking, the
-  hospital note is appended below the Booking's existing notes (never overwriting them), and the
-  Contract flag appears if the Contract no longer fits.
+- [ ] Southern Cross sample: Priya Nair lands on the Tue 28 PM List; R2 shows patient name, DOB
+  and note diffs, and a Contract line with "From the hospital: nib" and the "Hospital names a
+  different payer" pill. Change the Contract to the nib-held one and apply: the patient is updated,
+  the Procedure is on the picked Contract (set by the office), the hospital note is appended below
+  the Booking's existing notes (never overwriting them), and no insurer or funding-source field
+  appears anywhere on the Booking. Leaving the Contract alone keeps the default.
 - [ ] Forte sheet: R2 shows "NHI invalid" and Apply is disabled with the reason; correct the NHI
-  inline and apply. R3 is Unmatched ("No List at Forte Health ..."); Create Draft List creates it (source
-  "Hospital row", no Slot taken) and the row follows the OQ-44 branch built; with the "no Bookings"
-  branch, assign the Draft List on the Day view and the row's suggestion becomes Create Booking on
-  the new List.
+  inline and apply. R3 is Unmatched ("No List at Forte Health ..."); Create Draft List and Booking
+  creates the Draft List with hospital, surgeon, day and session (origin "Hospital row", no Slot or
+  anaesthetist taken) holding the row's Booking, and the row moves to Decided. The Draft List shows
+  on Phase 31's Draft Lists page and the Day view band with one Booking; assign it to an
+  anaesthetist there and the Booking comes with it.
 - [ ] Demo actions, **Send unmatched row, New booking, no List yet**: the row appears under Unmatched
   with its reason. Create a List in a Slot: pick an anaesthetist (a blacklisted one shows the warning
   and can still go ahead); the List and Booking appear on the Day view for that date. The other
@@ -706,7 +797,12 @@ re-homed "Fire hospital message" and "Replay last message" stay in the bar only,
   under Decided with the reason.
 - [ ] Select a matched row, then Demo actions, **Reschedule to a date with no List**: a Reschedule
   row appears under Unmatched ("no List there yet"); the Booking has not moved. Create a List in a
-  Slot on that date and the Booking moves onto it.
+  Slot on that date and the Booking moves onto it, keeping its id and History. Run it again on
+  another Booking and choose Create a Draft List: "Move to new Draft List" puts the Booking on the
+  new Draft List.
+- [ ] A row whose surgeon is not recognised: Create a List and Create a Draft List show the surgeon
+  picker and stay disabled with "Choose the surgeon first" until one is picked; Create a Booking on
+  an existing List does not need it.
 - [ ] Try to apply a row whose List is AUTHORISED: the button is disabled with "This List is
   authorised and locked"; Reject works.
 - [ ] Admin Integrations (Future-scope badge): Demo actions, Fire hospital message MSG-STG-1001 after
@@ -751,7 +847,8 @@ makes S1 honest now.
   - **S4 Beat 4** becomes **"the unmatched queue"**: Click: Admin, Matching, Demo actions, Send
     unmatched row, New booking, no List yet; open it under Unmatched; Create a List in a Slot. Say:
     "Nothing from a hospital is ever dropped. A row that matches nothing waits here until someone
-    decides: create the List, park it on a Draft List, or reject it with a reason." Expected: the row
+    decides: create the List, put the Booking on a Draft List for the office to fill, or reject it
+    with a reason." Expected: the row
     in Unmatched, then the new List and Booking on the Day view and the row under Decided. Move the
     feed-mapping dead-letter to "What to narrate rather than click" as Future scope (HL7 v2).
   - **S5 Beat 2** (MSG-STG-1002, the new-format NHI): Expected now reads "the message is sent to
@@ -760,11 +857,14 @@ makes S1 honest now.
   - **Direct URLs:** add Matching `/admin/matching`.
   - **Recovery from demo accidents:** "Imported the download twice: nothing new is added. Applied
     the wrong row: fix the Booking by hand; the row's decision stays in the history."
-  - **Discovery points** (S1): OQ-13 (format, fields, cadence per hospital), bulk apply, and whether
-    St George's sends an appointment id AA can match on.
+  - **Discovery points** (S1): OQ-13 (format, fields, cadence per hospital, and whether the
+    download carries the insurer or Contract), bulk apply, whether St George's sends an appointment
+    id AA can match on, and creating a Draft List straight from a row (US-01.6.1 left how Draft Lists
+    are created for later; US-02.1.2 lists it).
 - `docs/demo-guide/02-workflows-and-handoffs.md`: **Workflow 1** readiness line and triggers ("a
   hospital download or sheet arrives"); main path step 5 becomes "Hospital rows are matched on the
-  matching screen: the office applies, creates or rejects each one; anaesthetists and the office
+  matching screen: the office applies, creates (a Booking, a List, or a Draft List holding the
+  Booking) or rejects each one; anaesthetists and the office
   change Bookings directly while the List is DRAFT"; add the matching-screen handoff (office to
   anaesthetist: the Booking appears on her List). **Integration failure** becomes "Hospital rows":
   an unmatched row waits in the unmatched queue; a duplicate row is skipped; a row for a submitted
@@ -804,11 +904,19 @@ review-and-fix pass (PROGRESS convention 18)**:
   the schedule is `decideImportRow`, and only with an explicit decision (the PWA stand-in included).
   Every canned message leaves the schedule byte-identical.
 - **Nothing is dropped.** A row that matches nothing, a reschedule to a date with no List, a
-  modification for an unknown appointment and a row waiting on a Draft List all stay open and
-  visible; "unmatched" is derived, so no code path can clear it without a decision. A skipped
-  re-import is counted and said.
+  modification for an unknown appointment all stay open and visible; "unmatched" is derived, so no
+  code path can clear it without a decision. A Draft List created from a row holds the row's
+  Booking (OQ-44), so no row is left waiting on one, and a failed second step leaves the row open.
+  A skipped re-import is counted and said.
 - **A missing field is never a change.** No incoming "not supplied" value blanks a Booking field; the
   diff, the classifier and the apply agree on this.
+- **D2 holds.** No decision writes an insurer or funding source to a Booking, Procedure or Patient;
+  the row's payer is display only. A Contract changes only by the admin's pick, through
+  `setProcedureContract` or `createBooking`'s checked `contractId`, and only from
+  `contractOptionsFor`'s offer.
+- **The Draft List rules hold.** `createDraft` never saves without hospital, surgeon, day and
+  session, takes no Slot or anaesthetist, and puts the Booking on the Draft List through Phase 31's
+  path, not a second copy.
 - **Atomic decisions.** Pre-check then refusable-first: a refused move, a locked List, a stale
   suggestion or an invalid NHI leaves the row open and the schedule unchanged. The decision and its
   Booking-side history row land in one commit. Look for races: the clock passing the session, the
@@ -834,8 +942,8 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **Status row** for catch-up Phase 33, and a phase entry with:
-  - the drift-check result (items changed or not; OQ-13 and FT-02.1 status; the OQ-44 branch built for
-    Create Draft List);
+  - the drift-check result against 501b0b8 (items changed or not; OQ-13 and FT-02.1 status; OQ-44
+    built as answered, with how the Booking is put on the Draft List; D2 confirmed);
   - what was built, and what was removed (`applyEffect`, the park codes, `manualIntervention`, the
     Phase 28 park-on-no-List seam, `resultCardId`);
   - the `PERSIST_VERSION` bump (from and to);
@@ -855,22 +963,31 @@ review-and-fix pass (PROGRESS convention 18)**:
      the decision are stored.
   3. A field the hospital did not supply is never a change (OQ-13's "sometimes do not come through").
      A hospital note is appended, never overwritten. An NHI difference is shown, never applied.
-  4. A hospital row never sets a Contract: a created Booking takes the default (Phase 20), and a
-     modification changes insurer and funding source only (US-04.3.6 is Future Work).
-  5. A reschedule may move a Booking to another anaesthetist's List; a reschedule with no target List
+  4. A hospital row never sets a Contract (US-04.3.6 is Future Work): a created Booking takes the
+     default (Phase 20) unless the admin picks another in the panel, and the hospital's payer text is
+     shown beside the Contract, never stored on the Booking (D2, OQ-55).
+  5. "Create a Draft List" from a row creates it with all four of hospital, surgeon, day and session
+     and puts the row's Booking on it in the same decision (OQ-44 answered 2026-10-01); a row never
+     waits on a Draft List.
+  6. A reschedule may move a Booking to another anaesthetist's List; a reschedule with no target List
      parks as unmatched. This replaces the Phase 11 behaviour that retimed in place.
-  6. Every hospital-pathway channel (download, manual sheet, feed message) stamps `source:
+  7. Every hospital-pathway channel (download, manual sheet, feed message) stamps `source:
      'hospitalDownload'`; the channel lives on the row and in the Booking's History.
-  7. The sample files are labelled fixtures while OQ-13 is open.
+  8. The sample files are labelled fixtures while OQ-13 is open.
+  9. A row's surgeon resolves by HPI CPN first, then by name (OQ-52); `createList` and `createDraft`
+     need a resolved or admin-picked surgeon.
 - **Handoff notes:**
   - For **34**: `stageImportRows` is the entry point a sync or a delivered sheet calls; add sync
     state to the `intake` slice; the manual-sheet auto-match toggle should call `decideImportRow` with
     the suggestion, never a write path directly; demote the simulator and hide the monitor's Future
     tabs; rebuild S1 from this phase's Beat 1.
-  - For **35**: the update email after a match reads the decision's `fieldsApplied`; concurrent edits
+  - For **35**: the update email after a match (to the surgeon's rooms for a Booking change, OQ-46)
+    reads the decision's `fieldsApplied`; concurrent edits
     ("Hospital changes this booking now") can stage a row against the Booking in the context hook.
-  - For **40**: add the unpaid-balance alert (US-11.3.2) to the row panel's flags at create and match;
-    NHI attach and merge replace the "NHI differs" dead end.
+  - For **40**: register the unpaid-balance alert (US-11.3.2: mild under, strong over the threshold,
+    always waved through) as a Phase 15a warning rule and show it in the row panel at create and
+    match; NHI attach and merge replace the "NHI differs" dead end; the "No NHI supplied" pill is
+    where the missing-NHI problem list starts (OQ-49).
   - For **42 and 43**: the sample files are not master data; 43's restricted raw-row view can read
     `ImportRow.incoming`.
   - For **44**: S1 Beat 1, S4 Beat 4 and S5 Beat 2 were patched, not rewritten; the PWA parity audit

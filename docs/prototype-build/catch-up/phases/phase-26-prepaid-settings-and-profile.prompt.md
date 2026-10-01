@@ -5,51 +5,52 @@ The app is aa-prototype/ (the phase doc's src/ paths are relative to aa-prototyp
 Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the Prepayment track, the sequencing rule "26 and 27 run back to back, after 25", the PWA parity section, and the "Confirm before building" row for 26.
 2. docs/prototype-build/catch-up/phases/phase-26-prepaid-settings-and-profile.md: your detailed plan.
-3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the FT-06.1, US-06.1.1 and US-06.1.2 rows of the "EP-06 · Prepayment" section and the US-12.1.1 to US-12.1.4 rows of the "EP-12 · Anaesthetist profile and reporting" section. Then docs/prototype-build/catch-up/epics/EP-06.md and EP-12.md (the same items), docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-15, DM-27, and DM-11 for RVG groups) and reverse-check.md (RV-09, for context only).
+3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the FT-06.1, US-06.1.1 and US-06.1.2 rows of the "EP-06 · Prepayment" section and the US-12.1.1 to US-12.1.4 rows of the "EP-12 · Anaesthetist profile and reporting" section. Then docs/prototype-build/catch-up/epics/EP-06.md and EP-12.md (the same items), docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-19 and DM-33; DM-13 for RVG groups, DM-27 for the GST number on invoices, DM-32 for the HPI CPN) and reverse-check.md (RV-09, for context only).
 4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
    - requirements/FT-06.1.md, US-06.1.1.md, US-06.1.2.md, US-12.1.1.md, US-12.1.3.md and US-12.1.4.md;
-   - for context, requirements/FT-12.1.md, US-12.1.2.md, US-06.2.1.md and US-05.1.3.md;
-   - questions/OQ-14.md and OQ-25.md (both answered);
-   - in ../domain-model.md, the entity diagram in section 2 (PREPAID_SETTING, PROFILE) and the Prepayment rule in section 3.
+   - for context, requirements/FT-12.1.md, US-12.1.2.md, US-08.4.5.md (the GST number, Phase 22), US-01.1.3.md (the start date, Phase 28), US-06.2.1.md and US-05.1.3.md;
+   - questions/OQ-14.md, OQ-25.md and OQ-52.md (all answered; OQ-52 at the 2026-10-01 meeting: the HPI number and the CPN are one identifier, called the HPI CPN), and OQ-73.md (open, Phase 27's; it shapes only the seed coherence test);
+   - in ../domain-model.md, the entity diagram in section 2 (PREPAID_SETTING, PROFILE), the HPI CPN glossary row and the Prepayment rule in section 3.
 5. The analysis maps for the code you will change: docs/prototype-build/catch-up/analysis/prototype-map-apps-mobile-web.md (More tab, web routes, Accounts GST tab), prototype-map-admin.md section 9 (Master data), prototype-map-store-seed.md (masters and the seed cast) and prototype-map-shell-demo-pwa.md (the PWA More panel and pwaPurity).
 6. Design: docs/design/Design Language.dc.html (tokens, pills, mono data), Mobile App.dc.html (card and row anatomy, bottom sheets, sticky primary action), Web Dashboard.dc.html (top nav, panels, desktop grid) and Admin Review.dc.html (table anatomy for the Master data columns). No mockup has a profile screen: extend these patterns, do not invent new ones.
 7. docs/prototype-build/PROGRESS.md:
    - the binding conventions;
    - the Decisions log entries this phase supersedes or must honour: 2026-07-21 (navigation structures: the web app keeps its four tabs), 2026-07-23 Phase 07 build decisions (office-only master data), 2026-07-24 Phase 13 (the persona avatar treatment on More) and 2026-09-28 (the anaesthetist Card shows no calculation; the profile shows the rate as a setting, never a fee on the Card);
-   - the PROGRESS entries for catch-up Phases 19, 20 and 25, for the RVG group shapes, the interim Booking prepayment flag and the AUTHORISED lock as actually built.
+   - the PROGRESS entries for catch-up Phases 17, 19, 20, 21, 22 and 25: the HPI CPN helpers, label and duplicate refusal (17), the RVG group shapes (19), the interim Booking prepayment flag (20), the effective billable party selector billablePartyForProcedure and isPersonParty (21), Anaesthetist.gstNumber with its validator, format and invoice supplier snapshot (22), and the AUTHORISED lock (25), as actually built.
 
 Then do the drift check in the phase doc:
-- Run git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
-- Confirm US-12.1.4 (Verify) still puts bank details in the system, and that US-12.1.1, US-12.1.2 and US-06.1.2 still let the anaesthetist, and the office on their behalf, edit these settings. If any reading changed, apply the "If it has changed" column of the phase doc's table.
+- Run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Confirm US-12.1.4 (Verify) still puts bank details in the system and names one HPI CPN (OQ-52), and that US-12.1.1, US-12.1.2, US-08.4.5 and US-06.1.2 still let the anaesthetist, and the office on their behalf, edit these settings. If any reading changed, apply the "If it has changed" column of the phase doc's table.
 - Confirm Phase 25's lock has landed. If it has not, use the fallback rate note and the it.todo lock test the phase doc describes.
 - Confirm where Phase 14 put the PWA demo-actions chip (planned in src/pwa/MobileViewport.tsx, not on the More tab) so the new More cards do not collide with it or with PwaDemoPanel.
 - Record the current PERSIST_VERSION.
 
-Then enter plan mode: map the phase doc's work items onto the files as Phases 15 to 25 actually left them, and wait for my approval. If the work will not fit one session, propose the split after work item 8.
+Then enter plan mode: map the phase doc's work items onto the files as Phases 14 to 25 actually left them, and wait for my approval. If the work will not fit one session, propose the split after work item 8.
 
 While working:
-- One Anaesthetist record, one unit value. The profile edits Anaesthetist.unitValue, the field fees read and Phase 25's lock copies. A change re-prices only Bookings on Lists not yet authorised. Do not add a second copy of the rate.
-- Nothing is derived from the prepaid set in this phase. No Booking, banner, gate or review flag reads prepaidSettings; Phase 20's office-set Booking prepayment flag and cardRequiresPrepayment stay untouched. Phase 27 does the derivation.
+- One Anaesthetist record, one unit value, one identifier. The profile edits Anaesthetist.unitValue, the field fees read and Phase 25's lock copies. A change re-prices only Bookings on Lists not yet authorised. Do not add a second copy of the rate. The HPI CPN stays the one hpiId field, labelled "HPI CPN" everywhere (no "HPI id" or "HPI number"), checked with Phase 17's normaliseHpiCpn, isPlausibleHpiCpn and duplicate check. The GST number is Phase 22's field and validator; reuse them.
+- Nothing is derived from the prepaid set in this phase. No Booking, banner, gate or review flag reads prepaidSettings; Phase 20's office-set Booking prepayment flag and bookingRequiresPrepayment (Phase 15's name for cardRequiresPrepayment) stay untouched. Phase 27 does the derivation.
 - Build the pure helpers first, with Vitest tests: bank account normalise and mask, the prepaid set (normalise, validate, expand, reason, summary) on Phase 19's codesInGroup, and the profile field policy as data.
-- Permissions are enforced in the store. The anaesthetist edits only their own rate, GST period, contact details and prepaid set. The office edits everything, including bank details, HPI and active. Any role 'system' actor (integration feeds, runs, demo control) edits nothing. Refusals render verbatim.
+- Permissions are enforced in the store. The anaesthetist edits only their own rate, GST period, GST number, contact details and prepaid set. The office edits everything, including bank details, the HPI CPN and active. Nobody edits the registration number. Any role 'system' actor (integration feeds, runs, demo control) edits nothing. Refusals render verbatim.
 - Every write goes through mutate() and is audited. Office edits carry onBehalfOf (MutationMeta gains it and mutate() copies it onto the AuditEntry). Bank numbers are masked in the audit and everywhere outside the office's edit field. A no-change save writes no audit entry.
 - Group and AA-code deletes are refused while an anaesthetist's prepaid set references them.
-- The payables run shows each destination account, snapshots it on the disbursement, and holds a payable whose anaesthetist has no bank account on file. No seeded payout changes.
+- Bank details are display-only (DM-33). The payables run shows each destination account (or a warning-tone "No bank account on file") and snapshots it on the disbursement; it holds, reroutes or re-amounts nothing. No seeded payout changes.
+- A GST number edit never changes an invoice already issued (Phase 22's supplier snapshot).
 - Mock backend only. Determinism: seeded bank numbers are built from the registration number on non-issued bank code 99, and nothing new draws from the seeded RNG. Bump PERSIST_VERSION once.
-- Keep the seed coherent for Phase 27: the seeded prepaid sets must hit exactly the Bookings Phase 20 flagged for prepayment (Nair on 41800, not 41789), with Riley's uncoded Booking as the one noted exception. Change a seeded set, never a Booking's code.
+- Keep the seed coherent for Phase 27: the seeded prepaid sets, counted only where the Procedure's effective billable party is a person paying for the patient (Phase 21's billablePartyForProcedure passing isPersonParty; US-06.2.1 as changed at 501b0b8 and OQ-73's recommendation, which Phase 27 builds), must hit exactly the Bookings Phase 20 flagged for prepayment (Nair on 41800, not 41789), with Riley's uncoded Booking as the one noted exception. Change a seeded set, never a Booking's code.
 - The shared tick list and profile rows live in src/shared/profile and import nothing from apps/, so pwaPurity stays green.
 - Design: mobile edits in bottom sheets with a sticky teal Save, never a desktop form. The web profile is a desktop layout reached from the persona block, and the four nav tabs are unchanged. Teal is the only action colour, crimson is identity only, and "via" and "Not on file" markers are neutral or warning-tone pills. Money and account numbers are mono.
 - No en dashes or em dashes in any app-facing copy.
-- Demo triggers: none. Everything is normal use, so add no trigger-registry entry and leave the Control Panel alone.
-- Build nothing ahead of the plan: no prepayment derivation, estimator, gate change, GST window rework, payout history, bank verification or notifications.
+- Demo triggers: none. Everything is normal use, so add no trigger-registry entry, no 15a warning sample, and leave the Control Panel alone.
+- Build nothing ahead of the plan: no prepayment derivation, estimator, GST schedule rework, payout history, payout hold, bank verification, HPI CPN register lookup or check character (no phase builds them; 40a only unifies the label and format), start date (28) or notifications.
 - Keep npm run build, npm run build:pwa and npx vitest run green at the end of the session.
 
 When done:
 - Run the manual test checklist and report each item.
-- Run npm run build, npm run build:pwa, npx vitest run and npm run shots, all green, with no S1 to S5 figure moved.
+- Run npm run build, npm run build:pwa, npx vitest run and npm run shots, all green, with no S1 to S5 figure moved and PERSIST_VERSION bumped once.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): fan out Opus review subagents for quality, bugs/correctness and plan adherence, using the phase doc's steer list. Independently verify each finding, fix the confirmed ones with tests, and re-green.
-- Update PROGRESS.md: status row, phase entry with the drift-check result and the review pass, the Decisions-log entries listed in the phase doc, and the handoff notes for 27, 36, 37, 38 and 42.
-- Patch the demo guide sections the phase doc names (personas and permissions, the workflows profile case, the optional S4 Beat 1 pointer, cheat sheet section 8 and the payables note, the README feature row) and the same sections of master-demo-guide.html.
-- Do not commit. Give me short, clear notes on what changed, what is provisional, and anything you need me to decide.
+- Update PROGRESS.md: status row, phase entry with the drift-check result and the review pass, the Decisions-log entries listed in the phase doc, and the handoff notes for 27, 28, 36, 37, 38, 40a and 42.
+- Patch the demo guide sections the phase doc names (personas and permissions with "HPI CPN", the cheat sheet permission matrix row, the workflows profile case, the optional S4 Beat 1 pointer, cheat sheet section 8 and the payables note, the README feature row) and the same sections of master-demo-guide.html.
+- Do not commit. Give me short, clear notes on what changed, anything still provisional, and anything you need me to decide.
 
-Phase goal: give each anaesthetist a profile they own on mobile and web (rate per unit, GST period, contact details, a masked bank account and a prepaid tick list of RVG codes and groups), let the office maintain it on their behalf with every edit audited, and show the destination account on the payables run, ready for Phase 27 to derive prepayment from the stored set.
+Phase goal: give each anaesthetist a profile they own on mobile and web (rate per unit, GST period, GST number, contact details, a read-only HPI CPN, a masked, display-only bank account and a prepaid tick list of RVG codes and groups), let the office maintain it on their behalf with every edit audited (including the HPI CPN, format-checked), and show the destination account on the payables run, ready for Phase 27 to derive prepayment from the stored set.

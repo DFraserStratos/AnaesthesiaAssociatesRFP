@@ -1,107 +1,178 @@
 # Phase 36 · Internal ledger and balance views
 
 **Requirements covered:**
-[EP-08](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-08.md) (the ledger half: linked pairs, system of record, the parallel-run constraint as an optional narrated panel; the lock, invoices and credit are Phases 25, 22 and 39),
-[FT-08.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-08.3.md),
-[US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md) (creation and payment move both legs; reversal is Phase 39),
+[EP-08](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-08.md) (the ledger half: linked pairs as the system of record, the parallel-run constraint as an optional narrated panel; the lock, invoices and credit are Phases 25, 22 and 39),
+[FT-08.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-08.3.md) (including history that survives Xero contact archiving),
 [US-08.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.2.md),
 [US-08.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.4.md),
 [US-08.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.5.md) (Proposed),
 [US-13.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.2.1.md);
-[DM-18](../analysis/domain-model-delta.md#dm-18) (BillingCase promoted to a ledger pair);
-[DM-19](../analysis/domain-model-delta.md#dm-19) (derived positions: the whole ledger, each anaesthetist and each patient; the patient screen is Phase 40).
+[DM-22](../analysis/domain-model-delta.md#dm-22) (BillingCase promoted to a ledger pair, with the payee
+anaesthetist stamped at authorisation);
+[DM-23](../analysis/domain-model-delta.md#dm-23) (derived positions: the whole ledger, each anaesthetist
+and each patient; the patient screen is Phase 40, and the flat outstanding list with no ageing is
+Phase 38).
+**Kept, not rebuilt:** [US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md)
+was re-graded **Matches** at `501b0b8`: the handoff already creates the ACCREC and ACCPAY together,
+links them, and a fault creates neither. This phase keeps that pairing and makes the pair the engine's
+own record, the source the admin views and the payables run read. It adds no reversal (Phase 39).
 No reverse finding is closed here. The "mirror" wording the EP-08 gap names (code and Xero-sim copy
 calling the engine a copy of Xero) is removed as part of the work.
-**Depends on:** Phase 16 (the payable equals the receivable, `payableReleasedFor`, the stored
-`invoiceNumber`/`reference` on Xero records, and `billing.aaFeeInvoices`, which this phase folds into
-the ledger), Phase 22 (`Invoice.procedureIds`, `lineage`, supplier and delivery, which the legs link
-to), Phase 25 (invoices are built only from the AUTHORISED lock; `Invoice.lockedFrom`), and Phase 27
-(`prepaymentStatusFor` with part paid, the prepayment pair raised at setup, the recorded
-prepaid-above-final excess). Through them: 14's trigger registry and actors, 15's Booking
-vocabulary, 23's per-Procedure units on invoice lines, 24's layered total and 26's disbursement
-destination and bank hold.
+**Answered and built:**
+[OQ-02](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-02.md) (D1: AA's fee is
+a monthly invoice to each anaesthetist from settings, built by Phase 16; here it becomes an `aaFee` pair
+with a receivable and no payable),
+[OQ-03](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-03.md) (a prepayment
+above the final fee is kept, not refunded or credited: 27's excess is an informational figure outside
+the imbalance),
+[OQ-05](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-05.md) (a List never
+fails; a Booking with any failed billable party fails whole, so a billing exception holds back every
+pair of that Booking),
+[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (no personal
+information in Xero, only a unique id: the pair id is the Xero reference),
+[OQ-40](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-40.md) (prepaid money is
+held in trust until the procedure and refunded in full on cancellation: Phase 41's trust account and
+hold, so "receipts held" here says only that it includes prepayments received) and
+[OQ-42](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-42.md) (a refund after
+payout is a credit note plus a negative invoice netted in the next run: Phases 39 and 39a; the leg
+entries here accept a signed amount).
+**Still open, built as noted:**
+[OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md) (BCTI
+granularity and wording: **one payable leg per receivable invoice**, the same value as its
+receivable, as Phases 16 and 22 built it; the one-place note stays beside 16's `bctisFor`),
+[OQ-47](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-47.md) (payment day and
+cycle, and whether period BCTI approval is the release: the payables run stays an on-demand office
+action; Phase 39a adds the run record and approval),
+[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (what the
+per-BCTI charge counts: unchanged, 16's count function is only re-fed) and
+[OQ-71](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-71.md) (recovering a
+negative with nothing to net against: Phase 39a).
+**Depends on:**
+- **Phase 16:** the payable equals the receivable and `payableReleasedFor`; the stored
+  `invoiceNumber`/`reference` on Xero records; the monthly AA fee invoices (`billing.aaFeeInvoices`,
+  `runMonthlyFeeInvoices`, `raiseAnaesthetistInvoiceInto`, `recordAaFeePayment`, `aaFeeRunPreview`),
+  which this phase folds into the ledger; and the one BCTI count, `bctisFor` over `bctiRecords(state)`,
+  which this phase re-feeds from the payable legs.
+- **Phase 22:** `Invoice.procedureIds`, `lineage`, `supplier` and `delivery`, which the legs link to,
+  and the Contract payment setting (OQ-23): a Split gives two invoices, so two pairs and two BCTIs.
+- **Phase 25:** invoices are built only from the AUTHORISED lock (`Invoice.lockedFrom`), and the payee
+  anaesthetist is stamped at authorise (`BillingCase.payeeAnaesthetistId` from `lock.payee`), which
+  becomes the pair's payee.
+- **Phase 27:** the prepayment invoice generated at setup and held for admin approval
+  (`generatePrepaymentInvoice`, `approvePrepaymentInvoice`, withdrawal), the payee helper
+  `prepaymentBasisAnaesthetist`, the reworked `prepaymentStatusFor` with part paid, and
+  `excessAboveFinal`.
+- Through them: 14's trigger registry and actors, 15's Booking vocabulary, 15a's warning routine (27's
+  prepayment warning reads the status re-pointed here), 23's per-Procedure units on invoice lines, 24's
+  layered total and 26's disbursement destination and `missingBank` flag (display only: 26 holds no
+  payment back).
+
 **Estimated:** 2 sessions. Session 1: work items 1 to 11 (figures pinned, model, pure ledger module,
-every creator, payments, payables, handoff, the AA fee fold, selectors, seed), ending green with the
-UI edited only as far as it must compile. Session 2: items 12 to 19 (the Admin Ledger screen, the
-re-pointed surfaces, the Xero sim, copy, triggers, shots and the demo guide). This is a full two
-sessions. If session 1 runs long, move item 10 (audit labels) to the start of session 2; item 18 is
-the first thing cut from session 2. Do not cut the parity test or the seed-balance assertions.
+every creator with the stamped payee, payments, payables, handoff, the AA fee fold, selectors and the
+BCTI re-read, seed), ending green with the UI edited only as far as it must compile. Session 2: items
+12 to 19 (the Admin Ledger screen, the re-pointed surfaces, the Xero sim, copy, triggers, shots and
+the demo guide). This is a full two sessions. If session 1 runs long, move item 10 (audit labels) to
+the start of session 2; item 18 is the first thing cut from session 2. Do not cut the parity test,
+the BCTI parity assertions or the seed-balance assertions.
 
 ## Goal
 
 `BillingCase` becomes a **ledger pair**, and the ledger becomes AA's system of record. Every invoice
 the engine raises creates one pair in the same `mutate()` that raises the invoice, before and
 independent of the Xero handoff. The pair has a **receivable leg** (from the billable party) and a
-**payable leg** (to the anaesthetist). Each leg has its own number (the invoice number, and the same
-number with `-P`), its own amount, its dated money entries (receipts in, disbursements out) and its
-Xero mirror id. The pair links to the Booking, the List, the anaesthetist, the patient's hidden id and
-the Procedures it bills. A payment moves both legs together, and a payable can never be disbursed
-beyond what its receivable has received.
+**payable leg** (to the anaesthetist: the BCTI, one per receivable invoice and the same value, as
+Phases 16 and 22 built it; never split per Procedure). Each leg has its own number (the invoice
+number, and the same number with `-P`), its own amount, its dated money entries (receipts in,
+disbursements out) and its Xero mirror id. The pair links to the Booking, the List, the patient's
+hidden id and the Procedures it bills, and names the **payee anaesthetist stamped at authorise**
+(Phase 25's lock; for a prepayment, Phase 27's basis anaesthetist). A payment moves both legs
+together, and a payable can never be disbursed beyond what its receivable has received.
 
 Xero becomes what the catalogue says it is: a receivables and banking service that mirrors the
 ledger. The handoff reads the legs and stamps their mirror ids. A handoff fault leaves the pair in the
 ledger, marked "Not yet in Xero". Payables due and the payables run are computed from payable legs,
 not from `state.xero.accPays`. Code and copy stop calling the engine's records a mirror of Xero.
+Phase 16's BCTI count re-reads from the payable legs, with a parity test, so the monthly fee run
+charges exactly what it charged before (Dr Rutherford's $500 + $5 x 40 = $700 still reproduces).
 
 From the ledger come derived positions at three scopes:
 - **The whole ledger:** receivables outstanding, receipts held, payables due, amounts disbursed, and
   the imbalance between receipts held and payables due, with the checks that explain it.
 - **One anaesthetist:** what is owed to them, collected for them and paid out to them, and what
-  they owe AA (their unpaid AA fee invoices).
+  they owe AA (their unpaid monthly AA fee invoices).
 - **One patient:** every invoice across every anaesthetist, as paid, part paid or unpaid. This is a
   selector only; Phase 40 builds the patient screen.
 
 A new **Admin Ledger** screen shows the whole ledger and any one anaesthetist, with an in-balance or
 out-of-balance indicator. A demo trigger injects a receipt that matches no receivable, so the
 indicator goes out of balance, and the office clears it by allocating or refunding the receipt.
-Web Accounts, mobile Balances, the dashboard feed, prepayment status, the AA fee invoices, the Billing
-monitor, the invoice document and the Xero simulation all read the ledger.
+Web Accounts, mobile Balances, the dashboard feed, prepayment status, the AA fee invoices and the BCTI
+count, the Billing monitor, the invoice document and the Xero simulation all read the ledger.
 
 This evolves `BillingCase`; it is not a second ledger. Every money figure a presenter shows today must
 read the same after the change, and a parity test proves it.
 
 > Names below are the July names where later phases have not renamed them (`cardId`, `casesForCard`,
 > `handoffCasesForCard`). Phase 15 renamed Card to Booking; use the renamed identifiers. Likewise use
-> what Phases 16 to 27 actually shipped (the AA fee actions, 22's invoice fields, 25's lock, 26's
-> payables destination, 27's prepayment status and excess), as recorded in their PROGRESS entries.
+> what Phases 16 to 27 actually shipped (the AA fee actions and `bctiRecords`, 22's invoice fields,
+> 25's lock and stamped payee, 26's payables destination, 27's prepayment approval, status and
+> excess), as recorded in their PROGRESS entries.
 
 ## Before you start: drift check
 
 1. Run:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
-   Look for changes to EP-08, FT-08.3, US-08.3.1, US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1, and to
-   the items this phase leans on: US-08.3.3 (history survives archiving), US-08.4.3 (unique numbers,
-   the `-P` payable), US-09.1.1, US-09.2.1, US-10.1.2, US-10.2.1, FT-10.3, US-10.3.2, FT-13.2,
-   US-13.2.2, US-11.3.1, US-05.3.5, FT-06.3, and the domain model's "Internal ledger" section and
-   glossary. Check that US-13.2.3 is still Retired (merged into US-13.2.1). If an item changed, re-read
-   it and adjust the work items. If one is now Retired or Future, drop it from this phase and record
-   that in the PROGRESS entry.
-2. **Open questions.** None blocks this phase. These touch it; if still open, build the interim.
-   - **OQ-02** (AA fee basis): "what they owe" is the anaesthetist's unpaid AA fee invoices, shown
-     with Phase 16's `AA_FEE_BASIS.label`. No new fee maths here.
-   - **OQ-47** (payment day and cycle): the payables run stays an on-demand office action. No weekly
-     close, and no "Tuesday" or "Wednesday" in any copy.
-   - **OQ-29** (buyer-created ACCPAY wording): the payable leg carries no tax-invoice wording of its
-     own. Phase 22's `taxInvoice` stays on the Xero ACCPAY.
-   - **OQ-28** (Answered: credit in full, then rebill) and **OQ-42** (Open): reversal is Phase 39.
-     Leave the leg entry arrays able to take a negative (credit) entry, but add no credit path.
-   - **OQ-40** (trust account, Open): "receipts held" is the ledger's cash held for anaesthetists, not
-     a trust account. Phase 41 owns the trust account. Say so in the screen's footnote.
-   - US-13.2.1 says "Detailed requirements to be worked out later". Label the Ledger screen layout
-     provisional (item 12).
+   Look for changes to EP-08, FT-08.3, US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1, and to the items
+   this phase leans on: US-08.3.1 (Matches; the pairing kept), US-08.3.3 (history survives archiving),
+   US-08.4.3 (unique numbers, the `-P` payable), US-09.1.1, US-09.1.4 (the BCTI note: "one per
+   procedure" beside "the same value as its receivable"), US-09.2.1, US-10.1.2, US-10.2.1, US-10.2.5
+   and US-10.2.6 (negative invoices and period approval, Phase 39a), FT-10.3, US-10.3.1, US-10.3.2,
+   US-10.3.3, FT-13.2, US-13.2.2, US-11.3.1, US-05.3.5, FT-06.3, US-06.3.1, US-06.5.4, and the domain
+   model's "Internal ledger" section and glossary. Check that US-13.2.3 is still Retired (merged into
+   US-13.2.1). If an item changed, re-read it and adjust the work items. If one is now Retired or
+   Future, drop it from this phase and record that in the PROGRESS entry.
+2. **Answers and open questions.** None blocks this phase.
+   - **Answered, build the answer:** OQ-02 (the fee is a monthly invoice; "what they owe AA" is the
+     anaesthetist's unpaid fee invoices, with no new fee maths here), OQ-03 (excess prepayment kept:
+     no credit, no refund, no "credit due" copy), OQ-05 (one exception per Booking, none of its pairs
+     until it is resolved), OQ-30 (no personal data in any Xero field), OQ-40 (prepaid money is held in
+     trust until the procedure: Phase 41 builds that account; here "receipts held" includes
+     prepayments received, and the footnote says so) and OQ-42 (credit note plus a negative invoice:
+     Phases 39 and 39a; leave the leg entry arrays able to take a negative entry, but add no credit or
+     netting path).
+   - **Still open:** OQ-29 (one payable leg per receivable invoice; the payable leg carries no
+     tax-invoice wording of its own, 22's wording stays on the Xero ACCPAY), OQ-47 (the payables run
+     stays an on-demand office action: no weekly close, no period approval, and no "Tuesday",
+     "Wednesday" or "20th" in any copy), OQ-60 (16's `bctisFor` rule unchanged) and OQ-71 (not
+     touched).
+   - **If OQ-29 or AA's accountant has settled "one BCTI per procedure"** since `501b0b8`, stop and
+     tell the owner before item 2: the payable leg would need per-Procedure parts (the
+     `procedureShares` below are the start), and the plan re-baselines `bctiRecords`, the $700 seed
+     and the S3 and S4 figures in one place. If OQ-47 has been answered, do not build it here; record
+     it for Phase 39a.
+   - US-13.2.1 still says "Detailed requirements to be worked out later": the Ledger screen carries a
+     one-line note saying the detail is to be worked out with AA (item 12).
 3. **Read what Phases 16 to 27 actually built** (their PROGRESS entries):
-   - 16: `AaFeeInvoice`'s money fields, `generateAaFeeInvoices`, `recordAaFeePayment`,
-     `uncoveredCollectionsFor`, the `XeroAccRec.kind` values and the guards on `receivePayment`,
+   - 16: `AaFeeInvoice`'s money fields (`accRecId`, `amountReceived`, `paidAtISO`),
+     `runMonthlyFeeInvoices`, `raiseAnaesthetistInvoiceInto`, `recordAaFeePayment`,
+     `aaFeeRunPreview`, `bctiRecords` and `bctisFor` (`domain/billing/bcti.ts`), the
+     "Seed a month of BCTIs" builder, the `XeroAccRec.kind` values and the guards on `receivePayment`,
      `openAccRecs` and the poll.
-   - 22: `procedureIds`, `lineage`, `portion` and `delivery` on `Invoice`.
+   - 22: `procedureIds`, `lineage`, `portion`, `supplier` and `delivery` on `Invoice`, and how a Split
+     payment setting raises its second invoice.
    - 23 and 24: what invoice lines carry per Procedure (units, the layered total).
-   - 25: `Invoice.lockedFrom`, and how `retryBillingCase` rebuilds from the lock.
-   - 26: `payablesDue.byAnaesthetist`, `heldForBank` and `Disbursement.destination`.
-   - 27: the reworked `prepaymentStatusFor` and where the `creditDue` excess was stored.
+   - 25: `Invoice.lockedFrom`, `BillingCase.payeeAnaesthetistId`, the payee readers it re-pointed
+     (`anaesthetistIdForCase` in `paymentActions.ts` and `selectors.ts`, `bctiRecords`), and how
+     `retryBillingCase` rebuilds from the lock.
+   - 26: `payablesDue.byAnaesthetist` (with `destinationMasked`), `missingBank` and
+     `Disbursement.destination`.
+   - 27: `Invoice.approval`, the held and withdrawn prepayment handoff (draft and voided Xero records),
+     `prepaymentBasisAnaesthetist`, the reworked `prepaymentStatusFor`, and `excessAboveFinal` on the
+     prepayment case.
    Adjust the work items to reuse what exists instead of adding a second copy.
 4. Note the current `PERSIST_VERSION` (13 at the snapshot; 14 to 35 will have raised it).
 5. Record the result (including "no drift") in the PROGRESS entry.
@@ -126,18 +197,23 @@ read the same after the change, and a parity test proves it.
   - `docs/design/Web Dashboard.dc.html`: panel anatomy for the web Accounts position strip.
   - No mockup covers a ledger screen. Extend the Admin Review tiles and table and the Billing monitor
     panels; do not invent a new visual language.
-- **Catalogue:** the covered files above, plus US-08.3.3, US-08.4.3, US-09.1.1, US-09.2.1, US-10.1.2,
-  US-10.2.1, FT-10.3, US-10.3.2, FT-13.2, US-13.2.2, US-11.3.1, US-05.3.5, OQ-02, OQ-29, OQ-40, OQ-47
-  and `domain-model.md` ("Internal ledger" and the glossary rows "Internal ledger" and "ACCREC /
-  ACCPAY").
+- **Catalogue:** the covered files above, plus US-08.3.1, US-08.3.3, US-08.4.3, US-09.1.1, US-09.1.4,
+  US-09.2.1, US-10.1.2, US-10.2.1, US-10.2.5, US-10.2.6, FT-10.3, US-10.3.1, US-10.3.2, US-10.3.3,
+  FT-13.2, US-13.2.2, US-11.3.1, US-05.3.5, US-06.3.1, US-06.5.4; OQ-02, OQ-03, OQ-05, OQ-29, OQ-30,
+  OQ-40, OQ-42, OQ-47, OQ-60 and OQ-71; the 2026-10-01 note
+  (`catalogue/notes/2026-10-01-aa-meeting-with-greg.md`, points #1, #18 and #41 on the fee and the
+  BCTI); and `domain-model.md` ("Internal ledger" and the glossary rows "Internal ledger", "ACCREC /
+  ACCPAY", "AA fee", "Trust account" and "Negative invoice").
 - **Gap analysis:**
-  - `GAP-ANALYSIS.md`: Summary sizing, themes 8 and 10, "Structural first" step 5, the Money trigger
-    cluster, and the DM-18 and DM-19 rows.
-  - `epics/EP-08.md`: the header note, and the EP-08, FT-08.3, US-08.3.1, US-08.3.2, US-08.3.4 and
-    US-08.3.5 sections.
+  - `GAP-ANALYSIS.md`: Summary sizing, themes 7 (money model) and 10 (patients), the "Structural
+    first" bullet "DM-26 fee removal and DM-22 ledger pair", the Money corrections trigger cluster,
+    the Uncertainty note on DM-22 (BCTI cardinality), and the DM-22 and DM-23 rows.
+  - `epics/EP-08.md`: the header note, and the EP-08, FT-08.3, US-08.3.1 (Matches), US-08.3.2,
+    US-08.3.4 and US-08.3.5 sections.
   - `epics/EP-13.md`: US-13.2.1.
-  - `gaps.json` entries for the covered IDs, DM-18 and DM-19.
-  - `analysis/domain-model-delta.md`: DM-18, DM-19, and DM-22 (the AA fee as a ledger item).
+  - `gaps.json` entries for the covered IDs, US-08.3.1, DM-22 and DM-23.
+  - `analysis/domain-model-delta.md`: DM-22, DM-23, and DM-26 (the AA fee as a separate ledger item);
+    DM-21 and DM-25 for what Phases 41 and 39a build on these legs.
 - **Code entry points** (July line numbers, from `analysis/prototype-map-*.md`; shifted by 14 to 27):
   - `src/domain/types.ts`:
     - billing types: `Invoice` 662, `InvoiceLine` 678, `BillingPipelineStatus` 687, `BillingCase`
@@ -154,8 +230,11 @@ read the same after the change, and a parity test proves it.
       `resetDomainState` about 218;
     - `billingRun.ts`: `runBillingForList` 68 (case creation about 141 to 230), `retryBillingCase`
       285, `handoffListCases` 444, `wireBillingRun` 457;
-    - `prepaymentActions.ts` (27's raise, case creation about 112 to 146);
-    - 16's `aaFeeActions.ts`;
+    - `prepaymentActions.ts` (27's `generatePrepaymentInvoice`, `approvePrepaymentInvoice`, the
+      withdrawal, `prepaymentBasisAnaesthetist`; case creation about 112 to 146 in July);
+    - 16's `aaFeeActions.ts` (`runMonthlyFeeInvoices`, `raiseAnaesthetistInvoiceInto`,
+      `recordAaFeePayment`) and `domain/billing/bcti.ts` (`BctiRecord`, `bctisFor`);
+    - 25's lock (`lock.payee`) and where it stamps `BillingCase.payeeAnaesthetistId`;
     - `xeroHandoff.ts` (`handoffCase` 153, `resolveContactInto`, `handoffCasesForCard`);
     - `paymentActions.ts` (`receivePayment` 78, `gstComponentOf`);
     - `payablesActions.ts` (`payablesDue` 36, `disbursePayables`, `runPayables`, `disbursePayable`);
@@ -172,7 +251,7 @@ read the same after the change, and a parity test proves it.
       `accpayInvoicesFor` 649, `outstandingAccpayInvoicesFor` 663, `overdueAccountsFor` 668,
       `receivablesAgingFor` 679, `gstActivityFor` 709, `paymentHistoryFor` 763;
     - `billingContextForCard` 837, `entityCounts` 874, the `MirrorState` type;
-    - 16's `aaFeeInvoicesFor`, `allAaFeeInvoices` and `pendingAaFeeSummary`.
+    - 16's `aaFeeInvoicesFor`, `allAaFeeInvoices`, `aaFeeRunPreview` and `bctiRecords`.
   - `src/domain/seed/`: `history.ts` (`buildHistory` 145, the `HBC` cases about 286, `RCTH` receipts,
     `DSBH` disbursements, the missed-webhook `PaymentIn`); `billing.ts` (`SeedBillingSlice` 48,
     `buildSeedBillingSlice` 114, BC0001 about 234); 16's seeded AA fee history.
@@ -205,7 +284,10 @@ read the same after the change, and a parity test proves it.
     `visual/xero-pair.spec.ts`, `admin-phase09.spec.ts`, `web-phase05.spec.ts`,
     `mobile-phase04.spec.ts` (Balances). Capture recipes:
     `requirements-board/capture/recipes/US-08.3.1.json`, `US-08.3.2`, `US-08.3.4`, `US-08.3.5`,
-    `US-13.2.1` (status "absent"), `US-13.2.2`.
+    `US-13.2.1` (status "absent"), `US-13.2.2`, `US-09.1.4` (the simulator ACCPAY record).
+  - 16's tests `aaFeeActions.test.ts` and the `bcti.ts` tests, 25's lock tests and 27's
+    `prepayment.test.ts` and `prepaymentParity.test.ts`, which this phase's re-pointing must keep
+    green.
 
 ## Work items
 
@@ -218,41 +300,68 @@ read the same after the change, and a parity test proves it.
      total, received, outstanding, aging bucket), `receivablesAgingFor` totals, `paymentHistoryFor`
      rows (received, released, paid out, status), and `gstActivityFor` totals for July 2026 and for
      the seeded history months;
-   - `payablesDue` (count, total, and 26's `byAnaesthetist` and `heldForBank`);
+   - `payablesDue` (count, total, and 26's `byAnaesthetist` and `missingBank`);
    - every seeded Booking's `prepaymentStatusFor`;
-   - 16's `aaFeeInvoicesFor` statuses and `pendingAaFeeSummary`;
+   - 16's `aaFeeInvoicesFor` statuses, `allAaFeeInvoices`, and `aaFeeRunPreview` for July 2026 and the
+     seeded fee months (May and June 2026);
+   - **the BCTI records:** `bctiRecords(state)` in full (every record's ACCPAY id, bill number,
+     receivable invoice number, anaesthetist, issued date and voided flag), and `bctisFor` per
+     anaesthetist for each of those months;
    - `billingMonitor` status per row for the seeded authorised Lists;
    - the `openAccRecs` picker list.
 
-   Also capture four scripted flows, pinning every figure at each step:
-   - **S3:** authorise Souter Mon 20 AM and PM. Pin the invoice numbers and totals. Then pay half
-     the nib invoice, run payables, pay the rest, and run payables again.
+   Also capture five scripted flows, pinning every figure at each step:
+   - **S3:** authorise Souter Mon 20 AM and PM. Pin the invoice numbers, totals and payees. Then pay
+     half the nib invoice, run payables, pay the rest, and run payables again.
    - **S4 Beat 3:** the billing failure, then resolve and retry.
    - **S4 Beat 5:** the Hemi Walker part-then-balance payment with two payables runs.
-   - **27's Nair balance run.**
+   - **27's prepayment flows:** "Add prepaid-list Booking" (held, awaiting approval), Approve and send,
+     a half payment (part paid), then the Nair balance run.
+   - **16's fee run:** "Seed a month of BCTIs" then "Run monthly fee invoices" for July 2026: Dr
+     Rutherford's fee invoice is $700.00 at seed settings, then "Record fee payment".
 
    This test must pass unchanged at the end of the phase. The only permitted edits are selector
-   renames in its imports.
-2. **Types** (`domain/types.ts`; DM-18). Delete `BillingCase` and `BillingPipelineStatus`, so the
+   renames in its imports, and the two deliberate BCTI differences named in item 8, only if they
+   apply.
+2. **Types** (`domain/types.ts`; DM-22). Delete `BillingCase` and `BillingPipelineStatus`, so the
    compiler finds every reader. Add:
    - `ReceivableLeg = { number; counterparty: CounterpartyRef; amount; receivedAmount; paidInAtISO?;
      xeroAccRecId? }`. `amount` is the invoice total, GST inclusive, and `number` is the invoice
      number.
-   - `PayableLeg = { number; anaesthetistId; amount; releasedAmount; disbursedAmount; paidOutAtISO?;
-     xeroAccPayId? }`:
+   - `PayableLeg = { number; anaesthetistId; amount; releasedAmount; disbursedAmount; issuedAtISO;
+     paidOutAtISO?; xeroAccPayId? }`. This leg **is the BCTI**: one per receivable invoice, never one
+     per Procedure (OQ-29 open; the plan's rule, kept in 16's one place):
      - `number` is `${invoiceNumber}-P` (US-08.4.3), stored, never derived at view time;
+     - `anaesthetistId` is the **payee**, stamped when the pair is created: from 25's lock
+       (`lock.payee`, today `BillingCase.payeeAnaesthetistId`) on a procedure pair, from 27's
+       `prepaymentBasisAnaesthetist` on a prepayment pair. It is never re-derived from the List.
+       Phase 41 repoints it, through one action, when a prepaid Booking moves (US-06.5.4);
      - `amount` equals the receivable's amount (FT-10.3, Phase 16);
-     - `releasedAmount` replaces `authorisedAmount`.
+     - `releasedAmount` replaces `authorisedAmount`;
+     - `issuedAtISO` is the date the BCTI counts in for the monthly fee (16's `bctisFor`), taken from
+       the same source 16's records used, so the counted month does not move.
+     Amounts and entries are signed numbers, so Phases 39 and 39a can add a credit or a negative
+     entry; this phase writes only positive ones.
    - `LedgerPair`, a discriminated union on `kind`, so every consumer must say which kinds it reads:
      - `kind: 'procedure' | 'prePayment'`: `{ id; kind; invoiceId; bookingId; listId; anaesthetistId;
-       patientId; procedureIds; procedureShares; createdAtISO; receivable; payable; handoffFailure? }`.
-       `patientId` is the hidden internal id, so patient history is ledger data, not a join through
-       the Booking (FT-08.3, US-08.3.3). `procedureIds` come from 22's `Invoice.procedureIds`.
-       `procedureShares: { procedureId; units?; amountExGst }[]` comes from the invoice lines, which
-       closes Phase 23's US-05.3.5 handoff.
+       patientId; procedureIds; procedureShares; createdAtISO; issue; receivable; payable;
+       prepaidAboveFinal?; handoffFailure? }`.
+       - `anaesthetistId` is the payee, the same id as `payable.anaesthetistId` (one field to read in
+         filters; the seed test asserts they agree).
+       - `patientId` is the hidden internal id, so patient history is ledger data, not a join through
+         the Booking (FT-08.3, US-08.3.3). `procedureIds` come from 22's `Invoice.procedureIds`.
+       - `procedureShares: { procedureId; units?; amountExGst }[]` comes from the invoice lines, which
+         closes Phase 23's US-05.3.5 handoff. It is information about the one payable, not a split of
+         it.
+       - `issue: 'held' | 'issued' | 'withdrawn'`. Billing-run pairs are `issued` at creation. A
+         prepayment pair is `held` while 27's invoice awaits approval, `issued` when approved and sent,
+         and `withdrawn` when 27 withdraws it. Held and withdrawn pairs count in no position, no
+         payables total and no BCTI count.
+       - `prepaidAboveFinal` (ex-GST) moves 27's `excessAboveFinal` onto the prepayment pair. It is
+         kept, never refunded or credited (OQ-03), and is informational only.
      - `kind: 'aaFee'`: `{ id; kind; aaFeeInvoiceId; anaesthetistId; createdAtISO; receivable;
        handoffFailure? }`. It has **no payable leg**: AA is charging its own fee, not passing money
-       through (FT-10.3, DM-22). The receivable's counterparty is the anaesthetist.
+       through (FT-10.3, DM-26). The receivable's counterparty is the anaesthetist.
    - `LedgerReceipt` renames `BillingReceipt`:
      - `caseId` becomes `pairId`, and it gains `pairKind`, so an AA fee payment is money in without
        ever becoming the anaesthetist's income;
@@ -264,10 +373,12 @@ read the same after the change, and a parity test proves it.
      note? }`.
    - `BillingException = { id; bookingId; listId; code; message; procedureId?; atISO; resolvedAtISO?;
      resolvedPairIds? }`. A billing-run failure raises no invoice, so it is no longer a pair (see
-     item 4).
-   - `AaFeeInvoice` keeps its document fields (number, reference, basis, period, lines, totals,
-     raised) and loses its money fields (`accRecId`, `amountReceived`, `paidAtISO`). It gains
-     `ledgerPairId`.
+     item 4). One per Booking: the Booking fails whole and the List never fails (OQ-05).
+   - `AaFeeInvoice` keeps its document fields (`invoiceNumber`, `reference`, `anaesthetistId`,
+     `monthISO`, the `settings` snapshot, `lines`, the counted `bctis` snapshot and `bctiCount`,
+     `subtotal`, `gst`, `total`, `raisedAtISO`, `raisedBy`) and loses its money fields (`accRecId`,
+     `amountReceived`, `paidAtISO`). It gains `ledgerPairId`. Its `bctis` snapshot is a record of
+     what was counted at the time, not a second count.
    - `PaymentIn.source` gains `'allocation'`. `XeroAccRec` and `XeroAccPay` get doc comments saying
      each mirrors one ledger leg. `XeroAccRec.kind` stays as 16 left it.
    - `AppState.billing` becomes `{ invoices, invoiceLines, ledger: Record<string, LedgerPair>,
@@ -281,11 +392,16 @@ read the same after the change, and a parity test proves it.
 3. **The pure ledger module** (`domain/billing/ledger.ts`, exported from the billing index, with
    `ledger.test.ts`; convention 9):
    - Constructors:
-     - `newBookingPair({ id, kind, invoice, lines, bookingId, listId, anaesthetistId, patientId,
-       atISO })` builds both legs, with the payable amount equal to the receivable amount, and the
-       shares via `procedureSharesFrom(lines)`: per Procedure, summed amounts ex-GST and units.
-       Deduction lines count.
+     - `newBookingPair({ id, kind, invoice, lines, bookingId, listId, payeeAnaesthetistId,
+       patientId, issue, atISO })` builds both legs, with the payable amount equal to the receivable
+       amount, the payee on the pair and the payable leg, and the shares via
+       `procedureSharesFrom(lines)`: per Procedure, summed amounts ex-GST and units. Deduction lines
+       count. It builds exactly one payable leg whatever the number of Procedures.
      - `newAaFeePair({ id, aaFeeInvoice, atISO })`.
+     - `setPairIssue(pair, issue)`: `held` to `issued` or `withdrawn` only; anything else refused.
+     - `reamountHeldPair(pair, invoice, lines)`: on a `held` pair only, rewrites both legs' amounts
+       (still equal) and the shares when 27 re-estimates the held invoice in place; refused on an
+       issued or withdrawn pair (a sent invoice is never rewritten, OQ-70).
    - Movements, each returning the new pair and the increments:
      - `applyReceipt(pair, amount)`: clamps to the receivable balance. On a Booking pair it sets
        `releasedAmount = payableReleasedFor(received, payable.amount)` (16's rule; never a second
@@ -306,7 +422,8 @@ read the same after the change, and a parity test proves it.
      - `disbursedAboveReleased`;
      - `receivedAboveAmount`.
      A healthy ledger returns none.
-   - `ledgerPosition(pairs, unmatched)`, over Booking pairs only:
+   - `ledgerPosition(pairs, unmatched)`, over **issued** Booking pairs only (held and withdrawn
+     prepayment pairs are listed but never summed):
 
      ```
      receivablesOutstanding = sum(max(0, receivable.amount - receivable.receivedAmount))
@@ -321,18 +438,28 @@ read the same after the change, and a parity test proves it.
      ```
 
      It also returns `aaFees: { invoiced, received, outstanding }` from the `aaFee` pairs. These are
-     AA's own income, so they are **never** part of `receiptsHeld` or `imbalance`. And it returns
+     AA's own income, so they are **never** part of `receiptsHeld` or `imbalance`. It returns
+     `prepaidAboveFinal` (the sum of 27's kept excess, OQ-03), informational and never part of
+     `imbalance`, and `awaitingApproval` (the count and total of held prepayment pairs). And it returns
      `checks`, and `notInXero` (the count of pairs without mirror ids).
    - `anaesthetistPosition(pairs, anaesthetistId)`, the same maths scoped (US-13.2.1 "the same balance
      view, scoped"):
      - `dueNow` (released, not paid out) and `awaitingCollection`;
      - `owedToThem = dueNow + awaitingCollection`;
      - `collected`, `paidOut`;
-     - `theyOweAa` (their unpaid `aaFee` receivables);
+     - `theyOweAa` (their unpaid monthly AA fee invoices, the `aaFee` receivables);
      - `imbalance` and the `checks` for their pairs (unmatched receipts belong to no anaesthetist
        until allocated).
-   - `patientPosition(pairs, patientId)`: rows across every anaesthetist, each `paid | partPaid |
-     unpaid` with its outstanding amount, plus `outstandingTotal` (DM-19; the screen is Phase 40).
+   - `patientPosition(pairs, patientId)`: rows across every anaesthetist (pair id, invoice id and
+     number, payee anaesthetist, Booking, billable party, raised date, total, outstanding, and status
+     `paid | partPaid | unpaid`), plus `outstandingTotal` and the oldest unpaid raised date (DM-23;
+     Phase 40 builds the screen and the mild or strong balance warning on it, OQ-41).
+   - `bctiRecordsOf(pairs)`: 16's `BctiRecord[]` read from the payable legs, one record per payable
+     leg of an issued or withdrawn Booking pair (a withdrawn pair's record is `voided: true`, so
+     `bctisFor` drops it), with `accPayId` the leg's mirror id where it has one and the pair id
+     otherwise, `billNumber` the leg number, `receivableInvoiceNumber` the receivable number,
+     `anaesthetistId` the payee and `issuedAtISO` the leg's. `aaFee` pairs have no payable, so they
+     are never counted. This is the only list `bctisFor` reads after this phase.
    - Tests:
      - the equation is exact to the cent;
      - a clean paid, part-paid and disbursed mix is in balance;
@@ -343,35 +470,66 @@ read the same after the change, and a parity test proves it.
      - a patient with invoices under two anaesthetists gets both rows;
      - a half receipt releases exactly half (16's rule);
      - a disbursement above released is refused;
-     - the shares sum to the invoice subtotal;
+     - the shares sum to the invoice subtotal, and a three-Procedure invoice still has one payable
+       leg;
+     - a held prepayment pair counts in no total and gives no BCTI; approving it adds it to
+       receivables outstanding; a withdrawn one never counts;
+     - `reamountHeldPair` keeps both legs equal to the new invoice total, and refuses an issued pair;
+     - `prepaidAboveFinal` never moves `imbalance`;
+     - `bctiRecordsOf` gives one record per issued payable leg, none for a fee pair;
      - same input gives deep-equal output.
-4. **Pairs are created at invoice time** (store; US-08.3.1, FT-08.3):
+4. **Pairs are created at invoice time** (store; FT-08.3, keeping US-08.3.1's pairing):
    - `runBillingForList` and `retryBillingCase` (`billingRun.ts`) create one pair per raised invoice,
-     in the run's single `mutate`, through `newBookingPair`. The pair takes the Booking, List,
-     anaesthetist and patient from the Booking at run time. Each pair audits `ledger.pairCreated`
-     (entity `ledgerPair`, after: both numbers, amounts, kind, bookingId).
+     in the run's single `mutate`, through `newBookingPair`, with `issue: 'issued'`. A Split payment
+     setting (22, OQ-23) raises two invoices, so two pairs, each with its own payable leg. The pair
+     takes the Booking, List and patient from the Booking at run time, and the **payee from 25's
+     lock** (`lock.payee.anaesthetistId`), never from the List: the field 25 stamped on the case
+     (`payeeAnaesthetistId`) becomes `pair.anaesthetistId` and `payable.anaesthetistId`. Each pair
+     audits `ledger.pairCreated` (entity `ledgerPair`, after: both numbers, amounts, kind, bookingId,
+     payee).
    - A billing-run failure writes a `BillingException` instead of a failed case. The audit stays
-     `booking.billingException` (15's name).
+     `booking.billingException` (15's name). The Booking fails whole (OQ-05): none of its invoices,
+     including a Split's second, gets a pair until the exception is resolved, and the List's other
+     Bookings still bill.
    - `retryBillingCase` becomes `retryBillingException(api, actor, exceptionId)`, office only. On
      success it creates the pairs, stamps `resolvedAtISO` and `resolvedPairIds`, and audits
-     `billing.exceptionResolved`. It still rebuilds only from 25's lock and stays idempotent: a
-     resolved exception refuses with `alreadyResolved`.
-   - 27's prepayment raise (`prepaymentActions.ts`) creates a `prePayment` pair in its `mutate`.
-   - 16's `generateAaFeeInvoices` creates an `aaFee` pair per fee invoice. It no longer creates the
-     fee ACCREC itself; the handoff does (item 5).
-   - 27's prepaid-above-final excess: wherever 27 recorded `creditDue`, leave it on the Booking (it
-     raises no invoice, so no pair). The ledger position reads it as an informational
-     `creditDuePending` total, never counted in `imbalance`. Phase 41 turns it into a credit.
+     `billing.exceptionResolved`. It still rebuilds only from 25's lock (payee included) and stays
+     idempotent: a resolved exception refuses with `alreadyResolved`.
+   - **Prepayment pairs** (27's `prepaymentActions.ts`):
+     - `generatePrepaymentInvoice` creates a `prePayment` pair in its `mutate` with `issue: 'held'`
+       and the payee from `prepaymentBasisAnaesthetist`;
+     - 27's `reestimate` path in `syncPrepayment` (the held invoice's lines and amount rewritten in
+       place) calls `reamountHeldPair` in the same `mutate`, so the held pair never differs from its
+       invoice;
+     - `approvePrepaymentInvoice` sets it `issued` in the same `mutate` that sends the invoice;
+     - the withdrawal (a change that removes the requirement, or "List authorised before approval")
+       sets it `withdrawn`. The number stays used and the pair stays in the ledger for history.
+   - 16's `runMonthlyFeeInvoices` creates an `aaFee` pair per fee invoice, inside
+     `raiseAnaesthetistInvoiceInto`, so every invoice from AA to an anaesthetist (including 39a's later
+     carried-forward negative) gets its pair on the one path. It no longer creates the fee ACCREC
+     itself; the handoff does (item 5).
+   - 27's prepaid-above-final excess: 27 recorded it as `excessAboveFinal` on the prepayment case. It
+     raises no invoice, so it creates no pair; the run writes it as `prepaidAboveFinal` on the
+     prepayment pair it came from. It is kept (OQ-03: not refunded, not credited) and never counted in
+     `imbalance`. Phase 41 builds its surfaces.
    - The case-id sequence may shift, because failures no longer consume `BC` ids. Invoice numbers do
      not shift. Record any change in scripted case references.
+   - Tests: the payee is the lock's in a test-only state where the List's `anaesthetistId` is changed
+     after authorise; a Split gives two pairs and two payable legs; a failed Booking gives no pairs
+     while a sibling bills; a held, approved and withdrawn prepayment moves `issue` exactly once each;
+   changing the estimated duration of a held prepayment rewrites its pair's amounts with the invoice.
 5. **The handoff reads the ledger** (`xeroHandoff.ts`; US-09.1.1, FT-09.1):
    - `handoffCase(api, caseId)` becomes `handoffPair(api, pairId)`:
      - the ACCREC is built from the receivable leg (amount, `invoiceNumber = receivable.number`,
        `reference` = the pair id), and the ACCPAY from the payable leg (`amountPayable =
        payable.amount`, `invoiceNumber = payable.number`);
      - it stamps `xeroAccRecId` and `xeroAccPayId` on the legs in the same `mutate`;
+     - the ACCPAY contact is the pair's stamped payee (as 25 left it), never a List lookup;
+     - a held prepayment pair hands off as drafts (ACCREC `draft`, ACCPAY `draft`), as 27 built it;
+       approval moves the ACCREC on, and a withdrawal voids both mirrors;
      - an `aaFee` pair gets its 16-style `kind: 'aaFee'` ACCREC against the anaesthetist's existing
-       contact, and no ACCPAY.
+       contact, and no ACCPAY;
+     - the `reference` carries only the pair id: no name, NHI or other personal data (OQ-30).
    - Idempotency keys on the leg ids. The fault path records `pair.handoffFailure` and creates no Xero
      records, but the pair and its money state stand. The monitor and Ledger show "Not yet in Xero".
    - The handoff never creates, amends or deletes a ledger record, other than stamping the mirror
@@ -401,7 +559,9 @@ read the same after the change, and a parity test proves it.
      `UnmatchedReceipt` (status `held`), audited `ledger.unmatchedReceipt`.
    - 16's `recordAaFeePayment` writes a `LedgerReceipt` with `pairKind: 'aaFee'` on the fee pair.
      Add `incomeReceiptsFor(state, anaesthetistId)`, which excludes `aaFee`, and use it everywhere a
-     receipt means income (GST activity, `uncoveredCollectionsFor`, payment history).
+     receipt means income (GST activity, payment history). Fee money never reaches the BCTI count
+     either: that reads payable legs, and a fee pair has none.
+   - A payment on a held prepayment ACCREC is refused as 27 refuses it (not sent yet).
    - New store actions in `store/ledgerActions.ts`:
      - **`recordUnmatchedReceipt(api, { amount, reference, idempotencyKey, source, atISO? })`**: a
        system actor (`Xero webhook`, the existing `paymentActions.ts` system actor); idempotent by key.
@@ -424,21 +584,28 @@ read the same after the change, and a parity test proves it.
      - an ACCREC with no pair becomes one held receipt, and a replay does not add a second;
      - allocation refusals, and a successful allocation returning the ledger to balance;
      - a refund returning it to balance;
-     - fee payments never reach GST activity or the next fee run.
+     - fee payments never reach GST activity, payment history or the BCTI count.
 7. **Payables are computed from the ledger** (`payablesActions.ts`; US-08.3.2, US-10.1.2):
-   - `payablesDue(state)` reads the payable legs (`releasedAmount - disbursedAmount`) and drops its
-     `Pick<AppState, 'xero'>` signature (the internal `caseByAccPay` map goes). It keeps 26's `byAnaesthetist`, `destinationMasked` and
-     `heldForBank`.
+   - `payablesDue(state)` reads the payable legs of issued pairs (`releasedAmount - disbursedAmount`)
+     and drops its `Pick<AppState, 'xero'>` signature (the internal `caseByAccPay` map goes). It keeps
+     26's `byAnaesthetist` (keyed on the stamped payee), `destinationMasked` and `missingBank`. Keep
+     `byAnaesthetist` a signed sum per payee over legs: Phase 39a adds negative legs, nets them per
+     anaesthetist and puts its period approval (US-10.2.6) in front of this same figure, with no second
+     source.
+   - Prepayment pairs release on receipt by 16's rule, as 27 left them. Holding prepaid money in trust
+     until the procedure (OQ-40) is Phase 41's; do not add a hold here.
    - `runPayables` and `disbursePayable(api, actor, pairId)` iterate the pairs and apply
      `applyDisbursement`. Each writes a `LedgerDisbursement` (with 26's destination) and mirrors a
      Xero `Disbursement` plus the ACCPAY's `amountDisbursed` and status, audited `ledger.disbursed`
      then `xero.disbursed`.
    - A pair with a released amount but no ACCPAY mirror cannot occur (a receipt needs an ACCREC);
      guard it anyway with `notInXero`, skip, and count.
-   - 26's bank hold is unchanged.
+   - 26's destination snapshot and `missingBank` flag are unchanged (a payee with no bank account on
+     file is still paid, with a `null` destination, as 26 built it).
+   - The run stays an on-demand office action (OQ-47 open): no payment day, no weekly close.
    - Tests: two partial runs never double-pay; `payablesDue` is identical whether or not `state.xero`
-     is present in the input (prove the ledger alone drives it); the run mirrors exactly what it
-     disbursed.
+     is present in the input (prove the ledger alone drives it); the run pays each payee what their
+     legs release, and mirrors exactly what it disbursed.
 8. **Selectors re-point** (a new `store/ledgerSelectors.ts`, re-exported from the store index;
    `selectors.ts` updated in place). Every app money view reads the ledger, never `state.xero`
    (US-08.3.2). Only the Xero simulation and the webhook picker read Xero.
@@ -453,16 +620,37 @@ read the same after the change, and a parity test proves it.
      boolean result is unchanged; Phase 40 builds on the position.
    - Prepayment (27's `prepaymentStatusFor`, `prePaymentInvoicesForBooking`, `prePaidByProcedure`):
      invoiced and received totals come from the Booking's `prePayment` receivable legs.
+   - `prepaymentStatusFor`'s `awaitingApproval`, `unpaid`, `partPaid` and `paid` read the pair's
+     `issue` and receivable leg; withdrawn pairs never count (27's rule). 27's prepayment warning
+     (15a's routine) reads this status, so its mild and strong text does not change.
    - `billingMonitor` reads `pairStatusLabel` and the exceptions. It keeps counting run output only
      (not prepayment pairs), per the Phase 09 ruling.
    - The anaesthetist views:
      - `accpayInvoicesFor` becomes `payableRowsFor`, and `outstandingPayableRowsFor`,
        `overdueAccountsFor` and `receivablesAgingFor` follow; `paymentHistoryFor` reads the legs;
+     - rows select on the stamped payee (`pair.anaesthetistId`); `anaesthetistIdForCase` (both
+       copies, which 25 pointed at the stamped payee) is deleted, not kept as a List join;
      - a row no longer needs the Xero mirror to be visible. The ledger says the money is owed, so a
        handoff fault no longer hides it from the anaesthetist. The next-day rule stays;
-     - the aging logic is unchanged (Phase 38 reworks it).
-   - 16's `aaFeeInvoicesFor`, `allAaFeeInvoices` and `pendingAaFeeSummary` take their status and
-     amounts from the fee pair.
+     - the aging logic is only re-pointed: Phase 38 replaces it with the flat outstanding list with
+       no ageing (D8).
+   - 16's `aaFeeInvoicesFor`, `allAaFeeInvoices` and `aaFeeRunPreview` take their status and amounts
+     from the fee pair.
+   - **The BCTI count re-reads from the ledger** (FT-10.3, US-10.3.1; the critic's point kept):
+     - `bctiRecords(state)` becomes `bctiRecordsOf(Object.values(state.billing.ledger))` and stops
+       reading `state.xero.accPays`. `bctisFor` and `aaFeeFor` are untouched: one count, one list.
+     - Update the comment beside `bctiRecords` (16's one place): one BCTI per receivable invoice (its
+       payable leg), counted against the stamped payee, issued legs only. Do not restate it anywhere
+       else.
+     - **Parity test** (in `ledgerParity.test.ts`, item 1): on the seed and at every step of the five
+       scripted flows, the records equal the pre-change `bctiRecords` output (compared on bill number,
+       receivable invoice number, anaesthetist, issued date and voided; the `accPayId` may be the leg's
+       mirror id), and `aaFeeRunPreview` and every raised fee invoice's `bctiCount`, lines and total
+       are unchanged. Dr Rutherford's July fee is still $700.00.
+     - Two deliberate differences, each with its own test and a Decisions-log line: a pair whose
+       handoff failed now counts (the BCTI was issued when the invoice was raised, not when Xero got
+       it), and a held prepayment pair does not (nothing has been sent). If 16 and 27 shipped either
+       of these the other way, only that flow step is re-pinned, with the reason.
    - `openAccRecs` excludes any ACCREC no pair links.
    - New:
      - `ledgerPositionOf(state)`, `anaesthetistLedgerPosition(state, id)` and
@@ -470,7 +658,9 @@ read the same after the change, and a parity test proves it.
      - `ledgerRows(state, { scope, anaesthetistId?, openOnly })` for the table;
      - `heldUnmatchedReceipts(state)`, and `ledgerAttentionCount(state)` (held receipts plus checks).
    - **Gate:** this grep returns nothing:
-     `grep -rnE "billing\.cases|BillingCase\b|BillingReceipt\b|MirrorState|billing mirror|Engine's own mirror|Billing Engine MIRROR|retryBillingCase|handoffCase\(" aa-prototype/src aa-prototype/visual`
+     `grep -rnE "billing\.cases|BillingCase\b|BillingReceipt\b|MirrorState|billing mirror|Engine's own mirror|Billing Engine MIRROR|retryBillingCase|handoffCase\(|anaesthetistIdForCase|excessAboveFinal" aa-prototype/src aa-prototype/visual`
+     And `grep -rn "accPays" aa-prototype/src/store/selectors.ts aa-prototype/src/store/ledgerSelectors.ts`
+     finds no BCTI or money read.
      Also check that no file under `src/apps/web`, `src/apps/mobile`, `src/apps/admin` or
      `src/shared` reads `s.xero` or `state.xero` for a money figure. Two reads are allowed and stay:
      `MasterData.tsx`'s `XeroArchivingView` (contact archiving), and the demo-trigger entries in
@@ -484,13 +674,20 @@ read the same after the change, and a parity test proves it.
    - The seeded receipts become `LedgerReceipt` rows (`pairId`, `pairKind`).
    - Each seeded Xero `Disbursement` gets a matching `LedgerDisbursement` (`LD` ids in the `H`
      namespace for history, for example `LDH01`), with 26's destination.
+   - Every seeded pair carries its payee (Dr Souter for the history; the seeded prepayment's basis
+     anaesthetist for `BC0001`) and `issue: 'issued'` (27's seeded prepayment is approved and sent).
    - 16's fee history becomes two `aaFee` pairs: H01 paid (with its fee receipt entry) and H02
-     unpaid.
+     unpaid, created through `raiseAnaesthetistInvoiceInto`'s pair constructor.
+   - 16's "Seed a month of BCTIs" builder (Dr Rutherford's 40 paid and disbursed July accounts) builds
+     pairs, receipts and ledger disbursements through the same constructors, so after it the ledger is
+     still in balance and `bctisFor` still counts 40.
    - The seeded missed-webhook `PaymentIn` stays Xero-only. The ledger does not know it until the
      poll runs, which is the point of that beat.
    - The seed is **in balance.** Add these `seedBilling.test.ts` assertions:
      - `ledgerPositionOf(seed).imbalance === 0` and `checks` is empty;
-     - every Booking pair has `payable.amount === receivable.amount`;
+     - every Booking pair has `payable.amount === receivable.amount`, exactly one payable leg, and
+       `pair.anaesthetistId === payable.anaesthetistId`;
+     - `bctiRecords(seed)` equals the pinned pre-change records (item 1);
      - every leg's cumulative amounts equal the sums of its entries;
      - every Xero ACCREC and ACCPAY maps to exactly one leg, except the missed-webhook payment's
        unmirrored receipt;
@@ -514,7 +711,7 @@ read the same after the change, and a parity test proves it.
     - Edit the UI only as far as compiling needs (renamed selectors; the monitor's retry calls
       `retryBillingException` and `handoffPair`).
     - Run `npm run build`, `npm run build:pwa` and `npx vitest run`, all green, with item 1 passing
-      unchanged.
+      unchanged (including the BCTI and fee-run parity).
     - Write a short "session 1 done" note in the PROGRESS entry.
 
 **Session 2: the Ledger screen, the surfaces, triggers and the demo.**
@@ -529,8 +726,9 @@ read the same after the change, and a parity test proves it.
         badge.
     - **Header:** h1 "Ledger", and the intro: "The Billing Engine's own ledger is AA's system of
       record. Every invoice is a receivable from the billable party and a linked payable to the
-      anaesthetist. Xero mirrors it for receivables and banking." A small neutral note: "Layout
-      provisional. Detailed requirements to be worked out with AA (US-13.2.1)."
+      anaesthetist. Xero mirrors it for receivables and banking." A small neutral note: "The detail of
+      these views is still to be worked out with AA." (US-13.2.1's own note; it is not an open
+      question.)
     - **Scope:** a Segmented control, "Whole ledger" or "One anaesthetist", with a select (roster
       order, `drSurname` from `shared/format.ts`). It is URL-driven, so the browser Back button
       works.
@@ -543,13 +741,14 @@ read the same after the change, and a parity test proves it.
     - **Tiles** (the Admin Review tile row, `data-shot="ledger-tiles"`):
       - Whole ledger: Receivables outstanding, Receipts held, Payables due (with a teal text link,
         "Run payables in the Billing monitor", to `/admin/billing`, whose own product button runs
-        them), Disbursed. A secondary
-        row shows Awaiting collection (payables not yet released), AA fees outstanding (with 16's
-        basis label), Not yet in Xero (count), and, when 27 recorded any, "Pre-paid above final fee,
-        credit due" (labelled "Credit handled in a later release").
+        them), Disbursed. A secondary row shows Awaiting collection (payables not yet released), AA
+        fees outstanding (unpaid monthly fee invoices, linking to 16's `/admin/billing/aa-fees`), Not
+        yet in Xero (count), Pre-payments awaiting approval (count and total, linking to 27's Invoices
+        strip; not yet owed, so outside every other figure), and, when 27 recorded any, "Pre-paid
+        above final fee" with the caption "Kept, not refunded" (OQ-03). None of these four enters the
+        equation.
       - One anaesthetist: Owed to them (with "due now $X · awaiting collection $Y"), Collected,
-        Paid out, They owe AA (unpaid AA fee invoices, basis label), and the scoped balance
-        indicator.
+        Paid out, They owe AA (unpaid monthly fee invoices), and the scoped balance indicator.
     - **Unmatched receipts card** (`data-shot="ledger-unmatched"`, whole-ledger scope, only when any
       exist):
       - rows show Received, Reference, Amount (mono) and a status pill (Held warning, Allocated
@@ -562,14 +761,21 @@ read the same after the change, and a parity test proves it.
       These are product office actions, unbadged.
     - **Pairs table** (`data-shot="ledger-pairs"`, `tableChrome` cells):
       - columns: Receivable (mono number), Payable (mono, `-P`, "None" for an AA fee), Kind
-        (Procedure, Pre-payment, AA fee), Patient (name only, never the NHI), Payer, Anaesthetist
-        (surname; hidden in the anaesthetist scope), Amount, Received, Released, Paid out, Xero
-        ("Mirrored" or "Not yet in Xero" warning pill);
+        (Procedure, Pre-payment, AA fee), Patient (name only, never the NHI), Payer, Payee (surname;
+        hidden in the anaesthetist scope), Amount, Received, Released, Paid out, Xero ("Mirrored", or
+        a "Not yet in Xero" warning pill; a neutral "Contact archived in Xero" note when the payer's
+        Xero contact is archived, because the pair does not depend on it, FT-08.3 and US-08.3.3);
+      - a held prepayment pair shows a neutral "Awaiting approval" pill and blank money columns; a
+        withdrawn one shows only under All, with a neutral "Withdrawn" pill;
       - filter chips: Open (default: anything outstanding or not fully paid out) and All;
       - a row opens `/admin/invoices/:invoiceId`, or `/admin/billing` for an AA fee;
       - excludes nothing: the seeded history is ledger data. Totals row in mono.
-    - **Footnotes:** "Receipts held is the money AA holds for anaesthetists; it is not a trust
-      account (OQ-40)." And one line on scale: at 28,000 invoices a year this table pages.
+    - **Footnotes:** "Receipts held is the money AA holds for anaesthetists, including pre-payments
+      received." (OQ-40. Do not claim a trust hold here: until Phase 41 a prepayment still releases on
+      receipt, as 27 left it. Phase 41 adds the trust account and its hold, and changes this line.)
+      "One payable per invoice, for the same amount." (The buyer-created tax invoice wording is Phase
+      22's, on the Xero ACCPAY, OQ-29.) And one line on scale: at 28,000 invoices a year this table
+      pages.
     - Empty and zero states read calmly ("No payables due").
 13. **Re-point the office surfaces.**
     - **Billing monitor:**
@@ -586,17 +792,20 @@ read the same after the change, and a parity test proves it.
         (`/admin/ledger?pair=<id>` highlights it).
     - **Invoices screen:** the failed-case banner reads `openBillingExceptions`.
     - **Review:** the post-authorise banner counts the pairs created.
-    - **Booking prepayment panel (27):** check that it reads the re-pointed status and that nothing
-      changed on screen.
+    - **Booking prepayment panel, rail card and Invoices "Awaiting approval" strip (27):** check that
+      they read the re-pointed status and that nothing changed on screen.
+    - **AA fee invoices (16):** the fee table's status and paid date come from the fee pair, and each
+      expanded row's counted BCTIs list the payable leg numbers (`-P`). No visual change.
 14. **The anaesthetist surfaces** (US-08.3.5 "a single place", US-08.3.2):
     - **Web Accounts:** a "Your position" strip above the sub-tabs (`data-shot="web-accounts-position"`,
       Web Dashboard panel anatomy): Owed to you (due now and awaiting collection), Collected, Paid out
-      to you, and You owe AA (16's AA fees tab link, basis label). It uses
-      `anaesthetistLedgerPosition`.
+      to you, and You owe AA (unpaid monthly fee invoices, linking to 16's AA fees tab). It uses
+      `anaesthetistLedgerPosition`, the one definition Phase 38's dashboard panel reuses.
     - **Mobile Balances:** the header card keeps "Outstanding to you" and adds one mono line,
-      "Collected $X · Paid out $Y", plus "You owe AA $Z" when above zero.
+      "Collected $X · Paid out $Y", plus "You owe AA $Z" when above zero (one line only; the fee
+      invoice list stays on web, as Phase 16 placed it).
     - **Dashboard:** the aging panel reads the re-pointed selector. No visual change; Phase 38
-      rebuilds that panel.
+      replaces it with the financial position and the flat outstanding list (D8).
     - Copy: replace "from the billing MIRROR", the "Unpaid ACCPAY invoices appear here the day after
       they are billed" empty states and the "One row per outstanding ACCPAY invoice" caption with
       ledger wording, for example "Invoices appear here the day after they are billed." and "One row
@@ -625,6 +834,8 @@ read the same after the change, and a parity test proves it.
     - disabled reasons;
     - the inject body creates exactly one held receipt, and a second press is disabled;
     - the re-pointed payment entries move the ledger and Xero together;
+    - 16's re-pointed "Seed a month of BCTIs" and "Record fee payment" write pairs and fee receipts,
+      and the fee run after them still gives $700.00;
     - the PWA stand-in disburses only what is due.
     Never add anything to the Control Panel page. Update the Control Panel S3 scenario text
     (`DemoControlPanel.tsx`) for the new closing beat.
@@ -644,7 +855,7 @@ read the same after the change, and a parity test proves it.
     - Update `xero-pair.spec.ts` (the ledger pair callout), `admin-phase09.spec.ts` (the monitor and
       invoice rail), the web Accounts shot (position strip) and the mobile Balances shot.
     - Run
-      `node requirements-board/scripts/capture.ts --only US-08.3.1,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1 --dry`
+      `node requirements-board/scripts/capture.ts --only US-08.3.1,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-09.1.4 --dry`
       and record which recipes break or can now move from "absent" to real shots (US-13.2.1). Do not
       edit catalogue files.
     - Patch the demo guide (below).
@@ -655,8 +866,11 @@ Harness bar (framed build):
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Inject unmatched receipt | Admin · Ledger (`/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId`) | bar | A bank-feed notification arrives for $120.00 with reference "Bank deposit · SOUTER JULY" that matches no invoice number. Calls `recordUnmatchedReceipt` (named seed constant `UNMATCHED_RECEIPT_DEMO`, key `UNMATCHED-DEMO-<n>` from 14's `memory.ts` counter, source webhook). The indicator turns "Out of balance by $120.00" with one check, and the nav badge shows 1. Disabled with "Resolve the held receipt first" while one is held. The office clears it with the screen's own "Allocate to invoice" or "Mark refunded" |
+| Inject unmatched receipt | Admin · Ledger (`/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId`) | bar | A bank-feed notification arrives for $120.00 with reference "Bank deposit · SOUTER JULY" that matches no invoice number. Calls `recordUnmatchedReceipt` (named seed constant `UNMATCHED_RECEIPT_DEMO`, key `UNMATCHED-DEMO-<n>`, where n is one more than the unmatched receipts already in the ledger, so a reload never reuses a key; source webhook). The indicator turns "Out of balance by $120.00" with one check, and the nav badge shows 1. Disabled with "Resolve the held receipt first" while one is held. The office clears it with the screen's own "Allocate to invoice" or "Mark refunded" |
 | Payment received · full / half, Replay last payment event (re-pointed) | 14's routes (Admin · Invoice document, Xero sim pair detail), plus Admin · Ledger | bar | Same bodies and idempotency keys as 14 and 16. On the Ledger, `choices` are the open Booking receivables that have a Xero ACCREC (number, payer, balance). The receipt lands in the ledger first, then Xero; tiles and indicator update in place and stay in balance |
+| Run archive job (re-pointed) | 14's routes (Admin · Billing monitor, Xero sim), plus Admin · Ledger | bar | 14's `run-archive-job`, unchanged body (it archives Xero contacts only). On the Ledger, the archived payer's pairs stay listed with their money, and the Xero column notes "Contact archived in Xero" (FT-08.3, US-08.3.3) |
+| Seed a month of BCTIs, Record fee payment (re-pointed) | 16's routes (`/admin/billing/aa-fees`; Xero sim fee pair) | bar | 16's entries, same labels and disabled reasons. The seeded July accounts are now pairs with ledger receipts and disbursements, so the ledger stays in balance; "Run monthly fee invoices" still gives Dr Rutherford $700.00. "Record fee payment" writes the fee pair's receipt, so They owe AA falls and nothing else moves |
+| Add prepaid-list Booking (re-pointed) | 27's routes (Admin · Day, Admin · Booking detail) | bar | 27's entry, same body. The generated invoice now also creates a held Pre-payment pair, shown on the Ledger as "Awaiting approval" and counted in no total until Approve and send |
 | Parallel run variance (optional, item 18) | Admin · Billing monitor (`/admin/billing`) | bar | Toggles the badged legacy-versus-ledger panel. Label reads "Hide parallel run variance" while shown. Never disabled |
 
 "Run payables" is **not** a bar entry. Phase 14 ruled that its home is the Billing monitor's own
@@ -670,6 +884,9 @@ PWA equivalents (the mobile Balances "paid out" figure waits on the office's pay
 | Office runs payables | Mobile · Balances (`/mobile/balances`) | PWA only, badge office stand-in | `runPayables(OFFICE_SIMULATION_ACTOR)` (14's actor, `badge: 'office-stand-in'`, `surfaces: ['pwa']`). The header card's "Paid out" rises by what was due. Message names the amount paid out to Dr Souter. Disabled with "Nothing due to pay out" when Dr Souter's `dueNow` is zero |
 | Payment received · full / half | Mobile · Balances | PWA only | 14's `pwa-payment-full` / `pwa-payment-half`, unchanged bodies. Now "Collected" moves as well as "Outstanding to you" |
 
+14's PWA-only "Office authorises this List" is unchanged in body: the billing run it triggers now
+creates the pairs, with the payee stamped from the lock, so Balances reads them the next day.
+
 There is no Ledger screen on the PWA and no mobile beat waits on the ledger itself, so no further
 PWA entry is needed. The office-only allocation and refund are product actions in Admin.
 
@@ -682,12 +899,18 @@ PWA entry is needed. The office-only allocation and refund are product actions i
   list without ageing (RV-19, D8), the GST-period activity summary aligned to the profile, and
   billed Lists that stay visible (D9): Phase 38. This phase only re-points the reads and adds the
   Accounts position strip.
-- Credit legs, reversing a pair (US-08.3.1's "reversed" clause), credit-and-rebill and additional
-  invoices: Phase 39.
-- The patient screen, US-13.2.2 and US-11.3.1's invoice view, the missing-NHI list and the unpaid
-  alert: Phase 40. This phase supplies `patientLedgerPosition` only.
-- The trust account, prepayment refunds and turning the prepaid-above-final excess into a credit:
-  Phase 41.
+- The cash-basis GST schedule over the ledger's disbursement entries: Phase 38.
+- Credit legs, reversing a pair (US-08.3.1's "reversed" clause), credit-and-rebill (OQ-19, OQ-28)
+  and free-form additional invoices (D10): Phase 39.
+- The payables run record, period approval of BCTIs (US-10.2.6), negative invoices netted in the run
+  (US-10.2.5, OQ-42), the remittance advice and the carried-forward negative (OQ-71): Phase 39a.
+- The patient screen, US-13.2.2 and US-11.3.1's invoice view, the missing-NHI list and the mild or
+  strong unpaid-patient warning (OQ-41): Phase 40. This phase supplies `patientLedgerPosition` only.
+- The trust account holding prepayments until the procedure (OQ-40), refunds on cancellation, the
+  overpaid-prepayment surfaces (OQ-03: kept, no credit) and repointing a moved prepaid Booking's
+  payee (US-06.5.4): Phase 41.
+- Splitting a payable per Procedure ("one BCTI per procedure", OQ-29): not built; raise it with AA's
+  accountant beside OQ-29 and OQ-60.
 - A real parallel-run reconciliation, a payment day or weekly cycle (OQ-47), bank feeds, and a
   general ledger. Xero is not AA's general ledger, and neither is this.
 - Mobile or web views of the ledger beyond the position figures.
@@ -697,12 +920,13 @@ PWA entry is needed. The office-only allocation and refund are product actions i
 - [ ] Reset. Admin side nav shows "Ledger" with no badge. The whole ledger reads "In balance · receipts
       held equal payables due", and the equation reads $0.00 imbalance.
 - [ ] The tiles show Receivables outstanding (the seeded unpaid history), Receipts held equal to
-      Payables due, and Disbursed (the seeded paid accounts and BC0001). AA fees outstanding shows H02
-      with the basis label.
+      Payables due, and Disbursed (the seeded paid accounts and BC0001). AA fees outstanding shows
+      Dr Souter's unpaid June fee invoice (H02).
 - [ ] One anaesthetist, Dr Souter: Owed to her (due now and awaiting collection), Collected, Paid out
       and She owes AA agree with web Accounts (Overdue total, Payments, AA fees) for the persona.
 - [ ] S3 flow: authorise Souter Mon 20 AM and PM. The Ledger gains one pair per invoice, each with
-      `-P` payable numbers and Xero "Mirrored". Every figure in item 1 is unchanged.
+      one `-P` payable number (one even for a multi-Procedure invoice), Payee Souter and Xero
+      "Mirrored". Every figure in item 1 is unchanged.
 - [ ] Demo actions on the nib invoice, Payment received · half. The Ledger shows Received and
       Released up by exactly the half, and Payables due up by the same. It stays in balance. The
       invoice document chips and the Xero sim agree ("Matches the ledger").
@@ -721,8 +945,16 @@ PWA entry is needed. The office-only allocation and refund are product actions i
       invoice the next day regardless. Resolve and retry mirrors it.
 - [ ] S4 Beat 3: the billing failure shows as an exception in the monitor, not as a ledger row.
       Resolve and retry creates the pair.
-- [ ] 27's prepayment: raise Riley's prepayment. A Pre-payment pair appears, and "Payment received ·
-      half" shows part paid on the Booking panel and in the Ledger.
+- [ ] 27's prepayment: "Add prepaid-list Booking". A Pre-payment pair appears as "Awaiting approval",
+      and no tile moves. Approve and send: Receivables outstanding rises by its total. "Payment
+      received · half" shows part paid on the Booking panel, its warning text and the Ledger, which
+      stays in balance.
+- [ ] AA fee invoices: "Seed a month of BCTIs", then "Run monthly fee invoices" for July 2026. Dr
+      Rutherford's fee invoice is $700.00 ($500.00 + $5.00 x 40), its counted BCTIs list `-P`
+      numbers, and the Ledger gains an AA fee pair (Payable "None") under AA fees outstanding, with
+      the imbalance unchanged. "Record fee payment" clears it.
+- [ ] "Run archive job" on the Ledger: the archived contact's pairs stay listed with their money, and
+      the Xero column notes the archived contact.
 - [ ] Web Accounts shows the "Your position" strip. Mobile Balances shows "Collected $X · Paid out
       $Y". Neither says "ACCPAY" or "mirror".
 - [ ] Xero sim pair detail shows "Ledger pair (the system of record)" with both numbers and the
@@ -754,10 +986,14 @@ Patch these in the same session, in `docs/demo-guide/` and the matching sections
     someone. A receipt nobody can match shows up as an imbalance, not a mystery in Xero."
   - **Expected:** in balance; the $120.00 imbalance with its explanation; back in balance after
     allocation.
+- S3 Beat 4 (the monthly AA fee, as Phase 16 left it): no figure changes; add to Expected "the fee
+  invoice is an AA fee pair on the Ledger, with no payable, outside the balance".
 - S4 Beat 5 (partial payment): add to Expected "the Ledger's Payables due rises with each part payment
   and returns to $0.00 after each run".
 - S3 "Discovery points": add "how AA wants unmatched receipts handled (allocate, refund, or hold for
-  investigation), and the detail of the balance views (US-13.2.1 says it is to be worked out)".
+  investigation), the detail of the balance views (US-13.2.1 says it is to be worked out), and
+  whether a buyer-created tax invoice is one per invoice, as built, or one per procedure (OQ-29, with
+  AA's accountant)".
 - `04-presenter-cheat-sheet.md`: line 124 ("reads the Billing Engine's mirror") becomes the ledger
   wording, plus a short "Internal ledger" section (pairs, the equation, the trigger and where it
   lives).
@@ -783,8 +1019,21 @@ explicitly supersedes.
 
 **Steer this phase's reviewers at:**
 
-- **Parity.** `ledgerParity.test.ts` passes with only import renames. No presenter-visible figure in
-  S3, S4 or S5 moved. Any case-reference shift is recorded.
+- **Parity.** `ledgerParity.test.ts` passes with only import renames (and item 8's two named BCTI
+  differences, if they applied). No presenter-visible figure in S3, S4 or S5 moved. Any
+  case-reference shift is recorded.
+- **The BCTI count.** `bctiRecords` reads payable legs only, never `state.xero.accPays`; `bctisFor`
+  is still the only count; the fee run preview and every fee invoice match the pinned figures, and
+  Dr Rutherford's July fee is $700.00.
+- **One payable leg per receivable invoice.** No code splits a payable per Procedure; `procedureShares`
+  is information, not a second payable. A Split payment setting gives two pairs, not one pair with two
+  payables.
+- **The payee.** Every procedure pair's payee comes from 25's lock, and every prepayment pair's from
+  `prepaymentBasisAnaesthetist`. Nothing re-derives it from the List (grep for the deleted
+  `anaesthetistIdForCase`), and a test proves a List change after authorise does not move it.
+- **Prepayment approval.** A held pair counts in no total, no payables figure and no BCTI count; a
+  withdrawn pair never counts; approval issues it exactly once; a re-estimate rewrites the held pair
+  with its invoice and never touches a sent one.
 - **One ledger, not two.** `BillingCase` is gone, not wrapped. No code keeps money state both on a pair
   and somewhere else (16's `AaFeeInvoice` money fields are deleted, not left stale). Xero records hold
   only mirrored copies.
@@ -799,7 +1048,7 @@ explicitly supersedes.
   - Cumulative leg amounts always equal the sums of their entries.
 - **The equation.**
   - The imbalance is `receiptsHeld - payablesDue`, exact to the cent.
-  - AA fee money and 27's excess are never counted in it.
+  - AA fee money, held prepayments and 27's kept excess (OQ-03) are never counted in it.
   - The per-anaesthetist positions partition the whole ledger.
   - The seed is in balance.
   - An unmatched receipt is the only way the demo goes out of balance, and allocating or refunding it
@@ -815,7 +1064,7 @@ explicitly supersedes.
   - No app money view (web, mobile, admin, shared) reads `state.xero`.
   - `payablesDue` and the run work from the ledger alone.
   - An invoice not yet in Xero is still owed and still visible to the anaesthetist the next day.
-  - Fee payments never reach GST activity, payment history or the next fee run.
+  - Fee payments never reach GST activity, payment history or the BCTI count.
 - **Patient data.** The pair's `patientId` is the hidden internal id. The NHI never appears in the
   ledger table, the Xero sim or any new Xero field (`xeroNhi.test.ts`).
 - **Copy, design, triggers.**
@@ -830,16 +1079,18 @@ explicitly supersedes.
 ## PROGRESS.md updates
 
 - Status row for catch-up Phase 36, and a phase entry covering:
-  - the drift-check result and the OQ interims (OQ-02, OQ-29, OQ-40, OQ-47);
+  - the drift-check result; the answers built (OQ-02, OQ-03, OQ-05, OQ-30, OQ-40, OQ-42) and how the
+    open questions were handled (OQ-29, OQ-47, OQ-60, OQ-71);
   - what 16 to 27 were found to provide, and the renames made (the selector and store names in item
     8);
   - the session split and the adversarial pass;
-  - the tests added (the ledger module, parity, unmatched receipts, payables from the ledger, seed
-    balance, triggers);
+  - the tests added (the ledger module, parity, the BCTI and fee-run parity, the stamped payee,
+    prepayment approval states, unmatched receipts, payables from the ledger, seed balance,
+    triggers), and whether either of item 8's deliberate BCTI differences applied;
   - `PERSIST_VERSION` old to new;
   - any shift in case references;
   - whether item 18 was built;
-  - the capture recipes that can now be shot (US-13.2.1) or broke.
+  - the capture recipes that can now be shot (US-13.2.1) or broke (US-08.3.1, US-09.1.4).
 - Decisions log:
   - **Superseded:**
     - The 2026-07-24 Phase 10 build decision (1): money source of truth as three cumulative amounts on
@@ -850,21 +1101,45 @@ explicitly supersedes.
       It is now read from the prepayment receivable leg.
     - Phase 16's reading that the AA fee invoice sits outside `billing.cases`. It is now an `aaFee`
       ledger pair with a receivable leg and no payable.
+    - Phase 16's `bctiRecords` source (`state.xero.accPays`). It now reads the payable legs; the count
+      rule beside it is unchanged.
+    - Phase 25's `BillingCase.payeeAnaesthetistId` and Phase 27's `excessAboveFinal` on the case. The
+      payee lives on the pair and its payable leg; the excess is `prepaidAboveFinal` on the prepayment
+      pair.
     - The Phase 10 phrasing "apps read the Billing Engine's mirror, never Xero". It becomes "apps read
       the ledger, the system of record".
-  - **New provisional readings:**
-    - The imbalance equation, and that AA fee money and prepaid excess sit outside it.
+  - **New readings:**
+    - The imbalance equation, and that AA fee money, held prepayments and the kept prepaid excess
+      (OQ-03) sit outside it.
     - An unmatched receipt is held in the ledger and cleared only by office allocation or refund.
-    - A billing-run failure is a `BillingException`, not a ledger pair.
+    - A billing-run failure is a `BillingException`, not a ledger pair; one per Booking, which fails
+      whole (OQ-05).
     - An invoice's visibility to the anaesthetist no longer depends on the Xero mirror.
+    - A BCTI is issued when its invoice is raised (counted even before Xero has it) and not while a
+      prepayment awaits approval.
+    - A prepayment pair is created at generation and held until approval; withdrawal keeps it for
+      history and out of every total.
     - Case references keep the `BC` prefix as pair ids.
-    - "Receipts held" is not the trust account (OQ-40).
-    - The Ledger screen's layout is provisional (US-13.2.1).
+    - "Receipts held" includes prepayments received; the trust account that holds them until the
+      procedure (OQ-40) is Phase 41's.
+    - One payable leg per receivable invoice stays the plan's reading of OQ-29, in 16's one place
+      (still open with AA's accountant).
+    - The Ledger screen's detail is to be worked out with AA (US-13.2.1's own note).
 - **Handoff notes:**
   - 37 builds Xero-detected disbursement, remittance and void flags on the "Matches the ledger"
     comparison and the leg mirror ids.
-  - 38 builds the dashboard position panel on `anaesthetistLedgerPosition`.
-  - 39 adds credit entries to both legs and reverses pairs.
-  - 40 builds the patient view on `patientLedgerPosition`.
-  - 41 turns `creditDuePending` into credits and adds the trust account beside "receipts held".
+  - 38 builds the dashboard position panel on `anaesthetistLedgerPosition`, the flat outstanding list
+    (D8) on the receivable and payable legs, and the cash-basis GST schedule on the
+    `LedgerDisbursement` entries.
+  - 39 adds credit entries to both legs and reverses pairs; its additional invoices create pairs
+    through `newBookingPair`, so they feed `bctiRecords` with no other change.
+  - 39a builds the payables run record, period BCTI approval and negative-invoice netting on
+    `payablesDue.byAnaesthetist` and signed payable legs, and its carried-forward negative invoice
+    through `raiseAnaesthetistInvoiceInto`, which already creates the pair.
+  - 39b's event invoices create pairs through the same constructor and feed `bctiRecords`.
+  - 40 builds the patient view and the unpaid-patient warning on `patientLedgerPosition` (rows carry
+    the oldest unpaid raised date).
+  - 41 adds the trust account beside "receipts held" (and changes the footnote), surfaces
+    `prepaidAboveFinal` as kept (no credit, OQ-03), and repoints a moved prepaid Booking's payee on
+    the pair and payable leg through one action (US-06.5.4).
   - 43 loads full-scale pairs through the same constructors.

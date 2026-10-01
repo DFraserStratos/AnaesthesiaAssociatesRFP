@@ -1,56 +1,76 @@
 # Phase 28 · Slot and List split
 
 **Requirements covered:**
-[FT-01.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.2.md) Slot availability status ·
-[US-01.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.3.md) Status is independent of bookings ·
-[US-01.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.3.md) Manual List assignment ·
+[FT-01.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.2.md) Slot availability status (a status on the Slot, one mechanism with the calendar; Verify) ·
+[US-01.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.3.md) Status is independent of bookings, and a List shows in place of the status (Verify) ·
+[US-01.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.3.md) Manual List assignment (regraded Contradicts) ·
 [US-01.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.4.md) Slot default times ·
-[DM-02](../analysis/domain-model-delta.md#dm-02) Slot, List and Draft List are three things (the Slot and List half; Draft List is Phase 31) ·
-[DM-04](../analysis/domain-model-delta.md#dm-04) Slot availability held on the Slot, independent of bookings (the model half; the editable status master is Phase 29) ·
+[US-01.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.3.md) Slots from the anaesthetist's start date ·
+[DM-02](../analysis/domain-model-delta.md#dm-02) Slot, List and Draft List are three things (the Slot and List half, with the start date; Draft List is Phase 31) ·
+[DM-04](../analysis/domain-model-delta.md#dm-04) Availability is a status on the Slot, not a second record reconciled into the List (the model half; the calendar and the editable status master are Phase 29) ·
 [RV-14](../analysis/reverse-check.md#rv-14-list-status-mixes-availability-with-booking-type-empty-slot-modelled-as-a-list) List status mixes availability with booking type; empty Slot modelled as a List.
 Read alongside (not closed here):
 [EP-01](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-01.md),
 [FT-01.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.1.md) and
-[US-01.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.1.md) (two Slots per anaesthetist per day, already met by the canvas),
+[US-01.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.1.md) (two Slots per anaesthetist per day, default free, "stored or inferred is left to implementation"),
 [FT-01.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.3.md) and
 [US-01.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.1.md) (the pairing rule: Phase 31),
-[US-01.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.1.md) (reassign: its technical discussion is the mechanism this phase builds),
+[US-01.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.2.md) (recurring bookings, the catalogue's new name for Permanent Lists: Phase 30 renames them),
+[US-01.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.1.md) (reassign: its technical discussion is the mechanism this phase builds; its new note, the update email after a cover change, is Phase 35),
 [US-01.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.1.md),
 [US-01.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.2.2.md) and
-[US-01.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.3.md) (Phase 29),
-[OQ-17](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-17.md),
-[OQ-27](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-27.md), and the
+[US-01.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.3.md) (the calendar and the status master: Phase 29),
+[FT-01.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.6.md) (Draft Lists, including the Lists of an anaesthetist who marks themselves unavailable: Phase 31),
+[OQ-17](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-17.md) and
+[OQ-27](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-27.md) (both answered 2026-10-01: the status lives on the Slot),
+[OQ-64](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-64.md) (open: the logical model, stored or inferred Slots, the final status values and the names),
+the meeting note [2026-10-01 · AA meeting with Greg](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md) (#9, #13, #42), and the
 "Slot, List and Draft List" section of [domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
-**Depends on:** 14 (the demo-trigger registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts`, `store/officeStandIn.ts` and the PWA sheet `src/pwa/PwaDemoActions.tsx`) and 15 (Booking vocabulary: `bookingsForList`, `createBooking`, `schedule.bookings`). By the roadmap order 16 to 27 have also run; if 17 has, reuse its blacklist helper and `SurgeonSelect` in every picker this phase rewrites. First phase of the Schedule track; 29 to 32 build on it.
-**Estimated:** 2 sessions, and full ones: this is the largest structural change on the schedule side. Session 1 is the model, store and seed with every reader re-pointed (work items 1 to 12), re-greened and demoable with no visible change except the fixed behaviours. Deleting `listForSlot`, `List.statusKey` and `ListPatch`'s times forces a minimal re-point of the drawer, phone advice, Edit list and Reassign in session 1 (work item 12, "compile-forced minimums"); session 2 finishes them. Session 2 adds the new office flows, the settings editor, the stand-in trigger and the demo guide (work items 13 to 23). If session 1 runs long, keep the golden test and the green gate and move the README paragraph (23) and the capture-recipe edits (22) to the end of session 2 rather than cutting tests.
+**Depends on:** 14 (the demo-trigger registry, `useDemoTriggerContext`, `OFFICE_SIMULATION_ACTOR` in `store/demoActors.ts`, `store/officeStandIn.ts` and the PWA sheet `src/pwa/PwaDemoActions.tsx`) and 15 (Booking vocabulary: `bookingsForList`, `createBooking`, `schedule.bookings`). By the roadmap order 15a and 16 to 27 have also run; if 17 has, reuse its blacklist helper and `SurgeonSelect` in every picker this phase rewrites, and if 17 and 27 have, keep the blacklist acknowledgement and the prepayment re-check they hung on `reassignList` (work item 9). First phase of the Schedule track; 29 to 32 build on it.
+**Estimated:** 2 sessions, and full ones: this is the largest structural change on the schedule side. Session 1 is the model, store and seed with every reader re-pointed (work items 1 to 12), re-greened and demoable with no visible change except the fixed behaviours. Deleting `listForSlot`, `List.statusKey` and `ListPatch`'s times forces a minimal re-point of the drawer, phone advice, Edit list and Reassign in session 1 (work item 12, "compile-forced minimums"); session 2 finishes them. Session 2 adds the new office flows, the settings editor and start-date fields, the stand-in trigger and the demo guide (work items 13 to 23). If session 1 runs long, keep the golden test and the green gate and move the README paragraph (23) and the capture-recipe edits (22) to the end of session 2 rather than cutting tests.
 
 ## Goal
 
 The catalogue separates three things the prototype welds into one. A **Slot** is the AM or PM
-half-day every active anaesthetist has on every day of the canvas, and it can be empty. A **List**
-is assigned to an anaesthetist, sits in exactly one Slot and holds Bookings. A Draft List is a List
-not yet assigned to anybody (Phase 31). Today an empty Slot *is* a List (`statusKey: 'free'`,
-`state: 'DRAFT'`), the List id is derived from the Slot, and one six-value `statusKey` mixes
-availability (free, unavailable, holiday) with what is booked (private, public, pre-op). The admin
-grid then paints a phone-booked Free List as Private while both anaesthetist apps still say Free.
+half-day every active anaesthetist has on every day of the canvas, from their start date; it is free
+by default and can be empty. A **List** is assigned to an anaesthetist, sits in exactly one Slot and
+holds Bookings. A Draft List is a List with no anaesthetist yet (Phase 31). Today an empty Slot *is*
+a List (`statusKey: 'free'`, `state: 'DRAFT'`), the List id is derived from the Slot, one six-value
+`statusKey` mixes availability (free, unavailable, holiday) with what is booked (private, public,
+pre-op), and availability is a second record (`masters.availability`) reconciled into the Lists.
+The admin grid then paints a phone-booked Free List as Private while both anaesthetist apps still
+say Free.
+
+The 2026-10-01 meeting settled the shape (OQ-17 and OQ-27, answered): "The System will create AM & PM
+slots for every active anaesthetist. These slots can have a status, or a list." Availability is a
+**status held on the Slot**, and it is the **one mechanism** the anaesthetist's calendar edits
+(Phase 29), not a second record reconciled against Lists. Once a List is put in a Slot, **the List
+shows in place of the status**. OQ-64 keeps the logical model, storage, the final status values and
+the names open; this phase builds its recommendation (the working model, with every Slot stored, as
+the seed already generates) and labels only the status values and names as still to settle.
 
 This phase introduces:
 
-- a **Slot** record for each anaesthetist, day and session, with a deterministic id
-  (`S-<reg>-<date>-<AM|PM>`), holding the Slot's **availability**, an optional note, optional
-  start and end time **overrides** and (until Phase 32) the cover marker;
+- a **Slot** record for each anaesthetist, day and session **from the anaesthetist's start date**,
+  with a deterministic id (`S-<reg>-<date>-<AM|PM>`), holding the Slot's **status** (free by
+  default), an optional note, optional start and end time **overrides** and (until Phase 32 removes
+  it) the cover-request marker;
+- a **start date** on the anaesthetist (US-01.1.3), set in the Add flow and editable afterwards, so
+  a new anaesthetist's Slots begin on that date, not on the demo clock's today;
 - the **List** as its own record with a `slotId` and a `kind` (private, public, pre-op), created only
-  on assignment: by the office (**Assign List**, which requires a surgeon and a hospital, or
-  **Book (phone advice)**, which assigns and then adds a Booking), or by the Permanent List
-  projection when the canvas is generated;
-- a **displayed status derived from the Slot's availability plus the kind of any List in it**, never
-  from bookings, computed by one pure function and read identically by mobile, web and admin. The
-  six-colour design language stays, because the derived key is the same six keys;
+  on assignment: by the office (**Assign List**, which requires a surgeon and a hospital and turns a
+  free Slot into an ad hoc List, or **Book (phone advice)**, which assigns and then adds a Booking),
+  or by the recurring-booking projection (today's Permanent List templates) when the canvas is
+  generated;
+- a **displayed status** that is the List's kind when a List is in the Slot and the Slot's status
+  otherwise, never derived from bookings, computed by one pure function and read identically by
+  mobile, web and admin. The six-colour design language stays, because the derived key is the same
+  six keys;
 - **one settings record** for the default AM and PM start and end times, editable by the office, with
   per-Slot overrides;
 - **Reassign** as a move of the List between Slots: the List keeps its id, Bookings and history, the
-  target Slot must be empty and available, and the vacated Slot returns to available unless the
-  office marks it otherwise.
+  target Slot must be empty and free, and the vacated Slot returns to free unless the office marks it
+  otherwise.
 
 Every reader is re-pointed: the canvas generator, the clock roll-forward, selectors, the Admin Day
 grid and drawer, the mobile schedule and availability screens, the web Lists, week strip,
@@ -62,17 +82,23 @@ carrying an approval state, which settles the "DRAFT" label collision. `PERSIST_
 1. Diff the covered and read-alongside items against the plan's snapshot:
 
    ```
-   git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.1.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-01.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.1.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.5.3.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-17.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-27.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-44.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.1.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-01.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.1.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.3.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.2.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-01.5.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-01.6.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-17.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-27.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-44.md" "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-64.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Also run the whole-catalogue diff from ROADMAP.md "When the catalogue changes" and scan it for new
-   items that name Slot, List, availability or default times. (At plan time, 2026-09-30, the catalogue
-   had no diff against `1f067a8`.)
+   items that name Slot, List, availability, status, start date or default times. (At plan update,
+   2026-10-01, this doc is current at `501b0b8`: OQ-17 and OQ-27 answered, FT-01.2, US-01.2.3 and
+   US-01.5.3 rewritten to "a status on the Slot, one mechanism with the calendar, the List shows in
+   place of the status", US-01.1.3 rewritten to "Slots from the start date", OQ-64 added.)
 2. If an item changed, re-read it and adjust the work items. Things to look for:
-   - **FT-01.2 / US-01.2.3** (both Proposed): if either is now Retired or Future, keep the Slot record
+   - **FT-01.2 / US-01.2.3** (both Verify): if either is now Retired or Future, keep the Slot record
      (DM-02 still needs it) but drop the "independent of bookings" tests' requirement link and note it.
    - **US-01.3.3**: if manual assignment no longer requires a surgeon (for example "surgeon or
-     hospital"), relax the Assign List validation to match.
+     hospital"), relax the Assign List validation to match. Its note says anaesthetists are not
+     expected to turn a free Slot into a List; if that changes, the anaesthetist apps gain an assign
+     path, which is a new work item.
+   - **US-01.1.3**: if Slots are to start from something other than the start date (for example an
+     active-from flag), change the generator gate in work item 4 to match.
    - **US-01.1.4**: if default times become per hospital or per anaesthetist, the settings record in
      work item 5 takes that shape instead.
    - **US-01.4.1**: if the vacated-Slot default changes from "returns to available", change the
@@ -80,23 +106,27 @@ carrying an approval state, which settles the "DRAFT" label collision. `PERSIST_
    - **domain-model.md** "Slot, List and Draft List": if the hierarchy or the Slot's contents change,
      stop and re-plan work items 2 to 4 before building.
    - Any covered item now Retired or Future leaves the covers; record that in the PROGRESS entry.
-3. **Open questions** (the ROADMAP "Confirm before building" row for 28):
-   - **OQ-17** (the status vocabulary) and **OQ-27** (is List status the same thing as the
-     anaesthetist availability calendar) are Open at `1f067a8`. If still open, build this safe interim
-     and label it provisional:
-     - Slot availability keeps today's three values (`available`, `unavailable`, `holiday`, shown as
-       Free, Unavailable and Holiday or On leave as today). Phase 29 adds "available for emergency" and
-       makes the status set editable master data.
-     - The List's `kind` keeps the p.17 booking values (private, public, pre-op). This is OQ-27's
-       Model B reading for the List and its Model A reading for availability (held on the Slot, not
-       merged into the List). Both are compatible with either answer at the model level, because the
-       displayed key is derived and the Slot and List stay separate records.
-     - The Admin "List statuses" master view carries the line "Provisional: AA to confirm the status
-       set (OQ-17, OQ-27)".
-     If either is answered, follow the answer: a Model A ruling changes nothing structural here; a
-     Model B ruling that keeps a separate availability calendar is Phase 29's job, and this phase's
-     Slot availability becomes the reconciled projection of it.
-   - **OQ-44** (Draft List contents) does not gate this phase. Do not add Draft Lists here.
+3. **Open questions** (the ROADMAP "Confirm before building" row for 28 to 31, OQ-64):
+   - **OQ-17 and OQ-27 are answered** (2026-10-01): the availability status belongs to the Slot,
+     a Slot is free by default, the anaesthetist's calendar and the Slot status are one mechanism,
+     and a List in the Slot shows in place of the status. Build that; it is not provisional.
+   - **OQ-64 is open.** Build its recommendation ("keep the working model and Draft Lists for
+     unavailability, and settle names with AA's users"), labelled provisional in one place:
+     - **Storage:** every Slot is stored (US-01.1.1's technical discussion leaves stored or
+       inferred to implementation; about 20,000 small records, what the seed already generates).
+     - **Status values:** the Slot status keeps today's three values (`free`, `unavailable`,
+       `holiday`, shown as Free, Unavailable and Holiday). The final values and colours are not
+       named yet; Phase 29 makes the set editable master data (US-01.2.2).
+     - **Names:** the UI keeps "Slot" and "List"; "Draft List" stays reserved for Phase 31.
+     - **The one place:** the Admin "List statuses" master view carries the line "Provisional: the
+       status values, colours and names are still to be settled with AA's users (OQ-64)."
+     - **An unavailable Slot that holds a List** keeps the List and its conflict flag in this phase;
+       Phase 31 turns those Lists into Draft Lists (the OQ-27 answer and OQ-64's recommendation).
+     If OQ-64 is answered: an unavailable half-day ruled to be a List (Greg's "an unavailable list")
+     or the day ruled the real parent with Slots only a view means stop and re-plan work items 2 to
+     4; named status values replace the three values and labels in work item 2 and the "List
+     statuses" rows; inferred Slots need no change here (storage stays an implementation choice).
+   - **OQ-44** (Draft List contents, answered) does not gate this phase. Do not add Draft Lists here.
 4. **Check the neighbours:**
    - Phases 14 and 15 are DONE (look for `src/shared/demoTriggers/`, `useDemoTriggerContext`,
      `OFFICE_SIMULATION_ACTOR` in `src/store/demoActors.ts`, and `schedule.bookings` / `bookingsForList`). If 15 has not run, stop:
@@ -105,6 +135,12 @@ carrying an approval state, which settles the "DRAFT" label collision. `PERSIST_
      `src/shared/schedule`). If it is, the Assign List sheet, the phone-advice step and the reassign
      picker use them exactly as 17 wired `EditListSheet`, `PhoneAdviceBooking` and `ReassignListFlow`.
      If it is not, use plain selects and leave a handoff note for 17.
+   - Whether Phase 26 added fields to `Anaesthetist`, `AnaesthetistPatch` or the Add and Edit
+     anaesthetist sheets (the anaesthetist profile, and 22's GST number): add `startDateISO` beside
+     them, not in a parallel form.
+   - Whether Phase 27 is DONE: note the prepayment re-check it calls from `reassignList` and
+     `reassignBooking` (`syncPrepayment` at plan time) and the tests that pin it; the rewritten
+     `reassignList` keeps that call (work item 9).
    - Note the current `PERSIST_VERSION` (13 at plan time; phases 15 to 27 raise it).
 5. Record the drift-check result in the PROGRESS entry.
 
@@ -124,30 +160,33 @@ the key comes from, not what it looks like.
   rows (booked, Free "Offer cover", leave) and the availability strip with "My availability".
 - `docs/design/Web Dashboard.dc.html` and `docs/design/Web Availability.dc.html`: the week strip
   (dashed Free block, merged holiday block), "Who's free", and the availability grid cells.
-- No mockup covers the Session times editor or the Assign List sheet. Extend the Admin master-data
-  table and sheet patterns (`useSurface().Overlay`, `FieldLabel`, the Phase 17 sheets).
+- No mockup covers the Session times editor, the Assign List sheet or the start-date field. Extend the
+  Admin master-data table and sheet patterns (`useSurface().Overlay`, `FieldLabel`, `TextField
+  type="date"` as in `ContractEditSheet`, the Phase 17 sheets).
 
-**Catalogue items:** the four covered files above; read EP-01, FT-01.3, US-01.3.1 and US-01.4.1 for
-the rules this phase must not break or pre-empt. US-01.1.4's second sentence ("a booking that runs
-all day simply uses both the AM and PM Slot") is already true: there is no all-day type, and the
-grid's merged full-day leave block is display only.
+**Catalogue items:** the five covered files above; read EP-01, FT-01.3, US-01.3.1 and US-01.4.1 for
+the rules this phase must not break or pre-empt, and US-01.5.3 and FT-01.6 for what 29 and 31 build
+on this model. US-01.1.4's second sentence ("a booking that runs all day simply uses both the AM and
+PM Slot") is already true: there is no all-day type, and the grid's merged full-day leave block is
+display only. US-01.1.3's note ("Once created, the Slots can be edited freely") is met by the Slot
+status, times and assignment actions below.
 
 **Analysis files:**
 
-- `docs/prototype-build/catch-up/gaps.json`: items `FT-01.2`, `US-01.2.3`, `US-01.3.3`, `US-01.1.4`;
-  `dataModelDeltas` DM-02 and DM-04; `reverseFindings` RV-14.
+- `docs/prototype-build/catch-up/gaps.json`: items `FT-01.2`, `US-01.2.3`, `US-01.3.3`, `US-01.1.4`,
+  `US-01.1.3`; `dataModelDeltas` DM-02 and DM-04; `reverseFindings` RV-14.
 - `docs/prototype-build/catch-up/epics/EP-01.md`: the header note (the structural notes, the "DRAFT"
-  collision, the S2 impact list) and the four covered sections, plus US-01.3.1, US-01.5.4 and
-  US-01.2.1 for what is deliberately left to 29 to 31.
+  collision, the S2 impact list) and the five covered sections, plus US-01.3.1, US-01.5.4, US-01.2.1
+  and US-01.5.3 for what is deliberately left to 29 to 31.
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 4 (Slot, List and Draft List) and the DM-02,
   DM-04 and RV-14 rows.
 - `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (DM-02, DM-03, DM-04, DM-05) and
   `reverse-check.md` (RV-14, RV-15).
 - `docs/prototype-build/catch-up/analysis/prototype-map-store-seed.md` (sections 2, 6, 7 and 9),
-  `prototype-map-domain.md` (the `List`, `PermanentList`, availability and status types),
+  `prototype-map-domain.md` (the `List`, `PermanentList`, `Anaesthetist`, availability and status types),
   `prototype-map-shared.md` (`format.ts`, `ListRow`, `StatusLegend`, `RequestCoverSheet`, the audit labels),
   `prototype-map-admin.md` (Day grid, ListDrawer, EditListSheet, PhoneAdviceBooking,
-  ReassignListFlow, Master data), `prototype-map-apps-mobile-web.md` (Forward Lists, Availability,
+  ReassignListFlow, Master data, Add and Edit anaesthetist), `prototype-map-apps-mobile-web.md` (Forward Lists, Availability,
   web Lists, WeekStrip, Availability grid, Dashboard, the "Session model" notes) and
   `prototype-map-shell-demo-pwa.md` (section 7, the PWA, and section 9, extension points).
 - `requirements-board/capture/ATLAS.md` and the recipes for US-01.x: they hard-code List ids,
@@ -155,12 +194,14 @@ grid's merged full-day leave block is display only.
 
 **Code entry points** (paths under `aa-prototype/src/`; names follow Phase 15's Card to Booking rename map, so where a file kept its old name, use that):
 
-- **Model:** `domain/types.ts`: `List` (L~301), `ListStatusKey` and `LIST_STATUS_KEYS` (L53),
-  `CoverRequest` (L277), `PermanentList` (L575), `AnaesthetistAvailability` (L593), `ListStatus`
-  master row (L610); `domain/statusKeyParity.test.ts`; `theme/statusColours.ts` (`StatusKey`,
-  `STATUS_ORDER`, stays as is).
+- **Model:** `domain/types.ts`: `Anaesthetist` (L141, no start date today), `List` (L~301),
+  `ListStatusKey` and `LIST_STATUS_KEYS` (L53), `CoverRequest` (L277), `PermanentList` (L575),
+  `AnaesthetistAvailability` (L593, the "reconciled into the canvas" comment the catalogue now
+  rejects), `ListStatus` master row (L610); `domain/statusKeyParity.test.ts`; `theme/statusColours.ts`
+  (`StatusKey`, `STATUS_ORDER`, the Free, Unavailable and Holiday labels; stays as is).
 - **Generator and seed:** `domain/seed/canvas.ts` (`listIdForSlot`, `defaultTimes`,
-  `generateListsForDates`, `CanvasMasters`), `domain/seed/slotHash.ts` (unchanged),
+  `generateListsForDates`, `CanvasMasters` with `anaesthetistIds`), `domain/seed/slotHash.ts` (unchanged),
+  `domain/seed/cast.ts` (`ANAESTHETISTS`, which gain a start date),
   `domain/seed/index.ts` (`patchSlot`, `FREE`, `applyDesignFixups`, `applyPhase06Conflicts`,
   `applyPhase09Slots`, `SEED_LIST_IDS`, `SEED_MARKERS`, the masters and schedule assembly),
   `domain/seed/availabilityAndHolidays.ts` (`AVAILABILITY`), `domain/seed/permanentLists.ts`,
@@ -171,8 +212,8 @@ grid's merged full-day leave block is display only.
   `store/lifecycle.ts` (`editList` + `ListPatch` L~490, `reassignList` L~550 with `VACATED_STATUSES`,
   `setAvailability` L~703, `requestCover` L~844, `editRefusal`),
   `store/selectors.ts` (`listForSlot` L39, `listsForDate`, `bookingsForList`, `entityCounts`,
-  `isBackdropList`), `store/clockActions.ts` (`rollCanvasForward`, which feeds `masters.availability` to the generator), `store/mastersActions.ts`
-  (`addAnaesthetist`, which does the same; `addPermanentList` and `editPermanentList` with their `statusKey` field; `addHospitalHoliday`),
+  `isBackdropList`), `store/clockActions.ts` (`rollCanvasForward`, which feeds every anaesthetist and `masters.availability` to the generator), `store/mastersActions.ts`
+  (`AnaesthetistPatch` and `editAnaesthetist` L~170 to 220; `NewAnaesthetistFields` and `addAnaesthetist` L~222 to 310, which generates from the clock's today and reads `masters.availability`; `addPermanentList` and `editPermanentList` with their `statusKey` field; `addHospitalHoliday` and its closed-hospital conflict stamp),
   `store/bookingActions.ts` (`cardActions.ts` before Phase 15; `addPostOpAddendum`'s free-session target, L~290),
   `store/integrationActions.ts` (S12 target via `listForSlot`, S13 cross-List reschedule,
   `ingestPdfRow`), `store/officeStandIn.ts` (Phase 14), `store/index.ts`.
@@ -191,13 +232,15 @@ grid's merged full-day leave block is display only.
   (header prints `list.state`; `isFreeEmpty`; the action row),
   `flows/EditListSheet.tsx`, `flows/PhoneAdviceBooking.tsx` (`isScriptedS2Booking`, the 08:00 to
   12:00 / 13:00 to 17:00 defaults, surgeon "Not assigned yet"), `flows/ReassignListFlow.tsx`
-  (`freeTargets` via `listForSlot`, vacated-status picker, "proposed reading" copy), `flows/MoveBookingFlow.tsx` (prints
+  (`freeTargets` via `listForSlot`, vacated-status picker, "proposed reading" copy), `flows/MoveBookingFlow.tsx` (`MoveCardFlow.tsx` before Phase 15; prints
   `l.state`; its targets are every non-AUTHORISED List on the date, free ones included), `flows/PermanentListSheet.tsx`
-  (the `statusKey` select), `screens/MasterData.tsx` or, after 17, `screens/masters/` (the "List statuses" view,
-  L~458; the Permanent Lists table prints `p.statusKey`, L~260), `screens/ReviewScreen.tsx`, `screens/AdminBookingDetail.tsx`,
+  (the `statusKey` select), `flows/AddAnaesthetistFlow.tsx` and `flows/EditAnaesthetistSheet.tsx`
+  (no start-date field today), `screens/MasterData.tsx` or, after 17, `screens/masters/` (`AnaesthetistsView`
+  and its "Adding one extends the canvas forward" sub-line; the "List statuses" view, L~458; the Permanent Lists table prints `p.statusKey`, L~260), `screens/ReviewScreen.tsx`, `screens/AdminBookingDetail.tsx`,
   `screens/IntegrationMonitorScreen.tsx` (PDF target picker L~238).
 - **Mobile:** `apps/mobile/screens/ForwardListsScreen.tsx` (`toRow` by `statusKey`),
-  `screens/AvailabilityScreen.tsx` (strip dots, "My availability", Free only, cover chips),
+  `screens/AvailabilityScreen.tsx` (strip dots, "My availability" Free and Block calling
+  `setAvailability` with `'available'` or `'unavailable'` at L~101, Free only, cover chips),
   `screens/ListDetailScreen.tsx`, `screens/BookingDetailScreen.tsx`, `apps/mobile/routes.tsx`,
   `components/SlideStack.tsx`.
 - **Web:** `apps/web/screens/ListsScreen.tsx`, `components/WeekStrip.tsx`,
@@ -229,35 +272,48 @@ grid's merged full-day leave block is display only.
    `notes` when the Slot holds a List and `slot.note` when it does not; `hospitalId`, `surgeonId` and
    `conflicts` read the List (absent and `[]` on an empty Slot); times are compared only where today's
    List carried them (free, unavailable and holiday rows carry none today). This proves the
-   generator and the fixups kept every RNG draw, every placement and every Booking. Later phases that
-   deliberately change seed content regenerate the fixture and say so.
+   generator and the fixups kept every RNG draw, every placement and every Booking. Every seeded
+   anaesthetist's start date precedes the fixture window (work item 6), so the start-date gate
+   changes nothing in it. Later phases that deliberately change seed content regenerate the fixture
+   and say so.
 
-2. **Types** (`domain/types.ts`). DM-02, DM-04.
-   - `SlotId = string`. `SlotAvailability = 'available' | 'unavailable' | 'holiday'` with a comment
-     that the set is provisional (OQ-17, OQ-27) and that Phase 29 extends it.
-   - `interface Slot { id; anaesthetistId; dateISO; session; availability; note?; startTime?; endTime?; coverRequest? }`.
+2. **Types** (`domain/types.ts`). DM-02, DM-04, US-01.1.3.
+   - `SlotId = string`. `SlotStatus = 'free' | 'unavailable' | 'holiday'` (`SLOT_STATUSES`), the
+     catalogue's words: a Slot is free by default and the anaesthetist changes it, for example to on
+     holiday or unavailable (US-01.2.1). Its doc comment says the status belongs to the Slot, is the
+     one mechanism the calendar edits (FT-01.2, OQ-27), and that the value set and names are
+     provisional until OQ-64 names them; Phase 29 makes it master data.
+   - `interface Slot { id; anaesthetistId; dateISO; session; status; note?; startTime?; endTime?; coverRequest? }`.
      `startTime`/`endTime` are the per-Slot overrides (US-01.1.4 "each Slot can override");
-     `coverRequest` moves here from `List` until Phase 32 replaces it with swap requests.
+     `coverRequest` moves here from `List` until Phase 32 removes it (the anaesthetist then moves
+     their own List instead).
    - `ListKind = 'private' | 'public' | 'preop'` (`LIST_KINDS`).
    - `List`: add `slotId: SlotId` and `kind: ListKind`; remove `statusKey`, `startTime`, `endTime` and
      `coverRequest`. Keep `anaesthetistId`, `dateISO` and `session` on the List as **denormalised
      copies of its Slot's**, written only by the store actions that set `slotId` (work item 9), so the
      hundreds of existing `l.anaesthetistId === ...` filters keep working. The invariant test in work
      item 6 checks they never drift.
+   - `Anaesthetist` gains **`startDateISO: IsoDate`** (required), with a comment citing US-01.1.3
+     ("creates their Slots from their start date"). `NewAnaesthetistFields` and `AnaesthetistPatch`
+     gain it.
    - Rename the six-key union to `DisplayStatusKey` / `DISPLAY_STATUS_KEYS` (same six strings, same
      order) and delete `ListStatusKey`, so the compiler finds every reader. `ListStatus` master rows
      are keyed by `DisplayStatusKey`. Rename `statusKeyParity.test.ts`'s subject accordingly; parity
-     with the theme's `StatusKey` still holds.
+     with the theme's `StatusKey` still holds, and a second parity line checks `SLOT_STATUSES` and
+     `LIST_KINDS` together are exactly the six keys.
    - `interface SlotSettings { defaultTimes: Record<Session, { startTime: WallTime; endTime: WallTime }> }`.
-   - `PermanentList`: `statusKey` becomes `kind: ListKind`; add optional `startTime`/`endTime` (the
-     pre-op templates carry 09:00 to 12:00 and 13:00 to 17:00, which the projection writes as Slot
-     overrides).
-   - `AnaesthetistAvailability` leaves the masters. Keep the shape only as the seed's leave-window
-     input (rename to `SeedLeaveWindow`), consumed by the generator.
+   - `PermanentList` (the recurring-booking template; Phase 30 renames it): `statusKey` becomes
+     `kind: ListKind`; add optional `startTime`/`endTime` (the pre-op templates carry 09:00 to 12:00
+     and 13:00 to 17:00, which the projection writes as Slot overrides).
+   - `AnaesthetistAvailability` leaves the masters, and with it the "reconciled into the canvas"
+     model. Keep the shape only as the seed's leave-window input (rename to `SeedLeaveWindow`, with
+     `status: SlotStatus`), consumed by the generator.
 
 3. **The pure Slot module** (`domain/slots.ts`, no React, exported from `domain/index.ts`) with
    `domain/slots.test.ts`:
-   - `slotIdFor(anaesthetistId, dateISO, session)` returns `S-<reg>-<date>-<AM|PM>`.
+   - `slotIdFor(anaesthetistId, dateISO, session)` returns `S-<reg>-<date>-<AM|PM>`. (Surgeon ids
+     also start `S-`, for example `S-HALE`; the registration-and-date shape keeps them distinct, and
+     no code may infer an entity's type from an id prefix.)
    - `projectedListId(anaesthetistId, dateISO, session)` returns today's `L-<reg>-<date>-<AM|PM>`
      (renamed from `listIdForSlot`). Its doc comment says it names the Slot the List was **born**
      in, is used only by the projection and the seed, and must never be parsed to find a List's
@@ -265,34 +321,41 @@ grid's merged full-day leave block is display only.
      guide's direct URLs and the capture recipes' URLs valid. Lists created at runtime take `LG####`
      from the counter (work item 9).
    - `displayStatusKey(slot: Slot, list: List | undefined): DisplayStatusKey`: a List present returns
-     `list.kind`; otherwise `holiday` returns `holiday`, `unavailable` returns `unavailable`,
-     `available` returns `free`. **It takes no Bookings**, which is how US-01.2.3 ("never derives a
-     Slot's status from its booking activity") is guaranteed by the signature. A List on an
-     unavailable Slot shows its kind plus its conflict flag, as today (the colour change is Phase 30).
+     `list.kind` (the List shows in place of the status, US-01.2.3 and FT-01.2); otherwise it returns
+     `slot.status`. **It takes no Bookings**, which is how US-01.2.3 ("never derives a Slot's status
+     from its booking activity") is guaranteed by the signature. A List on an unavailable Slot shows
+     its kind plus its conflict flag, as today (the colour change is Phase 30; the Draft List route is
+     Phase 31).
    - `effectiveSlotTimes(slot, settings)` returns `{ startTime, endTime, overridden }`: the Slot's
      override where set, else the settings default for its session (US-01.1.4).
-   - `isOpenSlot(slot, list)`: available and no List (the "Free" the finders, cover chips and "Free
+   - `isOpenSlot(slot, list)`: status free and no List (the "Free" the finders, cover chips and "Free
      only" filters mean).
-   - Tests: the full `displayStatusKey` table (three availabilities with no List, and every kind on
-     every availability); `effectiveSlotTimes` with and without overrides and after a settings change.
+   - `slotDatesFor(startDateISO, datesISO)`: the subset on or after the start date (one helper for the
+     generator, roll-forward and the start-date edit).
+   - Tests: the full `displayStatusKey` table (three statuses with no List, and every kind on every
+     status); `effectiveSlotTimes` with and without overrides and after a settings change;
+     `slotDatesFor` at, before and after the start date.
 
 4. **Generator** (`domain/seed/canvas.ts`): `generateCanvasForDates(masters, datesISO)` returns
    `{ slots: Slot[]; lists: List[] }` and replaces `generateListsForDates`.
-   - `CanvasMasters` becomes `{ seed, anaesthetistIds, permanentLists, leave, holidays }`. Today
-     `rollCanvasForward` and `addAnaesthetist` pass `masters.availability` as the leave input; once it
-     leaves the masters they pass the seed constant `SEED_LEAVE` (work item 6), so the far edge still
-     deep-equals a fresh generation. Leave set at runtime already lives on the Slots it covers (every
-     date it can target is inside the horizon); Phase 29 owns leave set beyond it.
+   - `CanvasMasters` becomes `{ seed, anaesthetists: readonly { id; startDateISO }[], permanentLists, leave, holidays }`
+     (replacing `anaesthetistIds`). An anaesthetist gets no Slot on a date before their start date
+     (US-01.1.3). The slot RNG is hashed per slot, so skipping a pair consumes no draw for any other
+     slot. Today `rollCanvasForward` and `addAnaesthetist` pass `masters.availability` as the leave
+     input; once it leaves the masters they pass the seed constant `SEED_LEAVE` (work item 6), so the
+     far edge still deep-equals a fresh generation. Leave set at runtime already lives on the Slots it
+     covers (every date it can target is inside the horizon); Phase 29 owns leave set beyond it.
    - Same precedence and **the same RNG draws per slot** as today (leave window, then weekday
      template, then the slot RNG), so the golden test holds:
-     - a leave window or an RNG "unavailable" draw sets the Slot's availability and note ("Not
+     - a leave window or an RNG "unavailable" draw sets the Slot's status and note ("Not
        available") and creates no List;
-     - an unused slot is an `available` Slot with no List;
+     - an unused slot is a `free` Slot with no List (every new Slot starts free: EP-01, US-01.1.1);
      - a template or an RNG private or public draw creates a List `{ id: projectedListId(...), slotId,
-       kind, hospitalId?, surgeonId?, notes?, state: 'DRAFT', conflicts: [] }`;
+       kind, hospitalId?, surgeonId?, notes?, state: 'DRAFT', conflicts: [] }` in a `free` Slot;
      - template times become Slot overrides; RNG private and public Lists stamp no times (they take
        the settings default, so a changed default reaches them: US-01.1.4's third gap bullet);
-     - hospital holidays flag Lists exactly as today.
+     - hospital holidays flag Lists exactly as today, through one exported helper
+       (`closedHospitalConflict(list, holidays)`) that work item 9's `assignListToSlot` reuses.
    - Delete `defaultTimes`. The generator reads no default times at all.
 
 5. **One settings record for default times** (US-01.1.4: "Admins set default start and end times for
@@ -302,12 +365,16 @@ grid's merged full-day leave block is display only.
    `shared/format.ts` `sessionTimeRange`, and `PhoneAdviceBooking`'s 08:00 to 12:00 / 13:00 to 17:00.
    Every time label and the grid geometry read `effectiveSlotTimes`.
 
-6. **Seed assembly** (`domain/seed/index.ts`, `history.ts`, `availabilityAndHolidays.ts`):
+6. **Seed assembly** (`domain/seed/index.ts`, `cast.ts`, `history.ts`, `availabilityAndHolidays.ts`):
    - `schedule.slots: Record<SlotId, Slot>` beside `schedule.lists` (Lists only).
-   - Rewrite the fixups over the two records. `patchSlot` splits into `setSlot(slots, a, d, s, { availability?, note?, startTime?, endTime? })`,
+   - Each `ANAESTHETISTS` row in `cast.ts` gets a fixed `startDateISO` before the canvas horizon and
+     the `L-HIST-*` backdrop (staggered joining dates, for example 2009 to 2024, so the Master data
+     column reads true to life). No seeded anaesthetist starts inside the horizon, which keeps the
+     golden fixture exact.
+   - Rewrite the fixups over the two records. `patchSlot` splits into `setSlot(slots, a, d, s, { status?, note?, startTime?, endTime? })`,
      `placeList(lists, slots, a, d, s, { kind, hospitalId, surgeonId?, notes? })` (creates or patches
      the List with `projectedListId`) and `clearSlot(lists, slots, a, d, s, note?)` (removes any List
-     and leaves an available Slot; this is today's `FREE`, and the "Free / open for cover" style notes
+     and leaves a free Slot; this is today's `FREE`, and the "Free / open for cover" style notes
      move to `Slot.note`). The design times pinned today (for example Rutherford Tue 21 AM 08:00 to
      13:00) become Slot overrides.
    - `applyPhase06Conflicts` selects booked Lists by `kind`; ids are unchanged, so it picks the same two
@@ -326,16 +393,17 @@ grid's merged full-day leave block is display only.
      `/demo/data` to open a Slot marker) or `placeList` a List there.
    - `PermanentList` seed rows (`permanentLists.ts`) take `kind`; the pre-op rows carry today's
      09:00 to 12:00 / 13:00 to 17:00 as template times.
-   - Seed tests (`seed.test.ts`): exactly two Slots per anaesthetist per day across the horizon; every
+   - Seed tests (`seed.test.ts`): exactly two Slots per anaesthetist per day across the horizon from
+     the later of their start date and the horizon start, and none before the start date; every
      non-backdrop List's `slotId` resolves and its `anaesthetistId`, `dateISO` and `session` match the
      Slot's; no Slot holds two Lists; no empty Slot has a List-only field; every seeded Booking's
      `listId` resolves to a List; two builds deep-equal. Remove `counters.availability` from the seed.
 
 7. **Store core** (`appStore.ts`, `mutate.ts`): add `schedule.slots` and `masters.slotSettings`, drop
    `masters.availability`; `resetDomainState` restores both. **Bump `PERSIST_VERSION` by one** with a
-   comment line ("Phase 28: Slot and List split; the canvas is two records") and extend
-   `persistMigrate.test.ts`. In `ID_FORMATS`, remove `availability` and keep `list` (`LG`) for
-   runtime-created Lists; update its comment (Lists are no longer "regenerated").
+   comment line ("Phase 28: Slot and List split; the canvas is two records; anaesthetists have a start
+   date") and extend `persistMigrate.test.ts`. In `ID_FORMATS`, remove `availability` and keep `list`
+   (`LG`) for runtime-created Lists; update its comment (Lists are no longer "regenerated").
 
 8. **Selectors** (`store/selectors.ts`):
    - **Delete `listForSlot`** rather than re-implementing it, so the compiler lists every caller and
@@ -345,46 +413,69 @@ grid's merged full-day leave block is display only.
      grid does not scan Lists per cell), and `slotViewsForDate(state, dateISO)`,
      `slotViewsForAnaesthetist(state, anaesthetistId, fromISO, toISO)` and `slotView(state, slotId)`
      returning `{ slot, list?, displayKey, times }`. Components that need arrays select the stable
-     records and derive with `useMemo`, as the file's header comment requires.
+     records and derive with `useMemo`, as the file's header comment requires. An anaesthetist with no
+     Slot on a date (before their start date) has no view for it, so the Admin Day grid shows their row
+     from their start date on.
    - `entityCounts` gains `slots` and loses `availability`.
 
-9. **Store actions** (a new `store/slotActions.ts`, exported from `store/index.ts`; every write through
-   `mutate()` with before and after, timestamps from the clock):
+9. **Store actions** (every write through `mutate()` with before and after, timestamps from the
+   clock). A new `store/slotActions.ts`, exported from `store/index.ts`, holds `placeListOnSlot`,
+   `assignListToSlot`, `moveListToSlot` and `reassignList`, `setAvailability`, `setSlotTimes`,
+   `setSlotDefaultTimes` and `requestCover` (moved out of `lifecycle.ts`, keeping their public
+   names and the `store/index.ts` exports). The other actions below are amended where they live today
+   (`lifecycle.ts`, `mastersActions.ts`, `clockActions.ts`, `bookingActions.ts`,
+   `integrationActions.ts`):
    - **Internal `placeListOnSlot`** (not exported from the package index): the one place a List is
      created at runtime. It allocates `LG####`, sets `slotId`, the denormalised fields, `kind`,
-     hospital, surgeon and notes, `state: 'DRAFT'`, `conflicts: []`, and emits `list.create`.
+     hospital, surgeon and notes, `state: 'DRAFT'`, `conflicts` from `closedHospitalConflict`, and
+     emits `list.create`.
    - **`assignListToSlot(api, actor, slotId, { hospitalId, surgeonId, kind, notes? })`**
-     (US-01.3.3). Office only (`officeOnly`); refuses `notFound`, `slotOccupied` (the Slot already
-     holds a List), `hospitalRequired`, `surgeonRequired`, `invalidKind`, and `slotNotAvailable` for an
-     unavailable or holiday Slot. That last refusal is an **interim**: Phase 30 turns it into
-     accept-and-flag (US-01.5.2 "nothing blocks the admin"). If Phase 17 is done, a blacklisted
-     pairing is warned and acknowledged exactly as 17 does in `editList` (its `*.blacklistAcknowledged`
-     entry); never refused. Returns `{ listId }`.
-   - **`reassignList(api, actor, listId, toAnaesthetistId, vacatedAvailability = 'available')`**,
-     re-implemented over **`moveListToSlot(api, actor, listId, toSlotId, vacatedAvailability)`**
+     (US-01.3.3: an admin assigns a surgeon and a hospital to an available Slot, which creates its
+     List; anaesthetists do not). Office only (`officeOnly`); refuses `notFound`, `slotOccupied` (the
+     Slot already holds a List), `hospitalRequired`, `surgeonRequired`, `invalidKind`, and
+     `slotNotAvailable` for an unavailable or holiday Slot. That last refusal matches the story's
+     "available Slot" and is an **interim**: Phase 30 turns it into accept-and-flag (US-01.5.2
+     "nothing blocks the admin"). A hospital closed that day is flagged on the new List, as the
+     generator does (the regraded gap's "no conflict flag on closed hospital"). If Phase 17 is done, a
+     blacklisted pairing is warned and acknowledged exactly as 17 does in `editList` (its
+     `*.blacklistAcknowledged` entry); never refused. Returns `{ listId }`.
+   - **`reassignList(api, actor, listId, toAnaesthetistId, vacatedStatus = 'free')`**,
+     re-implemented over **`moveListToSlot(api, actor, listId, toSlotId, vacatedStatus)`**
      (US-01.4.1's technical discussion: change the owner reference, consume the covering
      anaesthetist's Slot, return the vacated Slot to available). The List keeps its id, Bookings,
      phone notes and history; `slotId` and the denormalised fields change; availability conflicts drop
      and holiday conflicts stay (as today); the source Slot's time override moves to the target Slot
      and is cleared from the vacated one. Refuses `officeOnly`, `listAuthorised`, `notFound`,
      `sameSlot`, `differentSession` (a move stays on the same day and session), `slotOccupied`
-     and `targetNotAvailable`. The outcome becomes `{ listId, vacatedSlotId }` (today's
+     and `targetNotOpen`. The outcome becomes `{ listId, vacatedSlotId }` (today's
      `{ movedListId, regeneratedListId }` goes). Audits one `list.reassign` (before and after `{ slotId, anaesthetistId }`)
-     plus `slot.availability` on the vacated Slot when the office picks Unavailable or Holiday. **No
+     plus `slot.status` on the vacated Slot when the office picks Unavailable or Holiday. **No
      more absorb and regenerate**: no List is deleted, none is allocated, and `list.absorb` and
-     `list.regenerate` are no longer written.
-   - **`setAvailability(api, actor, anaesthetistId, dateISO, session, kind, note?)`** keeps its
-     signature (the mobile screen calls it) and now writes `Slot.availability` and `Slot.note`, audited
-     `slot.availability`. The same refusals as today (anaesthetist own only, integration forbidden).
-     Outcome `{ reconciled: 'updated' | 'conflictFlagged' | 'noChange' }`:
-     - an empty Slot is simply updated (no List to "restatus");
+     `list.regenerate` are no longer written. Phase 32 reuses `moveListToSlot` for the anaesthetist's
+     own move into a colleague's free Slot.
+     **Keep what earlier phases hung on today's `reassignList`** (read the function before rewriting
+     it): if Phase 17 is done, its `list.blacklistAcknowledged` meta for an office move onto a
+     blacklisted pairing, written in the same commit through 17's helper (warn, never refuse); if
+     Phase 27 is done, its prepayment re-check (`syncPrepayment(api, bookingId, cause)` as
+     `ENGINE_ACTOR` after the commit, once per Booking on the moved List; use the name the code has),
+     which 27 wired into `reassignList` and expects this rewrite to keep (US-06.3.5 "whenever a List
+     or a Booking is moved"; OQ-70: an invoice already sent keeps its agreed amount). Put both in
+     `moveListToSlot`, so Phase 32's own-List move inherits them.
+   - **`setAvailability(api, actor, anaesthetistId, dateISO, session, status, note?)`** keeps its
+     shape (the mobile screen calls it; its Free button now passes `'free'`) and writes `Slot.status`
+     and `Slot.note` directly, audited `slot.status`. This is the one mechanism (FT-01.2): no second
+     record, nothing reconciled. The same refusals as today (anaesthetist own only, integration
+     forbidden), plus `noSlot` before the anaesthetist's start date. Outcome
+     `{ result: 'updated' | 'conflictFlagged' | 'noChange' }`:
+     - an empty Slot is simply updated;
      - a Slot holding a List, marked unavailable or holiday, keeps the List and its kind and flags an
-       availability `ListConflict` as today ("replace, never stack");
-     - marking a Slot holding a List **available** updates the Slot and writes **no** conflict. Today's
+       availability `ListConflict` as today ("replace, never stack"). This is the **interim** until
+       Phase 31 turns such Lists into Draft Lists (the OQ-27 answer, OQ-64's recommendation);
+     - marking a Slot holding a List **free** updates the Slot and writes **no** conflict. Today's
        "Marked available, but this List carries booking context" conflict is a symptom of the welded
        model and goes. An earlier availability conflict on that List stays until Phase 30 adds
        clearing;
-     - availability never touches `List.kind`, and nothing about Bookings is read (US-01.2.3, FT-01.2).
+     - the status never touches `List.kind`, and nothing about Bookings is read (US-01.2.3, FT-01.2).
    - **`setSlotTimes(api, actor, slotId, { startTime?, endTime? })`**: office only; `HH:mm`, start
      before end; an empty string clears the override; refuses when the Slot's List is AUTHORISED
      (`listAuthorised`, mirroring `editRefusal`). Audit `slot.times`. US-01.1.4 "each Slot can
@@ -397,14 +488,25 @@ grid's merged full-day leave block is display only.
      (Phase 31 enforces the pairing rule).
    - **`requestCover(api, actor, slotId, kind, message?, targetAnaesthetistId?)`**: the marker is
      written on the Slot, and the action refuses unless `isOpenSlot` (`notFree`). Audit
-     `slot.coverRequest`. Phase 32 replaces it.
-   - **`addAnaesthetist`** generates the new anaesthetist's Slots (and any projected Lists) through
-     `generateCanvasForDates`; its result copy says "N forward Slots generated".
-     `addPermanentList` and `editPermanentList` take `kind: ListKind` (private, public or pre-op) in
-     place of `statusKey`, plus optional `startTime`/`endTime`, and keep their no-retro-projection
-     behaviour (Phase 30 repopulates the canvas). `addHospitalHoliday` flags Lists as today.
-   - **`rollCanvasForward`** (`clockActions.ts`) appends Slots and Lists; `canvas.rollForward`
-     records `{ slots, lists }` per day. Far-edge output still deep-equals a fresh generation.
+     `slot.coverRequest`. Phase 32 removes it.
+   - **`addAnaesthetist`** (US-01.1.3) takes `startDateISO` (required, a valid ISO date; refuses
+     `invalidStartDate`) and generates the new anaesthetist's Slots (and any projected Lists) through
+     `generateCanvasForDates` for the horizon dates from the later of the start date and the demo
+     clock's today. A start date beyond the horizon end generates none; roll-forward creates them
+     when the horizon reaches it. Audit `canvas.generate` with `{ slots, lists, fromISO, toISO }`; the
+     result copy reads "N forward Slots generated from <date>" (or "Slots start on <date>, when the
+     four-month horizon reaches it").
+   - **`editAnaesthetist`** accepts `startDateISO` (US-01.1.3's note: "Once created, the Slots can be
+     edited freely"). Only dates from the clock's today are touched: moving the start date earlier
+     generates the missing Slots up to the old start; moving it later removes the now-early Slots,
+     refusing `listsBeforeStart` ("Dr X has Lists before that date. Reassign them first.") when any of
+     them holds a List. One commit: `anaesthetist.update` plus `canvas.generate` or `canvas.trim`.
+   - **`rollCanvasForward`** (`clockActions.ts`) passes every anaesthetist with their start date,
+     appends Slots and Lists, and `canvas.rollForward` records `{ slots, lists }` per day. Far-edge
+     output still deep-equals a fresh generation. `addPermanentList` and `editPermanentList` take
+     `kind: ListKind` (private, public or pre-op) in place of `statusKey`, plus optional
+     `startTime`/`endTime`, and keep their no-retro-projection behaviour (Phase 30 repopulates the
+     canvas). `addHospitalHoliday` flags Lists as today, through `closedHospitalConflict`.
    - **`addPostOpAddendum`** (interim until Phase 39 replaces the addendum Booking): its target becomes
      today's open Slot for that anaesthetist; it creates the List there with `placeListOnSlot`, copying
      the original List's hospital, surgeon and kind, then the Booking, in one audited mutation. The
@@ -421,32 +523,44 @@ grid's merged full-day leave block is display only.
      beats are unchanged, and prove it in `demoScenarios.test.ts`. `ingestPdfRow` and the PDF target
      picker offer Lists only.
    - **Audit labels** (`shared/audit/actionLabels.ts`): `list.create` "List assigned",
-     `slot.availability` "Availability set", `slot.times` "Session times changed",
-     `slot.coverRequest` "Cover requested", `settings.slotDefaults` "Default session times changed";
-     `fieldLabels.ts` gains `kind`, `availability`, `slotId`, `startTime`, `endTime`. Keep the old
-     `list.absorb`, `list.regenerate`, `list.restatus` and `availability.*` labels so any older
-     persisted history still reads. `auditNarrative.test.ts` must pass.
+     `slot.status` "Availability set", `slot.times` "Session times changed",
+     `slot.coverRequest` "Cover requested", `settings.slotDefaults` "Default session times changed",
+     `canvas.trim` "Slots removed before start date";
+     `fieldLabels.ts` gains `kind`, `status` ("Availability"), `slotId`, `startTime`, `endTime`,
+     `startDateISO` ("Start date"). Keep the old `list.absorb`, `list.regenerate`, `list.restatus` and
+     `availability.*` labels so any older persisted history still reads. `auditNarrative.test.ts` must
+     pass.
 
 10. **Store tests** (`store/slotActions.test.ts`, updated `lifecycle.test.ts`, `canvasRoll.test.ts`,
     `mastersActions.test.ts`, `postOpAddendum.test.ts`, `integrationActions.test.ts`):
     - `assignListToSlot`: every refusal; success creates exactly one `LG` List in that Slot, flips its
-      display key from `free` to the kind, and writes one `list.create`.
+      display key from `free` to the kind, writes one `list.create`, and carries a holiday conflict
+      when the hospital is closed that day.
     - **Status independence (US-01.2.3):** for a sample of seeded Slots, create, complete, cancel and
       move Bookings, and assert `displayStatusKey` never changes; set a Slot to holiday with and
       without a List and assert it reads holiday when empty and keeps the List's kind (plus a conflict)
       when not.
+    - **One mechanism (FT-01.2):** after `setAvailability`, the only changed record is the Slot
+      (plus a conflict on its List where one applies); no availability master exists to read.
     - **One status in three apps:** the phone-advice path (assign, then a Booking) gives the same
       display key through `slotView`, `slotViewsForDate` (Admin) and `slotViewsForAnaesthetist`
       (mobile and web). There is no second derivation anywhere (the `displayStatusKeyForList` and
       `effectivelyBooked` helpers are deleted; the reviewers check for stragglers).
     - Reassign: the List id, Bookings and history are unchanged; the target Slot holds it; the vacated
-      Slot is available by default and unavailable or holiday on request; no List is deleted or
-      allocated; time overrides travel; each refusal.
-    - `setAvailability`: marking a booked Slot available writes no conflict (the gap's "bogus
+      Slot is free by default and unavailable or holiday on request; no List is deleted or
+      allocated; time overrides travel; each refusal. If 17 is done, a move onto a blacklisted
+      pairing succeeds with one acknowledgement; if 27 is done, a held prepayment invoice on a moved
+      Booking is re-estimated for the new anaesthetist and a sent one keeps its amount (27's existing
+      `reassignList` tests must still pass unchanged in intent).
+    - `setAvailability`: marking a booked Slot free writes no conflict (the gap's "bogus
       conflict"); repeated toggles leave at most one availability conflict.
     - `setSlotTimes` and `setSlotDefaultTimes`, including "an override survives a default change".
-    - Roll-forward and `addAnaesthetist`: two Slots per day for everyone, deep-equal to a fresh
-      generation.
+    - **Start date (US-01.1.3):** `addAnaesthetist` with a start date of today, a future date inside
+      the horizon, and a date beyond it (Slots only from the start date; none, then created by
+      roll-forward); `editAnaesthetist` moving the date earlier (Slots filled in) and later (empty
+      Slots removed; `listsBeforeStart` when one holds a List; nothing before today touched).
+    - Roll-forward and `addAnaesthetist`: two Slots per day for everyone on or after their start
+      date, deep-equal to a fresh generation.
 
 11. **Registry and context** (Phase 14's `src/shared/demoTriggers/`):
     - Re-point every entry that resolved a List through `listForSlot` or `listIdForSlot`
@@ -473,8 +587,9 @@ grid's merged full-day leave block is display only.
     - **Mobile:** `ForwardListsScreen` builds rows from `slotViewsForAnaesthetist` (free rows from open
       Slots with "Offer cover" or "Requested", leave rows from holiday Slots, unavailable collapses,
       booked rows from Lists); `AvailabilityScreen` strip dots, "N free sessions", Free only and the
-      cover chips use `isOpenSlot`; "My availability" reads the persona's Slots; `ListDetailScreen`
-      and `BookingDetailScreen` chips read `list.kind` and times from the Slot.
+      cover chips use `isOpenSlot`; "My availability" reads the persona's Slots and its Free and Block
+      buttons write the Slot status; `ListDetailScreen` and `BookingDetailScreen` chips read
+      `list.kind` and times from the Slot.
     - **Web:** `ListsScreen`, `WeekStrip`, `AvailabilityGrid` and `DashboardScreen` (day summary,
       offer cover, "Who's free") use Slot views; `ListDetailView` and `BookingDetailView` as mobile.
     - **Shared:** `shared/format.ts` gains `slotTimeRange(view)` (replacing `sessionTimeRange(list)`)
@@ -485,9 +600,11 @@ grid's merged full-day leave block is display only.
       phrase "Draft List" is reserved for Phase 31. The domain value stays `DRAFT` (EP-07). The
       `/demo/data` inspector may keep raw codes.
     - `RequestCoverSheet` takes a `slotId`.
-    - **Permanent Lists:** `PermanentListSheet`'s select offers the three kinds (Private, Public, Pre-op)
-      and gains optional start and end ("Leave blank for the default session times"); the Master data
-      table prints the kind's label, not the raw key.
+    - **Permanent Lists** (recurring bookings; the rename is Phase 30's): `PermanentListSheet`'s select
+      offers the three kinds (Private, Public, Pre-op) and gains optional start and end ("Leave blank
+      for the default session times"); the Master data table prints the kind's label, not the raw key.
+    - **Add anaesthetist, compile-forced:** `AddAnaesthetistFlow` passes the demo clock's today as
+      `startDateISO` until item 18 adds the field.
     - **Compile-forced minimums** (finished in session 2, but working at the end of session 1 so the
       app stays demoable): clicking an empty Slot on the grid opens the drawer in a plain empty-Slot
       form with today's Book (phone advice) action (item 13 completes it); `PhoneAdviceBooking` calls
@@ -497,7 +614,8 @@ grid's merged full-day leave block is display only.
       `isOpenSlot` and it passes the vacated value through (item 17 changes the default and copy). Any
       Vitest or Playwright spec these break is fixed in session 1, not left for item 21.
     - **Demo inspector** (`DemoData.tsx`): the banner becomes "Canvas invariant holds: exactly 2 Slots
-      per anaesthetist today, every List in one Slot"; counts show Slots and Lists.
+      per anaesthetist per day from their start date, every List in one Slot"; counts show Slots and
+      Lists.
     - Re-green all four commands. Compare screenshots with the baseline: expected differences are the
       drawer header's approval label and nothing else. **Session 1 ends here, green and demoable.**
 
@@ -508,10 +626,12 @@ grid's merged full-day leave block is display only.
     publishes `'adminDay.selectedSlotId'`.
     - **A Slot holding a List:** today's drawer (header name, date, session, `approvalStateLabel`,
       `StatusChip` of the kind; Needs attention; Session with times, hospital, surgeon, note; Bookings;
-      actions Edit list, Reassign list, History). Reassign is offered for every List, not only
+      actions Edit list, Reassign list, History). The List shows in place of the status; where the
+      Slot's own status is not free (the anaesthetist marked it unavailable), the Needs attention
+      section says so beside the existing conflict flag. Reassign is offered for every List, not only
       "booked" status keys.
     - **An empty Slot:** header with the anaesthetist, date, session and the Slot's status chip (Free,
-      Unavailable or Holiday); a "Slot" section with availability, times (with "Default" or
+      Unavailable or Holiday); a "Slot" section with the status, times (with "Default" or
       "Overridden") and note; actions **Assign List** (teal primary, open Slots only),
       **Book (phone advice)** (open Slots only), **Edit times** and **History** (the Slot's audit,
       `entityIds={[slotId]}`). An unavailable or holiday Slot shows a one-line note that it is not
@@ -520,10 +640,11 @@ grid's merged full-day leave block is display only.
 14. **Assign List sheet** (`apps/admin/flows/AssignListSheet.tsx`, `useSurface().Overlay`), US-01.3.3:
     hospital (required), surgeon (required: `SurgeonSelect` for the Slot's anaesthetist with the
     blacklisted group and `BlacklistWarning` if Phase 17 is done), kind as a segmented control
-    (Private, Public; default Private; pre-op Lists come only from Permanent Lists until the pairing
+    (Private, Public; default Private; pre-op Lists come only from recurring bookings until the pairing
     decision in Phase 31), and an optional note. Errors inline ("Choose the hospital." / "Choose the
-    surgeon."). Saving calls `assignListToSlot`; the drawer switches to the new List. Copy states the
-    rule plainly: "Assigning a surgeon and hospital creates the List in this Slot."
+    surgeon."). A closed hospital shows the amber flag on the new List, not a block. Saving calls
+    `assignListToSlot`; the drawer switches to the new List. Copy states the rule plainly: "Assigning
+    a surgeon and hospital turns this free Slot into a List."
 
 15. **Book (phone advice)** (`flows/PhoneAdviceBooking.tsx`), rebuilt on the same assignment step:
     - Step 1 is the Assign List fields plus start and end times, prefilled from `effectiveSlotTimes`
@@ -546,23 +667,34 @@ grid's merged full-day leave block is display only.
 17. **Reassign** (`flows/ReassignListFlow.tsx`), US-01.4.1:
     - candidates are other anaesthetists whose Slot on the same day and session is open
       (`isOpenSlot`), partitioned by Phase 17's `partitionAnaesthetistsForSurgeon` if present;
-    - the confirm step's vacated picker reads **Available (default)**, Unavailable, On leave, with the
-      line "The vacated Slot returns to available unless you mark it otherwise.";
+    - the confirm step's vacated picker reads **Free (default)**, Unavailable, Holiday, with the
+      line "The vacated Slot returns to free unless you mark it otherwise.";
     - the "free-target, absorb and regenerate ... proposed reading" copy is removed; the confirm text
       says the List moves with its Bookings and history into the colleague's Slot;
+    - no update email here (US-01.4.1's note, OQ-46): Phase 35 offers it after a reassignment;
     - update `ReassignListFlow.test.tsx` (the default, the candidates, the move).
 
-18. **Session times master** (Admin > Master data, a new "Session times" entry in the sub-nav, placed
-    beside "List statuses"): a small two-row table (AM, PM) with start and end, Edit opening a sheet
-    that calls `setSlotDefaultTimes`, and the line "Slots with their own times keep them." US-01.1.4
-    "Admins set default start and end times". Add the provisional OQ-17 / OQ-27 line to the "List
-    statuses" view's header (see the drift check); Phase 29 turns that view into an editor.
+18. **Master data: session times and the anaesthetist start date.**
+    - **Session times** (a new "Session times" entry in the sub-nav, placed beside "List statuses"): a
+      small two-row table (AM, PM) with start and end, Edit opening a sheet that calls
+      `setSlotDefaultTimes`, and the line "Slots with their own times keep them." US-01.1.4 "Admins
+      set default start and end times".
+    - **List statuses:** add the OQ-64 provisional line (see the drift check) to the view's header,
+      the one place the open status values and names are labelled; Phase 29 turns that view into an
+      editor.
+    - **Start date** (US-01.1.3): `AddAnaesthetistFlow` gains a required "Start date" field
+      (`TextField type="date"`, default the demo clock's today) with the hint "Slots are created from
+      this date across the four-month horizon."; `EditAnaesthetistSheet` gains the same field, saving
+      through `editAnaesthetist` and showing its `listsBeforeStart` refusal inline. The Anaesthetists
+      table gains a "Start date" column, and its sub-line becomes "Adding one creates their Slots from
+      their start date."
 
-19. **Anaesthetist apps, the fixed behaviour** (US-01.2.3 and US-01.3.3's third gap bullet). Check, and
+19. **Anaesthetist apps, the fixed behaviour** (US-01.2.3 and US-01.3.3's gap bullets). Check, and
     fix any straggler, that after an office assignment or a phone-advice booking:
     - mobile Forward Lists shows the session as a booked List row (hospital, surgeon, time, Booking
       count), not "Free session / Offer cover";
-    - the mobile availability strip, "Free only" and the cover chips no longer offer that session;
+    - the mobile availability strip, "Free only" and the cover chips no longer offer that session,
+      and `requestCover` refuses it;
     - the web week strip block is booked and clickable, the web Lists row opens the List, and the
       dashboard day summary counts it;
     - `StatusChip`, `ListRow` and `StatusLegend` still take a `StatusKey` from the theme, fed by
@@ -579,57 +711,65 @@ grid's merged full-day leave block is display only.
     warns on (if 17 is done); a second run takes the next open Slot.
 
 21. **Playwright and shot hooks.** `data-shot` hooks `admin-slot-drawer`, `admin-assign-list`,
-    `admin-session-times`, `mobile-lists-assigned`. Update the admin specs that open a Free List,
-    book by phone and reassign (`visual/admin-phase06.spec.ts` and any spec relying on
-    `admin-list-drawer`); extend `visual/pwa-device.spec.ts` to open the Demo chip on Lists, run the
-    stand-in and assert a new booked row appears. Keep `pwaPurity.test.ts` green (the stand-in body
-    lives in `src/store`, the entry in `src/shared`).
+    `admin-session-times`, `admin-add-anaesthetist-start`, `mobile-lists-assigned`. Update the admin
+    specs that open a Free List, book by phone, reassign and add an anaesthetist
+    (`visual/admin-phase06.spec.ts` and any spec relying on `admin-list-drawer`); extend
+    `visual/pwa-device.spec.ts` to open the Demo chip on Lists, run the stand-in and assert a new
+    booked row appears. Keep `pwaPurity.test.ts` green (the stand-in body lives in `src/store`, the
+    entry in `src/shared`).
 
 22. **Capture recipes** (`requirements-board/capture/recipes/`): re-point only the selectors and
     captions the change breaks. Find them by grepping the recipes for the free-session List ids
     (for example `L-41267-2026-07-21-PM`, `L-47733-2026-07-21-PM`, `L-34821-2026-07-22-PM`),
-    "open for cover", "Offer cover", "Book (phone advice)", "Reassign", "Free only" and raw "DRAFT"
-    text; at plan review that set is mainly the US-01.x recipes (US-01.1.4, US-01.2.1, US-01.2.3,
-    US-01.3.1, US-01.3.3, US-01.4.1, US-01.4.2, US-01.4.3, US-01.5.2, US-01.5.3) plus US-02.3.1.
-    Recipes that only use booked `L-...` ids or `admin-list-drawer` keep working (both are kept).
-    Update the ATLAS id table (Slots `S-...`, projected Lists keep `L-...`, runtime Lists `LG####`). Do not re-run the captures unless
-    the owner asks.
+    "open for cover", "Offer cover", "Book (phone advice)", "Reassign", "Free only", "Add anaesthetist"
+    and raw "DRAFT" text; at plan review that set is mainly the US-01.x recipes (US-01.1.3, US-01.1.4,
+    US-01.2.1, US-01.2.3, US-01.3.1, US-01.3.3, US-01.4.1, US-01.4.2, US-01.4.3, US-01.5.2, US-01.5.3)
+    plus US-02.3.1. Recipes that only use booked `L-...` ids or `admin-list-drawer` keep working (both
+    are kept). Update the ATLAS id table (Slots `S-...`, projected Lists keep `L-...`, runtime Lists
+    `LG####`). Do not re-run the captures unless the owner asks.
 
 23. **Docs inside the app and close-out.** `aa-prototype/README.md` folder map: `domain/slots.ts`,
-    `store/slotActions.ts`, and one paragraph on the Slot and List model (Slot id, projected List id,
-    runtime `LG` ids, the derived display key, the settings record). Then finish green, run the
-    adversarial review, patch the demo guide and write the PROGRESS entry.
+    `store/slotActions.ts`, and one paragraph on the Slot and List model (Slot id and status, the
+    start date, projected List id, runtime `LG` ids, the derived display key, the settings record).
+    Then finish green, run the adversarial review, patch the demo guide and write the PROGRESS entry.
 
 ## Demo triggers
 
 Everything in this phase is demonstrable through normal use in the framed build: the office assigns
-a List, books by phone, edits times and defaults, and reassigns in Admin, and the result shows in the
-mobile and web apps. So the harness bar gains **no** new entry. The PWA has no Admin app, so the
-mobile side of "the office assigned me a List" needs a stand-in:
+a List, books by phone, edits times and defaults, adds an anaesthetist with a start date, and
+reassigns in Admin, and the result shows in the mobile and web apps. So the harness bar gains **no**
+new entry. The PWA has no Admin app, so the mobile side of "the office assigned me a List" needs a
+stand-in:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Office assigns a List to my next free Slot | Mobile · Lists (`/mobile/lists`) | PWA only, badged "office stand-in" | Finds Dr Souter's earliest open Slot from today and assigns a List there as the simulated office. `choices`: St George's Hospital · Mr T. Hale (default), Southern Cross · Ms K. Patel, Forte Health · Mr C. Okafor, with any blacklisted pairing left out. The message names the Slot ("Assigned St George's Hospital · Mr T. Hale to your Wed 22 Jul PM Slot") and the row appears as a Private List. Disabled with "No free Slot in the next four months" |
+| Office assigns a List to my next free Slot | Mobile · Lists (`/mobile/lists`) | PWA only, badged "office stand-in" | Finds Dr Souter's earliest open Slot from today and assigns a List there as the simulated office. `choices`: St George's · Mr T. Hale (default), Southern Cross · Ms K. Patel, Forte Health · Mr C. Okafor, with any blacklisted pairing left out. The message names the Slot ("Assigned St George's · Mr T. Hale to your Wed 22 Jul PM Slot", hospital names as the hospital master reads them) and the row appears as a Private List. Disabled with "No free Slot in the next four months" |
 
-Re-pointed, not added: `stage-post-op` (its `when` uses `projectedListId`). The new context key
-`'adminDay.selectedSlotId'` is published for Phase 30.
+Re-pointed, not added: `stage-post-op` (its `when` uses `projectedListId`) and `ingest-pdf-row`
+(`slotFor` + `listInSlot`). The new context key `'adminDay.selectedSlotId'` is published for
+Phase 30.
 
 ## Out of scope
 
-- **Draft Lists** (FT-01.6, DM-03) and the **pairing rule** enforcement (US-01.3.1, FT-01.3): Phase 31.
-  The Fitzgerald "Surgeon TBC" List and the hospital-less pre-op and surgeon-less acute Lists stay as
-  seeded.
-- **The availability calendar**, "available for emergency", leave set weeks ahead, web availability
-  controls and **editable Slot statuses** (US-01.2.1, US-01.2.2, US-01.5.3): Phase 29.
+- **Draft Lists** (FT-01.6, DM-03), including the Lists of an anaesthetist who marks themselves
+  unavailable becoming Draft Lists (the OQ-27 answer), and the **pairing rule** enforcement
+  (US-01.3.1, FT-01.3): Phase 31. The Fitzgerald "Surgeon TBC" List and the hospital-less pre-op and
+  surgeon-less acute Lists stay as seeded.
+- **The availability calendar** (days off ahead, a series, editing or deleting one instance), web
+  availability controls, a holiday control on mobile and **editable Slot statuses** (US-01.2.1,
+  US-01.2.2, US-01.5.3): Phase 29, on the Slot status this phase stores.
 - **Conflicts on every path**, the List colour change, clearing a conflict, holiday edit and delete,
   the conflict dashboard, **assigning onto an unavailable Slot** (the interim refusal here), and
-  **Permanent List edits repopulating the canvas** (US-01.5.2, US-01.5.4, US-01.3.2): Phase 30.
-- **Swap requests** replacing the cover marker (US-01.4.3, DM-05, RV-15): Phase 32.
+  **recurring-booking edits repopulating the canvas** and the rename from Permanent Lists (US-01.5.2,
+  US-01.5.4, US-01.3.2): Phase 30.
+- **An anaesthetist moving their own List** to the office or into a colleague's free Slot, which
+  removes the cover-request marker (US-01.4.3, US-01.4.6, DM-05, RV-15): Phase 32.
+- The update email after a reassignment (US-01.4.1's note, US-02.3.3): Phase 35.
 - Hospital download rows creating Lists and the no-silent-apply matching screen: Phase 33 (the
   integration parking rule here is an interim).
 - The post-op addendum's replacement by additional invoices: Phase 39.
-- `Anaesthetist.active` having a canvas effect, and un-assigning a List back to an empty Slot: not
-  planned; raise with the owner if a beat needs them.
+- `Anaesthetist.active` having a canvas effect (EP-01's minor gap), and un-assigning a List back to an
+  empty Slot: not planned; raise with the owner if a beat needs them.
 - The 85-anaesthetist scale demo (Phase 43). `canvasRoll.test.ts`'s scale test must stay inside its
   time budget with Slots.
 
@@ -650,22 +790,26 @@ Re-pointed, not added: `stage-post-op` (its `when` uses `projectedListId`). The 
       show it as a booked List row that opens; neither offers cover on it.
 - [ ] Status independence: add, complete and cancel a Booking on a List; its colour and label never
       change. Mobile Availability: Block, then Free, on a session holding a List: the List keeps its
-      colour, Block raises the amber flag, Free adds no new flag.
+      colour, Block raises the amber flag, Free adds no new flag. Block on an empty session: Admin Day
+      shows it Unavailable (hatched) at once, with no second record in `/demo/data`.
 - [ ] Session times: Master data, Session times, change PM to 13:30 to 17:30. Every PM block without its
       own times moves on the grid, mobile and web; Rutherford Tue 21 PM (13:30 to 17:00, overridden)
       does not. Change it back.
 - [ ] Edit list on a List with an overridden time: "Use default" restores the default; the audit shows
       "Session times changed".
-- [ ] Reassign Rutherford Wed 22 AM to Sharma: the picker defaults the vacated Slot to Available;
+- [ ] Reassign Rutherford Wed 22 AM to Sharma: the picker defaults the vacated Slot to Free;
       choose Unavailable and confirm. The List keeps its id (the URL on Review or the drawer History
       shows the same List), its Bookings and its history, now under Sharma; Rutherford's AM Slot is
       Unavailable (hatched); nothing reads "regenerated".
 - [ ] Next day (clock) and "Next morning" twice: the far edge gains two Slots per anaesthetist per day;
       `/demo/data` shows the Slot invariant holding.
-- [ ] Add an anaesthetist in Master data: "N forward Slots generated", and their row shows Free Slots
-      across the horizon.
+- [ ] Add an anaesthetist in Master data with start date Mon 3 Aug 2026: "N forward Slots generated
+      from 3 Aug"; Admin Day on Fri 31 Jul has no row for them, Mon 3 Aug shows a row of Free Slots.
+      Edit their start date to Wed 29 Jul: their row appears on 29 Jul. Assign a List on 3 Aug, then
+      try a start date of 4 Aug: refused with "Reassign them first". The Anaesthetists table shows the
+      start date column.
 - [ ] Master data, Permanent Lists: the sheet offers Private, Public and Pre-op only, with optional times;
-      the table shows the kind's label.
+      the table shows the kind's label. Master data, List statuses carries the OQ-64 provisional line.
 - [ ] Move a Booking in Admin: the picker lists Lists only and carries the "assign a List to it first"
       line; an empty Slot is not a target.
 - [ ] S1 on the framed build (Fire hospital message and its modify and move messages) behaves exactly as
@@ -682,34 +826,38 @@ Re-pointed, not added: `stage-post-op` (its `when` uses `projectedListId`). The 
 This phase breaks S2 Beats 1 to 3 and touches S4 Beat 2. Patch, in the same session:
 
 - **`docs/demo-guide/03-demo-script.md`:**
-  - S2 Beat 1, Say: "Every active anaesthetist has two half-day **Slots** a day, whether or not a List
-    sits in them. A List is what the office assigns into a Slot."
+  - S2 Beat 1, Say: "Every active anaesthetist has two half-day **Slots** a day from their start date,
+    whether or not a List sits in them. A Slot is free until the anaesthetist marks it otherwise, and
+    a List is what the office puts in it; then the List shows instead of the status."
   - S2 Beat 2: the click path becomes "Open Dr Priya Sharma's Tue 21 PM **Free Slot** → Book (phone
     advice) → St George's Hospital, Mr T. Hale; keep the default times (13:00 to 17:30) → Continue to
     add booking → ...". Expected: "The Slot now holds a Private List with the new Booking, and the
     anaesthetist's web and mobile views show it as booked." Delete the "still label the session Free,
     an open polish item" caveat. Add an optional one-liner: "Assign List does the same without a
     patient, for a session booked ahead."
-  - S2 Beat 3: keep "Reassign list → Dr Priya Sharma", then "the vacated Slot defaults to Available;
+  - S2 Beat 3: keep "Reassign list → Dr Priya Sharma", then "the vacated Slot defaults to Free;
     choose **Unavailable** because Dr Rutherford is ill → Confirm reassignment". Say: "The List moves
     with its Bookings and history into Dr Sharma's Slot; nothing is re-keyed." Expected: "the vacated
     Slot shows Unavailable; History records one reassignment." Remove the "free-target, absorb and
     regenerate is the prototype's proposal" line.
   - S4 Beat 2: add to Expected: "the addendum sits on a List created in today's free Slot" (interim
     until 39).
-  - Discovery points or direct URLs that call an empty session a "List".
+  - Discovery points or direct URLs that call an empty session a "List"; drop "the exact
+    List-reassignment mechanics" from S2's discovery points (US-01.4.1's technical discussion settles
+    them).
 - **`docs/demo-guide/02-workflows-and-handoffs.md`:** Workflow 3 steps 5 to 9 (target a free Slot; the
-  List moves into it; the vacated Slot returns to available or is marked unavailable; no absorb or
+  List moves into it; the vacated Slot returns to free or is marked unavailable; no absorb or
   regenerate); the "Prototype readiness" note stops calling the mechanism a prototype proposal and cites
   US-01.4.1; line 78's "displayed consistently in all apps" is now true, including after a phone booking.
 - **`docs/demo-guide/04-presenter-cheat-sheet.md`:** item 5 "List reassignment mechanics" rewritten to the
-  Slot move; add a short "Slots and Lists" line and the default-times setting; a note that the status
-  vocabulary is provisional (OQ-17, OQ-27).
+  Slot move; add a short "Slots and Lists" line (a status on the Slot, the List shown in its place,
+  Slots from the start date) and the default-times setting; a note that the status values and names
+  are still to be settled with AA's users (OQ-64).
 - **`docs/demo-guide/master-demo-guide.html`:** the same S2 Beats 1 to 3 and S4 Beat 2 rows, the
   workflow 3 summary and the cheat-sheet item (the sections near "phone advice", "Reassign list" and
   "vacated slot").
 - **Control Panel** `SCENARIOS` S2 text (`apps/demo/DemoControlPanel.tsx`): "Free Slot", "Assign List",
-  and the vacated-Slot default.
+  and the vacated-Slot default (Free).
 
 ## Adversarial review (after build)
 
@@ -724,11 +872,12 @@ review-and-fix pass (PROGRESS convention 18)**:
 - do not re-raise anything already settled in the Decisions log (as amended by this phase).
 
 **Steer this phase's reviewers at:**
-- **One derivation.** The displayed status comes only from `displayStatusKey(slot, list)`. Hunt for
-  any surviving derivation from Bookings, hospital or surgeon (`displayStatusKeyForList`,
-  `effectivelyBooked`, `statusKey === 'free' && cards`), any screen that reads `list.kind` for a free
-  test instead of `isOpenSlot`, and any app whose label or colour for the same session differs from the
-  others.
+- **One derivation, one mechanism.** The displayed status comes only from `displayStatusKey(slot, list)`,
+  and availability lives only on `Slot.status`. Hunt for any surviving derivation from Bookings,
+  hospital or surgeon (`displayStatusKeyForList`, `effectivelyBooked`, `statusKey === 'free' && cards`),
+  any leftover availability record or reconcile step, any screen that reads `list.kind` for a free
+  test instead of `isOpenSlot`, and any app whose label or colour for the same session differs from
+  the others.
 - **No caller left behind.** Every former `listForSlot` caller now handles "no List in this Slot"
   correctly: the integration targets park instead of silently retiming, the addendum creates its List,
   the PDF picker offers Lists only, the finders and cover chips use open Slots, and no code parses a
@@ -737,18 +886,23 @@ review-and-fix pass (PROGRESS convention 18)**:
   reassigned List keeps its id; Slot ids are deterministic; the denormalised `anaesthetistId`,
   `dateISO` and `session` on a List always equal its Slot's after every action (assign, reassign,
   roll-forward, addendum, stand-in). Roll-forward and `addAnaesthetist` read the same leave input
-  (`SEED_LEAVE`) as the seed build, so the far edge matches a fresh generation.
+  (`SEED_LEAVE`) and start dates as the seed build, so the far edge matches a fresh generation.
+- **Start date.** No Slot exists before an anaesthetist's start date after any path (seed, add, edit,
+  roll-forward); editing the start date never touches a date before today and never deletes a List.
 - **Determinism.** The golden test reproduces today's canvas and Bookings exactly; the RNG draw order
   per slot is unchanged; roll-forward deep-equals a fresh generation; no `Date.now()`, `new Date()` or
-  `Math.random()`; `PERSIST_VERSION` bumped and the migrate test extended.
+  `Math.random()` (the start-date default comes from the demo clock); `PERSIST_VERSION` bumped and the
+  migrate test extended.
 - **Audit and guards.** Every new write goes through `mutate()` with before and after; reassign writes
   one `list.reassign` and no absorb or regenerate; the office-only and AUTHORISED guards hold on assign,
   move and times; the new action codes are labelled; blacklist handling (if 17 is done) warns and never
-  refuses.
+  refuses; the rewritten `reassignList` / `moveListToSlot` still writes 17's acknowledgement and runs
+  27's prepayment re-check for every moved Booking.
 - **Scope discipline.** No Draft Lists, no pairing enforcement, no availability calendar, no conflict
-  clearing or colour change, no swap flow. The interim refusals (assign onto an unavailable Slot) and
-  interim behaviours (addendum List, integration parking) are labelled as such in code comments and
-  the Decisions log.
+  clearing or colour change, no anaesthetist move flow. The interim refusals (assign onto an
+  unavailable Slot) and interim behaviours (conflict flag on an unavailable Slot holding a List until
+  31, addendum List, integration parking) are labelled as such in code comments and the Decisions
+  log. The OQ-64 provisional label appears in one place only.
 - **Design and copy.** The six colours and treatments are unchanged; the empty-Slot drawer extends the
   List drawer; teal-only actions; no en or em dashes; no "DRAFT" or "Draft" shown on an assigned List
   or an empty Slot; `pwaPurity` holds and the stand-in is PWA-only and badged.
@@ -756,32 +910,39 @@ review-and-fix pass (PROGRESS convention 18)**:
 ## PROGRESS.md updates
 
 - **Status row** for catch-up Phase 28, and a phase entry with:
-  - the drift-check result (items changed or not; OQ-17, OQ-27 and OQ-44 status; whether 17 had run);
+  - the drift-check result (items changed or not against `501b0b8`; OQ-64 still open or answered;
+    whether 17, 26 and 27 had run, and how 17's and 27's reassign hooks were carried into `moveListToSlot`);
   - what was built, with the name map for later phases: `listForSlot` removed in favour of `slotFor` +
     `listInSlot`; `listIdForSlot` renamed `projectedListId`; `ListStatusKey` renamed
-    `DisplayStatusKey`; `List.statusKey` replaced by `List.kind` plus the Slot's `availability`;
+    `DisplayStatusKey`; `List.statusKey` replaced by `List.kind` plus `Slot.status`;
     `List.startTime`/`endTime`/`coverRequest` moved to the Slot; `generateListsForDates` renamed
-    `generateCanvasForDates`; `masters.availability` removed;
+    `generateCanvasForDates` (now taking start dates); `masters.availability` removed;
+    `Anaesthetist.startDateISO` added;
   - the `PERSIST_VERSION` bump (from and to);
-  - tests added (the golden fixture, `slots.test.ts`, `slotActions.test.ts`, the independence and
-    three-app parity tests) and the before and after Vitest and Playwright counts;
+  - tests added (the golden fixture, `slots.test.ts`, `slotActions.test.ts`, the independence,
+    one-mechanism, start-date and three-app parity tests) and the before and after Vitest and
+    Playwright counts;
   - the review pass.
 - **Decisions log:**
-  1. **Superseded:** 2026-07-23 "Availability reconciliation, both directions". Availability is held on
-     the Slot; nothing is "restatused"; a Slot holding a List keeps the List's kind and is
-     conflict-flagged when marked unavailable or on leave; marking it available writes no conflict.
+  1. **Superseded:** 2026-07-23 "Availability reconciliation, both directions". Availability is a
+     status held on the Slot, the one mechanism the calendar edits (OQ-17 and OQ-27, answered
+     2026-10-01); nothing is "restatused" or reconciled; a Slot holding a List keeps the List's kind
+     and is conflict-flagged when marked unavailable or holiday (interim until Phase 31 makes those
+     Lists Draft Lists); marking it free writes no conflict.
   2. **Superseded:** the reassign mechanism (4th review #6 and the Phase 06 entry: free target, absorb,
      regenerate the vacated slot, default Unavailable). The List moves between Slots, keeps its id, and
-     the vacated Slot returns to available by default (US-01.4.1).
+     the vacated Slot returns to free by default (US-01.4.1).
   3. **Superseded:** Phase 06 decision (5), the grid display-status derivation from cards or a hospital.
-     One pure `displayStatusKey(slot, list)` for all three apps (US-01.2.3). Handoff item P5 is closed.
+     One pure `displayStatusKey(slot, list)` for all three apps: the List's kind in place of the
+     Slot's status (US-01.2.3). Handoff item P5 is closed.
   4. **Amended:** 2026-07-23 "Deterministic IDs". Slots `S-<reg>-<date>-<session>`; projected Lists keep
      the birth-slot `L-...` form (never parsed); runtime Lists `LG####`; no regenerated Lists. The
      Phase 02 entry's "always resolve slots via `listForSlot`" note is replaced by `slotFor` +
      `listInSlot`.
-  5. **New:** the status vocabulary is a labelled simplification until OQ-17 and OQ-27 are answered
-     (availability: available, unavailable, holiday; List kind: private, public, pre-op); the six-colour
-     design language is kept by deriving the display key.
+  5. **New, provisional (OQ-64, one place):** every Slot is stored; the Slot status values are free,
+     unavailable and holiday and the List kinds private, public and pre-op, with the names "Slot" and
+     "List", until OQ-64 names the final values, colours and names; the six-colour design language is
+     kept by deriving the display key. The label sits on the List statuses master view only.
   6. **New:** default AM and PM times are one settings record (`masters.slotSettings`); overrides live on
      the Slot and travel with a reassigned List.
   7. **New:** the approval state `DRAFT` is shown as "Open"; "Draft List" is reserved for Phase 31.
@@ -790,18 +951,27 @@ review-and-fix pass (PROGRESS convention 18)**:
      target Slot holds no List parks for the office until Phase 33.
   9. **New:** List keeps denormalised `anaesthetistId`, `dateISO` and `session`, kept equal to its Slot's
      by the store and checked by an invariant test.
+  10. **New:** an anaesthetist's Slots start on their start date (US-01.1.3); a start-date edit adds or
+      removes Slots from today on and never removes a List.
   Convention 10 ("six statuses ... used by all three apps") stands; note that the key is now derived.
 - **Handoff notes:**
-  - For **29**: `SlotAvailability` is the set to extend (emergency; on leave vs holiday) and to turn into
-    master data; `setAvailability` already writes the Slot; web gets the same control.
+  - For **29**: the calendar edits `Slot.status` directly (one mechanism, nothing to reconcile);
+    `SlotStatus` is the set to turn into master data (and to extend if OQ-64 names more values);
+    `setAvailability` already writes the Slot; web gets the same control; series and single-instance
+    edits write the same field.
   - For **30**: `assignListToSlot`'s `slotNotAvailable` refusal becomes accept-and-flag; availability
     conflicts are not cleared yet; `'adminDay.selectedSlotId'` is ready for "Simulate sickness";
-    Permanent List edits need a projection over existing Slots (`generateCanvasForDates` is pure and
-    reusable).
-  - For **31**: `placeListOnSlot` is the one creation path a Draft List assignment should reuse; the
-    pairing rule has three seeded exceptions to resolve (Fitzgerald TBC, pre-op, acute).
-  - For **32**: `Slot.coverRequest` is the marker to replace; `moveListToSlot` is the confirm step's move.
+    recurring-booking edits need a projection over existing Slots (`generateCanvasForDates` is pure and
+    reusable), and the Permanent List rename is still to do.
+  - For **31**: `placeListOnSlot` is the one creation path a Draft List assignment should reuse;
+    `setAvailability`'s conflict path on a Slot holding a List is where unavailability turns the List
+    into a Draft List; the pairing rule has three seeded exceptions to resolve (Fitzgerald TBC,
+    pre-op, acute).
+  - For **32**: `Slot.coverRequest` is the marker to remove; `moveListToSlot` is the move into a
+    colleague's free Slot.
   - For **33**: the integration parking rule is the seam for "no silent apply".
+  - For **35**: the reassign confirm is where the cover-change update email to the hospital is offered
+    (US-01.4.1's note, OQ-46).
   - For **38**: billed Lists and the Slot views are ready for "stay visible".
   - For **39**: remove the addendum's List creation with the addendum.
   - For **44**: S2 Beats 1 to 3 were patched here; re-read them in the rewrite.

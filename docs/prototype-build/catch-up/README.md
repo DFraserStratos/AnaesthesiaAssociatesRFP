@@ -5,7 +5,7 @@ Since then the requirements catalogue (`docs/discovery-reference/Updated Require
 has moved a long way. This folder holds the gap analysis between the two and the build plan to close
 it: catch-up phases numbered from 14.
 
-Catalogue snapshot: `1f067a8` (2026-09-30).
+Catalogue snapshot: `501b0b8` (2026-10-01).
 
 ## Start here
 
@@ -68,3 +68,7 @@ The tools the second skill drives, all run from the repo root:
 | `tools/workflow-plan-update.js` | Opus planners for an update: outline, coverage, critic, affected phase docs and prompts. |
 | `tools/apply-plan-update.mjs <journal> <commit> [--built ..]` | Rebuilds `plan.json` exactly from an update run, moves the baseline, regenerates `index.html`. |
 | `tools/build-index.mjs` | Renders `index.html` from `plan.json`, `gaps.json` and the prompt files. |
+
+## Update history
+
+- 2026-10-01 · `1f067a8..501b0b8` (AA meeting with Greg, D1 to D8 and D10 answered): 142 items re-graded; all 31 phases kept, 28 updated (14, 37, 43 baseline only); 6 phases added (15a warnings, 38a find past work, 39a payment runs, 39b pre/post-op events, 40a NHI lookup, 43a ease of use); US-08.6.4 unparked into 39. 37 phases, about 63 sessions (was 52).
