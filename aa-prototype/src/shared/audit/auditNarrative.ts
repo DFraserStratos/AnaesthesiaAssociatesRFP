@@ -167,7 +167,7 @@ function formatShape(value: Record<string, unknown>): string | null {
   }
   // Quarantined inbound ethnicity code
   if (typeof value.receivedCode === 'string') return `${value.receivedCode} · held for correction`
-  // BookingCancellation / PrepaymentOverride / ListPhoneNote — the words are the value.
+  // BookingCancellation / ListPhoneNote — the words are the value.
   if (typeof value.reason === 'string') return value.reason
   if (typeof value.text === 'string') return value.text
   return null

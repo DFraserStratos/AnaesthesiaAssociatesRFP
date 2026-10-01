@@ -26,7 +26,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.attachmentAdd': 'Attachment added',
   'booking.attachmentRemove': 'Attachment removed',
   'booking.reassign': 'Booking moved to another list',
-  'booking.prepaymentOverride': 'Pre-payment gate overridden',
+  'booking.warningCleared': 'Warning cleared',
   'booking.billed': 'Booking billed',
   'booking.billingException': 'Billing exception raised',
 

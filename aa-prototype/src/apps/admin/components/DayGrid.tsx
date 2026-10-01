@@ -21,8 +21,8 @@ interface DayGridProps {
    *  via the phone-advice path renders as a booked block. */
   activeBookingCounts: Record<string, number>
   /** Lists holding a booking whose pre-payment is flagged (Phase 09): outstanding
-   *  (required / invoiced-unpaid) or an office-overridden gate. */
-  prepaymentFlags: Map<string, 'outstanding' | 'overridden'>
+   *  (required / invoiced-unpaid). */
+  prepaymentFlags: Map<string, 'outstanding'>
   onSelectList: (listId: string) => void
 }
 
@@ -43,7 +43,7 @@ interface DisplaySegment extends Segment {
   displayKey: StatusKey
   needsAttention: boolean
   hasNote: boolean
-  prepaymentFlag?: 'outstanding' | 'overridden'
+  prepaymentFlag?: 'outstanding'
 }
 
 /** Merge a both-sessions holiday/unavailable pair into one full-day block. */
@@ -352,7 +352,7 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
         <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
       )}
       {prepaymentFlag !== undefined && (
-        <span title={prepaymentFlag === 'overridden' ? 'Pre-payment gate overridden' : 'Pre-payment outstanding'} style={{ position: 'absolute', bottom: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
+        <span title="Pre-payment outstanding" style={{ position: 'absolute', bottom: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
       )}
     </button>
   )

@@ -189,7 +189,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Web dashboard, Lists, availability and accounts views
 - Admin day view, changes, cover, review, authorisation, masters and audit
 - Billing run, invoice documents and billed-List disappearance (Phase 08)
-- Pre-payment gate, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
+- Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
 - HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
@@ -273,9 +273,9 @@ Say:
 ### 8. Pre-payment
 
 - The RFP requires payment before the procedure.
-- It does not specify how pre-procedure invoicing fits the normal authorised-List billing trigger or
-  whether an override exists.
-- The prototype uses a visible completion block and a reasoned, audited office override.
+- AA decided not to block (OQ-57): an unpaid prepayment is a strong before-procedure warning in both
+  apps, and completing, submitting and authorising all go through. There is no override.
+- The escalation as the date nears and the automatic prepayment invoice come later (catch-up Phase 27).
 
 ### 9. Concurrency
 

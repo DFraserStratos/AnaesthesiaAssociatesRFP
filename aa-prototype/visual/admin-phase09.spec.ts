@@ -32,7 +32,7 @@ test('admin phase 09: billing monitor failure, resolve and retry', async ({ page
   await page.screenshot({ path: 'visual/shots/p9-03-retried.png', fullPage: true })
 })
 
-test('admin phase 09: pre-payment gate on a booking', async ({ page }) => {
+test('admin phase 09: prepayment warning on a booking (never a block)', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
 
@@ -46,12 +46,15 @@ test('admin phase 09: pre-payment gate on a booking', async ({ page }) => {
   await expect(page.getByText('Pre-payment flagged')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-04-friday.png', fullPage: true })
 
-  // Open Souter's AM list (Forte / Ms G. Lim) and its booking → the gate banner.
+  // Open Souter's AM list (Forte / Ms G. Lim) and its booking: the warning banner.
   await page.getByText('Ms G. Lim', { exact: false }).first().click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText('Pre-payment required', { exact: true })).toBeVisible()
+  await expect(page.getByText('Prepayment required. No prepayment invoice has been raised yet.')).toBeVisible()
+  await expect(page.getByText(/never a block/)).toBeVisible()
   await expect(page.getByRole('button', { name: /Raise pre-procedure invoice/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Override/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-05-gate.png', fullPage: true })
 })

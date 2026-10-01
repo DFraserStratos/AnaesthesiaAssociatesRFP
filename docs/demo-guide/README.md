@@ -92,7 +92,7 @@ Snapshot date: **24 July 2026**
 | Anaesthetist web dashboard, Lists, availability and accounts views | Ready | Strong supporting workflow |
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
-| Pre-payment gate, post-op addendum and billing monitor | Ready | Phase 09 |
+| Prepayment warning, post-op addendum and billing monitor | Ready | Phase 09 |
 | Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
 | HL7/FHIR/PDF ingestion and integration monitoring | Ready | Phase 11 |
 | Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |

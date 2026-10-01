@@ -129,7 +129,10 @@ export interface MutationMeta {
 
 /** What a recipe may replace. Audit is the wrapper's job — never the recipe's. */
 export type DomainPatch = Partial<
-  Pick<AppState, 'masters' | 'schedule' | 'settings' | 'counters' | 'billing' | 'xero' | 'integrations' | 'dayNotes'>
+  Pick<
+    AppState,
+    'masters' | 'schedule' | 'settings' | 'appSettings' | 'counters' | 'billing' | 'xero' | 'integrations' | 'dayNotes'
+  >
 >
 
 function deriveStampBookingId(meta: MutationMeta, schedule: AppState['schedule']): BookingId | null {
@@ -227,6 +230,7 @@ export function resetDomainState(api: AppStoreApi): void {
     schedule: seed.schedule,
     audit: seed.audit,
     settings: seed.settings,
+    appSettings: seed.appSettings,
     dayNotes: seed.dayNotes,
     counters: seedBilling.counters,
     billing: {

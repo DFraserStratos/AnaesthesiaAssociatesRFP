@@ -334,8 +334,9 @@ shown under "List attachments" on mobile and web and read-only in the Admin List
 - There are advisory conflicts.
 - Rutherford AM "is now marked unavailable": the S2 reassign target.
 
-**Fri 24:** the pre-payment gate. AM is unpaid, with "Pre-payment required" and "Raise
-pre-procedure invoice". PM is paid.
+**Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a). AM is
+unpaid: Annette Riley's Booking shows "Pre-payment required" with the warning text and "Raise
+pre-procedure invoice", and still completes. PM is paid (Priya Nair).
 
 **Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney.
 Authorising Morrison raises 6 invoices.

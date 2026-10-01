@@ -355,13 +355,6 @@ export interface BookingCancellation {
   atISO: IsoDateTime
 }
 
-/** Audited override of the pre-payment completion gate (B7; 2nd review #6). */
-export interface PrepaymentOverride {
-  reason: string
-  by: string
-  atISO: IsoDateTime
-}
-
 export interface Attachment {
   id: string
   name: string
@@ -406,7 +399,6 @@ export interface Booking {
    */
   source?: BookingSource
   cancellation?: BookingCancellation
-  prepaymentOverride?: PrepaymentOverride
   attachments: Attachment[]
   notes?: string
   /** Stamped in lockstep with every audit entry (7th review A8). */

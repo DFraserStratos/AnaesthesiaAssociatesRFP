@@ -428,8 +428,9 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 - A patient-funded Procedure may require full or split pre-payment.
 - Payment is required before the procedure.
-- The prototype shows a visible completion block until the pre-invoice is paid or an office-only,
-  reasoned override is recorded.
+- An unpaid prepayment never blocks: it is a strong before-procedure warning on the Booking in both
+  apps, so the anaesthetist sees it before surgery starts (AA's decision, OQ-57). There is no override.
+- The office raises the pre-procedure invoice; once it is paid the warning goes.
 - Exact timing relative to the normal `AUTHORISED` billing trigger is a prototype reading.
 
 #### Post-operative addition

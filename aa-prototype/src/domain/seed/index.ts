@@ -58,6 +58,8 @@ import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
+import { defaultAppSettings } from '../warnings/settings'
+import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory } from './history'
@@ -109,6 +111,12 @@ export interface SeedSchedule {
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   billingLines: Record<string, BillingLine>
+  /**
+   * Office clearances of derived warnings (catch-up Phase 15a), keyed by
+   * warning key. Kept outside the Booking so clearing never touches a Booking
+   * an AUTHORISED List has locked. Empty at seed.
+   */
+  warningClearances: Record<string, WarningClearance>
 }
 
 export interface SeedState {
@@ -116,6 +124,12 @@ export interface SeedState {
   schedule: SeedSchedule
   audit: AuditEntry[]
   settings: DemoSettings
+  /**
+   * App settings (catch-up Phase 15a; DM-31): warning-rule switches and
+   * parameters. Kept apart from `settings`, which holds demo controls. No
+   * screen edits it (US-13.7.4 is Future).
+   */
+  appSettings: AppSettings
   /**
    * Seeded anaesthetist-dashboard figures (Phase 05; W1/W4), keyed by
    * registration number. Labelled demo figures; Phase 10 replaces the
@@ -437,6 +451,7 @@ function buildSeedInternal(): SeedBuild {
       bookings: bookingsRec,
       procedures: proceduresRec,
       billingLines: billingLinesRec,
+      warningClearances: {},
     },
     audit,
     settings: {
@@ -445,6 +460,7 @@ function buildSeedInternal(): SeedBuild {
       // archive job decrements `activeContacts`. Not ~28k seeded records.
       volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
     },
+    appSettings: defaultAppSettings(),
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     counters: {
@@ -624,13 +640,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Pre-payment booking (split, unpaid)',
       entityType: 'booking',
       entityId: scenario.prepayment,
-      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, $800 deposit on a $1,200 self funded fee. Unpaid: gate blocks completion.',
+      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, $800 deposit on a $1,200 self funded fee. Unpaid: raises the prepayment warning, never a block.',
     },
     prepaymentPaidBooking: {
       label: 'Pre-payment booking (mixed + full, seeded paid)',
       entityType: 'booking',
       entityId: scenario.prepaymentPaid,
-      detail: 'Souter Fri 24 PM; one hospital procedure + one full pre-payment (seeded PAID). Completes with no override; no balance invoice.',
+      detail: 'Souter Fri 24 PM; one hospital procedure + one full pre-payment (seeded PAID). Paid: no warning; no balance invoice.',
     },
     billingFailureBooking: {
       label: 'Billing failure booking (COS ACC)',

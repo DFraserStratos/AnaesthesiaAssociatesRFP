@@ -73,7 +73,18 @@ export {
   addPostOpAddendum,
   type CreateBookingInput,
 } from './bookingActions'
-export { raisePreProcedureInvoice, overridePrepaymentGate } from './prepaymentActions'
+export { raisePreProcedureInvoice } from './prepaymentActions'
+export {
+  warningFactsFor,
+  warningsForBooking,
+  warningsForList,
+  openWarnings,
+  warningSummaryByList,
+  clearWarning,
+  type WarningState,
+  type OpenWarningRow,
+  type ListWarningSummary,
+} from './warnings'
 export { addAttachment, removeAttachment, type AttachmentFile, type AttachmentTarget } from './attachmentActions'
 export {
   addBillingLine,

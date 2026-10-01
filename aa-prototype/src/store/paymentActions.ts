@@ -12,7 +12,7 @@
  *     it DRAFT → AUTHORISED ("partial payments pass through proportionally");
  *   - mirror the money onto the BillingCase (received/authorised, paidInAt, a
  *     derived status label), so a fully-paid PRE-PAYMENT case reads `paid` and
- *     `prepaymentStatusFor` clears the Phase-09 completion gate;
+ *     the `prepaymentUnpaid` warning (catch-up Phase 15a) goes;
  *   - append a `BillingReceipt` (the GST-report source + the idempotency
  *     key-set), GST = gross × 0.15 / 1.15.
  *

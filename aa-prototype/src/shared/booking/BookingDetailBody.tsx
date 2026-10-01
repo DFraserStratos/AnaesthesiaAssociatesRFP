@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, Minus, Plus, Receipt, ShieldAlert, Stethoscope, XCircle } from 'lucide-react'
+import { Copy, History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, TriangleAlert, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
+import { PREPAYMENT_REQUIRED_TEXT, PREPAYMENT_UNPAID_TEXT } from '../../domain/warnings'
 import {
   validateBookingForBilling,
   type BillingValidationFailure,
@@ -30,7 +31,6 @@ import {
   CancelBookingSheet,
   EditPatientSheet,
   EditProcedureSheet,
-  PrepaymentOverrideSheet,
   RemoveProcedureSheet,
 } from '../flows'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
@@ -57,7 +57,6 @@ type SheetState =
   | 'none'
   | 'cancel'
   | 'patient'
-  | 'prepaymentOverride'
   | 'attachment'
   | { kind: 'procedure'; procedureId: string }
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
@@ -488,37 +487,25 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
         </div>
       )}
       {prepaymentStatus !== 'none' && (
-        <div data-shot="booking-prepayment" style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.warning.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.warning.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div data-shot="booking-prepayment" style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.error.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-            <ShieldAlert size={16} aria-hidden />
+            {prepaymentStatus === 'paid' ? <ShieldCheck size={16} aria-hidden /> : <TriangleAlert size={16} aria-hidden />}
             {prepaymentStatus === 'required' && 'Pre-payment required'}
             {prepaymentStatus === 'outstanding' && 'Pre-payment outstanding'}
-            {prepaymentStatus === 'overridden' && 'Pre-payment gate overridden'}
             {prepaymentStatus === 'paid' && 'Pre-payment received'}
           </div>
           <span>
-            {prepaymentStatus === 'required' &&
-              'A patient-funded procedure on this booking requires pre-payment before the procedure proceeds. Completing the booking is blocked until the pre-invoice is paid or the office records an override.'}
-            {prepaymentStatus === 'outstanding' &&
-              'The pre-procedure invoice has been raised but is not yet paid. Completing the booking is blocked until payment clears or the office records an override.'}
-            {prepaymentStatus === 'overridden' &&
-              `The office lifted the pre-payment gate. Reason: ${booking.prepaymentOverride?.reason ?? 'not recorded'}.`}
-            {prepaymentStatus === 'paid' && 'The pre-payment invoice has been paid. The completion gate is cleared.'}
+            {prepaymentStatus === 'required' && PREPAYMENT_REQUIRED_TEXT}
+            {prepaymentStatus === 'outstanding' && PREPAYMENT_UNPAID_TEXT}
+            {prepaymentStatus === 'paid' && 'The prepayment invoice has been paid.'}
           </span>
           {(prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && (
-            <span style={{ fontSize: 11.5, opacity: 0.85 }}>
-              Pre-payment timing against the AUTHORISED billing trigger is an RFP open question. The prototype raises the pre-invoice before the procedure and bills only the balance at the run.
-            </span>
+            <span style={{ fontSize: 11.5, opacity: 0.85 }}>A warning, never a block: this Booking can still be completed and submitted.</span>
           )}
-          {isOffice && (prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && canEdit && (
+          {isOffice && prepaymentStatus === 'required' && canEdit && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
-              {prepaymentStatus === 'required' && (
-                <button onClick={doRaisePrepayment} style={officeActionStyle}>
-                  <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
-                </button>
-              )}
-              <button onClick={() => setSheet('prepaymentOverride')} style={officeActionStyle}>
-                <ShieldAlert size={14} aria-hidden /> Override gate
+              <button onClick={doRaisePrepayment} style={officeActionStyle}>
+                <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
               </button>
             </div>
           )}
@@ -745,7 +732,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
 
       <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'booking', id: bookingId }} actor={actor} onClose={() => setSheet('none')} />
       <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
-      <PrepaymentOverrideSheet open={sheet === 'prepaymentOverride'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onOverridden={() => setError(null)} />
       {patient !== undefined && (
         <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
       )}

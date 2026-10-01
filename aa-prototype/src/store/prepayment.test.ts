@@ -1,27 +1,25 @@
 /**
- * Pre-payment gate, override and pre-invoice tests (Phase 09; B7).
+ * Pre-payment tests (Phase 09; B7), reworked for catch-up Phase 15a (D5, OQ-57,
+ * US-06.3.2 "No block", US-13.7.1 "Never blocks").
  *
- * The gate blocks completing an unpaid selfFundedPrepayment booking; the audited
- * office override lifts it; a seeded PAID pre-invoice clears it with no
- * override; a non-prepayment booking is unaffected. `raisePreProcedureInvoice` is
- * office-only, idempotent, and refused once the List is authorised. The
- * balance-after-override run bills the remainder (deposit + balance = the full
- * self funded fee).
+ * An unpaid selfFundedPrepayment booking is NOT blocked: it completes, saves,
+ * submits and authorises while carrying the strong before-procedure
+ * `prepaymentUnpaid` warning. Raising the pre-invoice changes the warning's
+ * text; paying it removes the warning. `raisePreProcedureInvoice` is
+ * office-only, idempotent, and refused once the List is authorised. The balance
+ * run bills the remainder (deposit + balance = the full self funded fee).
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, completeBooking, completionBlockersFor, submitList } from './lifecycle'
-import { overridePrepaymentGate, raisePreProcedureInvoice } from './prepaymentActions'
+import { authoriseList, completeBooking, completionBlockersFor, editBooking, submitList } from './lifecycle'
+import { raisePreProcedureInvoice } from './prepaymentActions'
 import { runBillingForList } from './billingRun'
-import {
-  billingMonitor,
-  prePaymentInvoicesForBooking,
-  prepaymentStatusFor,
-  proceduresForBooking,
-} from './selectors'
+import { billingMonitor, bookingsForList, prePaymentInvoicesForBooking, prepaymentStatusFor } from './selectors'
+import { warningsForBooking } from './warnings'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
+import { PREPAYMENT_REQUIRED_TEXT, PREPAYMENT_UNPAID_TEXT } from '../domain/warnings'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
@@ -39,54 +37,64 @@ function listOf(api: BoundAppStore, bookingId: string): string {
   if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
   return booking.listId
 }
+/** Complete every other open Booking on the List, so submit is possible. */
+function completeSiblings(api: BoundAppStore, actor: Actor, bookingId: string): void {
+  for (const b of bookingsForList(api.getState(), listOf(api, bookingId))) {
+    if (b.id === bookingId || b.completed || b.cancellation !== undefined) continue
+    expect(completeBooking(api, actor, b.id)).toMatchObject({ ok: true })
+  }
+}
+function prepaymentWarnings(api: BoundAppStore, bookingId: string) {
+  return warningsForBooking(api.getState(), bookingId).filter((w) => w.ruleId === 'prepaymentUnpaid')
+}
 
-describe('the completion gate', () => {
-  it('blocks completing an unpaid selfFundedPrepayment booking (required, no invoice yet)', () => {
+describe('an unpaid prepayment never blocks (D5)', () => {
+  it('Riley carries the strong before-procedure warning and has no prepayment blocker', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('required')
     const blockers = completionBlockersFor(api.getState(), api.getState().schedule.bookings[riley]!)
-    expect(blockers.some((b) => b.code === 'prepaymentUnpaid')).toBe(true)
-    expect(completeBooking(api, SOUTER, riley)).toMatchObject({ ok: false, code: 'prepaymentUnpaid' })
+    expect(blockers).toEqual([])
+    expect(prepaymentWarnings(api, riley)).toEqual([
+      expect.objectContaining({ kind: 'beforeProcedure', strength: 'strong', text: PREPAYMENT_REQUIRED_TEXT }),
+    ])
   })
 
-  it('a seeded PAID pre-invoice clears the gate with no override', () => {
+  it('completes as the anaesthetist, saves an edit, submits and authorises, with the warning still raised', () => {
+    const api = store()
+    const riley = marker('prepaymentBooking')
+    const listId = listOf(api, riley)
+    expect(completeBooking(api, SOUTER, riley)).toMatchObject({ ok: true })
+    expect(api.getState().schedule.bookings[riley]!.completed).toBe(true)
+    expect(prepaymentWarnings(api, riley)).toHaveLength(1)
+    // US-13.7.1 "saved": an edit to the warned Booking goes through.
+    expect(editBooking(api, SOUTER, riley, { notes: 'Patient aware of the prepayment.' })).toMatchObject({ ok: true })
+    completeSiblings(api, SOUTER, riley)
+    expect(submitList(api, SOUTER, listId)).toMatchObject({ ok: true })
+    expect(authoriseList(api, OFFICE, listId)).toMatchObject({ ok: true })
+    expect(prepaymentWarnings(api, riley)).toHaveLength(1)
+  })
+
+  it('a seeded PAID pre-invoice raises no warning and completes', () => {
     const api = store()
     const paid = marker('prepaymentPaidBooking')
     expect(prepaymentStatusFor(api.getState(), paid)).toBe('paid')
+    expect(prepaymentWarnings(api, paid)).toEqual([])
     expect(completeBooking(api, SOUTER, paid).ok).toBe(true)
-    expect(api.getState().schedule.bookings[paid]!.completed).toBe(true)
-    expect(api.getState().schedule.bookings[paid]!.prepaymentOverride).toBeUndefined()
   })
 
-  it('a non-prepayment booking is unaffected by the gate', () => {
+  it('a non-prepayment booking raises no prepayment warning', () => {
     const api = store()
     const acc = marker('accRelatedBooking')
     expect(prepaymentStatusFor(api.getState(), acc)).toBe('none')
-    const blockers = completionBlockersFor(api.getState(), api.getState().schedule.bookings[acc]!)
-    expect(blockers.some((b) => b.code === 'prepaymentUnpaid')).toBe(false)
-  })
-})
-
-describe('overridePrepaymentGate', () => {
-  it('is office-only and needs a reason', () => {
-    const api = store()
-    const riley = marker('prepaymentBooking')
-    expect(overridePrepaymentGate(api, SOUTER, riley, 'proceeding')).toMatchObject({ ok: false, code: 'officeOnly' })
-    expect(overridePrepaymentGate(api, OFFICE, riley, '  ')).toMatchObject({ ok: false, code: 'reasonRequired' })
+    expect(prepaymentWarnings(api, acc)).toEqual([])
   })
 
-  it('lifts the gate (audited), then the booking completes; a second override is refused', () => {
+  it('raising the pre-invoice changes the warning text', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
-    const outcome = overridePrepaymentGate(api, OFFICE, riley, 'Patient paid in clinic, receipt on file')
-    expect(outcome.ok).toBe(true)
-    expect(prepaymentStatusFor(api.getState(), riley)).toBe('overridden')
-    expect(
-      api.getState().audit.some((a) => a.entityId === riley && a.action === 'booking.prepaymentOverride'),
-    ).toBe(true)
-    expect(completeBooking(api, SOUTER, riley).ok).toBe(true)
-    expect(overridePrepaymentGate(api, OFFICE, riley, 'again')).toMatchObject({ ok: false, code: 'alreadyOverridden' })
+    expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
+    expect(prepaymentWarnings(api, riley).map((w) => w.text)).toEqual([PREPAYMENT_UNPAID_TEXT])
   })
 })
 
@@ -117,17 +125,15 @@ describe('raisePreProcedureInvoice', () => {
   })
 })
 
-describe('balance after override (deposit + balance = the full self funded fee)', () => {
-  it('raises the $800 deposit, overrides, then bills the $400 balance with a visible deduction line', () => {
+describe('balance after a deposit (deposit + balance = the full self funded fee)', () => {
+  it('raises the $800 deposit, completes while unpaid, then bills the $400 balance with a visible deduction line', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
     const listId = listOf(api, riley)
 
     expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
-    // The gate still blocks (outstanding) until the override.
-    expect(completeBooking(api, SOUTER, riley)).toMatchObject({ ok: false, code: 'prepaymentUnpaid' })
-    expect(overridePrepaymentGate(api, OFFICE, riley, 'Proceeding on the office call').ok).toBe(true)
     expect(completeBooking(api, SOUTER, riley).ok).toBe(true)
+    completeSiblings(api, SOUTER, riley)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     const run = runBillingForList(api, listId)
@@ -142,8 +148,6 @@ describe('balance after override (deposit + balance = the full self funded fee)'
     // deposit (800) + balance (400) = the full $1,200 self funded fee.
     const deposit = prePaymentInvoicesForBooking(state, riley)[0]!
     expect(deposit.subtotal + balance[0]!.subtotal).toBe(1200)
-    // A procedure with only one procedure means only one invoice for the booking kind standard.
-    void proceduresForBooking(state, riley)
   })
 })
 
@@ -152,7 +156,6 @@ describe('the monitor does not conflate the paid pre-invoice with the run', () =
     const api = store()
     const paid = marker('prepaymentPaidBooking')
     const listId = listOf(api, paid)
-    // Paid gate clears completion; bill the list.
     expect(completeBooking(api, OFFICE, paid).ok).toBe(true)
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)

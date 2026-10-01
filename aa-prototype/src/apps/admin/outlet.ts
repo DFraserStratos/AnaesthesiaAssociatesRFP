@@ -21,7 +21,7 @@ export interface AdminOutletContext {
   listsByAnaesthetist: Record<string, List[]>
   masters: AppState['masters']
   activeBookingCounts: Record<string, number>
-  prepaymentFlags: Map<string, 'outstanding' | 'overridden'>
+  prepaymentFlags: Map<string, 'outstanding'>
   summary: string
   notes: DayNote[]
   reviewRows: ReviewRow[]

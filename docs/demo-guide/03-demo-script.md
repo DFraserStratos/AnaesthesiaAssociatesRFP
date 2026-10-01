@@ -302,20 +302,18 @@ actions** on the screen named in its beat.
 
 **Stage it:** use **Reset → Confirm reset**. Work top to bottom through the beats below.
 
-### Beat 1: pre-payment gate
+### Beat 1: prepayment warning
 
 - **Click:**
-  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley → Mark
-    complete**.
-  - Pause on the pre-payment block.
-  - Go to **Admin Day view → Fri 24 Jul → Souter AM → Annette Riley**.
-  - Select **Override pre-payment gate**, enter **Manager approved theatre exception**, and save.
-  - Return to Mobile and complete the Booking.
-- **Say:** "A patient-funded pre-payment must be paid before the procedure. A browser prototype cannot
-  gate a theatre list, so completion is blocked until the pre-invoice is paid or the office records a
-  reasoned, audited override."
-- **Expected:** completion is blocked with the pre-payment reason; the office override lifts it and is
-  written to the audit trail.
+  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley**.
+  - Read the **Pre-payment required** warning on her Booking.
+  - Select **Mark complete**: it completes.
+  - Optionally, go to **Admin Day view → Fri 24 Jul → Souter AM → Annette Riley** and show the same
+    warning to the office, with **Raise pre-procedure invoice** beside it.
+- **Say:** "A warning, never a block. The anaesthetist sees it before surgery starts, while the
+  surgeon can still be told; the office sees it too. AA decided not to block (OQ-57)."
+- **Expected:** completion goes through while the prepayment is unpaid; the warning shows in both
+  apps. There is no override any more.
 
 ### Beat 2: post-op addendum
 
@@ -362,9 +360,9 @@ actions** on the screen named in its beat.
   part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises pro-rata; payables pays only the increment each run.
 
-**Discovery points:** billing-failure isolation (a prototype choice; the RFP leaves it open); the
-pre-payment gate and override placement; and how inbound messages targeting a submitted or authorised
-List are parked for manual intervention.
+**Discovery points:** billing-failure isolation (a prototype choice; the RFP leaves it open); which
+conditions warn, and how strongly; and how inbound messages targeting a submitted or authorised List
+are parked for manual intervention.
 
 ---
 

@@ -496,4 +496,12 @@ describe('completionBlockersFor', () => {
     const failures = blockers[0]?.details as BillingValidationFailure[]
     expect(failures.some((f) => f.field === 'billingRoute')).toBe(true)
   })
+
+  it('never lists an unpaid prepayment: warnings are not blockers (catch-up Phase 15a; D5)', () => {
+    const api = store()
+    const riley = SEED_MARKERS['prepaymentBooking']!.entityId
+    const state = api.getState()
+    const blockers = completionBlockersFor(state, state.schedule.bookings[riley]!)
+    expect(blockers.map((b) => b.code)).not.toContain('prepaymentUnpaid')
+  })
 })

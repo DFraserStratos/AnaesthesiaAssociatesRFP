@@ -4,8 +4,7 @@
  * Webhook idempotency (replay is a no-op; two distinct partials both apply),
  * partial pro-rata authorisation of the ACCPAY, webhook-then-poll double
  * delivery causing no double effect, receipts (GST) as the idempotency
- * key-set, and a pre-payment webhook clearing the Phase-09 completion gate
- * without an override.
+ * key-set, and a pre-payment webhook removing the prepayment warning.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -16,6 +15,7 @@ import { raisePreProcedureInvoice } from './prepaymentActions'
 import { receivePayment, gstComponentOf, proRataAuthorised } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
 import { casesForList, casesForBooking, prepaymentStatusFor } from './selectors'
+import { warningsForBooking } from './warnings'
 import { roundToCents, toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
@@ -150,8 +150,8 @@ describe('reconciliation poll (safety net)', () => {
   })
 })
 
-describe('pre-payment webhook clears the completion gate (closes Phase 09 deferral)', () => {
-  it('paying the split pre-payment pre-invoice clears the gate without an override', () => {
+describe('pre-payment webhook clears the prepayment warning (Phase 09; catch-up Phase 15a)', () => {
+  it('paying the split pre-payment pre-invoice removes the warning', () => {
     const api = store()
     const riley = marker('prepaymentBooking')
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('required')
@@ -162,12 +162,13 @@ describe('pre-payment webhook clears the completion gate (closes Phase 09 deferr
     const preCase = casesForBooking(api.getState(), riley)[0]!
     const accRec = api.getState().xero.accRecs[preCase.accRecId!]!
 
-    // Webhook pays it in full → case 'paid' → gate clears.
+    expect(warningsForBooking(api.getState(), riley).some((w) => w.ruleId === 'prepaymentUnpaid')).toBe(true)
+
+    // Webhook pays it in full → case 'paid' → the warning goes.
     expect(receivePayment(api, { accRecId: accRec.id, amount: accRec.amountDue, idempotencyKey: 'PRE', source: 'webhook' }).ok).toBe(true)
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('paid')
 
-    // The booking now completes with no override (its only blocker was the gate).
-    expect(api.getState().schedule.bookings[riley]!.prepaymentOverride).toBeUndefined()
+    expect(warningsForBooking(api.getState(), riley).some((w) => w.ruleId === 'prepaymentUnpaid')).toBe(false)
     const done = completeBooking(api, SOUTER, riley)
     expect(done.ok).toBe(true)
     expect(toCents(accRec.amountDue)).toBeGreaterThan(0)

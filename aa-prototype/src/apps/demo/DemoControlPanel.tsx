@@ -302,13 +302,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S4',
     title: 'S4 · Exceptions',
-    blurb: 'Pre-payment gate, post-op addendum, billing failure + retry, integration dead-letter + fix, partial payment.',
+    blurb: 'Prepayment warning, post-op addendum, billing failure + retry, integration dead-letter + fix, partial payment.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley: read the prepayment warning, then Mark complete (a warning, never a block); (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },

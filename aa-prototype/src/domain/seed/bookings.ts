@@ -820,8 +820,8 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   })
 
   // Pre-payment (split deposit) — the UNPAID exemplar, on Souter's own Fri 24
-  // AM list so the outstanding flag + completion gate are reachable in the
-  // mobile app (Phase 09; B7). A self funded cosmetic case billed as a flat
+  // AM list so the unpaid-prepayment warning is reachable in the mobile app
+  // (Phase 09; B7; a warning, never a block, since catch-up Phase 15a / D5). A self funded cosmetic case billed as a flat
   // agreed professional fee ($1,200), so an $800 deposit leaves a coherent
   // $400 balance (deposit + balance = the full fee).
   const souterFri24Am = listIdForSlot(ANAE.souter, FRI24, 'AM')
@@ -890,9 +890,8 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // normally, plus one BillableParty selfFundedPrepayment{full} procedure whose
   // full fee is pre-invoiced and seeded paid (see domain/seed/billing.ts): it
   // demos the mixed case (hospital portion untouched), the full case (no balance
-  // invoice) and the payment-cleared gate (completes with no override). Left
-  // NOT completed so the presenter clears the gate live; both procedures carry
-  // full capture so only the (already cleared) gate stands between it and done.
+  // invoice) and the paid state (no prepayment warning). Left NOT completed so
+  // the presenter can complete it live; both procedures carry full capture.
   const souterFri24Pm = listIdForSlot(ANAE.souter, FRI24, 'PM')
   const prepaidBooking = addBooking({
     listId: souterFri24Pm,

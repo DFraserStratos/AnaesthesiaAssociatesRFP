@@ -186,18 +186,16 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
   const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
 
-  // Lists on the selected day holding a booking whose pre-payment is flagged — a
-  // day-grid indicator (Phase 09). Outstanding (required/invoiced-unpaid) wins
-  // over an overridden gate on the same list; both surface so an override is
-  // never invisible at a glance.
+  // Lists on the selected day holding a booking whose pre-payment is unpaid: a
+  // day-grid indicator (Phase 09). Session 2 of catch-up Phase 15a replaces it
+  // with the warning routine's per-List summary.
   const prepaymentFlags = useMemo(() => {
-    const map = new Map<string, 'outstanding' | 'overridden'>()
+    const map = new Map<string, 'outstanding'>()
     for (const booking of Object.values(bookingsRecord)) {
       const list = listsRecord[booking.listId]
       if (list === undefined || list.dateISO !== selectedDate) continue
       const status = prepaymentStatusFor({ schedule, billing }, booking.id)
       if (status === 'required' || status === 'outstanding') map.set(list.id, 'outstanding')
-      else if (status === 'overridden' && !map.has(list.id)) map.set(list.id, 'overridden')
     }
     return map
   }, [bookingsRecord, listsRecord, selectedDate, schedule, billing])

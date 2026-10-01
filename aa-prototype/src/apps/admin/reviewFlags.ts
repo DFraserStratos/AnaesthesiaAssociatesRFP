@@ -40,7 +40,7 @@ export interface ReviewProcedureInput {
 }
 
 /** The derived pre-payment status, passed in so `reviewFlags` stays pure (no store). */
-export type ReviewPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid' | 'overridden'
+export type ReviewPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
 
 export interface ReviewBookingInput {
   booking: Booking
@@ -68,12 +68,10 @@ export function reviewFlagsForBooking({ booking, procedures, prepaymentStatus }:
     flags.push({ tone: 'neutral', text: 'Not marked completed', bookingId: booking.id })
   }
 
-  // (e) pre-payment still to resolve, or lifted by an office override (Phase 09;
-  // B7). Both are flagged (warn) so the office sees them at authorisation.
+  // (e) pre-payment still to resolve (Phase 09; B7), flagged (warn) so the
+  // office sees it at authorisation. Never a block.
   if (prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') {
     flags.push({ tone: 'warn', text: 'Pre-payment outstanding', bookingId: booking.id })
-  } else if (prepaymentStatus === 'overridden') {
-    flags.push({ tone: 'warn', text: 'Pre-payment gate overridden', bookingId: booking.id })
   }
 
   for (const { procedure, fee, baseCode } of procedures) {

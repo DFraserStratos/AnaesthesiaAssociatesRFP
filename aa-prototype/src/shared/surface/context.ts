@@ -83,7 +83,7 @@ export interface BookingLayoutSlots {
   header: ((collapsed: boolean, history: ReactNode) => ReactNode) | null
   /** The History affordance (right-aligned; a page action on desktop). */
   history: ReactNode
-  /** Booking-wide notices: cancelled, copied, post-op, pre-payment gate, refusals. */
+  /** Booking-wide notices: cancelled, copied, post-op, prepayment warning, refusals. */
   banners: ReactNode
   /** Patient, scheduled time, attachments, notes for the office. */
   context: ReactNode

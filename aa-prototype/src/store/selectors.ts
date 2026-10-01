@@ -360,19 +360,18 @@ export function prePaidByProcedure(
   return out
 }
 
-export type PrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid' | 'overridden'
+export type PrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
 
 /**
- * The ONE derived pre-payment status for a Booking — the single source the
- * completion gate, the three flag surfaces (mobile booking, admin day view,
- * review) and the review flag all read. `required` = prepayment needed, no
- * invoice raised yet; `outstanding` = invoice raised, unpaid, not overridden;
- * `paid` = the pre-invoice cleared; `overridden` = the office lifted the gate.
+ * The ONE derived pre-payment status for a Booking: the source the
+ * `prepaymentUnpaid` warning rule (via `warningFactsFor`), the Booking's
+ * prepayment row and the Billing views read. `required` = prepayment needed,
+ * no invoice raised yet; `outstanding` = invoice raised, unpaid; `paid` = the
+ * pre-invoice cleared. Never a completion gate (catch-up Phase 15a; D5).
  */
 export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing'>, bookingId: string): PrepaymentStatus {
   if (!bookingRequiresPrepayment(state, bookingId)) return 'none'
   if (paidPrePaymentCaseForBooking(state, bookingId) !== undefined) return 'paid'
-  if (state.schedule.bookings[bookingId]?.prepaymentOverride !== undefined) return 'overridden'
   if (prePaymentInvoicesForBooking(state, bookingId).length > 0) return 'outstanding'
   return 'required'
 }

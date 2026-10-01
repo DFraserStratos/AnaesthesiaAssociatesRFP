@@ -10,18 +10,16 @@
  *    have already billed the full amount, so raising a deposit too would double
  *    charge), and is idempotent (refused if a pre-payment invoice already exists).
  *
- *  - `overridePrepaymentGate` records the office's real-world "proceed anyway"
- *    call (a browser prototype cannot itself verify a payment): it writes
- *    `Booking.prepaymentOverride` with a mandatory reason, audited and shown as a
- *    flagged override everywhere the Booking appears. It lifts the completion gate
- *    (2nd review #6; the settled hard-gate + audited-override ruling).
+ *  An unpaid prepayment never blocks completion (catch-up Phase 15a; D5,
+ *  OQ-57): it raises the `prepaymentUnpaid` warning (`domain/warnings`). The
+ *  July completion gate and its audited override are gone.
  *
  * OPEN QUESTION surfaced in UI copy: the RFP leaves the pre-payment timing vs
  * the AUTHORISED billing trigger open; this is the prototype's proposed reading
  * (pre-invoice pre-day, balance at the run).
  */
 
-import type { BillingCase, Invoice, InvoiceLine, PrepaymentOverride } from '../domain/types'
+import type { BillingCase, Invoice, InvoiceLine } from '../domain/types'
 import {
   buildPrePaymentInvoiceForBooking,
   type InvoiceBuildContext,
@@ -171,56 +169,4 @@ export function raisePreProcedureInvoice(
   handoffCasesForBooking(api, bookingId)
 
   return ok({ invoiceIds })
-}
-
-/**
- * Record an office override of the pre-payment completion gate (audited, with a
- * mandatory reason). Lifts the block; shown as a flagged override wherever the
- * Booking appears. Blocked on an AUTHORISED List (its Bookings are locked).
- */
-export function overridePrepaymentGate(
-  api: AppStoreApi,
-  actor: Actor,
-  bookingId: string,
-  reason: string,
-): Outcome {
-  const state = api.getState()
-  const found = getBooking(state, bookingId)
-  if (found === undefined) return refuse('notFound', 'Booking not found.')
-  const { booking, list } = found
-
-  if (actor.role !== 'office') {
-    return refuse('officeOnly', 'Only the office can override the pre-payment gate.')
-  }
-  if (reason.trim() === '') {
-    return refuse('reasonRequired', 'An override reason is required.')
-  }
-  if (list.state === 'AUTHORISED') {
-    return refuse('listAuthorised', 'This List is authorised and its Bookings are locked.')
-  }
-  if (!bookingRequiresPrepayment(state, bookingId)) {
-    return refuse('notPrepayment', 'This Booking does not require pre-payment; there is nothing to override.')
-  }
-  if (booking.prepaymentOverride !== undefined) {
-    return refuse('alreadyOverridden', 'The pre-payment gate is already overridden on this Booking.')
-  }
-
-  const override: PrepaymentOverride = { reason: reason.trim(), by: actor.who, atISO: clockISO(state.clock) }
-  mutate(
-    api,
-    actor,
-    {
-      entityType: 'booking',
-      entityId: bookingId,
-      action: 'booking.prepaymentOverride',
-      after: { reason: override.reason },
-    },
-    (s) => ({
-      schedule: {
-        ...s.schedule,
-        bookings: { ...s.schedule.bookings, [bookingId]: { ...booking, prepaymentOverride: override } },
-      },
-    }),
-  )
-  return ok(undefined)
 }

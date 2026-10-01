@@ -30,7 +30,10 @@ export const FIELD_LABELS: Record<string, string> = {
   correlationRef: 'Appointment reference',
   cancellation: 'Cancellation',
   cancelled: 'Cancelled',
-  prepaymentOverride: 'Pre-payment override',
+  // Warning clearances (catch-up Phase 15a)
+  ruleId: 'Warning rule',
+  strength: 'Strength',
+  warning: 'Warning',
   attachments: 'Attachments',
   attachmentId: 'Attachment',
   notes: 'Notes for the office',

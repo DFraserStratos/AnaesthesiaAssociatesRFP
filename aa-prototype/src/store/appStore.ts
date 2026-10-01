@@ -93,7 +93,9 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v15: 2026-10-02 · catch-up Phase 15: Booking.source on the scenario Bookings,
+/** v16: 2026-10-02 · catch-up Phase 15a: app settings for the warning routine;
+ *  warning clearances; prepayment override removed (D5).
+ *  v15: 2026-10-02 · catch-up Phase 15: Booking.source on the scenario Bookings,
  *  List attachments (the seeded theatre-list PDF), AT attachment ids.
  *  v14: 2026-10-02 · catch-up Phase 15: Card renamed to Booking: `schedule.bookings`,
  *  BK ids (HBK for history), `booking.*` audit, `counters.booking`.
@@ -131,7 +133,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 15
+export const PERSIST_VERSION = 16
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }
@@ -195,6 +197,17 @@ export function backfillMerge(current: AppStore, persisted: unknown): AppStore {
     const pv = p[key as string]
     if (isPlainObject(cv) && isPlainObject(pv)) {
       merged[key as string] = { ...cv, ...pv }
+    }
+  }
+  // One deliberate second level (catch-up Phase 15a): a rule registered after
+  // the store was persisted gains its seeded settings entry, while a persisted
+  // entry (its switch and params) wins.
+  const appSettings = merged['appSettings']
+  if (isPlainObject(appSettings) && isPlainObject(current.appSettings)) {
+    const persistedRules = isPlainObject(appSettings['warningRules']) ? appSettings['warningRules'] : {}
+    merged['appSettings'] = {
+      ...appSettings,
+      warningRules: { ...current.appSettings.warningRules, ...persistedRules },
     }
   }
   return merged as unknown as AppStore

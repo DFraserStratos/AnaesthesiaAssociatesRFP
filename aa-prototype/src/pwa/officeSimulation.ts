@@ -19,7 +19,7 @@
  * authorises a List off the back of the anaesthetist's own submit, and this must
  * never be presented as proposed behaviour. A real submission goes to the
  * OFFICE REVIEW QUEUE, where a person checks it (missing billing references,
- * pre-payment gates, cancelled bookings, phone notes) and authorises it
+ * prepayment warnings, cancelled bookings, phone notes) and authorises it
  * deliberately — that separation is the whole point of the SUBMITTED state, and
  * the Admin Review screen is where the prototype demonstrates it. What this job
  * simulates is only the PASSAGE OF TIME and the presence of that person. It is

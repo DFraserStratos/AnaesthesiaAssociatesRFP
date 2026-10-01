@@ -163,7 +163,7 @@ describe('copyBooking', () => {
       completed: false,
       attachments: [],
     })
-    for (const key of ['notes', 'scheduledTime', 'correlationRef', 'cancellation', 'prepaymentOverride', 'bookingType'] as const) {
+    for (const key of ['notes', 'scheduledTime', 'correlationRef', 'cancellation', 'bookingType'] as const) {
       expect(copy?.[key]).toBeUndefined()
     }
 
@@ -295,7 +295,7 @@ describe('copyBooking', () => {
     expect(outcome.ok).toBe(true)
   })
 
-  it('submitting the copy list is blocked until the new Booking is completed', () => {
+  it('the copy list cannot be submitted until the new Booking is completed', () => {
     // Copy adds an incomplete Booking; the completion-gated submit must refuse.
     const api = store()
     // Souter AM list is all-complete DRAFT — copy one booking there.

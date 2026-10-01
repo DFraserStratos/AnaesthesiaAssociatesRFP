@@ -73,15 +73,12 @@ describe('reviewFlags (pure)', () => {
     expect(flags.some((f) => f.text === 'B set manually')).toBe(true)
   })
 
-  it('(e) flags outstanding pre-payment and an overridden gate (warn), input-driven', () => {
+  it('(e) flags outstanding pre-payment (warn), input-driven', () => {
     const outstanding = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'outstanding' })
     expect(outstanding.find((f) => f.text === 'Pre-payment outstanding')?.tone).toBe('warn')
 
     const required = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'required' })
     expect(required.some((f) => f.text === 'Pre-payment outstanding')).toBe(true)
-
-    const overridden = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'overridden' })
-    expect(overridden.find((f) => f.text === 'Pre-payment gate overridden')?.tone).toBe('warn')
 
     // Paid / none / absent add no pre-payment flag.
     for (const status of ['paid', 'none', undefined] as const) {

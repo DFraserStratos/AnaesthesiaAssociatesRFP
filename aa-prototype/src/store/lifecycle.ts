@@ -25,7 +25,7 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { billingContextForBooking, bookingsForList, listForSlot, prepaymentStatusFor, proceduresForBooking } from './selectors'
+import { billingContextForBooking, bookingsForList, listForSlot, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
 
 // ---------------------------------------------------------------------------
@@ -76,8 +76,9 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
 // ---------------------------------------------------------------------------
 
 /**
- * An ordered completion blocker. Phase 09's pre-payment gate slots in as a
- * second entry in the list `completionBlockersFor` builds — no restructuring.
+ * An ordered completion blocker. Blockers are billing completeness only: a
+ * warning (`domain/warnings`, e.g. an unpaid prepayment) never becomes a
+ * blocker (catch-up Phase 15a; D5, US-13.7.1 "Never blocks").
  */
 export interface CompletionBlocker {
   code: string
@@ -104,22 +105,6 @@ export function completionBlockersFor(state: AppState, booking: Booking): Comple
       code: 'validationFailed',
       message: `This Booking is missing required billing data (${failures.length} ${failures.length === 1 ? 'item' : 'items'}).`,
       details: failures,
-    })
-  }
-
-  // Pre-payment gate (B7; Phase 09): "payment must be collected before the
-  // procedure proceeds". completeBooking is the last checkpoint the prototype
-  // controls, so an unpaid selfFundedPrepayment booking is blocked here — liftable
-  // only by the audited `overridePrepaymentGate` (which sets prepaymentOverride,
-  // moving the status to 'overridden') or a paid pre-invoice (status 'paid').
-  const prepayment = prepaymentStatusFor(state, booking.id)
-  if (prepayment === 'required' || prepayment === 'outstanding') {
-    blockers.push({
-      code: 'prepaymentUnpaid',
-      message:
-        prepayment === 'required'
-          ? 'Pre-payment is required for this Booking and no pre-procedure invoice has been raised yet. Raise and collect the pre-payment, or record an office override, before completing.'
-          : 'The pre-procedure invoice for this Booking is unpaid. Collect the pre-payment, or record an office override, before completing.',
     })
   }
 
