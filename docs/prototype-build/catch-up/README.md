@@ -44,14 +44,27 @@ Catalogue snapshot: `1f067a8` (2026-09-30).
 
 ## When the catalogue changes
 
-Every phase starts with a drift check (`git diff 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue"`
-for its items) and adapts. When the changes are big enough to re-grade:
+Two project skills (in `.claude/skills/`) run the whole loop:
 
-1. List the changed items: `git diff --name-only 1f067a8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements"`.
-2. Build the workflow args for just those: `node docs/prototype-build/catch-up/tools/build-args.mjs US-01.1.1 US-02.3.1 ...`
-   (no IDs means everything).
-3. Ask Claude Code to run `tools/workflow-gap-analysis.js` as a workflow with those epics, the repo root and
-   the new commit as args.
-4. Merge the results: `node docs/prototype-build/catch-up/tools/assemble-gaps.mjs <journal.jsonl> <commit> <date> --merge`
-   (items the re-run did not cover keep their earlier grading).
-5. Update the affected phase docs, or re-run the plan workflow for the phases not yet built.
+1. **`/update-requirements`** after a meeting or a round of board answers: files transcripts and notes as
+   a catalogue note, completes answers that point at the evidence, updates the requirements, and writes a
+   change log in `docs/discovery-reference/Updated Requirements/changes/`. Then commit and push.
+2. **`/update-build-plan <commit or link>`** then re-grades the changed items against the prototype,
+   re-plans the affected phases, updates their docs and prompts, moves the drift-check baseline and
+   regenerates `index.html`.
+
+Every phase also starts with its own drift check against the plan's baseline commit, so small changes are
+caught at build time.
+
+The tools the second skill drives, all run from the repo root:
+
+| Tool | What it does |
+|---|---|
+| `tools/plan-state.mjs [--to <ref>] [--coverage]` | Baseline, what changed since, built phases, coverage check. |
+| `tools/build-args.mjs [ID ...]` | The `epics` args for the gap-analysis workflow (all in-scope items, or just those IDs). |
+| `tools/workflow-gap-analysis.js` | Sonnet reviewers + adversarial verifiers; `reuseMaps`, `runDelta`, `runReverse`, `runThemes` switches for partial re-runs. |
+| `tools/assemble-gaps.mjs <journal> <commit> <date> [--merge]` | Builds `gaps.json`, `GAP-ANALYSIS.md`, `epics/`, `tools/units.json` from a run; `--merge` keeps earlier gradings for items not re-run. |
+| `tools/workflow-dev-plan.js` | Opus planners for a plan from scratch. |
+| `tools/workflow-plan-update.js` | Opus planners for an update: outline, coverage, critic, affected phase docs and prompts. |
+| `tools/apply-plan-update.mjs <journal> <commit> [--built ..]` | Rebuilds `plan.json` exactly from an update run, moves the baseline, regenerates `index.html`. |
+| `tools/build-index.mjs` | Renders `index.html` from `plan.json`, `gaps.json` and the prompt files. |

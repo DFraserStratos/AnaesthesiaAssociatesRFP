@@ -24,6 +24,8 @@ the Vitest + Playwright suites are green.
 between the prototype and the catalogue (at commit `1f067a8`) and a build plan of phases 14 to 44 to
 close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). A catch-up phase
 session follows its phase doc and prompt; other work is still fixes, polish and demo preparation.
+When requirements change, the `/update-requirements` skill records the evidence and updates the
+catalogue, then (after a commit) `/update-build-plan <commit>` updates the plan.
 
 Routine fixes and polish do not require reading or updating `PROGRESS.md`. Consult its build history,
 open-items handoff and Decisions log only when they are relevant to the task. Consult
