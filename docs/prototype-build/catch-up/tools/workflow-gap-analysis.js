@@ -9,7 +9,16 @@ export const meta = {
   ],
 }
 
+/*
+ * args: root (repo root), commit (catalogue commit graded), epics (from tools/build-args.mjs), plus
+ * optional switches for a partial re-run over changed items:
+ *   reuseMaps: true   skip the six mappers; reuse analysis/prototype-map-*.md (prototype code unchanged)
+ *   runDelta: false   skip the data-model delta (domain-model.md unchanged)
+ *   runReverse: false skip the reverse check (no newly retired items)
+ *   runThemes: false  skip the themes summary (assemble-gaps.mjs --merge keeps the earlier one)
+ */
 const ROOT = args.root
+const OPT = { reuseMaps: !!args.reuseMaps, runDelta: args.runDelta !== false, runReverse: args.runReverse !== false, runThemes: args.runThemes !== false }
 const EPICS = args.epics.map(e => ({
   ...e,
   items: e.items.map(s => { const [id, status, oq] = s.split('|'); return { id, status, type: id.startsWith('EP') ? 'epic' : id.startsWith('FT') ? 'feature' : 'story', title: '', oqs: oq ? oq.split(',') : [] } }),
@@ -145,7 +154,7 @@ const MAPS = [
 ]
 
 phase('Map')
-log(`272 in-scope items across ${EPICS.length} epics; catalogue @ ${args.commit.slice(0, 7)}`)
+log(`${EPICS.reduce((n, e) => n + e.items.length, 0)} items across ${EPICS.length} epics; options ${JSON.stringify(OPT)}; catalogue @ ${args.commit.slice(0, 7)}`)
 
 const mapJobs = MAPS.map(mp => () => agent(
   `${CTX}
@@ -176,10 +185,10 @@ Return the structured deltas (verify_outcome and verify_note as "").`,
   { label: 'delta:domain-model', phase: 'Map', model: M, effort: 'high', schema: DELTA },
 )
 
-const mapped = await parallel([...mapJobs, deltaJob])
-const deltaDraft = mapped[mapped.length - 1]
+const mapped = await parallel([...(OPT.reuseMaps ? [] : mapJobs), ...(OPT.runDelta ? [deltaJob] : [])])
+const deltaDraft = OPT.runDelta ? mapped[mapped.length - 1] : null
 const mapFiles = MAPS.map(mp => `"${ROOT}/${AN}/prototype-map-${mp.key}.md"`).join('\n')
-log(`maps done (${mapped.slice(0, -1).filter(Boolean).length}/${MAPS.length}); ${deltaDraft ? deltaDraft.deltas.length : 0} draft model deltas`)
+log(`maps ${OPT.reuseMaps ? 'reused' : `done (${mapped.slice(0, OPT.runDelta ? -1 : undefined).filter(Boolean).length}/${MAPS.length})`}; ${deltaDraft ? deltaDraft.deltas.length : 0} draft model deltas`)
 
 const READ_MAPS = `First read ALL of these prototype map files (they index where things are):\n${mapFiles}\nIf a map file is missing, explore the code directly.`
 
@@ -297,7 +306,7 @@ const epicResults = pipeline(
     return { epic: ep.id, title: ep.title, items, epic_observations: (v && v.epic_observations) || review.epic_observations }
   },
 )
-const reverseResult = pipeline(
+const reverseResult = !OPT.runReverse ? Promise.resolve([null]) : pipeline(
   [1],
   () => agent(reversePrompt, { label: 'reverse-check', phase: 'Review', model: M, effort: 'high', schema: REVERSE }),
   draft => agent(verifyReversePrompt(draft), { label: 'verify:reverse', phase: 'Verify', model: M, effort: 'high', schema: REVERSE }).then(v => v || draft),
@@ -319,7 +328,7 @@ const compact = verified.map(e => ({
   epic: e.epic, title: e.title, observations: e.epic_observations,
   items: e.items.map(i => ({ id: i.id, verdict: i.verdict, summary: i.summary, missing_or_wrong: i.missing_or_wrong, demo_trigger: i.demo_trigger, surfaces: i.surfaces, size: i.size })),
 }))
-const themes = await agent(
+const themes = !OPT.runThemes ? null : await agent(
   `${CTX}
 
 TASK: write the narrative summary for the gap-analysis report. The verified per-item gradings, the verified data-model delta and the verified reverse check are below. Detailed per-epic tables are generated separately from the data, so do NOT reproduce item-by-item lists. Write for the product owner and the planners who will turn this into build phases.
