@@ -16,6 +16,8 @@ import { SURGEON_PDFS, FEED_META, type PdfRow, type SurgeonPdf } from '../../../
 import { validateNhi } from '../../../domain/nhi'
 import { validateEthnicityCode, ETHNICITY_DEMO_SUBSET } from '../../../domain/nzhis'
 import { dayMicroCap } from '../../../shared/format'
+import { useDemoTriggerContext } from '../../../shared/demoTriggers'
+import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 
 interface Props {
@@ -28,8 +30,11 @@ const cell = adminCell()
 const head = adminHead()
 
 /**
- * The integration monitor (Phase 11) — proposed product UI, so NOT demo-badged
- * (only its simulation triggers, on the demo control panel, carry the badge).
+ * The integration monitor (Phase 11). Its Surgeon PDFs, Data quality and
+ * Validators tabs are proposed product UI and carry no badge; its Messages and
+ * Feed config tabs show the HL7 v2 / FHIR reliability tooling the catalogue
+ * marks Future scope, badged as such (catch-up Phase 14, until Phase 34). Its
+ * demo triggers live in the harness bar's Demo actions menu.
  * Tabs: the message log, editable per-hospital feed mappings (the failure-fix
  * flow), the surgeon-PDF inbox + extraction review, the ethnicity data-quality
  * queue, and the NHI/ethnicity validators. It surfaces the RFP's reliability
@@ -38,6 +43,9 @@ const head = adminHead()
  */
 export function IntegrationMonitorScreen({ actor }: Props) {
   const [tab, setTab] = useState<Tab>('messages')
+  // The tab is local state the URL cannot carry; publish it so the Demo
+  // actions menu can show "Ingest PDF row" on the Surgeon PDFs tab only.
+  useDemoTriggerContext('integrations.tab', tab)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
       <div>
@@ -51,13 +59,14 @@ export function IntegrationMonitorScreen({ actor }: Props) {
       </div>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}`, flexWrap: 'wrap' }}>
-        <TabButton active={tab === 'messages'} onClick={() => setTab('messages')}>Messages</TabButton>
-        <TabButton active={tab === 'feeds'} onClick={() => setTab('feeds')}>Feed config</TabButton>
+        <TabButton active={tab === 'messages'} onClick={() => setTab('messages')} future>Messages</TabButton>
+        <TabButton active={tab === 'feeds'} onClick={() => setTab('feeds')} future>Feed config</TabButton>
         <TabButton active={tab === 'pdfs'} onClick={() => setTab('pdfs')}>Surgeon PDFs</TabButton>
         <TabButton active={tab === 'quality'} onClick={() => setTab('quality')}>Data quality</TabButton>
         <TabButton active={tab === 'validators'} onClick={() => setTab('validators')}>Validators</TabButton>
       </div>
 
+      {(tab === 'messages' || tab === 'feeds') && <FutureScopeNote />}
       {tab === 'messages' && <MessagesTab />}
       {tab === 'feeds' && <FeedConfigTab actor={actor} />}
       {tab === 'pdfs' && <SurgeonPdfsTab actor={actor} />}
@@ -84,7 +93,7 @@ function MessagesTab() {
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyNote>No messages received yet. Replay one from the integration simulator (demo control) to see the log fill.</EmptyNote>
+        <EmptyNote>No messages received yet. Fire one from Demo actions in the harness bar, or replay one in the integration simulator, to see the log fill.</EmptyNote>
       ) : (
         <div style={{ overflowX: 'auto', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 920 }}>
@@ -486,15 +495,33 @@ function VerdictLine({ ok, text }: { ok: boolean | undefined; text: string }) {
 // Shared bits
 // ---------------------------------------------------------------------------
 
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function TabButton({ active, onClick, children, future }: { active: boolean; onClick: () => void; children: React.ReactNode; future?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      style={{ border: 'none', background: 'none', padding: '10px 14px', fontFamily: 'inherit', fontSize: 14, fontWeight: active ? 600 : 500, color: active ? neutral.ink : neutral.slate, boxShadow: active ? `inset 0 -2px 0 ${neutral.ink}` : 'none', cursor: 'pointer' }}
+      style={{ border: 'none', background: 'none', padding: '10px 14px', fontFamily: 'inherit', fontSize: 14, fontWeight: active ? 600 : 500, color: active ? neutral.ink : neutral.slate, boxShadow: active ? `inset 0 -2px 0 ${neutral.ink}` : 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
     >
       {children}
+      {future === true && <DemoBadge tone="future" style={{ padding: '1px 7px', fontSize: 9.5, gap: 4 }} />}
     </button>
+  )
+}
+
+/**
+ * Interim Future-scope note (catch-up Phase 14, RV-05 and RV-06; Phase 34
+ * demotes these tabs). HL7 v2, FHIR R4 and near-real-time messaging are Future
+ * in the catalogue (FT-14.1, FT-14.2, FT-14.3, FT-14.5).
+ */
+function FutureScopeNote() {
+  return (
+    <div data-shot="integrations-future-scope" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 14px', background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, fontSize: 12.5, color: neutral.slate }}>
+      <DemoBadge tone="future" />
+      <span>
+        HL7 v2, FHIR R4 and near real time messaging are Future scope. In scope today is the St George's and
+        Southern Cross download into a matching screen.
+      </span>
+    </div>
   )
 }
 

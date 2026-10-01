@@ -52,7 +52,7 @@
     {
       "name": "billing-run",
       "app": "admin",
-      "caption": "Billing run for the authorised list, card by card",
+      "caption": "Billing run for the authorised list, Booking by Booking",
       "start": "/admin/billing",
       "setup": [
         {

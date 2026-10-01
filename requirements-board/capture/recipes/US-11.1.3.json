@@ -42,7 +42,7 @@
         },
         {
           "state": "linked",
-          "caption": "Card linked to the existing patient record, no duplicate created",
+          "caption": "Booking linked to the existing patient record, no duplicate created",
           "steps": [
             {
               "click": "text=\"Add a card\" >> nth=0"
@@ -120,7 +120,7 @@
         },
         {
           "state": "linked",
-          "caption": "Card linked to the existing patient record, no duplicate created",
+          "caption": "Booking linked to the existing patient record, no duplicate created",
           "steps": [
             {
               "click": "text=\"Add a card\" >> nth=0"

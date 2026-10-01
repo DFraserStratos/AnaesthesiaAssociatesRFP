@@ -6,7 +6,7 @@
     {
       "name": "fixed-price",
       "app": "admin",
-      "caption": "Card priced from the surgeon's fixed price list, units still recorded",
+      "caption": "Booking priced from the surgeon's fixed price list, units still recorded",
       "start": "/admin/day/2026-07-14/cards/C0028",
       "states": [
         {

@@ -903,7 +903,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,
   // MULTI-card list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
   // card is on the COS externally held ACC Type 2 (an organisation holder with
-  // NO default fallback), effective when seeded; the demo control panel dates
+  // NO default fallback), effective when seeded; the billing-failure demo trigger dates
   // it out then authorises this list, so the card is a genuine rating failure
   // (contractIneffective). The clean hospital-route sibling still invoices,
   // demonstrating per-card failure isolation.

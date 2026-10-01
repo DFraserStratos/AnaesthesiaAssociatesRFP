@@ -10,10 +10,10 @@
       "start": "/demo/xero",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero"
         },
         {
-          "click": "role=button[name=\"Run archive job\"]"
+          "trigger": "run-archive-job"
         },
         {
           "wait": 600
@@ -35,10 +35,10 @@
       "start": "/web/accounts/payments",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero"
         },
         {
-          "click": "role=button[name=\"Run archive job\"]"
+          "trigger": "run-archive-job"
         },
         {
           "wait": 600

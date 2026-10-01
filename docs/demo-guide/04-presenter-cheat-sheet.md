@@ -190,13 +190,31 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Pre-payment gate, post-op addendum and billing monitor with per-card isolation and retry (Phase 09)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
 - HL7/FHIR/PDF ingestion, integration monitor, mapping fix and dedupe (Phase 11)
-- The finished demo control panel with S1 to S5 scenario jumps (Phase 12)
+- The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
+  Demo actions (catch-up Phase 14)
 
 ### Present but honestly demo-only (keep the badge in view)
 
 - The Xero simulator, integration simulator and the control panel are labelled "demo simulation":
   they simulate external systems and are not proposed end-user product screens.
 - The billing monitor itself is proposed product UI; only its simulation triggers are badged.
+- **Demo actions** (the pill in the top bar, beside the app switcher) holds the simulated events for
+  the screen you are on, each badged "Demo trigger". It appears only on screens that have one. The
+  control panel is now the index of them, with an **Open screen** link per entry (catch-up Phase 14).
+- On a handset, the amber **Demo** chip opens the same actions as a sheet. Its **Office authorises
+  this List** is badged "Office stand-in": the phone has no Admin app, so it plays the office for one
+  submitted List.
+- **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
+  simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
+  actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
+  matching screen, which a later build shows.
+- **Play the office** (PWA More tab) is off by default and badged "Simulated office" while on. It
+  auto-authorises every submitted List and is a scaffold, not the proposed flow: use **Office
+  authorises this List** instead.
+- Optional Admin Audit aside: **Demo actions → Simulate sign-in attempts** adds five audited rows
+  (account provisioned with no admin access to credentials, Admin sign-in with MFA, a failed attempt,
+  a self-service password reset, an Apple social-login sign-in on mobile). Set Entity type to
+  **account** to see them together. The identity service (Auth0 or Entra External ID) is simulated.
 
 ### Still upcoming
 

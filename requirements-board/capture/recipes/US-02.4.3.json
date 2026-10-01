@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "button",
-          "caption": "Copy for an additional procedure, on a Card",
+          "caption": "Copy for an additional procedure, on a Booking",
           "steps": [],
           "highlight": [
             "role=button[name=\"Copy for an additional procedure\"]"
@@ -42,7 +42,7 @@
       "states": [
         {
           "state": "button",
-          "caption": "Copy for an additional procedure, on a Card",
+          "caption": "Copy for an additional procedure, on a Booking",
           "steps": [
             {
               "scroll": "[data-testid=slide-card] >> role=button[name=\"Copy for an additional procedure\"]"

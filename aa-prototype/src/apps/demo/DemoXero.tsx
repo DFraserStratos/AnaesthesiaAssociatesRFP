@@ -2,14 +2,12 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRight, ChevronLeft, ExternalLink, Info } from 'lucide-react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DemoSurface } from './DemoSurface'
-import { disbursePayable, receivePayment, useAppStore, type Actor } from '../../store'
+import { OFFICE_ACTOR, disbursePayable, receivePayment, useAppStore } from '../../store'
 import { dateTimeMicroCap, formatCurrency } from '../../shared/format'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
-
-const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -246,7 +244,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
       }
     }
 
-    const payout = disbursePayable(useAppStore, OFFICE, pair.accPay.id)
+    const payout = disbursePayable(useAppStore, OFFICE_ACTOR, pair.accPay.id)
     if (!payout.ok) {
       setSettlementMessage(`The anaesthetist payout could not be completed: ${payout.message}`)
       return

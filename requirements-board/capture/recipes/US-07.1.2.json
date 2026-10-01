@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "blocked",
-          "caption": "Submit replaced by the count of Cards still to finish",
+          "caption": "Submit replaced by the count of Bookings still to finish",
           "steps": [],
           "highlight": [
             "role=button[name=\"1 to finish before submitting\"]"
@@ -19,7 +19,7 @@
         },
         {
           "state": "what-is-missing",
-          "caption": "Cards still to finish, showing what is missing",
+          "caption": "Bookings still to finish, showing what is missing",
           "steps": [
             {
               "click": "role=button[name=\"1 to finish before submitting\"]"
@@ -50,7 +50,7 @@
         },
         {
           "state": "what-is-missing",
-          "caption": "Cards still to finish, showing what is missing",
+          "caption": "Bookings still to finish, showing what is missing",
           "steps": [
             {
               "click": "[data-testid=mobile-list-footer] button"

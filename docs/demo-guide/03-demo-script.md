@@ -25,11 +25,18 @@ unfinished Margaret Ellison Card designed for live capture.
 4. Confirm the demo clock reads Tuesday 21 July 2026, 8:00.
 5. Keep this document (or the master HTML) open in a second tab. Do not present from the Data Inspector.
 
-The control panel is grouped: **Clock & reset**, **Scenario jumps (S1 to S5)**, **Booking & integration
-events**, and **Billing, money & exceptions**. Each scenario jump confirms first, resets the data,
-applies any extra preparation needed, and prints where to go next with one-click navigation. S1 to
-S4 can instead begin from the ordinary Reset control. Use the live clock immediately to the right of
-the app switcher to advance time without leaving the screen you are presenting.
+The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
+**Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
+preparation needed, and prints where to go next with one-click navigation. S1 to S4 can instead begin
+from the ordinary Reset control. Use the live clock immediately to the right of the app switcher to
+advance time without leaving the screen you are presenting.
+
+**Demo actions live on their screen.** A simulated event (a hospital message, a payment webhook, a
+billing failure, a job run) is fired from the screen it belongs to: open **Demo actions** in the top
+bar, beside the app switcher, and select **Run** on the entry. The pill only appears on screens that
+have demo actions, and the menu stays open after a run so you can read the result. On a handset (the
+installed PWA) the same actions are in a small amber **Demo** chip that opens a sheet. The control
+panel's **Demo actions by screen** lists every one with an **Open screen** link.
 
 ## Direct URLs
 
@@ -94,6 +101,10 @@ mobile background and changes nothing here.
 **Serves:** the RFP's near-real-time hospital integration, the Card as the billing anchor, and BTM
 capture. **Time:** 5 to 6 minutes.
 
+> **Caveat: HL7 v2 and FHIR are Future scope; present Beat 1 as an illustration of intake.** The
+> in-scope path, a hospital download matched by the office, arrives in a later build. The Integrations
+> simulator and the Admin Integrations Messages and Feed config tabs are badged **Future scope**.
+
 **Stage it:** use **Reset → Confirm reset**, then open the Anaesthetist Mobile App. The Tue 28 Jul
 St George's AM List holds three booked, not-yet-captured cases, so the hospital booking arrives into a
 working List rather than an empty one.
@@ -103,9 +114,11 @@ working List rather than an empty one.
 - **Click:**
   - In Mobile Lists, open the Tue 28 Jul St George's AM session and read its three booked cases
     (07:45 knee arthroscopy, 09:45 shoulder arthroscopy, 11:15 wrist ORIF).
-  - Go to **Demo: Integrations → S12 · New booking → Replay**.
-  - Pause on the processed message.
-  - Return to Mobile and reopen the Tue 28 Jul AM List.
+  - Back on Mobile Lists, open **Demo actions** in the top bar → **Fire hospital message** → choose
+    **S12 · New booking · MSG-STG-1001** → **Run**. (Alternative: **Demo: Integrations → S12 · New
+    booking → Replay**, which shows the raw HL7 and FHIR panes.)
+  - Pause on the result line.
+  - Reopen the Tue 28 Jul AM List.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
   mapped per hospital, processed near real time, and audited. This booking created a patient Card
   without anyone re-keying it."
@@ -281,9 +294,10 @@ differ).
 ## S4 · Exceptions
 
 **Serves:** resilience, the RFP's hard cases, and the audited overrides that keep them honest.
-**Time:** 8 to 10 minutes. Use this for a technical audience; every sub-trigger is on the panel.
+**Time:** 8 to 10 minutes. Use this for a technical audience; every sub-trigger is under **Demo
+actions** on the screen named in its beat.
 
-**Stage it:** use **Reset → Confirm reset**. Work top to bottom through the triggers named below.
+**Stage it:** use **Reset → Confirm reset**. Work top to bottom through the beats below.
 
 ### Beat 1: pre-payment gate
 
@@ -303,8 +317,8 @@ differ).
 ### Beat 2: post-op addendum
 
 - **Click:**
-  - Go to **Control panel → Stage post-op scenario → Stage scenario**.
   - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List → Sarah Mitchell**.
+  - Open **Demo actions → Stage post-op scenario → Run** (it shows only for this List).
   - Select **Add post-op event**.
   - Pause on the new addendum Card.
 - **Say:** "A later pain consult or ward review can create another charge. The original authorised Card
@@ -314,8 +328,8 @@ differ).
 ### Beat 3: billing failure and retry
 
 - **Click:**
-  - Go to **Control panel → Trigger billing failure → Trigger failure**.
-  - Go to **Admin billing monitor → Losa Tuilagi → Resolve & retry**.
+  - Go to **Admin billing monitor → Demo actions → Trigger billing failure → Run**.
+  - On the same screen, **Losa Tuilagi → Resolve & retry**.
 - **Say:** "A Card can fail rating after the List is authorised, here because a group-held contract with
   no default fallback was dated out. The prototype isolates that Card, still invoices its clean sibling,
   then lets the office correct and retry."
@@ -324,9 +338,9 @@ differ).
 ### Beat 4: integration dead-letter and manual fix
 
 - **Click:**
-  - Go to **Control panel → Booking & integration events → Fire an integration message →
-    MSG-CPH-2001**.
-  - Go to **Admin Integrations → Feed config → Christchurch Public**.
+  - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-CPH-2001 → Run**.
+  - Go to **Feed config → Christchurch Public**. Say that the tab is badged **Future scope**: HL7
+    feeds and their mappings are not in today's scope.
   - Change **patientNhi** from **PID-2** to **PID-3**, then select **Save**.
   - Go to **Message log → MSG-CPH-2001 → Reprocess**.
 - **Say:** "Christchurch Public sends the NHI in PID-3, but the feed was onboarded reading PID-2. The
@@ -337,10 +351,10 @@ differ).
 ### Beat 5: partial payment
 
 - **Click:**
-  - Go to **Control panel → Payment received (webhook)** and choose the
-    **Hemi Walker · St George's** clean-sibling invoice.
-  - Select **Half (partial) → Record payment → Run payables**.
-  - Select **Full payment → Record payment → Run payables** for the remaining balance.
+  - Go to **Admin Invoices → Hemi Walker · St George's** (the clean-sibling invoice from Beat 3).
+  - Open **Demo actions → Payment received · half → Run**.
+  - Go to **Billing monitor** and select its own **Run payables** button.
+  - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables** again.
 - **Say:** "A partial payment authorises only its proportional payable share. Two payables runs across a
   part-then-balance payment prove there is no double payment."
 - **Expected:** the payable authorises pro-rata; payables pays only the increment each run.
@@ -378,7 +392,8 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
 ### Beat 2: NHI dual-format validator
 
 - **Click:**
-  - Go to **Control panel → Fire an integration message → MSG-STG-1002 (new-format NHI)**.
+  - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-STG-1002 (new-format
+    NHI) → Run**.
   - Optional: add a Card manually and try both NHI formats.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
   new-format NHI with a mod-23 check letter validates and processes end to end."
@@ -442,6 +457,8 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
   restarts deterministic identifiers, so invoice numbers begin at the same point every time.
 - The Integration simulator also has **Reset demo data → Confirm reset** beside Start live feed. It
   performs the same whole-demo reset without making you return to the control panel.
+- Lost the screen a demo action lives on? The control panel's **Demo actions by screen** has an
+  **Open screen** link for every entry (with a hint where a tab is needed, such as Surgeon PDFs).
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Card.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from

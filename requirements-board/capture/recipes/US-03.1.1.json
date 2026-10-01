@@ -30,7 +30,7 @@
           "highlight": [
             "tr:has-text(\"Margaret Ellison\")"
           ],
-          "caption": "List detail with its cards"
+          "caption": "List detail with its Bookings"
         },
         {
           "state": "booking",
@@ -77,7 +77,7 @@
           "highlight": [
             "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
           ],
-          "caption": "List detail with its cards"
+          "caption": "List detail with its Bookings"
         },
         {
           "state": "booking",

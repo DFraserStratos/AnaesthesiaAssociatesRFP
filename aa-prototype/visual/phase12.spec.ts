@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { runDemoAction } from './demoActions'
 
 /**
- * Phase 12 — the finished demo control panel. A real-browser click-through of
- * the new controls (scenario jumps, procedure-day jump, PDF arrival, automated
- * jobs) that also asserts the console stays clean across the interaction.
+ * Phase 12 — the demo control panel, now the index (catch-up Phase 14). A
+ * real-browser click-through of the scenario jumps and procedure-day jump, then
+ * the re-homed PDF arrival (Admin Integrations, Surgeon PDFs tab) and job run
+ * (Billing monitor) from the harness bar's Demo actions, asserting the console
+ * stays clean across the interaction.
  */
 
 test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run clean', async ({ page }) => {
@@ -16,11 +19,12 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')
 
-  // The four labelled groups are present.
+  // The three labelled groups are present, and no trigger buttons remain.
   await expect(page.getByText('Clock & reset', { exact: true })).toBeVisible()
   await expect(page.getByText('Scenario jumps · S1 to S5', { exact: true })).toBeVisible()
-  await expect(page.getByText('Booking & integration events', { exact: true })).toBeVisible()
-  await expect(page.getByText('Billing, money & exceptions', { exact: true })).toBeVisible()
+  await expect(page.getByText('Demo actions by screen', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Ingest PDF row' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Trigger failure' })).toHaveCount(0)
 
   // Procedure-day jump advances the clock to 28 July.
   await page.getByRole('button', { name: /Procedure day/ }).click()
@@ -33,15 +37,17 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: 'Go to Mobile app' }).click()
   await expect(page).toHaveURL(/\/mobile/)
 
-  // PDF arrival: ingest a row, expect a created/updated confirmation.
-  await page.goto('/demo/control')
+  // PDF arrival: from Admin Integrations, Surgeon PDFs tab, ingest a row.
+  await page.goto('/admin/integrations')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'Ingest PDF row' }).click()
-  await expect(page.getByText(/Brian Holt/)).toBeVisible()
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Surgeon PDFs' }).click()
+  expect(await runDemoAction(page, 'ingest-pdf-row', { close: true })).toMatch(/Brian Holt/)
 
-  // Automated jobs: run the reconciliation poll.
-  await page.getByRole('button', { name: 'Run reconciliation poll' }).click()
-  await expect(page.getByText(/Reconciliation poll/)).toBeVisible()
+  // Automated jobs: run the reconciliation poll from the Billing monitor.
+  await page.goto('/admin/billing')
+  await page.waitForLoadState('networkidle')
+  expect(await runDemoAction(page, 'run-reconciliation-poll')).toMatch(/Reconciliation poll/)
 
   expect(consoleErrors, `console errors: ${consoleErrors.join(' | ')}`).toEqual([])
 })

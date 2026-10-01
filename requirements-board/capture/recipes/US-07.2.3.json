@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "override",
-          "caption": "Price override on a submitted Card: a dollar adjustment with its reason",
+          "caption": "Price override on a submitted Booking: a dollar adjustment with its reason",
           "steps": [
             {
               "click": "role=button[name=\"Price override\"]"
@@ -40,7 +40,7 @@
         },
         {
           "state": "saved",
-          "caption": "Correction saved straight onto the Card, no return to the anaesthetist",
+          "caption": "Correction saved straight onto the Booking, no return to the anaesthetist",
           "steps": [
             {
               "click": "role=button[name=\"Price override\"]"

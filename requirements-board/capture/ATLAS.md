@@ -16,7 +16,7 @@ The demo clock starts at **Tue 21 Jul 2026, 08:00**. It never ticks by itself.
 - [Seed data worth shooting](#seed-data-worth-shooting)
 - [Overlays that need clicks](#overlays-that-need-clicks)
 - [Existing hooks](#existing-hooks)
-- [Demo control panel (`/demo/control`)](#demo-control-panel-democontrol)
+- [Demo control panel (`/demo/control`) and Demo actions](#demo-control-panel-democontrol-and-demo-actions)
 - [Gotchas](#gotchas)
 - [Worked examples](#worked-examples)
 
@@ -93,6 +93,7 @@ work.
 | `{ "scroll": sel }` / `{ "scroll": sel, "by": 400 }` | Scroll an element into view, or scroll inside it by a number of pixels. |
 | `{ "goto": "/path" }` | Full navigation. This reloads the page, and the store is rehydrated from localStorage. |
 | `{ "scenario": "S3" }` | Reset, then jump to scenario S1 to S5 on `/demo/control`. Works only on :5173, so never for mobile shots. |
+| `{ "trigger": "<id>", "choice": "...", "open": true }` | Run a demo action from the current screen's harness-bar "Demo actions" menu (see [Demo actions](#demo-control-panel-democontrol-and-demo-actions)). It lifts the bar's hide, opens `[data-shot=demo-actions]`, sets the row's select to `choice` if given, clicks Run in `[data-shot=demo-action-<id>]`, waits for its result line, closes the menu and hides the bar again. Fails if the row is missing or disabled. `"open": true` leaves the bar and the menu showing, so a state can shoot the result line. On a mobile (:5174) shot it opens the PWA's Demo sheet instead, picks `choice` by its label, runs the entry and taps the scrim to close. |
 
 **Setup vs steps**
 
@@ -177,6 +178,11 @@ Hooks already added:
 | `availability-row-mine` | `/web/availability` |
 | `availability-mine`, `availability-block-am`, `availability-block-pm` | `/mobile/availability` |
 | `scenario-s1` to `scenario-s5`, `scenario-confirm` | `/demo/control`, used by the `scenario` step |
+| `demo-actions` | The harness bar's "Demo actions" pill (only on screens with entries), used by the `trigger` step |
+| `demo-action-<id>` | One row of that menu, with its Run button and `role=status` result line |
+| `control-demo-index`, `index-<id>` | `/demo/control`: the "Demo actions by screen" index and each entry's row ("Open screen") |
+| `pwa-demo-actions` | The PWA's amber "Demo" chip (mobile shots on :5174), shown only on screens with PWA entries; hidden in shots except while a `trigger` step runs |
+| `pwa-demo-action-<id>` | One row of the PWA's Demo sheet, with its Run button and `role=status` result line, e.g. `office-authorises-list` on a submitted List |
 
 ## Selector tips (learned the hard way)
 
@@ -282,7 +288,7 @@ Audit.
 
 | Route | Shows |
 |---|---|
-| `/demo/control` | The presenter's cockpit: clock and reset, scenario jumps, integration events, money events, jobs. |
+| `/demo/control` | The presenter's index: clock and reset, scenario jumps, and every demo action listed under its screen with an "Open screen" link. No trigger buttons. |
 | `/demo/xero` | Xero simulation, Contacts tab. |
 | `/demo/xero/invoices` | Invoices tab. |
 | `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, illustrative AA service fee. `XRB0` exists in the seed. |
@@ -386,7 +392,8 @@ Authorising Morrison raises 6 invoices.
 - **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name").
 
 **Shell** (these controls sit in the harness bar, which is hidden in shots, so they can't be
-clicked; use the matching `/demo/control` buttons in `setup` instead)
+clicked; use the matching `/demo/control` buttons in `setup` instead. The "Demo actions" menu is
+the exception: use the `trigger` step)
 
 - **Demo clock:** `role=button[name=/Demo clock/]`. It offers "+15 min", "+1 hour", "Next day",
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
@@ -436,35 +443,50 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `[data-sliding-segmented-control]`
 - `[data-validation-focus=true]`
 
-## Demo control panel (`/demo/control`)
+## Demo control panel (`/demo/control`) and Demo actions
 
-**Clock and reset**
+Since catch-up Phase 14 every demo action lives **on its own screen**, in the harness bar's
+"Demo actions" menu (`[data-shot=demo-actions]`, shown only where the screen registers entries),
+and in the installed PWA's "Demo" sheet. The registry is
+`aa-prototype/src/shared/demoTriggers/registry.ts`. Stage them with the `trigger` step after a
+`goto` to their screen; never click the Control Panel for one.
+
+**The Control Panel is the index.** It keeps:
 
 - Clock buttons: "+15 min", "+1 hour", "Next day", "Next morning", "+7 days" and "Procedure day
   · 28 Jul".
 - "Reset demo data", then "Confirm reset".
+- Scenario jumps (the `scenario` step).
+- "Demo actions by screen" (`[data-shot=control-demo-index]`): each entry's row
+  (`[data-shot=index-<id>]`) with an "Open screen" button.
 
 **Scenario jumps.** Use the `{ "scenario": "Sn" }` step. Every jump resets first.
 
 | Scenario | What the jump does | Story |
 |---|---|---|
-| S1 · Booking to theatre | Reset only. | Fire MSG-STG-1001, then Sarah Mitchell appears on Souter Tue 28 Jul AM. |
+| S1 · Booking to theatre | Reset only. | On Mobile Lists, run `fire-hospital-message` (MSG-STG-1001), then Sarah Mitchell appears on Souter Tue 28 Jul AM. |
 | S2 · Office day | Reset only. | Admin work. |
 | S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38). |
-| S4 · Exceptions | Reset only. | Mobile. |
+| S4 · Exceptions | Reset only. | Mobile, then the Admin screens below. |
 | S5 · Compliance tour | Reset, three audited edits on David Chen's card, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
 
-**Events**
+**Demo actions by screen** (`trigger` ids)
 
-- **Fire an integration message:** a select, then "Fire message" and "Replay last (dedupe)".
-- **PDF list arrives:** "Ingest PDF row".
-- **Billing failure:** "Trigger failure" dates out the COS ACC contract and authorises Ropata
-  Thu 16.
-- **Post-op addendum:** "Stage scenario".
-- **Payment webhook:** "Full payment" or "Half (partial)", then "Record payment", with "Replay
-  last event".
-- **Xero handoff failure:** "Arm handoff failure".
-- **Jobs:** "Run reconciliation poll", "Run archive job" and "Run payables".
+| Screen (`goto`) | ids | Notes |
+|---|---|---|
+| `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure dates out the COS ACC contract and authorises Ropata Thu 16. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
+| `/demo/xero`, `/demo/xero/invoices[/<accRecId>]` | `run-reconciliation-poll`, `run-archive-job` | |
+| `/admin/review/L-41267-2026-07-14-AM` or that List's Card detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
+| `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
+| `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
+| `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
+| `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
+
+The PWA-only entries (`office-authorises-list` on a mobile List, `pwa-payment-full` and
+`pwa-payment-half` on Balances) are in the handset's Demo sheet, not the bar. On a mobile shot,
+use the same `trigger` step (mobile shots hide the Demo chip, as desktop shots hide the bar; the
+step shows it while it runs). "Play the office" is off on a fresh profile, so a submitted List waits
+until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 show the pattern).
 
 **Integration simulator** (`/demo/integrations`)
 

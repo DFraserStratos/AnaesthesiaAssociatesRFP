@@ -8,16 +8,34 @@
       "app": "admin",
       "caption": "Pre-payment outstanding flag on the day grid",
       "start": "/admin/day/2026-07-24",
-      "states": [ { "steps": [], "highlight": ["[data-shot=daygrid-block-prepayment]"] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-shot=daygrid-block-prepayment]"
+          ]
+        }
+      ]
     },
     {
       "name": "card-gate",
       "app": "mobile",
-      "caption": "The anaesthetist sees the unpaid pre-payment on the card",
+      "caption": "The anaesthetist sees the unpaid pre-payment on the Booking",
       "start": "/mobile/lists/L-34821-2026-07-24-AM",
       "states": [
-        { "steps": [ { "click": "text=\"Annette Riley\" >> nth=0" }, { "wait": "[data-testid=slide-card] [data-shot=card-prepayment]" } ],
-          "highlight": ["[data-testid=slide-card] [data-shot=card-prepayment]"] }
+        {
+          "steps": [
+            {
+              "click": "text=\"Annette Riley\" >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-card] [data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=card-prepayment]"
+          ]
+        }
       ]
     }
   ]

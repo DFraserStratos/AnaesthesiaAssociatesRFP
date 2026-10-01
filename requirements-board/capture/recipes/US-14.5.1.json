@@ -10,14 +10,11 @@
       "start": "/admin/integrations",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/admin/integrations"
         },
         {
-          "select": "[data-shot=control-integration-message] select",
-          "value": "MSG-CPH-2001"
-        },
-        {
-          "click": "[data-shot=control-integration-message] >> role=button[name=\"Fire message\"]"
+          "trigger": "fire-hospital-message",
+          "choice": "MSG-CPH-2001"
         },
         {
           "wait": 800

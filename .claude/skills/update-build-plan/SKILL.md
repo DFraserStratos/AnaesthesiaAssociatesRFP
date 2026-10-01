@@ -24,6 +24,11 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
   done, the screenshots on its user stories show what was built. So every unbuilt phase doc and prompt
   carries the Catalogue screenshots step (see "Catalogue screenshots in the plan" below), and any phase
   you add, change or re-scope has that section brought in step with its new covered items.
+- **Agents test themselves; the owner reviews once at the end** (ROADMAP.md "Owner review: agents test
+  themselves"). Any phase doc or prompt you add or change keeps that rule: no plan-approval stop, the
+  agent runs the manual test checklist itself in the running app, "ask the owner" becomes a built default
+  logged on the phase's "For the owner's review" list, and stops are kept only for the cases that section
+  names. Tell any writer or reviewer agent you start the same.
 - The plan edits plan files only. Never create, edit or delete capture recipes
   (`requirements-board/capture/recipes/`), catalogue images or `capture/REPORT.md` while updating the
   plan: the build phases do that, and they verify it with a capture run. Tell any agent you start the
@@ -106,6 +111,8 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    - no unbuilt phase still names the old baseline, or builds a default for a decision `ROADMAP.md`
      records as answered;
    - kick-off prompts reference files that exist;
+   - every unbuilt phase that touches UI has the frontend-design bullet in its prompt's "While
+     working:" list (`CU/ROADMAP.md`, "Front-end design");
    - each updated phase's "Catalogue screenshots" rows match its covered items and say what the
      recipe must show once built (`node CU/tools/recipe-status.mjs <num>` lists them);
    - `node CU/tools/build-index.mjs` is re-run if it changed anything.

@@ -7,24 +7,22 @@
       "name": "webhook-replay",
       "app": "simulator",
       "caption": "Payment webhook replayed with the same key",
-      "start": "/demo/control",
+      "start": "/demo/xero/invoices/XR0001",
       "states": [
         {
           "state": "first",
           "caption": "First webhook applies a part payment",
           "steps": [
             {
-              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Half (partial)\"]"
+              "trigger": "payment-half",
+              "open": true
             },
             {
-              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
-            },
-            {
-              "wait": 500
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=control-payment-webhook]"
+            "[data-shot=demo-action-payment-half]"
           ]
         },
         {
@@ -32,23 +30,18 @@
           "caption": "Replayed webhook ignored as a duplicate, no double effect",
           "steps": [
             {
-              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Half (partial)\"]"
+              "trigger": "payment-half"
             },
             {
-              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+              "trigger": "payment-replay",
+              "open": true
             },
             {
-              "wait": 500
-            },
-            {
-              "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Replay last event\"]"
-            },
-            {
-              "wait": 500
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=control-payment-webhook]"
+            "[data-shot=demo-action-payment-replay]"
           ]
         }
       ],

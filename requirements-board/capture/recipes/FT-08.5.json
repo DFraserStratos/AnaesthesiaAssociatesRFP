@@ -46,10 +46,10 @@
           "wait": 400
         },
         {
-          "goto": "/demo/control"
+          "goto": "/admin/billing"
         },
         {
-          "click": "role=button[name=\"Trigger failure\"]"
+          "trigger": "billing-failure"
         },
         {
           "wait": 800

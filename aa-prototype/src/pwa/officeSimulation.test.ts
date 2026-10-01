@@ -7,7 +7,8 @@
  * because the delay is the whole mechanism: `vi.advanceTimersByTime` is what
  * "the office got to it" looks like from a test.
  *
- * Covered: the trigger fires when enabled and not when disabled; the toggle is
+ * Covered: the toggle defaults to OFF (absent, corrupt or unreadable storage);
+ * the trigger fires when enabled and not when disabled; the toggle is
  * read at fire time, in both directions, including a List that has been waiting
  * across several delays with the toggle off; the resulting List reaches
  * AUTHORISED + billed with its invoices, cases and Xero mirror; the run is
@@ -99,9 +100,9 @@ afterEach(() => {
 })
 
 describe('the toggle', () => {
-  it('defaults to on when nothing is stored, and round-trips the setting', () => {
+  it('defaults to OFF when nothing is stored, and round-trips the setting', () => {
     expect(window.localStorage.getItem(OFFICE_SIM_STORAGE_KEY)).toBeNull()
-    expect(isOfficeSimulationEnabled()).toBe(true)
+    expect(isOfficeSimulationEnabled()).toBe(false)
 
     setOfficeSimulationEnabled(false)
     expect(isOfficeSimulationEnabled()).toBe(false)
@@ -109,24 +110,32 @@ describe('the toggle', () => {
     expect(isOfficeSimulationEnabled()).toBe(true)
   })
 
-  it('falls back to on when storage is unavailable, and a write never throws', () => {
+  it('reads a corrupt stored value as OFF', () => {
+    window.localStorage.setItem(OFFICE_SIM_STORAGE_KEY, 'yes please')
+    expect(isOfficeSimulationEnabled()).toBe(false)
+  })
+
+  it('falls back to OFF when storage is unavailable, and a write never throws', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('storage denied (private mode)')
     })
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('storage denied (private mode)')
     })
-    expect(isOfficeSimulationEnabled()).toBe(true)
-    expect(() => setOfficeSimulationEnabled(false)).not.toThrow()
+    expect(isOfficeSimulationEnabled()).toBe(false)
+    expect(() => setOfficeSimulationEnabled(true)).not.toThrow()
   })
 
   it('exports the panel copy, free of en and em dashes', () => {
-    expect(OFFICE_SIM_COPY).toBe('Submitted lists are authorised and billed automatically, as the office would.')
+    expect(OFFICE_SIM_COPY).toMatch(/^A demo scaffold, not the proposed flow/)
     expect(OFFICE_SIM_COPY).not.toMatch(/[–—]/)
   })
 })
 
 describe('the trigger', () => {
+  // The presenter has switched "Play the office" on (it defaults to OFF).
+  beforeEach(() => setOfficeSimulationEnabled(true))
+
   it('authorises and bills a live-submitted List once the office delay elapses', () => {
     const api = store()
     const unwireBilling = wireBillingRun(api)
@@ -300,6 +309,9 @@ describe('the toggle governs the run', () => {
 })
 
 describe('idempotence and teardown', () => {
+  // The presenter has switched "Play the office" on (it defaults to OFF).
+  beforeEach(() => setOfficeSimulationEnabled(true))
+
   it('wiring twice installs one job: the List is authorised and billed exactly once', () => {
     const api = store()
     const unwireBilling = wireBillingRun(api)
@@ -373,6 +385,9 @@ describe('idempotence and teardown', () => {
 })
 
 describe('silent no-ops', () => {
+  // The presenter has switched "Play the office" on (it defaults to OFF).
+  beforeEach(() => setOfficeSimulationEnabled(true))
+
   it('a demo reset before the timer fires leaves the reseeded List alone', () => {
     const api = store()
     const unwireBilling = wireBillingRun(api)

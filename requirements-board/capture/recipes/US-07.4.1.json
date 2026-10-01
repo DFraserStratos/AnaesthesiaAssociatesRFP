@@ -53,7 +53,10 @@
               "click": "role=button[name=\"Submit to office\"]"
             },
             {
-              "wait": 6500
+              "wait": 1600
+            },
+            {
+              "trigger": "office-authorises-list"
             },
             {
               "goto": "/mobile/lists"

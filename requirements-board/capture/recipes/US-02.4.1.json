@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "choose",
-          "caption": "Add a card, enter manually or from a photo",
+          "caption": "Add a Booking, enter manually or from a photo",
           "steps": [
             {
               "click": "text=\"Add a card\" >> nth=0"
@@ -55,7 +55,7 @@
       "states": [
         {
           "state": "choose",
-          "caption": "Add a card, enter manually or from a photo",
+          "caption": "Add a Booking, enter manually or from a photo",
           "steps": [
             {
               "click": "text=\"Add a card\" >> nth=0"

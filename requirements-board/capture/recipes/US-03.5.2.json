@@ -32,11 +32,15 @@
               "wait": 500
             },
             {
-              "scroll": "[data-shot=procedure-contract]"
+              "scroll": "[data-shot=units-row-b]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-shot=units-row-b]",
+            "[data-shot=units-row-m]"
           ],
           "caption": "100% adjustment: the fee is zero but the units are still recorded"
         }

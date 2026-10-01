@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { runDemoAction } from './demoActions'
 
 /**
  * Phase 08 walkthrough — authorise → the synchronous billing run raises
@@ -304,11 +305,13 @@ test('M10 view effect: the billed design-day list vanishes from the mobile app',
 })
 
 test('invoice rail keeps a failed Xero handoff visible and actionable', async ({ page }) => {
-  // Arm the real one-shot fault, then authorise through the normal office flow.
-  await page.goto('/demo/control')
+  // Arm the real one-shot fault from the Billing monitor's Demo actions, then
+  // authorise through the normal office flow.
+  await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'Arm handoff failure' }).click()
-  await expect(page.getByText('Armed', { exact: true })).toBeVisible()
+  await runDemoAction(page, 'arm-handoff-fault')
+  await expect(page.locator('[data-shot="demo-action-arm-handoff-fault"]').getByText('Armed', { exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
 
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')

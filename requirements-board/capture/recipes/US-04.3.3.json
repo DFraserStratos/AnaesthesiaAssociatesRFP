@@ -20,7 +20,7 @@
     {
       "name": "default-contract",
       "app": "web",
-      "caption": "Default hospital contract shown on the card",
+      "caption": "Default hospital contract shown on the Booking",
       "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
       "states": [
         {
@@ -34,7 +34,7 @@
     {
       "name": "default-contract",
       "app": "mobile",
-      "caption": "Default hospital contract shown on the card",
+      "caption": "Default hospital contract shown on the Booking",
       "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
       "states": [
         {

@@ -31,13 +31,16 @@
           "wait": 400
         },
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero/invoices"
         },
         {
-          "click": "role=button[name=\"Half (partial)\"]"
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
         },
         {
-          "click": "role=button[name=\"Record payment\"]"
+          "wait": 600
+        },
+        {
+          "trigger": "payment-half"
         },
         {
           "wait": 600

@@ -171,6 +171,12 @@ export const FIELD_LABELS: Record<string, string> = {
   days: 'Days',
   failNextHandoff: 'Fail next handoff',
   atISO: 'At',
+
+  // --- Accounts and sign-in (FT-13.5, simulated) --------------------------
+  app: 'App',
+  mfa: 'MFA check',
+  provider: 'Sign-in provider',
+  credentialsVisibleToAdmin: 'Credentials visible to admin',
 }
 
 /**

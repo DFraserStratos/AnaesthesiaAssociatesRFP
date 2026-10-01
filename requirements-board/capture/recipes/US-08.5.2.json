@@ -10,10 +10,10 @@
       "start": "/admin/billing",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/admin/billing"
         },
         {
-          "click": "role=button[name=\"Trigger failure\"]"
+          "trigger": "billing-failure"
         },
         {
           "wait": 800
@@ -22,7 +22,7 @@
       "states": [
         {
           "state": "failed",
-          "caption": "A failed card blocks only its own invoice, the rest of the list still bills",
+          "caption": "A failed Booking blocks only its own invoice, the rest of the list still bills",
           "steps": [],
           "highlight": [
             "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
@@ -30,7 +30,7 @@
         },
         {
           "state": "retried",
-          "caption": "After resolve and retry, the failed card bills on its own",
+          "caption": "After resolve and retry, the failed Booking bills on its own",
           "steps": [
             {
               "click": "role=button[name=\"Resolve & retry\"] >> nth=0"

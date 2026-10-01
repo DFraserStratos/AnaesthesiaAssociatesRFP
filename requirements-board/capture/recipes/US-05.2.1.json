@@ -20,26 +20,19 @@
     },
     {
       "name": "card-fee",
-      "app": "web",
-      "caption": "Card fee at Dr Souter's own unit value",
-      "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "app": "admin",
+      "caption": "The fee on the office's view of the Booking, at the anaesthetist's unit value",
+      "start": "/admin/day/2026-07-21/cards/C0001",
       "states": [
         {
-          "steps": [],
-          "highlight": [
-            "[data-testid=card-calculation]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "card-fee",
-      "app": "mobile",
-      "caption": "Card fee at Dr Souter's own unit value",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
-      "states": [
-        {
-          "steps": [],
+          "steps": [
+            {
+              "scroll": "[data-testid=card-calculation]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
             "[data-testid=card-calculation]"
           ]

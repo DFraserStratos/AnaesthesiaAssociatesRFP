@@ -33,8 +33,8 @@ const headCellStyle = adminHead()
  * Two RFP-open readings are stated in the copy here: this surface lives in the
  * Admin Web App (vs a separate Billing Engine screen), and a failed Card blocks
  * only its own invoice (per-card isolation). The monitor itself is proposed
- * product UI, so it carries NO demo badge; only its simulation triggers (on the
- * demo control panel) are badged (convention 13).
+ * product UI, so it carries NO demo badge; only its simulation triggers (in the
+ * harness bar's Demo actions menu on this screen) are badged (convention 13).
  */
 export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const schedule = useAppStore((s) => s.schedule)

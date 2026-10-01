@@ -128,6 +128,44 @@ test('a List opens, a Card completes and the List submits, all within the device
   await expect(page.getByTestId('list-submission-overlay')).toHaveCount(0)
   await expect(page.getByText('Submitted to office', { exact: true })).toBeVisible()
   await expectNoDocumentScroll(page, 'submitted List')
+
+  // "Play the office" defaults OFF (catch-up Phase 14): past the old 4s
+  // auto-authorise delay the List is still waiting for the office.
+  await page.waitForTimeout(4500)
+  await expect(page.getByText('Submitted to office', { exact: true })).toBeVisible()
+
+  // The Demo chip clears the List's submit footer.
+  const chip = page.locator('[data-shot="pwa-demo-actions"]')
+  await expect(chip).toBeVisible()
+  await expect(chip).not.toContainText('Office auto')
+  const chipBox = await chip.boundingBox()
+  const footerBox = await page.getByTestId('mobile-list-footer').boundingBox()
+  expect(chipBox !== null && footerBox !== null && chipBox.y + chipBox.height <= footerBox.y).toBe(true)
+
+  // The office stand-in authorises and bills this List from the Demo sheet.
+  await chip.click()
+  const row = page.locator('[data-shot="pwa-demo-action-office-authorises-list"]')
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).toContainText('raised its invoices')
+  await expect(row.getByRole('button', { name: 'Run' })).toBeDisabled()
+  await page.screenshot({ path: 'visual/shots/pwa-06-office-stand-in.png' })
+
+  // Billed = gone: the List has left the Done tab.
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  const lists = page.locator('[data-shot="pwa-demo-actions"]')
+  await expect(lists).toBeVisible()
+  const listsChip = await lists.boundingBox()
+  const tabBar = await page.getByTestId('mobile-tab-bar').boundingBox()
+  expect(listsChip !== null && tabBar !== null && listsChip.y + listsChip.height <= tabBar.y).toBe(true)
+  await page.getByRole('button', { name: 'Done', exact: true }).click()
+  await expect(page.getByText('Southern Cross')).toHaveCount(0)
+
+  // No chip on More, which has no demo actions.
+  await tab(page, 'More').click()
+  await expect(page).toHaveURL(/\/mobile\/more$/)
+  await expect(page.locator('[data-shot="pwa-demo-actions"]')).toHaveCount(0)
 })
 
 test('the safe-area contract resolves on the device host, at its emulation floors', async ({ page }) => {

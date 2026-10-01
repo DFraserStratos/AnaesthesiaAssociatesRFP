@@ -706,3 +706,11 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
 @page {
   margin: 14mm;
 }
+
+/* Harness bar: the "Demo actions" pill collapses to icon plus count below
+   1280px so the 48px bar never wraps (catch-up Phase 14). */
+@media (max-width: 1279px) {
+  .aa-demo-actions-label {
+    display: none;
+  }
+}

@@ -26,7 +26,7 @@
         },
         {
           "state": "applied",
-          "caption": "Reschedule applied, the Card moves to the new List",
+          "caption": "Reschedule applied, the Booking moves to the new List",
           "steps": [
             {
               "click": "[data-testid=integration-library] >> text=\"S13 · Reschedule (moves to another day)\""

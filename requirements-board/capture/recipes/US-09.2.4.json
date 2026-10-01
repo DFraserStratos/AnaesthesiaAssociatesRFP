@@ -60,10 +60,13 @@
           "wait": 400
         },
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero/invoices/XR0001"
         },
         {
-          "click": "[data-shot=control-payment-webhook] >> role=button[name=\"Record payment\"]"
+          "wait": 400
+        },
+        {
+          "trigger": "payment-full"
         },
         {
           "wait": 600

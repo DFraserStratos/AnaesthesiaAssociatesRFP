@@ -14,6 +14,33 @@
           "highlight": []
         }
       ]
+    },
+    {
+      "name": "sign-in-attempts",
+      "app": "admin",
+      "caption": "Every sign-in attempt is an audit row, with who, role, source and what changed",
+      "start": "/admin/audit",
+      "states": [
+        {
+          "steps": [
+            {
+              "trigger": "simulate-sign-in"
+            },
+            {
+              "select": "select >> nth=0",
+              "value": "account"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Signed in\")",
+            "tr:has-text(\"Sign-in failed\")",
+            "tr:has-text(\"Password reset by user\")"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { Check, ClipboardCopy, RefreshCw, RotateCcw } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 import { BottomSheet } from '../shared/surface'
+import { DemoBadge } from '../shared/DemoBadge'
 import {
   PERSIST_KEY,
   persistStatus,
@@ -201,11 +202,16 @@ function OfficeSimulationCard() {
           setOn(next)
         }}
       />
+      {on && (
+        <div>
+          <DemoBadge label="Simulated office" />
+        </div>
+      )}
       <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '18px' }}>{OFFICE_SIM_COPY}</div>
       <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
-        Off, and a submitted list simply waits, as it really would until the office reviews it. There is no
-        Admin app on the phone, so nothing else would move it on. Switch it back on and the office picks
-        that same list up a few seconds later.
+        Off by default: a submitted list waits, as it really would until the office reviews it. There is no
+        Admin app on the phone, so to move one list on, open the Demo chip on that list and run Office
+        authorises this List. Switched on, the office picks up every submitted list a few seconds later.
       </div>
     </Card>
   )

@@ -1,53 +1,27 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  RotateCcw,
-  Zap,
-  CalendarDays,
-  Info,
-  AlertTriangle,
-  Stethoscope,
-  CreditCard,
-  PlugZap,
-  Route,
-  FileText,
-  Banknote,
-} from 'lucide-react'
+import { RotateCcw, CalendarDays, Info, Route, ListChecks, ArrowRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import {
-  armHandoffFault,
+  OFFICE_ACTOR,
+  SOUTER_ACTOR,
   authoriseList,
   editCard,
-  editContract,
   editProcedure,
-  ingestPdfRow,
-  openAccRecs,
   proceduresForCard,
-  processMessage,
-  receivePayment,
   resetDemo,
-  runArchiveJob,
-  runPayables,
-  runReconciliationPoll,
-  submitList,
   useAppStore,
   useClockTimeLabel,
   useToday,
-  type Actor,
 } from '../../store'
-import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
-import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../../domain/seed'
-import { roundToCents } from '../../domain/billing/money'
-import { formatCurrency } from '../../shared/format'
+import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
+import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, type DemoTrigger } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
-
-const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 function ControlCard({ icon: Icon, title, eyebrow, children, shot }: {
   icon: LucideIcon
@@ -134,69 +108,26 @@ const secondaryHover = {
 }
 
 /**
- * Demo control panel (`/demo/control`). The presenter's cockpit, in four
- * labelled groups: the live clock + reset, the S1 to S5 scenario jumps (the
- * guided-script entry points), booking/integration events, and billing/money
- * events. Every trigger states what it will do before firing, and the demo-only
- * surfaces stay badged (PROGRESS convention 13).
+ * Demo control panel (`/demo/control`). The presenter's index (catch-up Phase
+ * 14), in three labelled groups: the live clock + reset, the S1 to S5 scenario
+ * jumps (the guided-script entry points), and every registered demo action
+ * listed under its screen with a link that opens it. The actions themselves
+ * live on their screens (`src/shared/demoTriggers`); none is fired from here.
+ * The demo-only surfaces stay badged (PROGRESS convention 13).
  */
 export function DemoControlPanel() {
   const todayISO = useToday()
   const timeLabel = useClockTimeLabel()
   const [confirmingReset, setConfirmingReset] = useState(false)
-  const [failureMsg, setFailureMsg] = useState<string | null>(null)
-  const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
 
   const dateLabel = format(parseISO(todayISO), 'EEEE d MMMM yyyy')
-
-  // Phase 09 demo trigger: date out the COS ACC contract (no default fallback)
-  // and authorise the seeded failure list; the wired billing run raises the
-  // sibling's invoice and fails the COS card, which surfaces in the monitor.
-  function triggerBillingFailure() {
-    const listId = SEED_LIST_IDS.billingFailure
-    const list = useAppStore.getState().schedule.lists[listId]
-    if (list === undefined) {
-      setFailureMsg('The billing-failure list is not present in this seed.')
-      return
-    }
-    if (list.billedAtISO !== undefined) {
-      setFailureMsg('Already triggered. Open the Admin app billing monitor to resolve and retry the failed card.')
-      return
-    }
-    editContract(useAppStore, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' })
-    if (list.state === 'DRAFT') submitList(useAppStore, OFFICE, listId)
-    const outcome = authoriseList(useAppStore, OFFICE, listId)
-    setFailureMsg(
-      outcome.ok
-        ? 'Done. In the Admin app billing monitor the COS card shows a rating failure while its clean sibling billed. Use Resolve & retry.'
-        : `Refused: ${outcome.message}`,
-    )
-  }
-
-  // Phase 09 demo trigger: authorise (lock + bill) an original episode and keep
-  // a free empty session today for its anaesthetist, so "Add post-op event" on
-  // the locked card has somewhere to land.
-  function stagePostOpScenario() {
-    const listId = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
-    const list = useAppStore.getState().schedule.lists[listId]
-    if (list === undefined) {
-      setPostOpMsg('The post-op original list is not present in this seed.')
-      return
-    }
-    if (list.state === 'DRAFT') submitList(useAppStore, OFFICE, listId)
-    const submitted = useAppStore.getState().schedule.lists[listId]
-    if (submitted?.state === 'SUBMITTED') authoriseList(useAppStore, OFFICE, listId)
-    setPostOpMsg(
-      'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its card and use "Add post-op event"; it lands on her free Tue 21 PM session.',
-    )
-  }
 
   const advances = demoClockShortcuts(useAppStore, todayISO)
 
   return (
     <DemoSurface
       title="Demo control panel"
-      subtitle="The presenter's cockpit for the demo. Reset the data, advance the clock, jump to a scenario and fire simulated integration and money events, all against the mock in-browser backend."
+      subtitle="The presenter's index for the demo. Reset the data, advance the clock and jump to a scenario here. Every demo action lives on its own screen, under Demo actions in the harness bar (or the Demo sheet on a handset), and is listed below with a link to that screen."
     >
       {/* ── Clock & reset ─────────────────────────────────────── */}
       <SectionHeading label="Clock & reset" />
@@ -268,53 +199,12 @@ export function DemoControlPanel() {
       />
       <ScenarioJumps />
 
-      {/* ── Booking & integration events ──────────────────────── */}
-      <SectionHeading label="Booking & integration events" />
-      <IntegrationTriggerCard />
-      <PdfArrivalCard />
-
-      {/* ── Billing, money & exceptions ───────────────────────── */}
-      <SectionHeading label="Billing, money & exceptions" />
-
-      <ControlCard icon={AlertTriangle} eyebrow="Billing exceptions" title="Trigger billing failure">
-        <div><DemoBadge label="Demo trigger" /></div>
-        <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-          Dates out the externally held COS ACC contract (a group holder with no default fallback) and authorises the
-          seeded multi-card list. One card fails to rate; its clean sibling still invoices, so the monitor shows
-          per-card isolation and a Resolve &amp; retry path.
-        </span>
-        <div style={{ marginTop: 4 }}>
-          <button type="button" onClick={triggerBillingFailure} style={actionButtonStyle}
-            {...secondaryHover}>
-            Trigger failure
-          </button>
-        </div>
-        {failureMsg !== null && (
-          <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{failureMsg}</div>
-        )}
-      </ControlCard>
-
-      <ControlCard icon={Stethoscope} eyebrow="Post-op addendum" title="Stage post-op scenario">
-        <div><DemoBadge label="Demo trigger" /></div>
-        <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-          Authorises (locks and bills) an original episode and keeps a free session open today for its anaesthetist,
-          ready for "Add post-op event" on the locked card. The addendum runs its own capture to invoice; the original
-          stays immutable.
-        </span>
-        <div style={{ marginTop: 4 }}>
-          <button type="button" onClick={stagePostOpScenario} style={actionButtonStyle}
-            {...secondaryHover}>
-            Stage scenario
-          </button>
-        </div>
-        {postOpMsg !== null && (
-          <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.success.onTint, background: semantic.success.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{postOpMsg}</div>
-        )}
-      </ControlCard>
-
-      <PaymentReceivedCard />
-      <HandoffFaultCard />
-      <AutomatedJobsCard />
+      {/* ── Demo actions by screen (the index) ────────────────── */}
+      <SectionHeading
+        label="Demo actions by screen"
+        hint="Demo actions live on the screen they belong to: open Demo actions in the harness bar there, or the Demo sheet in the installed PWA. This page is their index. Open screen takes you to where each one shows."
+      />
+      <DemoActionsIndex />
 
       {/* Billing rounding assumption (Decisions log 2026-07-22; Phase 04 repeats it on the T stepper) */}
       <div
@@ -361,13 +251,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S1',
     title: 'S1 · Booking to theatre',
-    blurb: 'A hospital HL7 booking lands on a booked list, then captures live on procedure day.',
+    blurb: 'A hospital HL7 booking (Future scope, shown as an illustration) lands on a booked list, then captures live on procedure day.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Start in Mobile to introduce the AM and PM Lists, then fire or replay MSG-STG-1001 in Integrations. Sarah Mitchell arrives as a fourth Card on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Card. The List itself stays DRAFT, because its other three Cards are still to be captured.',
+          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Card on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Card. The List itself stays DRAFT, because its other three Cards are still to be captured.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },
@@ -418,8 +308,11 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) Stage post-op, then Sharma Tue 14 AM, Sarah Mitchell; (3) Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) fire MSG-CPH-2001, change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) pay half of the St George\'s clean-sibling invoice for Hemi Walker, run payables, then pay the balance and run again.',
-        nav: [{ label: 'Go to Mobile app', path: APP_CONFIG.mobile.path }],
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) in Admin open Sarah Mitchell\'s Card on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
+        nav: [
+          { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
+          { label: 'Go to Billing monitor', path: '/admin/billing' },
+        ],
       }
     },
   },
@@ -433,18 +326,18 @@ const SCENARIOS: readonly Scenario[] = [
       const chenProcedure = proceduresForCard(useAppStore.getState(), chenCardId)[0]
       if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Card was not found to stage the audit trail.' }
       const staged = [
-        editProcedure(useAppStore, SOUTER, chenProcedure.id, { asaClass: 'AS2' }),
-        editCard(useAppStore, OFFICE, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
-        editProcedure(useAppStore, SOUTER, chenProcedure.id, { asaClass: 'AS1' }),
+        editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS2' }),
+        editCard(useAppStore, OFFICE_ACTOR, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
+        editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS1' }),
       ]
       const refused = staged.find((r) => !r.ok)
       if (refused !== undefined && !refused.ok) return { ok: false, message: `Reset done, but staging the audit trail was refused: ${refused.message}` }
-      const invoiceStage = authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.whitakerFri17)
+      const invoiceStage = authoriseList(useAppStore, OFFICE_ACTOR, SEED_LIST_IDS.whitakerFri17)
       if (!invoiceStage.ok) return { ok: false, message: `Audit staged, but the contract snapshot invoice could not be raised: ${invoiceStage.message}` }
       return {
         ok: true,
         message:
-          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
+          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },
@@ -534,297 +427,84 @@ function ScenarioJumps() {
   )
 }
 
-/** Badged demo trigger: simulate a Xero payment webhook against an open ACCREC. */
-function PaymentReceivedCard() {
-  const xero = useAppStore((s) => s.xero)
-  const billing = useAppStore((s) => s.billing)
-  const masters = useAppStore((s) => s.masters)
-  const schedule = useAppStore((s) => s.schedule)
-  const candidates = useMemo(() => openAccRecs({ xero, billing, masters, schedule }), [xero, billing, masters, schedule])
+const SURFACE_LABEL = { bar: 'Harness bar', pwa: 'Installed PWA' } as const
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [mode, setMode] = useState<'full' | 'partial'>('full')
-  const [keyN, setKeyN] = useState(1)
-  const [last, setLast] = useState<{ accRecId: string; key: string; amount: number } | null>(null)
-  const [msg, setMsg] = useState<string | null>(null)
-
-  const active = candidates.find((c) => c.accRecId === selectedId) ?? candidates[0]
-
-  function recordPayment() {
-    if (active === undefined) return
-    const partial = roundToCents(active.remaining / 2)
-    const amount = mode === 'partial' && partial > 0 ? partial : active.remaining
-    const key = `WEBHOOK-${active.accRecId}-${keyN}`
-    const res = receivePayment(useAppStore, { accRecId: active.accRecId, amount, idempotencyKey: key, source: 'webhook' })
-    setKeyN((n) => n + 1)
-    setLast({ accRecId: active.accRecId, key, amount })
-    setMsg(
-      res.ok
-        ? res.value.applied
-          ? `Webhook applied ${formatCurrency(amount)} to ${active.invoiceNumber}. The paired ACCPAY is authorised pro-rata.`
-          : 'No change (already fully paid).'
-        : `Refused: ${res.message}`,
-    )
+/** Group the registry by `screen`, keeping registry order within and across groups. */
+function groupByScreen(triggers: readonly DemoTrigger[]): { screen: string; entries: DemoTrigger[] }[] {
+  const groups: { screen: string; entries: DemoTrigger[] }[] = []
+  for (const t of triggers) {
+    const g = groups.find((x) => x.screen === t.screen)
+    if (g === undefined) groups.push({ screen: t.screen, entries: [t] })
+    else g.entries.push(t)
   }
+  return groups
+}
 
-  function replayLast() {
-    if (last === null) return
-    const res = receivePayment(useAppStore, { accRecId: last.accRecId, amount: last.amount, idempotencyKey: last.key, source: 'webhook' })
-    setMsg(
-      res.ok && !res.value.applied
-        ? 'Duplicate webhook ignored (idempotent by key). No double effect.'
-        : 'Replayed.',
-    )
-  }
+/**
+ * The index of every registered demo action, under its screen, with where it
+ * shows and an "Open screen" link to a place it is visible. Nothing is fired
+ * from here (catch-up Phase 14).
+ */
+function DemoActionsIndex() {
+  const navigate = useNavigate()
+  const state = useAppStore()
+  const groups = useMemo(() => groupByScreen(DEMO_TRIGGERS), [])
 
   return (
-    <ControlCard icon={CreditCard} eyebrow="Xero payments" title="Payment received (webhook)" shot="control-payment-webhook">
-      <div><DemoBadge label="Demo trigger" /></div>
-      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Simulates a Xero INVOICE webhook: the ACCREC is marked (part) paid and its paired ACCPAY is
-        authorised proportionally. Replaying reuses the last key to show idempotency. A missed webhook
-        is caught by the daily reconciliation poll when you advance the day.
-      </span>
-      {candidates.length === 0 ? (
-        <span style={{ fontSize: 12.5, color: neutral.mist, marginTop: 4 }}>
-          No open invoices. Authorise a list (or raise a pre-payment invoice) to create an ACCREC first.
-        </span>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-          <select
-            value={active?.accRecId ?? ''}
-            onChange={(e) => setSelectedId(e.target.value)}
-            style={{ font: 'inherit', fontSize: 13, padding: '7px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}
-          >
-            {candidates.map((c) => (
-              <option key={c.accRecId} value={c.accRecId}>
-                {c.invoiceNumber} · {c.patientName} · {c.counterpartyLabel} · {formatCurrency(c.remaining)} due
-              </option>
-            ))}
-          </select>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {(['full', 'partial'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                style={{ ...actionButtonStyle, background: mode === m ? neutral.sunken : neutral.surface, borderColor: mode === m ? neutral.slate : neutral.lineStrong }}
-              >
-                {m === 'full' ? 'Full payment' : 'Half (partial)'}
-              </button>
-            ))}
-            <button type="button" onClick={recordPayment} style={primaryButtonStyle}>
-              Record payment
-            </button>
-            <button type="button" onClick={replayLast} disabled={last === null} style={{ ...actionButtonStyle, opacity: last === null ? 0.5 : 1, cursor: last === null ? 'not-allowed' : 'pointer' }}>
-              Replay last event
-            </button>
+    <ControlCard icon={ListChecks} eyebrow="Index" title="Where each demo action lives" shot="control-demo-index">
+      <div><DemoBadge label="Demo trigger index" /></div>
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
+        {groups.map((g) => (
+          <div key={g.screen} style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: neutral.slate }}>{g.screen}</div>
+            {g.entries.map((t) => {
+              const pwaOnly = !t.surfaces.includes('bar')
+              const path = pwaOnly ? null : t.indexPath(state)
+              return (
+                <div key={t.id} data-shot={`index-${t.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{t.label}</span>
+                      <DemoTriggerBadge badge={t.badge} />
+                    </div>
+                    <span style={{ fontSize: 12.5, color: neutral.slate, lineHeight: 1.45 }}>{t.description}</span>
+                    <span style={{ fontSize: 12, color: neutral.mist }}>
+                      Shows in: {t.surfaces.map((x) => SURFACE_LABEL[x]).join(' and ')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 'none', maxWidth: 220, textAlign: 'right' }}>
+                    {pwaOnly ? (
+                      <span style={{ fontSize: 12, color: neutral.mist }}>Shown in the installed PWA</span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={path === null}
+                          onClick={() => { if (path !== null) navigate(path) }}
+                          style={{ ...actionButtonStyle, ...(path === null ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+                          {...(path === null ? {} : secondaryHover)}
+                        >
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            Open screen
+                            <ArrowRight size={14} strokeWidth={2.5} aria-hidden />
+                          </span>
+                        </button>
+                        {path === null && <span style={{ fontSize: 12, color: neutral.mist }}>{t.indexEmptyReason ?? 'Nothing to open yet'}</span>}
+                        {path !== null && t.indexHint !== undefined && <span style={{ fontSize: 12, color: neutral.mist }}>{t.indexHint}</span>}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+            {g.screen === BILLING_MONITOR_SCREEN && (
+              <div style={{ fontSize: 12.5, color: neutral.slate }}>
+                <strong style={{ fontWeight: 600 }}>Run payables:</strong> the Billing monitor's own button (product UI, not a demo action).
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      {msg !== null && (
-        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
-      )}
-    </ControlCard>
-  )
-}
-
-/** Badged demo trigger: fire a canned HL7/FHIR message + a dedupe replay. */
-function IntegrationTriggerCard() {
-  const [selectedId, setSelectedId] = useState<string>(CANNED_MESSAGES[0]?.id ?? '')
-  const [last, setLast] = useState<string | null>(null)
-  const [msg, setMsg] = useState<string | null>(null)
-
-  function fire() {
-    const res = processMessage(useAppStore, selectedId)
-    setLast(selectedId)
-    setMsg(
-      res.ok
-        ? `Fired ${selectedId}: ${res.value.outcome}. See the three-pane view in the integration simulator and the log in the Admin app Integrations monitor.`
-        : `Refused: ${res.message}`,
-    )
-  }
-  function replay() {
-    if (last === null) return
-    const res = processMessage(useAppStore, last)
-    setMsg(
-      res.ok
-        ? res.value.outcome === 'duplicate'
-          ? 'Deduplicated: same message control ID, no second Card created.'
-          : `Replayed ${last}: ${res.value.outcome}.`
-        : `Refused: ${res.message}`,
-    )
-  }
-
-  return (
-    <ControlCard icon={Zap} eyebrow="Integrations" title="Fire an integration message" shot="control-integration-message">
-      <div><DemoBadge label="Demo trigger" /></div>
-      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Sends a canned hospital HL7 / FHIR message into the mock backend. Includes the Christchurch
-        Public dead-letter case (MSG-CPH-2001). Replaying the same message shows idempotent dedupe (no
-        double Card). The full simulator lives at the Integrations demo surface; the message log is in
-        the Admin app Integrations monitor.
-      </span>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          style={{ font: 'inherit', fontSize: 13, padding: '7px 10px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink, maxWidth: 340 }}
-        >
-          {CANNED_MESSAGES.map((m) => (
-            <option key={m.id} value={m.id}>{m.label} · {m.id}</option>
-          ))}
-        </select>
-        <button type="button" onClick={fire} style={primaryButtonStyle}>
-          Fire message
-        </button>
-        <button type="button" onClick={replay} disabled={last === null} style={{ ...actionButtonStyle, opacity: last === null ? 0.5 : 1, cursor: last === null ? 'not-allowed' : 'pointer' }}>
-          Replay last (dedupe)
-        </button>
+        ))}
       </div>
-      {msg !== null && (
-        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
-      )}
-    </ControlCard>
-  )
-}
-
-/** Badged demo trigger: an emailed surgeon PDF arrives; ingest one reviewed row. */
-function PdfArrivalCard() {
-  const [msg, setMsg] = useState<string | null>(null)
-
-  function ingest() {
-    const pdf = SURGEON_PDFS[0]
-    const row = pdf?.rows.find((r) => r.id === 'R2')
-    if (pdf === undefined || row === undefined) {
-      setMsg('The sample PDF row is not present in this build.')
-      return
-    }
-    const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-    const res = ingestPdfRow(useAppStore, OFFICE, listId, row)
-    setMsg(
-      res.ok
-        ? `${res.value.outcome === 'created' ? 'Created' : 'Updated'} a Card for ${row.name} on Dr Souter's Mon 27 Jul AM List from ${pdf.fromSurgeon}'s emailed list. Re-firing updates the same Card (deduped by NHI), never a duplicate. The full review-and-edit-before-ingest flow, including the deliberately mistyped NHI row, is in the Integrations simulator under Surgeon PDFs.`
-        : `Refused: ${res.message}`,
-    )
-  }
-
-  return (
-    <ControlCard icon={FileText} eyebrow="Surgeon PDF" title="PDF list arrives (ingest a row)">
-      <div><DemoBadge label="Demo trigger" /></div>
-      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Simulates the emailed-PDF fallback: ingests one reviewed row onto its target List, with the
-        patient deduped by NHI. The RFP keeps phone and PDF as first-class channels; review and edit
-        before ingest lives in the Integrations simulator.
-      </span>
-      <div style={{ marginTop: 4 }}>
-        <button type="button" onClick={ingest} style={actionButtonStyle}
-          {...secondaryHover}>
-          Ingest PDF row
-        </button>
-      </div>
-      {msg !== null && (
-        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
-      )}
-    </ControlCard>
-  )
-}
-
-/** Badged demo trigger: arm the next Xero handoff to fault (D-handoff). */
-function HandoffFaultCard() {
-  const [msg, setMsg] = useState<string | null>(null)
-  const armed = useAppStore((s) => s.settings.failNextHandoff === true)
-  return (
-    <ControlCard icon={PlugZap} eyebrow="Xero handoff" title="Fail the next Xero handoff">
-      <div><DemoBadge label="Demo trigger" /></div>
-      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Arms the next ACCREC/ACCPAY handoff to fault. The invoice still stands; the case records a
-        handoff failure and no pair is created. Then authorise a list (or raise a pre-payment invoice):
-        the billing monitor shows the fault with a Resolve &amp; retry that re-runs the idempotent handoff.
-      </span>
-      <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
-        <button
-          type="button"
-          onClick={() => {
-            armHandoffFault(useAppStore, OFFICE)
-            setMsg('Armed. The next Xero handoff will fault once, then clear.')
-          }}
-          style={actionButtonStyle}
-          {...secondaryHover}
-        >
-          Arm handoff failure
-        </button>
-        {armed && <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint }}>Armed</span>}
-      </div>
-      {msg !== null && (
-        <div style={{ marginTop: 4, fontSize: 12.5, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
-      )}
-    </ControlCard>
-  )
-}
-
-/** Badged demo trigger: run a scheduled job now, without advancing the clock. */
-function AutomatedJobsCard() {
-  const [msg, setMsg] = useState<string | null>(null)
-
-  function reconcile() {
-    const n = runReconciliationPoll(useAppStore)
-    setMsg(
-      n > 0
-        ? `Reconciliation poll applied ${n} previously-missed payment${n === 1 ? '' : 's'}.`
-        : 'Reconciliation poll ran: no unmirrored payments to catch.',
-    )
-  }
-  function archive() {
-    const res = runArchiveJob(useAppStore)
-    if (!res.ok) {
-      setMsg(`Refused: ${res.message}`)
-      return
-    }
-    setMsg(
-      res.value.count > 0
-        ? `Archive job archived ${res.value.count} inactive Xero contact${res.value.count === 1 ? '' : 's'}.`
-        : 'Archive job ran: no contacts past the inactivity window yet.',
-    )
-  }
-  function payables() {
-    const res = runPayables(useAppStore, OFFICE)
-    if (!res.ok) {
-      setMsg(`Refused: ${res.message}`)
-      return
-    }
-    setMsg(
-      res.value.disbursedCount > 0
-        ? `Payables run disbursed ${formatCurrency(res.value.totalDisbursed)} across ${res.value.disbursedCount} payable${res.value.disbursedCount === 1 ? '' : 's'}.`
-        : 'Payables run ran: nothing authorised to disburse yet.',
-    )
-  }
-
-  return (
-    <ControlCard icon={Banknote} eyebrow="Automated jobs" title="Run a scheduled job now" shot="control-scheduled-jobs">
-      <div><DemoBadge label="Demo trigger" /></div>
-      <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Fires the jobs that otherwise run on the daily clock tick, without advancing the clock. The
-        payables run and the nightly archive job also live in the Admin app (their product home); the
-        reconciliation poll is the missed-webhook safety net.
-      </span>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-        <button type="button" onClick={reconcile} style={actionButtonStyle}
-          {...secondaryHover}>
-          Run reconciliation poll
-        </button>
-        <button type="button" onClick={archive} style={actionButtonStyle}
-          {...secondaryHover}>
-          Run archive job
-        </button>
-        <button type="button" onClick={payables} style={actionButtonStyle}
-          {...secondaryHover}>
-          Run payables
-        </button>
-      </div>
-      {msg !== null && (
-        <div style={{ marginTop: 4, fontSize: 12.5, color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 12px' }}>{msg}</div>
-      )}
     </ControlCard>
   )
 }

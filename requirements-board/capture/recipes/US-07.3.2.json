@@ -6,7 +6,7 @@
     {
       "name": "locked-cards",
       "app": "admin",
-      "caption": "Authorised List, every Card locked",
+      "caption": "Authorised List, every Booking locked",
       "start": "/admin/review/L-25490-2026-07-20-AM",
       "states": [
         {
@@ -33,7 +33,7 @@
     {
       "name": "edit-refused",
       "app": "simulator",
-      "caption": "Guard refuses an office edit to a Card on an authorised List",
+      "caption": "Guard refuses an office edit to a Booking on an authorised List",
       "start": "/demo/data",
       "states": [
         {

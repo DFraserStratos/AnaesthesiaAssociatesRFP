@@ -53,10 +53,16 @@
               "wait": 400
             },
             {
-              "goto": "/demo/control"
+              "goto": "/demo/xero/invoices"
             },
             {
-              "click": "role=button[name=\"Record payment\"]"
+              "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "trigger": "payment-full"
             },
             {
               "wait": 600
@@ -106,10 +112,16 @@
           "wait": 400
         },
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero/invoices"
         },
         {
-          "click": "role=button[name=\"Record payment\"]"
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "payment-full"
         },
         {
           "wait": 600

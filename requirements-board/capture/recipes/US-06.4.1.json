@@ -6,7 +6,7 @@
     {
       "name": "balance-invoice",
       "app": "admin",
-      "caption": "Balance invoice after the procedure, final fee less the paid deposit",
+      "caption": "Balance invoice after the procedure, final fee less the paid prepayment",
       "start": "/admin/invoices/INV0003",
       "setup": [
         {
@@ -25,17 +25,13 @@
           "wait": 600
         },
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero/invoices/XR0001"
         },
         {
-          "select": "select >> nth=1",
-          "value": "XR0001"
+          "wait": 400
         },
         {
-          "click": "role=button[name=\"Full payment\"]"
-        },
-        {
-          "click": "role=button[name=\"Record payment\"]"
+          "trigger": "payment-full"
         },
         {
           "wait": 600

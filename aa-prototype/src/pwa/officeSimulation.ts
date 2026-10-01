@@ -10,8 +10,10 @@
  * switches to the Admin Web App, authorises it, and the billing run raises the
  * invoices. On a real phone there is nobody to play the office, so a submitted
  * List simply stops there: the Done tab fills and never empties, Balances never
- * moves, and the second half of the story is unreachable. This job plays the
- * office so the phone can tell the whole story on its own.
+ * moves, and the second half of the story is unreachable. Since catch-up Phase
+ * 14 the per-List "Office authorises this List" demo trigger is how the phone
+ * tells the rest of the story; this job is the optional, automatic version of
+ * the same stand-in, off by default.
  *
  * IT IS A SIMULATION, AND IT IS EXPLICITLY NOT THE RFP FLOW. Nothing in the RFP
  * authorises a List off the back of the anaesthetist's own submit, and this must
@@ -25,6 +27,11 @@
  * honest behaviour (a submitted List that waits) whenever the question comes up,
  * and switching it back on hands that same waiting List to the office rather
  * than orphaning it, so the story can carry on from where the question left it.
+ *
+ * Since catch-up Phase 14 it DEFAULTS TO OFF and is badged "Simulated office"
+ * while on (RV-22). The handset's per-List "Office authorises this List" demo
+ * trigger (`store/officeStandIn.ts`, which this job also calls) is the stand-in
+ * the story uses; this toggle stays as a signposted scaffold.
  *
  * It is PWA-ONLY. `src/main.tsx` never wires it: in the prototype the Admin app
  * is right there behind the app switcher, and auto-authorising would sabotage
@@ -49,14 +56,7 @@
  * the audit trail names the simulation as the actor.
  */
 
-import {
-  authoriseList,
-  handoffListCases,
-  isListBilled,
-  runBillingForList,
-  type Actor,
-  type BoundAppStore,
-} from '../store'
+import { authoriseAsSimulatedOffice, type BoundAppStore } from '../store'
 
 // ---------------------------------------------------------------------------
 // The toggle (presenter setting, persisted outside the store)
@@ -72,7 +72,8 @@ const STORED_OFF = 'off'
  * The single description of what the toggle does. Exported so the demo panel's
  * label and this module's behaviour cannot drift apart.
  */
-export const OFFICE_SIM_COPY = 'Submitted lists are authorised and billed automatically, as the office would.'
+export const OFFICE_SIM_COPY =
+  'A demo scaffold, not the proposed flow: submitted lists are authorised and billed automatically a few seconds later. To show one List, use "Office authorises this List" in the Demo sheet instead.'
 
 /**
  * How long the office "takes" to pick a submitted List up. Long enough that the
@@ -83,27 +84,24 @@ export const OFFICE_SIM_COPY = 'Submitted lists are authorised and billed automa
  */
 export const OFFICE_SIM_DELAY_MS = 4_000
 
-/**
- * The office, simulated. Office-shaped exactly as the Admin Web App builds its
- * actor (`role: 'office'`, `source: 'office'`) because this performs a genuine
- * office action and must pass the same `officeOnly` guards, but the `who` says
- * plainly what it is: nobody reading the audit log in a workshop should come
- * away thinking a real person authorised this List.
- */
-const OFFICE_SIMULATION_ACTOR: Actor = { who: 'AA office (simulated)', role: 'office', source: 'office' }
+// The actor (`OFFICE_SIMULATION_ACTOR`, "AA office (simulated)") lives in
+// `store/demoActors.ts`, shared with the per-List "Office authorises this List"
+// demo trigger, which runs the same `authoriseAsSimulatedOffice` body.
 
 /**
- * Current setting. Defaults to TRUE when nothing is stored — the phone is
- * useless as a demo without it. Anything other than the stored "off" reads as
- * on, so a corrupted value degrades to the useful default rather than a dead
- * app. Guarded, like `readStoredScale`: storage throws outright in private mode
- * and under some enterprise policies.
+ * Current setting. Defaults to OFF (catch-up Phase 14, RV-22): only the stored
+ * "on" reads as on, so absent, corrupt or unreadable storage leaves a submitted
+ * List waiting for the office, which is the honest behaviour. The handset story
+ * moves on through the per-List "Office authorises this List" demo trigger;
+ * this toggle is the signposted auto-authorise scaffold. Guarded, like
+ * `readStoredScale`: storage throws outright in private mode and under some
+ * enterprise policies.
  */
 export function isOfficeSimulationEnabled(): boolean {
   try {
-    return window.localStorage.getItem(OFFICE_SIM_STORAGE_KEY) !== STORED_OFF
+    return window.localStorage.getItem(OFFICE_SIM_STORAGE_KEY) === STORED_ON
   } catch {
-    return true
+    return false
   }
 }
 
@@ -137,22 +135,9 @@ export function setOfficeSimulationEnabled(on: boolean): void {
  */
 function playTheOffice(api: BoundAppStore, listId: string): void {
   try {
-    const list = api.getState().schedule.lists[listId]
-    // Gone (a demo reset reseeded the schedule) or already moved on.
-    if (list === undefined || list.state !== 'SUBMITTED') return
-
-    const authorised = authoriseList(api, OFFICE_SIMULATION_ACTOR, listId)
-    if (!authorised.ok) return
-
-    // `authoriseList` emits `listAuthorised` inside that call. Where the host
-    // also wired `wireBillingRun` — the PWA entry does — the run and the Xero
-    // handoff have already completed synchronously and the List is stamped
-    // billed by the time we get here. The explicit run is the fallback for a
-    // host that did not; `runBillingForList` refuses `alreadyBilled` anyway, so
-    // the two paths together can never bill a List twice.
-    if (isListBilled(api.getState().schedule.lists[listId] ?? list)) return
-    const run = runBillingForList(api, listId)
-    if (run.ok) handoffListCases(api, listId)
+    // Refusals (the List is gone after a reset, or already moved on) are a
+    // legitimate silent outcome here; the shared stand-in does the work.
+    authoriseAsSimulatedOffice(api, listId)
   } catch (error) {
     // A demo convenience must never take the app down. Same reasoning as
     // `emitAppEvent`'s listener guard: log it and swallow it.

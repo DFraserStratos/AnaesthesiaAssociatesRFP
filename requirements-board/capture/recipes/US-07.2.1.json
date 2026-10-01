@@ -20,7 +20,7 @@
     {
       "name": "read-only-card",
       "app": "web",
-      "caption": "Card on a submitted List is read only, with no edit or capture controls",
+      "caption": "Booking on a submitted List is read only, with no edit or capture controls",
       "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
       "states": [
         {
@@ -53,7 +53,7 @@
     {
       "name": "read-only-card",
       "app": "mobile",
-      "caption": "Card on a submitted List is read only",
+      "caption": "Booking on a submitted List is read only",
       "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
       "states": [
         {
@@ -65,7 +65,7 @@
     {
       "name": "edit-refused",
       "app": "simulator",
-      "caption": "Guard refuses the anaesthetist's edit to a Card on a submitted List",
+      "caption": "Guard refuses the anaesthetist's edit to a Booking on a submitted List",
       "start": "/demo/data",
       "states": [
         {

@@ -6,7 +6,7 @@
     {
       "name": "nhi-lookup",
       "app": "web",
-      "caption": "NHI lookup when adding a card",
+      "caption": "NHI lookup when adding a Booking",
       "start": "/web/lists/L-34821-2026-07-21-PM",
       "states": [
         {
@@ -43,7 +43,7 @@
     {
       "name": "nhi-lookup",
       "app": "mobile",
-      "caption": "NHI lookup when adding a card",
+      "caption": "NHI lookup when adding a Booking",
       "start": "/mobile/lists/L-34821-2026-07-21-PM",
       "states": [
         {

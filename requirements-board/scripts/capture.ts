@@ -36,6 +36,10 @@ const PWA = 'http://localhost:5174'
  * admin list drawer are pinned to top:0 and would lose their header under a clip.
  */
 const HIDE_HARNESS = '#root > div > header:first-child { display: none !important; }'
+/** The PWA's equivalent: its amber "Demo" chip floats over product screens, so mobile shots hide it. */
+const HIDE_PWA_DEMO = '[data-shot="pwa-demo-actions"] { display: none !important; }'
+/** The id of the injected hide style, so a `trigger` step can lift it while it opens the demo menu or sheet. */
+const HIDE_HARNESS_ID = 'capture-hide-harness'
 const DESKTOP = { width: 1440, height: 900, dpr: 2 }
 const MOBILE = { width: 390, height: 844, dpr: 3 }
 const ACTION_TIMEOUT = 6000
@@ -57,6 +61,12 @@ type Step =
   | { scroll: string; by?: number }
   | { goto: string }
   | { scenario: string }
+  /**
+   * Run a harness-bar demo action (`[data-shot=demo-action-<id>]`), picking `choice` in its select
+   * first. `open: true` leaves the bar shown and the menu open, so a state step can shoot the
+   * menu and its result line (each shot has a fresh page, so nothing leaks to the next).
+   */
+  | { trigger: string; choice?: string; open?: boolean }
 
 interface State {
   state?: string
@@ -109,6 +119,8 @@ const fullRun = !only
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const DASHES = /[–—]/
 
+const STEP_KEYS = ['click', 'dblclick', 'fill', 'press', 'hover', 'select', 'wait', 'scroll', 'goto', 'scenario', 'trigger'] as const
+
 function validate(r: Recipe, fileId: string): string[] {
   const out: string[] = []
   if (r.id !== fileId) out.push(`recipe file ${fileId}.json holds id ${r.id}`)
@@ -132,6 +144,15 @@ function validate(r: Recipe, fileId: string): string[] {
       const f = fileFor(r.id, s, st)
       if (files.has(f)) out.push(`${where}: two states write ${f}`)
       files.add(f)
+    }
+  }
+  for (const s of r.shots ?? []) {
+    const steps = [...(s.setup ?? []), ...(s.states ?? []).flatMap((st) => st.steps ?? [])]
+    for (const step of steps) {
+      if (!STEP_KEYS.some((k) => k in step)) out.push(`shot "${s.name}": unknown step ${JSON.stringify(step)}`)
+      if ('trigger' in step) {
+        if (!SLUG.test(step.trigger)) out.push(`shot "${s.name}": trigger "${step.trigger}" must be a demo action id (kebab-case)`)
+      }
     }
   }
   return out
@@ -182,17 +203,18 @@ async function newContext(browser: Browser, app: ImageApp): Promise<BrowserConte
     serviceWorkers: 'block',
   })
   ctx.setDefaultTimeout(ACTION_TIMEOUT)
-  if (!mobile) {
-    await ctx.addInitScript((css) => {
+  {
+    await ctx.addInitScript(({ css, id }) => {
       const d = (globalThis as any).document
       const add = () => {
         const el = d.createElement('style')
+        el.id = id
         el.textContent = css
         d.head.appendChild(el)
       }
       if (d.head) add()
       else d.addEventListener('DOMContentLoaded', add)
-    }, HIDE_HARNESS)
+    }, { css: mobile ? HIDE_PWA_DEMO : HIDE_HARNESS, id: HIDE_HARNESS_ID })
   }
   return ctx
 }
@@ -231,6 +253,8 @@ async function runStep(page: Page, step: Step, i: number) {
     await settle(page, 200)
   } else if ('scenario' in step) {
     await runScenario(page, step.scenario, what)
+  } else if ('trigger' in step) {
+    await runTrigger(page, step.trigger, step.choice, step.open === true, what)
   } else if ('click' in step) {
     await (await mustFind(page, step.click, what)).click({ force: step.force })
   } else if ('dblclick' in step) {
@@ -254,6 +278,57 @@ async function runStep(page: Page, step: Step, i: number) {
   } else {
     throw new Error(`${what}: unknown step`)
   }
+}
+
+/**
+ * Run a demo action from the harness bar's "Demo actions" menu on the current screen (:5173).
+ * Shots hide the bar, so this lifts the hide style, opens `[data-shot=demo-actions]`, sets the
+ * row's select when `choice` is given, clicks the row's Run, waits for its `role="status"` line,
+ * closes the popover with Escape and restores the hide (unless `keepOpen`). Fails when the row is
+ * missing or disabled.
+ * On the PWA (:5174) the same step opens the amber Demo chip's bottom sheet instead
+ * (`[data-shot=pwa-demo-actions]`, rows `[data-shot=pwa-demo-action-<id>]`, choices as radio rows)
+ * and closes it by tapping the scrim.
+ */
+async function runTrigger(page: Page, id: string, choice: string | undefined, keepOpen: boolean, what: string) {
+  const pwa = page.url().startsWith(PWA)
+  const pillSel = pwa ? '[data-shot="pwa-demo-actions"]' : '[data-shot="demo-actions"]'
+  const rowSel = pwa ? `[data-shot="pwa-demo-action-${id}"]` : `[data-shot="demo-action-${id}"]`
+  const setHidden = (hidden: boolean) =>
+    page.evaluate(({ id: styleId, hidden: h }) => {
+      const el = (globalThis as any).document.getElementById(styleId)
+      if (el) el.disabled = !h
+    }, { id: HIDE_HARNESS_ID, hidden })
+  await setHidden(false)
+  try {
+    const pill = page.locator(pillSel)
+    if (!(await pill.count())) throw new Error(`${what}: no Demo actions menu on ${page.url()} (this screen registers no entries)`)
+    const row = page.locator(rowSel)
+    if (!(await row.isVisible())) await pill.first().click()
+    await row.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT }).catch(() => undefined)
+    if (!(await row.count())) throw new Error(`${what}: no demo action ${rowSel} on ${page.url()}`)
+    if (choice !== undefined) {
+      if (pwa) await row.locator(`[role=radio]`).filter({ hasText: choice }).first().click()
+      else await row.locator('select').selectOption(choice)
+    }
+    const run = row.getByRole('button', { name: 'Run' })
+    if (await run.isDisabled()) {
+      const reason = (await row.innerText()).split('\n').slice(-2).join(' ')
+      throw new Error(`${what}: demo action ${id} is disabled (${reason})`)
+    }
+    await run.click()
+    await row.getByRole('status').filter({ hasText: /\S/ }).waitFor({ state: 'visible', timeout: ACTION_TIMEOUT })
+    if (!keepOpen) {
+      if (pwa) {
+        // Tap the scrim above the sheet, then let the sheet-out motion finish.
+        await page.mouse.click(12, 12)
+        await page.waitForTimeout(400)
+      } else await page.keyboard.press('Escape')
+    }
+  } finally {
+    if (!keepOpen) await setHidden(true)
+  }
+  await settle(page, 200)
 }
 
 /** Jump to a demo scenario (S1 to S5) from the demo control panel on :5173. */

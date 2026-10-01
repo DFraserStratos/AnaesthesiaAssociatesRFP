@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "ready",
-          "caption": "Every Card complete, Mark list completed is available",
+          "caption": "Every Booking complete, Mark list completed is available",
           "steps": [],
           "highlight": [
             "role=button[name=\"Mark list completed\"]"
@@ -63,7 +63,7 @@
       "states": [
         {
           "state": "ready",
-          "caption": "Every Card complete, Mark list completed is available",
+          "caption": "Every Booking complete, Mark list completed is available",
           "steps": [],
           "highlight": [
             "[data-testid=mobile-list-footer]"

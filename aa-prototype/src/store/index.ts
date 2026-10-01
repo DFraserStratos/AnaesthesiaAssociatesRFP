@@ -120,6 +120,9 @@ export {
 } from './billingRun'
 export { handoffCase, handoffCasesForCard, type HandoffResult } from './xeroHandoff'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
+export { OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { authoriseAsSimulatedOffice, officeStandInRefusal } from './officeStandIn'
+export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
 export {

@@ -6,7 +6,7 @@
     {
       "name": "processing-status",
       "app": "admin",
-      "caption": "Billing monitor, processing succeeded for the list and each card",
+      "caption": "Billing monitor, processing succeeded for the list and each Booking",
       "start": "/admin/billing",
       "setup": [
         {
@@ -55,14 +55,14 @@
     {
       "name": "failure-reason",
       "app": "admin",
-      "caption": "A card that failed to process, with the reason why",
+      "caption": "A Booking that failed to process, with the reason why",
       "start": "/admin/billing",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/admin/billing"
         },
         {
-          "click": "role=button[name=\"Trigger failure\"]"
+          "trigger": "billing-failure"
         },
         {
           "wait": 800

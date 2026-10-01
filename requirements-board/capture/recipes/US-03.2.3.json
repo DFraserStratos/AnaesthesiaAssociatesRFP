@@ -31,7 +31,7 @@
           "highlight": [
             "role=button[name=\"Copy for an additional procedure\"]"
           ],
-          "caption": "Or copy the card for an additional procedure"
+          "caption": "Or copy the Booking for an additional procedure"
         },
         {
           "state": "added",
@@ -69,7 +69,7 @@
             "role=button[name=\"Add another procedure\"]",
             "role=button[name=\"Copy for an additional procedure\"]"
           ],
-          "caption": "Add another procedure, or copy the card for an additional procedure"
+          "caption": "Add another procedure, or copy the Booking for an additional procedure"
         },
         {
           "state": "added",

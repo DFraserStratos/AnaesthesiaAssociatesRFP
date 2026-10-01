@@ -65,7 +65,7 @@
         },
         {
           "state": "after",
-          "caption": "Hughes now holds the St George's List with its cards",
+          "caption": "Hughes now holds the St George's List with its Bookings",
           "steps": [
             {
               "click": "[data-day-grid-row=\"34821\"] button >> nth=0"

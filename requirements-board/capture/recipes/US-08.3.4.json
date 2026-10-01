@@ -6,7 +6,7 @@
     {
       "name": "money-in-out",
       "app": "admin",
-      "caption": "Money in and money out per card, after the payables run",
+      "caption": "Money in and money out per Booking, after the payables run",
       "start": "/admin/billing",
       "setup": [
         {
@@ -31,10 +31,16 @@
           "wait": 400
         },
         {
-          "goto": "/demo/control"
+          "goto": "/demo/xero/invoices"
         },
         {
-          "click": "role=button[name=\"Record payment\"]"
+          "click": "[data-testid=xero-invoice-table] tr:has-text(\"AA-2026-0002\")"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "trigger": "payment-full"
         },
         {
           "wait": 600

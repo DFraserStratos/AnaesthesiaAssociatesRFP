@@ -94,9 +94,15 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
 
-  // --- Demo control panel --------------------------------------------------
+  // --- Demo settings and triggers ---------------------------------------
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
+
+  // --- Accounts and sign-in (FT-13.5, simulated: catch-up Phase 14) -------
+  'account.provisioned': 'Account provisioned',
+  'auth.signIn': 'Signed in',
+  'auth.signInFailed': 'Sign-in failed',
+  'auth.passwordReset': 'Password reset by user',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

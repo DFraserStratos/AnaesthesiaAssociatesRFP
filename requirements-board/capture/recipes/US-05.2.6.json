@@ -47,7 +47,7 @@
         },
         {
           "state": "added",
-          "caption": "Rate times time line added to the card",
+          "caption": "Rate times time line added to the Booking",
           "steps": [
             {
               "click": "role=button[name=\"Add billing line\"] >> nth=0"
@@ -133,7 +133,7 @@
         },
         {
           "state": "added",
-          "caption": "Rate times time line added to the card",
+          "caption": "Rate times time line added to the Booking",
           "steps": [
             {
               "click": "role=button[name=\"Add billing line\"] >> nth=0"

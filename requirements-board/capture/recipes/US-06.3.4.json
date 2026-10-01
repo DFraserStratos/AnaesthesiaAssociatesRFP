@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "part-paid",
-          "caption": "Half the deposit received, pre-payment still outstanding",
+          "caption": "Half the pre-payment received, pre-payment still outstanding",
           "steps": [
             {
               "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
@@ -32,17 +32,13 @@
               "wait": 400
             },
             {
-              "goto": "/demo/control"
+              "goto": "/demo/xero/invoices/XR0001"
             },
             {
-              "select": "select >> nth=1",
-              "value": "XR0001"
+              "wait": 400
             },
             {
-              "click": "role=button[name=\"Half (partial)\"]"
-            },
-            {
-              "click": "role=button[name=\"Record payment\"]"
+              "trigger": "payment-half"
             },
             {
               "wait": 400
@@ -66,7 +62,7 @@
         },
         {
           "state": "paid",
-          "caption": "Deposit paid in full, pre-payment received and gate cleared",
+          "caption": "Pre-payment paid in full, pre-payment received and warning cleared",
           "steps": [
             {
               "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
@@ -87,17 +83,13 @@
               "wait": 400
             },
             {
-              "goto": "/demo/control"
+              "goto": "/demo/xero/invoices/XR0001"
             },
             {
-              "select": "select >> nth=1",
-              "value": "XR0001"
+              "wait": 400
             },
             {
-              "click": "role=button[name=\"Full payment\"]"
-            },
-            {
-              "click": "role=button[name=\"Record payment\"]"
+              "trigger": "payment-full"
             },
             {
               "wait": 400

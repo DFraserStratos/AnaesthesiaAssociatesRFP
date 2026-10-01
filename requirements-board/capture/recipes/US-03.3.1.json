@@ -30,7 +30,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Picker grouped by anatomical site"
+          "caption": "Picker grouped by anatomical site (earlier design: now RVG body headings)"
         },
         {
           "state": "search",
@@ -83,7 +83,7 @@
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
           ],
-          "caption": "Picker grouped by anatomical site"
+          "caption": "Picker grouped by anatomical site (earlier design: now RVG body headings)"
         },
         {
           "state": "search",

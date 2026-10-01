@@ -1,7 +1,7 @@
 {
   "id": "US-05.4.1",
   "status": "partial",
-  "absentReason": "The anaesthetist can apply a dollar adjustment or a fixed charge with a reason, and the card shows the fee before the override. It is not gated by the contract, and percentage discounts are office only.",
+  "absentReason": "The anaesthetist can apply a dollar adjustment or a fixed charge with a reason, and the office view of the Booking shows the fee before the override. It is not gated by the contract, and percentage discounts are office only. The anaesthetist sees no total on the Booking (2026-09-28 decision), so the applied adjustment shows as the saved adjustment block; the fee effect is on the office view.",
   "shots": [
     {
       "name": "adjustment",
@@ -34,7 +34,7 @@
         },
         {
           "state": "applied",
-          "caption": "Adjustment applied, the card total shows the fee before it",
+          "caption": "Adjustment applied, the Booking total shows the fee before it",
           "steps": [
             {
               "click": "[data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
@@ -58,7 +58,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-shot=capture-adjustment-and-charge]"
           ]
         }
       ]
@@ -101,7 +101,7 @@
         },
         {
           "state": "applied",
-          "caption": "Adjustment applied, the card total shows the fee before it",
+          "caption": "Adjustment applied, the Booking total shows the fee before it",
           "steps": [
             {
               "click": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
@@ -125,7 +125,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge]"
           ]
         }
       ]

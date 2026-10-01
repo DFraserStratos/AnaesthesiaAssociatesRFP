@@ -95,7 +95,8 @@ Snapshot date: **24 July 2026**
 | Pre-payment gate, post-op addendum and billing monitor | Ready | Phase 09 |
 | Xero pairs, payments, payables, payment history, live balances and GST activity | Ready | Phase 10 |
 | HL7/FHIR/PDF ingestion and integration monitoring | Ready | Phase 11 |
-| Demo control panel with S1 to S5 scenario jumps | Ready | Phase 12 |
+| Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |
+| HL7/FHIR integration simulator and monitor tabs | Ready, badged Future scope | Phase 11; in-scope hospital download arrives in catch-up Phase 34 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |
 
 Phases 00 to 12 are built and clickable. Phase 13 is the only remaining phase and is purely a visual

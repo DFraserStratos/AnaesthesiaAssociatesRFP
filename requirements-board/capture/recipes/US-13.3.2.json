@@ -10,10 +10,10 @@
       "start": "/admin/billing",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/admin/billing"
         },
         {
-          "click": "role=button[name=\"Trigger failure\"]"
+          "trigger": "billing-failure"
         },
         {
           "wait": 1500
@@ -22,7 +22,7 @@
       "states": [
         {
           "state": "failed",
-          "caption": "A Card that failed to rate, with the reason and Resolve & retry",
+          "caption": "A Booking that failed to rate, with the reason and Resolve & retry",
           "steps": [],
           "highlight": [
             "tr:has(button:has-text(\"Resolve & retry\"))"
@@ -30,7 +30,7 @@
         },
         {
           "state": "retried",
-          "caption": "After Resolve & retry the Card invoices and hands off",
+          "caption": "After Resolve & retry the Booking invoices and hands off",
           "steps": [
             {
               "click": "role=button[name=\"Resolve & retry\"]"

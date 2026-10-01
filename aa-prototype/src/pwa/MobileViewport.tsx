@@ -4,6 +4,7 @@ import { gradientCssVars } from '../theme/mobileGradient'
 import { AtmosphereLayer } from '../shell/gradientLab/AtmosphereLayer'
 import { useMobileGradient } from '../shell/gradientLab/useGradientLab'
 import { UpdatePrompt } from './UpdatePrompt'
+import { PwaDemoActions } from './PwaDemoActions'
 import { readViewportMetrics, viewportShortfall, SHORTFALL_VAR } from './viewportMetrics'
 
 /**
@@ -165,6 +166,9 @@ export function MobileViewport({ children }: { children: ReactNode }) {
           depend on this seat: `MobileCardLayout` publishes it on
           `documentElement`, so it inherits wherever the pill is mounted. */}
       <UpdatePrompt />
+      {/* The handset's demo actions (catch-up Phase 14), in the same host
+          chrome seat, so the framed prototype never renders them. */}
+      <PwaDemoActions />
     </div>
   )
 }

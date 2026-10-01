@@ -40,8 +40,35 @@ Requires **Node 20.19 or newer** — `engines` in `package.json` carries the exa
 and the odd-numbered majors.
 
 Once running, use the app-switcher (top right) to move between the three apps and the demo surfaces.
-The demo control panel (`Demo: Control Panel`) is the presenter's cockpit: reset, advance the clock,
-jump to a scenario (S1 to S5), and fire simulated integration and money events.
+The demo control panel (`Demo: Control Panel`) is the presenter's **index**: reset, advance the clock,
+jump to a scenario (S1 to S5), and see every demo action listed under its screen with an "Open
+screen" link. The actions themselves live on their screens, under **Demo actions** in the harness
+bar (see [Demo actions](#demo-actions)).
+
+## Demo actions
+
+Every simulated event (a hospital message, a payment webhook, a billing failure, a job run, the
+office standing in on a handset) is a **demo trigger** registered in
+`src/shared/demoTriggers/registry.ts` and shown only on the screen it belongs to:
+
+- **Framed prototype:** a "Demo actions" pill in the 48px harness bar (`src/shell/DemoActionsMenu.tsx`),
+  absent on screens with no entries.
+- **Installed PWA:** a small amber "Demo" chip that opens a bottom sheet (`src/pwa/PwaDemoActions.tsx`).
+- **Control Panel:** the index of all of them.
+
+Each entry declares its route patterns (`matchPath`, against the full pathname), its surfaces
+(`'bar'`, `'pwa'` or both), an optional `when` (visibility, for seed-scoped entries), optional
+`choices`, a `disabledReason` (shown under a disabled Run), a `run(api, ctx, choiceId)` returning
+`{ ok, message }`, and an `indexPath` for the Control Panel's link. A trigger acts on the entity in
+the URL (`ctx.params`) or on screen state the URL cannot carry, which a screen publishes with
+`useDemoTriggerContext(key, value)` (typed keys in `src/shared/demoTriggers/context.ts`). "Replay"
+memory lives in a small non-persisted store (`memory.ts`). The shared actors (`OFFICE_ACTOR`,
+`SOUTER_ACTOR`, `OFFICE_SIMULATION_ACTOR`) are in `src/store/demoActors.ts`.
+
+**To add one in a later phase:** add an entry to `DEMO_TRIGGERS` (store actions only, no
+`src/apps/*` or `src/shell/*` imports, because the PWA bundles the registry), add a context key if
+it needs screen state, and add it to `demoTriggers.test.ts`. Product actions stay as buttons in the
+product UI; never add a trigger to the Control Panel page.
 
 ## Stack
 
@@ -68,17 +95,18 @@ jump to a scenario (S1 to S5), and fire simulated integration and money events.
   that context; `routes.tsx` holds one thin wrapper per screen, mapping URL params to props and the
   screens' `onBack` / `onOpen…` callbacks to `navigate()`. Screens themselves know nothing about
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
-- **`apps/demo/`** — demo-only surfaces: the control panel, the Xero + billing-monitor simulator, the
-  integration simulator, and the seed-data inspector.
+- **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
+  billing-monitor simulator, the integration simulator, and the seed-data inspector.
 - **`shared/`** — cross-app components (the capture suite, `card/CardDetailBody`, schedule rows,
   flows, status chips, `format.ts` for NZ number/currency/date output).
 - **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
   design mockups, mirrored into `global.css`'s `@theme`.
-- **`pwa/`** — the nine modules that exist only for the second build target: the `MobileViewport`
-  host, the update pill and its registration handle, the More-tab presenter panel, the install coach
-  and the entry-time `beforeinstallprompt` capture it replays, the office simulation, and the boot
+- **`pwa/`** — the modules that exist only for the second build target: the `MobileViewport`
+  host, the update pill and its registration handle, the More-tab presenter panel, the handset's
+  Demo chip and sheet (`PwaDemoActions`), the install coach and the entry-time
+  `beforeinstallprompt` capture it replays, the office simulation, the viewport metrics, and the boot
   metrics with the `BootMark` component that stamps them
   — plus their tests, one of which (`pwaPurity.test.ts`) is
   what keeps the target's bundle honest. Nothing here reaches the prototype bundle. See
@@ -336,17 +364,20 @@ The installed PWA has no Admin app, so **nobody plays the office**. In the frame
 presenter submits a List on the phone, switches to the Admin Web App, authorises it and watches the
 billing run; on a real phone a submitted List would sit in Done forever and Balances would never move.
 
-`src/pwa/officeSimulation.ts` closes that loop. It is **on by default** and PWA-only (`src/main.tsx`
-never wires it — auto-authorising would sabotage the scripted S3 review beat). A few seconds after a
-List goes DRAFT → SUBMITTED it authorises and bills that List through the ordinary audited store
-actions, with an actor named `AA office (simulated)`, so the invoices, the Balances movement and the
-Xero mirror all follow.
+The handset closes that loop per List: the Demo chip on a submitted List offers **"Office authorises
+this List"** (`authoriseAsSimulatedOffice` in `src/store/officeStandIn.ts`), which authorises and bills
+that List through the ordinary audited store actions, with an actor named `AA office (simulated)`, so
+the invoices, the Balances movement (the next day) and the Xero mirror all follow.
+
+`src/pwa/officeSimulation.ts` is the older, automatic version: **"Play the office"** on More. It is
+**off by default** (absent or unreadable storage reads off), badged "Simulated office" while on, and
+PWA-only (`src/main.tsx` never wires it; auto-authorising would sabotage the scripted S3 review beat).
+When on, a few seconds after a List goes DRAFT → SUBMITTED it runs the same stand-in.
 
 **It is explicitly a simulation and explicitly not the RFP flow.** Nothing in the RFP authorises a List
 off the back of the anaesthetist's own submit; a real submission goes to the office review queue and a
-person authorises it deliberately, which is the entire point of the SUBMITTED state. It is toggleable
-from the More tab precisely so a presenter can show the honest behaviour (a submitted List that simply
-waits) whenever the question comes up. Switching it back on hands that same waiting List over a few
+person authorises it deliberately, which is the entire point of the SUBMITTED state. Off, a
+submitted List simply waits, which is the honest behaviour. Switching it back on hands that same waiting List over a few
 seconds later, rather than orphaning it, so the story can carry on from where the question left it.
 
 ### What it deliberately does not do

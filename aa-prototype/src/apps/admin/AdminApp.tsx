@@ -10,7 +10,7 @@ import {
   prepaymentStatusFor,
   useAppStore,
   useToday,
-  type Actor,
+  OFFICE_ACTOR,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { ANAESTHETISTS } from '../../domain/seed'
@@ -22,7 +22,6 @@ import { isBooked, surnameOf } from './util'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
-const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 /** Which side-nav section the current URL is in (`/admin` itself is the day view). */
 function sectionForPath(pathname: string): NavSection {
@@ -206,7 +205,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const notes = dayNotesRecord[selectedDate] ?? []
 
   const context: AdminOutletContext = {
-    actor: OFFICE,
+    actor: OFFICE_ACTOR,
     todayISO,
     selectedDate,
     sortMode,
@@ -220,7 +219,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     reviewRows,
     shellScrollbarWidth,
     onSelectList: setDrawerListId,
-    onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE, selectedDate, text, flagged),
+    onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE_ACTOR, selectedDate, text, flagged),
   }
 
   const SECTION_PATH: Record<NavSection, string> = {
@@ -250,7 +249,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       {drawerListId !== null && (
         <ListDrawer
           listId={drawerListId}
-          actor={OFFICE}
+          actor={OFFICE_ACTOR}
           onClose={() => setDrawerListId(null)}
           onOpenCard={(cardId) => navigate(`/admin/day/${selectedDate}/cards/${cardId}`)}
         />

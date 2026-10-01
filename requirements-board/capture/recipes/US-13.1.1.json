@@ -17,7 +17,7 @@
         },
         {
           "state": "drill-down",
-          "caption": "Drill into a List to see its session and Cards",
+          "caption": "Drill into a List to see its session and Bookings",
           "steps": [
             {
               "click": "text=\"Southern Cross\" >> nth=0"

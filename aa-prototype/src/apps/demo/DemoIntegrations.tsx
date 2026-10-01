@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
+import { useDemoTriggerContext } from '../../shared/demoTriggers'
 import { DemoSurface } from './DemoSurface'
 import { processMessage, resetDemo, useAppStore } from '../../store'
 import { neutral, accent, radius, semantic } from '../../theme/tokens'
@@ -48,6 +49,9 @@ export function DemoIntegrations() {
   const feed = feeds[feedId]
   const library = useMemo(() => CANNED_MESSAGES.filter((m) => m.feedId === feedId), [feedId])
   const selected = cannedMessage(selectedId ?? '') ?? library[0]
+  // Publish the EFFECTIVE selection (the feed's first message until one is
+  // clicked) so the Demo actions menu's "Fire hospital message" preselects it.
+  useDemoTriggerContext('integrationsSim.selectedMessageId', selected?.id ?? '')
 
   const souter = anaesthetists[ANAE.souter]
   const practitioner = useMemo(
@@ -124,6 +128,7 @@ export function DemoIntegrations() {
       subtitle="Replay hospital messages through the mock integration pipeline, from source payload to schedule change."
       maxWidth={1440}
       subtitleMaxWidth={1440}
+      futureScope="HL7 v2, FHIR R4 and near real time are Future scope. In scope today is the St George's and Southern Cross download into a matching screen."
     >
       <div
         data-testid="integration-workspace"

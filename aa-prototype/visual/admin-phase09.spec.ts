@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { runDemoAction } from './demoActions'
 
 /**
  * Phase 09 admin walkthrough — the billing monitor (trigger a failure, see
@@ -8,20 +9,18 @@ import { test, expect } from '@playwright/test'
  */
 
 test('admin phase 09: billing monitor failure, resolve and retry', async ({ page }) => {
-  // Trigger the seeded billing failure from the demo control panel.
-  await page.goto('/demo/control')
+  // Trigger the seeded billing failure from the Billing monitor's Demo actions menu.
+  await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'Trigger failure' }).click()
-  await page.waitForTimeout(300)
-  await expect(page.getByText(/rating failure|billing monitor/i).first()).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/p9-01-trigger.png', fullPage: true })
-
-  // Into the Admin app billing monitor.
-  await page.goto('/admin')
-  await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: /Billing monitor/ }).click()
-  await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Billing monitor' })).toBeVisible()
+  const message = await runDemoAction(page, 'billing-failure')
+  expect(message).toMatch(/rating failure/)
+  await page.screenshot({ path: 'visual/shots/p9-01-trigger.png', fullPage: true })
+  // Pressed once, it reads Already triggered.
+  await expect(page.locator('[data-shot="demo-action-billing-failure"]').getByText('Already triggered')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // The monitor updated without leaving the screen.
   // The failed COS card and its resolve action are present; the sibling billed.
   await expect(page.getByRole('button', { name: /Resolve/ }).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })

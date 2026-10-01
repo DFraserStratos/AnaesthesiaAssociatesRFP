@@ -61,9 +61,10 @@ wireBillingRun(useAppStore)
 wireReconciliationPoll(useAppStore)
 wireArchiveJob(useAppStore)
 wireIntegrationRetry(useAppStore)
-// PWA-only, and on by default: with no Admin app on the phone there is nobody
-// to play the office, so a submitted List would sit in Done forever and
-// Balances would never move. Explicitly a simulation, not the RFP flow.
+// PWA-only, and OFF by default ("Play the office" on More switches it on): with
+// no Admin app on the phone there is nobody to play the office. The handset
+// story uses the per-List "Office authorises this List" in the Demo sheet; this
+// auto-authorise timer is a signposted scaffold, explicitly not the RFP flow.
 wireOfficeSimulation(useAppStore)
 
 markBootStart()

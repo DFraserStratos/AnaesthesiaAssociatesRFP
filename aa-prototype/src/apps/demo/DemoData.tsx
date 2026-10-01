@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import { StatusChip } from '../../shared'
-import { ANAE, SEED_MARKERS, type SeedMarker } from '../../domain/seed'
+import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
 import {
   authoriseList,
@@ -17,6 +17,8 @@ import {
   useAppStore,
   useClockTimeLabel,
   useToday,
+  OFFICE_ACTOR,
+  SOUTER_ACTOR,
   type Actor,
   type Outcome,
 } from '../../store'
@@ -93,8 +95,8 @@ const selectStyle: React.CSSProperties = {
 // ---------------------------------------------------------------------------
 
 const PERSONA_ACTORS: Record<string, Actor> = {
-  souter: { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter },
-  kirsty: { who: 'Kirsty W.', role: 'office', source: 'office' },
+  souter: SOUTER_ACTOR,
+  kirsty: OFFICE_ACTOR,
   integration: { who: 'HL7 feed', role: 'system', source: 'integration' },
 }
 

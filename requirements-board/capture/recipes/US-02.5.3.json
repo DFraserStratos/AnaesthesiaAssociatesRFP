@@ -26,7 +26,7 @@
         },
         {
           "state": "applied",
-          "caption": "Cancellation applied, the Card is soft-cancelled",
+          "caption": "Cancellation applied, the Booking is soft-cancelled",
           "steps": [
             {
               "click": "[data-testid=integration-library] >> text=\"S15 · Cancellation\""

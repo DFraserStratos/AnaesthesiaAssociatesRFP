@@ -25,7 +25,7 @@
       "states": [
         {
           "state": "setup",
-          "caption": "Office billing setup on a submitted Card",
+          "caption": "Office billing setup on a submitted Booking",
           "steps": [
             {
               "scroll": "text=/Office billing setup/"

@@ -12,19 +12,38 @@
         {
           "state": "free-list",
           "caption": "A Free List offers Book (phone advice)",
-          "steps": [{ "click": "text=\"open for cover\" >> nth=0" }, { "wait": 600 }],
-          "highlight": ["role=button[name=\"Book (phone advice)\"]"]
+          "steps": [
+            {
+              "click": "text=\"open for cover\" >> nth=0"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "role=button[name=\"Book (phone advice)\"]"
+          ]
         },
         {
           "state": "form",
-          "caption": "Phone-advice booking sets the List context, then adds the patient's Card",
+          "caption": "Phone-advice booking sets the List context, then adds the patient's Booking",
           "steps": [
-            { "click": "text=\"open for cover\" >> nth=0" },
-            { "wait": 600 },
-            { "click": "role=button[name=\"Book (phone advice)\"]" },
-            { "wait": 600 }
+            {
+              "click": "text=\"open for cover\" >> nth=0"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 600
+            }
           ],
-          "highlight": ["[role=dialog]"]
+          "highlight": [
+            "[role=dialog]"
+          ]
         }
       ]
     },
@@ -35,8 +54,17 @@
       "start": "/admin/day/2026-07-21/cards/C0009",
       "states": [
         {
-          "steps": [{ "click": "role=button[name=\"Edit\"] >> nth=1" }, { "wait": 600 }],
-          "highlight": ["[role=dialog]"]
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit\"] >> nth=1"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
         }
       ]
     }

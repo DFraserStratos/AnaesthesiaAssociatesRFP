@@ -6,7 +6,7 @@
     {
       "name": "deposit-invoice",
       "app": "admin",
-      "caption": "Pre-procedure invoice for an agreed deposit",
+      "caption": "Older screen, pre-procedure invoice for a partial deposit, which is no longer allowed",
       "start": "/admin/invoices/INV0002",
       "setup": [
         {

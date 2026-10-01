@@ -13,24 +13,47 @@
           "state": "flagged",
           "caption": "Extracted row with an invalid NHI flagged for correction",
           "steps": [
-            { "click": "role=button[name=\"Surgeon PDFs\"]" },
-            { "click": "role=button[name=\"Open\"] >> nth=0" },
-            { "wait": 500 }
+            {
+              "click": "role=button[name=\"Surgeon PDFs\"]"
+            },
+            {
+              "click": "role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=pdf-row-3]"]
+          "highlight": [
+            "[data-shot=pdf-row-3]"
+          ]
         },
         {
           "state": "ingested",
-          "caption": "NHI corrected and the row ingested as a new Card",
+          "caption": "NHI corrected and the row ingested as a new Booking",
           "steps": [
-            { "click": "role=button[name=\"Surgeon PDFs\"]" },
-            { "click": "role=button[name=\"Open\"] >> nth=0" },
-            { "wait": 500 },
-            { "fill": "[data-shot=pdf-row-3] input >> nth=0", "value": "ZAA0067" },
-            { "click": "[data-shot=pdf-row-3] >> role=button[name=\"Ingest row\"]" },
-            { "wait": 500 }
+            {
+              "click": "role=button[name=\"Surgeon PDFs\"]"
+            },
+            {
+              "click": "role=button[name=\"Open\"] >> nth=0"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=pdf-row-3] input >> nth=0",
+              "value": "ZAA0067"
+            },
+            {
+              "click": "[data-shot=pdf-row-3] >> role=button[name=\"Ingest row\"]"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=pdf-row-3]"]
+          "highlight": [
+            "[data-shot=pdf-row-3]"
+          ]
         }
       ]
     }

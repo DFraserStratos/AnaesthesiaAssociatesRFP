@@ -6,7 +6,7 @@
     {
       "name": "service-fee",
       "app": "simulator",
-      "caption": "AA service fee calculated against each payable",
+      "caption": "Prototype: fee as a percentage of each payable (superseded, see description)",
       "start": "/demo/xero/invoices/XRB0",
       "states": [
         {

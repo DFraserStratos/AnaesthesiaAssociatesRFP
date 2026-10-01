@@ -20,7 +20,7 @@
             }
           ],
           "highlight": [],
-          "caption": "Permanent lists: hospital, day, anaesthetist, session and surgeon"
+          "caption": "Recurring bookings: hospital, day, anaesthetist, session and surgeon"
         },
         {
           "state": "add",
@@ -41,7 +41,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Add a permanent list"
+          "caption": "Add a recurring booking"
         }
       ]
     }

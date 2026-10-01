@@ -30,7 +30,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Cards still to finish, with what is missing"
+          "caption": "Bookings still to finish, with what is missing"
         }
       ]
     },
@@ -61,7 +61,7 @@
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
           ],
-          "caption": "Cards still to finish, with what is missing"
+          "caption": "Bookings still to finish, with what is missing"
         }
       ]
     }

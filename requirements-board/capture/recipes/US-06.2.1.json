@@ -6,21 +6,43 @@
     {
       "name": "prepayment-flag",
       "app": "mobile",
-      "caption": "Card flagged Pre-payment required",
+      "caption": "Booking flagged Pre-payment required",
       "start": "/mobile/lists/L-34821-2026-07-24-AM",
       "states": [
-        { "steps": [ { "click": "text=\"Annette Riley\" >> nth=0" }, { "wait": "[data-testid=slide-card] [data-shot=card-prepayment]" } ],
-          "highlight": ["[data-testid=slide-card] [data-shot=card-prepayment]"] }
+        {
+          "steps": [
+            {
+              "click": "text=\"Annette Riley\" >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-card] [data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-card] [data-shot=card-prepayment]"
+          ]
+        }
       ]
     },
     {
       "name": "prepayment-flag",
       "app": "web",
-      "caption": "Card flagged Pre-payment required",
+      "caption": "Booking flagged Pre-payment required",
       "start": "/web/lists/L-34821-2026-07-24-AM",
       "states": [
-        { "steps": [ { "click": "text=\"Annette Riley\" >> nth=0" }, { "wait": "[data-shot=card-prepayment]" } ],
-          "highlight": ["[data-shot=card-prepayment]"] }
+        {
+          "steps": [
+            {
+              "click": "text=\"Annette Riley\" >> nth=0"
+            },
+            {
+              "wait": "[data-shot=card-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=card-prepayment]"
+          ]
+        }
       ]
     }
   ]

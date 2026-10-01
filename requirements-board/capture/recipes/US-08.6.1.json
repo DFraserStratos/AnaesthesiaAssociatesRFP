@@ -6,7 +6,7 @@
     {
       "name": "post-op-event",
       "app": "web",
-      "caption": "Add post-op event on a card whose list is already invoiced",
+      "caption": "Add post-op event on a Booking whose list is already invoiced",
       "start": "/web/lists/L-34821-2026-07-20-AM",
       "setup": [
         {
@@ -51,7 +51,7 @@
     {
       "name": "post-op-event",
       "app": "mobile",
-      "caption": "Add post-op event on a card whose list is already invoiced, on the phone",
+      "caption": "Add post-op event on a Booking whose list is already invoiced, on the phone",
       "start": "/mobile/lists/L-34821-2026-07-21-AM",
       "states": [
         {
@@ -66,7 +66,10 @@
               "click": "role=button[name=\"Submit to office\"]"
             },
             {
-              "wait": 6500
+              "wait": 1600
+            },
+            {
+              "trigger": "office-authorises-list"
             },
             {
               "goto": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001"
@@ -92,10 +95,10 @@
       "start": "/admin/day/2026-07-14",
       "setup": [
         {
-          "goto": "/demo/control"
+          "goto": "/admin/review/L-41267-2026-07-14-AM"
         },
         {
-          "click": "role=button[name=\"Stage scenario\"]"
+          "trigger": "stage-post-op"
         },
         {
           "wait": 800
@@ -104,7 +107,7 @@
       "states": [
         {
           "state": "locked",
-          "caption": "Locked, invoiced card offering Add post-op event",
+          "caption": "Locked, invoiced Booking offering Add post-op event",
           "steps": [
             {
               "click": "text=\"Christchurch Public\" >> nth=0"
@@ -129,7 +132,7 @@
         },
         {
           "state": "added",
-          "caption": "Addendum created as a new linked card, the original stays locked",
+          "caption": "Addendum created as a new linked Booking, the original stays locked",
           "steps": [
             {
               "click": "text=\"Christchurch Public\" >> nth=0"

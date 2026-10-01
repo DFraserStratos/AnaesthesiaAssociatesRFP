@@ -29,7 +29,7 @@
         },
         {
           "state": "after",
-          "caption": "Category changed to Self-funded, the pre-payment banner is gone from the card",
+          "caption": "Category changed to Self-funded, the pre-payment banner is gone from the Booking",
           "steps": [
             {
               "click": "[data-shot=daygrid-block-prepayment] >> nth=0"

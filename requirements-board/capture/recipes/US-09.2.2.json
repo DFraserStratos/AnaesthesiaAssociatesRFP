@@ -7,19 +7,20 @@
       "name": "reconciliation-poll",
       "app": "simulator",
       "caption": "Daily reconciliation poll, the safety net for missed webhooks",
-      "start": "/demo/control",
+      "start": "/demo/xero",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=control-scheduled-jobs] >> role=button[name=\"Run reconciliation poll\"]"
+              "trigger": "run-reconciliation-poll",
+              "open": true
             },
             {
-              "wait": 500
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=control-scheduled-jobs]"
+            "[data-shot=demo-action-run-reconciliation-poll]"
           ]
         }
       ]

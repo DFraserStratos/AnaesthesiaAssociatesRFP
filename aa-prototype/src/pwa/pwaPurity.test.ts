@@ -45,6 +45,7 @@ const FORBIDDEN: readonly { label: string; test: (path: string) => boolean }[] =
   { label: 'the prototype router', test: (p) => p.endsWith('/src/router.tsx') || p.endsWith('/router.tsx') },
   { label: 'the simulated phone frame', test: (p) => p.endsWith('/PhoneFrame.tsx') },
   { label: 'the Gradient Lab panel', test: (p) => p.endsWith('/GradientLab.tsx') },
+  { label: 'the harness bar Demo actions menu', test: (p) => p.endsWith('/shell/DemoActionsMenu.tsx') },
 ]
 
 /** Collapse `a/b/../c` to `a/c` so two spellings of one file compare equal. */
@@ -149,6 +150,11 @@ describe('PWA bundle purity (the mobile app only)', () => {
   it('reaches the mobile app itself', () => {
     expect([...modules].some((p) => p.endsWith('src/apps/mobile/MobileApp.tsx'))).toBe(true)
     expect([...modules].some((p) => p.endsWith('src/pwa/MobileViewport.tsx'))).toBe(true)
+  })
+
+  it('carries the demo-trigger registry for the handset Demo sheet (catch-up Phase 14)', () => {
+    expect([...modules].some((p) => p.endsWith('src/shared/demoTriggers/registry.ts'))).toBe(true)
+    expect([...modules].some((p) => p.endsWith('src/pwa/PwaDemoActions.tsx'))).toBe(true)
   })
 
   for (const forbidden of FORBIDDEN) {
