@@ -691,6 +691,9 @@ PWA.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Fresh reset, open Admin: the side nav shows one "Intake" item under Day view (no "Integrations", no separate "Matching"); `/admin/integrations` and `/admin/matching` land on `/admin/intake/matching`; Phase 33's Send unmatched row and Reschedule to a date with no List still appear there.
 - [ ] Importing the St George's sample by hand after the pull on open reports Sarah Mitchell's row as already imported (no duplicate row).
 - [ ] Opening the matching screen runs a pull: both tiles read "Last synced 08:00", St George's shows 2 new rows (Sarah Mitchell and the new-format NHI patient), Southern Cross 1; the Audit viewer shows one "Hospital sync" row per hospital with "On open" (not two, even in dev StrictMode).
@@ -866,6 +869,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 34, and an entry `### Catch-up Phase 34 · Hospital sync, PDF upload
   and the S1 rebuild (date)` with:
   - the drift-check result against `501b0b8`, OQ-13's status and whether the provisional cadence was

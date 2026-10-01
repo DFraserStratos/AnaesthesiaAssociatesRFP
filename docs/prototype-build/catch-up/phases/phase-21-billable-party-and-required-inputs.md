@@ -621,6 +621,9 @@ product actions in the product UI. The old plan's "Stage child billed directly" 
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] **Hospital override (US-11.2.2 AC).** Admin, a DRAFT Booking on the patient-direct RVG Default
       Post-paid Contract, billed to the patient by default: set the billable party to Christchurch Eye.
       The fee is unchanged to the cent, Invoice to shows the hospital with its contact email, and
@@ -790,6 +793,9 @@ in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status table:** add a catch-up row for Phase 21.
 - **Phase entry.** A catch-up Phase 21 entry covering:
   - the drift-check result (catalogue diff against 501b0b8, OQ-67's status, what 15a and 20 left that

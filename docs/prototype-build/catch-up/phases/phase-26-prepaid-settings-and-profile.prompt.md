@@ -26,7 +26,7 @@ Then do the drift check in the phase doc:
 - Confirm where Phase 14 put the PWA demo-actions chip (planned in src/pwa/MobileViewport.tsx, not on the More tab) so the new More cards do not collide with it or with PwaDemoPanel.
 - Record the current PERSIST_VERSION.
 
-Then enter plan mode: map the phase doc's work items onto the files as Phases 14 to 25 actually left them, and wait for my approval. If the work will not fit one session, propose the split after work item 8.
+Then write a plan: map the phase doc's work items onto the files as Phases 14 to 25 actually left them, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves"). If the work will not fit one session, propose the split after work item 8.
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -48,12 +48,12 @@ While working:
 - Keep npm run build, npm run build:pwa and npx vitest run green at the end of the session.
 
 When done:
-- Run the manual test checklist and report each item.
+- Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Run npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board, all green, with no S1 to S5 figure moved and PERSIST_VERSION bumped once.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): fan out Opus review subagents for quality, bugs/correctness and plan adherence, using the phase doc's steer list. Independently verify each finding, fix the confirmed ones with tests, and re-green.
 - Run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-06.1.1, US-06.1.2, US-12.1.1, US-12.1.3 and US-12.1.4 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green.
 - Update PROGRESS.md: status row, phase entry with the drift-check result, the review pass and the catalogue screenshot result (REPORT.md counts before and after), the Decisions-log entries listed in the phase doc, and the handoff notes for 27, 28, 36, 37, 38, 40a and 42.
 - Patch the demo guide sections the phase doc names (personas and permissions with "HPI CPN", the cheat sheet permission matrix row, the workflows profile case, the optional S4 Beat 1 pointer, cheat sheet section 8 and the payables note, the README feature row) and the same sections of master-demo-guide.html.
-- Do not commit. Give me short, clear notes on what changed, anything still provisional, and anything you need me to decide.
+- Do not commit. Give me short, clear notes on what changed, anything still provisional, and the "For the owner's review" list (also in the PROGRESS entry): decisions logged for my end-of-catch-up review rather than asked now.
 
 Phase goal: give each anaesthetist a profile they own on mobile and web (rate per unit, GST period, GST number, contact details, a read-only HPI CPN, a masked, display-only bank account and a prepaid tick list of RVG codes and groups), let the office maintain it on their behalf with every edit audited (including the HPI CPN, format-checked), and show the destination account on the payables run, ready for Phase 27 to derive prepayment from the stored set.

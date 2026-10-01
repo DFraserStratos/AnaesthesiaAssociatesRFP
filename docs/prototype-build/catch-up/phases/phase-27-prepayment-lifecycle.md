@@ -682,6 +682,9 @@ sample is added (this phase changes a rule, it does not add one).
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin Day, Tue 21 Jul: the "Pre-payments" card lists Annette Riley (Souter, Fri 24 Jul,
       "Estimate needed", "In 3 days"), and Priya Nair as paid. The To-do card shows Riley's mild
       warning "Prepayment needed. Record the estimated duration...". The Fri 24 AM block carries the
@@ -901,6 +904,9 @@ anything settled in the Decisions log except the rulings this phase explicitly s
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status row for catch-up Phase 27, and a phase entry covering:
   - the drift-check result, and D5 and D6 built as answered;
   - the OQ-38, OQ-70, OQ-73 and OQ-75 recommendations built as provisional, and where each lives;

@@ -762,6 +762,9 @@ re-homed "Fire hospital message" and "Replay last message" stay in the bar only,
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin side nav shows "Matching" under Day view with no badge; the screen shows the
   empty state, the OQ-13 interim line and the teal "Import hospital download" button.
 - [ ] Import, St George's: the dialog shows the "Sample file" badge and three samples; "5 rows
@@ -1003,6 +1006,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 33, and a phase entry with:
   - the drift-check result against 501b0b8 (items changed or not; OQ-13 and FT-02.1 status; OQ-44
     built as answered, with how the Booking is put on the Draft List; D2 confirmed);

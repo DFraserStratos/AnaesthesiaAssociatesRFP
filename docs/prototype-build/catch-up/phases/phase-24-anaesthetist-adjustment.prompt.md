@@ -41,7 +41,7 @@ Before doing anything else, read these in order:
 Then do the drift check in the phase doc:
 - run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" and read it for the covered IDs, US-03.5.2, US-05.4.2, OQ-62 and OQ-16 (the 2026-10-01 update that 501b0b8 records changed only US-04.2.2's Notes for this phase: Proposed on OQ-62, and the consistently overridden base unit note);
 - adjust the work items if anything changed, and drop and log anything now Retired or Future;
-- ask me whether the anaesthetist should see the fee before and after the adjustment. The default is no, which keeps the 2026-09-28 ruling;
+- do not ask me whether the anaesthetist should see the fee before and after the adjustment: build the default (no, which keeps the 2026-09-28 ruling) and put the question on the "For the owner's review" list;
 - note that domain-model.md still lists an AMOUNT kind that the stories do not have. Build the stories' reading;
 - record OQ-62's status. If still open, leave 19's and 23's base-unit work and labels as they are; if answered, it is 19's and 23's rework, not this phase's;
 - note that the US-03.5.1 and US-05.4.1 catalogue screenshots show today's retired dollar field and a Booking total. this phase re-shoots them in its catalogue screenshot step (it never edits the catalogue's text or status);
@@ -49,7 +49,7 @@ Then do the drift check in the phase doc:
 - confirm Phase 18 seeded CT-RVG-POSTPAID (RVG Default Post-paid), which does not exist at the snapshot;
 - grep for any anaesthetist-written dollar or fixed priceOverride a later phase seeded;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into work-sized steps, and wait for my approval. The phase is planned as one tight session; if it runs over, stop green after work item 6 and do items 7 to 12 in a second session.
+Then write a plan that turns the work items into work-sized steps, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves"). The phase is planned as one tight session; if it runs over, stop green after work item 6 and do items 7 to 12 in a second session.
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -76,7 +76,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18):
   - fan out three Opus review subagents, for quality, bugs and money correctness, and plan and catalogue adherence, steered by the phase doc's bullets;
@@ -92,7 +92,7 @@ When done:
   - capture step 10 in 02-workflows-and-handoffs.md;
   - the office review responsibilities in 01-personas-and-responsibilities.md;
   - the Contract rules line in 04-presenter-cheat-sheet.md;
-- give me short, clear notes on what changed and anything left open. Include:
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry). Include:
   - the domain-model AMOUNT wording;
   - whether reasons should print on customer invoices;
   - the before and after display question.

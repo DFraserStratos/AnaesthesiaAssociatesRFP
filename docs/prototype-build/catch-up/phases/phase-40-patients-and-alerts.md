@@ -860,6 +860,9 @@ need no PWA stand-in.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. The Admin side nav shows **Patients** with a warn badge. Missing NHI lists exactly Noah
       Prescott (Mon 27 Jul AM, Forte, Dr Souter, 08:00), with Mr Okafor's rooms email and phone, "6
       days" in the mild tone and "Not yet" requested (plus any 33 or 34 seeded NHI-less row, named).
@@ -1060,6 +1063,9 @@ Run the standard review-and-fix pass (PROGRESS convention 18):
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40, and a phase entry with:
   - the drift-check result against `501b0b8` (items changed or not; D11 and OQ-49, OQ-74 status;
     which D11 branch was built);

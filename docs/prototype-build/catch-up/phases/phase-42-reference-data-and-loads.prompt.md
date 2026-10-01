@@ -24,7 +24,7 @@ Then do the drift check in the phase doc:
 - confirm Phases 17, 18, 19, 29 and 30 are DONE (and note 20, 21, 22, 23, 25, 31, 33 and 34), and note the names they chose;
 - record the seed's flagged-List set, grep every picker that offers hospitals, surgeons, rooms, groups or insurers (plus 20's Contract picker and 21's billable-party override), grep every reader of hospital holidays (masters.holidays and 30's index, including addAnaesthetist's generation and the recurring-booking projection), and grep for stored copies of master names;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into a plan (two sessions: session 1 is items 1 to 10 and stops green; session 2 is items 11 to 19; the doc's size warning gives the fallback split and the trim order), and wait for my approval.
+Then write a plan that turns the work items into a plan (two sessions: session 1 is items 1 to 10 and stops green; session 2 is items 11 to 19; the doc's size warning gives the fallback split and the trim order), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -43,7 +43,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green, and that pwaPurity.test.ts still passes;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -56,6 +56,6 @@ When done:
   - the cheat-sheet, persona and workflow lines;
   - the same sections of master-demo-guide.html, word for word;
   - the Control Panel's S5 scenario text;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: every reference table is maintained in Admin Master data in one consistent pattern, including hospitals, insurers (with the cover split left on the Contract's payment setting), recurring bookings and a master public-holiday calendar; controlled spreadsheets load with row validation and rejected rows listed with reasons; and a clean-cut go-live demo loads only AA-approved data, never Solutions Plus junk or unit values.

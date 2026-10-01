@@ -25,7 +25,7 @@ Then do the drift check in the phase doc:
 - confirm 21's authoriseBlockersFor holds only the schedule miss (the child billable party is a mild warning, D4) and does not block on a missing required input (if it does, use the plan's handoff fallback for the failure trigger);
 - record the current PERSIST_VERSION (13 at 501b0b8);
 - check that Phase 16 has run (the planned order puts it before the Contracts track; it is not a declared dependency, so the plan's AA-FEE and BCTI clauses apply only if it has).
-Then enter plan mode: turn the plan into work-sized steps, and wait for my approval.
+Then write a plan: turn the plan into work-sized steps, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -53,12 +53,12 @@ While working:
   - Never commit.
 
 When done:
-- Run the manual test checklist and report each item.
+- Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green.
 - Run the adversarial review-and-fix pass (convention 18: fan out Opus reviewers for quality, bugs, plan adherence and money integrity; independently verify each finding; fix the confirmed ones; re-green).
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19; it absorbs work item 16's capture-recipe bullets): create or update the capture recipes for US-04.1.3, US-04.3.5, US-07.3.1, US-08.1.1, US-08.4.4 and US-15.0.3 (US-04.1.3 is new, with US-08.4.4 now captured) and every recipe this phase broke (US-08.5.1, US-08.5.2 with its captions on OQ-05's answer, US-13.3.2 re-pointed, and US-04.1.2's status and absentReason); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - Update PROGRESS.md: status row, catch-up Phase 25 entry with the drift-check result against 501b0b8, the lock's field list, the review pass and the catalogue screenshot result (REPORT.md counts before and after), the Decisions-log entries listed in the phase doc (the removed fallback, the re-based failure demo, what is locked, the payee fixed at authorise, versions, the authorise blocker kinds, failure per Booking confirmed, the engine's required-input backstop, migrated locks, the pricing date), and handoff notes for 27, 32, 35, 36, 39, 41, 42 and 44.
 - Patch the demo guide in the same session: S3 Expected, S4 Beat 3 rewritten (a failed Booking is held back whole while the List bills), the S5 staging text, S5 Beat 4 rewritten and the new optional unit-value beat, the S4 discovery points, the cheat sheet, the workflows doc, the matching master-demo-guide.html sections, and the Control Panel S4 and S5 text. This is a milestone phase: finish with a consistency read of master-demo-guide.html against the run sheet.
-- Give me short, clear notes.
+- Give me short, clear notes, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: every authorised Procedure carries a locked record of the Contract version, rate inputs, payment setting and split, adjustment and payee that priced and paid it, the billing run prices only from that record, a failed Booking is held back whole while the rest of the List bills, and any invoice can be regenerated exactly, whatever has changed since.

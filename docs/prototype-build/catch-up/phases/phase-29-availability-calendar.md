@@ -668,6 +668,9 @@ needs one.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Mobile, Availability: the "My availability" card shows today's AM and PM as chips (or the List
   where one sits). "Change" opens a bottom sheet whose status choices are exactly the active,
   anaesthetist-settable statuses (Free, Holiday, Unavailable).
@@ -848,6 +851,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 29, and a phase entry with:
   - the drift-check result (items changed or not; OQ-64 status and which branch was built);
   - what was built, per work item;

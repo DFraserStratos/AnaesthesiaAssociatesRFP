@@ -157,8 +157,8 @@ Last, the Day dashboard shows each List block's **booking count** (US-13.1.1).
      seeds no "Available for emergency" status and built no `isEmergencyOnly` (its Decisions log 8),
      so the picker has no emergency group: an admin-added status lands in Free or Not available by
      its bookable flag, and the row shows its own label. If a later phase or the owner has added an
-     emergency-only behaviour by now, ask the owner whether it gets its own labelled group with a
-     soft warning and no conflict, and record the answer.
+     emergency-only behaviour by now, give it its own labelled group with a soft warning and no
+     conflict, and log that reading on the "For the owner's review" list rather than asking.
 4. **Check the neighbours:**
    - Phases 17, 28, 29 and 30 are DONE. Confirm the names in their PROGRESS entries, because this doc
      uses the planned names and the build may have renamed them:
@@ -1088,6 +1088,9 @@ screens. In the framed build, the presenter plays the office in Admin, so the st
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. The Admin side nav shows **Draft Lists 4** in amber, below Day view.
 - [ ] Admin Day, Tue 21 Jul:
   - the right rail shows a **Draft Lists** card under the calendar, four rows oldest first, then 15a's
@@ -1348,9 +1351,12 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 31, and a phase entry with:
-  - the drift-check result: items changed or not since `501b0b8`; OQ-64 and OQ-43 status; the owner's
-    answer on the pre-op and acute pairing reading, and on emergency Slots if any status now has an
+  - the drift-check result: items changed or not since `501b0b8`; OQ-64 and OQ-43 status; the reading
+    built (and logged for the owner's review) on pre-op and acute pairing, and on emergency Slots if any status now has an
     emergency-only behaviour; the names 15a, 17, 27, 28, 29 and 30 actually used (including what
     became of `availabilityClash`);
   - what was built, with a name map for later phases: `DraftList`, `AssignedList`, `DraftTrail`,

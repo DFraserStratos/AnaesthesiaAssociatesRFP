@@ -655,6 +655,9 @@ the store-level tests in item 6 and by checking Admin, Audit after a PWA authori
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin, Master data, Anaesthetists: every row shows a GST number; editing Dr Souter's to
       "12" refuses with the GST message; a valid one saves and shows in History.
 - [ ] Master data, Contracts: every row shows Delivery and Payment; nib split payment shows Portal
@@ -831,6 +834,9 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status table:** a catch-up row for Phase 22.
 - **Phase entry:** the drift check result (catalogue diff from 501b0b8, OQ-29, OQ-68 and OQ-67
   status, BCTI granularity, what 16 and 18 to 21 left), files and actions added and removed, the

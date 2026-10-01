@@ -27,7 +27,7 @@ Then do the drift check in the phase doc:
 - confirm Phases 14, 15, 15a, 17, 19, 20, 28, 30 and 31 are DONE (and note whether 23 and 25 are), and read the names they left: createBooking with its source and optional contractId, reassignBooking, findBookingByCorrelation, defaultContractForBooking, contractOptionsFor and setProcedureContract, assignListToSlot, slotFor and pairingIssues, createDraftList and how a Booking goes onto a Draft List, SurgeonSelect and BlacklistWarning, Surgeon.hpiId, and the re-homed hospital-message triggers;
 - grep for every consumer of processMessage, applyEffect, manualIntervention, resultCardId and the Phase 28 and 31 integration park codes (noTargetList, pairingIncomplete);
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps (session 1 ends green at work item 9), and wait for my approval.
+Then write a plan that turns the work items into session-sized steps (session 1 ends green at work item 9), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -45,7 +45,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and npm run verify:board after the capture-recipe changes;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -54,6 +54,6 @@ When done:
   - the Decisions-log entries listed in the phase doc, marking Phase 11 items (5) and (6) as superseded in part;
   - the handoff notes for 34, 35, 40 and 44;
 - patch the demo guide in the same session: S1 stage and Beat 1, S4 Beat 4 (now the unmatched queue), S5 Beat 2, Direct URLs and recovery in 03-demo-script.md; Workflow 1 and the integration-failure section in 02-workflows-and-handoffs.md; the personas; the cheat sheet; the same sections of master-demo-guide.html; and the Control Panel S1, S4 and S5 text;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: hospital downloads and feed messages land as rows on an Admin matching screen, where the office sees each row's change type and field-level differences and decides it (match and apply, create a Booking, a List in a Slot, or a Draft List that holds the row's Booking, or reject), unmatched rows wait in a queue, and nothing reaches a Booking without that decision.

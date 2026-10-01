@@ -492,6 +492,9 @@ is expected.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Web, Dr Souter, an Open List (approval state `DRAFT`), then Add booking, then Enter manually. Under the NHI field:
       the shape hint, the Hub badge, and "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM),
       only to identify this patient. Health Information Privacy Code 2020."
@@ -633,6 +636,9 @@ re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
   - the drift-check result (items changed or not; the refresh cadence and HPI CPN checks; the
     provisional reading built);

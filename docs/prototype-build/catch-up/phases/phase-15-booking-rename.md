@@ -651,6 +651,9 @@ the map. The Control Panel index lists them under the renamed screens.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] No screen in Mobile, Web, Admin, the Control Panel, the Data Inspector, the Integrations or Xero simulators, or the PWA More panel says "card" for a Booking. "Card" survives only for the physical booking card (photo capture) and in visual-card component names.
 - [ ] Old bookmarks redirect: `/web/lists/L-34821-2026-07-21-PM/cards/C0009`, `/mobile/lists/L-34821-2026-07-21-PM/cards/C0009` and `/admin/day/2026-07-21/cards/C0009` each land on Margaret Ellison's Booking under `/bookings/BK0009`.
 - [ ] After Reset, S1 to S5 run as scripted in the updated guide, and every figure is unchanged, including Holt's $396.18 in S3.
@@ -784,6 +787,9 @@ supersedes.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status.** Add a row for catch-up Phase 15 to the status table (in the catch-up section, which
   Phase 14 adds if it ran first). Mark it IN PROGRESS at the session 1 checkpoint and DONE at the
   end.

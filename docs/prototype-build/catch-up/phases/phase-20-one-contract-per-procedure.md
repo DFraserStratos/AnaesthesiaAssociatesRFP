@@ -576,6 +576,9 @@ must still stage and clear on Admin Day and Booking detail.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Fire MSG-STG-1001 (Phase 14's re-homed trigger), then open Souter Tue 28 Jul
       St George's AM on mobile: Sarah Mitchell's Booking shows "St George's RVG Default Hospital" on
       mobile, web and the Admin card; Admin also shows "Billed to St George's".
@@ -781,6 +784,9 @@ re-raise anything settled in the Decisions log except the rulings this phase exp
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Catalogue screenshots result:** the recipes changed (the seven re-shot items and the broken ones: US-06.3.5, US-07.2.2, US-11.4.2, US-02.5.5), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the reasons handed on: US-11.4.2 to Phase 21 (reimbursement wording), US-04.3.7 and US-04.2.7 to Phase 21, US-04.2.12 and US-04.2.8 to Phase 22, US-04.2.11 and US-04.2.5 to Phase 23, US-04.1.3 and US-04.1.2 to Phase 25.
 - Status row for catch-up Phase 20, and a phase entry: drift-check result against 501b0b8, D2 built
   as answered, OQ-66 built as its recommendation, what 15a, 18 and 19 were found to provide, the

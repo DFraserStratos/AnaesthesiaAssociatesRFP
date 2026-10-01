@@ -631,6 +631,9 @@ automatically.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Web → Dashboard: the greeting, day summary, Offer cover and week strip are as before;
       below them, one row of two panels, Financial position and Who's free. No Productivity, no Leave,
       no ageing bars. Leave still shows as holiday blocks in the week strip.
@@ -800,6 +803,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
   - the drift-check result (items changed or not; OQ-31 status; D8 built as answered; D9 built as
     the provisional default, or which branch if answered; US-12.2.2's status);

@@ -694,6 +694,9 @@ stand-in approves first".
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 Take run ids, sequences and figures from the running app; the ids below are examples.
 
 Session 1 (after **Reset → Confirm reset**):
@@ -884,6 +887,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 39a, and a phase entry with:
   - the drift-check result (US-10.2.5 and US-10.2.6 still Verify or not; OQ-47, OQ-71, OQ-60 and
     OQ-29 status; whether 39 shipped a negative invoice record or this phase added it);

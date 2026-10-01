@@ -29,7 +29,7 @@ Then do the drift check in the phase doc:
 - confirm that 20 and 25 closed US-02.5.5's Contract gaps (every Contract selection and adjustment is an audited Procedure write; the lock and version history exist); if not, stop and report;
 - build the write inventory (every store action the Booking detail calls, classed as drafted edit or command);
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into two session-sized steps (split after work item 12; the phase doc's spill point says what moves if session 1 runs long), and wait for my approval.
+Then write a plan that turns the work items into two session-sized steps (split after work item 12; the phase doc's spill point says what moves if session 1 runs long), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -51,7 +51,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out Opus review subagents for quality, bugs and plan adherence, plus one on the draft-store refactor, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-02.3.1, US-02.3.2, US-02.3.3, US-02.5.5 and US-02.5.6 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -61,6 +61,6 @@ When done:
   - the Decisions-log entries listed in the phase doc (superseding the last-write-wins stance; extending the audit-presentation decision; drafted edits versus commands; the email allowlist and the OQ-46 recipients; the on-demand button and drafted-not-sent mark as OQ-69's provisional recommendation; the cover email after an anaesthetist's move as OQ-65's; a reassignment as its own event);
   - the handoff notes for 40, 41, 43 and 44;
 - patch the demo guide in the same session: S5 Beat 1 and the S5 discovery points, S2 Beat 3, the office side of 32's own-move beat, the remembered-changes rooms email beat, every beat that edits on the Admin Booking detail (add Save changes), the optional two-editors beat, the cheat sheet (including rewriting discovery topic 9, Concurrency), the workflows and personas notes, the same sections of master-demo-guide.html (including its S5 discovery callout and Concurrency card), and the S5 jump message; then do the milestone consistency read of master-demo-guide.html against the run sheet, and grep docs/demo-guide for "last-write-wins" and "single-user" (none should remain);
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: Admin Booking editing becomes draft-then-save, with one change set per save, grouped history and an as-at view. Concurrent saves merge or show a clash. An on-demand mailto update email built from the changes remembered since the last email goes to the surgeon's rooms for a Booking change and to the hospital for a cover change, including after an anaesthetist moves their own List. The office can add a Booking to a booked List, while anaesthetists keep immediate saves.

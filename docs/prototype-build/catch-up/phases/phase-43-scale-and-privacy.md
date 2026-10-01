@@ -594,6 +594,9 @@ audit lists this phase as "no PWA stand-in required".
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. The harness bar, the web top nav, the admin side nav and the mobile More card each show
       "Synthetic data only" with its tooltip; crimson and teal are unchanged around them.
 - [ ] Admin Day on Tue 21 Jul at demo scale: no pager, the footer shows real counts and no "narrated"
@@ -738,6 +741,9 @@ anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`: the
   drift-check result (including OQ-30's state), the shipped names used from Phases 28, 33 to 37 and 42, the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in

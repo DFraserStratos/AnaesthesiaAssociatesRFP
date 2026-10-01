@@ -686,6 +686,9 @@ payee, and that a `contractNotInForce` blocker makes them refuse quietly with no
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] **S3 figures.** Jump S3, authorise Souter Mon 20 AM and PM. Invoices and totals are exactly as
       before this phase (Holt $396.18; the Prentice split). Each Booking shows "Contract vN locked at
       authorise"; Review shows the lock glyph and version in the CONTRACT column and "(locked)" on the
@@ -852,6 +855,9 @@ re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status row for catch-up Phase 25, and a phase entry: the drift-check result against `501b0b8`
   (including what 16 and 18 to 24 were found to provide, every live payee join replaced, and any
   change to the fields to freeze), the lock's field list, the tests added, `PERSIST_VERSION` old to

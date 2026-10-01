@@ -566,6 +566,9 @@ one is ever needed.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Admin, Master data:
   - Surgeons lists every seeded surgeon with a room and an HPI CPN;
   - Surgeons' rooms shows each room's email, phone and derived surgeons;
@@ -731,6 +734,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Catalogue screenshots result:** the recipes filled in (US-13.6.1, US-13.6.2, US-13.6.3, US-01.3.5) and changed (US-13.4.1 and any other recipe re-pointed), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reason handed to Phase 31 (US-01.3.5, Draft List path).
 - **Status row** for catch-up Phase 17, and a phase entry with:
   - the drift-check result against 501b0b8 (items changed or not; OQ-43 status);

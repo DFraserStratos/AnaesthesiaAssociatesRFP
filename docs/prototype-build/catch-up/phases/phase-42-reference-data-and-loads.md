@@ -794,6 +794,9 @@ through item 16.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Admin, Master data: the sub-nav is grouped (People and places, Schedule, Billing, Settings,
       Go-live), and every view has the same header, with no "view only" anywhere.
 - [ ] Insurers: add "Southern Health Cover" with direct claims on. It appears with Yes, and Contracts
@@ -974,6 +977,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 42, and a phase entry with:
   - the drift-check result (items changed since 501b0b8 or not, OQ-62 status and where base units
     loaded, the re-load question, and the 17 to 34 names used);

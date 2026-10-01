@@ -83,8 +83,9 @@ data, so this phase adds no rule, report or Contract setting for repeated overri
    - **Default:** keep the ruling. The fee before the adjustment is **recorded** (US-05.4.1: "records
      the fee as it stood before the adjustment") and shown to the office, but the anaesthetist Card
      shows no money. The only exception is the fixed final price the anaesthetist types in.
-   - **Ask the owner** whether the anaesthetist should see the before and after figures. If the
-     answer is yes, add a read-only "Calculated fee · after your adjustment" row to the adjustment
+   - **Do not ask now** (ROADMAP.md "Owner review: agents test themselves"): build the default and put
+     "should the anaesthetist see the before and after figures?" on the phase's "For the owner's
+     review" list. If the owner later answers yes, add a read-only "Calculated fee · after your adjustment" row to the adjustment
      card only, not a Card total. Record the answer in the Decisions log.
    - **Catalogue screenshots.** US-03.5.1's images are captioned "Adjustment and charge" and
      "Dollar adjustment field", and US-05.4.1's show a Booking total. They were shot from today's
@@ -614,6 +615,9 @@ Authorising prices with both layers, and neither touches the adjustment.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] **Field absent where not allowed.** Mobile, Dr Souter, Mon 27 Jul: the Aria rate x time
       Booking shows no Price adjustment section. So does any St George's default Booking (S1's Sarah
       Mitchell on Tue 28 Jul).
@@ -746,6 +750,9 @@ green, and before writing the PROGRESS entry.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for Phase 24, and a phase entry recording:
   - the drift-check result against 501b0b8, including OQ-62's status, the owner's answer on drift
     check 3 if one came, and the domain-model `AMOUNT` note;

@@ -27,7 +27,7 @@ Then do the drift check in the phase doc:
 - note OQ-74's status (if open, build its recommendation: count from the invoice date, a credit balance is a mild warning, labelled provisional in one caption) and record for the owner the "billable patient only" reading, the office-only audience (against US-13.7.3's "triangle in either app"), the beforeProcedure kind (US-13.7.1 leaves it unset) and the threshold-versus-US-13.7.4 reading;
 - confirm Phases 15a, 34 and 36 are DONE, and note the real names of 14's OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR and authoriseAsSimulatedOffice, 15a's WarningRule, WarningFacts, WARNING_RULES, warningFactsFor, warningsForBooking, openWarnings, clearWarning, useBookingWarnings, WARNING_SAMPLES and SEED_WARNING_SAMPLE_BOOKINGS, 21's Booking.billableParty and authoriseBlockersFor, 33's ImportRow, HOSPITAL_DOWNLOAD_SAMPLES, importHospitalDownload, stageImportRows and decideImportRow (and how its matcher proposes a target for a row whose NHI no Booking holds), 34's deliverDailySheet and daily-sheet fixtures, 36's patientLedgerPosition and its row fields (including the billable party), 22's resendInvoice and 35's mailto builder;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into ordered steps (the rule and its threshold, model, pure rules and store first, then the create and match stamps, the authorise gate and seed, then the Admin Patients screens, the Booking, review and mobile and web wording, then triggers, tests and docs), and wait for my approval.
+Then write a plan that turns the work items into ordered steps (the rule and its threshold, model, pure rules and store first, then the create and match stamps, the authorise gate and seed, then the Admin Patients screens, the Booking, review and mobile and web wording, then triggers, tests and docs), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -46,7 +46,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -60,6 +60,6 @@ When done:
   - the intake and follow-up steps in 02-workflows-and-handoffs.md, and the office and anaesthetist lines in 01-personas-and-responsibilities.md;
   - the same sections of master-demo-guide.html;
   - the Control Panel's S1 and S5 scenario text;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: Admin gets a patient record, found by search, keyed on the system's own patient id with the NHI as a second unique index, with ethnicity, a details-differ prompt, every invoice across every anaesthetist marked paid, part paid or unpaid with the balance, and a tracked follow-up log. It also gets a Missing NHI problem list showing the surgeon's rooms, which escalates as the date nears; attaching an NHI there merges the provisional record into the existing one. A Booking without an NHI goes ahead flagged and blocks its List's authorisation (D11 default, provisional), and the anaesthetist sees "NHI missing". When a Booking is created or matched for a patient who owes AA money on invoices billed to them, 15a's routine raises an office warning, mild within the 90 day threshold and strong over it, which never blocks and replaces the billing monitor's "Prior balance" tag.

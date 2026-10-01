@@ -775,6 +775,9 @@ Phase 30.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin Day, Tue 21 Jul looks as before: same blocks, colours, labels, times and flags; the
       header summary reads the same counts.
 - [ ] Open a Free block: the drawer shows a Slot (Free chip, default or overridden times, note) with
@@ -958,6 +961,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 28, and a phase entry with:
   - the drift-check result (items changed or not against `501b0b8`; OQ-64 still open or answered;
     whether 17, 26 and 27 had run, and how 17's and 27's reassign hooks were carried into `moveListToSlot`);

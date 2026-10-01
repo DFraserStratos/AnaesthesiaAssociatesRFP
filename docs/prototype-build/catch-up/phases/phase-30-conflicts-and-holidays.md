@@ -751,6 +751,9 @@ handset at once and 31 retires or re-points this stand-in (handoff).
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin, Day view, Tue 21 Jul: no conflicts. The Demo actions pill shows "Simulate
   sickness". Dr Fitzgerald's PM "Surgeon TBC" block (attention only, no conflict) keeps its status tint with the "!" and border, as before.
 - [ ] Wed 22 Jul: Dr Rutherford's AM Christchurch Eye Surgery block and Dr Morrison's PM Southern
@@ -932,6 +935,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 30, and a phase entry with:
   - the drift-check result against 501b0b8 (items changed or not, OQ-09 still answered, OQ-64's
     state, the 28 and 29 names used);

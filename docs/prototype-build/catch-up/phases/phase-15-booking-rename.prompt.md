@@ -37,7 +37,7 @@ Before doing anything else, read these in order:
 Then do the drift check in the phase doc:
 - git diff 501b0b8 over the covered and read-alongside catalogue files and domain-model.md (the plan's snapshot; the 2026-10-01 update is already folded into the phase doc);
 - confirm whether Phase 14 has run (look for aa-prototype/src/shared/demoTriggers/ and a Phase 14 PROGRESS entry).
-If an item changed, adjust the work items. If US-03.1.3 is now Retired or Future, drop the attachment items and note it for PROGRESS.md. If the glossary renamed Booking again, stop and ask me. Then enter plan mode, turn the plan into work-sized steps, and wait for my approval.
+If an item changed, adjust the work items. If US-03.1.3 is now Retired or Future, drop the attachment items and note it for PROGRESS.md. If the glossary renamed Booking again, stop and ask me. Then turn the plan into work-sized steps and start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Session 1 is a mechanical rename and needs no skill; session 2's attachment, source-line and copy UI does. Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -64,7 +64,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- Run the manual test checklist and report each item.
+- Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are all green.
 - Run the adversarial review-and-fix pass (convention 18). Fan out Opus review subagents for quality, bugs/correctness, plan adherence and rename completeness. Independently verify each finding, fix the confirmed ones, and re-green all suites.
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.1.3 and every recipe this phase broke (all the card-named recipes, notably US-02.4.3, US-03.2.3 and US-07.3.2); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -78,6 +78,6 @@ When done:
   - the Decisions-log entries: vocabulary (amends convention 10; reassign or move, never swap; no timesheet), Copy (supersedes the two July rulings, "references" reading), Booking.source optional and display-only with its interims, and store-allocated attachment ids;
   - the catalogue screenshot result (REPORT.md counts before and after).
 - Confirm the demo guide updates listed in the phase doc are applied (the four docs, README, the same sections of master-demo-guide.html and the Control Panel scenario text), as are the one-line rename pointer at the top of each analysis/prototype-map-*.md and the aa-prototype/README.md folder map.
-- Give me short, clear notes.
+- Give me short, clear notes, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: Booking replaces Card across the whole prototype. Attachments sit on a Booking or a whole List, a Booking can show an optional source, and Copy makes a skeleton-only new Booking with its own primary Procedure.

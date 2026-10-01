@@ -617,6 +617,9 @@ with a Vitest test.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Admin → Master data → RVG codes: search "cosmetic" finds the tagged codes. The group filter
       narrows to Plastics. Each row shows an NZSA or AA source pill.
 - [ ] Add AA code (for example AA205, single base 4, body heading Skin, group Plastics, "Also add to the
@@ -780,6 +783,9 @@ settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Catalogue screenshots result:** the recipe filled in (US-05.1.6) and changed (the other four covered items, plus the broken ones such as US-03.3.2 and US-13.4.1), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reasons handed on: US-05.1.6 to Phase 23 (Contract base unit override) and US-03.3.1 to Phase 20 (the Contract pick).
 - Status row for catch-up Phase 19, and a phase entry: what was built, the parity result, the review
   pass (findings confirmed and fixed, anything not treated as a defect and why), tests added, and the

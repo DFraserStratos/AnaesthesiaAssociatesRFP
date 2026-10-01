@@ -47,7 +47,7 @@ Then do the drift check in the phase doc:
 - confirm D7 / OQ-39 is still answered as built (stop and tell me if it was reopened). Note the status of OQ-65, OQ-43 and OQ-70: build each recommendation, labelled provisional in its one place, or its answer as the doc describes. Stop and tell me if OQ-70 came back "credit and re-prepay";
 - confirm Phases 14, 15, 15a, 17, 27, 28, 29, 30 and 31 are DONE, and read what they left: the names above, Slot.coverRequest, and every other place the doc's grep finds;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps, and wait for my approval. Plan for two sessions:
+Then write a plan that turns the work items into session-sized steps, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves"). Plan for two sessions:
 - session 1 ends green at work item 8: types, helpers, seed tests, the three store actions, the notices, audit labels, and the cover marker retired;
 - session 2 does items 9 to 15, then the demo guide, the milestone read, the review pass and PROGRESS.
 
@@ -94,7 +94,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run and npm run shots are green, and npm run verify:board;
 - run the adversarial review-and-fix pass. That is convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green;
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.4.3, US-01.4.5 and US-01.4.6 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -109,6 +109,6 @@ When done:
   - the same sections of master-demo-guide.html;
   - the Control Panel S2 text.
   This is a milestone phase, so finish with a consistency read of master-demo-guide.html against the run sheet;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: an anaesthetist moves one of her own Lists, at once and with no one to accept or confirm, either to the office, where it becomes a Draft List, or into a colleague's free Slot from the availability view, with a reason-free warning for a blacklisted pairing. A Booking done by another anaesthetist moves to that anaesthetist's List, with the payee and the prepayment re-check following. The office and the colleague see derived notices, and the cover-request marker is gone.

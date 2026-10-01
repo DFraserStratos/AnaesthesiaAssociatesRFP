@@ -440,6 +440,9 @@ lists them under their screens.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin → Day → Fri 24 Jul: Souter AM has the strong outline and a triangle with "1";
       the drawer's Annette Riley row carries the same outline and a triangle; the "Has warnings"
       filter isolates it.
@@ -568,6 +571,9 @@ completion gate and override this phase supersedes.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Catch-up status row for Phase 15a and a phase entry: the drift-check result, D5's status, each
   provisional reading (placement, recording of clearing, the confirm step, the prepayment kind and
   strength), the session-1 stop point, the checklist item by item, test counts, the review pass.

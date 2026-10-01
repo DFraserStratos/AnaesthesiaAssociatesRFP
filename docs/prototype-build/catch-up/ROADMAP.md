@@ -260,6 +260,42 @@ stays as a signposted scaffold, defaults to OFF and shows a badge when on, and l
 - **Phase 14 adds a Future-scope caveat to S1** while the HL7/FHIR tooling still carries it; 15a
   turns S4 Beat 1's gate into a warning; 34 rebuilds S1.
 
+### Front-end design
+
+Every phase from 15 on touches UI, so every kick-off prompt from 15 on tells the agent to invoke the
+`/frontend-design:frontend-design` skill before building or reshaping any screen, sheet, dialog,
+panel, row, banner or state. The skill works inside the design system, not over it: the
+`docs/design` files and `src/theme` tokens stay authoritative (PROGRESS convention 17, CLAUDE.md
+"Design"), so it shapes layout, hierarchy, spacing, states and finish, never a new palette, typeface
+or visual language, and the two hard rules (crimson identity only, teal the only action colour)
+hold. Store, seed and pure-domain steps do not need it. A new or re-planned phase that touches UI
+carries the same "While working:" bullet.
+
+### Owner review: agents test themselves
+
+The owner (2026-10-02) is running the phases back to back and will not review the app after each
+one. One proper review comes **after all catch-up phases are finished**. So, from Phase 15 on:
+
+- **No plan-approval stop.** After the drift check, the agent writes its step plan (in the session,
+  and in the PROGRESS entry) and starts building straight away. It does not enter plan mode or wait
+  for approval.
+- **The agent is the tester.** It runs the phase's manual test checklist itself, in the running app
+  (start root `npm run dev` in the background if 5173 or 5174 is down), driving it with Playwright
+  or the `/run` skill and checking screenshots by eye. "Handset" checks use the emulated mobile
+  viewport unless a real phone is already attached. Each item is reported pass or fail with its
+  evidence. It never hands the checklist, a click-through or a screenshot check to the owner.
+- **Defaults over questions.** Where a phase doc says "ask the owner" about a product choice, the
+  agent builds the stated default, labels it provisional where the doc says so, and logs the question
+  for the end-of-catch-up review instead of asking.
+- **Stop and ask only when it is very needed:** a drift-check stop condition the phase doc names (a
+  vocabulary rename, a reopened decision that changes the model, a covered item that has left its
+  lane so the phase no longer makes sense), a blocker no documented default resolves, or an action
+  that is destructive or hard to undo. Everything else is decided, recorded and carried forward.
+- **Owner review queue.** Each phase's PROGRESS entry ends with a short "For the owner's review"
+  list: the defaults built for open questions, provisional readings, anything logged rather than
+  fixed, and the screens worth a look. Phase 44 gathers these lists into one review list for the
+  owner's end-of-catch-up review.
+
 ### Catalogue screenshots
 
 The catalogue's stories carry screenshots of the prototype, taken by the Requirements Board's capture

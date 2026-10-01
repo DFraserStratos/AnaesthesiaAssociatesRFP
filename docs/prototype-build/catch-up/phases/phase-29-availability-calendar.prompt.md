@@ -25,7 +25,7 @@ Then do the drift check in the phase doc:
 - check OQ-64: if it is answered that an unavailable half-day is a List, or that Slots are only a view of the day, stop and raise it with me before planning; if it names the status values and colours, seed those instead;
 - confirm Phase 28 is DONE, and note the names it chose (Slot type and collection, Slot.status and its SlotStatus union of free, unavailable and holiday, the start-date rule, List.kind, the display union and displayStatusKey / isOpenSlot in domain/slots.ts, store/slotActions.ts, rollCanvasForward and generateCanvasForDates, the golden canvas fixture, what became of masters.availability, and whether it already stopped the false conflict);
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into two session-sized steps (session 1 is items 1 to 10 and stops green; if it runs long, move item 10, the Admin editor, to session 2), and wait for my approval.
+Then write a plan that turns the work items into two session-sized steps (session 1 is items 1 to 10 and stops green; if it runs long, move item 10, the Admin editor, to session 2), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -48,7 +48,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green, and that pwaPurity.test.ts still passes;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.2.1, US-01.2.2, US-01.5.3, US-03.1.4 and US-15.0.2 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -60,6 +60,6 @@ When done:
   - 03-demo-script.md: S2 Beat 1's legend line, the optional days-off and series moment, the discovery points (OQ-17 and OQ-27 answered, OQ-64 open) and the Direct URLs;
   - the cheat sheet, the workflows note and the personas lines;
   - the same sections of master-demo-guide.html, word for word;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: anaesthetists keep their Slots' availability from a calendar on mobile and web, weeks ahead: Free by default, days off marked ahead, repeating days off as a series, and one instance changed or deleted, with the calendar editing the Slot status directly and no false conflicts. The Slot status set becomes editable master data, coloured from the design's six tokens, that every app reads.

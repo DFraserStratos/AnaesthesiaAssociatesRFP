@@ -26,7 +26,7 @@ Then do the drift check in the phase doc:
 - confirm OQ-52 is still answered as one HPI CPN (stop and tell me if it was reopened), and note OQ-43's status (a new name goes into the single BLACKLIST_TERM label);
 - confirm Phases 14 and 15 are DONE (if either is not, stop and tell me), and use the post-15 names (AddBookingFlow, stampBookingId, "Continue to add booking", or whatever actually landed);
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps, and wait for my approval.
+Then write a plan that turns the work items into session-sized steps, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -53,7 +53,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-13.6.1, US-13.6.2, US-13.6.3 and US-01.3.5 and every recipe this phase broke (the phase doc's Catalogue screenshots section names US-13.4.1); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -62,6 +62,6 @@ When done:
   - the Decisions-log entries listed in the phase doc;
   - the handoff notes for 18, 26 and 40a, 28, 30, 31, 32, 35, 27/34/40 and 42;
 - patch the demo guide in the same session: S2 Beat 2, discovery points (OQ-43, not OQ-52) and Direct URLs in 03-demo-script.md; the cheat sheet; the workflows note; and the same sections of master-demo-guide.html;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: surgeons become real master data, keyed on one HPI CPN, with a profile, a room with contacts, groups, hospital contact emails and an audited, office-kept blacklist. The office sees a soft, never-blocking warning whenever it pairs a blacklisted surgeon and anaesthetist, through one shared helper that Draft List assignment (31) and the anaesthetist's own-List move (32) reuse.

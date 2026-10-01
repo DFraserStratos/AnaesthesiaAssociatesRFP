@@ -797,6 +797,9 @@ lists the two new entries under their screens automatically.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 Session 1 (after **Reset → Confirm reset**):
 
 - [ ] Admin · Review for Dr Sharma's Tue 14 Jul AM List: Demo actions shows **Stage post-op
@@ -1006,6 +1009,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 39, and a phase entry with:
   - the drift-check result (items changed or not since 501b0b8; FT-08.6 and US-08.6.1 to US-08.6.4
     still Verify or not; OQ-60, OQ-71 and OQ-72 status; the List the combined-procedure trigger uses;

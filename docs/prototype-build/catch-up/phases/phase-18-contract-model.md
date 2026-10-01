@@ -715,6 +715,9 @@ These Contract fields and behaviours belong to later phases. Do not add fields f
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Admin, Master data, Contracts: every seeded Contract shows an AA code, a category, holder,
       pricing and scope, and none shows "Type n". The AA codes are unique and match the seed test.
       The five hospital defaults, nib and RVG Default Post-paid carry the lock. Health NZ shows
@@ -908,6 +911,9 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Catalogue screenshots result:** the recipes filled in (US-04.1.4, US-04.2.10) and changed (the other five covered items, plus the broken ones such as US-04.2.2 and US-04.2.5), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reasons handed on: US-04.1.2 to Phase 25 (versioning) and US-04.2.1 to Phases 19 and 20 (procedures filter, picker narrowing).
 - **Status row:** add Phase 18 (Contract model) as DONE with the date, or IN PROGRESS after session 1
   with what remains.

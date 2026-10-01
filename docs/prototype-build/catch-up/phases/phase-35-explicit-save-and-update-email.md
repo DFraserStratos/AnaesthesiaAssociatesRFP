@@ -794,6 +794,9 @@ and [US-13.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/re
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Admin, Tue 21 Jul, open a Booking. Nudge the time, type in Notes, change a Procedure's Contract.
       The unsaved bar reads "3 unsaved changes" with those field names. The Day view and the
       anaesthetist's mobile Booking still show the old values.
@@ -1028,6 +1031,9 @@ phase entry. Do not re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status table: Phase 35 row DONE with the date.
 - Phase entry "Phase 35 · Explicit save and the update email (date)":
   - the drift-check result; OQ-46 built as answered; the OQ-69 and OQ-65 status (recommendation built

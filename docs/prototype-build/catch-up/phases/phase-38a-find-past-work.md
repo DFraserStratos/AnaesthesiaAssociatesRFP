@@ -445,6 +445,9 @@ enough.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Mobile → Lists: the search field and the calendar button sit under the greeting; Week,
       Month, To-Do and Done work as before; Done still shows no backdrop Lists.
 - [ ] Tap the calendar button: the sheet opens on July 2026 with today marked and half-bars on days
@@ -561,6 +564,9 @@ re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38a, and a phase entry with:
   - the drift-check result (items changed or not; whether the Admin App or date of birth came into
     scope; the provisional readings built);

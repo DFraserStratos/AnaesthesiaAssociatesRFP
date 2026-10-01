@@ -47,15 +47,15 @@ Then do the drift check in the phase doc:
 - OQ-64 is open with a recommendation: build it, labelled provisional and kept in one place. That means:
   - an anaesthetist marking themselves unavailable while holding open Lists returns those Lists to the office as Draft Lists, behind one rule constant and one decision helper, so Phase 30's conflict flag comes back if the answer flips;
   - every user-facing Draft List word ("Draft List", "Unassigned") lives in one terms module, because the names are not settled. "Being prepared" is gone;
-- tell me about the pre-op and acute pairing reading. Phase 29 seeds no emergency-only status and has no isEmergencyOnly, so the assign picker has no emergency group; ask about it only if such a status exists by now. The pre-op and acute reading has two parts:
+- note the pre-op and acute pairing reading for the "For the owner's review" list. Phase 29 seeds no emergency-only status and has no isEmergencyOnly, so the assign picker has no emergency group; if such a status exists by now, build it as its own labelled group with a soft warning and no conflict, and log that for the review rather than asking. The pre-op and acute reading has two parts:
   - AA rooms becomes a location record;
   - pre-op and public Lists (acute theatre and the "Elective ortho" templates) name a surgeon.
 - confirm Phases 17, 28, 29 and 30 are DONE (and whether 27 is) and note their actual names;
 - note the current PERSIST_VERSION.
-Then enter plan mode and turn the work items into session-sized steps:
+Then write a plan that turns the work items into session-sized steps:
 - session 1: the model, the pairing rule, the seed, the store and the unavailability route, with every reader re-pointed, ending green;
 - session 2: the Admin screens, the right-rail card and Day dashboard, the triggers, the PWA stand-in and the docs.
-Wait for my approval.
+Then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -112,7 +112,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass. This is convention 18:
   - fan out three Opus review subagents, for quality, bugs and plan adherence, steered by the phase doc's bullets;
@@ -129,6 +129,6 @@ When done:
   - the cheat sheet;
   - the same sections of master-demo-guide.html;
   - the Control Panel S2 scenario text;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: a List with no anaesthetist yet becomes a Draft List. Each has a hospital, surgeon, day and session, all required, may already hold Bookings, and takes no Slot. Draft Lists are flagged "Unassigned" with their waiting time, beside the day in the right rail, in a band on the Day dashboard, on their own Admin page and on a nav badge; only the office assigns one, into a free Slot with soft warnings and a full audit, or removes it or changes its date. Provisionally (OQ-64), an anaesthetist who goes unavailable returns their open Lists to the office as Draft Lists. Every List has exactly one hospital and one surgeon, and the Day dashboard shows each block's booking count.

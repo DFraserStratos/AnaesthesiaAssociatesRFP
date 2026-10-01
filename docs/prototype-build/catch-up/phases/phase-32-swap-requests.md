@@ -646,6 +646,9 @@ There are no office stand-ins: nothing in this phase waits for the office (D7).
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin Day shows no Moved-by-anaesthetists block. Nothing anywhere says "Cover
   requested", "Offer cover", "Tap to ask", "swap" or "notified when someone accepts".
 - [ ] Web, Availability (as Dr Souter), the seed test's day:
@@ -818,6 +821,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 32, and a phase entry with:
   - the drift-check result: items changed or not, and the status of OQ-65, OQ-43 and OQ-70 (built as
     recommendations or as answered);

@@ -568,6 +568,9 @@ required".
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin Billing monitor shows "Connected", an empty Xero sync queue and no divergence panel;
       Demo actions lists Simulate Xero outage (enabled) and Restore Xero (disabled, "Xero is connected").
 - [ ] Simulate Xero outage. Authorise a SUBMITTED List from the Review queue: it authorises and bills
@@ -728,6 +731,9 @@ amends (listed below).
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - A catch-up status row for Phase 37 and an entry `### Catch-up Phase 37 · Xero mirror resilience
   (date)`: the drift-check result, the Phase 36 names used, whether 39 had landed, the checklist item by
   item, test counts, the Catalogue screenshots result (recipes created or changed, the REPORT.md

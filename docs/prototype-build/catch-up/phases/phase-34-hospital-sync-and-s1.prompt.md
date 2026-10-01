@@ -25,7 +25,7 @@ Then do the drift check in the phase doc:
 - confirm Phase 14's context keys (integrations.tab and integrationsSim.selectedMessageId only; this phase adds intake.openPdfId);
 - check whether 33 already re-pointed S4 Beat 4 and S5 Beat 2;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps, and wait for my approval.
+Then write a plan that turns the work items into session-sized steps, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -45,12 +45,12 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green (session 2, work item 17 re-points the capture recipes);
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs/correctness and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for the items in the phase doc's Catalogue screenshots section and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - update PROGRESS.md: the status row and a phase entry (drift-check result against 501b0b8, OQ-13 status and the provisional cadence, the real Phase 27 and 33 names used, what moved to the Future-scope surface, the PERSIST_VERSION from and to, the pinned fixtures, tests added, the catalogue screenshot result (REPORT.md counts before and after), the review pass), the Decisions-log entries listed in the phase doc (superseding the Phase 11 monitor reading and the Phase 11 reading of Christchurch Public as a live feed, and closing Phase 14's interim badges), the convention 4 amendment, and the handoff notes for 35, 40, 42, 43 and 44;
 - patch the demo guide in the same session: S1 rebuilt (including the "PDFs stay needed" line and the optional PDF beat with the estimated duration), S4 Beat 4 and S5 Beat 2 if 33 did not (and no line calling Christchurch Public a feed), Direct URLs, run orders, narrate and recovery sections in docs/demo-guide/03-demo-script.md; the cheat sheet, workflows, personas and README; the same sections of master-demo-guide.html; and the Control Panel scenario text. Finish with a consistency read of those master-guide sections against the run sheet;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: St George's and Southern Cross, and only they, sync into the matching screen on a schedule, on open and on Sync now, with last-synced and failed-sync state and nothing applied until the office decides; Christchurch Public stops being a live feed; other providers' daily sheets arrive by hand import with a badged auto-match demo; surgeon PDFs can be uploaded and corrected, DOB, ethnicity and the rooms' estimated duration included, the duration landing in Phase 27's per-Procedure field for its estimator; the HL7/FHIR tooling sits on a separate Future-scope surface; and S1 tells the sync-then-match story.

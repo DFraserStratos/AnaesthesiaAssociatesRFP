@@ -12,7 +12,7 @@ Before doing anything else, read these in order:
 
 Then do the drift check in the phase doc: run git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md", re-read any covered or context item that changed, drop anything now Retired or Future, confirm Phase 38 is DONE and note the exact names 15, 28, 29, 30, 36 and 38 shipped, note the current PERSIST_VERSION, and tell me what changed. If the catalogue now puts this search or calendar in the Admin App, stop and tell me before building.
 
-Then enter plan mode: turn the work items into ordered steps (the pure search module, the history seed, the look-back selectors and the history-survives tests first, then the shared month grid, the mobile calendar and search, the web Calendar view and search, the drill-down checks, tests, shots and docs), name the exact files and tests each step touches, and wait for my approval.
+Then write a plan: turn the work items into ordered steps (the pure search module, the history seed, the look-back selectors and the history-survives tests first, then the shared month grid, the mobile calendar and search, the web Calendar view and search, the drill-down checks, tests, shots and docs), name the exact files and tests each step touches, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -32,12 +32,12 @@ While working:
 - Keep npm run build, npm run build:pwa and npx vitest run green throughout (run them from aa-prototype/).
 
 When done:
-- Run the manual test checklist and report each item.
+- Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Run npm run build, npm run build:pwa, npx vitest run and npm run shots in aa-prototype/, all green, and npm run verify:board at the repo root.
 - Run the adversarial review-and-fix pass (PROGRESS convention 18): three Opus review subagents for quality, bugs/correctness and plan adherence, steered by the phase doc's bullets; independently verify each finding, fix the confirmed ones (with a test where a bug had none), and re-green.
 - Run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.1.6 and US-03.1.7 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green.
 - Update PROGRESS.md: the catch-up status row and a phase entry (drift check, the provisional readings, the name map, the history added and the money figures checked unchanged, PERSIST_VERSION from and to, test counts, the review pass, the catalogue screenshot result with REPORT.md counts before and after), the four Decisions-log entries in the phase doc, and the handoff notes for 39b, 40, 40a, 43 and 44.
 - Patch the demo guide in the same session: the Direct URLs tables, S3's optional closing moment and discovery points in docs/demo-guide/03-demo-script.md, the cheat sheet's app cards and readiness list, the workflows and personas docs, and the same passages of master-demo-guide.html.
-- Give me short, clear notes on what changed and anything left open.
+- Give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: a calendar on mobile and web that jumps to any day back to January 2026 and drills to List, Booking and Procedure, and a search that finds the anaesthetist's own Bookings by NHI or part of a patient name, over six months of seeded history for Dr Souter that moves no money figure.

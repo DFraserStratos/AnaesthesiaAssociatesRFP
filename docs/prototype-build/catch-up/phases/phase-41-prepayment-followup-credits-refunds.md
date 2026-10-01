@@ -809,6 +809,9 @@ letter.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Master data, Pre-payment letters: three templates, one default per kind. Edit
       "Cosmetic procedure pre-payment", insert `{{patient}}`: refused "unknown merge field". Remove
       `{{estimate}}`: refused. The preview always ends with the fixed estimate notice, which promises
@@ -1002,6 +1005,9 @@ readings this phase explicitly supersedes.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status row for catch-up Phase 41, and a phase entry covering:
   - the drift-check result and the OQ states (OQ-03, OQ-40 and OQ-42 built as answered; OQ-70 built
     as its recommendation; OQ-61 and OQ-47 left in 27's and 39a's places);

@@ -25,7 +25,7 @@ Then do the drift check in the phase doc:
 - note what 15a and 20 actually left;
 - note who Phase 18 made the RVG Default Hospital Contract bill, keep it, and record the tension with OQ-55's "a default Contract bills the patient" for the owner, as part of OQ-67 (drift-check step 5).
 If a covered item is now Retired or Future, drop it and say so.
-Then enter plan mode: turn the plan into work-sized steps across the two sessions, and wait for my approval.
+Then write a plan: turn the plan into work-sized steps across the two sessions, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -52,12 +52,12 @@ While working:
   - Never commit.
 
 When done:
-- Run the manual test checklist and report each item.
+- Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green.
 - Run the adversarial review-and-fix pass (convention 18: fan out Opus reviewers for quality, bugs, plan adherence and money integrity; independently verify each finding; fix the confirmed ones; re-green).
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-11.2.1, US-11.2.2, US-11.2.3, US-11.2.4, US-11.4.2, US-04.2.7, US-04.3.7, US-03.6.1, US-03.6.2 and US-07.2.2 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - Update PROGRESS.md: status row, catch-up Phase 21 entry with the drift-check result, the review pass and the catalogue screenshot result (REPORT.md counts before and after), the six Decisions-log entries, and handoff notes for 22, 23, 25, 27 and 40.
 - Patch the demo guide in the same session: S1 Beat 3 note, S2 Beat 4 plus the optional child-warning aside, S3 Beat 1 wording, the cheat sheet (payer section and 15a's warnings section), the workflows and personas docs, the matching master-demo-guide.html sections, and the Control Panel S2 text.
-- Give me short, clear notes.
+- Give me short, clear notes, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: every Booking says who is invoiced and where, defaulted from each Procedure's Contract and independent of pricing; it cannot be completed without what its Contract requires, and a child billed directly raises a mild warning that never blocks.

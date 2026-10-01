@@ -499,6 +499,9 @@ gains nothing; Phase 14's index lists the trigger under its screen.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Mobile → Lists: the "Welcome to your Lists" card sits under the greeting; "Got it" hides
       it; a reload keeps it hidden. Web Dashboard and Admin Day show their own card the same way.
 - [ ] Demo actions → "Show first-run hints again": all three cards come back. With none dismissed, the
@@ -616,6 +619,9 @@ records the pass. Do not re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 43a, and a phase entry with:
   - the drift-check result (US-15.0.1 changed or not; any OQ answered that changed a tip);
   - the work item 1 inventory and what was fixed in each place;

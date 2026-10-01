@@ -26,7 +26,7 @@ Then do the drift check in the phase doc:
 - check OQ-64: if still open, build its recommendation as the phase doc says; if answered, follow the doc's re-plan triggers;
 - confirm Phases 14 and 15 are DONE (stop if 15 has not run), and note whether 17, 26 and 27 are;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps (session 1: model, store, seed and every reader re-pointed, ending green; session 2: the office flows, settings editor and start-date fields, stand-in trigger and docs), and wait for my approval.
+Then write a plan that turns the work items into session-sized steps (session 1: model, store, seed and every reader re-pointed, ending green; session 2: the office flows, settings editor and start-date fields, stand-in trigger and docs), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -52,7 +52,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-01.1.3, US-01.1.4, US-01.2.1, US-01.2.2, US-01.2.3 and US-01.3.3 and every recipe this phase broke (the phase doc's Catalogue screenshots section lists them, work item 22 says how to find them); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -61,6 +61,6 @@ When done:
   - the Decisions-log entries listed in the phase doc (three superseded, one amended, the new, provisional and interim rulings);
   - the handoff notes for 29, 30, 31, 32, 33, 35, 38, 39 and 44;
 - patch the demo guide in the same session: S2 Beats 1 to 3 and S4 Beat 2 in 03-demo-script.md, workflow 3 in 02-workflows-and-handoffs.md, the cheat sheet, the same sections of master-demo-guide.html, and the Control Panel S2 scenario text;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: the canvas becomes Slots and Lists. Every anaesthetist has a Slot per half-day from their start date, holding its availability status (free by default) and times; the status is the one mechanism, with no record reconciled into Lists. A List is created only when the office assigns one (or a recurring booking projects it) and then shows in place of the status. The displayed status never depends on Bookings and matches in all three apps, default times come from one setting, and Reassign moves a List between Slots intact.

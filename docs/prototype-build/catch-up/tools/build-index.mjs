@@ -314,7 +314,7 @@ const howSection = `
     <li><b>Pick the next phase</b> from the table below, respecting the order in "Sequencing and rules". The Contracts track (17 to 25) and the Schedule track (28 to 32) each run strictly in order.</li>
     <li><b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt. The agent reads the roadmap, its phase doc, the gap detail for its items, the prototype maps and <code>PROGRESS.md</code> before touching anything.</li>
     <li><b>Drift check first.</b> The catalogue keeps moving. Each session diffs its items against <code>${esc(shortCommit)}</code>, reports what changed, and adapts the plan before building.</li>
-    <li><b>The agent enters plan mode</b>, turns the phase doc into work-sized steps, and waits for approval before changing any file.</li>
+    <li><b>The agent plans and builds straight on.</b> It turns the phase doc into work-sized steps and starts building without waiting for approval, so phases can run back to back (ROADMAP.md "Owner review: agents test themselves").</li>
     <li><b>Every phase ends the same way:</b> <code>npm run build</code>, <code>npm run build:pwa</code>, <code>npx vitest run</code> and (for UI work) <code>npm run shots</code> green; the checklist run and reported item by item; the adversarial review-and-fix pass (PROGRESS convention 18); the demo guide patched for any beat it broke; the catalogue screenshots brought in step with the app (the phase's capture recipes created or updated, then a full <code>npm run capture</code> in <code>requirements-board/</code> with no failed recipe and <code>npm run verify:board</code> green, PROGRESS convention 19); a <code>PROGRESS.md</code> entry. Agents never commit.</li>
     <li><b>When the catalogue changes,</b> follow <a href="README.md">README.md</a>: re-grade the changed items, merge them into <code>gaps.json</code>, update the affected phase docs, and re-render this page with <code>node docs/prototype-build/catch-up/tools/build-index.mjs</code>.</li>
   </ol>
@@ -322,7 +322,7 @@ const howSection = `
     <p><strong>Demo buttons live on their screens.</strong> Anything that cannot be shown through normal use (scheduled jobs, backend events, external systems) gets a trigger in the harness bar's "Demo actions" menu, listed only on the screen where it matters. The installed PWA has no harness bar, so it gets the same list as a badged demo-actions sheet, plus office stand-ins for beats that wait on the office. Phase 14 builds the mechanism; every later phase registers into it.</p>
   </div>
   <div class="callout">
-    <p><strong>The checklists are the contract.</strong> Each phase ends with a short manual test checklist. The kick-off prompt makes the agent run and report it, but click through it yourself too: it doubles as a rehearsal for the workshop beats that phase touches.</p>
+    <p><strong>The checklists are the contract.</strong> Each phase ends with a short manual test checklist. The agent runs it itself in the running app and reports each item with evidence; nothing is handed to the owner per phase. Each PROGRESS entry ends with a "For the owner's review" list, and Phase 44 gathers them into one list for a single review once every catch-up phase is done.</p>
   </div>
   <div class="flow">
     ${flow}

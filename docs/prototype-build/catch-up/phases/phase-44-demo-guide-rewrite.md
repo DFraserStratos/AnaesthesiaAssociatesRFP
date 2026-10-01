@@ -651,6 +651,9 @@ followed by one deep link per beat.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Drift check run (in both sessions); the OQ list and the D1 to D11 branch table are recorded;
       nothing the guide or the app calls settled is an Open, Confirm or Proposed OQ at HEAD, and no
       Proposed, Open or Verify requirement is described as AA confirmed; answered decisions (D1 to
@@ -824,6 +827,12 @@ review-and-fix pass (PROGRESS convention 18)**:
   readings still shown in the app, each with its OQ or D number (D9, D11, the open OQs, the BCTI
   granularity); the snapshot commit the build was made against (`501b0b8`) and the HEAD commit this
   phase checked; a pointer to the ROADMAP's "When the catalogue changes" procedure for the next round.
+- **Owner review list** (a section after the closing summary): the owner reviews the app once, now
+  that every catch-up phase is done (ROADMAP.md "Owner review: agents test themselves"). Gather every
+  phase's "For the owner's review" list into one list, grouped by app and screen, each line with its
+  phase, what to look at (route and persona), the default or reading built, and the OQ or D number;
+  drop lines a later phase already settled. Open it with a suggested review order (S1 to S5 from
+  Reset, then the remaining screens).
 - **Open-items handoff:** any regression logged in item 12, any parity gap not fixed, the catalogue
   correction for US-11.1.2's "modulus 24", the BCTI granularity point for AA's accountant (beside
   OQ-29 and OQ-60), and the stale `CLAUDE.md` lines for the owner.

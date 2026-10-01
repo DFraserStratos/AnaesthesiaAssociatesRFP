@@ -863,6 +863,9 @@ backstop).
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Mobile (Dr Souter): on a DRAFT Booking, add a procedure. The first shows the "Primary" pill at the
       top. The new one shows the additional note, B 0 "Base units are on the primary procedure", its own
       T, the modifiers caption row instead of ASA and chips, and "Make primary".
@@ -1066,6 +1069,9 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - A status row for catch-up Phase 23, and a phase entry covering:
   - the drift-check result and the OQ-15 and OQ-66 status;
   - what was built;

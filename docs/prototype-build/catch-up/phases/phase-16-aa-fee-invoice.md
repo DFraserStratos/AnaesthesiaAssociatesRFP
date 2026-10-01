@@ -552,6 +552,9 @@ passes the purity check.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Xero simulation: the NHI callout is a neutral info callout, "No personal information in
       Xero", with no mention of an unresolved contradiction. Invoices → any seeded procedure pair:
       the ACCPAY payable equals the ACCREC amount due; no fee box anywhere; both cards show
@@ -734,6 +737,9 @@ the 2026-07-29 fee ruling this phase explicitly supersedes.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Catch-up status row for Phase 16 and a phase entry (template in PROGRESS.md), recording the drift
   check result, the OQ-60 and OQ-29 status, where Phase 14 had re-homed the webhook trigger, the
   step-1 stop point, the manual checklist item by item, and the review pass. Note that FT-10.3,

@@ -26,7 +26,7 @@ Then do the drift check in the phase doc:
 - US-12.2.2 is Verify: build its text as written (cash basis of payouts, the sale and its GST, a balance check); the BCTI-per-procedure question and OQ-29 stay with AA's accountant and are not built;
 - confirm Phases 28 and 36 are DONE and note the exact names 36 shipped (its position selector, planned as anaesthetistLedgerPosition with owedToThem / awaitingCollection / dueNow / collected / paidOut; LedgerPair kinds, PayableLeg, LedgerDisbursement and incomeReceiptsFor; its renames such as outstandingPayableRowsFor, pairsForList and openBillingExceptions; its Accounts "Your position" strip, mobile "Collected · Paid out" line and "Office runs payables" stand-in), 26's gstPeriodLabel and profile route, and where 22 keeps an invoice's GST. The phase doc's code entry points use pre-36 names: use what 36 actually shipped;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into ordered steps (domain and store first, then the dashboard, Accounts Outstanding and GST schedule, Balances and the billed-List views, then triggers, tests and docs), marking the session split, and wait for my approval.
+Then write a plan that turns the work items into ordered steps (domain and store first, then the dashboard, Accounts Outstanding and GST schedule, Balances and the billed-List views, then triggers, tests and docs), marking the session split, then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -43,7 +43,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2 and US-07.2.1 and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -52,6 +52,6 @@ When done:
   - the Decisions-log entries listed in the phase doc (three superseded, one amended, three new);
   - the handoff notes for 37, 38a, 39, 39a, 40, 41, 43 and 44;
 - patch the demo guide in the same session: the Direct URLs table, S3 Beats 1 and 3 and the S3 discovery points in 03-demo-script.md, the billing and balances steps in 02-workflows-and-handoffs.md, the GST and money lines in 01-personas-and-responsibilities.md, cheat-sheet sections 2 and 11, its "Built and clickable" line and "What each app is for", the same sections of master-demo-guide.html, and the Control Panel scenario text if it names Overdue, ageing, GST activity or the List vanishing;
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: the web dashboard shows the anaesthetist's real financial position (owed, collected, paid out) from the ledger with the seeded Productivity and Leave panels gone; outstanding balances are one flat list of unpaid payables, oldest first, with no ageing (D8); the GST schedule lists, on a cash basis, the payables AA actually paid the anaesthetist in their own aligned GST period with the sale, its GST and a balance check; and a List reads "Done, unbilled" and then "Done, billed" on web and mobile instead of vanishing (D9, provisional).

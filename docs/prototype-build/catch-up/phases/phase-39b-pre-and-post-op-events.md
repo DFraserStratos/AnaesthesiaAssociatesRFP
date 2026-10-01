@@ -638,6 +638,9 @@ rule. Phase 44's audit records the stand-in.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 Session 1 (store level, after **Reset → Confirm reset**): the store tests above pass, including the
 deep-equal Booking checks and the BCTI count; the parity fixture matches; `npm run build`,
 `npm run build:pwa` and `npx vitest run` green.
@@ -796,6 +799,9 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 39b, and a phase entry with:
   - the drift-check result (FT-03.7, US-03.7.1 and US-03.7.2 still Verify or not, US-05.5.2 and
     US-03.3.6 status; OQ-63, OQ-12 and OQ-48 status), the Slot used for the staging, and whether 39's

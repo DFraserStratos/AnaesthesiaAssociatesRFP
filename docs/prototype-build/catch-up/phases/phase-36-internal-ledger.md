@@ -918,6 +918,9 @@ PWA entry is needed. The office-only allocation and refund are product actions i
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Reset. Admin side nav shows "Ledger" with no badge. The whole ledger reads "In balance · receipts
       held equal payables due", and the equation reads $0.00 imbalance.
 - [ ] The tiles show Receivables outstanding (the seeded unpaid history), Receipts held equal to
@@ -1131,6 +1134,9 @@ explicitly supersedes.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status row for catch-up Phase 36, and a phase entry covering:
   - the drift-check result; the answers built (OQ-02, OQ-03, OQ-05, OQ-30, OQ-40, OQ-42) and how the
     open questions were handled (OQ-29, OQ-47, OQ-60, OQ-71);

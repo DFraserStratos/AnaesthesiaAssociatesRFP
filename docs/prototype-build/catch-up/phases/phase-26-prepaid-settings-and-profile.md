@@ -476,6 +476,9 @@ registers the prepayment triggers.
 
 ## Manual test checklist
 
+The agent runs every item itself in the running app and reports it with evidence; none is handed
+to the owner (ROADMAP.md "Owner review: agents test themselves").
+
 - [ ] Mobile More: the Profile card shows $26.50, Monthly, Dr Souter's GST number (22's seed, mono),
       phone, email, registration 34821, HPI CPN 10SOUM and a masked bank number with the office caption.
       No "HPI id" or "HPI number" anywhere on any app. No en or em dash anywhere.
@@ -626,6 +629,9 @@ Do not re-raise anything settled in the Decisions log.
 
 ## PROGRESS.md updates
 
+- **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
+  themselves"): the defaults built for open questions, provisional readings, anything logged
+  rather than fixed, and the screens worth a look, each with its route and persona.
 - Status row for catch-up Phase 26, and a phase entry: the drift-check result (including whether 25 had
   landed), what was built, the review pass (findings confirmed and fixed, anything not treated as a
   defect and why), tests added, and the `PERSIST_VERSION` bump.

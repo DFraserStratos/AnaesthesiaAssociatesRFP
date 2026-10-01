@@ -28,7 +28,7 @@ Then do the drift check in the phase doc:
 - translate the phase doc's 501b0b8 names through 15's rename table (cardActions.ts is bookingActions.ts, cardFee is already bookingFee, CardDetailBody is shared/booking/BookingDetailBody, validateCardForBilling is validateBookingForBilling, buildInvoicesForCard and buildPrePaymentInvoiceForCard are buildInvoicesForBooking and buildPrePaymentInvoiceForBooking, seed cards.ts is bookings.ts, routes use /bookings/:bookingId);
 - pick the past, unscripted Souter List for the seeded three-procedure Booking with a one-off seed query;
 - note the current PERSIST_VERSION.
-Then enter plan mode, turn the work items into session-sized steps (session 1 ends green after the seed), and wait for my approval.
+Then write a plan that turns the work items into session-sized steps (session 1 ends green after the seed), then start building without waiting for my approval (ROADMAP.md "Owner review: agents test themselves").
 
 While working:
 - Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
@@ -48,7 +48,7 @@ While working:
 - Do not commit or push.
 
 When done:
-- run the manual test checklist and report each item;
+- run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence;
 - confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are green;
 - run the adversarial review-and-fix pass (convention 18: fan out three Opus review subagents for quality, bugs and plan adherence, plus a fourth on billing maths, steered by the phase doc's bullets; independently verify each finding; fix the confirmed ones with tests; re-green);
 - run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.2.1, US-03.2.2, US-04.2.5, US-04.2.11, US-05.3.1, US-05.3.4 and US-05.3.5 (and re-shoot US-03.2.3's shots) and every recipe this phase broke; in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
@@ -57,6 +57,6 @@ When done:
   - the Decisions-log entries listed in the phase doc;
   - the handoff notes for 22 (splitShares closed), 24, 25, 27, 33 (feed-swaps-primary to a matching row, not yet in 33's plan; add it to the open items), 34, 36, 39, 39b, 42 (base-unit overrides only) and 43a;
 - patch the demo guide in the same session: the cheat sheet's split-billing section (and section 7's invoice-count point, renamed), the workflows' Multiple Procedures section and billing-engine step, the personas list, S3 Beat 1 and its new "Worth pointing at" (3/2/2, Make primary, the combination in the picker), the other "split-billing Card" mentions in the demo script, the S5 discovery points (OQ-15, OQ-66; drop OQ-53), the same sections of master-demo-guide.html, and the Control Panel scenario text; then grep for "time-only" and "split billing" (only quoted RFP headings may remain);
-- give me short, clear notes on what changed and anything left open.
+- give me short, clear notes on what changed and anything left open, ending with the "For the owner's review" list (also in the PROGRESS entry).
 
 Phase goal: every Booking has exactly one primary Procedure, listed first, that anyone with edit rights can change; fees are priced for the whole Booking under the catalogue rule (base on the primary, time on each, modifiers split 3/2/2 above four whichever Contracts, provisional until Ben validates it), with a per-Contract multi-procedure rule and a Contract base-unit override; and a combination of procedures is one Contract offered under each of its parent procedures.
