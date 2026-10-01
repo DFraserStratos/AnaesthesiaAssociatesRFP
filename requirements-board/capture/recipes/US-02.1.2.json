@@ -1,7 +1,7 @@
 {
   "id": "US-02.1.2",
   "status": "partial",
-  "absentReason": "No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Card instead of duplicating it. There is no option to create a new List or to reject a row.",
+  "absentReason": "No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Booking instead of duplicating it. There is no option to create a new List or to reject a row.",
   "shots": [
     {
       "name": "pdf-row-matching",

@@ -8,10 +8,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { reviewFlagsForCard, reviewFlagsForList } from './reviewFlags'
-import type { Card, Procedure } from '../../domain/types'
+import { reviewFlagsForBooking, reviewFlagsForList } from './reviewFlags'
+import type { Booking, Procedure } from '../../domain/types'
 import { type BtmBreakdown, type FeeResult } from '../../domain/billing/fee'
-import { cardsForList, createAppStore, proceduresForCard } from '../../store'
+import { bookingsForList, createAppStore, proceduresForBooking } from '../../store'
 import { procedureFee } from '../../shared/capture/feeContext'
 import { SEED_MARKERS } from '../../domain/seed'
 
@@ -28,82 +28,82 @@ function stubFee(btm: BtmBreakdown = ZERO_BTM): FeeResult {
 }
 
 function proc(over: Partial<Procedure> = {}): Procedure {
-  return { id: 'P1', cardId: 'C1', description: 'Test op', accRelated: false, isAdditional: false, selectedModifierCodes: [], ...over }
+  return { id: 'P1', bookingId: 'BK1', description: 'Test op', accRelated: false, isAdditional: false, selectedModifierCodes: [], ...over }
 }
 
-function card(over: Partial<Card> = {}): Card {
-  return { id: 'C1', completed: true, ...over } as unknown as Card
+function booking(over: Partial<Booking> = {}): Booking {
+  return { id: 'BK1', completed: true, ...over } as unknown as Booking
 }
 
 describe('reviewFlags (pure)', () => {
-  it('(a) flags a card not marked completed', () => {
-    const flags = reviewFlagsForCard({ card: card({ completed: false }), procedures: [] })
+  it('(a) flags a booking not marked completed', () => {
+    const flags = reviewFlagsForBooking({ booking: booking({ completed: false }), procedures: [] })
     expect(flags.some((f) => f.text === 'Not marked completed' && f.tone === 'neutral')).toBe(true)
   })
 
   it('(b) flags a missing billing reference on the hospital route only', () => {
-    const hospitalNoRef = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc({ billingRoute: 'hospital' }), fee: stubFee() }] })
+    const hospitalNoRef = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital' }), fee: stubFee() }] })
     expect(hospitalNoRef.some((f) => f.text === 'No billing reference')).toBe(true)
 
-    const hospitalWithRef = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc({ billingRoute: 'hospital', billingReference: 'REF-1' }), fee: stubFee() }] })
+    const hospitalWithRef = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'hospital', billingReference: 'REF-1' }), fee: stubFee() }] })
     expect(hospitalWithRef.some((f) => f.text === 'No billing reference')).toBe(false)
 
-    const insurerRoute = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc({ billingRoute: 'insurer' }), fee: stubFee() }] })
+    const insurerRoute = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ billingRoute: 'insurer' }), fee: stubFee() }] })
     expect(insurerRoute.some((f) => f.text === 'No billing reference')).toBe(false)
   })
 
   it('(c) raises an amber ACC advisory only on the billable-party route', () => {
-    const bp = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'billableParty' }), fee: stubFee() }] })
+    const bp = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'billableParty' }), fee: stubFee() }] })
     expect(bp.find((f) => f.text === 'ACC should not bill the patient directly')?.tone).toBe('warn')
 
-    const hospitalAcc = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
+    const hospitalAcc = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc({ accRelated: true, billingRoute: 'hospital', billingReference: 'R' }), fee: stubFee() }] })
     expect(hospitalAcc.some((f) => f.text.startsWith('ACC'))).toBe(false)
   })
 
   it('(d) flags a manual override with its signed delta vs the natural computation', () => {
     // proc() carries no times/codes, so the natural B/T/M is all zero.
     const overriddenTime: BtmBreakdown = { ...ZERO_BTM, time: { units: 5, source: 'overridden' }, totalUnits: 5 }
-    const flags = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc(), fee: stubFee(overriddenTime) }] })
-    expect(flags).toEqual([{ tone: 'neutral', text: 'T adjusted +5 manually', cardId: 'C1', procedureId: 'P1' }])
+    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenTime) }] })
+    expect(flags).toEqual([{ tone: 'neutral', text: 'T adjusted +5 manually', bookingId: 'BK1', procedureId: 'P1' }])
   })
 
   it('(d) an override landing on the natural value reads "set manually"', () => {
     const overriddenBase: BtmBreakdown = { ...ZERO_BTM, base: { units: 0, source: 'overridden' } }
-    const flags = reviewFlagsForCard({ card: card(), procedures: [{ procedure: proc(), fee: stubFee(overriddenBase) }] })
+    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc(), fee: stubFee(overriddenBase) }] })
     expect(flags.some((f) => f.text === 'B set manually')).toBe(true)
   })
 
   it('(e) flags outstanding pre-payment and an overridden gate (warn), input-driven', () => {
-    const outstanding = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'outstanding' })
+    const outstanding = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'outstanding' })
     expect(outstanding.find((f) => f.text === 'Pre-payment outstanding')?.tone).toBe('warn')
 
-    const required = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'required' })
+    const required = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'required' })
     expect(required.some((f) => f.text === 'Pre-payment outstanding')).toBe(true)
 
-    const overridden = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: 'overridden' })
+    const overridden = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'overridden' })
     expect(overridden.find((f) => f.text === 'Pre-payment gate overridden')?.tone).toBe('warn')
 
     // Paid / none / absent add no pre-payment flag.
     for (const status of ['paid', 'none', undefined] as const) {
-      const flags = reviewFlagsForCard({ card: card(), procedures: [], prepaymentStatus: status })
+      const flags = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: status })
       expect(flags.some((f) => f.text.startsWith('Pre-payment'))).toBe(false)
     }
   })
 
-  it('yields no flags for a cancelled card', () => {
-    const cancelled = card({
+  it('yields no flags for a cancelled booking', () => {
+    const cancelled = booking({
       completed: false,
       cancellation: { reason: 'Postponed', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00' },
     })
-    expect(reviewFlagsForCard({ card: cancelled, procedures: [] })).toEqual([])
+    expect(reviewFlagsForBooking({ booking: cancelled, procedures: [] })).toEqual([])
   })
 
-  it('reviewFlagsForList totals flags across cards and excludes cancelled ones', () => {
-    const cards = [
-      { card: card({ id: 'C1', completed: false }), procedures: [] },
-      { card: card({ id: 'C2', completed: false, cancellation: { reason: 'x', by: 'y', role: 'office' as const, source: 'office' as const, atISO: '2026-07-21T09:00:00' } }), procedures: [] },
+  it('reviewFlagsForList totals flags across bookings and excludes cancelled ones', () => {
+    const bookings = [
+      { booking: booking({ id: 'BK1', completed: false }), procedures: [] },
+      { booking: booking({ id: 'BK2', completed: false, cancellation: { reason: 'x', by: 'y', role: 'office' as const, source: 'office' as const, atISO: '2026-07-21T09:00:00' } }), procedures: [] },
     ]
-    expect(reviewFlagsForList(cards).length).toBe(1)
+    expect(reviewFlagsForList(bookings).length).toBe(1)
   })
 })
 
@@ -117,14 +117,14 @@ describe('reviewFlags over seeded data (real calculator)', () => {
     const list = s.schedule.lists[listId]
     if (list === undefined) throw new Error('no design-day PM list')
 
-    const cards = cardsForList(s, listId).map((c) => ({
-      card: c,
-      procedures: proceduresForCard(s, c.id).map((p, i) => {
+    const bookings = bookingsForList(s, listId).map((c) => ({
+      booking: c,
+      procedures: proceduresForBooking(s, c.id).map((p, i) => {
         const view = procedureFee({ procedure: p, list, ordinal: i + 1, masters: s.masters, billingLines: s.schedule.billingLines })
         return { procedure: p, fee: view.fee, baseCode: view.baseCode }
       }),
     }))
-    const flags = reviewFlagsForList(cards)
+    const flags = reviewFlagsForList(bookings)
     expect(flags.some((f) => /^T (adjusted|set)/.test(f.text))).toBe(true)
   })
 })

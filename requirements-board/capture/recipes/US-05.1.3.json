@@ -29,7 +29,7 @@
       "name": "code-picker",
       "app": "web",
       "caption": "Procedure code picker grouped by anatomical site",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -50,7 +50,7 @@
       "name": "code-picker",
       "app": "mobile",
       "caption": "Procedure code picker grouped by anatomical site",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [

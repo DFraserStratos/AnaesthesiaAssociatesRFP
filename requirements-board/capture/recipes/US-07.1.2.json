@@ -6,7 +6,7 @@
     {
       "name": "blocked-submit",
       "app": "web",
-      "caption": "A List with an incomplete Card cannot be submitted",
+      "caption": "A List with an incomplete Booking cannot be submitted",
       "start": "/web/lists/L-34821-2026-07-21-PM",
       "states": [
         {
@@ -37,7 +37,7 @@
     {
       "name": "blocked-submit",
       "app": "mobile",
-      "caption": "A List with an incomplete Card cannot be submitted",
+      "caption": "A List with an incomplete Booking cannot be submitted",
       "start": "/mobile/lists/L-34821-2026-07-21-PM",
       "states": [
         {

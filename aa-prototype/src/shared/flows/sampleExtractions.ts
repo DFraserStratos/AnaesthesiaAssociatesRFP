@@ -7,7 +7,7 @@
  */
 
 import { PAPER_CARD_A, PAPER_CARD_B } from '../../assets/samplePaperCards'
-import type { ExtractionFields } from './ManualCardForm'
+import type { ExtractionFields } from './ManualBookingForm'
 
 export interface SampleExtraction {
   id: string

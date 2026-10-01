@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editProcedure } from './lifecycle'
-import { cardsForList, proceduresForCard } from './selectors'
+import { bookingsForList, proceduresForBooking } from './selectors'
 import {
   addAnaesthetist,
   addHospitalHoliday,
@@ -55,9 +55,9 @@ describe('editAnaesthetist', () => {
 
   it('re-prices a Type 1 fee that reads the anaesthetist unit value', () => {
     const api = createAppStore()
-    const card = cardsForList(api.getState(), MORRISON_LIST)[0]
-    if (card === undefined) throw new Error('no card')
-    const proc = proceduresForCard(api.getState(), card.id)[0]
+    const booking = bookingsForList(api.getState(), MORRISON_LIST)[0]
+    if (booking === undefined) throw new Error('no booking')
+    const proc = proceduresForBooking(api.getState(), booking.id)[0]
     if (proc === undefined) throw new Error('no procedure')
     // Force plain Type 1 (units x own unit value): no contract, no override.
     expect(editProcedure(api, OFFICE, proc.id, { governingContractId: undefined, priceOverride: undefined }).ok).toBe(true)

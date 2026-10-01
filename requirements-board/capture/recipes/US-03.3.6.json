@@ -1,13 +1,13 @@
 {
   "id": "US-03.3.6",
   "status": "partial",
-  "absentReason": "Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are handled as a post-op event on a locked card, not shot here.",
+  "absentReason": "Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are handled as a post-op event on a locked booking, not shot here.",
   "shots": [
     {
       "name": "billing-line",
       "app": "web",
       "caption": "Add a billing line",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "card",
@@ -38,7 +38,7 @@
       "name": "billing-line",
       "app": "mobile",
       "caption": "Add a billing line",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "card",

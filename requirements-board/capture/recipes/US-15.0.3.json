@@ -7,7 +7,7 @@
       "name": "entered-by-anaesthetist",
       "app": "web",
       "caption": "Anaesthetist stamps the finish time on a Booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -28,10 +28,10 @@
       "name": "seen-by-office",
       "app": "admin",
       "caption": "The same finish time, current in the office's view of the Booking",
-      "start": "/admin/day/2026-07-21/cards/C0009",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
       "setup": [
         {
-          "goto": "/web/lists/L-34821-2026-07-21-PM/cards/C0009"
+          "goto": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009"
         },
         {
           "click": "text=\"Finish now\""

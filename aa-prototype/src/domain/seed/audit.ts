@@ -1,14 +1,14 @@
 /**
  * Rich, deterministic audit history for the pristine demo seed.
  *
- * Seed state still represents the current truth, but every Card now carries a
+ * Seed state still represents the current truth, but every Booking now carries a
  * useful journey that can be opened without first staging live edits:
  * booking, scheduling context, Procedure setup, capture where present, fee
  * lines where present, and the final completion or cancellation fact.
  *
- * Existing lifecycle entries from `cards.ts` remain authoritative. This
+ * Existing lifecycle entries from `bookings.ts` remain authoritative. This
  * builder fills the earlier story around them, adds missing completion facts
- * for generic and historical Cards, orders the combined log chronologically,
+ * for generic and historical Bookings, orders the combined log chronologically,
  * and allocates one sequential audit-id space for runtime writes to continue.
  */
 
@@ -17,7 +17,7 @@ import type {
   Anaesthetist,
   AuditEntry,
   BillingLine,
-  Card,
+  Booking,
   List,
   Procedure,
 } from '../types'
@@ -27,7 +27,7 @@ interface SeedAuditInput {
   existing: readonly AuditEntry[]
   anaesthetists: Record<string, Anaesthetist>
   lists: Record<string, List>
-  cards: Record<string, Card>
+  bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   billingLines: Record<string, BillingLine>
 }
@@ -45,9 +45,9 @@ function shiftISO(atISO: string, minutes: number): string {
   return format(addMinutes(parseISO(atISO), minutes), "yyyy-MM-dd'T'HH:mm:ss")
 }
 
-function bookingISO(listDateISO: string, cardIndex: number): string {
-  const leadDays = 6 + (cardIndex % 9)
-  const minuteOfDay = 8 * 60 + 20 + ((cardIndex * 23) % (7 * 60))
+function bookingISO(listDateISO: string, bookingIndex: number): string {
+  const leadDays = 6 + (bookingIndex % 9)
+  const minuteOfDay = 8 * 60 + 20 + ((bookingIndex * 23) % (7 * 60))
   const candidateDateISO = format(addDays(parseISO(listDateISO), -leadDays), 'yyyy-MM-dd')
   const hour = Math.floor(minuteOfDay / 60)
   const minute = minuteOfDay % 60
@@ -58,7 +58,7 @@ function bookingISO(listDateISO: string, cardIndex: number): string {
   // move it into the preceding five days instead of inventing future history.
   const dateISO =
     candidateISO >= `${DEMO_TODAY}T08:00:00`
-      ? format(addDays(parseISO(DEMO_TODAY), -(1 + (cardIndex % 5))), 'yyyy-MM-dd')
+      ? format(addDays(parseISO(DEMO_TODAY), -(1 + (bookingIndex % 5))), 'yyyy-MM-dd')
       : candidateDateISO
   return `${dateISO}T${time}`
 }
@@ -115,14 +115,14 @@ function procedureCapture(procedure: Procedure): Record<string, unknown> {
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
 
-function cardContext(card: Card): Record<string, unknown> {
+function bookingContext(booking: Booking): Record<string, unknown> {
   const after: Record<string, unknown> = {
-    scheduledTime: card.scheduledTime,
-    copiedFromCardId: card.copiedFromCardId,
-    cardType: card.cardType,
-    addendumOfCardId: card.addendumOfCardId,
-    notes: card.notes,
-    attachments: card.attachments.length > 0 ? card.attachments : undefined,
+    scheduledTime: booking.scheduledTime,
+    copiedFromBookingId: booking.copiedFromBookingId,
+    bookingType: booking.bookingType,
+    addendumOfBookingId: booking.addendumOfBookingId,
+    notes: booking.notes,
+    attachments: booking.attachments.length > 0 ? booking.attachments : undefined,
   }
   return Object.fromEntries(Object.entries(after).filter(([, value]) => value !== undefined))
 }
@@ -154,13 +154,13 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
   const existingActions = new Set(
     input.existing.map((entry) => `${entry.entityType}|${entry.entityId}|${entry.action}`),
   )
-  const proceduresByCard = new Map<string, Procedure[]>()
+  const proceduresByBooking = new Map<string, Procedure[]>()
   for (const procedure of Object.values(input.procedures)) {
-    const rows = proceduresByCard.get(procedure.cardId) ?? []
+    const rows = proceduresByBooking.get(procedure.bookingId) ?? []
     rows.push(procedure)
-    proceduresByCard.set(procedure.cardId, rows)
+    proceduresByBooking.set(procedure.bookingId, rows)
   }
-  for (const rows of proceduresByCard.values()) rows.sort((a, b) => a.id.localeCompare(b.id))
+  for (const rows of proceduresByBooking.values()) rows.sort((a, b) => a.id.localeCompare(b.id))
 
   const linesByProcedure = new Map<string, BillingLine[]>()
   for (const line of Object.values(input.billingLines)) {
@@ -170,49 +170,49 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
   }
   for (const rows of linesByProcedure.values()) rows.sort((a, b) => a.id.localeCompare(b.id))
 
-  const cards = Object.values(input.cards).sort((a, b) => a.id.localeCompare(b.id))
-  cards.forEach((card, cardIndex) => {
-    const list = input.lists[card.listId]
-    if (list === undefined) throw new Error(`seed audit Card ${card.id} references missing List ${card.listId}`)
+  const bookings = Object.values(input.bookings).sort((a, b) => a.id.localeCompare(b.id))
+  bookings.forEach((booking, bookingIndex) => {
+    const list = input.lists[booking.listId]
+    if (list === undefined) throw new Error(`seed audit Booking ${booking.id} references missing List ${booking.listId}`)
 
-    const bookedAtISO = bookingISO(list.dateISO, cardIndex)
+    const bookedAtISO = bookingISO(list.dateISO, bookingIndex)
     const anaesthetist = anaesthetistName(input, list)
-    const integrationOrigin = card.correlationRef !== undefined
+    const integrationOrigin = booking.correlationRef !== undefined
     const bookingWho = integrationOrigin ? 'Hospital booking feed' : OFFICE_NAME
     const bookingRole = integrationOrigin ? 'system' : 'office'
     const bookingSource = integrationOrigin ? 'integration' : 'office'
 
     const createdAfter: Record<string, unknown> = {
-      patientId: card.patientId,
-      listId: card.listId,
+      patientId: booking.patientId,
+      listId: booking.listId,
     }
-    if (card.correlationRef !== undefined) createdAfter.correlationRef = card.correlationRef
+    if (booking.correlationRef !== undefined) createdAfter.correlationRef = booking.correlationRef
     push({
-      entityType: 'card',
-      entityId: card.id,
+      entityType: 'booking',
+      entityId: booking.id,
       who: bookingWho,
       role: bookingRole,
       source: bookingSource,
-      action: 'card.create',
+      action: 'booking.create',
       after: createdAfter,
       atISO: bookedAtISO,
     })
 
-    const context = cardContext(card)
+    const context = bookingContext(booking)
     if (Object.keys(context).length > 0) {
       push({
-        entityType: 'card',
-        entityId: card.id,
+        entityType: 'booking',
+        entityId: booking.id,
         who: bookingWho,
         role: bookingRole,
         source: bookingSource,
-        action: 'card.update',
+        action: 'booking.update',
         after: context,
         atISO: shiftISO(bookedAtISO, 2),
       })
     }
 
-    const procedures = proceduresByCard.get(card.id) ?? []
+    const procedures = proceduresByBooking.get(booking.id) ?? []
     procedures.forEach((procedure, procedureIndex) => {
       const procedureBaseISO = shiftISO(bookedAtISO, 4 + procedureIndex * 4)
       push({
@@ -222,7 +222,7 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
         role: bookingRole,
         source: bookingSource,
         action: 'procedure.create',
-        after: { cardId: card.id, description: procedure.description },
+        after: { bookingId: booking.id, description: procedure.description },
         atISO: procedureBaseISO,
       })
 
@@ -257,9 +257,9 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
       const capture = procedureCapture(procedure)
       if (Object.keys(capture).length > 0) {
         const capturedAtISO =
-          card.completedAtISO !== undefined
-            ? shiftISO(card.completedAtISO, -2 - procedureIndex)
-            : card.lastModifiedAtISO
+          booking.completedAtISO !== undefined
+            ? shiftISO(booking.completedAtISO, -2 - procedureIndex)
+            : booking.lastModifiedAtISO
         push({
           entityType: 'procedure',
           entityId: procedure.id,
@@ -273,31 +273,31 @@ export function buildSeedAudit(input: SeedAuditInput): AuditEntry[] {
       }
     })
 
-    const completedKey = `card|${card.id}|card.complete`
-    if (card.completed && !existingActions.has(completedKey)) {
+    const completedKey = `booking|${booking.id}|booking.complete`
+    if (booking.completed && !existingActions.has(completedKey)) {
       push({
-        entityType: 'card',
-        entityId: card.id,
+        entityType: 'booking',
+        entityId: booking.id,
         who: anaesthetist,
         role: 'anaesthetist',
         source: 'anaesthetist',
-        action: 'card.complete',
+        action: 'booking.complete',
         after: { completed: true },
-        atISO: card.completedAtISO ?? card.lastModifiedAtISO,
+        atISO: booking.completedAtISO ?? booking.lastModifiedAtISO,
       })
     }
 
-    const cancelledKey = `card|${card.id}|card.cancel`
-    if (card.cancellation !== undefined && !existingActions.has(cancelledKey)) {
+    const cancelledKey = `booking|${booking.id}|booking.cancel`
+    if (booking.cancellation !== undefined && !existingActions.has(cancelledKey)) {
       push({
-        entityType: 'card',
-        entityId: card.id,
-        who: card.cancellation.by,
-        role: card.cancellation.role,
-        source: card.cancellation.source,
-        action: 'card.cancel',
-        after: { cancelled: true, reason: card.cancellation.reason },
-        atISO: card.cancellation.atISO,
+        entityType: 'booking',
+        entityId: booking.id,
+        who: booking.cancellation.by,
+        role: booking.cancellation.role,
+        source: booking.cancellation.source,
+        action: 'booking.cancel',
+        after: { cancelled: true, reason: booking.cancellation.reason },
+        atISO: booking.cancellation.atISO,
       })
     }
   })

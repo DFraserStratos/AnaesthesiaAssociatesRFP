@@ -83,7 +83,7 @@ export function MobileViewport({ children }: { children: ReactNode }) {
 
   /**
    * Publish the software keyboard's height as `--aa-keyboard-inset`, consumed
-   * by `BottomSheet` and the card dock so neither ends up behind the keys.
+   * by `BottomSheet` and the booking dock so neither ends up behind the keys.
    *
    * On iOS the keyboard shrinks only the VISUAL viewport; the layout viewport
    * is unchanged. WebKit then tries to scroll the layout viewport to reveal the
@@ -163,7 +163,7 @@ export function MobileViewport({ children }: { children: ReactNode }) {
           Gradient Lab. Rendering it here rather than at the router root is what
           lets the pill inherit `--aa-inset-bottom` and sit correctly above the
           tab bar on every device. Its other input, `--aa-dock-height`, does not
-          depend on this seat: `MobileCardLayout` publishes it on
+          depend on this seat: `MobileBookingLayout` publishes it on
           `documentElement`, so it inherits wherever the pill is mounted. */}
       <UpdatePrompt />
       {/* The handset's demo actions (catch-up Phase 14), in the same host

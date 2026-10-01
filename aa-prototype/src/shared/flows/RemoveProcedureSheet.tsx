@@ -7,7 +7,7 @@ import { useSurface } from '../surface'
 interface RemoveProcedureSheetProps {
   open: boolean
   procedureId: string
-  /** 1-based position on the Card, for the heading. */
+  /** 1-based position on the Booking, for the heading. */
   ordinal: number
   actor: Actor
   onClose: () => void
@@ -15,8 +15,8 @@ interface RemoveProcedureSheetProps {
 }
 
 /**
- * Confirms removing a procedure from a Card. Deliberately lighter than
- * `CancelCardSheet`: no reason field. A cancelled Card stays visible in the
+ * Confirms removing a procedure from a Booking. Deliberately lighter than
+ * `CancelBookingSheet`: no reason field. A cancelled Booking stays visible in the
  * List and the reason is what explains it to the office, whereas a removed
  * procedure is a data-entry correction that leaves nothing on screen to
  * explain — the audit entry carries who and when, and the removed row is
@@ -57,7 +57,7 @@ export function RemoveProcedureSheet({ open, procedureId, ordinal, actor, onClos
         <div style={{ fontSize: 18, fontWeight: 700 }}>Remove procedure {ordinal}?</div>
         <div style={{ fontSize: 13, color: neutral.slate }}>
           <strong style={{ color: neutral.ink }}>{name}</strong> and everything captured on it (times, units,
-          modifiers and notes) are removed from this card. This is audited and cannot be undone from here.
+          modifiers and notes) are removed from this booking. This is audited and cannot be undone from here.
         </div>
         {lineCount > 0 && (
           <div style={{ fontSize: 13, color: neutral.slate }}>

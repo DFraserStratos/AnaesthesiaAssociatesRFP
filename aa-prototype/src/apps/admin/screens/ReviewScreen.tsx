@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import type { BillingRoute, Card, Procedure } from '../../../domain/types'
+import type { BillingRoute, Booking, Procedure } from '../../../domain/types'
 import { authoriseList, logListNote, prepaymentStatusFor, useAppStore, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useSurface } from '../../../shared'
-import { cardFee, procedureFee } from '../../../shared/capture'
+import { bookingFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, routeLabel, sessionTimeRange } from '../../../shared/format'
-import { HistorySheet } from '../../../shared/card'
+import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
-import { reviewFlagsForCard, type ReviewFlag } from '../reviewFlags'
+import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
 
 interface ReviewScreenProps {
   listId: string
@@ -31,15 +31,15 @@ const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Code', 'Times', 'B · T · M', 
  * (convention 17, visual only): breadcrumb, header (title · context · status
  * pill · submitted pill), a 4-tile summary strip, the review table and totals
  * row, and the authorise action bar + choreography. Every figure comes from the
- * REAL Phase 01 calculator (procedureFee / cardFee looped over the non-cancelled
- * cards) — NOT the mockup's simplified numbers (Decisions log). The ROUTE column
+ * REAL Phase 01 calculator (procedureFee / bookingFee looped over the non-cancelled
+ * bookings) — NOT the mockup's simplified numbers (Decisions log). The ROUTE column
  * shows the RFP billing route, not the anaesthetic technique. FLAGS come from
  * the RFP-grounded `reviewFlags` helper (no invented duration-outlier flag).
  */
 export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: ReviewScreenProps) {
   const { Overlay } = useSurface()
   const listsRecord = useAppStore((s) => s.schedule.lists)
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const schedule = useAppStore((s) => s.schedule)
@@ -51,7 +51,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
-  /** The open per-card History: its merged entity ids plus their scope labels. */
+  /** The open per-booking History: its merged entity ids plus their scope labels. */
   const [history, setHistory] = useState<{ ids: readonly string[]; labels?: Record<string, string> } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,19 +59,19 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
 
   const rows = useMemo(() => {
     if (list === undefined) return []
-    const cards = Object.values(cardsRecord)
+    const bookings = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId && c.cancellation === undefined)
       .sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id))
-    return cards.map((card: Card) => {
+    return bookings.map((booking: Booking) => {
       const procs = Object.values(proceduresRecord)
-        .filter((p) => p.cardId === card.id)
+        .filter((p) => p.bookingId === booking.id)
         .sort((a, b) => a.id.localeCompare(b.id))
       const views = procs.map((p, i) => procedureFee({ procedure: p, list, ordinal: i + 1, masters, billingLines: billingLinesRecord }))
-      const totals = cardFee(procs, list, masters, billingLinesRecord)
-      const flags = reviewFlagsForCard({
-        card,
+      const totals = bookingFee(procs, list, masters, billingLinesRecord)
+      const flags = reviewFlagsForBooking({
+        booking,
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, baseCode: views[i]!.baseCode })),
-        prepaymentStatus: prepaymentStatusFor({ schedule, billing }, card.id),
+        prepaymentStatus: prepaymentStatusFor({ schedule, billing }, booking.id),
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
@@ -79,9 +79,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const routeText = routes.size === 0 ? 'Not set' : routes.size > 1 ? 'Mixed' : routeLabel([...routes][0])
       const procIds = new Set(procs.map((p) => p.id))
       const lineIds = Object.values(billingLinesRecord).filter((l) => procIds.has(l.procedureId)).map((l) => l.id)
-      const entityIds = [card.id, ...procs.map((p) => p.id), ...lineIds]
+      const entityIds = [booking.id, ...procs.map((p) => p.id), ...lineIds]
       // Which procedure a history row belongs to — only where the merged trail
-      // is ambiguous, i.e. a Card carrying more than one procedure.
+      // is ambiguous, i.e. a Booking carrying more than one procedure.
       let entityLabels: Record<string, string> | undefined
       if (procs.length > 1) {
         const labels: Record<string, string> = {}
@@ -94,9 +94,9 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         })
         entityLabels = labels
       }
-      return { card, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds, entityLabels }
+      return { booking, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds, entityLabels }
     })
-  }, [list, listId, cardsRecord, proceduresRecord, billingLinesRecord, masters, schedule, billing])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, schedule, billing])
 
   if (list === undefined) return null
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
@@ -112,11 +112,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const authAt = audit.filter((a) => a.entityId === listId && a.action === 'list.authorise').at(-1)?.atISO
   const dayLabel = dayMicroCap(list.dateISO)
 
-  // Invoices the billing run raised for this list (via its cards) — the run is
+  // Invoices the billing run raised for this list (via its bookings) — the run is
   // synchronous with authorise, so these exist by the time the banner renders.
-  const listCardIds = new Set(Object.values(cardsRecord).filter((c) => c.listId === listId).map((c) => c.id))
+  const listBookingIds = new Set(Object.values(bookingsRecord).filter((c) => c.listId === listId).map((c) => c.id))
   // Only standard (run) invoices — a pre-payment pre-invoice is not run output (Phase 09).
-  const raisedCount = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listCardIds.has(i.cardId)).length
+  const raisedCount = Object.values(invoicesRecord).filter((i) => i.kind === 'standard' && listBookingIds.has(i.bookingId)).length
 
   // Keep the open list in its former queue position after authorisation so the
   // permanent previous/next controls remain stable while its state changes.
@@ -226,7 +226,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
 
       {/* Summary strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        <Tile label="Cards" value={String(rows.length)} />
+        <Tile label="Bookings" value={String(rows.length)} />
         <Tile label="Total units" value={String(listTotals.units)} />
         <Tile label="Total fee" value={formatCurrency(listTotals.fee)} />
         <Tile label="Flags" value={String(allFlags.length)} tone={allFlags.length > 0 ? 'warn' : undefined} sub="to check before authorising" />
@@ -247,12 +247,12 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ card, primary, primaryView, totals, flags, routeText, procCount, entityIds, entityLabels }) => {
-              const patient = masters.patients[card.patientId]
+            {rows.map(({ booking, primary, primaryView, totals, flags, routeText, procCount, entityIds, entityLabels }) => {
+              const patient = masters.patients[booking.patientId]
               const btm = primaryView?.fee.btm
               return (
-                <tr key={card.id}>
-                  <td className="mono" style={nowrapCell}>{card.scheduledTime ?? '·'}</td>
+                <tr key={booking.id}>
+                  <td className="mono" style={nowrapCell}>{booking.scheduledTime ?? '·'}</td>
                   <td style={cellStyle}>
                     <div style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
@@ -304,7 +304,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       {/* Action bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, boxShadow: elevation.e1, padding: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>{rows.length} card{rows.length === 1 ? '' : 's'} · {listTotals.units} units · {formatCurrency(listTotals.fee)}</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{rows.length} booking{rows.length === 1 ? '' : 's'} · {listTotals.units} units · {formatCurrency(listTotals.fee)}</div>
           {!authorised && allFlags.length > 0 && (
             <div style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{allFlags.length} flag{allFlags.length === 1 ? '' : 's'} open. Check or note them before authorising.</div>
           )}
@@ -327,7 +327,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Authorise this list for billing?</div>
           <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-            Authorising locks every Card on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
+            Authorising locks every Booking on this List immutable (no further edits by anyone) and hands the List to the Billing Engine as a single unit. Invoices are raised immediately, grouped by counterparty. There is no return to the anaesthetist from here.
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="secondary" block onClick={() => setConfirmOpen(false)}>Cancel</Button>
@@ -351,7 +351,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
           open
           entityIds={history.ids}
           {...(history.labels !== undefined ? { entityLabels: history.labels } : {})}
-          title="Card history"
+          title="Booking history"
           onClose={() => setHistory(null)}
         />
       )}

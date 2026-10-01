@@ -7,7 +7,7 @@
       "name": "guardian-payer",
       "app": "admin",
       "caption": "Guardian set as the billable party for a child",
-      "start": "/admin/day/2026-07-24/cards/C0033",
+      "start": "/admin/day/2026-07-24/bookings/BK0033",
       "states": [
         {
           "state": "set",

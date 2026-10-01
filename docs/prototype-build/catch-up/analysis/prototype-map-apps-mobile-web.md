@@ -1,5 +1,7 @@
 # Prototype map: Anaesthetist Mobile App and Anaesthetist Web App
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 All paths relative to `aa-prototype/src/`. Line numbers verified against the code on 2026-09-30. The code is the truth; comments in it cite old phases and are not proof.
 
 **Orientation.** Both apps are React front ends run as one persona, Dr Melanie Souter (`shell/appConfig.ts:27`, registration no. `34821`, initials MS). Both read the in-memory store (`useAppStore`, `store/`) and write only through store actions with an `Actor` `{who, role:'anaesthetist', source:'anaesthetist', anaesthetistId}` built in `MobileApp.tsx:111` / `WebApp.tsx:44`. There is no login, no other anaesthetist persona and no real notification. Every read is filtered to `anaesthetistId` except the availability screens, which show all anaesthetists' session STATUS only. Mobile = 4 tabs (Lists slide-stack of 3 layers, Availability, Balances, More). Web = 4 nav tabs (Dashboard, Lists with list and card drill-down, Availability, Accounts with 3 sub-tabs). Card capture (procedure codes, BTM, times, units, billing lines, validation, complete/amend/cancel/copy) is NOT in these folders: both apps embed the same `shared/card/CardDetailBody.tsx`, so card behaviour is identical on both. Route table is in `router.tsx:70-120`.

@@ -1,5 +1,7 @@
 # Prototype map: domain layer (aa-prototype/src/domain, excluding seed/)
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 Orientation. `aa-prototype/src/domain/` is the pure-TypeScript model and rules layer: entity types (`types.ts`), demo clock, seeded RNG, NHI + ethnicity helpers, the billing maths (fee calc, contract selection, card validation, invoice building) and the HL7/FHIR translation + canned-message libraries. No React/store/theme imports (enforced by `domainPurity.test.ts`). There are NO routes/screens here; the domain is consumed by `src/store/*` (actions, billingRun, integrationActions) and the three apps. All paths below are relative to `aa-prototype/src/domain/` unless stated. Wired-but-not-here behaviour (store actions, UI) must be checked in the store/app maps. Tests (`*.test.ts`) sit beside each module and are the best executable spec of the rules.
 
 Contents

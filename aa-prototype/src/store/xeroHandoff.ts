@@ -29,7 +29,7 @@ import type { CounterpartyRef, XeroContact } from '../domain/types'
 import { aaServiceFeeFor } from '../domain/billing/agencyFee'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { casesForCard, counterpartyName } from './selectors'
+import { casesForBooking, counterpartyName } from './selectors'
 
 const HANDOFF_ACTOR: Actor = { who: 'Xero handoff', role: 'system', source: 'system' }
 
@@ -163,8 +163,8 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
   const invoice = state.billing.invoices[theCase.invoiceId]
   if (invoice === undefined) return refuse('noInvoice', 'The case invoice was not found.')
-  const card = state.schedule.cards[theCase.cardId]
-  const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
+  const booking = state.schedule.bookings[theCase.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   const anaesthetist = list !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
   if (anaesthetist === undefined) {
     return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this case.')
@@ -283,13 +283,13 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
 }
 
 /**
- * Hand off every eligible (invoiced, not-yet-paired, not-failed) case for a Card
+ * Hand off every eligible (invoiced, not-yet-paired, not-failed) case for a Booking
  * — the pre-payment pre-invoice seam (D-pre-invoice-pair: the pre-invoice gets
  * the full ACCREC+ACCPAY pair, so a fully-prepaid procedure still has a
  * disbursement path). Idempotent.
  */
-export function handoffCasesForCard(api: AppStoreApi, cardId: string): void {
-  for (const c of casesForCard(api.getState(), cardId)) {
+export function handoffCasesForBooking(api: AppStoreApi, bookingId: string): void {
+  for (const c of casesForBooking(api.getState(), bookingId)) {
     if (c.invoiceId !== undefined && c.accRecId === undefined && c.status !== 'failed') {
       handoffCase(api, c.id)
     }

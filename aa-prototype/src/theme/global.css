@@ -185,7 +185,7 @@ body,
 
 /*
  * Kills Chrome-Android pull-to-refresh, which would RELOAD the SPA and lose
- * transient sheet state (the add-card flow's `addOpen`, a screen's open sheet;
+ * transient sheet state (the add-booking flow's `addOpen`, a screen's open sheet;
  * slide-stack depth survives, it is in the URL). Has to sit on the root
  * scroller, not on a host element, or the gesture is already claimed. Verified
  * harmless for `/web` and `/admin`, where it also stops the desktop backdrop
@@ -356,7 +356,7 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
      that reaches its end stops there instead of chaining the remaining delta
      out to an ancestor. Deliberately NOT `-webkit-overflow-scrolling: touch`,
      which is a no-op on iOS 13+ and on older WebKit breaks the `position:
-     sticky` the mobile card layout depends on. */
+     sticky` the mobile booking layout depends on. */
   overscroll-behavior: contain;
 }
 

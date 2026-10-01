@@ -7,7 +7,7 @@
       "name": "ranged-base-code",
       "app": "web",
       "caption": "Choosing the exact base units within a ranged code",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "choose",
@@ -83,7 +83,7 @@
       "name": "ranged-base-code",
       "app": "mobile",
       "caption": "Choosing the exact base units within a ranged code",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "choose",

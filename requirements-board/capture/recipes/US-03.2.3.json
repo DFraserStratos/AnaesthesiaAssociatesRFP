@@ -1,13 +1,13 @@
 {
   "id": "US-03.2.3",
   "status": "partial",
-  "absentReason": "Anaesthetists add procedures on web and mobile; each carries its own billing route, but the Contract is not chosen separately per added procedure. Admin adding procedures is covered by the admin card screen, not shot here.",
+  "absentReason": "Anaesthetists add procedures on web and mobile; each carries its own billing route, but the Contract is not chosen separately per added procedure. Admin adding procedures is covered by the admin booking screen, not shot here.",
   "shots": [
     {
       "name": "add-procedure",
       "app": "web",
       "caption": "Add another procedure to a booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -25,13 +25,14 @@
           "state": "copy",
           "steps": [
             {
-              "scroll": "role=button[name=\"Copy for an additional procedure\"]"
+              "scroll": "role=button[name=\"Copy booking\"]"
             }
           ],
           "highlight": [
-            "role=button[name=\"Copy for an additional procedure\"]"
+            "role=button[name=\"Add another procedure\"]",
+            "role=button[name=\"Copy booking\"]"
           ],
-          "caption": "Or copy the Booking for an additional procedure"
+          "caption": "Add another procedure adds to this Booking; Copy booking starts a new one"
         },
         {
           "state": "added",
@@ -56,7 +57,7 @@
       "name": "add-procedure",
       "app": "mobile",
       "caption": "Add another procedure to a booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -66,10 +67,9 @@
             }
           ],
           "highlight": [
-            "role=button[name=\"Add another procedure\"]",
-            "role=button[name=\"Copy for an additional procedure\"]"
+            "role=button[name=\"Add another procedure\"]"
           ],
-          "caption": "Add another procedure, or copy the Booking for an additional procedure"
+          "caption": "Add another procedure to the Booking"
         },
         {
           "state": "added",

@@ -28,7 +28,7 @@ interface InvoiceDocumentProps {
  */
 export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const billing = useAppStore((s) => s.billing)
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
@@ -49,10 +49,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   }, [lines, proceduresRecord])
 
   if (invoice === undefined) return null
-  const card = cardsRecord[invoice.cardId]
-  const list = card !== undefined ? listsRecord[card.listId] : undefined
+  const booking = bookingsRecord[invoice.bookingId]
+  const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const anaesthetist = list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
-  const patient = card !== undefined ? masters.patients[card.patientId] : undefined
+  const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
   const addressee = counterpartyName({ masters }, invoice.counterparty)
 
   const isPatientLayout = invoice.layout === 'patient'

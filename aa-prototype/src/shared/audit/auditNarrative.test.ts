@@ -1,5 +1,5 @@
 /**
- * The audit reading layer (A7 presentation). Pins the four things the Card
+ * The audit reading layer (A7 presentation). Pins the four things the Booking
  * history sheet and the admin Audit viewer are now trusted to get right:
  *
  *   - a patch key holding `undefined` reads as "not set", never as `{}`
@@ -98,12 +98,12 @@ describe('auditFieldChanges', () => {
 
   it('shows one side only when the entry records one side only', () => {
     const created = auditFieldChanges(
-      entry({ id: 'A0106', action: 'card.create', entityType: 'card', entityId: 'C0088', after: { patientId: 'PT0004' } }),
+      entry({ id: 'A0106', action: 'booking.create', entityType: 'booking', entityId: 'BK0088', after: { patientId: 'PT0004' } }),
     )
     expect(created).toEqual([{ key: 'patientId', label: 'Patient id', after: 'PT0004' }])
 
     const removed = auditFieldChanges(
-      entry({ id: 'A0107', action: 'procedure.remove', before: { cardId: 'C0088', description: 'Hip' } }),
+      entry({ id: 'A0107', action: 'procedure.remove', before: { bookingId: 'BK0088', description: 'Hip' } }),
     )
     expect(removed.every((c) => c.after === undefined)).toBe(true)
   })
@@ -259,5 +259,14 @@ describe('field labels', () => {
   it('sentence-cases an unmapped key and drops the ISO suffix', () => {
     expect(fieldLabel('somethingNewAtISO')).toBe('Something new at')
     expect(fieldLabel('baseUnitsCaptured')).toBe('Base units')
+  })
+})
+
+describe('Booking source values (catch-up Phase 15)', () => {
+  it('render as their labels, and an unrelated source passes through', () => {
+    expect(formatAuditValue('source', 'copy')).toBe('Copy of another Booking')
+    expect(formatAuditValue('source', 'surgeonPdf')).toBe('Surgeon PDF')
+    expect(formatAuditValue('source', 'webhook')).toBe('webhook')
+    expect(formatAuditValue('source', 'constructor')).toBe('constructor')
   })
 })

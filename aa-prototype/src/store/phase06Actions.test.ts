@@ -16,7 +16,7 @@ import {
   auditForEntity,
   dayNotesFor,
   listsForDate,
-  proceduresForCard,
+  proceduresForBooking,
   submittedListCount,
   submittedLists,
 } from './selectors'
@@ -51,11 +51,11 @@ function marker(key: string): string {
 }
 const SOUTER_AM = marker('designDayAmList')
 const MORRISON_LIST = marker('submittedListMorrison')
-const TWO_FUNDER_CARD = marker('twoFunderCard')
+const TWO_FUNDER_BOOKING = marker('twoFunderBooking')
 
 function twoFunderLines(api: BoundAppStore): { proc: string; withOverride: BillingLine; other: BillingLine } {
-  const proc = proceduresForCard(api.getState(), TWO_FUNDER_CARD)[0]
-  if (proc === undefined) throw new Error('two-funder card has no procedure')
+  const proc = proceduresForBooking(api.getState(), TWO_FUNDER_BOOKING)[0]
+  if (proc === undefined) throw new Error('two-funder booking has no procedure')
   const lines = Object.values(api.getState().schedule.billingLines).filter((l) => l.procedureId === proc.id)
   const withOverride = lines.find((l) => l.funderOverride !== undefined)
   const other = lines.find((l) => l.funderOverride === undefined)

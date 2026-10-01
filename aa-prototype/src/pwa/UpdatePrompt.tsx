@@ -84,7 +84,7 @@ export function UpdatePrompt() {
         right: 0,
         // Clears whichever bottom chrome is on screen. At Lists depth 0 that is
         // the tab bar, and 78 covers it; at depth 1 and 2 the tab bar is gone
-        // and a much taller commit dock takes its place, so `MobileCardLayout`
+        // and a much taller commit dock takes its place, so `MobileBookingLayout`
         // publishes its MEASURED height as `--aa-dock-height` on
         // `documentElement` (it has to inherit down to here) and `max()` takes
         // whichever is bigger. That measured height already carries the dock's

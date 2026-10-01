@@ -83,11 +83,13 @@ product UI; never add a trigger to the Control Panel page.
 
 ## Folder map (`src/`)
 
-- **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/`, billing maths (`billing/`),
+- **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
+  `seed/bookings.ts`), billing maths (`billing/`, including `validateBookingForBilling.ts`),
   the advanceable `clock.ts`, NHI/NZHIS validators, and the integration message/PDF fixtures
   (`integrations/`). Fully unit-tested.
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
-  patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
+  Booking creation and Copy (`bookingActions.ts`), Booking and List attachments
+  (`attachmentActions.ts`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
   three top-level files: `<App>.tsx` is the app's **layout** route (nav, persona actor, shared
@@ -97,8 +99,9 @@ product UI; never add a trigger to the Control Panel page.
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
 - **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
   billing-monitor simulator, the integration simulator, and the seed-data inspector.
-- **`shared/`** — cross-app components (the capture suite, `card/CardDetailBody`, schedule rows,
-  flows, status chips, `format.ts` for NZ number/currency/date output).
+- **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the attachment
+  strip and simulated picker in `attachments/`, schedule rows, flows, status chips, the legacy
+  `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output).
 - **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
@@ -126,7 +129,7 @@ entry (`pwa/main.tsx`), and the `vite-plugin-pwa` plugin. `root: 'pwa'` brings f
 where it sits in that file.
 
 Of the 163 modules `pwa/main.tsx` pulls in, **139 are shared** with the prototype — the whole store,
-the whole domain, the BTM capture suite, `CardDetailBody`, the sheets, the theme — **14 are the
+the whole domain, the BTM capture suite, `BookingDetailBody`, the sheets, the theme — **14 are the
 mobile app itself** (`src/apps/mobile/`), and **10 exist only for this target** (`pwa/main.tsx` plus
 the nine files in `src/pwa/`). One omission carries the entire difference: the PWA entry never
 renders `AppShell`, and with it go the app switcher, the two web apps, the admin app, the four demo
@@ -171,7 +174,7 @@ build depends on it.
 ### Why the URLs stay `/mobile/*`
 
 They are not cosmetic leftovers. `MOBILE_TAB_PATH`, `listsStackLocation`'s
-`matchPath('/mobile/lists/:listId/cards/:cardId', …)` and every `navigate('/mobile/…')` call hard-code
+`matchPath('/mobile/lists/:listId/bookings/:bookingId', …)` and every `navigate('/mobile/…')` call hard-code
 the prefix — and `BrowserRouter basename="/mobile"` does **not** fix that: under a basename,
 `navigate('/mobile/lists')` resolves to `/mobile/mobile/lists`. Rebasing would mean parameterising a
 shared pure module for cosmetic gain on URLs nobody sees in an installed app. So the manifest ships
@@ -267,7 +270,7 @@ is the thing it replaced.
 **What any static host needs**, in order of how badly it fails without it:
 
 1. **An SPA fallback to `index.html`.** `src/router.tsx` is a `BrowserRouter`, so `/mobile/lists` and
-   `/admin/day/2026-07-21/cards/x` are not files on disk — a refresh or a pasted deep link 404s
+   `/admin/day/2026-07-21/bookings/x` are not files on disk — a refresh or a pasted deep link 404s
    without it. The PWA needs it for a second reason that bites earlier: the manifest's
    `start_url: '/mobile/lists'` is not a file either, so the **first** load, before any worker exists,
    would 404 and nothing would install. It must be a **fallback**, evaluated after the filesystem
@@ -385,7 +388,8 @@ seconds later, rather than orphaning it, so the story can carry on from where th
 - **No shared state between devices.** Two installs and the desktop prototype are three independent
   demo worlds, each with its own localStorage. Closing that needs a real backend.
 - **No real camera.** `PhotoCaptureFlow` picks between two bundled SVG "paper cards"
-  (`src/assets/samplePaperCards.ts`); there is no `<input type="file">`, no `FileReader` and no
+  (`src/assets/samplePaperCards.ts`), and the attachment sheet's simulated file picker offers the
+  bundled samples in `src/assets/sampleAttachments.ts`; there is no `<input type="file">`, no `FileReader` and no
   `getUserMedia` anywhere in `src/`.
 - **No push notifications.** iOS 16.4+ supports them for installed PWAs, so "a new list was assigned
   to you" is a strong future demo beat, but it needs a real push service.

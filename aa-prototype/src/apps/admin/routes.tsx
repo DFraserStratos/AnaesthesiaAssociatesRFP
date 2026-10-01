@@ -5,7 +5,7 @@ import { useAppStore, useToday } from '../../store'
 import { DayNav } from './components/DayNav'
 import { DayGrid } from './components/DayGrid'
 import { RightRail } from './components/RightRail'
-import { AdminCardDetail } from './screens/AdminCardDetail'
+import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
 import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
 import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
@@ -70,7 +70,7 @@ export function AdminDayRoute() {
           anaesthetists={ctx.anaesthetists}
           listsByAnaesthetist={ctx.listsByAnaesthetist}
           masters={ctx.masters}
-          activeCardCounts={ctx.activeCardCounts}
+          activeBookingCounts={ctx.activeBookingCounts}
           prepaymentFlags={ctx.prepaymentFlags}
           onSelectList={ctx.onSelectList}
         />
@@ -90,12 +90,12 @@ export function AdminDayRoute() {
   )
 }
 
-export function AdminCardDetailRoute() {
-  const { dateISO = '', cardId = '' } = useParams()
+export function AdminBookingDetailRoute() {
+  const { dateISO = '', bookingId = '' } = useParams()
   const { actor, todayISO } = useAdminOutlet()
   const navigate = useNavigate()
   const { state: navigationState } = useLocation()
-  const exists = useAppStore((s) => s.schedule.cards[cardId] !== undefined)
+  const exists = useAppStore((s) => s.schedule.bookings[bookingId] !== undefined)
   const fromInvoiceId =
     typeof navigationState === 'object' &&
     navigationState !== null &&
@@ -106,13 +106,14 @@ export function AdminCardDetailRoute() {
   const returnInvoice = useAppStore((s) => {
     if (fromInvoiceId === null) return undefined
     const invoice = s.billing.invoices[fromInvoiceId]
-    return invoice?.cardId === cardId ? invoice : undefined
+    return invoice?.bookingId === bookingId ? invoice : undefined
   })
 
   return (
     <RequireEntity exists={exists}>
-      <AdminCardDetail
-        cardId={cardId}
+      <AdminBookingDetail
+        key={bookingId}
+        bookingId={bookingId}
         actor={actor}
         todayISO={todayISO}
         onBack={() =>
@@ -122,6 +123,7 @@ export function AdminCardDetailRoute() {
               : `/admin/invoices/${returnInvoice.id}`,
           )
         }
+        onCopied={(newId) => navigate(`/admin/day/${dateISO}/bookings/${newId}`)}
         backLabel={
           returnInvoice === undefined
             ? 'Day view'

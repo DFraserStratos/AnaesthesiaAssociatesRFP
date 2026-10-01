@@ -14,7 +14,7 @@
           "caption": "Photo of the paper card (simulated with sample cards)",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -35,7 +35,7 @@
           "caption": "Booking pre-filled from the scan, for the anaesthetist to check and save",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -70,7 +70,7 @@
           "caption": "Photo of the paper card (simulated with sample cards)",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -91,7 +91,7 @@
           "caption": "Booking pre-filled from the scan, for the anaesthetist to check and save",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600

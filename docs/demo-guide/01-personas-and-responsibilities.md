@@ -21,39 +21,41 @@ or three hats: scheduling coordinator, billing reviewer and operational exceptio
 
 Dr Souter works independently across multiple hospitals and surgeons. She is mobile during the day,
 often moving between locations. Her phone is the fastest way to see what is happening, review patient
-Cards and capture the data AA needs for billing.
+Bookings and capture the data AA needs for billing.
 
 ### Goals
 
 - Know which AM and PM Lists are assigned to her.
-- See the hospital, surgeon, patient Cards and procedure times.
+- See the hospital, surgeon, patient Bookings and procedure times.
 - Respond to late changes without phoning AA for every detail.
 - Capture accurate Base, Time and Modifier data with minimal typing.
-- Add a missing Card when the hospital and device disagree.
+- Add a missing Booking when the hospital and device disagree.
 - Complete work and hand the whole List to the AA office.
-- See availability for possible cover or swaps.
+- See availability for possible cover or reassignment.
 - Later, see outstanding amounts and GST-period activity.
 
 ### Core actions
 
 1. Open Forward Lists and choose an assigned List.
-2. Review its time-ordered Cards.
-3. Open a Card and confirm patient, procedure, hospital and surgeon context.
+2. Review its time-ordered Bookings.
+3. Open a Booking and confirm patient, procedure, hospital and surgeon context.
 4. Record ASA, RVG code, start/handover time, modifiers, notes and any allowed additional billing
    line.
 5. Review the calculated units and fee at her personal dollar-per-unit value.
-6. Mark each active Card complete.
+6. Mark each active Booking complete.
 7. Submit the whole List to the office.
 8. Use Availability to offer a Free session or request cover.
-9. Create a missing Card manually or through simulated photo extraction.
-10. Copy a Card skeleton when recording an additional procedure, with time-only charging rules.
+9. Create a missing Booking manually or through simulated photo extraction.
+10. Copy a Booking to start a new Booking for the same patient on the same List (its own primary procedure,
+    nothing else inherited); record an additional procedure inside a Booking with **Add another procedure**,
+    which charges time units only.
 
 ### Permissions
 
-- `DRAFT`: may edit her Cards and submit the List when every active Card is complete.
-- `SUBMITTED`: may view the List as completed/unbilled, but may not edit its Cards.
-- `AUTHORISED`: Cards are locked for everyone.
-- May only see her own Lists and patient Cards.
+- `DRAFT`: may edit her Bookings and submit the List when every active Booking is complete.
+- `SUBMITTED`: may view the List as completed/unbilled, but may not edit its Bookings.
+- `AUTHORISED`: Bookings are locked for everyone.
+- May only see her own Lists and patient Bookings.
 - May see colleagues' session availability, but not their patient details.
 - May not authorise a List, edit master data or use office monitoring.
 
@@ -91,21 +93,21 @@ This is a usage context, not a separate role.
 
 Away from theatre, Dr Souter wants a wider view of upcoming work, availability and financial
 information. The web app provides more space for tables and summaries while preserving the same
-underlying List, Card and BTM actions.
+underlying List, Booking and BTM actions.
 
 ### Goals and actions
 
 - Review the dashboard and coming week.
 - Browse a date-ranged view of Lists.
-- Drill into the same List and Card detail available on mobile.
-- Create or copy a Card and capture BTM data when a desktop is more convenient.
+- Drill into the same List and Booking detail available on mobile.
+- Create or copy a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
 - Find Free anaesthetists and request cover.
 - Review accounts outstanding and GST-period activity.
 
 ### Demo distinction
 
 Use the web app for overview and planning. Use mobile for the procedure-day action. Avoid repeating
-the same Card-edit workflow twice unless the audience asks whether the two surfaces have equivalent
+the same Booking-edit workflow twice unless the audience asks whether the two surfaces have equivalent
 functionality.
 
 ### Current prototype caveats
@@ -128,20 +130,20 @@ short-notice cover.
 
 - See the entire day across the anaesthetist roster.
 - Find a Free AM or PM slot quickly when a surgeon's room calls.
-- Keep hospital, surgeon, times and Cards accurate.
+- Keep hospital, surgeon, times and Bookings accurate.
 - Reconcile conflicts from anaesthetist availability and hospital holidays.
-- Move one patient Card when a booking changes.
+- Move one patient Booking when a booking changes.
 - Reassign a whole List when an anaesthetist is unavailable.
-- Preserve Cards and audit history through every change.
+- Preserve Bookings and audit history through every change.
 
 ### Core actions
 
 1. Use the one-day dashboard as the operational control tower.
 2. Navigate dates and read the status-coloured AM/PM grid.
-3. Open a List and review its Cards.
+3. Open a List and review its Bookings.
 4. Create a phone-advice booking on a suitable List.
 5. Edit List context, including hospital, surgeon and actual start/end times.
-6. Move a single Card to a different List for a routine reschedule.
+6. Move a single Booking to a different List for a routine reschedule.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.
 8. Add internal day notes.
 9. Maintain schedule-related master data such as anaesthetists, Permanent Lists and hospital
@@ -150,17 +152,17 @@ short-notice cover.
 
 ### Permissions
 
-- Sees all Lists and Cards.
-- May edit `DRAFT` and `SUBMITTED` Lists/Cards.
-- May not edit Cards after `AUTHORISED`.
+- Sees all Lists and Bookings.
+- May edit `DRAFT` and `SUBMITTED` Lists/Bookings.
+- May not edit Bookings after `AUTHORISED`.
 - May perform office-only billing setup corrections.
-- May reassign a List or a Card.
+- May reassign a List or a Booking.
 
 ### Pain points
 
 - Phone, email and PDF remain major booking channels.
 - Existing integrations are unreliable.
-- Several sources may change the same Card.
+- Several sources may change the same Booking.
 - Manual checking creates bottlenecks and data-quality risk.
 - Illness and late schedule changes must be resolved quickly.
 
@@ -186,7 +188,7 @@ creates a clear handoff in the demo.
 
 ### Context
 
-An anaesthetist has submitted a completed List. Kirsty reviews all of its Cards as a set before
+An anaesthetist has submitted a completed List. Kirsty reviews all of its Bookings as a set before
 allowing billing to proceed.
 
 ### Goals
@@ -200,18 +202,18 @@ allowing billing to proceed.
 ### Core actions
 
 1. Open the Review queue of `SUBMITTED` Lists.
-2. Review every active Card and its calculated fee.
+2. Review every active Booking and its calculated fee.
 3. Inspect flags such as missing references, ACC route warnings or manual BTM overrides.
 4. Correct billing setup in the office when required.
 5. Log a phone note if clarification was needed.
 6. Authorise the List.
-7. Confirm that the Cards lock and the List hands to billing.
+7. Confirm that the Bookings lock and the List hands to billing.
 8. Later, monitor invoice and integration failures and retry after correction.
 
 ### Critical rule
 
 There is no `RETURNED` state. If the office finds an issue after submission, office staff initiate a
-phone conversation and make the correction themselves. The anaesthetist does not reopen the Card.
+phone conversation and make the correction themselves. The anaesthetist does not reopen the Booking.
 
 ### RFP anchors
 
@@ -231,7 +233,7 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
 - Monitor hospital HL7 and FHIR messages.
 - Review failed, duplicate, retried and manual-intervention items.
 - Correct partner-specific field mappings.
-- Reprocess failed messages without creating duplicate Cards.
+- Reprocess failed messages without creating duplicate Bookings.
 - Review PDF extraction before ingesting a surgeon's List.
 - Handle an inbound change that targets a `SUBMITTED` or `AUTHORISED` List.
 
@@ -274,7 +276,7 @@ archiving and live anaesthetist balances (Phase 10) are all clickable.
 
 | Actor | What it contributes |
 |---|---|
-| Surgeon or surgeon-room coordinator | Requests a Free List, phones changes and emails PDF Lists/Cards |
+| Surgeon or surgeon-room coordinator | Requests a Free List, phones changes and emails PDF Lists/Bookings |
 | Hospital/PAS | Sends new, changed, rescheduled and cancelled appointments |
 | Patient or guardian | Supplies billing details and may receive the invoice |
 | Hospital/contract holder | May receive and pay the invoice |
@@ -289,7 +291,7 @@ There is no patient, hospital or surgeon portal in the RFP.
 
 | App | Demonstrated person | Business responsibility |
 |---|---|---|
-| Anaesthetist Mobile App | Dr Melanie Souter | Procedure-day Lists, Cards, BTM, completion, submit, availability |
-| Anaesthetist Web App | Dr Melanie Souter | Wider schedule, List/Card detail, availability, accounts |
+| Anaesthetist Mobile App | Dr Melanie Souter | Procedure-day Lists, Bookings, BTM, completion, submit, availability |
+| Anaesthetist Web App | Dr Melanie Souter | Wider schedule, List/Booking detail, availability, accounts |
 | Admin Web App | Kirsty W. | Day operations, changes, review, authorisation, masters, audit and monitoring |
 | Demo surfaces | Kirsty/presenter | Simulate external systems; these are not proposed end-user apps unless explicitly labelled |

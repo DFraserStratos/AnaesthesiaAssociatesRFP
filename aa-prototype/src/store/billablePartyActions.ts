@@ -47,7 +47,7 @@ export function createBillableParty(
       entityId: billablePartyId,
       action: 'billableParty.create',
       after: { name: party.name, relationshipToPatient: party.relationshipToPatient },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return {
       masters: { ...s.masters, billableParties: { ...s.masters.billableParties, [billablePartyId]: party } },

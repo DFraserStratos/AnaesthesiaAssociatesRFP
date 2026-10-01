@@ -2,7 +2,7 @@
  * Human labels for the store's audit action codes (A7 presentation).
  *
  * The stored trail keeps its machine codes (`procedure.update`) — nothing here
- * changes what is written. This is the reading layer: the Card history sheet
+ * changes what is written. This is the reading layer: the Booking history sheet
  * leads with the label, and the admin Audit viewer shows the label with the raw
  * code beneath it, so the compliance surface stays greppable.
  *
@@ -16,17 +16,19 @@
  */
 
 export const ACTION_LABELS: Record<string, string> = {
-  // --- Cards ---------------------------------------------------------------
-  'card.create': 'Card created',
-  'card.update': 'Card updated',
-  'card.complete': 'Card completed',
-  'card.uncomplete': 'Card reopened for amendment',
-  'card.cancel': 'Card cancelled',
-  'card.copy': 'Card copied for an additional procedure',
-  'card.reassign': 'Card moved to another list',
-  'card.prepaymentOverride': 'Pre-payment gate overridden',
-  'card.billed': 'Card billed',
-  'card.billingException': 'Billing exception raised',
+  // --- Bookings ---------------------------------------------------------------
+  'booking.create': 'Booking created',
+  'booking.update': 'Booking updated',
+  'booking.complete': 'Booking completed',
+  'booking.uncomplete': 'Booking reopened for amendment',
+  'booking.cancel': 'Booking cancelled',
+  'booking.copy': 'Booking copied',
+  'booking.attachmentAdd': 'Attachment added',
+  'booking.attachmentRemove': 'Attachment removed',
+  'booking.reassign': 'Booking moved to another list',
+  'booking.prepaymentOverride': 'Pre-payment gate overridden',
+  'booking.billed': 'Booking billed',
+  'booking.billingException': 'Billing exception raised',
 
   // --- Procedures & billing lines -----------------------------------------
   'procedure.create': 'Procedure added',
@@ -38,6 +40,8 @@ export const ACTION_LABELS: Record<string, string> = {
 
   // --- Lists ---------------------------------------------------------------
   'list.update': 'List updated',
+  'list.attachmentAdd': 'List attachment added',
+  'list.attachmentRemove': 'List attachment removed',
   'list.submit': 'List submitted',
   'list.authorise': 'List authorised',
   'list.billed': 'List billed',

@@ -8,9 +8,9 @@ import {
   OFFICE_ACTOR,
   SOUTER_ACTOR,
   authoriseList,
-  editCard,
+  editBooking,
   editProcedure,
-  proceduresForCard,
+  proceduresForBooking,
   resetDemo,
   useAppStore,
   useClockTimeLabel,
@@ -257,7 +257,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Card on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Card. The List itself stays DRAFT, because its other three Cards are still to be captured.',
+          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Booking. The List itself stays DRAFT, because its other three Bookings are still to be captured.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },
@@ -294,7 +294,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM (St George\'s, the two-funder Card). In Admin, authorise both to generate the invoices and Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button, then follow the direct link to Dr Souter\'s payment history.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM (St George\'s, the two-funder Booking). In Admin, authorise both to generate the invoices and Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button, then follow the direct link to Dr Souter\'s payment history.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -308,7 +308,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) in Admin open Sarah Mitchell\'s Card on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley; override the blocked pre-payment in Admin; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },
@@ -322,12 +322,12 @@ const SCENARIOS: readonly Scenario[] = [
     blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
     run: () => {
       resetDemo(useAppStore)
-      const chenCardId = SEED_MARKERS['overriddenTimeUnitsCard']?.entityId ?? ''
-      const chenProcedure = proceduresForCard(useAppStore.getState(), chenCardId)[0]
-      if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Card was not found to stage the audit trail.' }
+      const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
+      const chenProcedure = proceduresForBooking(useAppStore.getState(), chenBookingId)[0]
+      if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Booking was not found to stage the audit trail.' }
       const staged = [
         editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS2' }),
-        editCard(useAppStore, OFFICE_ACTOR, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
+        editBooking(useAppStore, OFFICE_ACTOR, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }),
         editProcedure(useAppStore, SOUTER_ACTOR, chenProcedure.id, { asaClass: 'AS1' }),
       ]
       const refused = staged.find((r) => !r.ok)
@@ -337,7 +337,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Card histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
+          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },

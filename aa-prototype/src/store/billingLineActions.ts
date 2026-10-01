@@ -1,6 +1,6 @@
 /**
  * Billing line guards (Phase 04) — the mobile capture path for the RFP's
- * parallel billing methods: ancillary fixed-amount lines on any card, and
+ * parallel billing methods: ancillary fixed-amount lines on any booking, and
  * rate x time (Method 3) lines gated by a governing contract that permits an
  * individually arranged fee structure (5th review #1). 'rvg' lines are
  * unrepresentable here by design: capture never stores rvg-basis lines (the
@@ -9,7 +9,7 @@
  */
 
 import type { BillingLine, CounterpartyRef } from '../domain/types'
-import { INDIVIDUAL_ARRANGEMENT_MESSAGE, feeContextFor } from '../domain/billing/validateCardForBilling'
+import { INDIVIDUAL_ARRANGEMENT_MESSAGE, feeContextFor } from '../domain/billing/validateBookingForBilling'
 import { feeFor } from '../domain/billing/fee'
 import { roundToCents, toCents } from '../domain/billing/money'
 import {
@@ -22,8 +22,8 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { editRefusal, getCard } from './lifecycle'
-import { billingContextForCard, proceduresForCard } from './selectors'
+import { editRefusal, getBooking } from './lifecycle'
+import { billingContextForBooking, proceduresForBooking } from './selectors'
 
 export interface AddBillingLineInput {
   chargeBasis: 'fixed' | 'rateTime'
@@ -41,7 +41,7 @@ export interface AddBillingLineInput {
  * refused unless the procedure's governing contract carries
  * `permitsIndividualArrangement` — the same sentence the validator and the UI
  * show. Amounts land rounded to cents (hours x rate for rateTime). Audited
- * `billingLine.add`; the parent Card is stamped by the wrapper.
+ * `billingLine.add`; the parent Booking is stamped by the wrapper.
  */
 export function addBillingLine(
   api: AppStoreApi,
@@ -52,8 +52,8 @@ export function addBillingLine(
   const state = api.getState()
   const procedure = state.schedule.procedures[procedureId]
   if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
 
@@ -146,8 +146,8 @@ export function setBillingLineAllocation(
   if (line === undefined) return refuse('notFound', 'Billing line not found.')
   const procedure = state.schedule.procedures[line.procedureId]
   if (procedure === undefined) return refuse('notFound', 'The billing line has no procedure.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
 
   if (actor.role === 'anaesthetist') {
     return refuse(
@@ -166,12 +166,12 @@ export function setBillingLineAllocation(
   }
 
   // Conservation: recompute the procedure fee with the edited line in place.
-  const ctx = billingContextForCard(state, found.card)
-  if (ctx === undefined) return refuse('missingContext', 'This Card is missing its List or anaesthetist.')
+  const ctx = billingContextForBooking(state, found.booking)
+  if (ctx === undefined) return refuse('missingContext', 'This Booking is missing its List or anaesthetist.')
   const editedLines = ctx.billingLines.map((l) => (l.id === billingLineId ? nextLine : l))
   const procedureLines = editedLines.filter((l) => l.procedureId === procedure.id)
   if (procedureLines.some((l) => l.funderOverride !== undefined)) {
-    const ordinal = proceduresForCard(state, procedure.cardId).findIndex((p) => p.id === procedure.id) + 1
+    const ordinal = proceduresForBooking(state, procedure.bookingId).findIndex((p) => p.id === procedure.id) + 1
     const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
     const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
     if (toCents(allocated) !== toCents(fee.total)) {
@@ -191,7 +191,7 @@ export function setBillingLineAllocation(
       action: 'billingLine.update',
       before: { amount: line.amount, funderOverride: line.funderOverride },
       after: patch,
-      stampCardId: procedure.cardId,
+      stampBookingId: procedure.bookingId,
     },
     (s) => ({
       schedule: { ...s.schedule, billingLines: { ...s.schedule.billingLines, [billingLineId]: nextLine } },
@@ -224,8 +224,8 @@ export function setProcedureFunderAllocation(
   const state = api.getState()
   const procedure = state.schedule.procedures[procedureId]
   if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
 
   if (actor.role === 'anaesthetist') {
     return refuse(
@@ -236,8 +236,8 @@ export function setProcedureFunderAllocation(
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
 
-  const ctx = billingContextForCard(state, found.card)
-  if (ctx === undefined) return refuse('missingContext', 'This Card is missing its List or anaesthetist.')
+  const ctx = billingContextForBooking(state, found.booking)
+  if (ctx === undefined) return refuse('missingContext', 'This Booking is missing its List or anaesthetist.')
 
   const byId = new Map(entries.map((e) => [e.billingLineId, e]))
   const nextById: Record<string, BillingLine> = {}
@@ -256,7 +256,7 @@ export function setProcedureFunderAllocation(
 
   const procedureLines = editedLines.filter((l) => l.procedureId === procedureId)
   if (procedureLines.some((l) => l.funderOverride !== undefined)) {
-    const ordinal = proceduresForCard(state, procedure.cardId).findIndex((p) => p.id === procedureId) + 1
+    const ordinal = proceduresForBooking(state, procedure.bookingId).findIndex((p) => p.id === procedureId) + 1
     const fee = feeFor(procedure, feeContextFor(procedure, ordinal, { ...ctx, billingLines: editedLines }))
     const allocated = procedureLines.reduce((sum, l) => sum + l.amount, 0)
     if (toCents(allocated) !== toCents(fee.total)) {
@@ -279,7 +279,7 @@ export function setProcedureFunderAllocation(
       action: 'billingLine.update',
       before: { amount: before.amount, funderOverride: before.funderOverride },
       after: { amount: next.amount, funderOverride: next.funderOverride },
-      stampCardId: procedure.cardId,
+      stampBookingId: procedure.bookingId,
     }
   })
   mutate(api, actor, metas, (s) => {
@@ -293,7 +293,7 @@ export function setProcedureFunderAllocation(
 /**
  * Remove a stored billing line. A line carrying a funder override is office
  * knowledge (the RFP's two-funder split — 5th review #4): the anaesthetist may
- * not remove it; the office may. The meta carries an explicit `stampCardId`
+ * not remove it; the office may. The meta carries an explicit `stampBookingId`
  * because the post-recipe stamp derivation cannot find a deleted line, and
  * `before` carries the full line so the audit trail can reconstruct it.
  */
@@ -303,8 +303,8 @@ export function removeBillingLine(api: AppStoreApi, actor: Actor, billingLineId:
   if (line === undefined) return refuse('notFound', 'Billing line not found.')
   const procedure = state.schedule.procedures[line.procedureId]
   if (procedure === undefined) return refuse('notFound', 'The billing line has no procedure.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
 
@@ -323,7 +323,7 @@ export function removeBillingLine(api: AppStoreApi, actor: Actor, billingLineId:
       entityId: billingLineId,
       action: 'billingLine.remove',
       before: line,
-      stampCardId: procedure.cardId,
+      stampBookingId: procedure.bookingId,
     },
     (s) => {
       const billingLines = { ...s.schedule.billingLines }

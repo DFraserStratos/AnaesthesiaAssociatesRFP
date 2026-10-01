@@ -7,7 +7,7 @@
       "name": "contract-picker",
       "app": "admin",
       "caption": "Governing contract picker in the office billing setup",
-      "start": "/admin/day/2026-07-21/cards/C0009",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
           "steps": [

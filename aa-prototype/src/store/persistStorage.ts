@@ -18,7 +18,7 @@
  * 2. EVERY mutation re-serialises the WHOLE store. The pristine seed stringifies
  *    to 1,171,213 bytes (the schedule alone is ~845 KB across 3,877 Lists; the
  *    audit log another ~224 KB) — roughly 1.8 ms to stringify on an M-series
- *    Mac, so 8 to 20 ms on a mid-range phone, synchronously, on every card
+ *    Mac, so 8 to 20 ms on a mid-range phone, synchronously, on every booking
  *    completion and every fee edit. A ~250 ms trailing timer collapses a burst
  *    of mutations into a single write; the last value for a key wins.
  *

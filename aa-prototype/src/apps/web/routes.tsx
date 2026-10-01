@@ -6,7 +6,7 @@ import { mondayOf, shiftWeeks } from '../../shared/format'
 import {
   AccountsScreen,
   AvailabilityGrid,
-  CardDetailView,
+  BookingDetailView,
   DashboardScreen,
   ListDetailView,
   ListsScreen,
@@ -62,7 +62,7 @@ export function WebDashboardRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Lists — `/web/lists`, `/web/lists/:listId`, `…/cards/:cardId`
+// Lists — `/web/lists`, `/web/lists/:listId`, `…/bookings/:bookingId`
 // ---------------------------------------------------------------------------
 
 export function WebListsRoute() {
@@ -90,22 +90,22 @@ export function WebListDetailRoute() {
         actor={actor}
         todayISO={todayISO}
         onBack={() => navigate('/web/lists')}
-        onOpenCard={(cardId) => navigate(`/web/lists/${listId}/cards/${cardId}`)}
+        onOpenBooking={(bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`)}
       />
     </RequireEntity>
   )
 }
 
-export function WebCardDetailRoute() {
-  const { listId = '', cardId = '' } = useParams()
+export function WebBookingDetailRoute() {
+  const { listId = '', bookingId = '' } = useParams()
   const { actor, todayISO } = useWebOutlet()
   const navigate = useNavigate()
-  const exists = useAppStore((s) => s.schedule.cards[cardId] !== undefined)
+  const exists = useAppStore((s) => s.schedule.bookings[bookingId] !== undefined)
   const backToList = () => navigate(`/web/lists/${listId}`)
 
   return (
     <RequireEntity exists={exists}>
-      <CardDetailView cardId={cardId} actor={actor} todayISO={todayISO} onBack={backToList} onCopied={backToList} />
+      <BookingDetailView key={bookingId} bookingId={bookingId} actor={actor} todayISO={todayISO} onBack={backToList} onCopied={(newId) => navigate(`/web/lists/${listId}/bookings/${newId}`)} />
     </RequireEntity>
   )
 }

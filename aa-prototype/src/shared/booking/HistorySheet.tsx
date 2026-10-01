@@ -9,14 +9,14 @@ interface HistorySheetProps {
   open: boolean
   /**
    * The entity ids whose audit trails to merge. A single id (a List or master
-   * row) shows just that entity; a Card passes its own id PLUS its Procedure and
-   * BillingLine ids so the card's full story — the BTM overrides and
+   * row) shows just that entity; a Booking passes its own id PLUS its Procedure and
+   * BillingLine ids so the booking's full story — the BTM overrides and
    * billing-setup edits that the review FLAGS point at, audited as
-   * `procedure`/`billingLine` entities — appears, not only card-level actions.
+   * `procedure`/`billingLine` entities — appears, not only booking-level actions.
    */
   entityIds: readonly string[]
   /**
-   * Optional `entityId` -> scope label, so a multi-procedure Card's rows say
+   * Optional `entityId` -> scope label, so a multi-procedure Booking's rows say
    * which procedure they belong to. Omit on a single-entity history.
    */
   entityLabels?: Record<string, string>
@@ -28,14 +28,14 @@ interface HistorySheetProps {
  * The shared History affordance (Phase 07): opens through `useSurface().Overlay`
  * (a mobile bottom sheet or a web/admin dialog) and renders the merged
  * append-only audit trail via `HistoryTimeline` (same predicate as
- * `auditForEntity`, across the given ids). Wired into `CardDetailBody` (mobile /
+ * `auditForEntity`, across the given ids). Wired into `BookingDetailBody` (mobile /
  * web / admin), the admin review row and the admin List drawer. An anaesthetist
- * seeing their own card's full history (incl. office / integration actions) is
+ * seeing their own booking's full history (incl. office / integration actions) is
  * fine per A8 (their own data).
  */
 /**
  * What the empty state calls the thing being read, taken from the heading the
- * reader is already looking at ("Card history" -> "card", "List history" ->
+ * reader is already looking at ("Booking history" -> "booking", "List history" ->
  * "list"), so the two can never disagree. Falls back to "record".
  */
 function subjectFrom(title: string): string {

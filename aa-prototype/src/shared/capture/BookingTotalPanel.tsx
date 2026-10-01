@@ -1,16 +1,16 @@
 import { neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
-import type { CardTotalProps } from '../surface'
+import type { BookingTotalProps } from '../surface'
 import { useTickingValue } from './useTickingValue'
 
 /**
- * The desktop Card-total panel: everything about what the Card comes to.
- * `WebCardLayout` pins it above a separate, matching-width completion control,
+ * The desktop Booking-total panel: everything about what the Booking comes to.
+ * `WebBookingLayout` pins it above a separate, matching-width completion control,
  * mirroring the phone dock's visual separation.
  *
  * It is the only money summary on the desktop, so it carries the applied rate,
  * line breakdown and override note. A per-procedure panel here would duplicate
- * the common one-procedure total. Office Cards only: the anaesthetist Card
+ * the common one-procedure total. Office Bookings only: the anaesthetist Booking
  * shows no calculation.
  *
  * The rail has room to stack a row per line, so it uses `lines` whichever kind
@@ -18,15 +18,15 @@ import { useTickingValue } from './useTickingValue'
  *
  * Values tick with a green flash, so one modifier tap reads as one movement.
  * Figures come from the Phase 01 calculator via
- * `cardFee` / `procedureFee` — this only formats.
+ * `bookingFee` / `procedureFee` — this only formats.
  */
-export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: CardTotalProps) {
+export function BookingTotalPanel({ units, fee, lines, rateLabel, overrideNote, action }: BookingTotalProps) {
   const u = useTickingValue(units)
   const f = useTickingValue(fee)
 
   return (
     <div
-      data-testid="card-calculation"
+      data-testid="booking-calculation"
       style={{
         background: neutral.ink,
         borderRadius: radius.card,
@@ -75,7 +75,7 @@ export function CardTotalPanel({ units, fee, lines, rateLabel, overrideNote, act
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.55)' }}>
-            CARD TOTAL
+            BOOKING TOTAL
           </span>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span className="mono" style={{ fontSize: 28, fontWeight: 700, color: neutral.surface }}>

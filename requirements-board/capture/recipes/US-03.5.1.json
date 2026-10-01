@@ -7,7 +7,7 @@
       "name": "adjustment",
       "app": "web",
       "caption": "Adjustment and charge on the procedure",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "none",
@@ -38,7 +38,7 @@
       "name": "adjustment",
       "app": "mobile",
       "caption": "Adjustment and charge on the procedure",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "none",

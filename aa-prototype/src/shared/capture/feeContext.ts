@@ -7,7 +7,7 @@
  *   - the governing contract is the procedure's STORED-EXPLICIT
  *     `governingContractId` (never `selectContract` — that is the office's
  *     auto-suggest path, not the pricing path),
- *   - the procedure ordinal is its 1-based position in Card order (Type 3
+ *   - the procedure ordinal is its 1-based position in Booking order (Type 3
  *     second-procedure pricing depends on it),
  *   - nonRvgLines are this procedure's stored non-rvg lines (rvg-basis stored
  *     lines are never fee inputs).
@@ -20,7 +20,7 @@ import type { AppState } from '../../store'
 export interface ProcedureFeeArgs {
   procedure: Procedure
   list: List
-  /** 1-based position of the procedure on its Card. */
+  /** 1-based position of the procedure on its Booking. */
   ordinal: number
   masters: AppState['masters']
   billingLines: Record<string, BillingLine>
@@ -64,19 +64,19 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
   return view
 }
 
-export interface CardFeeTotals {
+export interface BookingFeeTotals {
   units: number
   total: number
 }
 
-/** Card-level totals (the CompleteBar / completion overlay figures): summed
- *  billable units and fee across the Card's procedures in Card order. */
-export function cardFee(
+/** Booking-level totals (the CompleteBar / completion overlay figures): summed
+ *  billable units and fee across the Booking's procedures in Booking order. */
+export function bookingFee(
   procedures: readonly Procedure[],
   list: List,
   masters: AppState['masters'],
   billingLines: Record<string, BillingLine>,
-): CardFeeTotals {
+): BookingFeeTotals {
   let units = 0
   let total = 0
   procedures.forEach((procedure, index) => {

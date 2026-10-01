@@ -6,9 +6,9 @@ import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
 import {
   authoriseList,
-  cancelCard,
-  completeCard,
-  editCard,
+  cancelBooking,
+  completeBooking,
+  editBooking,
   entityCounts,
   persistedBytes,
   persistStatus,
@@ -100,7 +100,7 @@ const PERSONA_ACTORS: Record<string, Actor> = {
   integration: { who: 'HL7 feed', role: 'system', source: 'integration' },
 }
 
-type GuardAction = 'completeCard' | 'cancelCard' | 'editCard' | 'submitList' | 'authoriseList'
+type GuardAction = 'completeBooking' | 'cancelBooking' | 'editBooking' | 'submitList' | 'authoriseList'
 
 // ---------------------------------------------------------------------------
 // The inspector
@@ -125,8 +125,8 @@ export function DemoData() {
   const [stateFilter, setStateFilter] = useState<ListState | 'ALL'>('ALL')
 
   const [personaKey, setPersonaKey] = useState<string>('souter')
-  const [guardAction, setGuardAction] = useState<GuardAction>('completeCard')
-  const [guardCardId, setGuardCardId] = useState<string>('')
+  const [guardAction, setGuardAction] = useState<GuardAction>('completeBooking')
+  const [guardBookingId, setGuardBookingId] = useState<string>('')
   const [guardListId, setGuardListId] = useState<string>('')
   const [guardResult, setGuardResult] = useState<{ action: string; outcome: Outcome<unknown> } | null>(null)
 
@@ -161,13 +161,13 @@ export function DemoData() {
     )
   }, [todaysLists, masters.anaesthetists])
 
-  const cardCountByList = useMemo(() => {
+  const bookingCountByList = useMemo(() => {
     const byList = new Map<string, number>()
-    for (const card of Object.values(schedule.cards)) {
-      byList.set(card.listId, (byList.get(card.listId) ?? 0) + 1)
+    for (const booking of Object.values(schedule.bookings)) {
+      byList.set(booking.listId, (byList.get(booking.listId) ?? 0) + 1)
     }
     return byList
-  }, [schedule.cards])
+  }, [schedule.bookings])
 
   const filteredLists = useMemo(
     () =>
@@ -190,8 +190,8 @@ export function DemoData() {
     switch (selectedMarker.entityType) {
       case 'list':
         return schedule.lists[selectedMarker.entityId]
-      case 'card':
-        return schedule.cards[selectedMarker.entityId]
+      case 'booking':
+        return schedule.bookings[selectedMarker.entityId]
       case 'procedure':
         return schedule.procedures[selectedMarker.entityId]
       case 'patient':
@@ -207,25 +207,25 @@ export function DemoData() {
   )
 
   const guardTargets = useMemo(() => {
-    // Lists holding a seeded scenario card (SEED_MARKERS) are always offered,
+    // Lists holding a seeded scenario booking (SEED_MARKERS) are always offered,
     // whatever their date — Phase 08's billing exemplars (split pair, two
     // funders, bariatric Type 3, rate x time, insured reimbursement, COS) sit
     // on past DRAFT lists and must be stageable from here (P7: jump to seeded
     // scenario states) for the submit → authorise → billing-run demo.
     const markerListIds = new Set(
       Object.values(SEED_MARKERS)
-        .filter((m) => m.entityType === 'card')
-        .map((m) => schedule.cards[m.entityId]?.listId)
+        .filter((m) => m.entityType === 'booking')
+        .map((m) => schedule.bookings[m.entityId]?.listId)
         .filter((id): id is string => id !== undefined),
     )
     const interestingLists = Object.values(schedule.lists)
       .filter((l) => l.state !== 'DRAFT' || l.dateISO === todayISO || markerListIds.has(l.id))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
     const listIds = new Set(interestingLists.map((l) => l.id))
-    const cards = Object.values(schedule.cards)
+    const bookings = Object.values(schedule.bookings)
       .filter((c) => listIds.has(c.listId))
       .sort((a, b) => a.id.localeCompare(b.id))
-    return { lists: interestingLists, cards }
+    return { lists: interestingLists, bookings }
   }, [schedule, todayISO])
 
   function describeList(listId: string): string {
@@ -236,12 +236,12 @@ export function DemoData() {
     return `${list.dateISO} ${list.session} · ${who}${hosp !== '' ? ` · ${hosp}` : ''} · ${list.state}`
   }
 
-  function describeCard(cardId: string): string {
-    const card = schedule.cards[cardId]
-    if (card === undefined) return cardId
-    const patient = masters.patients[card.patientId]?.name ?? card.patientId
-    const status = card.cancellation !== undefined ? 'cancelled' : card.completed ? 'complete' : 'pending'
-    return `${cardId} · ${patient} · ${status} (${describeList(card.listId)})`
+  function describeBooking(bookingId: string): string {
+    const booking = schedule.bookings[bookingId]
+    if (booking === undefined) return bookingId
+    const patient = masters.patients[booking.patientId]?.name ?? booking.patientId
+    const status = booking.cancellation !== undefined ? 'cancelled' : booking.completed ? 'complete' : 'pending'
+    return `${bookingId} · ${patient} · ${status} (${describeList(booking.listId)})`
   }
 
   function runGuard() {
@@ -249,14 +249,14 @@ export function DemoData() {
     if (actor === undefined) return
     let outcome: Outcome<unknown>
     switch (guardAction) {
-      case 'completeCard':
-        outcome = completeCard(useAppStore, actor, guardCardId)
+      case 'completeBooking':
+        outcome = completeBooking(useAppStore, actor, guardBookingId)
         break
-      case 'cancelCard':
-        outcome = cancelCard(useAppStore, actor, guardCardId, 'Guard console test cancellation')
+      case 'cancelBooking':
+        outcome = cancelBooking(useAppStore, actor, guardBookingId, 'Guard console test cancellation')
         break
-      case 'editCard':
-        outcome = editCard(useAppStore, actor, guardCardId, { notes: `Edited via guard console at ${timeLabel}` })
+      case 'editBooking':
+        outcome = editBooking(useAppStore, actor, guardBookingId, { notes: `Edited via guard console at ${timeLabel}` })
         break
       case 'submitList':
         outcome = submitList(useAppStore, actor, guardListId)
@@ -268,7 +268,7 @@ export function DemoData() {
     setGuardResult({ action: guardAction, outcome })
   }
 
-  const needsCard = guardAction === 'completeCard' || guardAction === 'cancelCard' || guardAction === 'editCard'
+  const needsBooking = guardAction === 'completeBooking' || guardAction === 'cancelBooking' || guardAction === 'editBooking'
 
   return (
     <DemoSurface
@@ -333,7 +333,7 @@ export function DemoData() {
                 <th style={headCellStyle}>Hospital</th>
                 <th style={headCellStyle}>Surgeon</th>
                 <th style={headCellStyle}>Times</th>
-                <th style={headCellStyle}>Cards</th>
+                <th style={headCellStyle}>Bookings</th>
                 <th style={headCellStyle}>State</th>
                 <th style={headCellStyle}>Notes / conflicts</th>
               </tr>
@@ -353,7 +353,7 @@ export function DemoData() {
                   <td style={cellStyle} className="mono">
                     {list.startTime !== undefined ? `${list.startTime} to ${list.endTime ?? ''}` : ''}
                   </td>
-                  <td style={cellStyle} className="mono">{cardCountByList.get(list.id) ?? 0}</td>
+                  <td style={cellStyle} className="mono">{bookingCountByList.get(list.id) ?? 0}</td>
                   <td style={cellStyle}>{list.state}</td>
                   <td style={{ ...cellStyle, maxWidth: 260 }}>
                     {list.notes}
@@ -444,13 +444,13 @@ export function DemoData() {
       {/* Audit trail */}
       <Panel
         title="Audit trail"
-        subtitle="Pick any Card (or click a row/scenario above) to read its append-only history."
+        subtitle="Pick any Booking (or click a row/scenario above) to read its append-only history."
       >
         <select value={auditEntityId} onChange={(e) => setAuditEntityId(e.target.value)} style={selectStyle}>
-          <option value="">Choose a card</option>
-          {guardTargets.cards.map((c) => (
+          <option value="">Choose a booking</option>
+          {guardTargets.bookings.map((c) => (
             <option key={c.id} value={c.id}>
-              {describeCard(c.id)}
+              {describeBooking(c.id)}
             </option>
           ))}
         </select>
@@ -470,7 +470,7 @@ export function DemoData() {
                 {auditTrail.length === 0 && (
                   <tr>
                     <td style={cellStyle} colSpan={5}>
-                      No audit entries for {auditEntityId}. Seeded Cards include booking and clinical
+                      No audit entries for {auditEntityId}. Seeded Bookings include booking and clinical
                       history; other records begin auditing when they change.
                     </td>
                   </tr>
@@ -567,18 +567,18 @@ export function DemoData() {
             onChange={(e) => setGuardAction(e.target.value as GuardAction)}
             style={selectStyle}
           >
-            <option value="completeCard">Complete card</option>
-            <option value="cancelCard">Cancel card</option>
-            <option value="editCard">Edit card (notes)</option>
+            <option value="completeBooking">Complete booking</option>
+            <option value="cancelBooking">Cancel booking</option>
+            <option value="editBooking">Edit booking (notes)</option>
             <option value="submitList">Submit list</option>
             <option value="authoriseList">Authorise list</option>
           </select>
-          {needsCard ? (
-            <select value={guardCardId} onChange={(e) => setGuardCardId(e.target.value)} style={selectStyle}>
-              <option value="">Choose a card</option>
-              {guardTargets.cards.map((c) => (
+          {needsBooking ? (
+            <select value={guardBookingId} onChange={(e) => setGuardBookingId(e.target.value)} style={selectStyle}>
+              <option value="">Choose a booking</option>
+              {guardTargets.bookings.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {describeCard(c.id)}
+                  {describeBooking(c.id)}
                 </option>
               ))}
             </select>
@@ -595,7 +595,7 @@ export function DemoData() {
           <button
             type="button"
             onClick={runGuard}
-            disabled={needsCard ? guardCardId === '' : guardListId === ''}
+            disabled={needsBooking ? guardBookingId === '' : guardListId === ''}
             style={{
               font: 'inherit',
               fontSize: 13,
@@ -606,7 +606,7 @@ export function DemoData() {
               background: accent.base,
               color: '#FFFFFF',
               cursor: 'pointer',
-              opacity: (needsCard ? guardCardId === '' : guardListId === '') ? 0.5 : 1,
+              opacity: (needsBooking ? guardBookingId === '' : guardListId === '') ? 0.5 : 1,
             }}
           >
             Attempt

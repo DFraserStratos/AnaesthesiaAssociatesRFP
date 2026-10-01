@@ -1,5 +1,7 @@
 # Prototype map: Admin Web App (`aa-prototype/src/apps/admin`)
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 **Orientation.** The Admin Web App is the office (persona Kirsty W., role `office`, source `office`) desktop app, mounted at `/admin` (min width 1320px). One layout component (`AdminApp.tsx`) renders a dark side nav plus an `<Outlet>`; screens are router sub-routes declared in `aa-prototype/src/router.tsx:89-106` with thin route wrappers in `routes.tsx`. There is NO real auth or role switching: `AdminApp.tsx:25` hardcodes `OFFICE: Actor = { who:'Kirsty W.', role:'office', source:'office' }` and passes it to every screen. All data comes from the Zustand store (`useAppStore`), all writes go through store actions returning `Outcome` (`ok` / `refuse(code,message)`) that are audited via `mutate()`. Screens hold only UI state. Paths below are relative to `aa-prototype/src/apps/admin/` unless they start with `store/`, `shared/`, `domain/` (relative to `aa-prototype/src/`). Nothing here talks to a network.
 
 ## Contents

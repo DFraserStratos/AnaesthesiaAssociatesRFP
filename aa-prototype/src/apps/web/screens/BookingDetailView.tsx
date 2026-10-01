@@ -4,53 +4,54 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
-import { CardDetailBody } from '../../../shared/card'
+import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
 
-interface CardDetailViewProps {
-  cardId: string
+interface BookingDetailViewProps {
+  bookingId: string
   actor: Actor
   todayISO: string
   onBack: () => void
-  onCopied: () => void
+  /** Opens the new Booking a Copy made. */
+  onCopied: (newBookingId: string) => void
 }
 
 /**
- * Web card detail (drill-down page; W2 / M6-M7 parity). Desktop chrome around
- * the shared `CardDetailBody` — identical BTM capture, validation and lifecycle
- * guards to mobile; the edit / copy / add-card flows render as centred dialogs
+ * Web booking detail (drill-down page; W2 / M6-M7 parity). Desktop chrome around
+ * the shared `BookingDetailBody` — identical BTM capture, validation and lifecycle
+ * guards to mobile; the edit / copy / add-booking flows render as centred dialogs
  * via the web surface.
  *
  * The chrome is a page header in the web app's own language (the 28/34 title
  * and slate sub-line the dashboard and lists table use), and then the body
  * spans the full page width. There is deliberately no wrapping panel: the web
- * `CardLayout` puts the capture cards straight onto the grey canvas the way
+ * `BookingLayout` puts the capture cards straight onto the grey canvas the way
  * every other web screen puts its panels there. Nesting white cards inside one
  * white panel was the mobile stack borrowed whole, and it flattened the
  * hierarchy on a surface that has room for a real one.
  */
-export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: CardDetailViewProps) {
-  const card = useAppStore((s) => s.schedule.cards[cardId])
+export function BookingDetailView({ bookingId, actor, todayISO, onBack, onCopied }: BookingDetailViewProps) {
+  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
 
-  const list = card !== undefined ? listsRecord[card.listId] : undefined
+  const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
-    if (card === undefined) return undefined
+    if (booking === undefined) return undefined
     return Object.values(proceduresRecord)
-      .filter((p) => p.cardId === cardId)
+      .filter((p) => p.bookingId === bookingId)
       .sort((a, b) => a.id.localeCompare(b.id))[0]
-  }, [card, cardId, proceduresRecord])
+  }, [booking, bookingId, proceduresRecord])
 
-  if (card === undefined || list === undefined) return null
-  const patient = masters.patients[card.patientId]
+  if (booking === undefined || list === undefined) return null
+  const patient = masters.patients[booking.patientId]
   const badge = nhiBadge(patient?.nhi)
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
   const header = (_collapsed: boolean, history: React.ReactNode) => (
     <div
-      data-testid="web-card-header"
+      data-testid="web-booking-header"
       style={{
         display: 'flex',
         alignItems: 'flex-end',
@@ -89,7 +90,7 @@ export function CardDetailView({ cardId, actor, todayISO, onBack, onCopied }: Ca
         <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
       </button>
 
-      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
     </div>
   )
 }

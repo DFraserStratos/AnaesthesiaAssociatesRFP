@@ -13,25 +13,25 @@ interface RoleEntry {
  * scoping and edit rights per role (A8 + the RFP: "controls around view, access,
  * edit rights ... managed by role", RFP.md:353). Everything here is provable
  * live via the persona switch: the anaesthetist apps are scoped to the persona's
- * own Lists/Cards; colleague availability exposes session status only;
+ * own Lists/Bookings; colleague availability exposes session status only;
  * authorisation, master data, audit and the billing monitor live solely in the
  * admin app. Opened from the admin side-nav footer.
  */
 const ROLES: RoleEntry[] = [
   {
     role: 'Anaesthetist (e.g. Dr Melanie Souter)',
-    view: 'Only their OWN Lists and Cards. A colleague\'s availability shows session status only, never patient or billing detail.',
-    edit: 'Edits their own Cards while the List is DRAFT; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
+    view: 'Only their OWN Lists and Bookings. A colleague\'s availability shows session status only, never patient or billing detail.',
+    edit: 'Edits their own Bookings while the List is DRAFT; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
   },
   {
     role: 'OfficeAdmin (Kirsty W. · Office)',
-    view: 'The whole day across every anaesthetist; every Card, the master data, the audit trail and the billing monitor.',
-    edit: 'Edits Cards on DRAFT and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data. Cannot edit an AUTHORISED List (locked).',
+    view: 'The whole day across every anaesthetist; every Booking, the master data, the audit trail and the billing monitor.',
+    edit: 'Edits Bookings on DRAFT and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data. Cannot edit an AUTHORISED List (locked).',
   },
   {
     role: 'Integration (HL7 / FHIR feed · source integration)',
-    view: 'Writes appointment Cards through the feed; no interactive UI.',
-    edit: 'Creates and updates Cards only while the List is DRAFT; never completes or authorises. A write to a SUBMITTED / AUTHORISED List is refused into a monitor manual-intervention item.',
+    view: 'Writes appointment Bookings through the feed; no interactive UI.',
+    edit: 'Creates and updates Bookings only while the List is DRAFT; never completes or authorises. A write to a SUBMITTED / AUTHORISED List is refused into a monitor manual-intervention item.',
   },
   {
     role: 'System / Demo (automated · source system/demo)',

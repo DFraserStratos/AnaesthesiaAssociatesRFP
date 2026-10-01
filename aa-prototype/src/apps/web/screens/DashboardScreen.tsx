@@ -51,7 +51,7 @@ export function DashboardScreen({
   onCover,
 }: DashboardScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const billing = useAppStore((s) => s.billing)
   const schedule = useAppStore((s) => s.schedule)
@@ -67,21 +67,21 @@ export function DashboardScreen({
   // The mockup greets by surname ("Kia ora, Dr Souter"); mobile does the same.
   const greetingName = drSurname(personaName)
 
-  // Day summary: today's booked lists + active cards + lists ready to submit.
+  // Day summary: today's booked lists + active bookings + lists ready to submit.
   const daySummary = useMemo(() => {
     const todays = Object.values(listsRecord).filter(
       (l) => l.anaesthetistId === anaesthetistId && l.dateISO === todayISO && l.billedAtISO === undefined,
     )
     const booked = todays.filter((l) => l.statusKey === 'private' || l.statusKey === 'public' || l.statusKey === 'preop')
-    let cards = 0
+    let bookings = 0
     let awaiting = 0
     for (const l of booked) {
-      const active = Object.values(cardsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined)
-      cards += active.length
+      const active = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined)
+      bookings += active.length
       if (l.state === 'DRAFT' && active.length > 0 && active.every((c) => c.completed)) awaiting += 1
     }
-    return { lists: booked.length, cards, awaiting }
-  }, [listsRecord, cardsRecord, anaesthetistId, todayISO])
+    return { lists: booked.length, bookings, awaiting }
+  }, [listsRecord, bookingsRecord, anaesthetistId, todayISO])
 
   // Souter's own next free session, for the Offer cover button.
   const myFreeList = useMemo(
@@ -136,7 +136,7 @@ export function DashboardScreen({
     })
   }
 
-  const summaryLine = `${format(parseISO(todayISO), 'EEEE d MMMM')} · ${daySummary.lists} ${daySummary.lists === 1 ? 'list' : 'lists'} today · ${daySummary.cards} ${daySummary.cards === 1 ? 'card' : 'cards'}${daySummary.awaiting > 0 ? ` · ${daySummary.awaiting} awaiting submission` : ''}`
+  const summaryLine = `${format(parseISO(todayISO), 'EEEE d MMMM')} · ${daySummary.lists} ${daySummary.lists === 1 ? 'list' : 'lists'} today · ${daySummary.bookings} ${daySummary.bookings === 1 ? 'booking' : 'bookings'}${daySummary.awaiting > 0 ? ` · ${daySummary.awaiting} awaiting submission` : ''}`
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

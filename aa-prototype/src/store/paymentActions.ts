@@ -65,8 +65,8 @@ export interface ReceivePaymentInput {
 }
 
 function anaesthetistIdForCase(state: Pick<AppState, 'schedule'>, theCase: BillingCase): string | undefined {
-  const card = state.schedule.cards[theCase.cardId]
-  const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
+  const booking = state.schedule.bookings[theCase.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   return list?.anaesthetistId
 }
 

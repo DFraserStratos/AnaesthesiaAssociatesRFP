@@ -7,7 +7,7 @@
       "name": "asa",
       "app": "web",
       "caption": "ASA score seeds the modifier units",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "asa-1",
@@ -38,13 +38,13 @@
       "name": "asa",
       "app": "mobile",
       "caption": "ASA score seeds the modifier units",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "asa-1",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 350
             },
             {
@@ -60,7 +60,7 @@
           "state": "asa-3",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 350
             },
             {

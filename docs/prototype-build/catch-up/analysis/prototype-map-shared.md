@@ -1,5 +1,7 @@
 # Prototype map: `aa-prototype/src/shared` + `src/theme`
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 All paths relative to `aa-prototype/src/` unless prefixed. Line numbers are approximate anchors from the code as read.
 
 **Orientation.** `shared/` holds UI and logic used by two or three of the apps (mobile, web anaesthetist, admin/office). It has NO routes of its own. Its centrepiece is the **Card detail** (`shared/card/CardDetailBody.tsx`): one component that renders a booked case ("Card") with patient, times, attachments, notes, per-procedure BTM (Base/Time/Modifier units) capture, billing lines, price override, copy/cancel/post-op, pre-payment gate and mark-complete. Mobile (`apps/mobile/screens/CardDetailScreen`), web (`apps/web/screens/CardDetailView`) and admin (`apps/admin/screens/AdminCardDetail`) are thin chrome wrappers. Platform differences (bottom sheet vs dialog, one column vs two-column grid, whether a fee is shown) are injected via `useSurface()` (`shared/surface`). The actor's role (`anaesthetist` / `office`) decides what is editable and whether money is shown. All writes call audited store actions in `store/` (`editCard`, `editProcedure`, `completeCard` ...); maths is pure in `domain/billing`. Also here: Add-card flows (manual form + simulated photo OCR + simulated NHI lookup), audit-trail presentation (`shared/audit`), formatting helpers, demo-clock shortcuts. `theme/` = tokens, status colours, motion, haptics, mobile gradient (visual only).

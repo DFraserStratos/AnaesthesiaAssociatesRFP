@@ -2,33 +2,33 @@ import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
-import { reassignCard, useAppStore, type Actor } from '../../../store'
+import { reassignBooking, useAppStore, type Actor } from '../../../store'
 import { Button } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
 
-interface MoveCardFlowProps {
+interface MoveBookingFlowProps {
   open: boolean
-  cardId: string
+  bookingId: string
   actor: Actor
   onClose: () => void
   onMoved: () => void
 }
 
 /**
- * Move a single Card to another List (3rd review #3; the RFP's routine case).
+ * Move a single Booking to another List (3rd review #3; the RFP's routine case).
  * The office picks a target day, then a candidate List (any anaesthetist, either
  * session); each candidate shows its surgeon/hospital and an advisory pairing
  * mismatch flag before confirm (5th review #5 — no hard guard on pairing). The
- * store's `reassignCard` blocks AUTHORISED source/target.
+ * store's `reassignBooking` blocks AUTHORISED source/target.
  */
-export function MoveCardFlow({ open, cardId, actor, onClose, onMoved }: MoveCardFlowProps) {
+export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: MoveBookingFlowProps) {
   const { Overlay } = useSurface()
-  const card = useAppStore((s) => s.schedule.cards[cardId])
+  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const lists = useAppStore((s) => s.schedule.lists)
   const masters = useAppStore((s) => s.masters)
 
-  const sourceList = card !== undefined ? lists[card.listId] : undefined
+  const sourceList = booking !== undefined ? lists[booking.listId] : undefined
   const [targetDate, setTargetDate] = useState(sourceList?.dateISO ?? '')
   const [error, setError] = useState<string | null>(null)
 
@@ -50,7 +50,7 @@ export function MoveCardFlow({ open, cardId, actor, onClose, onMoved }: MoveCard
 
   function move(target: List) {
     setError(null)
-    const outcome = reassignCard(useAppStore, actor, cardId, target.id)
+    const outcome = reassignBooking(useAppStore, actor, bookingId, target.id)
     if (!outcome.ok) {
       setError(outcome.message)
       return
@@ -63,9 +63,9 @@ export function MoveCardFlow({ open, cardId, actor, onClose, onMoved }: MoveCard
   return (
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Move card to another list</div>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Move booking to another list</div>
         <div style={{ fontSize: 13, color: neutral.slate }}>
-          The Card moves alone. Both lists' other cards and their status are untouched, and the move is recorded in the Card's audit trail.
+          The Booking moves alone. Both lists' other bookings and their status are untouched, and the move is recorded in the Booking's audit trail.
         </div>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -101,7 +101,7 @@ export function MoveCardFlow({ open, cardId, actor, onClose, onMoved }: MoveCard
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
         <Button variant="secondary" block onClick={onClose}>Cancel</Button>
-        <div style={{ fontSize: 11, color: accent.pressed }}>Select a target list to move the card immediately.</div>
+        <div style={{ fontSize: 11, color: accent.pressed }}>Select a target list to move the booking immediately.</div>
       </div>
     </Overlay>
   )

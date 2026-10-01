@@ -2,7 +2,7 @@ import { createContext, useContext, type ReactNode, type RefObject } from 'react
 
 /**
  * SurfaceContext — the seam that lets ONE shared implementation of every
- * flow / capture sheet / card body satisfy convention 16 on both platforms
+ * flow / capture sheet / booking body satisfy convention 16 on both platforms
  * (mobile bottom sheet vs desktop dialog / panel) with no per-platform
  * branching in the bodies themselves. A shared component asks `useSurface()`
  * for its `Overlay` (modal container) and `Footer` (sticky action-bar
@@ -24,9 +24,9 @@ export interface FooterProps {
   children: ReactNode
 }
 
-/** One line above the total: a procedure on a multi-procedure Card, or one of a
+/** One line above the total: a procedure on a multi-procedure Booking, or one of a
  *  single procedure's fee lines when it has more than one. */
-export interface CardTotalLine {
+export interface BookingTotalLine {
   label: string
   amount: number
   /** A short qualifier, e.g. "time units only". */
@@ -34,40 +34,40 @@ export interface CardTotalLine {
 }
 
 /**
- * The Card calculation: units, fee and breakdown. Office Cards only; the
- * anaesthetist Card shows none, so only the desktop surface renders it (the
- * phone's `CardTotal` renders nothing).
+ * The Booking calculation: units, fee and breakdown. Office Bookings only; the
+ * anaesthetist Booking shows none, so only the desktop surface renders it (the
+ * phone's `BookingTotal` renders nothing).
  *
  * `action` is the complete / amend bar. The web layout passes null and renders
  * the control as a separate, matching-width sibling below the total.
  */
-export interface CardTotalProps {
-  /** Summed billable units across the Card's procedures (`cardFee`). */
+export interface BookingTotalProps {
+  /** Summed billable units across the Booking's procedures (`bookingFee`). */
   units: number
-  /** Summed fee across the Card's procedures (`cardFee`). */
+  /** Summed fee across the Booking's procedures (`bookingFee`). */
   fee: number
   /** Breakdown rows; empty when there is nothing to break down. */
-  lines: readonly CardTotalLine[]
+  lines: readonly BookingTotalLine[]
   /** The applied rate, e.g. "FEE @ $26.50/UNIT", or null when procedures disagree. */
   rateLabel: string | null
   /** Price-override note, or null. */
   overrideNote: string | null
-  /** The complete / amend bar. Omitted on a locked Card. */
+  /** The complete / amend bar. Omitted on a locked Booking. */
   action?: ReactNode
 }
 
 /**
- * The card-detail slots. `CardDetailBody` builds each one and hands the set to
+ * The booking-detail slots. `BookingDetailBody` builds each one and hands the set to
  * the surface, which decides the arrangement: mobile stacks them in one scroll
  * column with the total and the action bar pinned to the phone frame; web lays
  * them on the 12-column desktop grid (capture left, a sticky commit rail
  * right). The body itself never branches on platform — it only says what the
  * pieces ARE.
  */
-export interface CardLayoutSlots {
+export interface BookingLayoutSlots {
   /**
-   * The rendered content region. Card validation uses this scope to find the
-   * first incomplete control without reaching into another mounted Card in the
+   * The rendered content region. Booking validation uses this scope to find the
+   * first incomplete control without reaching into another mounted Booking in the
    * mobile slide stack.
    */
   contentRef: RefObject<HTMLDivElement>
@@ -83,24 +83,24 @@ export interface CardLayoutSlots {
   header: ((collapsed: boolean, history: ReactNode) => ReactNode) | null
   /** The History affordance (right-aligned; a page action on desktop). */
   history: ReactNode
-  /** Card-wide notices: cancelled, copied, post-op, pre-payment gate, refusals. */
+  /** Booking-wide notices: cancelled, copied, post-op, pre-payment gate, refusals. */
   banners: ReactNode
   /** Patient, scheduled time, attachments, notes for the office. */
   context: ReactNode
   /** The per-procedure BTM capture blocks plus Add another procedure. */
   capture: ReactNode
-  /** Copy for an additional procedure, cancel card, post-op addendum. */
+  /** Copy booking, cancel booking, post-op addendum. */
   actions: ReactNode
   /**
-   * The Card's visible calculation, as a function of the action to embed in it.
+   * The Booking's visible calculation, as a function of the action to embed in it.
    * Fee and Units modes pin it while the capture column scrolls; Off passes null
    * and leaves only the completion control. Mobile passes `completeBar` into the
    * calculation stack; web passes null and renders it as a separate sibling.
-   * Cancelled and procedure-less Cards also pass null.
+   * Cancelled and procedure-less Bookings also pass null.
    */
   summary: ((action: ReactNode) => ReactNode) | null
   /**
-   * The complete / amend bar, or null when the Card offers neither. Handed to
+   * The complete / amend bar, or null when the Booking offers neither. Handed to
    * `summary` on mobile and rendered beside it by the web layout, so exactly one
    * thing renders it.
    */
@@ -115,14 +115,14 @@ export interface Surface {
   variant: SurfaceVariant
   /** Modal container — mobile `BottomSheet`, web `Dialog` (same signature). */
   Overlay: (props: OverlayProps) => ReactNode
-  /** Card-detail arranger — one scroll column (mobile) / two-column grid (web). */
-  CardLayout: (props: CardLayoutSlots) => ReactNode
+  /** Booking-detail arranger — one scroll column (mobile) / two-column grid (web). */
+  BookingLayout: (props: BookingLayoutSlots) => ReactNode
   /**
-   * The Card's calculation object — the desktop rail's ink panel, or the phone
+   * The Booking's calculation object — the desktop rail's ink panel, or the phone
    * dock's compact strip. Fee mode stacks or chips procedures; Units mode
    * suppresses every monetary field.
    */
-  CardTotal: (props: CardTotalProps) => ReactNode
+  BookingTotal: (props: BookingTotalProps) => ReactNode
   /**
    * Two related cards: stacked on the phone, side by side on the desktop. Lets a
    * shared capture block use the width a desktop has without knowing it is on one.

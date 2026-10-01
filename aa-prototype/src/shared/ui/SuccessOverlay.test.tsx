@@ -42,7 +42,7 @@ describe('SuccessOverlay', () => {
   it('holds the escape hatch back until the tick has drawn, then runs the owner dismissal', () => {
     vi.useFakeTimers()
     const onDismiss = vi.fn()
-    render(<SuccessOverlay title="Card complete" onDismiss={onDismiss} />)
+    render(<SuccessOverlay title="Booking complete" onDismiss={onDismiss} />)
 
     // The full-bleed valve lands where the finger that opened the overlay
     // already is, so while the tick draws there must be nothing to hit — an
@@ -69,7 +69,7 @@ describe('SuccessOverlay', () => {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }))
-    render(<SuccessOverlay title="Card complete" onDismiss={vi.fn()} />)
+    render(<SuccessOverlay title="Booking complete" onDismiss={vi.fn()} />)
 
     act(() => vi.advanceTimersByTime(motion.reducedMotionFade))
 
@@ -78,7 +78,7 @@ describe('SuccessOverlay', () => {
 
   it('drops its pending timers when the owner unmounts it first', () => {
     vi.useFakeTimers()
-    const view = render(<SuccessOverlay title="Card complete" onDismiss={vi.fn()} />)
+    const view = render(<SuccessOverlay title="Booking complete" onDismiss={vi.fn()} />)
 
     view.unmount()
 

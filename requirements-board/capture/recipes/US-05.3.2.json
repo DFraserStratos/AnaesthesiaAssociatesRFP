@@ -7,7 +7,7 @@
       "name": "additional-time",
       "app": "web",
       "caption": "Additional procedure with its own times and time units",
-      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
           "steps": [],
@@ -22,15 +22,15 @@
       "name": "additional-time",
       "app": "mobile",
       "caption": "Additional procedure with its own times and time units",
-      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=slide-card] [data-shot=capture-times] >> nth=1"
+              "scroll": "[data-testid=slide-booking] [data-shot=capture-times] >> nth=1"
             },
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 250
             },
             {
@@ -38,8 +38,8 @@
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] [data-shot=capture-times] >> nth=1",
-            "[data-testid=slide-card] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-t]"
+            "[data-testid=slide-booking] [data-shot=capture-times] >> nth=1",
+            "[data-testid=slide-booking] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-t]"
           ]
         }
       ]

@@ -7,19 +7,19 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import {
   authoriseList,
-  cancelCard,
-  completeCard,
-  editCard,
+  cancelBooking,
+  completeBooking,
+  editBooking,
   editProcedure,
   logListNote,
-  reassignCard,
+  reassignBooking,
   reassignList,
   requestCover,
   setAvailability,
   submitList,
 } from './lifecycle'
 import * as lifecycleModule from './lifecycle'
-import { auditForEntity, cardsForList, listForSlot, proceduresForCard } from './selectors'
+import { auditForEntity, bookingsForList, listForSlot, proceduresForBooking } from './selectors'
 import { onAppEvent, type AppEvent } from './events'
 import { addHospitalHoliday } from './mastersActions'
 import type { Actor } from './mutate'
@@ -50,90 +50,90 @@ const SOUTER_AM = marker('designDayAmList')
 const SOUTER_PM = marker('designDayPmList')
 const MORRISON_LIST = marker('submittedListMorrison')
 const WHITAKER_LIST = marker('submittedListWhitaker')
-const ELLISON_CARD = marker('pendingCaptureCard')
-const GUARDIAN_CARD = marker('guardianMinorCard')
+const ELLISON_BOOKING = marker('pendingCaptureBooking')
+const GUARDIAN_BOOKING = marker('guardianMinorBooking')
 
 function store(): BoundAppStore {
   return createAppStore()
 }
 
-function firstCardOf(api: BoundAppStore, listId: string): string {
-  const card = cardsForList(api.getState(), listId)[0]
-  if (card === undefined) throw new Error(`list ${listId} has no cards`)
-  return card.id
+function firstBookingOf(api: BoundAppStore, listId: string): string {
+  const booking = bookingsForList(api.getState(), listId)[0]
+  if (booking === undefined) throw new Error(`list ${listId} has no bookings`)
+  return booking.id
 }
 
 /** Ellison seeds PRE-capture (no handover — Phase 04's live Finish-now demo);
- *  stamp the finish so the card validates before it is completed. */
+ *  stamp the finish so the booking validates before it is completed. */
 function captureEllisonFinish(api: BoundAppStore): void {
-  const procedure = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+  const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
   if (procedure === undefined) throw new Error('Ellison has no procedure')
   expect(editProcedure(api, SOUTER, procedure.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
 }
 
-describe('completeCard', () => {
-  it('rejects a card with invalid billing data and surfaces the reasons', () => {
+describe('completeBooking', () => {
+  it('rejects a booking with invalid billing data and surfaces the reasons', () => {
     const api = store()
-    // The guardian-minor card has no captured times yet.
-    const outcome = completeCard(api, OFFICE, GUARDIAN_CARD)
+    // The guardian-minor booking has no captured times yet.
+    const outcome = completeBooking(api, OFFICE, GUARDIAN_BOOKING)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) {
       expect(outcome.code).toBe('validationFailed')
       expect(Array.isArray(outcome.details)).toBe(true)
     }
-    expect(api.getState().schedule.cards[GUARDIAN_CARD]?.completed).toBe(false)
+    expect(api.getState().schedule.bookings[GUARDIAN_BOOKING]?.completed).toBe(false)
   })
 
-  it('completes a valid pending card (Ellison, once her finish is captured) and audits it', () => {
+  it('completes a valid pending booking (Ellison, once her finish is captured) and audits it', () => {
     const api = store()
     captureEllisonFinish(api)
-    const outcome = completeCard(api, SOUTER, ELLISON_CARD)
+    const outcome = completeBooking(api, SOUTER, ELLISON_BOOKING)
     expect(outcome).toEqual({ ok: true, value: undefined })
-    const card = api.getState().schedule.cards[ELLISON_CARD]
-    expect(card?.completed).toBe(true)
-    expect(card?.completedAtISO).toBeDefined()
-    const trail = auditForEntity(api.getState(), ELLISON_CARD)
-    expect(trail.at(-1)?.action).toBe('card.complete')
+    const booking = api.getState().schedule.bookings[ELLISON_BOOKING]
+    expect(booking?.completed).toBe(true)
+    expect(booking?.completedAtISO).toBeDefined()
+    const trail = auditForEntity(api.getState(), ELLISON_BOOKING)
+    expect(trail.at(-1)?.action).toBe('booking.complete')
   })
 
-  it('never allows an integration source to complete a card', () => {
+  it('never allows an integration source to complete a booking', () => {
     const api = store()
-    const outcome = completeCard(api, INTEGRATION, ELLISON_CARD)
+    const outcome = completeBooking(api, INTEGRATION, ELLISON_BOOKING)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('integrationForbidden')
   })
 
-  it('refuses a cancelled card', () => {
+  it('refuses a cancelled booking', () => {
     const api = store()
-    const outcome = completeCard(api, OFFICE, marker('cancelledCard'))
+    const outcome = completeBooking(api, OFFICE, marker('cancelledBooking'))
     expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('cardCancelled')
+    if (!outcome.ok) expect(outcome.code).toBe('bookingCancelled')
   })
 })
 
 describe('submitList', () => {
-  it('blocks submission while any non-cancelled card is uncompleted, even when all validate', () => {
+  it('blocks submission while any non-cancelled booking is uncompleted, even when all validate', () => {
     const api = store()
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) {
-      expect(outcome.code).toBe('cardsNotCompleted')
-      expect(outcome.details).toEqual([ELLISON_CARD])
+      expect(outcome.code).toBe('bookingsNotCompleted')
+      expect(outcome.details).toEqual([ELLISON_BOOKING])
     }
   })
 
-  it('submits once every card is completed', () => {
+  it('submits once every booking is completed', () => {
     const api = store()
     captureEllisonFinish(api)
-    expect(completeCard(api, SOUTER, ELLISON_CARD).ok).toBe(true)
+    expect(completeBooking(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(true)
     expect(api.getState().schedule.lists[SOUTER_PM]?.state).toBe('SUBMITTED')
   })
 
-  it('a cancelled card does not block submission', () => {
+  it('a cancelled booking does not block submission', () => {
     const api = store()
-    expect(cancelCard(api, OFFICE, ELLISON_CARD, 'Procedure postponed').ok).toBe(true)
+    expect(cancelBooking(api, OFFICE, ELLISON_BOOKING, 'Procedure postponed').ok).toBe(true)
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(true)
   })
@@ -184,41 +184,41 @@ describe('authoriseList', () => {
 describe('edit rights matrix', () => {
   it('anaesthetist edit of a SUBMITTED list is rejected', () => {
     const api = store()
-    const cardId = firstCardOf(api, MORRISON_LIST)
-    const outcome = editCard(api, MORRISON, cardId, { notes: 'try' })
+    const bookingId = firstBookingOf(api, MORRISON_LIST)
+    const outcome = editBooking(api, MORRISON, bookingId, { notes: 'try' })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
   })
 
   it('office edit of a SUBMITTED list is allowed', () => {
     const api = store()
-    const cardId = firstCardOf(api, MORRISON_LIST)
-    const outcome = editCard(api, OFFICE, cardId, { notes: 'checked with theatre' })
+    const bookingId = firstBookingOf(api, MORRISON_LIST)
+    const outcome = editBooking(api, OFFICE, bookingId, { notes: 'checked with theatre' })
     expect(outcome.ok).toBe(true)
-    expect(api.getState().schedule.cards[cardId]?.notes).toBe('checked with theatre')
+    expect(api.getState().schedule.bookings[bookingId]?.notes).toBe('checked with theatre')
   })
 
-  it('integration edit of a SUBMITTED card is refused as an exception outcome; DRAFT is allowed', () => {
+  it('integration edit of a SUBMITTED booking is refused as an exception outcome; DRAFT is allowed', () => {
     const api = store()
-    const submittedCard = firstCardOf(api, MORRISON_LIST)
-    const refused = editCard(api, INTEGRATION, submittedCard, { notes: 'feed update' })
+    const submittedBooking = firstBookingOf(api, MORRISON_LIST)
+    const refused = editBooking(api, INTEGRATION, submittedBooking, { notes: 'feed update' })
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.code).toBe('integrationImmutable')
 
-    const draftOutcome = editCard(api, INTEGRATION, ELLISON_CARD, { scheduledTime: '16:15' })
+    const draftOutcome = editBooking(api, INTEGRATION, ELLISON_BOOKING, { scheduledTime: '16:15' })
     expect(draftOutcome.ok).toBe(true)
   })
 
   it('nobody edits an AUTHORISED list, and procedure edits obey the same matrix', () => {
     const api = store()
     expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
-    const cardId = firstCardOf(api, MORRISON_LIST)
+    const bookingId = firstBookingOf(api, MORRISON_LIST)
     for (const actor of [OFFICE, MORRISON, INTEGRATION]) {
-      const outcome = editCard(api, actor, cardId, { notes: 'try' })
+      const outcome = editBooking(api, actor, bookingId, { notes: 'try' })
       expect(outcome.ok).toBe(false)
       if (!outcome.ok) expect(outcome.code).toBe('listAuthorised')
     }
-    const procedure = proceduresForCard(api.getState(), cardId)[0]
+    const procedure = proceduresForBooking(api.getState(), bookingId)[0]
     expect(procedure).toBeDefined()
     if (procedure !== undefined) {
       const outcome = editProcedure(api, OFFICE, procedure.id, { billingReference: 'X' })
@@ -227,9 +227,9 @@ describe('edit rights matrix', () => {
     }
   })
 
-  it('procedure edits stamp and audit through the parent card', () => {
+  it('procedure edits stamp and audit through the parent booking', () => {
     const api = store()
-    const procedure = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+    const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (procedure === undefined) throw new Error('no procedure')
     const outcome = editProcedure(api, OFFICE, procedure.id, { billingReference: 'SX-2026-9999' })
     expect(outcome.ok).toBe(true)
@@ -237,40 +237,40 @@ describe('edit rights matrix', () => {
   })
 })
 
-describe('cancelCard', () => {
+describe('cancelBooking', () => {
   it('requires a reason and writes the audited soft-cancel', () => {
     const api = store()
-    const noReason = cancelCard(api, SOUTER, ELLISON_CARD, '  ')
+    const noReason = cancelBooking(api, SOUTER, ELLISON_BOOKING, '  ')
     expect(noReason.ok).toBe(false)
     if (!noReason.ok) expect(noReason.code).toBe('reasonRequired')
 
-    const outcome = cancelCard(api, SOUTER, ELLISON_CARD, 'Patient did not arrive')
+    const outcome = cancelBooking(api, SOUTER, ELLISON_BOOKING, 'Patient did not arrive')
     expect(outcome.ok).toBe(true)
-    const card = api.getState().schedule.cards[ELLISON_CARD]
-    expect(card?.cancellation?.reason).toBe('Patient did not arrive')
-    expect(card?.cancellation?.source).toBe('anaesthetist')
-    expect(auditForEntity(api.getState(), ELLISON_CARD).at(-1)?.action).toBe('card.cancel')
+    const booking = api.getState().schedule.bookings[ELLISON_BOOKING]
+    expect(booking?.cancellation?.reason).toBe('Patient did not arrive')
+    expect(booking?.cancellation?.source).toBe('anaesthetist')
+    expect(auditForEntity(api.getState(), ELLISON_BOOKING).at(-1)?.action).toBe('booking.cancel')
     // Excluded from completion/validation once cancelled.
-    const complete = completeCard(api, SOUTER, ELLISON_CARD)
+    const complete = completeBooking(api, SOUTER, ELLISON_BOOKING)
     expect(complete.ok).toBe(false)
   })
 
   it('role/source matrix: office may cancel on SUBMITTED, integration only on DRAFT, nobody on AUTHORISED', () => {
     const api = store()
-    const submittedCard = firstCardOf(api, WHITAKER_LIST)
-    const integrationOnSubmitted = cancelCard(api, INTEGRATION, submittedCard, 'S15 cancellation')
+    const submittedBooking = firstBookingOf(api, WHITAKER_LIST)
+    const integrationOnSubmitted = cancelBooking(api, INTEGRATION, submittedBooking, 'S15 cancellation')
     expect(integrationOnSubmitted.ok).toBe(false)
     if (!integrationOnSubmitted.ok) expect(integrationOnSubmitted.code).toBe('integrationImmutable')
 
-    const integrationOnDraft = cancelCard(api, INTEGRATION, ELLISON_CARD, 'S15 cancellation')
+    const integrationOnDraft = cancelBooking(api, INTEGRATION, ELLISON_BOOKING, 'S15 cancellation')
     expect(integrationOnDraft.ok).toBe(true)
 
-    const officeOnSubmitted = cancelCard(api, OFFICE, submittedCard, 'Postponed')
+    const officeOnSubmitted = cancelBooking(api, OFFICE, submittedBooking, 'Postponed')
     expect(officeOnSubmitted.ok).toBe(true)
 
     expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
-    const authorisedCard = firstCardOf(api, MORRISON_LIST)
-    const onAuthorised = cancelCard(api, OFFICE, authorisedCard, 'Too late')
+    const authorisedBooking = firstBookingOf(api, MORRISON_LIST)
+    const onAuthorised = cancelBooking(api, OFFICE, authorisedBooking, 'Too late')
     expect(onAuthorised.ok).toBe(false)
     if (!onAuthorised.ok) expect(onAuthorised.code).toBe('listAuthorised')
   })
@@ -288,18 +288,18 @@ describe('reassignList', () => {
         l.statusKey === 'free' &&
         l.state === 'DRAFT' &&
         l.anaesthetistId !== exclude &&
-        cardsForList(state, l.id).length === 0,
+        bookingsForList(state, l.id).length === 0,
     )
     if (hit === undefined) throw new Error('no free target in seed')
     return hit.anaesthetistId
   }
 
-  it('moves the list (cards and audit intact), absorbs the free target, regenerates the vacated slot', () => {
+  it('moves the list (bookings and audit intact), absorbs the free target, regenerates the vacated slot', () => {
     const api = store()
     const sourceId = listForSlot(api.getState(), ANAE.souter, WED22, 'AM')?.id
     if (sourceId === undefined) throw new Error('no source list')
-    const cardsBefore = cardsForList(api.getState(), sourceId).map((c) => c.id)
-    expect(cardsBefore.length).toBeGreaterThan(0)
+    const bookingsBefore = bookingsForList(api.getState(), sourceId).map((c) => c.id)
+    expect(bookingsBefore.length).toBeGreaterThan(0)
 
     const target = freeTargetOn(api, WED22, 'AM', ANAE.souter)
     const targetFreeListId = listForSlot(api.getState(), target, WED22, 'AM')?.id
@@ -310,7 +310,7 @@ describe('reassignList', () => {
 
     const moved = state.schedule.lists[sourceId]
     expect(moved?.anaesthetistId).toBe(target)
-    expect(cardsForList(state, sourceId).map((c) => c.id)).toEqual(cardsBefore)
+    expect(bookingsForList(state, sourceId).map((c) => c.id)).toEqual(bookingsBefore)
     expect(targetFreeListId !== undefined && state.schedule.lists[targetFreeListId]).toBeUndefined()
 
     // Canvas invariant: both anaesthetists still hold exactly 2 lists that day.
@@ -341,7 +341,7 @@ describe('reassignList', () => {
 
     expect(source.conflicts.some((conflict) => conflict.kind === 'availability')).toBe(true)
     expect(target.statusKey).toBe('free')
-    expect(cardsForList(api.getState(), target.id)).toHaveLength(0)
+    expect(bookingsForList(api.getState(), target.id)).toHaveLength(0)
 
     // A hospital conflict belongs to the booking and must survive the move.
     expect(addHospitalHoliday(api, OFFICE, source.hospitalId, WED22, 'Test closure').ok).toBe(true)
@@ -375,35 +375,35 @@ describe('reassignList', () => {
   })
 })
 
-describe('reassignCard', () => {
-  it('moves one card only: neither list restatuses, other cards untouched, audited at card level', () => {
+describe('reassignBooking', () => {
+  it('moves one booking only: neither list restatuses, other bookings untouched, audited at booking level', () => {
     const api = store()
     const before = api.getState()
-    const pmCards = cardsForList(before, SOUTER_PM).map((c) => c.id)
-    const amCards = cardsForList(before, SOUTER_AM).map((c) => c.id)
+    const pmBookings = bookingsForList(before, SOUTER_PM).map((c) => c.id)
+    const amBookings = bookingsForList(before, SOUTER_AM).map((c) => c.id)
     const pmStatus = before.schedule.lists[SOUTER_PM]?.statusKey
     const amStatus = before.schedule.lists[SOUTER_AM]?.statusKey
 
-    const outcome = reassignCard(api, SOUTER, ELLISON_CARD, SOUTER_AM)
+    const outcome = reassignBooking(api, SOUTER, ELLISON_BOOKING, SOUTER_AM)
     expect(outcome.ok).toBe(true)
     const state = api.getState()
-    expect(state.schedule.cards[ELLISON_CARD]?.listId).toBe(SOUTER_AM)
-    expect(cardsForList(state, SOUTER_PM).map((c) => c.id)).toEqual(pmCards.filter((id) => id !== ELLISON_CARD))
-    expect(cardsForList(state, SOUTER_AM).map((c) => c.id).sort()).toEqual([...amCards, ELLISON_CARD].sort())
+    expect(state.schedule.bookings[ELLISON_BOOKING]?.listId).toBe(SOUTER_AM)
+    expect(bookingsForList(state, SOUTER_PM).map((c) => c.id)).toEqual(pmBookings.filter((id) => id !== ELLISON_BOOKING))
+    expect(bookingsForList(state, SOUTER_AM).map((c) => c.id).sort()).toEqual([...amBookings, ELLISON_BOOKING].sort())
     expect(state.schedule.lists[SOUTER_PM]?.statusKey).toBe(pmStatus)
     expect(state.schedule.lists[SOUTER_AM]?.statusKey).toBe(amStatus)
-    expect(auditForEntity(state, ELLISON_CARD).at(-1)?.action).toBe('card.reassign')
+    expect(auditForEntity(state, ELLISON_BOOKING).at(-1)?.action).toBe('booking.reassign')
   })
 
-  it('office may move a card onto a SUBMITTED target; integration may not', () => {
+  it('office may move a booking onto a SUBMITTED target; integration may not', () => {
     const api = store()
-    const officeMove = reassignCard(api, OFFICE, ELLISON_CARD, WHITAKER_LIST)
+    const officeMove = reassignBooking(api, OFFICE, ELLISON_BOOKING, WHITAKER_LIST)
     expect(officeMove.ok).toBe(true)
 
-    const back = reassignCard(api, OFFICE, ELLISON_CARD, SOUTER_PM)
+    const back = reassignBooking(api, OFFICE, ELLISON_BOOKING, SOUTER_PM)
     expect(back.ok).toBe(true)
 
-    const integrationMove = reassignCard(api, INTEGRATION, ELLISON_CARD, WHITAKER_LIST)
+    const integrationMove = reassignBooking(api, INTEGRATION, ELLISON_BOOKING, WHITAKER_LIST)
     expect(integrationMove.ok).toBe(false)
     if (!integrationMove.ok) expect(integrationMove.code).toBe('integrationImmutable')
   })
@@ -411,14 +411,14 @@ describe('reassignCard', () => {
   it('is rejected when the source or the target list is AUTHORISED', () => {
     const api = store()
     expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
-    const lockedCard = cardsForList(api.getState(), MORRISON_LIST)[0]
-    if (lockedCard === undefined) throw new Error('no card')
+    const lockedBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]
+    if (lockedBooking === undefined) throw new Error('no booking')
 
-    const fromAuthorised = reassignCard(api, OFFICE, lockedCard.id, SOUTER_AM)
+    const fromAuthorised = reassignBooking(api, OFFICE, lockedBooking.id, SOUTER_AM)
     expect(fromAuthorised.ok).toBe(false)
     if (!fromAuthorised.ok) expect(fromAuthorised.code).toBe('listAuthorised')
 
-    const toAuthorised = reassignCard(api, OFFICE, ELLISON_CARD, MORRISON_LIST)
+    const toAuthorised = reassignBooking(api, OFFICE, ELLISON_BOOKING, MORRISON_LIST)
     expect(toAuthorised.ok).toBe(false)
     if (!toAuthorised.ok) expect(toAuthorised.code).toBe('listAuthorised')
   })
@@ -451,9 +451,9 @@ describe('setAvailability', () => {
     expect(list?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
   })
 
-  it('conflict-flags an empty-but-reserved list (hospital set, no cards)', () => {
+  it('conflict-flags an empty-but-reserved list (hospital set, no bookings)', () => {
     const api = store()
-    // Fitzgerald PM on the design day: private, St George's, surgeon TBC, no cards.
+    // Fitzgerald PM on the design day: private, St George's, surgeon TBC, no bookings.
     const before = listForSlot(api.getState(), ANAE.fitzgerald, TUE21, 'PM')
     expect(before?.hospitalId).toBeDefined()
     const outcome = setAvailability(api, OFFICE, ANAE.fitzgerald, TUE21, 'PM', 'unavailable')
@@ -475,7 +475,7 @@ describe('setAvailability', () => {
 
   it('replaces rather than stacks availability conflicts on repeated toggles', () => {
     const api = store()
-    // Souter's design-day AM list is booked (private, cards): every toggle
+    // Souter's design-day AM list is booked (private, bookings): every toggle
     // conflict-flags rather than restatusing, so the flags could pile up.
     setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
     setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'available')

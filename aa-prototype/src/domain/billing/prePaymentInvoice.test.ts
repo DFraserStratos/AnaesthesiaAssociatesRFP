@@ -1,7 +1,7 @@
 /**
  * Pure pre-payment invoice tests (Phase 09; B7): the pre-procedure invoice
  * covers only BillableParty-route `selfFundedPrepayment` procedures (a mixed
- * card's contract-holder procedures are untouched); split raises the agreed
+ * booking's contract-holder procedures are untouched); split raises the agreed
  * deposit, full raises the estimated fee; the later balance run nets the
  * deposit off as a visible deduction line so deposit + balance reconciles to
  * the patient-funded portion's full fee (GST included), and a full
@@ -10,8 +10,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
-  buildInvoicesForCard,
-  buildPrePaymentInvoiceForCard,
+  buildInvoicesForBooking,
+  buildPrePaymentInvoiceForBooking,
   type InvoiceBuildContext,
 } from './invoiceBuild'
 import { toCents } from './money'
@@ -20,14 +20,14 @@ import {
   HANDOVER_1030,
   START_0800,
   mkAnaesthetist,
-  mkCard,
+  mkBooking,
   mkContract,
   mkProcedure,
 } from './fixtures'
 
 const LIST_DATE = '2026-07-21'
 
-/** A hospital default so the mixed card's contract-holder procedure resolves. */
+/** A hospital default so the mixed booking's contract-holder procedure resolves. */
 const HOSPITAL_DEFAULT = mkContract({
   id: 'con-def',
   name: 'Default',
@@ -74,7 +74,7 @@ function prepaymentProc(overrides: Partial<ReturnType<typeof mkProcedure>> = {})
   })
 }
 
-describe('buildPrePaymentInvoiceForCard', () => {
+describe('buildPrePaymentInvoiceForBooking', () => {
   it('covers only BillableParty selfFundedPrepayment procedures (hospital procedures excluded)', () => {
     const hospitalProc = mkProcedure({
       id: 'proc-h',
@@ -83,7 +83,7 @@ describe('buildPrePaymentInvoiceForCard', () => {
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',
     })
-    const result = buildPrePaymentInvoiceForCard(mkCard(), [hospitalProc, prepaymentProc()], mkCtx())
+    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [hospitalProc, prepaymentProc()], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices).toHaveLength(1)
     const invoice = result.invoices[0]!
@@ -95,7 +95,7 @@ describe('buildPrePaymentInvoiceForCard', () => {
 
   it('split raises the agreed deposit as an ex-GST subtotal ($800 -> 800/120/920)', () => {
     const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 800 } })
-    const result = buildPrePaymentInvoiceForCard(mkCard(), [proc], mkCtx())
+    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [proc], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.lines).toHaveLength(1)
@@ -107,7 +107,7 @@ describe('buildPrePaymentInvoiceForCard', () => {
   })
 
   it('full raises the estimated full fee via the calculator', () => {
-    const result = buildPrePaymentInvoiceForCard(mkCard(), [prepaymentProc()], mkCtx())
+    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [prepaymentProc()], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.subtotal).toBe(FULL_FEE)
@@ -120,7 +120,7 @@ describe('buildPrePaymentInvoiceForCard', () => {
       prepaymentDetail: { type: 'split', depositAmount: 300 },
       billablePartyId: 'bp-7',
     })
-    const result = buildPrePaymentInvoiceForCard(mkCard(), [proc], mkCtx())
+    const result = buildPrePaymentInvoiceForBooking(mkBooking(), [proc], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices[0]!.counterparty).toEqual({ kind: 'billableParty', id: 'bp-7' })
   })
@@ -129,12 +129,12 @@ describe('buildPrePaymentInvoiceForCard', () => {
 describe('deposit + balance reconciliation', () => {
   it('split: deposit + balance = the full fee (ex-GST, GST and total all reconcile)', () => {
     const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 300 } })
-    const pre = buildPrePaymentInvoiceForCard(mkCard(), [proc], mkCtx())
+    const pre = buildPrePaymentInvoiceForBooking(mkBooking(), [proc], mkCtx())
     if (pre.kind !== 'invoices') throw new Error('expected invoices')
     const deposit = pre.invoices[0]!
 
     // The balance run threads the ex-GST deposit in as prePaidByProcedure.
-    const balance = buildInvoicesForCard(mkCard(), [proc], mkCtx({ prePaidByProcedure: pp(300) }))
+    const balance = buildInvoicesForBooking(mkBooking(), [proc], mkCtx({ prePaidByProcedure: pp(300) }))
     if (balance.kind !== 'invoices') throw new Error('expected invoices')
     expect(balance.invoices).toHaveLength(1)
     const bal = balance.invoices[0]!
@@ -149,16 +149,16 @@ describe('deposit + balance reconciliation', () => {
   })
 
   it('full: the balance nets to $0, so no balance invoice is raised', () => {
-    const pre = buildPrePaymentInvoiceForCard(mkCard(), [prepaymentProc()], mkCtx())
+    const pre = buildPrePaymentInvoiceForBooking(mkBooking(), [prepaymentProc()], mkCtx())
     if (pre.kind !== 'invoices') throw new Error('expected invoices')
     expect(pre.invoices[0]!.subtotal).toBe(FULL_FEE)
 
-    const balance = buildInvoicesForCard(mkCard(), [prepaymentProc()], mkCtx({ prePaidByProcedure: pp(FULL_FEE) }))
+    const balance = buildInvoicesForBooking(mkBooking(), [prepaymentProc()], mkCtx({ prePaidByProcedure: pp(FULL_FEE) }))
     if (balance.kind !== 'invoices') throw new Error('expected invoices')
     expect(balance.invoices).toHaveLength(0)
   })
 
-  it('mixed card: the contract-holder procedure bills in full while the full pre-payment nets away', () => {
+  it('mixed booking: the contract-holder procedure bills in full while the full pre-payment nets away', () => {
     const hospitalProc = mkProcedure({
       id: 'proc-h',
       rvgBaseCode: BASE_SINGLE_10.code,
@@ -166,8 +166,8 @@ describe('deposit + balance reconciliation', () => {
       handoverISO: HANDOVER_1030,
       governingContractId: 'con-def',
     })
-    const balance = buildInvoicesForCard(
-      mkCard(),
+    const balance = buildInvoicesForBooking(
+      mkBooking(),
       [hospitalProc, prepaymentProc()],
       mkCtx({ prePaidByProcedure: pp(FULL_FEE) }),
     )
@@ -181,14 +181,14 @@ describe('deposit + balance reconciliation', () => {
 
   it('a deposit larger than the fee is a negativeTotal exception (the belt guard)', () => {
     const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 800 } })
-    const balance = buildInvoicesForCard(mkCard(), [proc], mkCtx({ prePaidByProcedure: pp(800) }))
+    const balance = buildInvoicesForBooking(mkBooking(), [proc], mkCtx({ prePaidByProcedure: pp(800) }))
     expect(balance.kind).toBe('exception')
     if (balance.kind === 'exception') expect(balance.code).toBe('negativeTotal')
   })
 
   it('a prepaid procedure that also carries a funder split fails for review', () => {
     const proc = prepaymentProc()
-    const balance = buildInvoicesForCard(mkCard(), [proc], mkCtx({
+    const balance = buildInvoicesForBooking(mkBooking(), [proc], mkCtx({
       prePaidByProcedure: pp(FULL_FEE),
       billingLines: [
         { id: 'bl-1', procedureId: 'proc-pp', chargeBasis: 'rvg', amount: 630, description: 'Split', funderOverride: { kind: 'insurer', id: 'ins-1' } },
@@ -201,8 +201,8 @@ describe('deposit + balance reconciliation', () => {
   it('fails for review when the payer changed since the deposit was raised', () => {
     // Deposit raised to a billable party, but the procedure now bills the patient.
     const proc = prepaymentProc({ prepaymentDetail: { type: 'split', depositAmount: 300 } })
-    const balance = buildInvoicesForCard(
-      mkCard(),
+    const balance = buildInvoicesForBooking(
+      mkBooking(),
       [proc],
       mkCtx({ prePaidByProcedure: pp(300, { kind: 'billableParty', id: 'bp-9' }) }),
     )

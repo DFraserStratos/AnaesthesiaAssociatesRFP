@@ -7,7 +7,7 @@
       "name": "rvg-picker",
       "app": "web",
       "caption": "RVG code picker",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "closed",
@@ -60,7 +60,7 @@
       "name": "rvg-picker",
       "app": "mobile",
       "caption": "RVG code picker",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "closed",

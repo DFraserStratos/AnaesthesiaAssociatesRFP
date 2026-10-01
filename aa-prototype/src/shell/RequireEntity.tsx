@@ -7,7 +7,7 @@ import { Navigate } from 'react-router-dom'
  * null-guards a missing entity, but a blank page reads as broken; this turns the
  * blank into a redirect to the parent route.
  *
- * `to=".."` is route-relative (not path-relative), so the `:listId` / `:cardId`
+ * `to=".."` is route-relative (not path-relative), so the `:listId` / `:bookingId`
  * / `:invoiceId` routes are nested one segment deep under the collection they
  * fall back to — see `router.tsx`.
  */

@@ -7,7 +7,7 @@
       "name": "default-contract",
       "app": "admin",
       "caption": "Procedure governed by the St George's default contract",
-      "start": "/admin/day/2026-07-21/cards/C0001",
+      "start": "/admin/day/2026-07-21/bookings/BK0001",
       "states": [
         {
           "steps": [],
@@ -21,7 +21,7 @@
       "name": "default-contract",
       "app": "web",
       "caption": "Default hospital contract shown on the Booking",
-      "start": "/web/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "start": "/web/lists/L-34821-2026-07-21-AM/bookings/BK0001",
       "states": [
         {
           "steps": [],
@@ -35,12 +35,12 @@
       "name": "default-contract",
       "app": "mobile",
       "caption": "Default hospital contract shown on the Booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001",
+      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 450
             },
             {
@@ -48,7 +48,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] [data-testid=procedure-header] + div"
+            "[data-testid=slide-booking] [data-testid=procedure-header] + div"
           ]
         }
       ]

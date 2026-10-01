@@ -14,7 +14,7 @@
           "caption": "Add a Booking, enter manually or from a photo",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -29,7 +29,7 @@
           "caption": "Manual entry of the patient and operation",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -58,7 +58,7 @@
           "caption": "Add a Booking, enter manually or from a photo",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600
@@ -73,7 +73,7 @@
           "caption": "Manual entry of the patient and operation",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 600

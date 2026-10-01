@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { neutral, accent, radius, semantic } from '../../../theme/tokens'
 import {
-  cardsOnListByNhi,
+  bookingsOnListByNhi,
   correctEthnicityCode,
   dataQualityItems,
   integrationMonitor,
@@ -108,7 +108,7 @@ function MessagesTab() {
       )}
       <div style={{ fontSize: 12, color: neutral.mist, lineHeight: 1.5 }}>
         "Retried" is a processed message that took more than one attempt. Duplicates are deduped by the
-        message control ID (no second Card). Dead-letter and manual-intervention rows are retained for the
+        message control ID (no second Booking). Dead-letter and manual-intervention rows are retained for the
         office to action, never dropped.
       </div>
     </div>
@@ -273,7 +273,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
     const outcome = ingestPdfRow(useAppStore, actor, targetListId, row)
     setResults((res) => ({
       ...res,
-      [row.id]: outcome.ok ? { outcome: outcome.value.outcome, message: outcome.value.outcome === 'updated' ? 'Updated existing Card (not duplicated).' : 'New Card created.' } : { outcome: 'error', message: outcome.message },
+      [row.id]: outcome.ok ? { outcome: outcome.value.outcome, message: outcome.value.outcome === 'updated' ? 'Updated existing Booking (not duplicated).' : 'New Booking created.' } : { outcome: 'error', message: outcome.message },
     }))
   }
 
@@ -306,7 +306,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
           {rows.map((row, rowIndex) => {
             const nhiVerdict = row.nhi.trim() !== '' ? validateNhi(row.nhi) : undefined
             const normalised = nhiVerdict?.valid === true ? nhiVerdict.normalised : undefined
-            const match = normalised !== undefined ? cardsOnListByNhi({ schedule, masters }, targetListId, normalised)[0] : undefined
+            const match = normalised !== undefined ? bookingsOnListByNhi({ schedule, masters }, targetListId, normalised)[0] : undefined
             const result = results[row.id]
             return (
               <div key={row.id} data-shot={`pdf-row-${rowIndex + 1}`} style={{ background: neutral.surface, border: `1px solid ${result?.outcome === 'error' ? semantic.error.solid : neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -367,7 +367,7 @@ function DataQualityTab({ actor }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820, lineHeight: 1.5 }}>
         The RFP mandates NZHIS Level 4 ethnicity codes, so an inbound code that is not a valid code is
-        quarantined "pending correction", never stored, and the Card still books. Supply a valid code to
+        quarantined "pending correction", never stored, and the Booking still books. Supply a valid code to
         clear each item.
       </div>
       {items.length === 0 ? (

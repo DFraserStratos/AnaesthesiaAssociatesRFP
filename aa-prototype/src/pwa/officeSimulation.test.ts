@@ -18,11 +18,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../store/appStore'
-import { authoriseList, completeCard, editProcedure, submitList } from '../store/lifecycle'
+import { authoriseList, completeBooking, editProcedure, submitList } from '../store/lifecycle'
 import { wireBillingRun } from '../store/billingRun'
 import { advanceClockMinutes, resetDemo } from '../store/clockActions'
 import { clockISO, type Actor } from '../store/mutate'
-import { casesForList, invoicesForList, isListBilled, proceduresForCard } from '../store/selectors'
+import { casesForList, invoicesForList, isListBilled, proceduresForBooking } from '../store/selectors'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import {
   isOfficeSimulationEnabled,
@@ -44,7 +44,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 /** The office simulation's own audit identity — asserted, so a rename breaks here first. */
 const SIMULATED_OFFICE = 'AA office (simulated)'
 
-/** Souter's Tue-21 PM List: DRAFT, one card left to capture (the design-day path). */
+/** Souter's Tue-21 PM List: DRAFT, one booking left to capture (the design-day path). */
 const SOUTER_PM = SEED_LIST_IDS.souterPm21
 /** A List the SEED ships already SUBMITTED for the Admin review queue. */
 const SEEDED_QUEUE_LIST = SEED_LIST_IDS.morrisonMon20
@@ -66,12 +66,12 @@ function store(): BoundAppStore {
  */
 function submitAsSouter(api: BoundAppStore): void {
   advanceClockMinutes(api, 9 * 60 + 20)
-  const ellison = marker('pendingCaptureCard')
-  const procedure = proceduresForCard(api.getState(), ellison)[0]
-  if (procedure === undefined) throw new Error('the Ellison card has no procedure')
+  const ellison = marker('pendingCaptureBooking')
+  const procedure = proceduresForBooking(api.getState(), ellison)[0]
+  if (procedure === undefined) throw new Error('the Ellison booking has no procedure')
   const handover = editProcedure(api, SOUTER, procedure.id, { handoverISO: clockISO(api.getState().clock) })
   if (!handover.ok) throw new Error(`handover refused: ${handover.message}`)
-  const completed = completeCard(api, SOUTER, ellison)
+  const completed = completeBooking(api, SOUTER, ellison)
   if (!completed.ok) throw new Error(`complete refused: ${completed.message}`)
   const submitted = submitList(api, SOUTER, SOUTER_PM)
   if (!submitted.ok) throw new Error(`submit refused: ${submitted.message}`)

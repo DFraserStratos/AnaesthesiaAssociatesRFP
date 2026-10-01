@@ -7,7 +7,7 @@
       "name": "full-discount",
       "app": "web",
       "caption": "Full discount keeps the base, time and modifier record",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -50,12 +50,12 @@
       "name": "full-discount",
       "app": "mobile",
       "caption": "Full discount keeps the base, time and modifier record",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 1900
             },
             {

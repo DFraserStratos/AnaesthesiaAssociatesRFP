@@ -15,7 +15,7 @@ import { runBillingForList, handoffListCases } from './billingRun'
 import { handoffCase } from './xeroHandoff'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { armHandoffFault } from './demoSettingsActions'
-import { casesForList, casesForCard } from './selectors'
+import { casesForList, casesForBooking } from './selectors'
 import type { Actor } from './mutate'
 import { SEED_LIST_IDS, SEED_MARKERS, PAT } from '../domain/seed'
 
@@ -29,10 +29,10 @@ function marker(key: string): string {
   if (m === undefined) throw new Error(`missing marker ${key}`)
   return m.entityId
 }
-function listOf(api: BoundAppStore, cardId: string): string {
-  const card = api.getState().schedule.cards[cardId]
-  if (card === undefined) throw new Error(`missing card ${cardId}`)
-  return card.listId
+function listOf(api: BoundAppStore, bookingId: string): string {
+  const booking = api.getState().schedule.bookings[bookingId]
+  if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
+  return booking.listId
 }
 /** Submit → authorise → run → hand off (no wired emitter). */
 function billAndHandoff(api: BoundAppStore, listId: string): void {
@@ -82,7 +82,7 @@ describe('Xero handoff — the atomic pair', () => {
   it('dedupes the payer + payee contacts across every episode on the list', () => {
     const api = store()
     billAndHandoff(api, SEED_LIST_IDS.morrisonMon20)
-    // Morrison's list is all St George's hospital route, 6 cards → still ONE
+    // Morrison's list is all St George's hospital route, 6 bookings → still ONE
     // St George's payer contact and ONE Morrison payee contact (deduped, and the
     // seeded St George's org contact is reused via the cache).
     const contacts = Object.values(api.getState().xero.contacts)
@@ -95,8 +95,8 @@ describe('Xero handoff — the atomic pair', () => {
   it('keys the patient contact on the hidden internal id, never the NHI (convention 8)', () => {
     const api = store()
     // Raise the self-funded pre-payment pre-invoice (patient payer) → patient contact.
-    const rileyCard = marker('prepaymentCard')
-    expect(raisePreProcedureInvoice(api, OFFICE, rileyCard).ok).toBe(true)
+    const rileyBooking = marker('prepaymentBooking')
+    expect(raisePreProcedureInvoice(api, OFFICE, rileyBooking).ok).toBe(true)
 
     const contacts = Object.values(api.getState().xero.contacts)
     const patientContact = contacts.find((c) => c.type === 'patient')
@@ -111,7 +111,7 @@ describe('Xero handoff — the atomic pair', () => {
 
 describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
   function cosCaseId(api: BoundAppStore): string {
-    const listId = listOf(api, marker('cosAccContractCard'))
+    const listId = listOf(api, marker('cosAccContractBooking'))
     const cases = casesForList(api.getState(), listId).filter((c) => c.status !== 'failed')
     expect(cases.length).toBe(1)
     return cases[0]!.id
@@ -119,7 +119,7 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
 
   it('a fault records handoffFailure, creates no pair, keeps status invoiced, clears the flag', () => {
     const api = store()
-    const listId = listOf(api, marker('cosAccContractCard'))
+    const listId = listOf(api, marker('cosAccContractBooking'))
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)
@@ -137,7 +137,7 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
 
   it('retrying a faulted handoff creates exactly one pair and clears the fault', () => {
     const api = store()
-    const listId = listOf(api, marker('cosAccContractCard'))
+    const listId = listOf(api, marker('cosAccContractBooking'))
     expect(submitList(api, OFFICE, listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
     expect(runBillingForList(api, listId).ok).toBe(true)
@@ -155,7 +155,7 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
 
   it('is idempotent — a second handoff of an already-paired case is a no-op', () => {
     const api = store()
-    const listId = listOf(api, marker('cosAccContractCard'))
+    const listId = listOf(api, marker('cosAccContractBooking'))
     billAndHandoff(api, listId)
     const caseId = cosCaseId(api)
     const before = api.getState().billing.cases[caseId]!.accRecId
@@ -170,9 +170,9 @@ describe('Xero handoff — fault, retry, idempotency (D-handoff)', () => {
 describe('Xero handoff — pre-payment pre-invoice gets a full pair (D-pre-invoice-pair)', () => {
   it('raising a pre-invoice hands its case off to a full ACCREC + ACCPAY pair', () => {
     const api = store()
-    const rileyCard = marker('prepaymentCard')
-    expect(raisePreProcedureInvoice(api, OFFICE, rileyCard).ok).toBe(true)
-    const cases = casesForCard(api.getState(), rileyCard)
+    const rileyBooking = marker('prepaymentBooking')
+    expect(raisePreProcedureInvoice(api, OFFICE, rileyBooking).ok).toBe(true)
+    const cases = casesForBooking(api.getState(), rileyBooking)
     expect(cases.length).toBe(1)
     const c = cases[0]!
     expect(c.accRecId).toBeDefined()

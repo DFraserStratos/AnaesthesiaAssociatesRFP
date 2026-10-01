@@ -36,8 +36,8 @@ function pay(api: BoundAppStore): PayablesRunResult {
   return res.value
 }
 function billCos(api: BoundAppStore): { caseId: string; accRecId: string; accPayId: string; amountDue: number; amountPayable: number } {
-  const card = api.getState().schedule.cards[marker('cosAccContractCard')]!
-  const listId = card.listId
+  const booking = api.getState().schedule.bookings[marker('cosAccContractBooking')]!
+  const listId = booking.listId
   expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)

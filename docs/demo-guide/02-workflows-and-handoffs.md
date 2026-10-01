@@ -13,11 +13,11 @@ sequenceDiagram
 
     S->>S: Maintain rolling AM/PM List canvas
     SR->>O: Standing arrangement, phone, PDF or hospital update
-    O->>S: Reserve/update List and Cards
-    S->>A: Show assigned List and patient Cards
+    O->>S: Reserve/update List and Bookings
+    S->>A: Show assigned List and patient Bookings
     A->>A: Capture procedure and BTM data
     A->>O: Submit completed List
-    O->>O: Sanity-check and correct Cards
+    O->>O: Sanity-check and correct Bookings
     O->>B: Authorise whole List
     B->>B: Resolve route, Contract, fee and invoice grouping
     B->>X: Create ACCREC and draft ACCPAY
@@ -80,7 +80,7 @@ There is no `RETURNED` state.
 
 ### Handoff
 
-The office receives a stable schedule on which it can paint assignments and patient Cards.
+The office receives a stable schedule on which it can paint assignments and patient Bookings.
 
 ### Demo point
 
@@ -94,11 +94,11 @@ session.
 - RFP: `Supporting / Master Data`
 - Prototype: `D1`, `D2`, `D5`
 
-## Workflow 1: reserve a List and populate patient Cards
+## Workflow 1: reserve a List and populate patient Bookings
 
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
-**Prototype readiness:** Ready. Manual phone booking, mobile photo/manual Card creation, and the
+**Prototype readiness:** Ready. Manual phone booking, mobile photo/manual Booking creation, and the
 HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 
 ### Triggers
@@ -113,17 +113,17 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 
 1. The office selects a suitable AM or PM List.
 2. The List is assigned a hospital and surgeon.
-3. Patient appointments are represented as time-ordered Cards inside the List.
-4. Each Card points to a patient and contains one or more Procedures.
-5. Later messages or office actions can add, reschedule, modify, move or soft-cancel a Card while the
+3. Patient appointments are represented as time-ordered Bookings inside the List.
+4. Each Booking points to a patient and contains one or more Procedures.
+5. Later messages or office actions can add, reschedule, modify, move or soft-cancel a Booking while the
    List remains `DRAFT`.
 6. Every change writes `lastModifiedBy/At` and append-only audit history.
 
 ### Manual fallback paths
 
 - **Phone advice:** Kirsty creates the booking in Admin.
-- **Mobile/web manual Card:** Dr Souter enters the missing Card and its advised billing route.
-- **Photo:** Dr Souter photographs a paper Card; simulated extraction pre-fills a draft for review.
+- **Mobile/web manual Booking:** Dr Souter enters the missing Booking and its advised billing route.
+- **Photo:** Dr Souter photographs a paper booking card; simulated extraction pre-fills a draft for review.
 - **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
   NHI, so a re-ingest updates rather than duplicates).
 
@@ -157,21 +157,21 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 
 1. Kirsty opens the Admin Day View.
 2. She locates the relevant List by anaesthetist, time, hospital and status colour.
-3. She opens the List drawer and its Cards.
-4. For a routine patient reschedule, she moves one Card to a different List.
+3. She opens the List drawer and its Bookings.
+4. For a routine patient reschedule, she moves one Booking to a different List.
 5. For an incorrect assignment, she changes hospital, surgeon or actual start/end time.
-6. For a cancellation, she records a reason and soft-cancels the Card.
-7. Cancelled Cards remain visible for history but do not block submission or enter billing.
+6. For a cancellation, she records a reason and soft-cancels the Booking.
+7. Cancelled Bookings remain visible for history but do not block submission or enter billing.
 8. She can add an internal day note for colleagues.
 
 ### Handoff
 
-The updated List and Cards are immediately visible in Dr Souter's mobile and web views while the List
+The updated List and Bookings are immediately visible in Dr Souter's mobile and web views while the List
 is `DRAFT`.
 
 ### Demo point
 
-Show a single Card move and explain that it is different from reassigning an entire List.
+Show a single Booking move and explain that it is different from reassigning an entire List.
 
 ### Source
 
@@ -196,7 +196,7 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 3. Kirsty sees the conflict or receives the phone call.
 4. She views Free anaesthetists at the required AM/PM granularity.
 5. She selects a Free target session.
-6. She reassigns the whole List, including every Card and its history, to the replacement
+6. She reassigns the whole List, including every Booking and its history, to the replacement
    anaesthetist.
 7. The target's empty Free List is absorbed.
 8. A fresh List is regenerated in the vacated slot so the fixed two-Lists-per-day canvas remains
@@ -224,7 +224,7 @@ cover requests and an office-managed reassignment.
 - RFP: `Open Questions`
 - Prototype: `D7`, `M8`, `M9`, `A3`
 
-## Workflow 4: capture BTM and complete a Card
+## Workflow 4: capture BTM and complete a Booking
 
 **Primary actor:** Anaesthetist
 
@@ -236,7 +236,7 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 
 ### Steps
 
-1. Dr Souter opens her List and selects the patient Card.
+1. Dr Souter opens her List and selects the patient Booking.
 2. She confirms patient, operation, hospital and surgeon context.
 3. For each Procedure she selects the RVG base code.
 4. She records the start and handover times.
@@ -246,30 +246,33 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 6. She records ASA and any other applicable modifiers.
 7. The system prevents a positioning modifier if the base code already includes it.
 8. Modifier codes in the same band (pre-assessment, age, ASA, BMI) are one per procedure, so each
-   band is a segmented control and picking a sibling swaps it in rather than adding to it (tapping
+   band is a segmented control and picking a sibling replaces it rather than adding to it (tapping
    the live segment again clears the band). The codes that genuinely stack — a pre-assessment
    follow-up, emergency, positioning, awake intubation, post-op care — stay as chips under
    "Also applies", so the shape of the control tells you the rule before you touch it.
-9. Her Card shows no units or fee; only Mark complete is pinned. The office sees the full billing
-   total on the Admin Card.
+9. Her Booking shows no units or fee; only Mark complete is pinned. The office sees the full billing
+   total on the Admin Booking.
 10. She may record an allowed fixed or rate-by-time line, or an override with a reason.
-11. She selects Mark complete. If anything required is missing, the Card scrolls to and focuses the
+11. She selects Mark complete. If anything required is missing, the Booking scrolls to and focuses the
     first incomplete control while showing its inline validation message. She resolves each item and
-    marks the Card complete.
+    marks the Booking complete.
 
 ### Multiple Procedures
 
-- One Card can have several Procedures.
-- An additional Procedure in the same episode is time-only under the hard split-billing rule.
+- One Booking can have several Procedures.
+- An additional Procedure in the same episode (added with **Add another procedure**) is time-only under the
+  hard split-billing rule. Brian Holt's Booking on Dr Souter's Mon 20 AM List is the seeded example.
+- **Copy booking** is different: it starts a new Booking for the same patient on the same List, with its
+  own primary Procedure and only the billing reference carried over.
 - Base and Modifier units must not be charged a second time.
 
 ### Handoff
 
-When every active Card in the List is complete, the List becomes eligible for submission.
+When every active Booking in the List is complete, the List becomes eligible for submission.
 
 ### Demo point
 
-Use Margaret Ellison. She is the one incomplete Card on Dr Souter's Southern Cross PM List.
+Use Margaret Ellison. She is the one incomplete Booking on Dr Souter's Southern Cross PM List.
 
 ### Source
 
@@ -286,18 +289,18 @@ Use Margaret Ellison. She is the one incomplete Card on Dr Souter's Southern Cro
 
 ### Trigger
 
-Every active Card in the List has been marked complete.
+Every active Booking in the List has been marked complete.
 
 ### Steps
 
 1. Dr Souter chooses **Mark list completed**.
-2. The app confirms that every Card is complete and valid.
+2. The app confirms that every Booking is complete and valid.
 3. She selects **Submit to office**.
 4. A brief **List submitted** success moment confirms that it was sent to the office for review.
 5. The List becomes `SUBMITTED`.
 6. Dr Souter can still see it as completed/unbilled but cannot edit it.
 7. Kirsty opens the Review queue.
-8. She checks the full set of Cards, including:
+8. She checks the full set of Bookings, including:
    - billing route;
    - governing Contract;
    - Insurer;
@@ -307,7 +310,7 @@ Every active Card in the List has been marked complete.
 9. If something is wrong, Kirsty phones for clarification and corrects it in the office.
 10. She may log a phone note.
 11. She selects **Authorise for billing**.
-12. The List becomes `AUTHORISED`; every Card is immutable.
+12. The List becomes `AUTHORISED`; every Booking is immutable.
 
 ### Handoff
 
@@ -336,7 +339,7 @@ The List reaches `AUTHORISED`.
 
 ### Steps
 
-1. The Billing Engine iterates each active Card and its Procedures.
+1. The Billing Engine iterates each active Booking and its Procedures.
 2. It resolves the explicit billing route per Procedure:
    - Hospital/contract holder;
    - Billable Party, usually the patient;
@@ -344,7 +347,7 @@ The List reaches `AUTHORISED`.
 3. It selects the governing Contract and rating method.
 4. It calculates the fee from the captured snapshot.
 5. It enforces time-only additional Procedures and conserved two-funder allocations.
-6. It groups lines by counterparty per Card.
+6. It groups lines by counterparty per Booking.
 7. It creates one or more invoice documents.
 8. It displays the contract-holder or patient layout as appropriate.
 9. Office can simulate email or print. A direct-claim insurer uses the upload-portal state.
@@ -432,14 +435,14 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 #### Post-operative addition
 
 - A later pain consult or ward review can create another charge.
-- The original authorised Card stays immutable.
-- The prototype adds a linked addendum Card that follows its own submit, authorise and bill cycle.
+- The original authorised Booking stays immutable.
+- The prototype adds a linked addendum Booking that follows its own submit, authorise and bill cycle.
 
 #### Billing failure
 
-- A Card may fail rating after the List is authorised.
-- The prototype isolates that Card, lets the others invoice, then corrects the cause and retries.
-- Card-level isolation is an explicit prototype choice; the RFP leaves it open.
+- A Booking may fail rating after the List is authorised.
+- The prototype isolates that Booking, lets the others invoice, then corrects the cause and retries.
+- Booking-level isolation is an explicit prototype choice; the RFP leaves it open.
 
 #### Integration failure
 
@@ -460,7 +463,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 |---|---:|---|
 | Fixed canvas and Permanent Lists | Yes | Phase 02 |
 | Manual phone booking and office changes | Yes | Phase 06 |
-| Mobile/web manual and photo Card creation | Yes | Phases 03 to 05 |
+| Mobile/web manual and photo Booking creation | Yes | Phases 03 to 05 |
 | Cover request and office List reassignment | Yes | Phases 03, 06 |
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |

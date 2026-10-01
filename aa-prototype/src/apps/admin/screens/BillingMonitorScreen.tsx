@@ -9,7 +9,7 @@ import {
   retryBillingCase,
   runPayables,
   useAppStore,
-  type MonitorCardRow,
+  type MonitorBookingRow,
   type MonitorListRow,
   type MonitorStage,
 } from '../../../store'
@@ -26,13 +26,13 @@ const headCellStyle = adminHead()
 /**
  * The billing-flow monitor (Phase 09; A5). One pipeline per authorised List:
  * List authorised -> Billing run -> Invoices generated -> Emailed -> Xero
- * (Phase 10 stub), with a per-Card row underneath. Failed rows carry the case's
+ * (Phase 10 stub), with a per-Booking row underneath. Failed rows carry the case's
  * readable failure and a Resolve & retry action (re-effects a dated-out
- * contract, then re-bills only that Card).
+ * contract, then re-bills only that Booking).
  *
  * Two RFP-open readings are stated in the copy here: this surface lives in the
- * Admin Web App (vs a separate Billing Engine screen), and a failed Card blocks
- * only its own invoice (per-card isolation). The monitor itself is proposed
+ * Admin Web App (vs a separate Billing Engine screen), and a failed Booking blocks
+ * only its own invoice (per-booking isolation). The monitor itself is proposed
  * product UI, so it carries NO demo badge; only its simulation triggers (in the
  * harness bar's Demo actions menu on this screen) are badged (convention 13).
  */
@@ -62,7 +62,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
     )
   }
 
-  function resolveAndRetry(row: MonitorCardRow) {
+  function resolveAndRetry(row: MonitorBookingRow) {
     if (row.caseId === undefined) return
     // A Xero handoff fault: the fault flag was cleared when it faulted, so a
     // plain re-invoke of the idempotent handoff now creates the pair. (Distinct
@@ -103,7 +103,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Billing monitor</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 780 }}>
           The billing engine's office view: every authorised list, its pipeline from authorisation
-          to Xero handoff, and any card that needs attention. A failed card blocks only its own
+          to Xero handoff, and any booking that needs attention. A failed booking blocks only its own
           invoice, never the rest of the list. Where the RFP leaves open whether this surface sits in
           the Admin app or a separate Billing Engine screen, the prototype puts it here. The "Prior
           balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
@@ -114,7 +114,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
       {failedTotal > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '10px 14px', fontSize: 13, color: semantic.warning.onTint }}>
-          {failedTotal} card{failedTotal === 1 ? '' : 's'} across the pipeline need attention. Resolve and retry each below.
+          {failedTotal} booking{failedTotal === 1 ? '' : 's'} across the pipeline need attention. Resolve and retry each below.
         </div>
       )}
 
@@ -157,7 +157,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   )
 }
 
-function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveRetry: (r: MonitorCardRow) => void }) {
+function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveRetry: (r: MonitorBookingRow) => void }) {
   const context = [row.hospitalName ?? 'Unassigned', row.list.session, dayMicroCap(row.list.dateISO)].join(' · ')
   return (
     <div data-shot={`billing-pipeline-${row.listId}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -183,46 +183,46 @@ function PipelineCard({ row, onResolveRetry }: { row: MonitorListRow; onResolveR
         ))}
       </div>
 
-      {/* Per-card rows */}
+      {/* Per-booking rows */}
       <div style={{ overflowX: 'auto', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
           <thead>
             <tr>
-              {['Card', 'Patient', 'Status', 'Detail', ''].map((h) => (
+              {['Booking', 'Patient', 'Status', 'Detail', ''].map((h) => (
                 <th key={h === '' ? 'action' : h} style={headCellStyle}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {row.cardRows.map((cardRow) => (
-              <tr key={cardRow.cardId}>
-                <td className="mono" style={cellStyle}>{cardRow.cardId}</td>
-                <td style={cellStyle} data-shot={cardRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
-                  {cardRow.patientName}
-                  {cardRow.outstandingPriorBalance === true && (
+            {row.bookingRows.map((bookingRow) => (
+              <tr key={bookingRow.bookingId}>
+                <td className="mono" style={cellStyle}>{bookingRow.bookingId}</td>
+                <td style={cellStyle} data-shot={bookingRow.outstandingPriorBalance === true ? 'billing-prior-balance' : undefined}>
+                  {bookingRow.patientName}
+                  {bookingRow.outstandingPriorBalance === true && (
                     <span title="This patient has an open (unpaid) prior episode at the intake check. Open versus genuinely overdue is not yet distinguished: invoices carry a raised date but no due date. A discovery point for AA." style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>
                       Prior balance
                     </span>
                   )}
                 </td>
-                <td style={cellStyle}><CardStatusPill row={cardRow} /></td>
+                <td style={cellStyle}><BookingStatusPill row={bookingRow} /></td>
                 <td style={cellStyle}>
-                  {cardRow.status === 'failed' ? (
-                    <span style={{ color: semantic.error.onTint }}>{cardRow.failure?.message ?? 'Needs manual review.'}</span>
-                  ) : cardRow.handoffFailure !== undefined ? (
-                    <span style={{ color: semantic.warning.onTint }}>{cardRow.handoffFailure.message}</span>
-                  ) : cardRow.status === 'cancelled' ? (
+                  {bookingRow.status === 'failed' ? (
+                    <span style={{ color: semantic.error.onTint }}>{bookingRow.failure?.message ?? 'Needs manual review.'}</span>
+                  ) : bookingRow.handoffFailure !== undefined ? (
+                    <span style={{ color: semantic.warning.onTint }}>{bookingRow.handoffFailure.message}</span>
+                  ) : bookingRow.status === 'cancelled' ? (
                     <span style={{ color: neutral.mist }}>Cancelled · excluded from billing.</span>
-                  ) : cardRow.invoiceIds.length > 0 ? (
-                    <MoneyDetail row={cardRow} />
+                  ) : bookingRow.invoiceIds.length > 0 ? (
+                    <MoneyDetail row={bookingRow} />
                   ) : (
                     <span style={{ color: neutral.mist }}>No invoice (fully pre-paid or nothing to bill).</span>
                   )}
                 </td>
                 <td style={cellStyle}>
-                  {(cardRow.status === 'failed' || cardRow.handoffFailure !== undefined) && (
+                  {(bookingRow.status === 'failed' || bookingRow.handoffFailure !== undefined) && (
                     <button
-                      onClick={() => onResolveRetry(cardRow)}
+                      onClick={() => onResolveRetry(bookingRow)}
                       style={{ minHeight: 34, padding: '0 12px', borderRadius: radius.ctl, border: 'none', background: accent.base, color: '#FFFFFF', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
                       Resolve &amp; retry
@@ -255,7 +255,7 @@ function StageChip({ stage }: { stage: MonitorStage }) {
 }
 
 /** Paid-in / disbursed as two INDEPENDENT dated states (RFP two-state money). */
-function MoneyDetail({ row }: { row: MonitorCardRow }) {
+function MoneyDetail({ row }: { row: MonitorBookingRow }) {
   const n = row.invoiceIds.length
   const paidLabel =
     row.paidInAtISO !== undefined
@@ -280,7 +280,7 @@ function MoneyDetail({ row }: { row: MonitorCardRow }) {
   )
 }
 
-function CardStatusPill({ row }: { row: MonitorCardRow }) {
+function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
   const map: Record<string, { label: string; background: string; color: string }> = {
     invoiced: { label: 'Invoiced', background: semantic.success.tint, color: semantic.success.onTint },
     handedOff: { label: 'Handed off', background: semantic.success.tint, color: semantic.success.onTint },

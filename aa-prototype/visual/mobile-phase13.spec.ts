@@ -66,7 +66,7 @@ test('atmosphere + lab: outside the device, live-tunes, persists, resets, copies
   const changedImage = await atmosphereImage(page)
   expect(changedImage).not.toBe(defaultImage)
 
-  // The change survives tab + List/Card depth navigation.
+  // The change survives tab + List/Booking depth navigation.
   await page.getByRole('button', { name: 'Availability' }).click()
   await page.getByRole('button', { name: 'Balances' }).click()
   await page.getByRole('button', { name: 'Lists' }).click()
@@ -83,7 +83,7 @@ test('atmosphere + lab: outside the device, live-tunes, persists, resets, copies
   // The lab is collapsed again after a reload; re-open it.
   await page.getByRole('button', { name: 'Open Gradient Lab' }).click()
 
-  // Master switch off → data-atmosphere off, image none, card still visible.
+  // Master switch off → data-atmosphere off, image none, booking still visible.
   await page.getByRole('checkbox', { name: 'Master atmosphere' }).click()
   await expect(page.locator('[data-testid="mobile-atmosphere"]')).toHaveAttribute('data-atmosphere', 'off')
   expect(await atmosphereImage(page)).toBe('none')

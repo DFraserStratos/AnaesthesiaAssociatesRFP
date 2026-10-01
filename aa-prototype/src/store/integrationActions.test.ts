@@ -16,11 +16,11 @@ import {
   correctEthnicityCode,
   ingestPdfRow,
 } from './integrationActions'
-import { cancelCard } from './lifecycle'
+import { cancelBooking } from './lifecycle'
 import {
-  cardsForList,
+  bookingsForList,
   feedsForHospital,
-  findCardByCorrelation,
+  findBookingByCorrelation,
   integrationAttentionCount,
   integrationMonitor,
   dataQualityItems,
@@ -46,41 +46,41 @@ function rowFor(api: BoundAppStore, controlId: string) {
 }
 
 describe('S12 create', () => {
-  it('creates a Card on the routing List, stamps the correlation ref, audits source=integration, and reuses a repeat patient', () => {
+  it('creates a Booking on the routing List, stamps the correlation ref, audits source=integration, and reuses a repeat patient', () => {
     const api = store()
     const patientsBefore = Object.keys(api.getState().masters.patients).length
-    const before = cardsForList(api.getState(), STG_LIST).length
+    const before = bookingsForList(api.getState(), STG_LIST).length
 
     const out = processMessage(api, 'MSG-STG-1001')
     expect(out.ok).toBe(true)
 
     const state = api.getState()
-    const cards = cardsForList(state, STG_LIST)
-    expect(cards.length).toBe(before + 1)
-    const created = findCardByCorrelation(state, { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12 })
+    const bookings = bookingsForList(state, STG_LIST)
+    expect(bookings.length).toBe(before + 1)
+    const created = findBookingByCorrelation(state, { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12 })
     expect(created).toBeDefined()
     expect(created!.listId).toBe(STG_LIST)
     // Sarah Mitchell (CQY9304) is a seeded patient → reused, no duplicate row.
     expect(Object.keys(state.masters.patients).length).toBe(patientsBefore)
-    // The create audit and the card-create audit carry source=integration.
+    // The create audit and the booking-create audit carry source=integration.
     expect(state.audit.some((a) => a.entityId === created!.id && a.source === 'integration')).toBe(true)
   })
 
   it('processes a FHIR-native booking onto the Southern Cross List (no HL7 involved)', () => {
     const api = store()
-    const before = cardsForList(api.getState(), SX_LIST).length
+    const before = bookingsForList(api.getState(), SX_LIST).length
     const out = processMessage(api, 'FHIR-SX-2001')
     expect(out.ok).toBe(true)
-    const created = findCardByCorrelation(api.getState(), { sourceFeedId: FEED.sx, externalAppointmentId: APPT.fhirCreate })
+    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.sx, externalAppointmentId: APPT.fhirCreate })
     expect(created?.listId).toBe(SX_LIST)
-    expect(cardsForList(api.getState(), SX_LIST).length).toBe(before + 1)
+    expect(bookingsForList(api.getState(), SX_LIST).length).toBe(before + 1)
   })
 
-  it('quarantines an out-of-range ethnicity code (card created, code never stored) and the manual fix supplies a valid one', () => {
+  it('quarantines an out-of-range ethnicity code (booking created, code never stored) and the manual fix supplies a valid one', () => {
     const api = store()
     const out = processMessage(api, 'MSG-STG-1003')
     expect(out.ok).toBe(true)
-    const created = findCardByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12Ethnicity })
+    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s12Ethnicity })
     expect(created).toBeDefined()
     const patient = api.getState().masters.patients[created!.patientId]!
     expect(patient.ethnicityCode).toBeUndefined()
@@ -97,74 +97,74 @@ describe('S12 create', () => {
 })
 
 describe('modify events located by correlation ref', () => {
-  it('S14 updates the correlated Card (time + note)', () => {
+  it('S14 updates the correlated Booking (time + note)', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS14']!.entityId
     expect(processMessage(api, 'MSG-STG-1012').ok).toBe(true)
-    const card = api.getState().schedule.cards[target]!
-    expect(card.scheduledTime).toBe('12:15')
-    expect(card.notes).toBe('Bumped 15 min at surgeon request')
-    expect(api.getState().audit.some((a) => a.entityId === target && a.source === 'integration' && a.action === 'card.update')).toBe(true)
+    const booking = api.getState().schedule.bookings[target]!
+    expect(booking.scheduledTime).toBe('12:15')
+    expect(booking.notes).toBe('Bumped 15 min at surgeon request')
+    expect(api.getState().audit.some((a) => a.entityId === target && a.source === 'integration' && a.action === 'booking.update')).toBe(true)
   })
 
-  it('S15 soft-cancels the correlated Card (retained, cancelled, audited)', () => {
+  it('S15 soft-cancels the correlated Booking (retained, cancelled, audited)', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS15']!.entityId
     expect(processMessage(api, 'MSG-STG-1013').ok).toBe(true)
-    const card = api.getState().schedule.cards[target]!
-    expect(card.cancellation).toBeDefined()
-    expect(card.cancellation?.source).toBe('integration')
+    const booking = api.getState().schedule.bookings[target]!
+    expect(booking.cancellation).toBeDefined()
+    expect(booking.cancellation?.source).toBe('integration')
   })
 
-  it('same-List S13 retimes the correlated Card in place', () => {
+  it('same-List S13 retimes the correlated Booking in place', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS13Time']!.entityId
-    const before = api.getState().schedule.cards[target]!.listId
+    const before = api.getState().schedule.bookings[target]!.listId
     expect(processMessage(api, 'MSG-STG-1010').ok).toBe(true)
-    const card = api.getState().schedule.cards[target]!
-    expect(card.listId).toBe(before)
-    expect(card.listId).toBe(STG_MODIFY_LIST)
-    expect(card.scheduledTime).toBe('11:30')
+    const booking = api.getState().schedule.bookings[target]!
+    expect(booking.listId).toBe(before)
+    expect(booking.listId).toBe(STG_MODIFY_LIST)
+    expect(booking.scheduledTime).toBe('11:30')
   })
 
-  it('cross-List S13 reassigns the correlated Card, leaving both Lists\' other cards untouched', () => {
+  it('cross-List S13 reassigns the correlated Booking, leaving both Lists\' other bookings untouched', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS13Move']!.entityId
-    const stgOthersBefore = cardsForList(api.getState(), STG_MODIFY_LIST).map((c) => c.id).sort()
-    expect(api.getState().schedule.cards[target]!.listId).toBe(S13_MOVE_SOURCE)
+    const stgOthersBefore = bookingsForList(api.getState(), STG_MODIFY_LIST).map((c) => c.id).sort()
+    expect(api.getState().schedule.bookings[target]!.listId).toBe(S13_MOVE_SOURCE)
 
     expect(processMessage(api, 'MSG-STG-1011').ok).toBe(true)
 
-    const card = api.getState().schedule.cards[target]!
-    expect(card.listId).toBe(STG_MODIFY_LIST)
-    expect(card.scheduledTime).toBe('09:00')
-    // The source list no longer holds it; the STG list's prior cards are all still present.
-    expect(cardsForList(api.getState(), S13_MOVE_SOURCE).some((c) => c.id === target)).toBe(false)
+    const booking = api.getState().schedule.bookings[target]!
+    expect(booking.listId).toBe(STG_MODIFY_LIST)
+    expect(booking.scheduledTime).toBe('09:00')
+    // The source list no longer holds it; the STG list's prior bookings are all still present.
+    expect(bookingsForList(api.getState(), S13_MOVE_SOURCE).some((c) => c.id === target)).toBe(false)
     for (const id of stgOthersBefore) {
-      expect(api.getState().schedule.cards[id]!.listId).toBe(STG_MODIFY_LIST)
+      expect(api.getState().schedule.bookings[id]!.listId).toBe(STG_MODIFY_LIST)
     }
   })
 
-  it('a modify targeting a soft-cancelled Card is not applied and parks as manual intervention', () => {
+  it('a modify targeting a soft-cancelled Booking is not applied and parks as manual intervention', () => {
     const api = store()
     const target = SEED_MARKERS['integrationS14']!.entityId
     // The office cancels the appointment first; then a stale S14 arrives for it.
-    expect(cancelCard(api, OFFICE, target, 'Patient deferred').ok).toBe(true)
-    const timeBefore = api.getState().schedule.cards[target]!.scheduledTime
+    expect(cancelBooking(api, OFFICE, target, 'Patient deferred').ok).toBe(true)
+    const timeBefore = api.getState().schedule.bookings[target]!.scheduledTime
 
     const out = processMessage(api, 'MSG-STG-1012')
     expect(out.ok && out.value.outcome).toBe('manualIntervention')
-    const card = api.getState().schedule.cards[target]!
+    const booking = api.getState().schedule.bookings[target]!
     // Unchanged apart from staying cancelled: no time/note edit slipped through.
-    expect(card.scheduledTime).toBe(timeBefore)
-    expect(card.notes).toBeUndefined()
-    expect(card.cancellation).toBeDefined()
+    expect(booking.scheduledTime).toBe(timeBefore)
+    expect(booking.notes).toBeUndefined()
+    expect(booking.cancellation).toBeDefined()
   })
 
-  it('a message targeting a Card on a SUBMITTED List is NOT applied and parks as manual intervention', () => {
+  it('a message targeting a Booking on a SUBMITTED List is NOT applied and parks as manual intervention', () => {
     const api = store()
     const target = SEED_MARKERS['integrationLockedTarget']!.entityId
-    const before = api.getState().schedule.cards[target]!
+    const before = api.getState().schedule.bookings[target]!
     // The locked target sits on a coherent booked SUBMITTED St George's list.
     const lockedList = api.getState().schedule.lists[before.listId]!
     expect(lockedList.state).toBe('SUBMITTED')
@@ -173,8 +173,8 @@ describe('modify events located by correlation ref', () => {
     const out = processMessage(api, 'MSG-STG-1014')
     expect(out.ok).toBe(true)
     if (out.ok) expect(out.value.outcome).toBe('manualIntervention')
-    // Card unchanged.
-    expect(api.getState().schedule.cards[target]).toEqual(before)
+    // Booking unchanged.
+    expect(api.getState().schedule.bookings[target]).toEqual(before)
     const row = rowFor(api, 'MSG-STG-1014')
     expect(row?.status).toBe('manualIntervention')
     expect(integrationAttentionCount(api.getState())).toBeGreaterThan(0)
@@ -202,7 +202,7 @@ describe('retry vs dead-letter', () => {
 
   it('a malformed message under a wrong mapping exhausts its retries into dead-letter, then a mapping fix + reprocess recovers it', () => {
     const api = store()
-    const cphBefore = cardsForList(api.getState(), CPH_LIST).length
+    const cphBefore = bookingsForList(api.getState(), CPH_LIST).length
 
     // Attempt 1 (fails: PID-2 holds a local MRN, not the NHI).
     expect(processMessage(api, 'MSG-CPH-2001').ok).toBe(true)
@@ -214,27 +214,27 @@ describe('retry vs dead-letter', () => {
     const dead = rowFor(api, 'MSG-CPH-2001')!
     expect(dead.status).toBe('deadLetter')
     expect(dead.attempts).toBe(3)
-    expect(cardsForList(api.getState(), CPH_LIST).length).toBe(cphBefore)
+    expect(bookingsForList(api.getState(), CPH_LIST).length).toBe(cphBefore)
 
     // Fix the feed mapping (nhi <- PID-3) and reprocess.
     expect(setFeedMapping(api, OFFICE, FEED.cph, 'nhi', CPH_NHI_FIX).ok).toBe(true)
     const recovered = reprocessMessage(api, dead.id)
     expect(recovered.ok && recovered.value.outcome).toBe('processed')
-    expect(cardsForList(api.getState(), CPH_LIST).length).toBe(cphBefore + 1)
-    const created = findCardByCorrelation(api.getState(), { sourceFeedId: FEED.cph, externalAppointmentId: APPT.malformedCph })
+    expect(bookingsForList(api.getState(), CPH_LIST).length).toBe(cphBefore + 1)
+    const created = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.cph, externalAppointmentId: APPT.malformedCph })
     expect(created).toBeDefined()
   })
 })
 
 describe('dedupe', () => {
-  it('replaying an already-processed message records a duplicate no-op (no second Card)', () => {
+  it('replaying an already-processed message records a duplicate no-op (no second Booking)', () => {
     const api = store()
     expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
-    const cardsAfterFirst = cardsForList(api.getState(), STG_LIST).length
+    const bookingsAfterFirst = bookingsForList(api.getState(), STG_LIST).length
 
     const replay = processMessage(api, 'MSG-STG-1001')
     expect(replay.ok && replay.value.outcome).toBe('duplicate')
-    expect(cardsForList(api.getState(), STG_LIST).length).toBe(cardsAfterFirst)
+    expect(bookingsForList(api.getState(), STG_LIST).length).toBe(bookingsAfterFirst)
     const dupRows = Object.values(api.getState().integrations.messages).filter(
       (m) => m.messageControlId === 'MSG-STG-1001' && m.status === 'duplicate',
     )
@@ -247,26 +247,26 @@ describe('PDF ingestion', () => {
     const api = store()
     const pdf = SURGEON_PDFS.find((p) => p.id === 'PDF-OKAFOR-0729')!
     const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
-    const before = cardsForList(api.getState(), listId).length
+    const before = bookingsForList(api.getState(), listId).length
 
     const [r1, r2, r3] = pdf.rows
 
     // R1 (Sarah Mitchell) is already booked on this List → update, not duplicate.
     const u = ingestPdfRow(api, OFFICE, listId, r1!)
     expect(u.ok && u.value.outcome).toBe('updated')
-    expect(cardsForList(api.getState(), listId).length).toBe(before)
+    expect(bookingsForList(api.getState(), listId).length).toBe(before)
 
     // R2 is a clean new patient → create.
     const c = ingestPdfRow(api, OFFICE, listId, r2!)
     expect(c.ok && c.value.outcome).toBe('created')
-    expect(cardsForList(api.getState(), listId).length).toBe(before + 1)
+    expect(bookingsForList(api.getState(), listId).length).toBe(before + 1)
 
     // R3's printed NHI is invalid → refused until corrected.
     const bad = ingestPdfRow(api, OFFICE, listId, r3!)
     expect(bad.ok).toBe(false)
     const good = ingestPdfRow(api, OFFICE, listId, { ...r3!, nhi: r3!.correctedNhi! })
     expect(good.ok && good.value.outcome).toBe('created')
-    expect(cardsForList(api.getState(), listId).length).toBe(before + 2)
+    expect(bookingsForList(api.getState(), listId).length).toBe(before + 2)
   })
 })
 

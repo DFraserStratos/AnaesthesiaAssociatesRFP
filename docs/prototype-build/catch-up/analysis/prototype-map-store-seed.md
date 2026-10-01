@@ -1,5 +1,7 @@
 # Prototype map: store + seed
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 Orientation. All domain state lives in ONE zustand store (`aa-prototype/src/store/appStore.ts`) seeded deterministically by `aa-prototype/src/domain/seed/index.ts` `buildSeed()`. Paths below are relative to `aa-prototype/src/`. Components never own domain state; every write is an exported guard/action function `fn(api, actor, ...) => Outcome` (refusals are DATA: `{ok:false, code, message}`) that commits via `mutate()` in `store/mutate.ts` (patch + audit entry + Card stamp in one `setState`). There is NO real auth/user model: the "actor" is a plain object `{who, role: anaesthetist|office|system, source: anaesthetist|office|integration|system|demo, anaesthetistId?}` passed by the caller (built in apps/admin/AdminApp.tsx, apps/demo/*, pwa/officeSimulation.ts, mobile/web apps). Roles are enforced only inside the store guards. Prototype covers 14 seeded anaesthetists (not 85), 5 hospitals, 10 surgeons, 2 insurers, 1 contract-holder org. Time is the pinned demo clock (DEMO_TODAY 2026-07-21 08:00). Routes/screens are NOT in this area (see the app maps); this map lists which store fns/selectors each concern needs.
 
 Contents: 1 Store core | 2 Guards (lifecycle) | 3 Other action modules | 4 Money pipeline (billing run, Xero, payments) | 5 Integrations | 6 Selectors/hooks | 7 Seed | 8 Demo scenarios S1-S5 seed dependencies | 9 Time-relative things | 10 Stubs / hardcoded / absent

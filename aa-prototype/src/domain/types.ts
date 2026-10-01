@@ -36,7 +36,7 @@ export type InsurerId = string
 export type OrganisationId = string
 export type ContractId = string
 export type ListId = string
-export type CardId = string
+export type BookingId = string
 export type ProcedureId = string
 export type InvoiceId = string
 
@@ -113,7 +113,7 @@ export interface Patient {
   /**
    * Quarantine for an invalid inbound ethnicity code (7th review A11): the
    * received value is held "pending correction", never stored as the code;
-   * the Card still books; the manual-fix flow supplies a valid code.
+   * the Booking still books; the manual-fix flow supplies a valid code.
    */
   ethnicityPending?: { receivedCode: string; reason: string }
 }
@@ -252,13 +252,13 @@ export interface ContractPrice {
   contractId: ContractId
   rvgBaseCode?: string
   surgeonId?: SurgeonId
-  /** 1-based position of the procedure on its Card (2nd-procedure rules). */
+  /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
   procedureOrdinal?: number
   price: number
 }
 
 // ---------------------------------------------------------------------------
-// The canvas: Lists & Cards
+// The canvas: Lists & Bookings
 // ---------------------------------------------------------------------------
 
 /** A reconciliation conflict flagged onto a List (availability/holiday; 1st review #2, 7th review A9). */
@@ -322,13 +322,20 @@ export interface List {
    */
   billedAtISO?: IsoDateTime
   notes?: string
+  /**
+   * Files or photos attached to the List as a whole (US-03.1.3; catch-up
+   * Phase 15). Optional so the generated canvas Lists carry nothing; absent
+   * reads as empty. Written only through `addAttachment` / `removeAttachment`,
+   * and it travels with the List when the List is reassigned.
+   */
+  attachments?: Attachment[]
 }
 
 /**
  * Correlation key for integration-created bookings (6th review #1): HL7 SCH-2
  * filler appointment ID (the RFP sample's `1661243` — SCH-2, not SCH-1, per
  * 7th review A15) or the FHIR Appointment identifier. S13/S14/S15 locate their
- * Card by it; MSH-10 dedupes *messages*, this key correlates *appointments*.
+ * Booking by it; MSH-10 dedupes *messages*, this key correlates *appointments*.
  */
 export interface IntegrationCorrelationRef {
   sourceFeedId: string
@@ -336,11 +343,11 @@ export interface IntegrationCorrelationRef {
 }
 
 /**
- * Audited soft-cancel (7th review B23): cancelled Cards are retained and
+ * Audited soft-cancel (7th review B23): cancelled Bookings are retained and
  * visible, excluded from completion/submission validation and billing, never
  * hard-deleted. Manual cancel and the S15 message share this mechanism.
  */
-export interface CardCancellation {
+export interface BookingCancellation {
   reason: string
   by: string
   role: ActorRole
@@ -355,7 +362,7 @@ export interface PrepaymentOverride {
   atISO: IsoDateTime
 }
 
-export interface CardAttachment {
+export interface Attachment {
   id: string
   name: string
   kind: 'photo' | 'pdf' | 'other'
@@ -367,8 +374,11 @@ export interface CardAttachment {
   dataUrl?: string
 }
 
-export interface Card {
-  id: CardId
+/** The catalogue's Booking sources (domain model, Booking > Sources). */
+export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc' | 'anaesthetistPhoto' | 'copy'
+
+export interface Booking {
+  id: BookingId
   listId: ListId
   /** Always the hidden internal ID — never the NHI (convention 8). */
   patientId: PatientId
@@ -376,21 +386,28 @@ export interface Card {
   /** Completion is validation-gated; submission is completion-gated (1st review #1). */
   completed: boolean
   completedAtISO?: IsoDateTime
-  /** Card Copy is the RFP's additional-procedure mechanism (M6; 3rd review #2). */
-  copiedFromCardId?: CardId
+  /** Set on a Booking made by Copy (US-02.4.3): a skeleton copy of this one. */
+  copiedFromBookingId?: BookingId
   /**
-   * Post-op addendum Cards (B8; Phase 09) carry `cardType: 'postOpAddendum'`
-   * and link back to the original episode via `addendumOfCardId`. The addendum
-   * is a NEW Card that runs its own capture->submit->authorise->bill cycle; the
+   * Post-op addendum Bookings (B8; Phase 09) carry `bookingType: 'postOpAddendum'`
+   * and link back to the original episode via `addendumOfBookingId`. The addendum
+   * is a NEW Booking that runs its own capture->submit->authorise->bill cycle; the
    * original stays locked and immutable (the RFP's immutability answer). Both
-   * fields absent on ordinary Cards.
+   * fields absent on ordinary Bookings.
    */
-  cardType?: 'postOpAddendum'
-  addendumOfCardId?: CardId
+  bookingType?: 'postOpAddendum'
+  addendumOfBookingId?: BookingId
   correlationRef?: IntegrationCorrelationRef
-  cancellation?: CardCancellation
+  /**
+   * How the Booking entered the system, where the creating path knows it
+   * (DM-39). Optional and DISPLAY-ONLY: no validator, guard, selector, billing
+   * module or review flag reads it, and absent means "not recorded". The audit
+   * trail stays the record of where each change came from.
+   */
+  source?: BookingSource
+  cancellation?: BookingCancellation
   prepaymentOverride?: PrepaymentOverride
-  attachments: CardAttachment[]
+  attachments: Attachment[]
   notes?: string
   /** Stamped in lockstep with every audit entry (7th review A8). */
   lastModifiedBy: string
@@ -420,8 +437,8 @@ export type PatientPaymentCategory =
 
 /**
  * Rides with `selfFundedPrepayment` (7th review B6): the RFP's full-vs-split
- * distinction. The Card-level "pre-payment required" flag is DERIVED from the
- * card's procedures, never stored separately.
+ * distinction. The Booking-level "pre-payment required" flag is DERIVED from the
+ * booking's procedures, never stored separately.
  */
 export interface PrepaymentDetail {
   type: 'full' | 'split'
@@ -437,13 +454,13 @@ export type PriceOverride =
   | { kind: 'percentAdjustment'; percent: number; reason: string }
 
 /**
- * Procedure — the unit of billing on a Card. Captured BTM inputs persist AS
+ * Procedure — the unit of billing on a Booking. Captured BTM inputs persist AS
  * DATA, not just computed totals (7th review A3; RFP design principle 10: an
  * invoice must be reproducible against what was true when raised).
  */
 export interface Procedure {
   id: ProcedureId
-  cardId: CardId
+  bookingId: BookingId
   description: string
   /**
    * Unset until explicitly set (RFP: "set explicitly (by hospital advice, or
@@ -478,8 +495,9 @@ export interface Procedure {
   /** The hospital's contract/approval reference (6th review #6; A4's completeness check). */
   billingReference?: string
   /**
-   * A copied Card's procedures are additional from the first (3rd review #2):
-   * additional procedures yield TIME UNITS ONLY (RFP split-billing rule).
+   * Set on a Procedure added with "Add another procedure" (`addProcedure`):
+   * additional procedures yield TIME UNITS ONLY (RFP split-billing rule). A
+   * Booking's first Procedure, including a copy's, is never additional.
    */
   isAdditional: boolean
 
@@ -637,7 +655,7 @@ export interface DayNote {
 // ---------------------------------------------------------------------------
 
 /**
- * Append-only audit entry (convention 7). Every Card/Procedure mutation (and
+ * Append-only audit entry (convention 7). Every Booking/Procedure mutation (and
  * List reassignment/state change, plus Phase 08/10's automated actions with
  * source 'system'; 6th review #7) writes one. `entityType` stays a plain
  * string so later phases can audit new entities without reshaping.
@@ -663,7 +681,7 @@ export interface Invoice {
   id: InvoiceId
   invoiceNumber: string
   caseReference: string
-  cardId: CardId
+  bookingId: BookingId
   counterparty: CounterpartyRef
   /** Invoice layout differs by recipient class (RFP). */
   layout: 'contractHolder' | 'patient'
@@ -696,7 +714,7 @@ export type BillingPipelineStatus =
 /** One invoice's journey through the pipeline: invoice ↔ Xero ACCREC/ACCPAY GUIDs + status. */
 export interface BillingCase {
   id: string
-  cardId: CardId
+  bookingId: BookingId
   invoiceId?: InvoiceId
   accRecId?: string
   accPayId?: string
@@ -736,7 +754,7 @@ export interface BillingCase {
  * the GST-report source (each row carries its GST component) AND the payment
  * idempotency key-set (a webhook replay / poll re-detect whose key is already
  * present is a no-op). Attributed to the anaesthetist directly so the GST
- * report needs no card→list join. `grossAmount` is the amount received;
+ * report needs no booking→list join. `grossAmount` is the amount received;
  * `gstAmount` its GST component (gross × 0.15 / 1.15).
  */
 export interface BillingReceipt {
@@ -855,8 +873,8 @@ export interface IntegrationMessage {
   raw?: string
   /** Why the last attempt failed / parked (Phase 11) — rendered in the monitor. */
   failureReason?: string
-  /** The Card this message created or affected (Phase 11), for the monitor's link. */
-  resultCardId?: CardId
+  /** The Booking this message created or affected (Phase 11), for the monitor's link. */
+  resultBookingId?: BookingId
   /** Extracted patient display name (Phase 11), for the log's patient-ref column. */
   patientRef?: string
 }

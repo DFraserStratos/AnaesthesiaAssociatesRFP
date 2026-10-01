@@ -54,7 +54,7 @@
       "name": "card-history",
       "app": "admin",
       "caption": "Booking history records who changed the Booking, when, and what changed",
-      "start": "/admin/day/2026-08-04/cards/C0043",
+      "start": "/admin/day/2026-08-04/bookings/BK0043",
       "setup": [
         {
           "goto": "/demo/integrations"

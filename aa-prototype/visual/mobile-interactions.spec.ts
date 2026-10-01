@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
-async function openCard(page: Page): Promise<void> {
+async function openBooking(page: Page): Promise<void> {
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
@@ -57,7 +57,7 @@ test('mobile buttons compress while held without affecting presenter controls', 
   expect(presenterTransform).toBe('none')
   await page.mouse.up()
 
-  await openCard(page)
+  await openBooking(page)
   const disabledButton = page.locator('[data-aa-mobile-product] button:disabled').first()
   await expect(disabledButton).toBeVisible()
   await disabledButton.scrollIntoViewIfNeeded()
@@ -67,7 +67,7 @@ test('mobile buttons compress while held without affecting presenter controls', 
 })
 
 test('ASA and modifier highlights slide horizontally and across the two-column grid', async ({ page }) => {
-  await openCard(page)
+  await openBooking(page)
 
   const asa = page.getByRole('group', { name: 'ASA physical status' })
   await asa.scrollIntoViewIfNeeded()
@@ -103,7 +103,7 @@ test('ASA and modifier highlights slide horizontally and across the two-column g
 
 test('reduced motion removes geometric press and selection travel', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await openCard(page)
+  await openBooking(page)
 
   const asa = page.getByRole('group', { name: 'ASA physical status' })
   await asa.scrollIntoViewIfNeeded()
@@ -141,7 +141,7 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   await page.goto('/mobile')
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.waitForTimeout(300)
-  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Add a booking', { exact: false }).first().click()
   await page.getByText('Enter manually', { exact: false }).first().click()
   await page.getByText('Billing route', { exact: true }).scrollIntoViewIfNeeded()
   const formSegment = page.locator('[role="dialog"] [data-sliding-segmented-control]').first()
@@ -154,13 +154,13 @@ test('Start now becomes the travelling Finish action without a validation-focus 
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.waitForTimeout(300)
-  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Add a booking', { exact: false }).first().click()
   await page.getByText('Enter manually', { exact: false }).first().click()
 
   await page.getByLabel('Name').fill('Timer Motion Test')
   await page.getByLabel('Date of birth').fill('1980-01-01')
   await page.getByLabel('Operation').fill('Timer interaction review')
-  await page.getByRole('button', { name: 'Save card' }).click()
+  await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByText('Timer Motion Test', { exact: true }).click()
 
@@ -175,7 +175,7 @@ test('Start now becomes the travelling Finish action without a validation-focus 
 
   // Press and release by hand, because the point is to observe the held state
   // BETWEEN the two. `hover()` rather than a measured box + `mouse.move`: the
-  // freshly opened Card is still settling (the slide-in, then the reveal +
+  // freshly opened Booking is still settling (the slide-in, then the reveal +
   // scroll), so a box measured here was ~60px stale by `mouse.up` and the
   // release landed off the button — the press never registered and the slider
   // never travelled. `hover()` runs the stability check, so the cursor lands

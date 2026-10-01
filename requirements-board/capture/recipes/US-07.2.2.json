@@ -21,7 +21,7 @@
       "name": "correct-contract",
       "app": "admin",
       "caption": "Office corrects a Contract selection in the billing setup",
-      "start": "/admin/day/2026-07-20/cards/C0010",
+      "start": "/admin/day/2026-07-20/bookings/BK0010",
       "states": [
         {
           "state": "setup",

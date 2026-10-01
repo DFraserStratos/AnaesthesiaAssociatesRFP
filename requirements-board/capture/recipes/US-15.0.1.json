@@ -7,12 +7,12 @@
       "name": "card-capture",
       "app": "mobile",
       "caption": "Booking capture on the phone, large controls and one clear action",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=slide-card] [data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]",
               "by": 520
             },
             {

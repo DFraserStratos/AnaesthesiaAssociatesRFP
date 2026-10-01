@@ -19,7 +19,7 @@
           "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
         },
         {
-          "wait": "[data-shot=card-prepayment]"
+          "wait": "[data-shot=booking-prepayment]"
         },
         {
           "click": "role=button[name=\"Raise pre-procedure invoice\"]"

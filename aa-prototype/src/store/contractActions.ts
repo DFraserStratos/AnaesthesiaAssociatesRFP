@@ -2,7 +2,7 @@
  * Contract & ContractPrice master mutations (Phase 07). Split from
  * `mastersActions.ts` so the contract surface (create / edit / delete + the
  * Type 3 price rows) stays self-contained. All office-only, all through
- * `mutate()` (audit + `Outcome` refusals as data), `stampCardId: null`.
+ * `mutate()` (audit + `Outcome` refusals as data), `stampBookingId: null`.
  *
  * THE default-Type-1 invariant, second half (3rd review #9 / 7th review B14;
  * the creation half lives in `mastersActions.ts`): a hospital's or a
@@ -82,7 +82,7 @@ export function createContract(api: AppStoreApi, actor: Actor, input: ContractIn
       entityId: contract.id,
       action: 'contract.create',
       after: { name, type: contract.type, holderType: contract.holderType, holderId: contract.holderId },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return { masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: contract } }, counters: alloc.counters }
   })
@@ -135,7 +135,7 @@ export function editContract(api: AppStoreApi, actor: Actor, contractId: string,
       action: 'contract.update',
       before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof Contract]])),
       after: patch,
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contractId]: next } } }),
   )
@@ -170,7 +170,7 @@ export function deleteContract(api: AppStoreApi, actor: Actor, contractId: strin
       entityId: contractId,
       action: 'contract.delete',
       before: { name: existing.name, type: existing.type },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => {
       const contracts = { ...s.masters.contracts }
@@ -191,7 +191,7 @@ export interface ContractPriceInput {
   contractId: string
   rvgBaseCode?: string
   surgeonId?: string
-  /** 1-based position on the Card (the 2nd-procedure ordinal rule). */
+  /** 1-based position on the Booking (the 2nd-procedure ordinal rule). */
   procedureOrdinal?: number
   price: number
 }
@@ -221,7 +221,7 @@ export function addContractPrice(api: AppStoreApi, actor: Actor, input: Contract
       entityId: alloc.id,
       action: 'contractPrice.create',
       after: { contractId: input.contractId, price: input.price, rvgBaseCode: row.rvgBaseCode, procedureOrdinal: row.procedureOrdinal },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return { masters: { ...s.masters, contractPrices: { ...s.masters.contractPrices, [alloc.id]: row } }, counters: alloc.counters }
   })
@@ -249,7 +249,7 @@ export function editContractPrice(api: AppStoreApi, actor: Actor, priceId: strin
       action: 'contractPrice.update',
       before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof ContractPrice]])),
       after: patch,
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({ masters: { ...s.masters, contractPrices: { ...s.masters.contractPrices, [priceId]: next } } }),
   )

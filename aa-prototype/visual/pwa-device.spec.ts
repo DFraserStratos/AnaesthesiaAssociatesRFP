@@ -90,11 +90,11 @@ test('the entry redirects to Lists, and all four tabs render within the device w
   await expectNoDocumentScroll(page, 'back on Lists')
 })
 
-test('a List opens, a Card completes and the List submits, all within the device width', async ({ page }) => {
+test('a List opens, a Booking completes and the List submits, all within the device width', async ({ page }) => {
   await page.goto('/')
   await page.waitForLoadState('networkidle')
 
-  // Southern Cross PM: a DRAFT list with one card left to finish.
+  // Southern Cross PM: a DRAFT list with one booking left to finish.
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await expect(page.getByTestId('mobile-list-header')).toBeVisible()
   await settleSlide(page)
@@ -102,16 +102,16 @@ test('a List opens, a Card completes and the List submits, all within the device
   await page.screenshot({ path: 'visual/shots/pwa-03-list.png' })
 
   await page.getByText('Margaret Ellison', { exact: false }).first().click()
-  await expect(page.getByTestId('mobile-card-header')).toBeVisible()
-  await expect(page.getByTestId('mobile-card-commit')).toBeVisible()
+  await expect(page.getByTestId('mobile-booking-header')).toBeVisible()
+  await expect(page.getByTestId('mobile-booking-commit')).toBeVisible()
   await settleSlide(page)
-  await expectNoDocumentScroll(page, 'Card detail')
-  await page.screenshot({ path: 'visual/shots/pwa-04-card.png' })
+  await expectNoDocumentScroll(page, 'Booking detail')
+  await page.screenshot({ path: 'visual/shots/pwa-04-booking.png' })
 
   // The completion walk, as `visual/mobile-phase04.spec.ts` runs it, minus its
   // clock advance: that spec drives `/demo/control`, which is an AppShell
   // surface the PWA bundle deliberately does not contain. "Finish now" stamps
-  // whatever the demo clock reads, and the card completes either way.
+  // whatever the demo clock reads, and the booking completes either way.
   await page.getByRole('button', { name: 'Finish now' }).click()
   await page.getByRole('button', { name: 'Mark complete' }).click()
 

@@ -40,15 +40,15 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   const rows = useMemo(
     () =>
       invoices.map((invoice) => {
-        const card = schedule.cards[invoice.cardId]
-        const list = card !== undefined ? schedule.lists[card.listId] : undefined
-        const patient = card !== undefined ? masters.patients[card.patientId] : undefined
+        const booking = schedule.bookings[invoice.bookingId]
+        const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
+        const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
         const anaesthetist =
           list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
         const source = list !== undefined ? listSourceLabels(list, masters) : undefined
-        return { invoice, card, list, patient, anaesthetist, source }
+        return { invoice, booking, list, patient, anaesthetist, source }
       }),
-    [invoices, schedule.cards, schedule.lists, masters],
+    [invoices, schedule.bookings, schedule.lists, masters],
   )
 
   const billed = useMemo(() => billedLists({ schedule }), [schedule])
@@ -85,7 +85,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         <h1 style={{ margin: 0, fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>Invoices</h1>
         <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: 720 }}>
           Raised by the billing run when a list is authorised. Procedures billed to the same counterparty share one
-          invoice per Card; where funders differ, separate invoices are raised, one per funder. This reading of the
+          invoice per Booking; where funders differ, separate invoices are raised, one per funder. This reading of the
           RFP split billing wording is held as a discovery question.
         </div>
       </div>
@@ -109,11 +109,11 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
       {failedCases.length > 0 && (
         <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
-            {failedCases.length} card{failedCases.length === 1 ? '' : 's'} raised a billing exception
+            {failedCases.length} booking{failedCases.length === 1 ? '' : 's'} raised a billing exception
           </span>
           {failedCases.map((c) => (
             <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
-              <span className="mono">{c.cardId}</span> · {c.failure?.message ?? 'Needs manual review.'}
+              <span className="mono">{c.bookingId}</span> · {c.failure?.message ?? 'Needs manual review.'}
             </div>
           ))}
           <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>
@@ -129,7 +129,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1380 }}>
             <thead>
               <tr>
-                {['Number', 'Patient / card', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Status', ''].map((h, i) => (
+                {['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Status', ''].map((h, i) => (
                   <th
                     key={h === '' ? 'view' : h}
                     style={{
@@ -144,14 +144,14 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ invoice, card, list, patient, anaesthetist, source }) => {
-                const patientName = card === undefined ? 'Card unavailable' : (patient?.name ?? 'Unknown patient')
-                const cardLabel =
-                  card === undefined
-                    ? invoice.cardId
-                    : card.scheduledTime !== undefined
-                      ? `Card ${card.scheduledTime}`
-                      : 'Card time not set'
+              {rows.map(({ invoice, booking, list, patient, anaesthetist, source }) => {
+                const patientName = booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')
+                const bookingLabel =
+                  booking === undefined
+                    ? invoice.bookingId
+                    : booking.scheduledTime !== undefined
+                      ? `Booking ${booking.scheduledTime}`
+                      : 'Booking time not set'
                 return (
                   <tr
                     key={invoice.id}
@@ -162,17 +162,17 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   >
                   <td className="mono" style={{ ...cellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{invoice.invoiceNumber}</td>
                   <td style={cellStyle}>
-                    {card !== undefined && list !== undefined ? (
+                    {booking !== undefined && list !== undefined ? (
                       <Link
-                        aria-label={`View card for ${patientName}, ${cardLabel}`}
+                        aria-label={`View booking for ${patientName}, ${bookingLabel}`}
                         className="aa-table-entity-link"
-                        to={`/admin/day/${list.dateISO}/cards/${card.id}`}
+                        to={`/admin/day/${list.dateISO}/bookings/${booking.id}`}
                         state={{ fromInvoiceId: invoice.id }}
                       >
                         <span>
                           <span className="aa-table-entity-link-title">{patientName}</span>
                           <span className="mono" style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>
-                            {cardLabel}
+                            {bookingLabel}
                           </span>
                         </span>
                         <ChevronRight size={14} strokeWidth={2.2} color={neutral.mist} aria-hidden />
@@ -180,7 +180,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     ) : (
                       <>
                         <div style={{ fontWeight: 600 }}>{patientName}</div>
-                        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{cardLabel}</div>
+                        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
                       </>
                     )}
                   </td>

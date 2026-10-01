@@ -1,7 +1,7 @@
 {
   "id": "US-08.2.3",
   "status": "partial",
-  "absentReason": "The split is set by the office allocating billing lines to funders on the card, not by a covered amount or percentage defined on the Contract. The seeded example splits between an insurer and the hospital, not an insurer portion and a patient gap.",
+  "absentReason": "The split is set by the office allocating billing lines to funders on the booking, not by a covered amount or percentage defined on the Contract. The seeded example splits between an insurer and the hospital, not an insurer portion and a patient gap.",
   "shots": [
     {
       "name": "split-invoices",

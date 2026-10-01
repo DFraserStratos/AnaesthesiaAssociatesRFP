@@ -16,7 +16,7 @@ interface SuccessOverlayProps {
 }
 
 /**
- * Full-surface success moment shared by Card completion and List submission.
+ * Full-surface success moment shared by Booking completion and List submission.
  * The owning flow controls how long it remains visible.
  *
  * It runs the Design Language's complete-tick pattern in full: the circle pops,

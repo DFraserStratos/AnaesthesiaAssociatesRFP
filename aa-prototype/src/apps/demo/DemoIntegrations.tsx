@@ -36,7 +36,7 @@ const FEED_ORDER = [FEED.stg, FEED.cph, FEED.sx]
 export function DemoIntegrations() {
   const feeds = useAppStore((s) => s.integrations.feeds)
   const messages = useAppStore((s) => s.integrations.messages)
-  const cards = useAppStore((s) => s.schedule.cards)
+  const bookings = useAppStore((s) => s.schedule.bookings)
   const lists = useAppStore((s) => s.schedule.lists)
   const patients = useAppStore((s) => s.masters.patients)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
@@ -106,7 +106,7 @@ export function DemoIntegrations() {
       .sort((a, b) => (b.updatedAtISO ?? '').localeCompare(a.updatedAtISO ?? ''))[0]
   }, [messages, selected])
 
-  const resultCard = row?.resultCardId !== undefined ? cards[row.resultCardId] : undefined
+  const resultBooking = row?.resultBookingId !== undefined ? bookings[row.resultBookingId] : undefined
 
   function replay() {
     if (selected === undefined) return
@@ -261,9 +261,9 @@ export function DemoIntegrations() {
                   status={row?.status}
                   displayLabel={row !== undefined ? statusSentence(row.status, row.attempts) : undefined}
                   failureReason={row?.failureReason}
-                  cardLabel={
-                    resultCard !== undefined
-                      ? cardEffectLabel(resultCard.id, resultCard.patientId, resultCard.listId, patients, lists, anaesthetists)
+                  bookingLabel={
+                    resultBooking !== undefined
+                      ? bookingEffectLabel(resultBooking.id, resultBooking.patientId, resultBooking.listId, patients, lists, anaesthetists)
                       : undefined
                   }
                 />
@@ -476,12 +476,12 @@ function EffectView({
   status,
   displayLabel,
   failureReason,
-  cardLabel,
+  bookingLabel,
 }: {
   status?: string
   displayLabel?: string
   failureReason?: string
-  cardLabel?: string
+  bookingLabel?: string
 }) {
   if (status === undefined) {
     return <div style={{ fontSize: 12.5, color: neutral.mist, padding: '4px 0' }}>Not replayed yet. Click Replay to apply this message.</div>
@@ -491,8 +491,8 @@ function EffectView({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <StatusPill label={displayLabel ?? status} tone={tone} />
-      {cardLabel !== undefined && (
-        <div style={{ fontSize: 12.5, color: neutral.ink, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 10px' }}>{cardLabel}</div>
+      {bookingLabel !== undefined && (
+        <div style={{ fontSize: 12.5, color: neutral.ink, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 10px' }}>{bookingLabel}</div>
       )}
       {failureReason !== undefined && status !== 'processed' && (
         <div style={{ fontSize: 12, color: tone === 'err' ? semantic.error.onTint : semantic.warning.onTint }}>{failureReason}</div>
@@ -571,8 +571,8 @@ function statusSentence(status: string, attempts: number): string {
   }
 }
 
-function cardEffectLabel(
-  cardId: string,
+function bookingEffectLabel(
+  bookingId: string,
   patientId: string,
   listId: string,
   patients: Record<string, { name: string }>,
@@ -583,5 +583,5 @@ function cardEffectLabel(
   const list = lists[listId]
   const who = list !== undefined ? anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId : ''
   const when = list !== undefined ? `${list.dateISO} ${list.session}` : ''
-  return `Card ${cardId} · ${patient} · ${who} ${when}`.trim()
+  return `Booking ${bookingId} · ${patient} · ${who} ${when}`.trim()
 }

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ANAE, SEED_MARKERS } from '../../domain/seed'
 import {
   editProcedure,
-  proceduresForCard,
+  proceduresForBooking,
   resetDemo,
   useAppStore,
   type Actor,
@@ -20,10 +20,10 @@ const SOUTER: Actor = {
 }
 
 function pendingProcedureId(): string {
-  const cardId = SEED_MARKERS.pendingCaptureCard?.entityId
-  if (cardId === undefined) throw new Error('Missing pending capture marker')
-  const procedure = proceduresForCard(useAppStore.getState(), cardId)[0]
-  if (procedure === undefined) throw new Error('Pending card has no procedure')
+  const bookingId = SEED_MARKERS.pendingCaptureBooking?.entityId
+  if (bookingId === undefined) throw new Error('Missing pending capture marker')
+  const procedure = proceduresForBooking(useAppStore.getState(), bookingId)[0]
+  if (procedure === undefined) throw new Error('Pending booking has no procedure')
   return procedure.id
 }
 

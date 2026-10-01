@@ -12,7 +12,7 @@
  *
  * Two rules earn their own note:
  *
- * DIFF OVER THE UNION OF KEYS. `editCard` / `editProcedure` build `before` as
+ * DIFF OVER THE UNION OF KEYS. `editBooking` / `editProcedure` build `before` as
  * `Object.fromEntries(Object.keys(patch).map(k => [k, entity[k]]))`, so a field
  * that was never set arrives as a PRESENT key holding `undefined`. Iterating
  * one side's keys (or stringifying) loses it, which is how "not previously set"
@@ -27,8 +27,8 @@
  */
 
 import { format, parseISO } from 'date-fns'
-import type { AuditEntry } from '../../domain/types'
-import { formatCurrency } from '../format'
+import type { AuditEntry, BookingSource } from '../../domain/types'
+import { BOOKING_SOURCE_LABELS, formatCurrency } from '../format'
 import { fieldLabel } from './fieldLabels'
 
 /** A key present in the patch but holding no value. */
@@ -167,7 +167,7 @@ function formatShape(value: Record<string, unknown>): string | null {
   }
   // Quarantined inbound ethnicity code
   if (typeof value.receivedCode === 'string') return `${value.receivedCode} · held for correction`
-  // CardCancellation / PrepaymentOverride / ListPhoneNote — the words are the value.
+  // BookingCancellation / PrepaymentOverride / ListPhoneNote — the words are the value.
   if (typeof value.reason === 'string') return value.reason
   if (typeof value.text === 'string') return value.text
   return null
@@ -192,6 +192,7 @@ export function formatAuditValue(key: string, value: unknown): string {
     if (value.trim() === '') return 'empty'
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
+    if (key === 'source' && Object.hasOwn(BOOKING_SOURCE_LABELS, value)) return BOOKING_SOURCE_LABELS[value as BookingSource]
     return value
   }
   if (Array.isArray(value)) {
@@ -363,7 +364,7 @@ export function formatAuditStamp(atISO: string): string {
 /**
  * The one-line change summary for a dense feed (the admin Audit viewer): the
  * leading field's movement, with the rest counted. The full ledger belongs on
- * the Card history sheet, where someone is reading one record.
+ * the Booking history sheet, where someone is reading one record.
  */
 export function summariseAuditChanges(changes: readonly AuditFieldChange[]): string {
   const first = changes[0]

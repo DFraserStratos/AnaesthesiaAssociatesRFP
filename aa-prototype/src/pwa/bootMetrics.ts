@@ -4,7 +4,7 @@
  *
  * There is real work to measure. The mobile-only import closure has to parse
  * and evaluate, and `src/domain/seed` builds its whole world eagerly at module
- * scope: 3,877 Lists, 172 Cards, 175 Procedures and 915 audit entries. That
+ * scope: 3,877 Lists, 172 Bookings, 175 Procedures and 915 audit entries. That
  * measured at a median 23.6 ms on an M-series Mac, so a realistic phone cold
  * launch is 0.4 to 1.0 s of JS, all of it local once the service worker has
  * precached. No mitigation is warranted, and specifically no `manualChunks`:

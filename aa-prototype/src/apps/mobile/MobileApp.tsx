@@ -127,7 +127,7 @@ export function MobileApp({
     [actor, anaesthetistId, persona, moreExtra],
   )
 
-  // The List and Card layers are full-bleed (the mockup): the tab bar only shows
+  // The List and Booking layers are full-bleed (the mockup): the tab bar only shows
   // at the base of the Lists stack and on the other three tabs.
   const showTabBar = listsStackLocation(pathname).depth === 0
 

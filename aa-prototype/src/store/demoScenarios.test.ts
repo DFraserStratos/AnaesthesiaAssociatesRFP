@@ -11,12 +11,12 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { wireBillingRun } from './billingRun'
-import { authoriseList, editCard, editProcedure } from './lifecycle'
+import { authoriseList, editBooking, editProcedure } from './lifecycle'
 import { ingestPdfRow, processMessage } from './integrationActions'
 import { advanceClockToDate } from './clockActions'
 import { receivePayment } from './paymentActions'
 import { payablesDue, runPayables } from './payablesActions'
-import { auditForEntity, cardsForList, openAccRecs, proceduresForCard } from './selectors'
+import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../domain/seed'
 import { SURGEON_PDFS } from '../domain/integrations'
@@ -26,11 +26,11 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 describe('S1 · booking to theatre', () => {
-  it('the St George\'s S12 booking lands a new DRAFT Card on Souter\'s Tue 28 Jul AM List', () => {
+  it('the St George\'s S12 booking lands a new DRAFT Booking on Souter\'s Tue 28 Jul AM List', () => {
     const api = createAppStore()
     const listId = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
-    const before = cardsForList(api.getState(), listId)
-    // Three seeded, booked, uncaptured Cards: Sarah arrives as the fourth row.
+    const before = bookingsForList(api.getState(), listId)
+    // Three seeded, booked, uncaptured Bookings: Sarah arrives as the fourth row.
     expect(before).toHaveLength(3)
     expect(before.every((c) => !c.completed)).toBe(true)
 
@@ -39,7 +39,7 @@ describe('S1 · booking to theatre', () => {
 
     const list = api.getState().schedule.lists[listId]
     expect(list?.state).toBe('DRAFT')
-    expect(cardsForList(api.getState(), listId)).toHaveLength(4)
+    expect(bookingsForList(api.getState(), listId)).toHaveLength(4)
   })
 
   it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {
@@ -80,17 +80,17 @@ describe('S3 · money end-to-end', () => {
       expect(Object.keys(api.getState().xero.accRecs).length).toBeGreaterThan(0)
       expect(Object.keys(api.getState().xero.accPays).length).toBeGreaterThan(0)
 
-      const invoicesFor = (cardId: string): Invoice[] =>
-        Object.values(api.getState().billing.invoices).filter((i) => i.cardId === cardId)
+      const invoicesFor = (bookingId: string): Invoice[] =>
+        Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === bookingId)
       // The beat's contrast: same funder shares ONE invoice; two funders produce TWO.
-      const split = invoicesFor(SEED_MARKERS['splitBillingCard']?.entityId ?? '')
+      const split = invoicesFor(SEED_MARKERS['splitBillingBooking']?.entityId ?? '')
       expect(split).toHaveLength(1)
       expect(split[0]).toMatchObject({
         invoiceNumber: 'AA-2026-0002',
         counterparty: { kind: 'hospital', id: HOSP.forte },
         total: 396.18,
       })
-      const pair = invoicesFor(SEED_MARKERS['twoFunderCard']?.entityId ?? '')
+      const pair = invoicesFor(SEED_MARKERS['twoFunderBooking']?.entityId ?? '')
       expect(pair).toHaveLength(2)
       expect(pair.find((i) => i.counterparty.kind === 'insurer')).toMatchObject({
         invoiceNumber: 'AA-2026-0005',
@@ -127,34 +127,34 @@ describe('S3 · money end-to-end', () => {
 describe('S4 · exceptions', () => {
   it('the exception prerequisites are present from a fresh reset', () => {
     const s = createAppStore().getState()
-    // Unpaid pre-payment card (the completion-gate beat).
-    const prepaymentCardId = SEED_MARKERS['prepaymentCard']?.entityId ?? ''
-    expect(s.schedule.cards[prepaymentCardId]).toBeDefined()
+    // Unpaid pre-payment booking (the completion-gate beat).
+    const prepaymentBookingId = SEED_MARKERS['prepaymentBooking']?.entityId ?? ''
+    expect(s.schedule.bookings[prepaymentBookingId]).toBeDefined()
     // Billing-failure exemplar list (the failure + retry beat).
     expect(s.schedule.lists[SEED_LIST_IDS.billingFailure]?.state).toBe('SUBMITTED')
   })
 })
 
 describe('S5 · compliance tour', () => {
-  it('staging writes a multi-entry audit trail on the much-edited Card (Chen)', () => {
+  it('staging writes a multi-entry audit trail on the much-edited Booking (Chen)', () => {
     const api = createAppStore()
-    const chenCardId = SEED_MARKERS['overriddenTimeUnitsCard']?.entityId ?? ''
-    const procedure = proceduresForCard(api.getState(), chenCardId)[0]
+    const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
+    const procedure = proceduresForBooking(api.getState(), chenBookingId)[0]
     if (procedure === undefined) throw new Error('expected Chen\'s seeded procedure')
-    const seededCardRows = auditForEntity(api.getState(), chenCardId).length
+    const seededBookingRows = auditForEntity(api.getState(), chenBookingId).length
     const seededProcedureRows = auditForEntity(api.getState(), procedure.id).length
 
     expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS2' }).ok).toBe(true)
-    expect(editCard(api, OFFICE, chenCardId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }).ok).toBe(true)
+    expect(editBooking(api, OFFICE, chenBookingId, { notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.' }).ok).toBe(true)
     expect(editProcedure(api, SOUTER, procedure.id, { asaClass: 'AS1' }).ok).toBe(true)
 
-    // The Card History starts rich, then merges these staged Card + Procedure
+    // The Booking History starts rich, then merges these staged Booking + Procedure
     // rows after the pristine trail in append order.
     expect(
-      auditForEntity(api.getState(), chenCardId)
-        .slice(seededCardRows)
+      auditForEntity(api.getState(), chenBookingId)
+        .slice(seededBookingRows)
         .map((a) => a.action),
-    ).toEqual(['card.update'])
+    ).toEqual(['booking.update'])
     const procedureRows = auditForEntity(api.getState(), procedure.id)
     const stagedProcedureRows = procedureRows.slice(seededProcedureRows)
     expect(stagedProcedureRows.map((a) => a.action)).toEqual(['procedure.update', 'procedure.update'])
@@ -180,7 +180,7 @@ describe('S5 · compliance tour', () => {
 })
 
 describe('PDF arrival · Surgeon PDF ingest', () => {
-  it('ingesting the clean row creates a Card, then a re-ingest updates it (deduped by NHI)', () => {
+  it('ingesting the clean row creates a Booking, then a re-ingest updates it (deduped by NHI)', () => {
     const api = createAppStore()
     const pdf = SURGEON_PDFS[0]
     if (pdf === undefined) throw new Error('expected a seeded surgeon PDF')

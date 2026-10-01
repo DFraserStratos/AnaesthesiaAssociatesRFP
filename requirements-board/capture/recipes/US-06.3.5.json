@@ -20,11 +20,11 @@
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
             },
             {
-              "wait": "[data-shot=card-prepayment]"
+              "wait": "[data-shot=booking-prepayment]"
             }
           ],
           "highlight": [
-            "[data-shot=card-prepayment]"
+            "[data-shot=booking-prepayment]"
           ]
         },
         {

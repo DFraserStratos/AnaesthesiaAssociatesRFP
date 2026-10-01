@@ -1,19 +1,19 @@
 /**
  * Lifecycle guards (PROGRESS convention 6). DRAFT → SUBMITTED → AUTHORISED is
  * strictly ordered; SUBMITTED strips anaesthetist edit rights; AUTHORISED
- * locks Cards immutable; there is NO Returned transition anywhere. UI can
+ * locks Bookings immutable; there is NO Returned transition anywhere. UI can
  * never bypass a guard — every guard returns an `Outcome` (refusals as data;
  * Phase 11's monitor turns integration refusals into manual-intervention
  * items).
  *
  * The RFP state table, as enforced here:
- *   - anaesthetist: edits own DRAFT Lists' Cards only;
+ *   - anaesthetist: edits own DRAFT Lists' Bookings only;
  *   - office: edits DRAFT and SUBMITTED; authorises; nobody edits AUTHORISED;
  *   - integration-sourced writes only while the List is DRAFT.
  */
 
-import type { Card, CoverRequest, List, ListPhoneNote, ListStatusKey, Procedure, Session } from '../domain/types'
-import { validateCardForBilling } from '../domain/billing/validateCardForBilling'
+import type { Booking, CoverRequest, List, ListPhoneNote, ListStatusKey, Procedure, Session } from '../domain/types'
+import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import {
   allocateId,
   clockISO,
@@ -25,29 +25,29 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { billingContextForCard, cardsForList, listForSlot, prepaymentStatusFor, proceduresForCard } from './selectors'
+import { billingContextForBooking, bookingsForList, listForSlot, prepaymentStatusFor, proceduresForBooking } from './selectors'
 import { emitAppEvent } from './events'
 
 // ---------------------------------------------------------------------------
 // Shared checks
 // ---------------------------------------------------------------------------
 
-export function getCard(state: AppState, cardId: string): { card: Card; list: List } | undefined {
-  const card = state.schedule.cards[cardId]
-  if (card === undefined) return undefined
-  const list = state.schedule.lists[card.listId]
+export function getBooking(state: AppState, bookingId: string): { booking: Booking; list: List } | undefined {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return undefined
+  const list = state.schedule.lists[booking.listId]
   if (list === undefined) return undefined
-  return { card, list }
+  return { booking, list }
 }
 
 /**
- * The edit-rights matrix for Card/Procedure writes. Returns a refusal outcome
- * or null when the write may proceed. Exported so the Phase 03 card-creation
+ * The edit-rights matrix for Booking/Procedure writes. Returns a refusal outcome
+ * or null when the write may proceed. Exported so the Phase 03 booking-creation
  * and patient-edit guards apply the identical role/source/state gate.
  */
 export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
   if (list.state === 'AUTHORISED') {
-    return refuse('listAuthorised', 'This List is authorised and its Cards are locked. No edits are possible.')
+    return refuse('listAuthorised', 'This List is authorised and its Bookings are locked. No edits are possible.')
   }
   if (actor.source === 'integration') {
     if (list.state !== 'DRAFT') {
@@ -60,7 +60,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
   }
   if (actor.role === 'anaesthetist') {
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== list.anaesthetistId) {
-      return refuse('notOwnList', 'Anaesthetists can only change Cards on their own Lists.')
+      return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
     }
     if (list.state !== 'DRAFT') {
       return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
@@ -72,7 +72,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
 }
 
 // ---------------------------------------------------------------------------
-// completeCard
+// completeBooking
 // ---------------------------------------------------------------------------
 
 /**
@@ -86,64 +86,64 @@ export interface CompletionBlocker {
 }
 
 /**
- * Why a Card cannot be marked complete, without attempting the mutation.
- * `completeCard` refuses on the first entry; the mobile submit sheet uses the
- * full list to name each incomplete card's outstanding failures (Phase 04).
+ * Why a Booking cannot be marked complete, without attempting the mutation.
+ * `completeBooking` refuses on the first entry; the mobile submit sheet uses the
+ * full list to name each incomplete booking's outstanding failures (Phase 04).
  */
-export function completionBlockersFor(state: AppState, card: Card): CompletionBlocker[] {
+export function completionBlockersFor(state: AppState, booking: Booking): CompletionBlocker[] {
   const blockers: CompletionBlocker[] = []
 
-  const ctx = billingContextForCard(state, card)
+  const ctx = billingContextForBooking(state, booking)
   if (ctx === undefined) {
-    blockers.push({ code: 'missingContext', message: 'This Card is missing its List or anaesthetist.' })
+    blockers.push({ code: 'missingContext', message: 'This Booking is missing its List or anaesthetist.' })
     return blockers
   }
-  const failures = validateCardForBilling(card, proceduresForCard(state, card.id), ctx)
+  const failures = validateBookingForBilling(booking, proceduresForBooking(state, booking.id), ctx)
   if (failures.length > 0) {
     blockers.push({
       code: 'validationFailed',
-      message: `This Card is missing required billing data (${failures.length} ${failures.length === 1 ? 'item' : 'items'}).`,
+      message: `This Booking is missing required billing data (${failures.length} ${failures.length === 1 ? 'item' : 'items'}).`,
       details: failures,
     })
   }
 
   // Pre-payment gate (B7; Phase 09): "payment must be collected before the
-  // procedure proceeds". completeCard is the last checkpoint the prototype
-  // controls, so an unpaid selfFundedPrepayment card is blocked here — liftable
+  // procedure proceeds". completeBooking is the last checkpoint the prototype
+  // controls, so an unpaid selfFundedPrepayment booking is blocked here — liftable
   // only by the audited `overridePrepaymentGate` (which sets prepaymentOverride,
   // moving the status to 'overridden') or a paid pre-invoice (status 'paid').
-  const prepayment = prepaymentStatusFor(state, card.id)
+  const prepayment = prepaymentStatusFor(state, booking.id)
   if (prepayment === 'required' || prepayment === 'outstanding') {
     blockers.push({
       code: 'prepaymentUnpaid',
       message:
         prepayment === 'required'
-          ? 'Pre-payment is required for this Card and no pre-procedure invoice has been raised yet. Raise and collect the pre-payment, or record an office override, before completing.'
-          : 'The pre-procedure invoice for this Card is unpaid. Collect the pre-payment, or record an office override, before completing.',
+          ? 'Pre-payment is required for this Booking and no pre-procedure invoice has been raised yet. Raise and collect the pre-payment, or record an office override, before completing.'
+          : 'The pre-procedure invoice for this Booking is unpaid. Collect the pre-payment, or record an office override, before completing.',
     })
   }
 
   return blockers
 }
 
-/** Mark a Card completed — blocked unless `validateCardForBilling` passes. */
-export function completeCard(api: AppStoreApi, actor: Actor, cardId: string): Outcome {
+/** Mark a Booking completed — blocked unless `validateBookingForBilling` passes. */
+export function completeBooking(api: AppStoreApi, actor: Actor, bookingId: string): Outcome {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'This Card is cancelled and cannot be completed.')
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled and cannot be completed.')
   }
   if (actor.source === 'integration') {
-    return refuse('integrationForbidden', 'Integrations never complete Cards; completion is a clinical sign-off.')
+    return refuse('integrationForbidden', 'Integrations never complete Bookings; completion is a clinical sign-off.')
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
-  if (card.completed) return refuse('alreadyCompleted', 'This Card is already completed.')
+  if (booking.completed) return refuse('alreadyCompleted', 'This Booking is already completed.')
 
-  const blockers = completionBlockersFor(state, card)
+  const blockers = completionBlockersFor(state, booking)
   const first = blockers[0]
   if (first !== undefined) return refuse(first.code, first.message, blockers)
 
@@ -151,18 +151,18 @@ export function completeCard(api: AppStoreApi, actor: Actor, cardId: string): Ou
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.complete',
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.complete',
       before: { completed: false },
       after: { completed: true },
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        cards: {
-          ...s.schedule.cards,
-          [cardId]: { ...card, completed: true, completedAtISO: clockISO(s.clock) },
+        bookings: {
+          ...s.schedule.bookings,
+          [bookingId]: { ...booking, completed: true, completedAtISO: clockISO(s.clock) },
         },
       },
     }),
@@ -171,23 +171,23 @@ export function completeCard(api: AppStoreApi, actor: Actor, cardId: string): Ou
 }
 
 /**
- * Re-open a completed Card (Phase 04's "Amend" link). The anaesthetist amends
- * their own Card while the List is DRAFT; the office may re-open on DRAFT or
+ * Re-open a completed Booking (Phase 04's "Amend" link). The anaesthetist amends
+ * their own Booking while the List is DRAFT; the office may re-open on DRAFT or
  * SUBMITTED (the standard edit-rights matrix). Completion is a clinical
- * sign-off, so integrations never take it back either — mirrors completeCard.
+ * sign-off, so integrations never take it back either — mirrors completeBooking.
  */
-export function uncompleteCard(api: AppStoreApi, actor: Actor, cardId: string): Outcome {
+export function uncompleteBooking(api: AppStoreApi, actor: Actor, bookingId: string): Outcome {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'This Card is cancelled; there is no completion to amend.')
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled; there is no completion to amend.')
   }
-  if (!card.completed) return refuse('notCompleted', 'This Card is not marked complete.')
+  if (!booking.completed) return refuse('notCompleted', 'This Booking is not marked complete.')
   if (actor.source === 'integration') {
-    return refuse('integrationForbidden', 'Integrations never re-open Cards; completion is a clinical sign-off.')
+    return refuse('integrationForbidden', 'Integrations never re-open Bookings; completion is a clinical sign-off.')
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
@@ -196,17 +196,17 @@ export function uncompleteCard(api: AppStoreApi, actor: Actor, cardId: string): 
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.uncomplete',
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.uncomplete',
       before: { completed: true },
       after: { completed: false },
     },
     (s) => {
-      const next: Card = { ...card, completed: false }
+      const next: Booking = { ...booking, completed: false }
       delete next.completedAtISO
       return {
-        schedule: { ...s.schedule, cards: { ...s.schedule.cards, [cardId]: next } },
+        schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [bookingId]: next } },
       }
     },
   )
@@ -218,8 +218,8 @@ export function uncompleteCard(api: AppStoreApi, actor: Actor, cardId: string): 
 // ---------------------------------------------------------------------------
 
 /**
- * DRAFT → SUBMITTED. Completion-gated: every non-cancelled Card must be
- * marked Completed (validation alone is not enough); a cancelled Card never
+ * DRAFT → SUBMITTED. Completion-gated: every non-cancelled Booking must be
+ * marked Completed (validation alone is not enough); a cancelled Booking never
  * blocks.
  */
 export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outcome {
@@ -240,11 +240,11 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
     return refuse('notOwnList', 'Anaesthetists can only submit their own Lists.')
   }
 
-  const incomplete = cardsForList(state, listId).filter((c) => c.cancellation === undefined && !c.completed)
+  const incomplete = bookingsForList(state, listId).filter((c) => c.cancellation === undefined && !c.completed)
   if (incomplete.length > 0) {
     return refuse(
-      'cardsNotCompleted',
-      `Every Card must be completed before submission (${incomplete.length} to finish).`,
+      'bookingsNotCompleted',
+      `Every Booking must be completed before submission (${incomplete.length} to finish).`,
       incomplete.map((c) => c.id),
     )
   }
@@ -271,7 +271,7 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
 
 /**
  * SUBMITTED → AUTHORISED (strictly ordered — a DRAFT List can never jump).
- * Office only. Locks the List's Cards immutable and emits `listAuthorised`
+ * Office only. Locks the List's Bookings immutable and emits `listAuthorised`
  * for Phase 08's billing run.
  */
 export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): Outcome {
@@ -315,7 +315,7 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
  * a call the office made about the List (e.g. clarifying a reference with the
  * hospital) — it surfaces on the review action bar AND, via the audit entry, in
  * the List's history. Office-initiated; allowed in any List state since it is
- * an annotation, not a Card edit. There is NO return-to-anaesthetist action
+ * an annotation, not a Booking edit. There is NO return-to-anaesthetist action
  * anywhere: a SUBMITTED List flows only forward to AUTHORISED (convention 6, no
  * Returned state).
  */
@@ -338,7 +338,7 @@ export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text
       entityId: listId,
       action: 'list.phoneNote',
       after: { text: trimmed },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({
       schedule: {
@@ -351,26 +351,26 @@ export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text
 }
 
 // ---------------------------------------------------------------------------
-// cancelCard
+// cancelBooking
 // ---------------------------------------------------------------------------
 
 /**
- * Audited soft-cancel (7th review B23) — the legacy "Delete Card",
- * modernised. The Card is retained and visible, excluded from validation and
+ * Audited soft-cancel (7th review B23) — the legacy "Delete Booking",
+ * modernised. The Booking is retained and visible, excluded from validation and
  * billing; never a hard delete. Phase 11's S15 message calls this same guard
  * with source=integration (DRAFT Lists only).
  */
-export function cancelCard(api: AppStoreApi, actor: Actor, cardId: string, reason: string): Outcome {
+export function cancelBooking(api: AppStoreApi, actor: Actor, bookingId: string, reason: string): Outcome {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
   if (reason.trim() === '') {
     return refuse('reasonRequired', 'A cancellation reason is required.')
   }
-  if (card.cancellation !== undefined) {
-    return refuse('alreadyCancelled', 'This Card is already cancelled.')
+  if (booking.cancellation !== undefined) {
+    return refuse('alreadyCancelled', 'This Booking is already cancelled.')
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
@@ -379,18 +379,18 @@ export function cancelCard(api: AppStoreApi, actor: Actor, cardId: string, reaso
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.cancel',
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.cancel',
       after: { cancelled: true, reason: reason.trim() },
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        cards: {
-          ...s.schedule.cards,
-          [cardId]: {
-            ...card,
+        bookings: {
+          ...s.schedule.bookings,
+          [bookingId]: {
+            ...booking,
             cancellation: {
               reason: reason.trim(),
               by: actor.who,
@@ -407,16 +407,24 @@ export function cancelCard(api: AppStoreApi, actor: Actor, cardId: string, reaso
 }
 
 // ---------------------------------------------------------------------------
-// editCard / editProcedure (the guarded patch entry points)
+// editBooking / editProcedure (the guarded patch entry points)
 // ---------------------------------------------------------------------------
 
-export type CardPatch = Partial<Pick<Card, 'scheduledTime' | 'notes' | 'attachments'>>
+/** Attachments are not patchable: `addAttachment` / `removeAttachment` own them (catch-up Phase 15). */
+const BOOKING_PATCH_KEYS = ['scheduledTime', 'notes'] as const
+export type BookingPatch = Partial<Pick<Booking, (typeof BOOKING_PATCH_KEYS)[number]>>
 
-export function editCard(api: AppStoreApi, actor: Actor, cardId: string, patch: CardPatch): Outcome {
+export function editBooking(api: AppStoreApi, actor: Actor, bookingId: string, rawPatch: BookingPatch): Outcome {
+  // Only the patchable keys pass, even from an untyped caller: attachments go
+  // through `addAttachment` / `removeAttachment`.
+  const patch: BookingPatch = Object.fromEntries(
+    BOOKING_PATCH_KEYS.filter((k) => k in rawPatch).map((k) => [k, rawPatch[k]]),
+  )
+  if (Object.keys(patch).length === 0) return ok(undefined)
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
@@ -424,23 +432,23 @@ export function editCard(api: AppStoreApi, actor: Actor, cardId: string, patch: 
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, card[k as keyof Card]])),
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.update',
+      before: Object.fromEntries(Object.keys(patch).map((k) => [k, booking[k as keyof Booking]])),
       after: patch,
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: { ...card, ...patch } },
+        bookings: { ...s.schedule.bookings, [bookingId]: { ...booking, ...patch } },
       },
     }),
   )
   return ok(undefined)
 }
 
-export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'cardId'>>
+export type ProcedurePatch = Partial<Omit<Procedure, 'id' | 'bookingId'>>
 
 export function editProcedure(
   api: AppStoreApi,
@@ -451,8 +459,8 @@ export function editProcedure(
   const state = api.getState()
   const procedure = state.schedule.procedures[procedureId]
   if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
   const rights = editRefusal(actor, found.list)
   if (rights !== null) return rights
 
@@ -493,7 +501,7 @@ export type ListPatch = Partial<Pick<List, 'hospitalId' | 'surgeonId' | 'startTi
  * Patch a List's hospital/surgeon/times/notes through the standard edit-rights
  * matrix (office edits DRAFT and SUBMITTED; the anaesthetist only their own
  * DRAFT; AUTHORISED blocked). An empty string (or explicit undefined) on a key
- * present in the patch clears that field. Audited `list.update`, stamps no Card.
+ * present in the patch clears that field. Audited `list.update`, stamps no Booking.
  */
 export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: ListPatch): Outcome {
   const state = api.getState()
@@ -511,7 +519,7 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
       action: 'list.update',
       before: Object.fromEntries(Object.keys(patch).map((k) => [k, list[k as keyof List]])),
       after: patch,
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => {
       const next: List = { ...list }
@@ -534,7 +542,7 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
 }
 
 // ---------------------------------------------------------------------------
-// reassignList / reassignCard
+// reassignList / reassignBooking
 // ---------------------------------------------------------------------------
 
 /** Vacated-slot statuses that carry no booking context. */
@@ -575,8 +583,10 @@ export function reassignList(
 
   const target = listForSlot(state, toAnaesthetistId, source.dateISO, source.session)
   if (target === undefined) return refuse('noTargetSlot', 'The target slot does not exist on the canvas.')
-  const targetCards = cardsForList(state, target.id)
-  if (target.statusKey !== 'free' || target.state !== 'DRAFT' || targetCards.length > 0) {
+  const targetBookings = bookingsForList(state, target.id)
+  // A target carrying List attachments is not genuinely Free: absorbing it would
+  // delete them unaudited (catch-up Phase 15).
+  if (target.statusKey !== 'free' || target.state !== 'DRAFT' || targetBookings.length > 0 || (target.attachments ?? []).length > 0) {
     return refuse('targetNotFree', 'The target session must be Free to receive a reassigned List.')
   }
 
@@ -631,29 +641,29 @@ export function reassignList(
 }
 
 /**
- * Move one Card (with its Procedures) to a different List — the RFP's routine
- * single-booking move, audited at Card level. Neither List's status or other
- * Cards change. Blocked when either List is AUTHORISED; a SUBMITTED target is
- * allowed for the office (the all-Cards-completed rule gates the
+ * Move one Booking (with its Procedures) to a different List — the RFP's routine
+ * single-booking move, audited at Booking level. Neither List's status or other
+ * Bookings change. Blocked when either List is AUTHORISED; a SUBMITTED target is
+ * allowed for the office (the all-Bookings-completed rule gates the
  * DRAFT→SUBMITTED transition, not later office rebooking).
  */
-export function reassignCard(api: AppStoreApi, actor: Actor, cardId: string, toListId: string): Outcome {
+export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: string, toListId: string): Outcome {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list: source } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list: source } = found
   const target = state.schedule.lists[toListId]
   if (target === undefined) return refuse('notFound', 'Target List not found.')
-  if (target.id === source.id) return refuse('sameList', 'The Card is already on that List.')
+  if (target.id === source.id) return refuse('sameList', 'The Booking is already on that List.')
 
   if (source.state === 'AUTHORISED' || target.state === 'AUTHORISED') {
-    return refuse('listAuthorised', 'Cards on an authorised List are locked; an authorised List cannot receive Cards.')
+    return refuse('listAuthorised', 'Bookings on an authorised List are locked; an authorised List cannot receive Bookings.')
   }
   if (actor.source === 'integration') {
     if (source.state !== 'DRAFT' || target.state !== 'DRAFT') {
       return refuse(
         'integrationImmutable',
-        'An integration update can only move a Card between draft Lists. This message needs manual intervention.',
+        'An integration update can only move a Booking between draft Lists. This message needs manual intervention.',
       )
     }
   } else if (actor.role === 'anaesthetist') {
@@ -661,7 +671,7 @@ export function reassignCard(api: AppStoreApi, actor: Actor, cardId: string, toL
       actor.anaesthetistId !== undefined &&
       (actor.anaesthetistId !== source.anaesthetistId || actor.anaesthetistId !== target.anaesthetistId)
     ) {
-      return refuse('notOwnList', 'Anaesthetists can only move Cards between their own Lists.')
+      return refuse('notOwnList', 'Anaesthetists can only move Bookings between their own Lists.')
     }
     if (source.state !== 'DRAFT' || target.state !== 'DRAFT') {
       return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
@@ -672,16 +682,16 @@ export function reassignCard(api: AppStoreApi, actor: Actor, cardId: string, toL
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.reassign',
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.reassign',
       before: { listId: source.id },
       after: { listId: target.id },
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: { ...card, listId: target.id } },
+        bookings: { ...s.schedule.bookings, [bookingId]: { ...booking, listId: target.id } },
       },
     }),
   )
@@ -695,7 +705,7 @@ export function reassignCard(api: AppStoreApi, actor: Actor, cardId: string, toL
 /**
  * Write the AnaesthetistAvailability MASTER row, then reconcile that slot's
  * List (1st review #2; 7th review A9): only a truly-Free List (Free status,
- * no hospital, no surgeon, no active Cards) restatuses; anything carrying
+ * no hospital, no surgeon, no active Bookings) restatuses; anything carrying
  * booking context gets a conflict flag for the office — never a silent
  * change. The un-block direction is symmetric (a picked reading): 'available'
  * restatuses only an empty holiday/unavailable List back to Free.
@@ -732,9 +742,13 @@ export function setAvailability(
   // Decide the reconciliation before committing.
   let reconciled: 'restatused' | 'conflictFlagged' | 'noChange' = 'noChange'
   if (list !== undefined) {
-    const activeCards = cardsForList(state, list.id).filter((c) => c.cancellation === undefined)
+    const activeBookings = bookingsForList(state, list.id).filter((c) => c.cancellation === undefined)
     const unreserved =
-      list.hospitalId === undefined && list.surgeonId === undefined && activeCards.length === 0
+      list.hospitalId === undefined &&
+      list.surgeonId === undefined &&
+      activeBookings.length === 0 &&
+      // A List's own attachments are booking context too (catch-up Phase 15).
+      (list.attachments ?? []).length === 0
     if (kind === 'holiday' || kind === 'unavailable') {
       if (list.statusKey === 'free' && unreserved && list.state === 'DRAFT') reconciled = 'restatused'
       else reconciled = 'conflictFlagged'

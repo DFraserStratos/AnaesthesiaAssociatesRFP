@@ -91,8 +91,8 @@ export function listSourceLabels(
  * that grid. A Free slot that has gained booking context is presented as
  * Private even though the underlying status remains reconciliation-owned.
  */
-export function displayStatusKeyForList(list: List, hasCards: boolean): ListStatusKey {
-  return list.statusKey === 'free' && (hasCards || list.hospitalId !== undefined) ? 'private' : list.statusKey
+export function displayStatusKeyForList(list: List, hasBookings: boolean): ListStatusKey {
+  return list.statusKey === 'free' && (hasBookings || list.hospitalId !== undefined) ? 'private' : list.statusKey
 }
 
 const BOOKED = new Set(['private', 'public', 'preop'])

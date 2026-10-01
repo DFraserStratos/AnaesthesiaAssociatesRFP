@@ -1,25 +1,25 @@
 /**
  * Phase 04 store guard tests — addBillingLine / removeBillingLine (incl. the
  * Method 3 individual-arrangement gate and the funder-allocation protection),
- * addProcedure / removeProcedure, uncompleteCard and completionBlockersFor.
+ * addProcedure / removeProcedure, uncompleteBooking and completionBlockersFor.
  * Every test uses an isolated, non-persisted store seeded from buildSeed().
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { addBillingLine, removeBillingLine, setBillingLineAllocation } from './billingLineActions'
-import { addProcedure, removeProcedure } from './cardActions'
+import { addProcedure, removeProcedure } from './bookingActions'
 import {
   authoriseList,
   completionBlockersFor,
   editProcedure,
-  uncompleteCard,
+  uncompleteBooking,
 } from './lifecycle'
-import { auditForEntity, cardsForList, proceduresForCard } from './selectors'
+import { auditForEntity, bookingsForList, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
-import { INDIVIDUAL_ARRANGEMENT_MESSAGE } from '../domain/billing/validateCardForBilling'
+import { INDIVIDUAL_ARRANGEMENT_MESSAGE } from '../domain/billing/validateBookingForBilling'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
-import type { BillingValidationFailure } from '../domain/billing/validateCardForBilling'
+import type { BillingValidationFailure } from '../domain/billing/validateBookingForBilling'
 
 const SOUTER: Actor = {
   who: 'Dr Melanie Souter',
@@ -50,33 +50,33 @@ function marker(key: string): string {
 const SOUTER_PM = marker('designDayPmList')
 const MORRISON_LIST = marker('submittedListMorrison')
 const WHITAKER_LIST = marker('submittedListWhitaker')
-const ELLISON_CARD = marker('pendingCaptureCard')
-const RATE_TIME_CARD = marker('rateTimeCard')
-const TWO_FUNDER_CARD = marker('twoFunderCard')
-const SPLIT_CARD = marker('splitBillingCard')
-const CANCELLED_CARD = marker('cancelledCard')
+const ELLISON_BOOKING = marker('pendingCaptureBooking')
+const RATE_TIME_BOOKING = marker('rateTimeBooking')
+const TWO_FUNDER_BOOKING = marker('twoFunderBooking')
+const SPLIT_BOOKING = marker('splitBillingBooking')
+const CANCELLED_BOOKING = marker('cancelledBooking')
 
 function store(): BoundAppStore {
   return createAppStore()
 }
 
-function firstProcedureId(api: BoundAppStore, cardId: string): string {
-  const procedure = proceduresForCard(api.getState(), cardId)[0]
-  if (procedure === undefined) throw new Error(`card ${cardId} has no procedure`)
+function firstProcedureId(api: BoundAppStore, bookingId: string): string {
+  const procedure = proceduresForBooking(api.getState(), bookingId)[0]
+  if (procedure === undefined) throw new Error(`booking ${bookingId} has no procedure`)
   return procedure.id
 }
 
-/** The design-day Tane card: completed, valid, on Souter's DRAFT PM list. */
-function taneCardId(api: BoundAppStore): string {
-  const card = cardsForList(api.getState(), SOUTER_PM)[0]
-  if (card === undefined) throw new Error('no PM cards')
-  return card.id
+/** The design-day Tane booking: completed, valid, on Souter's DRAFT PM list. */
+function taneBookingId(api: BoundAppStore): string {
+  const booking = bookingsForList(api.getState(), SOUTER_PM)[0]
+  if (booking === undefined) throw new Error('no PM bookings')
+  return booking.id
 }
 
 describe('addBillingLine', () => {
-  it('adds a fixed ancillary line, audited, stamping the parent card', () => {
+  it('adds a fixed ancillary line, audited, stamping the parent booking', () => {
     const api = store()
-    const procedureId = firstProcedureId(api, ELLISON_CARD)
+    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
     const outcome = addBillingLine(api, SOUTER, procedureId, {
       chargeBasis: 'fixed',
       description: 'ACC pre-op flat fee',
@@ -93,15 +93,15 @@ describe('addBillingLine', () => {
 
     const entry = auditForEntity(state, outcome.value.billingLineId).at(-1)
     expect(entry?.action).toBe('billingLine.add')
-    // The wrapper stamped the PARENT card in lockstep with the audit entry.
-    const card = state.schedule.cards[ELLISON_CARD]
-    expect(card?.lastModifiedBy).toBe('Dr Melanie Souter')
-    expect(card?.lastModifiedAtISO).toBe(entry?.atISO)
+    // The wrapper stamped the PARENT booking in lockstep with the audit entry.
+    const booking = state.schedule.bookings[ELLISON_BOOKING]
+    expect(booking?.lastModifiedBy).toBe('Dr Melanie Souter')
+    expect(booking?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
   it('permits rate x time under the individual-arrangement contract, amount = roundToCents(hours x rate)', () => {
     const api = store()
-    const procedureId = firstProcedureId(api, RATE_TIME_CARD)
+    const procedureId = firstProcedureId(api, RATE_TIME_BOOKING)
     const outcome = addBillingLine(api, FITZGERALD, procedureId, {
       chargeBasis: 'rateTime',
       description: 'Second theatre session, hourly',
@@ -121,7 +121,7 @@ describe('addBillingLine', () => {
     const before = api.getState()
     const auditBefore = before.audit.length
     const linesBefore = Object.keys(before.schedule.billingLines).length
-    const procedureId = firstProcedureId(api, ELLISON_CARD)
+    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
 
     const outcome = addBillingLine(api, SOUTER, procedureId, {
       chargeBasis: 'rateTime',
@@ -141,7 +141,7 @@ describe('addBillingLine', () => {
 
   it('refuses rate x time when the procedure has no governing contract at all', () => {
     const api = store()
-    const procedureId = firstProcedureId(api, marker('guardianMinorCard'))
+    const procedureId = firstProcedureId(api, marker('guardianMinorBooking'))
     const outcome = addBillingLine(api, OFFICE, procedureId, {
       chargeBasis: 'rateTime',
       description: 'Hourly attempt',
@@ -155,8 +155,8 @@ describe('addBillingLine', () => {
   it('refuses bad input: empty description, non-positive amount / hours / rate', () => {
     const api = store()
     const auditBefore = api.getState().audit.length
-    const ellisonProc = firstProcedureId(api, ELLISON_CARD)
-    const rateTimeProc = firstProcedureId(api, RATE_TIME_CARD)
+    const ellisonProc = firstProcedureId(api, ELLISON_BOOKING)
+    const rateTimeProc = firstProcedureId(api, RATE_TIME_BOOKING)
 
     const noDescription = addBillingLine(api, SOUTER, ellisonProc, {
       chargeBasis: 'fixed',
@@ -197,7 +197,7 @@ describe('addBillingLine', () => {
 
   it('role/state matrix: anaesthetist refused on SUBMITTED, office allowed; not-own refused; AUTHORISED locked', () => {
     const api = store()
-    const morrisonProc = firstProcedureId(api, cardsForList(api.getState(), MORRISON_LIST)[0]!.id)
+    const morrisonProc = firstProcedureId(api, bookingsForList(api.getState(), MORRISON_LIST)[0]!.id)
 
     const anaesthetist = addBillingLine(api, MORRISON, morrisonProc, {
       chargeBasis: 'fixed',
@@ -214,7 +214,7 @@ describe('addBillingLine', () => {
     })
     expect(office.ok).toBe(true)
 
-    const notOwn = addBillingLine(api, SOUTER, firstProcedureId(api, RATE_TIME_CARD), {
+    const notOwn = addBillingLine(api, SOUTER, firstProcedureId(api, RATE_TIME_BOOKING), {
       chargeBasis: 'fixed',
       description: 'Not my list',
       amount: 40,
@@ -234,9 +234,9 @@ describe('addBillingLine', () => {
 })
 
 describe('removeBillingLine', () => {
-  it('removes a line, audited with the full line as before, stamping the card explicitly', () => {
+  it('removes a line, audited with the full line as before, stamping the booking explicitly', () => {
     const api = store()
-    const procedureId = firstProcedureId(api, ELLISON_CARD)
+    const procedureId = firstProcedureId(api, ELLISON_BOOKING)
     const added = addBillingLine(api, SOUTER, procedureId, {
       chargeBasis: 'fixed',
       description: 'Removable',
@@ -254,15 +254,15 @@ describe('removeBillingLine', () => {
     const entry = auditForEntity(state, lineId).at(-1)
     expect(entry?.action).toBe('billingLine.remove')
     expect((entry?.before as { amount?: number } | undefined)?.amount).toBe(30)
-    // The deleted line cannot be derived post-recipe: the explicit stampCardId
-    // still stamps the parent card in lockstep.
-    expect(state.schedule.cards[ELLISON_CARD]?.lastModifiedAtISO).toBe(entry?.atISO)
+    // The deleted line cannot be derived post-recipe: the explicit stampBookingId
+    // still stamps the parent booking in lockstep.
+    expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
   it('the anaesthetist may not remove a line from the submitted S3 List; the office may', () => {
     const api = store()
     const state = api.getState()
-    const procedureIds = proceduresForCard(state, TWO_FUNDER_CARD).map((p) => p.id)
+    const procedureIds = proceduresForBooking(state, TWO_FUNDER_BOOKING).map((p) => p.id)
     const funderLine = Object.values(state.schedule.billingLines).find(
       (l) => procedureIds.includes(l.procedureId) && l.funderOverride !== undefined,
     )
@@ -282,8 +282,8 @@ describe('removeBillingLine', () => {
 describe('addProcedure', () => {
   it('adds an isAdditional skeleton inheriting the funding context from the first procedure', () => {
     const api = store()
-    const first = proceduresForCard(api.getState(), ELLISON_CARD)[0]
-    const outcome = addProcedure(api, SOUTER, ELLISON_CARD)
+    const first = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
+    const outcome = addProcedure(api, SOUTER, ELLISON_BOOKING)
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
 
@@ -291,8 +291,9 @@ describe('addProcedure', () => {
     expect(procedure?.isAdditional).toBe(true)
     expect(procedure?.description).toBe('')
     expect(procedure?.rvgBaseCode).toBeUndefined()
-    // The funding context mirrors the first procedure — the same shape
-    // copyCard's skeleton inherits (splitCard's second procedure pattern).
+    // The funding context mirrors the first procedure (the split Booking's
+    // second-procedure pattern). "Add another procedure" is the only way to add
+    // an additional Procedure; Copy makes a new Booking (catch-up Phase 15).
     expect(procedure?.billingRoute).toBe(first?.billingRoute)
     expect(procedure?.governingContractId).toBe(first?.governingContractId)
 
@@ -300,27 +301,27 @@ describe('addProcedure', () => {
     expect(entry?.action).toBe('procedure.create')
   })
 
-  it('refuses cancelled and completed cards', () => {
+  it('refuses cancelled and completed bookings', () => {
     const api = store()
-    const cancelled = addProcedure(api, OFFICE, CANCELLED_CARD)
+    const cancelled = addProcedure(api, OFFICE, CANCELLED_BOOKING)
     expect(cancelled.ok).toBe(false)
-    if (!cancelled.ok) expect(cancelled.code).toBe('cardCancelled')
+    if (!cancelled.ok) expect(cancelled.code).toBe('bookingCancelled')
 
-    const completed = addProcedure(api, SOUTER, SPLIT_CARD)
+    const completed = addProcedure(api, SOUTER, SPLIT_BOOKING)
     expect(completed.ok).toBe(false)
     if (!completed.ok) {
-      expect(completed.code).toBe('cardCompleted')
+      expect(completed.code).toBe('bookingCompleted')
       expect(completed.message).toContain('Amend it before adding a procedure')
     }
   })
 
   it('refuses the anaesthetist on a SUBMITTED list', () => {
     const api = store()
-    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]!.id
-    // Re-open the completed card (office may, on SUBMITTED) so the list gate
+    const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
+    // Re-open the completed booking (office may, on SUBMITTED) so the list gate
     // itself is what refuses the anaesthetist.
-    expect(uncompleteCard(api, OFFICE, morrisonCard).ok).toBe(true)
-    const outcome = addProcedure(api, MORRISON, morrisonCard)
+    expect(uncompleteBooking(api, OFFICE, morrisonBooking).ok).toBe(true)
+    const outcome = addProcedure(api, MORRISON, morrisonBooking)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
   })
@@ -329,26 +330,26 @@ describe('addProcedure', () => {
 describe('removeProcedure', () => {
   it('removes an added procedure, audited with the removed row snapshotted', () => {
     const api = store()
-    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    const added = addProcedure(api, SOUTER, ELLISON_BOOKING)
     expect(added.ok).toBe(true)
     if (!added.ok) return
-    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(2)
+    expect(proceduresForBooking(api.getState(), ELLISON_BOOKING)).toHaveLength(2)
 
     const outcome = removeProcedure(api, SOUTER, added.value.procedureId)
     expect(outcome).toEqual({ ok: true, value: undefined })
     expect(api.getState().schedule.procedures[added.value.procedureId]).toBeUndefined()
-    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(1)
+    expect(proceduresForBooking(api.getState(), ELLISON_BOOKING)).toHaveLength(1)
 
     const entry = auditForEntity(api.getState(), added.value.procedureId).at(-1)
     expect(entry?.action).toBe('procedure.remove')
-    // The snapshot names its Card, which is what lets the card's History still
+    // The snapshot names its Booking, which is what lets the booking's History still
     // reach the trail of a procedure that no longer exists.
-    expect((entry?.before as { cardId?: string } | undefined)?.cardId).toBe(ELLISON_CARD)
+    expect((entry?.before as { bookingId?: string } | undefined)?.bookingId).toBe(ELLISON_BOOKING)
   })
 
   it('takes the procedure\'s billing lines with it, each audited', () => {
     const api = store()
-    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    const added = addProcedure(api, SOUTER, ELLISON_BOOKING)
     if (!added.ok) throw new Error('addProcedure failed')
     const line = addBillingLine(api, SOUTER, added.value.procedureId, {
       description: 'Ancillary flat fee',
@@ -362,55 +363,55 @@ describe('removeProcedure', () => {
     expect(auditForEntity(api.getState(), line.value.billingLineId).at(-1)?.action).toBe('billingLine.remove')
   })
 
-  it('refuses the Card\'s first procedure, whether or not it is the only one', () => {
+  it('refuses the Booking\'s first procedure, whether or not it is the only one', () => {
     const api = store()
-    const primary = firstProcedureId(api, ELLISON_CARD)
+    const primary = firstProcedureId(api, ELLISON_BOOKING)
 
     const alone = removeProcedure(api, SOUTER, primary)
     expect(alone.ok).toBe(false)
     if (!alone.ok) {
       expect(alone.code).toBe('primaryProcedure')
-      expect(alone.message).toContain('cancel the Card')
+      expect(alone.message).toContain('cancel the Booking')
     }
 
-    // Still refused once the Card has an additional procedure to fall back on:
+    // Still refused once the Booking has an additional procedure to fall back on:
     // the anchor carries the base and modifier units, and nothing is promoted
     // into its place.
-    expect(addProcedure(api, SOUTER, ELLISON_CARD).ok).toBe(true)
+    expect(addProcedure(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     const withSpare = removeProcedure(api, SOUTER, primary)
     expect(withSpare.ok).toBe(false)
     if (!withSpare.ok) expect(withSpare.code).toBe('primaryProcedure')
     expect(api.getState().schedule.procedures[primary]).toBeDefined()
-    expect(proceduresForCard(api.getState(), ELLISON_CARD)).toHaveLength(2)
+    expect(proceduresForBooking(api.getState(), ELLISON_BOOKING)).toHaveLength(2)
   })
 
-  it('refuses cancelled and completed cards, and the anaesthetist on a SUBMITTED list', () => {
+  it('refuses cancelled and completed bookings, and the anaesthetist on a SUBMITTED list', () => {
     const api = store()
 
-    const cancelledProcedure = firstProcedureId(api, CANCELLED_CARD)
+    const cancelledProcedure = firstProcedureId(api, CANCELLED_BOOKING)
     const cancelled = removeProcedure(api, OFFICE, cancelledProcedure)
     expect(cancelled.ok).toBe(false)
-    if (!cancelled.ok) expect(cancelled.code).toBe('cardCancelled')
+    if (!cancelled.ok) expect(cancelled.code).toBe('bookingCancelled')
 
-    // SPLIT_CARD is completed and carries two procedures, so the completion
+    // SPLIT_BOOKING is completed and carries two procedures, so the completion
     // gate is what refuses, not the last-procedure guard.
-    const completed = removeProcedure(api, SOUTER, firstProcedureId(api, SPLIT_CARD))
+    const completed = removeProcedure(api, SOUTER, firstProcedureId(api, SPLIT_BOOKING))
     expect(completed.ok).toBe(false)
     if (!completed.ok) {
-      expect(completed.code).toBe('cardCompleted')
+      expect(completed.code).toBe('bookingCompleted')
       expect(completed.message).toContain('Amend it before removing a procedure')
     }
 
-    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]!.id
-    expect(uncompleteCard(api, OFFICE, morrisonCard).ok).toBe(true)
-    const submitted = removeProcedure(api, MORRISON, firstProcedureId(api, morrisonCard))
+    const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
+    expect(uncompleteBooking(api, OFFICE, morrisonBooking).ok).toBe(true)
+    const submitted = removeProcedure(api, MORRISON, firstProcedureId(api, morrisonBooking))
     expect(submitted.ok).toBe(false)
     if (!submitted.ok) expect(submitted.code).toBe('listSubmitted')
   })
 
   it('blocks the anaesthetist when a line carries an office funder allocation, and lets the office through', () => {
     const api = store()
-    const added = addProcedure(api, SOUTER, ELLISON_CARD)
+    const added = addProcedure(api, SOUTER, ELLISON_BOOKING)
     if (!added.ok) throw new Error('addProcedure failed')
     const line = addBillingLine(api, SOUTER, added.value.procedureId, {
       description: 'Ancillary flat fee',
@@ -421,7 +422,7 @@ describe('removeProcedure', () => {
     // The additional procedure bills time units only and has no times, so its
     // whole fee is the one line: allocating it conserves to the cent.
     const allocated = setBillingLineAllocation(api, OFFICE, line.value.billingLineId, {
-      funderOverride: { kind: 'patient', id: api.getState().schedule.cards[ELLISON_CARD]!.patientId },
+      funderOverride: { kind: 'patient', id: api.getState().schedule.bookings[ELLISON_BOOKING]!.patientId },
       amount: 85.5,
     })
     expect(allocated.ok).toBe(true)
@@ -438,59 +439,59 @@ describe('removeProcedure', () => {
   })
 })
 
-describe('uncompleteCard', () => {
-  it('re-opens a completed card on the anaesthetist\'s own DRAFT list, audited', () => {
+describe('uncompleteBooking', () => {
+  it('re-opens a completed booking on the anaesthetist\'s own DRAFT list, audited', () => {
     const api = store()
-    const cardId = taneCardId(api)
-    expect(api.getState().schedule.cards[cardId]?.completed).toBe(true)
+    const bookingId = taneBookingId(api)
+    expect(api.getState().schedule.bookings[bookingId]?.completed).toBe(true)
 
-    const outcome = uncompleteCard(api, SOUTER, cardId)
+    const outcome = uncompleteBooking(api, SOUTER, bookingId)
     expect(outcome).toEqual({ ok: true, value: undefined })
-    const card = api.getState().schedule.cards[cardId]
-    expect(card?.completed).toBe(false)
-    expect(card?.completedAtISO).toBeUndefined()
-    expect(auditForEntity(api.getState(), cardId).at(-1)?.action).toBe('card.uncomplete')
+    const booking = api.getState().schedule.bookings[bookingId]
+    expect(booking?.completed).toBe(false)
+    expect(booking?.completedAtISO).toBeUndefined()
+    expect(auditForEntity(api.getState(), bookingId).at(-1)?.action).toBe('booking.uncomplete')
   })
 
-  it('refuses a card that is not completed, and a cancelled card', () => {
+  it('refuses a booking that is not completed, and a cancelled booking', () => {
     const api = store()
-    const notCompleted = uncompleteCard(api, SOUTER, ELLISON_CARD)
+    const notCompleted = uncompleteBooking(api, SOUTER, ELLISON_BOOKING)
     expect(notCompleted.ok).toBe(false)
     if (!notCompleted.ok) expect(notCompleted.code).toBe('notCompleted')
 
-    const cancelled = uncompleteCard(api, OFFICE, CANCELLED_CARD)
+    const cancelled = uncompleteBooking(api, OFFICE, CANCELLED_BOOKING)
     expect(cancelled.ok).toBe(false)
-    if (!cancelled.ok) expect(cancelled.code).toBe('cardCancelled')
+    if (!cancelled.ok) expect(cancelled.code).toBe('bookingCancelled')
   })
 
   it('anaesthetist refused on SUBMITTED; office allowed on SUBMITTED', () => {
     const api = store()
-    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]!.id
-    const refused = uncompleteCard(api, MORRISON, morrisonCard)
+    const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]!.id
+    const refused = uncompleteBooking(api, MORRISON, morrisonBooking)
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.code).toBe('listSubmitted')
 
-    const whitakerCard = cardsForList(api.getState(), WHITAKER_LIST)[0]!.id
-    const office = uncompleteCard(api, OFFICE, whitakerCard)
+    const whitakerBooking = bookingsForList(api.getState(), WHITAKER_LIST)[0]!.id
+    const office = uncompleteBooking(api, OFFICE, whitakerBooking)
     expect(office.ok).toBe(true)
-    expect(api.getState().schedule.cards[whitakerCard]?.completed).toBe(false)
+    expect(api.getState().schedule.bookings[whitakerBooking]?.completed).toBe(false)
   })
 })
 
 describe('completionBlockersFor', () => {
-  it('returns [] for a valid card, and validationFailed with named failures once the route is stripped', () => {
+  it('returns [] for a valid booking, and validationFailed with named failures once the route is stripped', () => {
     const api = store()
-    const cardId = taneCardId(api)
+    const bookingId = taneBookingId(api)
     const state = api.getState()
-    const card = state.schedule.cards[cardId]
-    if (card === undefined) throw new Error('no card')
-    expect(completionBlockersFor(state, card)).toEqual([])
+    const booking = state.schedule.bookings[bookingId]
+    if (booking === undefined) throw new Error('no booking')
+    expect(completionBlockersFor(state, booking)).toEqual([])
 
-    const procedureId = firstProcedureId(api, cardId)
+    const procedureId = firstProcedureId(api, bookingId)
     expect(editProcedure(api, OFFICE, procedureId, { billingRoute: undefined }).ok).toBe(true)
 
     const after = api.getState()
-    const blockers = completionBlockersFor(after, after.schedule.cards[cardId]!)
+    const blockers = completionBlockersFor(after, after.schedule.bookings[bookingId]!)
     expect(blockers[0]?.code).toBe('validationFailed')
     const failures = blockers[0]?.details as BillingValidationFailure[]
     expect(failures.some((f) => f.field === 'billingRoute')).toBe(true)

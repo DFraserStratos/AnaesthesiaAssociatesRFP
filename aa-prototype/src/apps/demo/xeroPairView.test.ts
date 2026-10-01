@@ -20,10 +20,10 @@ function stagedS3State(): AppState {
 }
 
 function nibPair(state: AppState) {
-  const cardId = SEED_MARKERS.twoFunderCard?.entityId
+  const bookingId = SEED_MARKERS.twoFunderBooking?.entityId
   const invoice = Object.values(state.billing.invoices).find(
     (candidate) =>
-      candidate.cardId === cardId &&
+      candidate.bookingId === bookingId &&
       candidate.counterparty.kind === 'insurer' &&
       candidate.counterparty.id === INS.nib,
   )
@@ -41,7 +41,7 @@ describe('Xero invoice-pair view', () => {
     const pair = nibPair(state)
 
     expect(pair.engine.patientName).toBe('Alan Prentice')
-    expect(pair.engine.cardId).toBe(SEED_MARKERS.twoFunderCard?.entityId)
+    expect(pair.engine.bookingId).toBe(SEED_MARKERS.twoFunderBooking?.entityId)
     expect(pair.engine.caseId).toBe(pair.engine.caseReference)
     expect(pair.accRec.contact?.name).toBe('nib')
     expect(pair.accPay?.contact?.name).toBe('Dr Melanie Souter')

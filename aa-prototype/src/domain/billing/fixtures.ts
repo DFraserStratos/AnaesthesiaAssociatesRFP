@@ -7,7 +7,7 @@
 import type {
   Anaesthetist,
   BillableParty,
-  Card,
+  Booking,
   Contract,
   Insurer,
   Procedure,
@@ -31,7 +31,7 @@ export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthet
 export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
   return {
     id: 'proc-1',
-    cardId: 'card-1',
+    bookingId: 'booking-1',
     description: 'Laparoscopic cholecystectomy',
     billingRoute: 'hospital',
     accRelated: false,
@@ -41,9 +41,9 @@ export function mkProcedure(overrides: Partial<Procedure> = {}): Procedure {
   }
 }
 
-export function mkCard(overrides: Partial<Card> = {}): Card {
+export function mkBooking(overrides: Partial<Booking> = {}): Booking {
   return {
-    id: 'card-1',
+    id: 'booking-1',
     listId: 'list-1',
     patientId: 'pat-1',
     completed: false,

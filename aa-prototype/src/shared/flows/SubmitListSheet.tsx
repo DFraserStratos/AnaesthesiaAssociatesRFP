@@ -11,7 +11,7 @@ interface SubmitListSheetProps {
   actor: Actor
   /**
    * 'blockers': the explanatory sheet behind the greyed submit bar — names
-   * every not-yet-complete card and its outstanding validation failures
+   * every not-yet-complete booking and its outstanding validation failures
    * verbatim (or the ready-but-not-completed nudge).
    * 'confirm': the pre-submit confirmation explaining what SUBMITTED means.
    */
@@ -21,10 +21,10 @@ interface SubmitListSheetProps {
 }
 
 interface BlockerRow {
-  cardId: string
+  bookingId: string
   patientName: string
   time: string
-  /** Empty = validation passes; the card just needs Mark complete. */
+  /** Empty = validation passes; the booking just needs Mark complete. */
   messages: string[]
 }
 
@@ -35,20 +35,20 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
 
   const rows: BlockerRow[] = useMemo(() => {
     if (!open || mode !== 'blockers') return []
-    return Object.values(state.schedule.cards)
+    return Object.values(state.schedule.bookings)
       .filter((c) => c.listId === listId && c.cancellation === undefined && !c.completed)
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
-      .map((card) => {
-        const blockers = completionBlockersFor(state, card)
+      .map((booking) => {
+        const blockers = completionBlockersFor(state, booking)
         const messages = blockers.flatMap((b) =>
           b.code === 'validationFailed'
             ? (b.details as BillingValidationFailure[]).map((f) => f.message)
             : [b.message],
         )
         return {
-          cardId: card.id,
-          patientName: state.masters.patients[card.patientId]?.name ?? 'Unknown patient',
-          time: card.scheduledTime ?? '·',
+          bookingId: booking.id,
+          patientName: state.masters.patients[booking.patientId]?.name ?? 'Unknown patient',
+          time: booking.scheduledTime ?? '·',
           messages,
         }
       })
@@ -69,14 +69,14 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
     <Overlay open={open} onClose={onClose}>
       {mode === 'blockers' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Cards still to finish</div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>Bookings still to finish</div>
           <div style={{ fontSize: 13, color: neutral.slate }}>
-            Every card must be marked complete before the list can be submitted to the office.
-            Cancelled cards do not count.
+            Every booking must be marked complete before the list can be submitted to the office.
+            Cancelled bookings do not count.
           </div>
           {rows.map((row) => (
             <div
-              key={row.cardId}
+              key={row.bookingId}
               style={{ background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl + 2, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}
             >
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
@@ -93,7 +93,7 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
                 ))
               ) : (
                 <div style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>
-                  Ready to complete. Open the card and tap Mark complete.
+                  Ready to complete. Open the booking and tap Mark complete.
                 </div>
               )}
             </div>
@@ -106,8 +106,8 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Submit this list to the office?</div>
           <div style={{ fontSize: 14, lineHeight: '21px', color: neutral.slate }}>
-            Submitting sends every card on this list to the office for review and billing. You will
-            not be able to change these cards afterwards; the office makes any corrections from
+            Submitting sends every booking on this list to the office for review and billing. You will
+            not be able to change these bookings afterwards; the office makes any corrections from
             here.
           </div>
           {error !== null && (

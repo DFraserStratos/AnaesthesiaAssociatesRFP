@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 /**
  * Phase 06 admin walkthrough — the one-day dashboard (grid + right rail),
  * internal notes, the list drawer, the office billing-setup edits (incl. the %
- * override and funder allocation), a single-card move, and list reassignment.
+ * override and funder allocation), a single-booking move, and list reassignment.
  * A working artifact for eyeballing plus light assertions that the office flows
  * reach the admin app.
  */
@@ -36,11 +36,11 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   expect(listDrawerLeft).toBe(rightRailLeft)
   await page.screenshot({ path: 'visual/shots/a-03-drawer.png', fullPage: true })
 
-  // Open a card as the office → the billing-setup section.
+  // Open a booking as the office → the billing-setup section.
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/a-04-card.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/a-04-booking.png', fullPage: true })
 
   // A % price override with a reason.
   await page.getByRole('button', { name: 'Price override', exact: true }).first().click()
@@ -141,7 +141,7 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })
 })
 
-test('admin phase 06 office edits a SUBMITTED card', async ({ page }) => {
+test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
@@ -154,10 +154,10 @@ test('admin phase 06 office edits a SUBMITTED card', async ({ page }) => {
   await expect(page.getByText(/Mon 20 Jul .* SUBMITTED/)).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
-  // The office can cancel a card on a SUBMITTED list (checklist item 7); this
+  // The office can cancel a booking on a SUBMITTED list (checklist item 7); this
   // affordance is hidden for the anaesthetist and was DRAFT-only before the fix.
-  await expect(page.getByRole('button', { name: /Cancel card/ })).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/a-10-submitted-card.png', fullPage: true })
+  await expect(page.getByRole('button', { name: /Cancel booking/ })).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/a-10-submitted-booking.png', fullPage: true })
 })
 
 test('S2 phone-advice lookup fills and saves the complete booking', async ({ page }) => {
@@ -183,7 +183,7 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await bookPhoneAdvice.click()
   await page.getByLabel('Hospital').selectOption({ label: "St George's" })
   await page.getByLabel('Surgeon').selectOption({ label: 'Mr T. Hale' })
-  await page.getByRole('button', { name: 'Continue to add card' }).click()
+  await page.getByRole('button', { name: 'Continue to add booking' }).click()
   await page.getByRole('button', { name: 'Enter manually' }).click()
 
   const lookup = page.getByRole('button', { name: 'Look up' })
@@ -201,16 +201,16 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.getByLabel('Billing reference')).toHaveValue('STG-HALE-2107')
   await expect(page.getByText(/Patient and booking details pre-filled/)).toBeVisible()
 
-  await page.getByRole('button', { name: 'Save card' }).click()
+  await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByText('Demo Patient', { exact: true })).toBeVisible()
 })
 
-test('generic manual-card lookup still requires an NHI', async ({ page }) => {
+test('generic manual-booking lookup still requires an NHI', async ({ page }) => {
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
-  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Add a booking', { exact: false }).first().click()
   await page.getByText('Enter manually', { exact: false }).first().click()
 
   await expect(page.getByRole('button', { name: 'Look up' })).toBeDisabled()

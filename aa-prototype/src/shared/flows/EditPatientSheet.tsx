@@ -8,13 +8,13 @@ import { useSurface } from '../surface'
 interface EditPatientSheetProps {
   open: boolean
   patient: Patient
-  cardId: string
+  bookingId: string
   actor: Actor
   onClose: () => void
 }
 
-/** Edit patient demographics via the audited `editPatient`, gated by the card's list. */
-export function EditPatientSheet({ open, patient, cardId, actor, onClose }: EditPatientSheetProps) {
+/** Edit patient demographics via the audited `editPatient`, gated by the booking's list. */
+export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: EditPatientSheetProps) {
   const { Overlay } = useSurface()
   const [name, setName] = useState(patient.name)
   const [dob, setDob] = useState(patient.dobISO)
@@ -41,7 +41,7 @@ export function EditPatientSheet({ open, patient, cardId, actor, onClose }: Edit
       actor,
       patient.hiddenInternalId,
       { name: name.trim(), dobISO: dob, phone: phone.trim(), email: email.trim(), address: address.trim() },
-      cardId,
+      bookingId,
     )
     if (!outcome.ok) {
       setError(outcome.message)

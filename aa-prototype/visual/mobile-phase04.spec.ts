@@ -22,11 +22,11 @@ async function advanceClockTo1715(page: Page): Promise<void> {
   await page.waitForTimeout(200)
 }
 
-test('mobile Card header groups status and History above the Patient card', async ({ page }) => {
+test('mobile Booking header groups status and History above the Patient card', async ({ page }) => {
   await openEllison(page)
 
-  const header = page.getByTestId('mobile-card-header')
-  const actions = page.getByTestId('mobile-card-header-actions')
+  const header = page.getByTestId('mobile-booking-header')
+  const actions = page.getByTestId('mobile-booking-header-actions')
   const status = actions.getByText('Private', { exact: true }).locator('..')
   const history = actions.getByRole('button', { name: 'History', exact: true })
   const patient = page.getByText('Patient', { exact: true }).locator('../..')
@@ -49,23 +49,23 @@ test('mobile Card header groups status and History above the Patient card', asyn
   await expect(page.getByRole('button', { name: 'History', exact: true })).toHaveCount(1)
 
   await history.click()
-  await expect(page.getByRole('dialog').getByText('Card history', { exact: true })).toBeVisible()
+  await expect(page.getByRole('dialog').getByText('Booking history', { exact: true })).toBeVisible()
 })
 
-test('mobile Card header folds History out of the compact navigation row', async ({ page }) => {
+test('mobile Booking header folds History out of the compact navigation row', async ({ page }) => {
   await openEllison(page)
 
-  const header = page.getByTestId('mobile-card-header')
+  const header = page.getByTestId('mobile-booking-header')
   await expect(header.getByRole('button', { name: 'History', exact: true })).toBeVisible()
 
-  await page.getByTestId('mobile-card-scroll').evaluate((el) => el.scrollTo({ top: 40 }))
+  await page.getByTestId('mobile-booking-scroll').evaluate((el) => el.scrollTo({ top: 40 }))
 
   await expect(header.getByRole('button', { name: 'History', exact: true })).toHaveCount(0)
 })
 
 test('capture: Ellison BTM block', async ({ page }) => {
   await openEllison(page)
-  await page.screenshot({ path: 'visual/shots/m4-01-card-top.png', fullPage: true })
+  await page.screenshot({ path: 'visual/shots/m4-01-booking-top.png', fullPage: true })
   // Scroll the phone frame's content to the capture block. What the scroll
   // shows is the masthead folded to its nav row above the Mark complete dock.
   await page.getByText('ASA status', { exact: true }).scrollIntoViewIfNeeded()
@@ -113,7 +113,7 @@ test('capture: finish now, complete, submit walk', async ({ page }) => {
   await page.waitForTimeout(500)
   await page.screenshot({ path: 'visual/shots/m4-07-confirm-sheet.png', fullPage: true })
 
-  // Successful submission gets the same full-screen fanfare as Card completion,
+  // Successful submission gets the same full-screen fanfare as Booking completion,
   // then settles on the read-only submitted List.
   await page.getByRole('button', { name: 'Submit to office' }).click()
   await expect(page.getByTestId('list-submission-overlay')).toContainText('List submitted')
@@ -146,14 +146,18 @@ test('capture: refused completion focuses the first missing field', async ({ pag
   await expect(page.getByText('Record the handover time.')).toBeVisible()
 })
 
-test('capture: copied card renders time-only', async ({ page }) => {
+test('capture: Copy booking opens a new skeleton Booking with a primary procedure', async ({ page }) => {
   await openEllison(page)
-  await page.getByText('Copy for an additional procedure', { exact: false }).click()
+  await expect(page).toHaveURL(/\/bookings\/BK0009$/)
+  await page.getByRole('button', { name: 'Copy booking' }).click()
   await page.waitForTimeout(600)
-  // The copy lands on the list; open it (the row with no operation yet).
-  await page.getByText('Procedure to capture', { exact: false }).first().click()
-  await page.waitForTimeout(600)
-  await page.screenshot({ path: 'visual/shots/m4-10-copied-time-only.png', fullPage: true })
+  // The copy opens straight away: a new Booking, not the List.
+  await expect(page).toHaveURL(/\/mobile\/lists\/[^/]+\/bookings\/BK\d{4}$/)
+  expect(page.url()).not.toMatch(/BK0009$/)
+  await expect(page.getByText('Copy of another Booking')).toBeVisible()
+  // A primary procedure: base capture is live, not the time-only note.
+  await expect(page.getByText(/time units only/i)).toHaveCount(0)
+  await page.screenshot({ path: 'visual/shots/m4-10-copied-skeleton.png', fullPage: true })
 })
 
 test('capture: Chen read-only with adjusted-manually provenance', async ({ page }) => {

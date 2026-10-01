@@ -7,7 +7,7 @@
       "name": "price-override",
       "app": "admin",
       "caption": "Office price override",
-      "start": "/admin/day/2026-07-21/cards/C0009",
+      "start": "/admin/day/2026-07-21/bookings/BK0009",
       "states": [
         {
           "state": "entry",

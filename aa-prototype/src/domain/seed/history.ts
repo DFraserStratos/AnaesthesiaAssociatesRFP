@@ -4,7 +4,7 @@
  * The anaesthetist money views (outstanding balances, receivables aging, GST
  * activity) go LIVE over the Billing Engine's mirror in Phase 10. To have them
  * populated on load for Dr Souter, we seed a set of PAST accounts as a full,
- * coherent graph: a billed List + completed Card + Procedure, an Invoice + line,
+ * coherent graph: a billed List + completed Booking + Procedure, an Invoice + line,
  * a BillingCase carrying the money (received / authorised / disbursed + dates),
  * and the Xero side (payer + payee contacts, ACCREC, ACCPAY, payments,
  * disbursements) + the contact-id cache.
@@ -20,7 +20,7 @@
  *
  * All ids use an `H`-prefixed namespace disjoint from the runtime counters, so
  * the pre-payment seed (INV0001/BC0001) and the first runtime run (INV0002…) are
- * untouched. Deterministic; the schedule rows receive their demo Card history
+ * untouched. Deterministic; the schedule rows receive their demo Booking history
  * centrally in `seed/audit.ts`, while billing and Xero rows remain initial
  * state rather than simulated runtime mutations.
  */
@@ -29,7 +29,7 @@ import type {
   Anaesthetist,
   BillingCase,
   BillingReceipt,
-  Card,
+  Booking,
   ContractHolderOrganisation,
   CounterpartyRef,
   Disbursement,
@@ -120,7 +120,7 @@ const ACCOUNTS: readonly HistoryAccount[] = [
 
 export interface HistoryBuild {
   lists: Record<string, List>
-  cards: Record<string, Card>
+  bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>
@@ -146,7 +146,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
   const anaesthetistId = ANAE.souter
   const souter = masters.anaesthetists[anaesthetistId]
   const build: HistoryBuild = {
-    lists: {}, cards: {}, procedures: {}, invoices: {}, invoiceLines: {}, cases: {},
+    lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, cases: {},
     receipts: {}, contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, contactIdCache: {},
   }
 
@@ -191,9 +191,9 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     const subtotal = roundToCents(acc.total / (1 + GST_RATE))
     const gst = roundToCents(acc.total - subtotal)
 
-    // --- schedule: List + Card + Procedure ---
+    // --- schedule: List + Booking + Procedure ---
     const listId = `L-HIST-${n}`
-    const cardId = `HC${n}`
+    const bookingId = `HBK${n}`
     const procId = `HP${n}`
     const list: List = {
       id: listId,
@@ -210,8 +210,8 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     list.surgeonId = acc.surgeonId
     build.lists[listId] = list
 
-    build.cards[cardId] = {
-      id: cardId,
+    build.bookings[bookingId] = {
+      id: bookingId,
       listId,
       patientId: acc.patientId,
       completed: true,
@@ -222,7 +222,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     }
     const procedure: Procedure = {
       id: procId,
-      cardId,
+      bookingId,
       description: acc.description,
       billingRoute: isPatientRoute(acc.counterparty) ? 'billableParty' : 'hospital',
       accRelated: acc.accRelated,
@@ -244,7 +244,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       id: invoiceId,
       invoiceNumber: `AA-2026-H${n}`,
       caseReference: caseId,
-      cardId,
+      bookingId,
       counterparty: acc.counterparty,
       layout: isPatientRoute(acc.counterparty) ? 'patient' : 'contractHolder',
       kind: 'standard',
@@ -285,7 +285,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
 
     const theCase: BillingCase = {
       id: caseId,
-      cardId,
+      bookingId,
       invoiceId,
       accRecId,
       accPayId,

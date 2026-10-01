@@ -15,7 +15,7 @@ import {
   advanceClockToNextMorning,
   resetDemo,
 } from './clockActions'
-import { authoriseList, cancelCard, editCard } from './lifecycle'
+import { authoriseList, cancelBooking, editBooking } from './lifecycle'
 import { processMessage } from './integrationActions'
 import { addDayNote } from './dayNoteActions'
 import { wireBillingRun } from './billingRun'
@@ -161,10 +161,10 @@ describe('reset determinism', () => {
       // integrations (fire a message), dayNotes (add a note), and billing/xero
       // (submit + authorise runs billing and hands off the Xero pair).
       advanceClockDays(api, 5)
-      const marker = SEED_MARKERS['pendingCaptureCard']
+      const marker = SEED_MARKERS['pendingCaptureBooking']
       if (marker === undefined) throw new Error('missing marker')
-      expect(editCard(api, OFFICE, marker.entityId, { notes: 'scribble' }).ok).toBe(true)
-      expect(cancelCard(api, OFFICE, marker.entityId, 'test').ok).toBe(true)
+      expect(editBooking(api, OFFICE, marker.entityId, { notes: 'scribble' }).ok).toBe(true)
+      expect(cancelBooking(api, OFFICE, marker.entityId, 'test').ok).toBe(true)
       expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
       expect(addDayNote(api, OFFICE, '2026-07-21', 'reset-test note').ok).toBe(true)
       const splitList = listIdForSlot(ANAE.souter, '2026-07-20', 'AM')

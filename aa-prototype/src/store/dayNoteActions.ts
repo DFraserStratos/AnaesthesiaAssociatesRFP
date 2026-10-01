@@ -18,7 +18,7 @@ export function initialsFor(name: string): string {
     .slice(0, 3)
 }
 
-/** Append a per-day internal note. Audited `dayNote.add`; stamps no Card. */
+/** Append a per-day internal note. Audited `dayNote.add`; stamps no Booking. */
 export function addDayNote(
   api: AppStoreApi,
   actor: Actor,
@@ -47,7 +47,7 @@ export function addDayNote(
       entityId: dayNoteId,
       action: 'dayNote.add',
       after: { dateISO, flagged },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return { dayNotes: { ...s.dayNotes, [dateISO]: [...existing, note] }, counters: alloc.counters }
   })

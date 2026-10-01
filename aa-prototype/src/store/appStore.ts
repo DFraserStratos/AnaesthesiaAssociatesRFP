@@ -19,7 +19,7 @@ import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zu
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { resilientLocalStorage } from './persistStorage'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID, type SeedState } from '../domain/seed'
+import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
 import type {
   BillingCase,
@@ -93,7 +93,11 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v13: 2026-07-30 — S1's Tue 28 AM List seeds three booked, uncaptured Cards
+/** v15: 2026-10-02 · catch-up Phase 15: Booking.source on the scenario Bookings,
+ *  List attachments (the seeded theatre-list PDF), AT attachment ids.
+ *  v14: 2026-10-02 · catch-up Phase 15: Card renamed to Booking: `schedule.bookings`,
+ *  BK ids (HBK for history), `booking.*` audit, `counters.booking`.
+ *  v13: 2026-07-30 — S1's Tue 28 AM List seeds three booked, uncaptured Bookings
  *  again (Mr Hale, St George's), so the S12 arrival lands on a populated List.
  *  v12: 2026-07-29 — ACCPAY records now snapshot an illustrative 5% AA service
  *  fee and the net amount payable to the anaesthetist.
@@ -101,8 +105,8 @@ export const PERSIST_KEY = 'aa-demo'
  *  its S13/S14/S15 exemplars moved to Aug 3/4, and S3's two Mon 20 Souter
  *  Lists now seed SUBMITTED in the Review queue.
  *  v10: 2026-07-29 — rich deterministic booking, Procedure, capture, fee-line
- *  and lifecycle history for every seeded Card, including historical billing
- *  Cards. Returning demos must reseed so the new audit graph and counter land.
+ *  and lifecycle history for every seeded Booking, including historical billing
+ *  Bookings. Returning demos must reseed so the new audit graph and counter land.
  *  v9: 2026-07-28 — removed a build-phase label from historical List notes.
  *  v8: 2026-07-27 — modifier bands (one code per band). The seed's own content
  *  is unchanged, but a pre-fix persisted Procedure can hold two codes from the
@@ -110,8 +114,8 @@ export const PERSIST_KEY = 'aa-demo'
  *  refusal caption, so the stale selection is discarded rather than carried
  *  into a demo.
  *  v7: Phase 11 — seeded integration feeds (3) in the integrations slice, five
- *  integration-origin seed Cards (correlationRef set) with a new SUBMITTED
- *  locked-target List (Beaumont Mon 20), new `Card.correlationRef` usage, and
+ *  integration-origin seed Bookings (correlationRef set) with a new SUBMITTED
+ *  locked-target List (Beaumont Mon 20), new `Booking.correlationRef` usage, and
  *  the `IntegrationMessage` log shape ('duplicate' status + failure/result
  *  fields). Reseeds on load.
  *  v6: Phase 10 — new BillingCase money fields (received/authorised/disbursed +
@@ -119,15 +123,15 @@ export const PERSIST_KEY = 'aa-demo'
  *  billing slice, DemoSettings.volumeStory + failNextHandoff, seeded historical
  *  billing-mirror + Xero rows (Souter receivables/GST) and the seeded
  *  missed-webhook PaymentIn, new counters (XC/XR/XP/PMT/DSB/PR/RCT).
- *  v5: Phase 09 — new seed cards (relocated unpaid pre-payment card, the mixed
- *  + full pre-payment card, the multi-card billing-failure list), the seeded
- *  PAID pre-invoice billing slice, and new `Card` fields (cardType /
- *  addendumOfCardId). v4: Phase 06 — `dayNotes` slice added to SeedState (3
+ *  v5: Phase 09 — new seed bookings (relocated unpaid pre-payment booking, the mixed
+ *  + full pre-payment booking, the multi-booking billing-failure list), the seeded
+ *  PAID pre-invoice billing slice, and new `Booking` fields (bookingType /
+ *  addendumOfBookingId). v4: Phase 06 — `dayNotes` slice added to SeedState (3
  *  seeded Tue-21 notes) + two advisory ListConflicts seeded onto Wed 22 booked
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
- *  (live Finish-now demo) + the Souter rate x time capture card + patient. */
-export const PERSIST_VERSION = 13
+ *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
+export const PERSIST_VERSION = 15
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }
@@ -152,7 +156,7 @@ export function freshAppState(): AppState {
   // The pristine seed ships one PAID pre-payment slice (Phase 09), with the
   // counters bumped past the ids it consumed so the first runtime billing run
   // continues the sequence cleanly.
-  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_CARD_ID)
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID)
   return {
     ...seed,
     counters: seedBilling.counters,

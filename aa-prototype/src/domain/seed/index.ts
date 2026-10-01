@@ -5,18 +5,19 @@
  *
  * Composition: masters + the canvas generator over the full horizon + fixups
  * that paint the design mockups' content (Tue 21 Jul design day, Souter's week
- * Mon 20 to Sun 26, the Thu 23 availability grid) + the card tableau and
- * scenario states + rich per-Card demo history + demo settings.
+ * Mon 20 to Sun 26, the Thu 23 availability grid) + the booking tableau and
+ * scenario states + rich per-Booking demo history + demo settings.
  */
 
 import type {
+  Attachment,
   Anaesthetist,
   AnaesthetistAvailability,
   AnaesthetistId,
   AuditEntry,
   BillableParty,
   BillingLine,
-  Card,
+  Booking,
   Contract,
   ContractHolderOrganisation,
   ContractPrice,
@@ -57,10 +58,11 @@ import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
-import { buildCards, type CardScenarioIds } from './cards'
+import { buildBookings, type BookingScenarioIds } from './bookings'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory } from './history'
 import { buildSeedAudit } from './audit'
+import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
 export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
 export { slotRng, hashStringToSeed } from './slotHash'
@@ -104,7 +106,7 @@ export interface SeedMasters {
 
 export interface SeedSchedule {
   lists: Record<string, List>
-  cards: Record<string, Card>
+  bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
   billingLines: Record<string, BillingLine>
 }
@@ -291,7 +293,7 @@ function applyPhase06Conflicts(lists: Record<string, List>): void {
  * billing-failure exemplars sit on (Souter Fri 24 AM/PM, Ropata Thu 16 AM) as
  * booked private sessions with a hospital + surgeon, so they read coherently in
  * the day grid and monitor. Applied after generation (like the design fixups)
- * and pinned in `cards.ts` so the filler never books them.
+ * and pinned in `bookings.ts` so the filler never books them.
  */
 function applyPhase09Slots(lists: Record<string, List>): void {
   const FRI24 = '2026-07-24'
@@ -325,7 +327,17 @@ function applyPhase09Slots(lists: Record<string, List>): void {
 
 interface SeedBuild {
   state: SeedState
-  scenario: CardScenarioIds
+  scenario: BookingScenarioIds
+}
+
+/** Dr Souter's Tue 28 Jul AM List (St George's), S1's destination List. */
+const SEED_LIST_ATTACHMENT_LIST_ID = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
+/** Its seeded attachment: `AT0001`, so the store's counter continues at 2. */
+const SEED_LIST_ATTACHMENT: Attachment = {
+  id: 'AT0001',
+  name: "Theatre list · St George's",
+  kind: 'pdf',
+  dataUrl: SAMPLE_THEATRE_LIST,
 }
 
 function buildSeedInternal(): SeedBuild {
@@ -344,13 +356,13 @@ function buildSeedInternal(): SeedBuild {
   applyPhase06Conflicts(lists)
   applyPhase09Slots(lists)
 
-  const cardsBuild = buildCards(SEED, Object.values(lists))
+  const bookingsBuild = buildBookings(SEED, Object.values(lists))
 
   // The seeded SUBMITTED lists awaiting authorisation (past dates — the clock
   // seeds at 08:00, so today's lists are DRAFT mid-capture): the two Phase-02
   // queue lists, S3's two Souter money-story Lists, the Phase-09 billing-failure
   // exemplar (Ropata Thu 16), and the Phase-11 locked-target list (Delaney Fri
-  // 17 — its integration-origin Card is what the locked-target message parks
+  // 17 — its integration-origin Booking is what the locked-target message parks
   // against).
   for (const id of [
     SEED_LIST_IDS.morrisonMon20,
@@ -372,7 +384,7 @@ function buildSeedInternal(): SeedBuild {
   const organisationsRec = byId(ORGANISATIONS, (o) => o.id)
   const patientsRec = byId(patients, (p) => p.hiddenInternalId)
 
-  // Seeded historical billing-mirror rows (Phase 10): merge their Lists/Cards/
+  // Seeded historical billing-mirror rows (Phase 10): merge their Lists/Bookings/
   // Procedures into the schedule. Their billing + Xero side is composed by
   // `buildSeedBillingSlice`, which rebuilds the same deterministic graph.
   const history = buildHistory({
@@ -383,17 +395,21 @@ function buildSeedInternal(): SeedBuild {
     patients: patientsRec,
     billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
   })
-  const cardsRec = byId(cardsBuild.cards, (c) => c.id)
-  const proceduresRec = byId(cardsBuild.procedures, (p) => p.id)
-  const billingLinesRec = byId(cardsBuild.billingLines, (l) => l.id)
+  const bookingsRec = byId(bookingsBuild.bookings, (c) => c.id)
+  const proceduresRec = byId(bookingsBuild.procedures, (p) => p.id)
+  const billingLinesRec = byId(bookingsBuild.billingLines, (l) => l.id)
   for (const [id, l] of Object.entries(history.lists)) lists[id] = l
-  for (const [id, c] of Object.entries(history.cards)) cardsRec[id] = c
+  // The one seeded List attachment (US-03.1.3; catch-up Phase 15), so List
+  // attachments show after Reset: the theatre list on S1's destination List.
+  const theatreList = lists[SEED_LIST_ATTACHMENT_LIST_ID]
+  if (theatreList !== undefined) lists[theatreList.id] = { ...theatreList, attachments: [SEED_LIST_ATTACHMENT] }
+  for (const [id, c] of Object.entries(history.bookings)) bookingsRec[id] = c
   for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
   const audit = buildSeedAudit({
-    existing: cardsBuild.audit,
+    existing: bookingsBuild.audit,
     anaesthetists: anaesthetistsRec,
     lists,
-    cards: cardsRec,
+    bookings: bookingsRec,
     procedures: proceduresRec,
     billingLines: billingLinesRec,
   })
@@ -418,7 +434,7 @@ function buildSeedInternal(): SeedBuild {
     },
     schedule: {
       lists,
-      cards: cardsRec,
+      bookings: bookingsRec,
       procedures: proceduresRec,
       billingLines: billingLinesRec,
     },
@@ -433,9 +449,9 @@ function buildSeedInternal(): SeedBuild {
     dayNotes: DAY_NOTES,
     counters: {
       audit: audit.length + 1,
-      card: cardsBuild.next.card,
-      procedure: cardsBuild.next.procedure,
-      billingLine: cardsBuild.next.billingLine,
+      booking: bookingsBuild.next.booking,
+      procedure: bookingsBuild.next.procedure,
+      billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
       availability: AVAILABILITY.length + 1,
@@ -443,10 +459,11 @@ function buildSeedInternal(): SeedBuild {
       list: 1,
       hospital: 1,
       contract: 1,
+      attachment: 2,
     },
   }
 
-  return { state, scenario: cardsBuild.scenario }
+  return { state, scenario: bookingsBuild.scenario }
 }
 
 /** Pinned slot-derived list ids the markers and tests reference. */
@@ -459,13 +476,13 @@ export const SEED_LIST_IDS = {
   whitakerFri17: listIdForSlot(ANAE.whitaker, '2026-07-17', 'AM'),
   souterMon20Am: listIdForSlot(ANAE.souter, '2026-07-20', 'AM'),
   souterMon20Pm: listIdForSlot(ANAE.souter, '2026-07-20', 'PM'),
-  // Phase 09: the unpaid pre-payment card's list, the mixed + full (seeded
-  // paid) card's list, and the multi-card billing-failure exemplar list.
+  // Phase 09: the unpaid pre-payment booking's list, the mixed + full (seeded
+  // paid) booking's list, and the multi-booking billing-failure exemplar list.
   prepaymentUnpaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'AM'),
   prepaymentPaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'PM'),
   billingFailure: listIdForSlot(ANAE.ropata, '2026-07-16', 'AM'),
   // Phase 11: the SUBMITTED (office-locked) List holding the locked-target
-  // integration Card, the clean S1 create destination, and separate modify
+  // integration Booking, the clean S1 create destination, and separate modify
   // targets that keep S1's List uncluttered.
   integrationLocked: listIdForSlot(ANAE.delaney, '2026-07-17', 'AM'),
   integrationStgList: listIdForSlot(ANAE.souter, '2026-07-28', 'AM'),
@@ -494,11 +511,11 @@ export function buildSeed(): SeedState {
 export { buildSeedBillingSlice, type SeedBillingSlice } from './billing'
 
 /**
- * The Card whose full pre-payment invoice the seeded billing slice materialises
+ * The Booking whose full pre-payment invoice the seeded billing slice materialises
  * as PAID (Phase 09). `freshAppState`/`resetDomainState` pass this to
  * `buildSeedBillingSlice`.
  */
-export const SEED_PREPAID_CARD_ID: string = SEED_BUILD.scenario.prepaymentPaid
+export const SEED_PREPAID_BOOKING_ID: string = SEED_BUILD.scenario.prepaymentPaid
 
 // ---------------------------------------------------------------------------
 // Seeded-scenario markers (the inspector's finder + the seed tests)
@@ -506,34 +523,34 @@ export const SEED_PREPAID_CARD_ID: string = SEED_BUILD.scenario.prepaymentPaid
 
 export interface SeedMarker {
   label: string
-  entityType: 'list' | 'card' | 'procedure' | 'patient' | 'contract'
+  entityType: 'list' | 'booking' | 'procedure' | 'patient' | 'contract'
   entityId: string
   detail: string
 }
 
-function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
+function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> {
   return {
     designDayAmList: {
       label: 'Design day AM list (done, unbilled)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.souterAm21,
-      detail: "Souter, St George's / Mr Hale, 5 cards all complete, DRAFT.",
+      detail: "Souter, St George's / Mr Hale, 5 bookings all complete, DRAFT.",
     },
     designDayPmList: {
       label: 'Design day PM list (mid capture)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.souterPm21,
-      detail: 'Souter, Southern Cross / Ms Patel, 4 cards, Ellison pending.',
+      detail: 'Souter, Southern Cross / Ms Patel, 4 bookings, Ellison pending.',
     },
-    pendingCaptureCard: {
-      label: 'Pending capture card (Ellison)',
-      entityType: 'card',
+    pendingCaptureBooking: {
+      label: 'Pending capture booking (Ellison)',
+      entityType: 'booking',
       entityId: scenario.ellison,
-      detail: 'Margaret Ellison, hip replacement, the one card left to finish.',
+      detail: 'Margaret Ellison, hip replacement, the one booking left to finish.',
     },
-    overriddenTimeUnitsCard: {
-      label: 'Manually adjusted T card (Chen)',
-      entityType: 'card',
+    overriddenTimeUnitsBooking: {
+      label: 'Manually adjusted T booking (Chen)',
+      entityType: 'booking',
       entityId: scenario.chen,
       detail: 'Captured time units carry overridden provenance for authorisation review.',
     },
@@ -541,89 +558,89 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       label: 'SUBMITTED list (Morrison, Mon 20)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.morrisonMon20,
-      detail: "St George's / Mr Tan, 6 completed cards plus 1 cancelled, awaiting authorisation.",
+      detail: "St George's / Mr Tan, 6 completed bookings plus 1 cancelled, awaiting authorisation.",
     },
     submittedListWhitaker: {
       label: 'SUBMITTED list (Whitaker, Fri 17)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.whitakerFri17,
-      detail: 'Christchurch Public acute, 5 completed cards, awaiting authorisation.',
+      detail: 'Christchurch Public acute, 5 completed bookings, awaiting authorisation.',
     },
-    cancelledCard: {
-      label: 'Cancelled card (audited soft cancel)',
-      entityType: 'card',
+    cancelledBooking: {
+      label: 'Cancelled booking (audited soft cancel)',
+      entityType: 'booking',
       entityId: scenario.cancelled,
       detail: 'On the SUBMITTED Morrison list; visible, excluded from validation and billing.',
     },
-    splitBillingCard: {
-      label: 'Split billing multi procedure card',
-      entityType: 'card',
+    splitBillingBooking: {
+      label: 'Split billing multi procedure booking',
+      entityType: 'booking',
       entityId: scenario.splitBilling,
       detail: 'Second procedure isAdditional: time units only on the BTM path.',
     },
-    twoFunderCard: {
+    twoFunderBooking: {
       label: 'One procedure, two funders',
-      entityType: 'card',
+      entityType: 'booking',
       entityId: scenario.twoFunder,
       detail: 'Two stored rvg lines, one with a nib funder override; amounts conserve to the fee.',
     },
-    rateTimeCard: {
-      label: 'Rate x time card (Method 3)',
-      entityType: 'card',
+    rateTimeBooking: {
+      label: 'Rate x time booking (Method 3)',
+      entityType: 'booking',
       entityId: scenario.rateTime,
       detail: 'Hourly rate line under the billable-party-held individual arrangement contract.',
     },
-    rateTimeCaptureCard: {
-      label: 'Rate x time capture card (Souter, Mon 27)',
-      entityType: 'card',
+    rateTimeCaptureBooking: {
+      label: 'Rate x time capture booking (Souter, Mon 27)',
+      entityType: 'booking',
       entityId: scenario.rateTimeCapture,
       detail: 'Not yet captured; the hours x rate line is added live in the mobile app under the Aria contract.',
     },
-    bariatricType3Card: {
-      label: 'Type 3 fixed price card (bariatric)',
-      entityType: 'card',
+    bariatricType3Booking: {
+      label: 'Type 3 fixed price booking (bariatric)',
+      entityType: 'booking',
       entityId: scenario.bariatric,
       detail: 'Mr Doyle price list; second procedure priced by the ordinal rule.',
     },
-    cosAccContractCard: {
-      label: 'Externally held ACC contract card (COS)',
-      entityType: 'card',
+    cosAccContractBooking: {
+      label: 'Externally held ACC contract booking (COS)',
+      entityType: 'booking',
       entityId: scenario.cosAcc,
       detail: 'Billed under the Canterbury Orthopaedic Surgeons ACC Type 2.',
     },
-    accRelatedCard: {
+    accRelatedBooking: {
       label: 'ACC related procedure (hospital route)',
-      entityType: 'card',
+      entityType: 'booking',
       entityId: scenario.accRelated,
       detail: "Billed under St George's ACC Type 2; sources W4's ACC column.",
     },
-    guardianMinorCard: {
+    guardianMinorBooking: {
       label: 'Guardian pays for a minor',
-      entityType: 'card',
+      entityType: 'booking',
       entityId: scenario.guardianMinor,
       detail: 'Grace Park (12); billable party override set to her mother.',
     },
-    prepaymentCard: {
-      label: 'Pre-payment card (split, unpaid)',
-      entityType: 'card',
+    prepaymentBooking: {
+      label: 'Pre-payment booking (split, unpaid)',
+      entityType: 'booking',
       entityId: scenario.prepayment,
       detail: 'Souter Fri 24 AM; selfFundedPrepayment split, $800 deposit on a $1,200 self funded fee. Unpaid: gate blocks completion.',
     },
-    prepaymentPaidCard: {
-      label: 'Pre-payment card (mixed + full, seeded paid)',
-      entityType: 'card',
+    prepaymentPaidBooking: {
+      label: 'Pre-payment booking (mixed + full, seeded paid)',
+      entityType: 'booking',
       entityId: scenario.prepaymentPaid,
       detail: 'Souter Fri 24 PM; one hospital procedure + one full pre-payment (seeded PAID). Completes with no override; no balance invoice.',
     },
-    billingFailureCard: {
-      label: 'Billing failure card (COS ACC)',
-      entityType: 'card',
+    billingFailureBooking: {
+      label: 'Billing failure booking (COS ACC)',
+      entityType: 'booking',
       entityId: scenario.billingFailure,
       detail: 'Ropata Thu 16, SUBMITTED. Fails when the COS ACC contract is dated out (no default fallback); its sibling still invoices.',
     },
-    insuredReimbursementCard: {
-      label: 'Insured reimbursement card',
-      entityType: 'card',
+    insuredReimbursementBooking: {
+      label: 'Insured reimbursement booking',
+      entityType: 'booking',
       entityId: scenario.insuredReimbursement,
       detail: 'Patient pays and claims from AIA Health; NOT the direct claim Insurer route.',
     },
@@ -637,13 +654,13 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       label: 'Repeat patient (Sarah Mitchell)',
       entityType: 'patient',
       entityId: PAT.mitchell,
-      detail: `Two episodes: cards ${scenario.repeatMitchell[0]} and ${scenario.repeatMitchell[1]}.`,
+      detail: `Two episodes: bookings ${scenario.repeatMitchell[0]} and ${scenario.repeatMitchell[1]}.`,
     },
     repeatPatientWalker: {
       label: 'Repeat patient (Hemi Walker)',
       entityType: 'patient',
       entityId: PAT.walker,
-      detail: `Two episodes: cards ${scenario.repeatWalker[0]} and ${scenario.repeatWalker[1]}.`,
+      detail: `Two episodes: bookings ${scenario.repeatWalker[0]} and ${scenario.repeatWalker[1]}.`,
     },
     missingBillingRef1: {
       label: 'Missing billing reference 1 of 2',
@@ -670,34 +687,40 @@ function buildMarkers(scenario: CardScenarioIds): Record<string, SeedMarker> {
       detail: 'Billable-party held; permitsIndividualArrangement gates rate x time capture.',
     },
     integrationS13Time: {
-      label: 'Integration card · S13 reschedule target (same list)',
-      entityType: 'card',
+      label: 'Integration booking · S13 reschedule target (same list)',
+      entityType: 'booking',
       entityId: scenario.integrationS13Time,
       detail: "Souter Tue 4 Aug AM (St George's); correlationRef set. The same-list S13 message retimes it.",
     },
     integrationS13Move: {
-      label: 'Integration card · S13 move target',
-      entityType: 'card',
+      label: 'Integration booking · S13 move target',
+      entityType: 'booking',
       entityId: scenario.integrationS13Move,
       detail: "Souter Mon 3 Aug PM (St George's); the cross-list S13 message reassigns it to Tue 4 Aug AM.",
     },
     integrationS14: {
-      label: 'Integration card · S14 modification target',
-      entityType: 'card',
+      label: 'Integration booking · S14 modification target',
+      entityType: 'booking',
       entityId: scenario.integrationS14,
       detail: "Souter Tue 4 Aug AM (St George's); the S14 message updates it, located by appointment id.",
     },
     integrationS15: {
-      label: 'Integration card · S15 cancellation target',
-      entityType: 'card',
+      label: 'Integration booking · S15 cancellation target',
+      entityType: 'booking',
       entityId: scenario.integrationS15,
       detail: "Souter Tue 4 Aug AM (St George's); the S15 message soft-cancels it.",
     },
+    listAttachment: {
+      label: 'List attachment (theatre list PDF)',
+      entityType: 'list',
+      entityId: SEED_LIST_ATTACHMENT_LIST_ID,
+      detail: "Souter Tue 28 Jul AM (St George's); the List carries the seeded theatre-list PDF.",
+    },
     integrationLockedTarget: {
-      label: 'Integration card · locked target (SUBMITTED list)',
-      entityType: 'card',
+      label: 'Integration booking · locked target (SUBMITTED list)',
+      entityType: 'booking',
       entityId: scenario.integrationLockedTarget,
-      detail: 'Delaney Fri 17 (SUBMITTED); the locked-target S14 message parks as manual intervention, card unchanged.',
+      detail: 'Delaney Fri 17 (SUBMITTED); the locked-target S14 message parks as manual intervention, booking unchanged.',
     },
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Seed tests — determinism, the canvas invariant, design-day fidelity (the
- * PM card fees to the cent, Ellison in her pre-capture state), the ~80%
+ * PM booking fees to the cent, Ellison in her pre-capture state), the ~80%
  * permanent-list share of surgeon assignments, marker resolution and the
  * staged scenario states.
  */
@@ -13,25 +13,25 @@ import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
-import { validateCardForBilling, type CardBillingContext } from '../billing/validateCardForBilling'
-import type { Card, List, Procedure } from '../types'
+import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
+import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
 
 const seed = buildSeed()
 
-function proceduresForCard(state: SeedState, cardId: string): Procedure[] {
+function proceduresForBooking(state: SeedState, bookingId: string): Procedure[] {
   return Object.values(state.schedule.procedures)
-    .filter((p) => p.cardId === cardId)
+    .filter((p) => p.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-function billingContextFor(state: SeedState, card: Card): CardBillingContext {
-  const list = state.schedule.lists[card.listId]
-  if (list === undefined) throw new Error(`card ${card.id} has no list`)
+function billingContextFor(state: SeedState, booking: Booking): BookingBillingContext {
+  const list = state.schedule.lists[booking.listId]
+  if (list === undefined) throw new Error(`booking ${booking.id} has no list`)
   const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) throw new Error(`list ${list.id} has no anaesthetist`)
-  const ctx: CardBillingContext = {
+  const ctx: BookingBillingContext = {
     anaesthetist,
     rvgCodes: state.masters.rvgCodes,
     contracts: state.masters.contracts,
@@ -50,8 +50,8 @@ describe('seed determinism', () => {
   })
 })
 
-describe('rich seeded Card history', () => {
-  it('gives every Card a booking-to-clinical trail, including historical billing Cards', () => {
+describe('rich seeded Booking history', () => {
+  it('gives every Booking a booking-to-clinical trail, including historical billing Bookings', () => {
     const auditByEntity = new Map<string, typeof seed.audit>()
     for (const entry of seed.audit) {
       const rows = auditByEntity.get(entry.entityId) ?? []
@@ -59,16 +59,16 @@ describe('rich seeded Card history', () => {
       auditByEntity.set(entry.entityId, rows)
     }
 
-    for (const card of Object.values(seed.schedule.cards)) {
-      const cardRows = auditByEntity.get(card.id) ?? []
+    for (const booking of Object.values(seed.schedule.bookings)) {
+      const bookingRows = auditByEntity.get(booking.id) ?? []
       expect(
-        cardRows.filter((entry) => entry.action === 'card.create'),
-        `${card.id} card.create`,
+        bookingRows.filter((entry) => entry.action === 'booking.create'),
+        `${booking.id} booking.create`,
       ).toHaveLength(1)
 
-      const procedures = proceduresForCard(seed, card.id)
-      expect(procedures.length, `${card.id} has a Procedure`).toBeGreaterThan(0)
-      const mergedRows = [...cardRows]
+      const procedures = proceduresForBooking(seed, booking.id)
+      expect(procedures.length, `${booking.id} has a Procedure`).toBeGreaterThan(0)
+      const mergedRows = [...bookingRows]
       for (const procedure of procedures) {
         const procedureRows = auditByEntity.get(procedure.id) ?? []
         expect(
@@ -94,22 +94,22 @@ describe('rich seeded Card history', () => {
         }
       }
 
-      expect(mergedRows.length, `${card.id} merged History rows`).toBeGreaterThanOrEqual(3)
-      if (card.completed) {
+      expect(mergedRows.length, `${booking.id} merged History rows`).toBeGreaterThanOrEqual(3)
+      if (booking.completed) {
         expect(
-          cardRows.filter((entry) => entry.action === 'card.complete'),
-          `${card.id} card.complete`,
+          bookingRows.filter((entry) => entry.action === 'booking.complete'),
+          `${booking.id} booking.complete`,
         ).toHaveLength(1)
       }
-      if (card.cancellation !== undefined) {
+      if (booking.cancellation !== undefined) {
         expect(
-          cardRows.filter((entry) => entry.action === 'card.cancel'),
-          `${card.id} card.cancel`,
+          bookingRows.filter((entry) => entry.action === 'booking.cancel'),
+          `${booking.id} booking.cancel`,
         ).toHaveLength(1)
       }
     }
 
-    expect(auditByEntity.get('HC01')?.map((entry) => entry.action)).toContain('card.complete')
+    expect(auditByEntity.get('HBK01')?.map((entry) => entry.action)).toContain('booking.complete')
   })
 
   it('allocates the seed trail chronologically and leaves the next audit id free', () => {
@@ -119,7 +119,7 @@ describe('rich seeded Card history', () => {
       if (index > 0) expect(entry.atISO >= seed.audit[index - 1]!.atISO).toBe(true)
     }
     expect(seed.counters.audit).toBe(seed.audit.length + 1)
-    for (const entry of seed.audit.filter((row) => row.action === 'card.create')) {
+    for (const entry of seed.audit.filter((row) => row.action === 'booking.create')) {
       expect(
         entry.atISO < `${DEMO_TODAY}T08:00:00`,
         `${entry.entityId} is booked by the reset clock`,
@@ -256,16 +256,16 @@ describe('patients & NHIs', () => {
 
 describe('design-day fees (the mockup figures, from the real calculator)', () => {
   const cases: Array<{ marker: string; total: number; units: number }> = [
-    { marker: 'twoFunderCard', total: 212, units: 8 },
+    { marker: 'twoFunderBooking', total: 212, units: 8 },
   ]
 
-  function feeForCard(cardId: string): { totals: number[]; unitSums: number[] } {
-    const card = seed.schedule.cards[cardId]
-    if (card === undefined) throw new Error(`missing card ${cardId}`)
-    const list = seed.schedule.lists[card.listId]
+  function feeForBooking(bookingId: string): { totals: number[]; unitSums: number[] } {
+    const booking = seed.schedule.bookings[bookingId]
+    if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
+    const list = seed.schedule.lists[booking.listId]
     const anaesthetist = list !== undefined ? seed.masters.anaesthetists[list.anaesthetistId] : undefined
     if (list === undefined || anaesthetist === undefined) throw new Error('missing context')
-    const procedures = proceduresForCard(seed, cardId)
+    const procedures = proceduresForBooking(seed, bookingId)
     const totals: number[] = []
     const unitSums: number[] = []
     procedures.forEach((procedure, index) => {
@@ -297,36 +297,36 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
   it('Tane: B6 T6 = 12 units, $318.00; Ellison pre-capture 8 units, $212.00', () => {
     const marker = SEED_MARKERS['designDayPmList']
     expect(marker).toBeDefined()
-    const cards = Object.values(seed.schedule.cards)
+    const bookings = Object.values(seed.schedule.bookings)
       .filter((c) => c.listId === SEED_LIST_IDS.souterPm21)
       .sort((a, b) => a.id.localeCompare(b.id))
-    expect(cards.length).toBe(4)
-    const [tane, marsh, chen, ellison] = cards
-    expect(tane && feeForCard(tane.id)).toEqual({ totals: [318], unitSums: [12] })
-    expect(marsh && feeForCard(marsh.id)).toEqual({ totals: [185.5], unitSums: [7] })
-    expect(chen && feeForCard(chen.id)).toEqual({ totals: [238.5], unitSums: [9] })
-    // Ellison seeds PRE-capture (no handover — the live Finish-now demo card):
+    expect(bookings.length).toBe(4)
+    const [tane, marsh, chen, ellison] = bookings
+    expect(tane && feeForBooking(tane.id)).toEqual({ totals: [318], unitSums: [12] })
+    expect(marsh && feeForBooking(marsh.id)).toEqual({ totals: [185.5], unitSums: [7] })
+    expect(chen && feeForBooking(chen.id)).toEqual({ totals: [238.5], unitSums: [9] })
+    // Ellison seeds PRE-capture (no handover — the live Finish-now demo booking):
     // B7 + T0 + M1 (A1 + AS1) = 8 units at the SXAP $26.50. The post-capture
     // $344.50/13u and 41u/$1,086.50 mockup pins live in btmCapture.test.ts,
     // after a simulated Finish-now at 17:20 (Decisions log 2026-07-23).
-    expect(ellison && feeForCard(ellison.id)).toEqual({ totals: [212], unitSums: [8] })
-    const all = cards.map((c) => feeForCard(c.id))
+    expect(ellison && feeForBooking(ellison.id)).toEqual({ totals: [212], unitSums: [8] })
+    const all = bookings.map((c) => feeForBooking(c.id))
     expect(all.reduce((s, f) => s + (f.unitSums[0] ?? 0), 0)).toBe(36)
     expect(all.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(954, 2)
   })
 
   it('bariatric Type 3: $2,800 first procedure, $950 by the second-procedure ordinal rule', () => {
-    const marker = SEED_MARKERS['bariatricType3Card']
+    const marker = SEED_MARKERS['bariatricType3Booking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
-    expect(feeForCard(marker.entityId).totals).toEqual([2800, 950])
+    expect(feeForBooking(marker.entityId).totals).toEqual([2800, 950])
   })
 
   it('rate x time: 3 hours at $480 = $1,440', () => {
-    const marker = SEED_MARKERS['rateTimeCard']
+    const marker = SEED_MARKERS['rateTimeBooking']
     expect(marker).toBeDefined()
     if (marker === undefined) return
-    expect(feeForCard(marker.entityId).totals).toEqual([1440])
+    expect(feeForBooking(marker.entityId).totals).toEqual([1440])
   })
 
   it('spot table entries hold', () => {
@@ -335,7 +335,7 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
       const marker = SEED_MARKERS[c.marker]
       expect(marker).toBeDefined()
       if (marker === undefined) continue
-      const fee = feeForCard(marker.entityId)
+      const fee = feeForBooking(marker.entityId)
       expect(fee.totals[0]).toBeCloseTo(c.total, 2)
       expect(fee.unitSums[0]).toBe(c.units)
     }
@@ -348,8 +348,8 @@ describe('scenario states', () => {
       const pool =
         marker.entityType === 'list'
           ? seed.schedule.lists
-          : marker.entityType === 'card'
-            ? seed.schedule.cards
+          : marker.entityType === 'booking'
+            ? seed.schedule.bookings
             : marker.entityType === 'procedure'
               ? seed.schedule.procedures
               : marker.entityType === 'patient'
@@ -363,21 +363,21 @@ describe('scenario states', () => {
     }
   })
 
-  it('the two-funder card passes conservation via validateCardForBilling', () => {
-    const marker = SEED_MARKERS['twoFunderCard']
+  it('the two-funder booking passes conservation via validateBookingForBilling', () => {
+    const marker = SEED_MARKERS['twoFunderBooking']
     if (marker === undefined) throw new Error('marker missing')
-    const card = seed.schedule.cards[marker.entityId]
-    if (card === undefined) throw new Error('card missing')
-    const failures = validateCardForBilling(card, proceduresForCard(seed, card.id), billingContextFor(seed, card))
+    const booking = seed.schedule.bookings[marker.entityId]
+    if (booking === undefined) throw new Error('booking missing')
+    const failures = validateBookingForBilling(booking, proceduresForBooking(seed, booking.id), billingContextFor(seed, booking))
     expect(failures).toEqual([])
     const lines = Object.values(seed.schedule.billingLines).filter(
-      (l) => proceduresForCard(seed, card.id).some((p) => p.id === l.procedureId),
+      (l) => proceduresForBooking(seed, booking.id).some((p) => p.id === l.procedureId),
     )
     expect(lines.some((l) => l.funderOverride !== undefined)).toBe(true)
     expect(lines.length).toBe(2)
   })
 
-  it("the seeded review Lists' non-cancelled cards are completed and valid", () => {
+  it("the seeded review Lists' non-cancelled bookings are completed and valid", () => {
     for (const listId of [
       SEED_LIST_IDS.morrisonMon20,
       SEED_LIST_IDS.whitakerFri17,
@@ -386,25 +386,25 @@ describe('scenario states', () => {
     ]) {
       const list = seed.schedule.lists[listId]
       expect(list?.state).toBe('SUBMITTED')
-      const cards = Object.values(seed.schedule.cards).filter((c) => c.listId === listId)
-      expect(cards.length).toBeGreaterThan(0)
-      for (const card of cards) {
-        if (card.cancellation !== undefined) continue
-        expect(card.completed, `${card.id} completed`).toBe(true)
-        const failures = validateCardForBilling(card, proceduresForCard(seed, card.id), billingContextFor(seed, card))
-        expect(failures, `${card.id} valid`).toEqual([])
+      const bookings = Object.values(seed.schedule.bookings).filter((c) => c.listId === listId)
+      expect(bookings.length).toBeGreaterThan(0)
+      for (const booking of bookings) {
+        if (booking.cancellation !== undefined) continue
+        expect(booking.completed, `${booking.id} completed`).toBe(true)
+        const failures = validateBookingForBilling(booking, proceduresForBooking(seed, booking.id), billingContextFor(seed, booking))
+        expect(failures, `${booking.id} valid`).toEqual([])
       }
     }
   })
 
-  it('the cancelled card sits on a SUBMITTED list with its cancel audited', () => {
-    const marker = SEED_MARKERS['cancelledCard']
+  it('the cancelled booking sits on a SUBMITTED list with its cancel audited', () => {
+    const marker = SEED_MARKERS['cancelledBooking']
     if (marker === undefined) throw new Error('marker missing')
-    const card = seed.schedule.cards[marker.entityId]
-    expect(card?.cancellation?.reason).toContain('postponed')
-    const list = card !== undefined ? seed.schedule.lists[card.listId] : undefined
+    const booking = seed.schedule.bookings[marker.entityId]
+    expect(booking?.cancellation?.reason).toContain('postponed')
+    const list = booking !== undefined ? seed.schedule.lists[booking.listId] : undefined
     expect(list?.state).toBe('SUBMITTED')
-    expect(seed.audit.some((a) => a.entityId === marker.entityId && a.action === 'card.cancel')).toBe(true)
+    expect(seed.audit.some((a) => a.entityId === marker.entityId && a.action === 'booking.cancel')).toBe(true)
   })
 
   it('exactly the two marked hospital-route procedures are missing billing references', () => {
@@ -429,5 +429,34 @@ describe('scenario states', () => {
         SEED_LIST_IDS.billingFailure,
       ].sort(),
     )
+  })
+})
+
+describe('Booking id numbering (catch-up Phase 15)', () => {
+  // The Card to Booking rename changed only the prefix: allocation order, and so
+  // every number, is unchanged. The legacy `/cards/` redirect relies on it.
+  function pin(bookingId: string) {
+    const booking = seed.schedule.bookings[bookingId]
+    const list = booking !== undefined ? seed.schedule.lists[booking.listId] : undefined
+    return {
+      patient: booking !== undefined ? seed.masters.patients[booking.patientId]?.name : undefined,
+      anaesthetist: list?.anaesthetistId,
+      dateISO: list?.dateISO,
+      session: list?.session,
+    }
+  }
+
+  it('BK0001 is Hemi Walker on Dr Souter\'s Tue 21 AM List', () => {
+    expect(pin('BK0001')).toEqual({ patient: 'Hemi Walker', anaesthetist: ANAE.souter, dateISO: '2026-07-21', session: 'AM' })
+  })
+
+  it('BK0009 is Margaret Ellison on Dr Souter\'s Tue 21 PM List', () => {
+    expect(pin('BK0009')).toEqual({ patient: 'Margaret Ellison', anaesthetist: ANAE.souter, dateISO: '2026-07-21', session: 'PM' })
+  })
+
+  it('no Booking or history Booking keeps a legacy Card id', () => {
+    const ids = Object.keys(seed.schedule.bookings)
+    expect(ids.every((id) => /^(BK\d{4}|HBK\d+)$/.test(id))).toBe(true)
+    expect(ids.some((id) => id.startsWith('HBK'))).toBe(true)
   })
 })

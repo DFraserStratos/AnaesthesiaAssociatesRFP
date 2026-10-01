@@ -89,13 +89,13 @@
               "click": "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
             },
             {
-              "wait": "[data-testid=slide-card] [data-testid=mobile-card-scroll]"
+              "wait": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]"
             },
             {
               "wait": 600
             },
             {
-              "scroll": "[data-testid=slide-card] [data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]",
               "by": 350
             }
           ],

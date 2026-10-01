@@ -2,24 +2,33 @@ import { useEffect, useState } from 'react'
 import { Camera, ChevronLeft, PencilLine } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { type Actor } from '../../store'
+import type { BookingSource } from '../../domain/types'
 import { Button, TickBadge } from '../ui'
 import { useSurface } from '../surface'
-import { ManualCardForm, type ExtractionFields } from './ManualCardForm'
+import { ManualBookingForm, type ExtractionFields } from './ManualBookingForm'
 import { PhotoCaptureFlow } from './PhotoCaptureFlow'
 
-interface AddCardFlowProps {
+interface AddBookingFlowProps {
   open: boolean
   listId: string
   actor: Actor
   manualEmptyLookupPrefill?: ExtractionFields & { nhi: string }
   onClose: () => void
-  onCreated: (cardId: string) => void
+  onCreated: (bookingId: string) => void
 }
 
 type Mode = 'choose' | 'manual' | 'photo' | 'done'
 
+/** The display-only Booking source for a prong (DM-39): the office's phone
+ *  advice is an office entry either way; an anaesthetist adds ad hoc or from a
+ *  photo of the booking card. */
+function sourceFor(actor: Actor, prong: 'manual' | 'photo'): BookingSource {
+  if (actor.role === 'office') return 'admin'
+  return prong === 'photo' ? 'anaesthetistPhoto' : 'anaesthetistAdHoc'
+}
+
 /**
- * Add a card: the chooser forks to the manual form or the simulated photo
+ * Add a booking: the chooser forks to the manual form or the simulated photo
  * capture, then a shared success state.
  *
  * The fork carries its own back affordance. Picking the wrong prong is easy on
@@ -31,10 +40,10 @@ type Mode = 'choose' | 'manual' | 'photo' | 'done'
  * block of its own; on web the surface seam swaps in `Dialog`, which has no
  * handle, and the same row reads as the dialog's top-left back link.
  */
-export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onClose, onCreated }: AddCardFlowProps) {
+export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, onClose, onCreated }: AddBookingFlowProps) {
   const { Overlay } = useSurface()
   const [mode, setMode] = useState<Mode>('choose')
-  const [result, setResult] = useState<{ cardId: string; reused: boolean } | null>(null)
+  const [result, setResult] = useState<{ bookingId: string; reused: boolean } | null>(null)
 
   // Reset to the chooser each time the sheet opens.
   useEffect(() => {
@@ -44,14 +53,14 @@ export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onC
     }
   }, [open])
 
-  function handleSaved(r: { cardId: string; reused: boolean }) {
+  function handleSaved(r: { bookingId: string; reused: boolean }) {
     setResult(r)
     setMode('done')
   }
 
   /**
    * Back to the fork. Only the two capture prongs offer it: `done` is past the
-   * point of no return (the card exists, and its own Done button is the exit),
+   * point of no return (the booking exists, and its own Done button is the exit),
    * and `choose` is the destination.
    */
   const canGoBack = mode === 'manual' || mode === 'photo'
@@ -69,7 +78,7 @@ export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onC
         <button
           type="button"
           onClick={goBack}
-          aria-label="Back to Add a card"
+          aria-label="Back to Add a booking"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -86,42 +95,43 @@ export function AddCardFlow({ open, listId, actor, manualEmptyLookupPrefill, onC
           }}
         >
           <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
-          Add a card
+          Add a booking
         </button>
       )}
 
       {mode === 'choose' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>Add a card</div>
+          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>Add a booking</div>
           <ChooseButton icon={<PencilLine size={20} strokeWidth={2} aria-hidden />} title="Enter manually" detail="Type the patient and operation" onClick={() => setMode('manual')} />
           <ChooseButton icon={<Camera size={20} strokeWidth={2} aria-hidden />} title="Photo of paper list" detail="Scan a paper theatre card (demo)" onClick={() => setMode('photo')} />
         </div>
       )}
 
       {mode === 'manual' && (
-        <ManualCardForm
+        <ManualBookingForm
           listId={listId}
           actor={actor}
           emptyLookupPrefill={manualEmptyLookupPrefill}
+          source={sourceFor(actor, 'manual')}
           onSaved={handleSaved}
         />
       )}
-      {mode === 'photo' && <PhotoCaptureFlow listId={listId} actor={actor} onSaved={handleSaved} />}
+      {mode === 'photo' && <PhotoCaptureFlow listId={listId} actor={actor} source={sourceFor(actor, 'photo')} onSaved={handleSaved} />}
 
       {mode === 'done' && result !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
           <TickBadge size={72} animate />
-          <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Card added</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: semantic.success.onTint }}>Booking added</div>
           <div style={{ fontSize: 13, color: neutral.slate, textAlign: 'center' }}>
             {result.reused
               ? 'Linked to an existing patient record by NHI. No duplicate was created.'
-              : 'A new patient record was created for this card.'}
+              : 'A new patient record was created for this booking.'}
           </div>
           <Button
             variant="primary"
             block
             onClick={() => {
-              onCreated(result.cardId)
+              onCreated(result.bookingId)
               onClose()
             }}
             style={{ marginTop: 4 }}

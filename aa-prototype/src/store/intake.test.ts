@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editPatient, upsertPatient } from './intake'
 import { createHospital, setInsurerDirectClaims } from './mastersActions'
-import { cardsForList } from './selectors'
+import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
 import { ANAE, INS, PAT, SEED_MARKERS } from '../domain/seed'
 
@@ -137,23 +137,23 @@ describe('upsertPatient', () => {
 })
 
 describe('editPatient', () => {
-  const ELLISON_CARD = SEED_MARKERS.pendingCaptureCard!.entityId
+  const ELLISON_BOOKING = SEED_MARKERS.pendingCaptureBooking!.entityId
   const MORRISON_LIST = SEED_MARKERS.submittedListMorrison!.entityId
 
   it('edits demographics and writes a patient.update audit entry', () => {
     const api = createAppStore()
-    const outcome = editPatient(api, SOUTER, PAT.ellison, { phone: '021 555 9999' }, ELLISON_CARD)
+    const outcome = editPatient(api, SOUTER, PAT.ellison, { phone: '021 555 9999' }, ELLISON_BOOKING)
     expect(outcome.ok).toBe(true)
     const state = api.getState()
     expect(state.masters.patients[PAT.ellison]?.phone).toBe('021 555 9999')
     expect(state.audit.at(-1)?.action).toBe('patient.update')
   })
 
-  it('refuses via a card on a locked (SUBMITTED) list for the anaesthetist', () => {
+  it('refuses via a booking on a locked (SUBMITTED) list for the anaesthetist', () => {
     const api = createAppStore()
-    const morrisonCard = cardsForList(api.getState(), MORRISON_LIST)[0]
-    expect(morrisonCard).toBeDefined()
-    const outcome = editPatient(api, MORRISON, morrisonCard!.patientId, { phone: '021 000 0000' }, morrisonCard!.id)
+    const morrisonBooking = bookingsForList(api.getState(), MORRISON_LIST)[0]
+    expect(morrisonBooking).toBeDefined()
+    const outcome = editPatient(api, MORRISON, morrisonBooking!.patientId, { phone: '021 000 0000' }, morrisonBooking!.id)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('listSubmitted')
   })

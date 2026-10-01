@@ -12,8 +12,8 @@
  *
  *  - `overridePrepaymentGate` records the office's real-world "proceed anyway"
  *    call (a browser prototype cannot itself verify a payment): it writes
- *    `Card.prepaymentOverride` with a mandatory reason, audited and shown as a
- *    flagged override everywhere the Card appears. It lifts the completion gate
+ *    `Booking.prepaymentOverride` with a mandatory reason, audited and shown as a
+ *    flagged override everywhere the Booking appears. It lifts the completion gate
  *    (2nd review #6; the settled hard-gate + audited-override ruling).
  *
  * OPEN QUESTION surfaced in UI copy: the RFP leaves the pre-payment timing vs
@@ -23,7 +23,7 @@
 
 import type { BillingCase, Invoice, InvoiceLine, PrepaymentOverride } from '../domain/types'
 import {
-  buildPrePaymentInvoiceForCard,
+  buildPrePaymentInvoiceForBooking,
   type InvoiceBuildContext,
 } from '../domain/billing/invoiceBuild'
 import {
@@ -38,33 +38,33 @@ import {
 } from './mutate'
 import type { AppStoreApi } from './appStore'
 import {
-  billingContextForCard,
-  cardRequiresPrepayment,
-  prePaymentInvoicesForCard,
-  proceduresForCard,
+  billingContextForBooking,
+  bookingRequiresPrepayment,
+  prePaymentInvoicesForBooking,
+  proceduresForBooking,
 } from './selectors'
-import { getCard } from './lifecycle'
-import { handoffCasesForCard } from './xeroHandoff'
+import { getBooking } from './lifecycle'
+import { handoffCasesForBooking } from './xeroHandoff'
 
 /**
- * Raise the pre-procedure invoice for a Card's patient-funded portion.
+ * Raise the pre-procedure invoice for a Booking's patient-funded portion.
  * Office-only; refused on an AUTHORISED/billed List and idempotent.
  */
 export function raisePreProcedureInvoice(
   api: AppStoreApi,
   actor: Actor,
-  cardId: string,
+  bookingId: string,
 ): Outcome<{ invoiceIds: string[] }> {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office raises a pre-procedure invoice.')
   }
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'This Card is cancelled; no pre-payment invoice is raised.')
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled; no pre-payment invoice is raised.')
   }
   // Refuse once the List is authorised or billed: the balance run would then
   // have billed the full amount, so a deposit invoice too would double charge.
@@ -74,29 +74,29 @@ export function raisePreProcedureInvoice(
       'This List is already authorised or billed. Raising a pre-payment invoice now would double charge; the balance is billed by the run.',
     )
   }
-  if (!cardRequiresPrepayment(state, cardId)) {
-    return refuse('notPrepayment', 'This Card has no self funded pre-payment procedure to invoice.')
+  if (!bookingRequiresPrepayment(state, bookingId)) {
+    return refuse('notPrepayment', 'This Booking has no self funded pre-payment procedure to invoice.')
   }
-  if (prePaymentInvoicesForCard(state, cardId).length > 0) {
-    return refuse('alreadyRaised', 'A pre-payment invoice has already been raised for this Card.')
+  if (prePaymentInvoicesForBooking(state, bookingId).length > 0) {
+    return refuse('alreadyRaised', 'A pre-payment invoice has already been raised for this Booking.')
   }
 
-  const cardCtx = billingContextForCard(state, card)
-  if (cardCtx === undefined) {
-    return refuse('noContext', 'Billing context could not be assembled for this Card.')
+  const bookingCtx = billingContextForBooking(state, booking)
+  if (bookingCtx === undefined) {
+    return refuse('noContext', 'Billing context could not be assembled for this Booking.')
   }
   const buildCtx: InvoiceBuildContext = {
-    ...cardCtx,
+    ...bookingCtx,
     listDateISO: list.dateISO,
-    patientId: card.patientId,
+    patientId: booking.patientId,
     ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
   }
-  const built = buildPrePaymentInvoiceForCard(card, proceduresForCard(state, cardId), buildCtx)
+  const built = buildPrePaymentInvoiceForBooking(booking, proceduresForBooking(state, bookingId), buildCtx)
   if (built.kind === 'exception') {
     return refuse(built.code, built.message)
   }
   if (built.invoices.length === 0) {
-    return refuse('notPrepayment', 'This Card has no self funded pre-payment procedure to invoice.')
+    return refuse('notPrepayment', 'This Booking has no self funded pre-payment procedure to invoice.')
   }
 
   const invoiceIds: string[] = []
@@ -120,7 +120,7 @@ export function raisePreProcedureInvoice(
         id: inv.id,
         invoiceNumber: num.id,
         caseReference: bc.id,
-        cardId,
+        bookingId,
         counterparty: draft.counterparty,
         layout: draft.layout,
         kind: 'prePayment',
@@ -143,7 +143,7 @@ export function raisePreProcedureInvoice(
         if (line.units !== undefined) stored.units = line.units
         invoiceLines[il.id] = stored
       }
-      cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
+      cases[bc.id] = { id: bc.id, bookingId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
       invoiceIds.push(inv.id)
       metas.push({
         entityType: 'invoice',
@@ -152,14 +152,14 @@ export function raisePreProcedureInvoice(
         after: {
           invoiceNumber: num.id,
           caseReference: bc.id,
-          cardId,
+          bookingId,
           counterparty: draft.counterparty,
           subtotal: draft.subtotal,
           total: draft.total,
         },
-        // The Card is not stamped: raising a pre-invoice is not a Card edit and
+        // The Booking is not stamped: raising a pre-invoice is not a Booking edit and
         // must not restamp lastModified (nor is the List billed).
-        stampCardId: null,
+        stampBookingId: null,
       })
     }
 
@@ -168,7 +168,7 @@ export function raisePreProcedureInvoice(
 
   // Hand the pre-invoice case(s) off to Xero as a full ACCREC+ACCPAY pair
   // (D-pre-invoice-pair) once the raise has committed. Idempotent.
-  handoffCasesForCard(api, cardId)
+  handoffCasesForBooking(api, bookingId)
 
   return ok({ invoiceIds })
 }
@@ -176,18 +176,18 @@ export function raisePreProcedureInvoice(
 /**
  * Record an office override of the pre-payment completion gate (audited, with a
  * mandatory reason). Lifts the block; shown as a flagged override wherever the
- * Card appears. Blocked on an AUTHORISED List (its Cards are locked).
+ * Booking appears. Blocked on an AUTHORISED List (its Bookings are locked).
  */
 export function overridePrepaymentGate(
   api: AppStoreApi,
   actor: Actor,
-  cardId: string,
+  bookingId: string,
   reason: string,
 ): Outcome {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office can override the pre-payment gate.')
@@ -196,13 +196,13 @@ export function overridePrepaymentGate(
     return refuse('reasonRequired', 'An override reason is required.')
   }
   if (list.state === 'AUTHORISED') {
-    return refuse('listAuthorised', 'This List is authorised and its Cards are locked.')
+    return refuse('listAuthorised', 'This List is authorised and its Bookings are locked.')
   }
-  if (!cardRequiresPrepayment(state, cardId)) {
-    return refuse('notPrepayment', 'This Card does not require pre-payment; there is nothing to override.')
+  if (!bookingRequiresPrepayment(state, bookingId)) {
+    return refuse('notPrepayment', 'This Booking does not require pre-payment; there is nothing to override.')
   }
-  if (card.prepaymentOverride !== undefined) {
-    return refuse('alreadyOverridden', 'The pre-payment gate is already overridden on this Card.')
+  if (booking.prepaymentOverride !== undefined) {
+    return refuse('alreadyOverridden', 'The pre-payment gate is already overridden on this Booking.')
   }
 
   const override: PrepaymentOverride = { reason: reason.trim(), by: actor.who, atISO: clockISO(state.clock) }
@@ -210,15 +210,15 @@ export function overridePrepaymentGate(
     api,
     actor,
     {
-      entityType: 'card',
-      entityId: cardId,
-      action: 'card.prepaymentOverride',
+      entityType: 'booking',
+      entityId: bookingId,
+      action: 'booking.prepaymentOverride',
       after: { reason: override.reason },
     },
     (s) => ({
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: { ...card, prepaymentOverride: override } },
+        bookings: { ...s.schedule.bookings, [bookingId]: { ...booking, prepaymentOverride: override } },
       },
     }),
   )

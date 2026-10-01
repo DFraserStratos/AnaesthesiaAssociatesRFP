@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { neutral, radius, semantic } from '../../theme/tokens'
-import type { BillingRoute, PatientPaymentCategory } from '../../domain/types'
+import type { BillingRoute, BookingSource, PatientPaymentCategory } from '../../domain/types'
 import { lookupNhi } from '../../domain/nzhis'
-import { createCard, useAppStore, type Actor } from '../../store'
+import { createBooking, useAppStore, type Actor } from '../../store'
 import { DemoBadge } from '../DemoBadge'
 import { Button, Segmented, TextField, FieldLabel } from '../ui'
 
@@ -23,13 +23,15 @@ export interface ExtractionFields {
   billingReference?: string
 }
 
-interface ManualCardFormProps {
+interface ManualBookingFormProps {
   listId: string
   actor: Actor
   initial?: ExtractionFields
   emptyLookupPrefill?: ExtractionFields & { nhi: string }
   attachment?: { name: string; kind: 'photo' | 'pdf' | 'other'; dataUrl?: string }
-  onSaved: (result: { cardId: string; reused: boolean }) => void
+  /** How this Booking entered the system (display-only, DM-39); the add flow passes it. */
+  source?: BookingSource
+  onSaved: (result: { bookingId: string; reused: boolean }) => void
 }
 
 type LookupState =
@@ -49,7 +51,7 @@ const CATEGORY_OPTIONS: { value: PatientPaymentCategory; label: string }[] = [
   { value: 'insuredReimbursement', label: 'Reimbursement' },
 ]
 
-export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, attachment, onSaved }: ManualCardFormProps) {
+export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, attachment, source, onSaved }: ManualBookingFormProps) {
   const rvgCodes = useAppStore((s) => s.masters.rvgCodes)
   const insurers = useAppStore((s) => s.masters.insurers)
   const billableParties = useAppStore((s) => s.masters.billableParties)
@@ -106,7 +108,7 @@ export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, att
 
   function save() {
     setError(null)
-    const outcome = createCard(useAppStore, actor, listId, {
+    const outcome = createBooking(useAppStore, actor, listId, {
       patient: {
         ...(nhi.trim() !== '' ? { nhi: nhi.trim() } : {}),
         name: name.trim(),
@@ -123,6 +125,7 @@ export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, att
       ...(billingRoute === 'billableParty' ? { patientPaymentCategory: category } : {}),
       ...(billingReference.trim() !== '' ? { billingReference: billingReference.trim() } : {}),
       ...(attachment !== undefined ? { attachment } : {}),
+      ...(source !== undefined ? { source } : {}),
     })
     if (!outcome.ok) {
       setError(outcome.message)
@@ -130,7 +133,7 @@ export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, att
     }
     // Was the patient reused? Detect via the just-written audit action.
     const lastPatientAudit = [...useAppStore.getState().audit].reverse().find((a) => a.entityType === 'patient')
-    onSaved({ cardId: outcome.value.cardId, reused: lastPatientAudit?.action === 'patient.reuse' })
+    onSaved({ bookingId: outcome.value.bookingId, reused: lastPatientAudit?.action === 'patient.reuse' })
   }
 
   const canSave = name.trim() !== '' && dob !== '' && operation.trim() !== ''
@@ -261,7 +264,7 @@ export function ManualCardForm({ listId, actor, initial, emptyLookupPrefill, att
       )}
 
       <Button variant="primary" block onClick={save} disabled={!canSave} style={{ marginTop: 4 }}>
-        Save card
+        Save booking
       </Button>
       {!canSave && (
         <div style={{ fontSize: 12, color: neutral.mist, textAlign: 'center', marginTop: -8 }}>

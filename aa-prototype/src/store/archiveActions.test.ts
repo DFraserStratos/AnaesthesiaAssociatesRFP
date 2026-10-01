@@ -79,7 +79,7 @@ describe('contact archive job', () => {
     expect(rileyContactBefore).toBeDefined()
     expect(api.getState().xero.contacts[rileyContactBefore!]!.archived).toBe(true)
 
-    expect(raisePreProcedureInvoice(api, OFFICE, marker('prepaymentCard')).ok).toBe(true)
+    expect(raisePreProcedureInvoice(api, OFFICE, marker('prepaymentBooking')).ok).toBe(true)
     expect(api.getState().xero.contacts[rileyContactBefore!]!.archived).toBe(false)
 
     advanceClockDays(api, 400)

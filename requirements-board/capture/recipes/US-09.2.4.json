@@ -48,7 +48,7 @@
       "start": "/admin/billing",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-24/cards/C0034"
+          "goto": "/admin/day/2026-07-24/bookings/BK0034"
         },
         {
           "click": "role=button[name=\"Raise pre-procedure invoice\"]"

@@ -34,7 +34,7 @@ Write one file per catalogue item, at `requirements-board/capture/recipes/<ID>.j
       "name": "procedure-picker",
       "app": "mobile",
       "caption": "Select a procedure",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "setup": [],
       "states": [
         { "state": "closed", "steps": [], "highlight": ["[data-testid=procedure-header]"] },
@@ -212,7 +212,9 @@ Hooks already added:
 | Kind | Format | Notes |
 |---|---|---|
 | List | `L-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | From `listIdForSlot`. For example `L-34821-2026-07-21-PM`. |
-| Card | `C0001`… | Seed order. `C0001`..`C0005` are Souter Tue 21 AM (C0001 Hemi Walker). `C0006` Wiremu Tane, `C0007` Susan Marsh, `C0008` David Chen, `C0009` **Margaret Ellison** (pending). Verify with one run. |
+| Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
+| History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. |
+| Attachment | `AT0001`… | Store-allocated. `AT0001` is the seeded theatre-list PDF on Souter Tue 28 AM. |
 | Invoice | `INV0001` / `AA-2026-0001` | `INV0001` is the seeded paid pre-payment. Runtime invoices start at `INV0002` once a list is authorised. |
 | Xero pair | `XRB0` | The seeded pre-payment. History pairs are `XRH01`… and runtime pairs `XR0001`…. |
 
@@ -220,8 +222,8 @@ Hooks already added:
 
 | List | ID | What it is |
 |---|---|---|
-| Souter Tue 21 AM | `L-34821-2026-07-21-AM` | St George's, Mr T. Hale. 5 complete cards, DRAFT. |
-| Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 cards, Ellison pending, DRAFT. |
+| Souter Tue 21 AM | `L-34821-2026-07-21-AM` | St George's, Mr T. Hale. 5 complete bookings, DRAFT. |
+| Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 bookings, Ellison pending, DRAFT. |
 | Morrison Mon 20 | `L-25490-2026-07-20-AM` | SUBMITTED. 6 complete and 1 cancelled. |
 | Whitaker Fri 17 | `L-36208-2026-07-17-AM` | SUBMITTED. |
 | Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Split billing, Brian Holt. |
@@ -230,7 +232,7 @@ Hooks already added:
 | Souter Fri 24 PM | `L-34821-2026-07-24-PM` | Pre-payment **paid** (Priya Nair, `INV0001`). |
 | Ropata Thu 16 | `L-39560-2026-07-16-AM` | SUBMITTED. The billing-failure target. |
 | Delaney Fri 17 | `L-27731-2026-07-17-AM` | SUBMITTED. Integration-locked target. |
-| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. |
+| Souter Tue 28 AM | `L-34821-2026-07-28-AM` | The S1 destination: MSG-STG-1001 adds Sarah Mitchell. Carries the seeded List attachment "Theatre list · St George's" (PDF). |
 | Souter Tue 4 Aug AM | `L-34821-2026-08-04-AM` | Targets for S13, S14 and S15. |
 | Souter Mon 3 Aug PM | `L-34821-2026-08-03-PM` | Source list for the S13 move. |
 
@@ -238,14 +240,17 @@ Hooks already added:
 
 Everything on :5173 sits under the harness bar, which the runner hides in every shot.
 
+Booking routes use `/bookings/:bookingId` (catch-up Phase 15). An old `…/cards/C0009` URL still
+redirects, with replace, to `…/bookings/BK0009`, but recipes should use the new form.
+
 **Web app** (`src/apps/web/`)
 
 | Route | Shows |
 |---|---|
 | `/web` | Dashboard: "Kia ora, Dr Souter", week strip, receivables aging, productivity, leave, "Offer cover". Add `?week=YYYY-MM-DD` (a Monday) to show another week. |
 | `/web/lists` | Table of Souter's lists. |
-| `/web/lists/:listId` | List detail: header, cards table, "Add a card", submit action. |
-| `/web/lists/:listId/cards/:cardId` | Card detail with capture: ASA, procedure code, times, card total, "Mark complete". |
+| `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
+| `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". |
 | `/web/availability` | Practice availability grid. Free cells read "Free · Open for booking" and can be clicked for cover. |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. |
 
@@ -255,7 +260,7 @@ Everything on :5173 sits under the harness bar, which the runner hides in every 
 |---|---|
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. |
-| `/admin/day/:date/cards/:cardId` | Admin card detail with "Office billing setup". |
+| `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
 | `/admin/invoices` | Invoice list. |
@@ -273,16 +278,16 @@ Audit.
 | Route | Shows |
 |---|---|
 | `/mobile/lists` | Forward lists. Segments Week, Month, To-Do, Done. Free rows read "Open for bookings or cover". |
-| `/mobile/lists/:listId` | List detail, with an "Add a card" and "Mark list completed" footer. The tab bar is hidden. |
-| `/mobile/lists/:listId/cards/:cardId` | Card detail. The tab bar is hidden. |
+| `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
+| `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. |
 | `/mobile/availability` | "My availability" (Free and Block per session), the everyone / free-only grid, and "Tap to ask" for cover. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
-- The slide layers are `[data-testid=slide-home|slide-list|slide-card]`. All stay mounted, so
-  scope selectors to the top layer, for example `[data-testid=slide-card] >> text="ASA status"`.
+- The slide layers are `[data-testid=slide-home|slide-list|slide-booking]`. All stay mounted, so
+  scope selectors to the top layer, for example `[data-testid=slide-booking] >> text="ASA status"`.
 
 **Simulators** (`src/apps/demo/`)
 
@@ -301,12 +306,20 @@ Audit.
 
 - Wiremu Tane: complete, lap chole 20941.
 - Susan Marsh: complete, nib insurer route.
-- David Chen: complete, self-funded. His time units were overridden manually, so the card is
+- David Chen: complete, self-funded. His time units were overridden manually, so the booking is
   read-only and shows "adjusted manually".
-- **Margaret Ellison** (`C0009`): **pending**. Left total hip replacement 47516, A1 modifier,
+- **Margaret Ellison** (`BK0009`): **pending**. Left total hip replacement 47516, A1 modifier,
   start 16:05.
   - "Finish now" stamps the end time.
   - The list can't be submitted until she is complete.
+
+**Booking source** (catch-up Phase 15): every scenario Booking shows one quiet "SOURCE · …" line on
+its detail (`[data-shot=booking-source]`): St George's, Southern Cross and Christchurch Public read
+"Hospital download", Forte Health and Christchurch Eye Surgery "Surgeon PDF". History Bookings show
+none. A Copy reads "Copy of another Booking".
+
+**List attachments:** Souter Tue 28 AM (`L-34821-2026-07-28-AM`) carries the seeded theatre-list PDF,
+shown under "List attachments" on mobile and web and read-only in the Admin List drawer.
 
 **Admin day, Tue 21**
 
@@ -334,9 +347,9 @@ Authorising Morrison raises 6 invoices.
 
 **Also seeded:**
 
-- A cancelled card on Morrison's list.
+- A cancelled booking on Morrison's list.
 - Guardian of a minor: Grace Park.
-- An insured-reimbursement card: Rutherford, Thu 16 AM.
+- An insured-reimbursement booking: Rutherford, Thu 16 AM.
 - A provisional patient with no NHI.
 - Repeat patients: Mitchell and Walker.
 - Procedures missing a billing reference.
@@ -347,23 +360,29 @@ Authorising Morrison raises 6 invoices.
 
 **Anaesthetist app** (web and mobile: a sheet on mobile, a dialog on web)
 
-- **Add card:** `text="Add a card" >> nth=0` on list detail. The sheet offers "Enter manually"
+- **Add booking:** `text="Add a booking" >> nth=0` on list detail. The sheet offers "Enter manually"
   and "Photo of paper list". The manual form has "Look up", which is disabled without an NHI,
-  "Save card" and "Done".
-- **Procedure picker:** `text="Change" >> nth=0` on a card. The search placeholder is "Search code
+  "Save booking" and "Done".
+- **Procedure picker:** `text="Change" >> nth=0` on a booking. The search placeholder is "Search code
   or name".
 - **Add billing line:** `role=button[name="Add billing line"]`.
-- **History:** `role=button[name="History"]` opens a dialog titled "Card history". On mobile it is
-  inside `[data-testid=mobile-card-header-actions]`.
-- **Cancel card:** "Cancel card", then fill `role=textbox[name="Reason"]`, then confirm.
+- **Add attachment** (catch-up Phase 15): `role=button[name="Add attachment"]` inside
+  `[data-shot=booking-attachments]` or `[data-shot=list-attachments]` opens
+  `[data-shot=add-attachment-sheet]`, badged "Simulated file picker", with two groups:
+  `role=group[name="Take a photo"]` and `role=group[name="Choose a file"]`. Clicking a sample attaches
+  it and closes the sheet. Remove buttons are named `Remove <name>` and show on hover or focus.
+- **Copy booking:** `role=button[name="Copy booking"]` opens the new Booking (a new `BK` id) at once.
+- **History:** `role=button[name="History"]` opens a dialog titled "Booking history". On mobile it is
+  inside `[data-testid=mobile-booking-header-actions]`.
+- **Cancel booking:** "Cancel booking", then fill `role=textbox[name="Reason"]`, then confirm.
 - **Edit:** "Edit" in the Patient section, or inside `[data-testid=procedure-header]`.
 - **Submit list:** "Mark list completed".
-  - If blocked, the sheet "Cards still to finish" opens.
+  - If blocked, the sheet "Bookings still to finish" opens.
   - If ready, a confirm sheet opens. Then "Submit to office" shows
     `[data-testid=list-submission-overlay]`, which auto-dismisses.
-- **Complete card:** "Finish now", then "Mark complete".
+- **Complete booking:** "Finish now", then "Mark complete".
   - `[data-testid=completion-overlay]` appears for about 1s. Shoot it with `{ "wait": 350 }`.
-  - Pressing "Mark complete" on an incomplete card marks `[data-validation-focus=true]`.
+  - Pressing "Mark complete" on an incomplete booking marks `[data-validation-focus=true]`.
 - **Cover:**
   - Mobile availability: `text="Tap to ask" >> nth=0`.
   - Web availability: `button:has-text("Open for booking") >> nth=0`.
@@ -374,10 +393,10 @@ Authorising Morrison raises 6 invoices.
 
 - **List drawer:** click a block on the day grid, for example `text="St George's" >> nth=0`. The
   drawer is `[data-testid=admin-list-drawer]`, with buttons "Edit list", "Reassign list",
-  "History", "Book (phone advice)" (free slots only), "Open" (a card) and "Move".
+  "History", "Book (phone advice)" (free slots only), "Open" (a booking) and "Move".
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then "Confirm
   reassignment". `[data-testid=list-reassignment-overlay]` appears.
-- **Admin card:** "Edit billing setup", "Price override" (placeholders `-10` and "Why the price
+- **Admin booking:** "Edit billing setup", "Price override" (placeholders `-10` and "Why the price
   differs") and "Funder allocation".
 - **Review:**
   - "Log phone note" opens a textarea, then "Log note".
@@ -397,8 +416,6 @@ the exception: use the `trigger` step)
 
 - **Demo clock:** `role=button[name=/Demo clock/]`. It offers "+15 min", "+1 hour", "Next day",
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
-- **Card calculation mode:** `role=button[name="Show Card units only"]` or
-  `role=button[name="Hide the Card calculation"]`. The default is units and fee.
 
 ## Existing hooks
 
@@ -422,18 +439,24 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 **Mobile**
 
-- `mobile-tab-bar`, `slide-home`, `slide-list`, `slide-card`
+- `mobile-tab-bar`, `slide-home`, `slide-list`, `slide-booking`
 - `mobile-lists-header`, `mobile-lists-scroll`
 - `mobile-list-header`, `mobile-list-scroll`, `mobile-list-footer`, `list-submission-overlay`
-- `mobile-card-header`, `mobile-card-header-actions`, `mobile-card-scroll`, `mobile-card-commit`
+- `mobile-booking-header`, `mobile-booking-header-actions`, `mobile-booking-scroll`, `mobile-booking-commit`
+
+**`data-shot` hooks for attachments and source** (use as `[data-shot=...]`)
+
+- `booking-attachments` (the Booking's Attachments section), `list-attachments` (mobile and web List
+  detail), `admin-list-attachments` (Admin List drawer, read-only), `add-attachment-sheet` (the
+  simulated file picker), `booking-source` (the source line)
 
 **Web**
 
-- `web-card-header`, `web-card-commit`, `payment-history-row-<invoiceNumber>`
+- `web-booking-header`, `web-booking-commit`, `payment-history-row-<invoiceNumber>`
 
-**Shared capture** (web and mobile card)
+**Shared capture** (web and mobile booking)
 
-- `procedure-header`, `card-calculation`, `time-capture-track`, `time-action-slider`,
+- `procedure-header`, `booking-calculation`, `time-capture-track`, `time-action-slider`,
   `completion-overlay`, `dock-spacer`
 
 **Other hooks**
@@ -468,7 +491,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | S2 · Office day | Reset only. | Admin work. |
 | S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38). |
 | S4 · Exceptions | Reset only. | Mobile, then the Admin screens below. |
-| S5 · Compliance tour | Reset, three audited edits on David Chen's card, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
+| S5 · Compliance tour | Reset, three audited edits on David Chen's booking, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
 
 **Demo actions by screen** (`trigger` ids)
 
@@ -476,7 +499,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 |---|---|---|
 | `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure dates out the COS ACC contract and authorises Ropata Thu 16. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]` | `run-reconciliation-poll`, `run-archive-job` | |
-| `/admin/review/L-41267-2026-07-14-AM` or that List's Card detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
+| `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
@@ -511,7 +534,7 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 
 **Data inspector** (`/demo/data`)
 
-- Seeded scenario finder, audit trail ("Choose a card"), lifecycle states.
+- Seeded scenario finder, audit trail ("Choose a booking"), lifecycle states.
 - Guard console: pick a persona and an action, then "Attempt".
 
 ## Gotchas
@@ -527,11 +550,11 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `INV0001` and `XRB0`, which are seeded.
 - **Overlays auto-dismiss** after about 1s: the completion overlay, the submission overlay and
   success overlays. Wait about 350ms, then shoot.
-- **The mobile card's header actions fold away** when `mobile-card-scroll` is scrolled.
+- **The mobile booking's header actions fold away** when `mobile-booking-scroll` is scrolled.
 - **Avoid the PWA More tab's build panel** (build ID, cold-launch ms). It changes on every run
   and breaks determinism.
 - **Stale IDs redirect** instead of showing a blank page. If a shot shows a list page when you
-  expected a card, the ID is wrong.
+  expected a booking, the ID is wrong.
 
 ## Worked examples
 

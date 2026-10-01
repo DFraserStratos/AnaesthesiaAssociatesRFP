@@ -61,7 +61,7 @@ function renderGrid() {
         A4: [holiday],
       }}
       masters={masters}
-      activeCardCounts={{}}
+      activeBookingCounts={{}}
       prepaymentFlags={new Map([['prepaid', 'outstanding']])}
       onSelectList={vi.fn()}
     />,

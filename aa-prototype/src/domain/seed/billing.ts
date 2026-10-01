@@ -2,7 +2,7 @@
  * Seed billing slice (Phase 09; pure, no store import so domain purity holds).
  *
  * The pristine seed ships ONE paid pre-payment slice: the mixed + full
- * pre-payment Card's full pre-invoice, materialised as an
+ * pre-payment Booking's full pre-invoice, materialised as an
  * `Invoice{kind:'prePayment'}` + line + a `BillingCase{status:'paid'}` so the
  * payment-cleared gate demos NOW (Phase 10's webhook flips a case to paid live;
  * this seeds one). `freshAppState()` composes this and `resetDomainState()`
@@ -13,7 +13,7 @@
  * and the returned counters are bumped past what this slice consumes so the
  * first runtime billing run continues the sequence with no collision. Billing
  * and Xero records deliberately receive no simulated runtime audit entries;
- * their linked schedule Cards receive rich history centrally in `seed/audit.ts`.
+ * their linked schedule Bookings receive rich history centrally in `seed/audit.ts`.
  */
 
 import type {
@@ -27,7 +27,7 @@ import type {
   XeroAccRec,
   XeroContact,
 } from '../types'
-import { buildPrePaymentInvoiceForCard, type InvoiceBuildContext } from '../billing/invoiceBuild'
+import { buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { aaServiceFeeFor } from '../billing/agencyFee'
 import { buildHistory } from './history'
 import type { SeedState } from './index'
@@ -72,16 +72,16 @@ const FORMATS: Record<string, { prefix: string; pad: number }> = {
   invoiceNumber: { prefix: 'AA-2026-', pad: 4 },
 }
 
-function proceduresOf(seed: SeedState, cardId: string) {
+function proceduresOf(seed: SeedState, bookingId: string) {
   return Object.values(seed.schedule.procedures)
-    .filter((p) => p.cardId === cardId)
+    .filter((p) => p.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-function contextFor(seed: SeedState, cardId: string): InvoiceBuildContext | undefined {
-  const card = seed.schedule.cards[cardId]
-  if (card === undefined) return undefined
-  const list = seed.schedule.lists[card.listId]
+function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | undefined {
+  const booking = seed.schedule.bookings[bookingId]
+  if (booking === undefined) return undefined
+  const list = seed.schedule.lists[booking.listId]
   if (list === undefined) return undefined
   const anaesthetist = seed.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) return undefined
@@ -94,7 +94,7 @@ function contextFor(seed: SeedState, cardId: string): InvoiceBuildContext | unde
     billableParties: seed.masters.billableParties,
     billingLines: Object.values(seed.schedule.billingLines),
     listDateISO: list.dateISO,
-    patientId: card.patientId,
+    patientId: booking.patientId,
   }
   if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
   if (list.hospitalId !== undefined) ctx.listHospitalId = list.hospitalId
@@ -109,9 +109,9 @@ const SEED_PREPAYMENT_KEY = 'SEED-PREPAY-BC0001'
  * (Phase 10; buildHistory) composed with the ONE PAID pre-payment case (the
  * mixed + full pre-payment exemplar), which gets its own Xero pair + receipt so
  * it reads consistently in the Xero sim and the GST report. Returns just the
- * history when the card has no patient-funded pre-payment procedure.
+ * history when the booking has no patient-funded pre-payment procedure.
  */
-export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): SeedBillingSlice {
+export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string): SeedBillingSlice {
   const history = buildHistory({
     anaesthetists: seed.masters.anaesthetists,
     hospitals: seed.masters.hospitals,
@@ -142,13 +142,13 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
     counters: { ...seed.counters, ...bumps },
   })
 
-  const card = seed.schedule.cards[prepaidCardId]
-  const ctx = contextFor(seed, prepaidCardId)
-  if (card === undefined || ctx === undefined) return finishAndReturn()
-  const built = buildPrePaymentInvoiceForCard(card, proceduresOf(seed, prepaidCardId), ctx)
+  const booking = seed.schedule.bookings[prepaidBookingId]
+  const ctx = contextFor(seed, prepaidBookingId)
+  if (booking === undefined || ctx === undefined) return finishAndReturn()
+  const built = buildPrePaymentInvoiceForBooking(booking, proceduresOf(seed, prepaidBookingId), ctx)
   if (built.kind !== 'invoices' || built.invoices.length === 0) return finishAndReturn()
 
-  const anaesthetistId = seed.schedule.lists[card.listId]?.anaesthetistId
+  const anaesthetistId = seed.schedule.lists[booking.listId]?.anaesthetistId
   const payeeContactId = anaesthetistId !== undefined ? contactIdCache[`anaesthetist:${anaesthetistId}`] : undefined
   const cpName = (cp: { kind: string; id: string }): string => {
     if (cp.kind === 'patient') return seed.masters.patients[cp.id]?.name ?? cp.id
@@ -172,7 +172,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
       id: invoiceId,
       invoiceNumber,
       caseReference: caseId,
-      cardId: prepaidCardId,
+      bookingId: prepaidBookingId,
       counterparty: draft.counterparty,
       layout: draft.layout,
       kind: 'prePayment',
@@ -233,7 +233,7 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidCardId: string): S
     }
     cases[caseId] = {
       id: caseId,
-      cardId: prepaidCardId,
+      bookingId: prepaidBookingId,
       invoiceId,
       accRecId,
       ...(payeeContactId !== undefined ? { accPayId } : {}),

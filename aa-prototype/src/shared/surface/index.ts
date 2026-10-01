@@ -8,7 +8,7 @@ export {
   type SurfaceVariant,
   type OverlayProps,
   type FooterProps,
-  type CardLayoutSlots,
-  type CardTotalLine,
-  type CardTotalProps,
+  type BookingLayoutSlots,
+  type BookingTotalLine,
+  type BookingTotalProps,
 } from './context'

@@ -18,7 +18,7 @@ const RESTING_TRANSITION = `transform ${motion.cardAdvance.in}ms ${motion.cardAd
 const LAYERS: SlideLayer[] = [
   { key: 'home', mounted: true, node: <div>Forward lists</div> },
   { key: 'list', mounted: true, node: <div>List detail</div> },
-  { key: 'card', mounted: true, node: <div>Card detail</div> },
+  { key: 'booking', mounted: true, node: <div>Booking detail</div> },
 ]
 
 beforeAll(() => {
@@ -116,14 +116,14 @@ describe('SlideStack edge-swipe-back', () => {
     const { layer } = renderStack(2, onPop, [
       ...LAYERS.slice(0, 2),
       {
-        key: 'card',
+        key: 'booking',
         mounted: true,
         node: (
           <div>
-            Card detail
+            Booking detail
             {/* `BottomSheet`, reduced to the two attributes the guard matches. */}
             <div role="dialog" aria-modal>
-              Cancel this card?
+              Cancel this booking?
             </div>
           </div>
         ),
@@ -291,7 +291,7 @@ describe('SlideStack edge-swipe-back', () => {
     // `pinch-zoom` is kept deliberately: the blanket `manipulation` this
     // overrides allowed it, and a drilled-in screen should not silently lose
     // magnification.
-    expect(getByTestId('slide-card')).toHaveStyle({ touchAction: 'pan-y pinch-zoom' })
+    expect(getByTestId('slide-booking')).toHaveStyle({ touchAction: 'pan-y pinch-zoom' })
     expect(getByTestId('slide-list').style.touchAction).toBeFalsy()
     expect(getByTestId('slide-home').style.touchAction).toBeFalsy()
   })
@@ -304,14 +304,14 @@ describe('SlideStack edge-swipe-back', () => {
   it('marks the armed layer for the subtree-wide touch-action rule', () => {
     const { getByTestId, rerender } = render(<SlideStack layers={LAYERS} depth={2} onPop={() => undefined} />)
 
-    expect(getByTestId('slide-card')).toHaveAttribute('data-aa-swipe-back', 'armed')
+    expect(getByTestId('slide-booking')).toHaveAttribute('data-aa-swipe-back', 'armed')
     expect(getByTestId('slide-list')).not.toHaveAttribute('data-aa-swipe-back')
 
     // Nothing is armed at the base of the stack, or with no `onPop`.
     rerender(<SlideStack layers={LAYERS} depth={0} onPop={() => undefined} />)
     expect(getByTestId('slide-home')).not.toHaveAttribute('data-aa-swipe-back')
     rerender(<SlideStack layers={LAYERS} depth={2} />)
-    expect(getByTestId('slide-card')).not.toHaveAttribute('data-aa-swipe-back')
+    expect(getByTestId('slide-booking')).not.toHaveAttribute('data-aa-swipe-back')
   })
 
   /**
@@ -324,7 +324,7 @@ describe('SlideStack edge-swipe-back', () => {
 
     expect(getByTestId('slide-list')).not.toHaveAttribute('inert')
     expect(getByTestId('slide-home')).toHaveAttribute('inert')
-    expect(getByTestId('slide-card')).toHaveAttribute('inert')
+    expect(getByTestId('slide-booking')).toHaveAttribute('inert')
 
     rerender(<SlideStack layers={LAYERS} depth={0} />)
     expect(getByTestId('slide-home')).not.toHaveAttribute('inert')

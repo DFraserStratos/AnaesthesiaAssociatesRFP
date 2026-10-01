@@ -11,13 +11,13 @@
  *    billing exception (Phase 09's failure demo; 3rd review #9);
  *  - who each Procedure (and each funder-overridden BillingLine) bills to —
  *    resolution is BY CONTRACT HOLDER on the contract-holder route;
- *  - how lines group into invoices: one invoice per Card per distinct
+ *  - how lines group into invoices: one invoice per Booking per distinct
  *    counterparty (§11 labelled reading — the RFP's "two separate invoices"
  *    split outcome arises when funders differ).
  */
 
 import type {
-  Card,
+  Booking,
   Contract,
   ContractHolderType,
   CounterpartyRef,
@@ -28,7 +28,7 @@ import type {
 import { feeFor, type FeeLine } from './fee'
 import { roundToCents, toCents } from './money'
 import { isEffectiveOn, selectContract } from './contracts'
-import { feeContextFor, type CardBillingContext } from './validateCardForBilling'
+import { feeContextFor, type BookingBillingContext } from './validateBookingForBilling'
 
 /**
  * ASSUMPTION (demo, discovery item): the RFP is silent on invoice GST
@@ -38,22 +38,22 @@ import { feeContextFor, type CardBillingContext } from './validateCardForBilling
  */
 export const GST_RATE = 0.15
 
-export interface InvoiceBuildContext extends CardBillingContext {
+export interface InvoiceBuildContext extends BookingBillingContext {
   /** Contract effectiveness is judged on the List (service) date. */
   listDateISO: IsoDate
   /** The List's hospital — resolves the hospital route's default when no contract is stored. */
   listHospitalId?: string
-  /** The Card's patient — the Billable Party route's default payer (7th review A1). */
+  /** The Booking's patient — the Billable Party route's default payer (7th review A1). */
   patientId: string
   /**
    * EX-GST amounts already invoiced ahead of the procedure (Phase 09
    * pre-payment), keyed by procedure id, WITH the counterparty the pre-invoice
    * was raised against. The balance run threads this in and
-   * `buildInvoicesForCard` appends one visible deduction line per prepaid
+   * `buildInvoicesForBooking` appends one visible deduction line per prepaid
    * procedure so the invoice bills only the remaining balance. A full
    * pre-payment nets that procedure's group to $0 (no balance invoice). The
    * stored counterparty is checked against the procedure's CURRENT counterparty
-   * so an office payer-change after the deposit fails the Card for review
+   * so an office payer-change after the deposit fails the Booking for review
    * rather than crediting the wrong party.
    */
   prePaidByProcedure?: Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }>
@@ -127,7 +127,7 @@ export function resolveContractForProcedure(
     return {
       kind: 'exception',
       code: 'contractMissing',
-      message: `The governing contract ${procedure.governingContractId} no longer exists. This Card needs manual review.`,
+      message: `The governing contract ${procedure.governingContractId} no longer exists. This Booking needs manual review.`,
     }
   }
 
@@ -142,7 +142,7 @@ export function resolveContractForProcedure(
     return {
       kind: 'exception',
       code: 'contractIneffective',
-      message: `No contract in effect on ${ctx.listDateISO}. ${stored.name} is held by a ${HOLDER_LABEL[stored.holderType]}, which carries no default fallback. This Card needs manual review in the billing monitor.`,
+      message: `No contract in effect on ${ctx.listDateISO}. ${stored.name} is held by a ${HOLDER_LABEL[stored.holderType]}, which carries no default fallback. This Booking needs manual review in the billing monitor.`,
     }
   }
 
@@ -173,8 +173,8 @@ export function resolveContractForProcedure(
   if (procedure.billingRoute === 'billableParty') return { kind: 'resolved' }
 
   // No route and nothing stored: completion validation normally prevents this,
-  // but the office can move an incomplete Card onto a SUBMITTED List (3rd
-  // review #7), so the run must fail the Card as data, never throw (8th review).
+  // but the office can move an incomplete Booking onto a SUBMITTED List (3rd
+  // review #7), so the run must fail the Booking as data, never throw (8th review).
   return {
     kind: 'exception',
     code: 'noBillingRoute',
@@ -235,7 +235,7 @@ export interface DraftInvoice {
   total: number
 }
 
-export type CardBuildResult =
+export type BookingBuildResult =
   | { kind: 'invoices'; invoices: DraftInvoice[] }
   | { kind: 'exception'; procedureId: ProcedureId; code: string; message: string }
 
@@ -252,22 +252,22 @@ function describeFeeLine(line: FeeLine): string {
 }
 
 /**
- * Build the invoice boundaries for one Card: rate every Procedure with its
+ * Build the invoice boundaries for one Booking: rate every Procedure with its
  * RESOLVED contract, tag every line with its funder, then group by
- * counterparty — one invoice per Card per distinct counterparty. Amounts are
+ * counterparty — one invoice per Booking per distinct counterparty. Amounts are
  * snapshots; nothing here is recomputed after the run commits.
  *
- * `procedures` must be in Card order (ordinal = index + 1, the 2nd-procedure
+ * `procedures` must be in Booking order (ordinal = index + 1, the 2nd-procedure
  * contract pricing key). A resolution exception on any Procedure fails the
- * whole Card (per-card isolation; the List still completes its run).
+ * whole Booking (per-booking isolation; the List still completes its run).
  */
-export function buildInvoicesForCard(
-  card: Card,
+export function buildInvoicesForBooking(
+  booking: Booking,
   procedures: readonly Procedure[],
   ctx: InvoiceBuildContext,
-): CardBuildResult {
-  // Cancelled Cards are retained but never billed (7th review B23).
-  if (card.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
+): BookingBuildResult {
+  // Cancelled Bookings are retained but never billed (7th review B23).
+  if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
 
@@ -311,7 +311,7 @@ export function buildInvoicesForCard(
       // The deposit credit must land on the party the deposit was invoiced to.
       // If the payer changed after the deposit was raised (an office edit),
       // netting against the new party would orphan the old party's deposit, so
-      // fail the Card for review.
+      // fail the Booking for review.
       if (
         prePaid.counterparty.kind !== procedureCounterparty.kind ||
         prePaid.counterparty.id !== procedureCounterparty.id
@@ -335,7 +335,7 @@ export function buildInvoicesForCard(
       // Conservation is RE-CHECKED here against the fee under the RESOLVED
       // contract: masters can change between completion and billing (a rate
       // edit, or the fallback substituting the default), and a stale split
-      // must fail the Card for review, never bill silently short (8th review).
+      // must fail the Booking for review, never bill silently short (8th review).
       const allocated = storedLines.reduce((sum, l) => sum + l.amount, 0)
       if (toCents(allocated) !== toCents(fee.total)) {
         return {
@@ -408,7 +408,7 @@ export function buildInvoicesForCard(
     const subtotal = roundToCents(lines.reduce((sum, l) => sum + l.amount, 0))
     // A negative invoice is never raised (a real practice issues a credit
     // note; Xero refuses negative ACCREC totals). Completion validation gates
-    // negative override fees, so this belt catches moved/edge cards and a
+    // negative override fees, so this belt catches moved/edge bookings and a
     // pre-payment (deposit or full estimate) that exceeds the final rated fee.
     if (subtotal < 0) {
       return {
@@ -435,10 +435,10 @@ export function buildInvoicesForCard(
 }
 
 /**
- * Build the PRE-PAYMENT (pre-procedure) invoice boundaries for one Card
+ * Build the PRE-PAYMENT (pre-procedure) invoice boundaries for one Booking
  * (Phase 09; B7). Covers ONLY the patient-funded procedures — those on the
  * Billable Party route with the `selfFundedPrepayment` category; a mixed
- * card's contract-holder procedures are untouched here (they bill normally
+ * booking's contract-holder procedures are untouched here (they bill normally
  * after authorisation). Two shapes:
  *
  *   - `split`: a flat AGREED deposit line (the `depositAmount` figure, never
@@ -453,12 +453,12 @@ export function buildInvoicesForCard(
  * full fee. Grouped by counterparty (the typed BillableParty else the
  * patient); always the patient layout.
  */
-export function buildPrePaymentInvoiceForCard(
-  card: Card,
+export function buildPrePaymentInvoiceForBooking(
+  booking: Booking,
   procedures: readonly Procedure[],
   ctx: InvoiceBuildContext,
-): CardBuildResult {
-  if (card.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
+): BookingBuildResult {
+  if (booking.cancellation !== undefined) return { kind: 'invoices', invoices: [] }
 
   const tagged: { counterparty: CounterpartyRef; line: DraftInvoiceLine }[] = []
   for (const [index, procedure] of procedures.entries()) {

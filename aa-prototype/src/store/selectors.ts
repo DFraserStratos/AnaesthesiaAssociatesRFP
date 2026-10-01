@@ -9,7 +9,7 @@
 import type {
   BillingCase,
   BillingPipelineStatus,
-  Card,
+  Booking,
   CounterpartyRef,
   DayNote,
   IntegrationCorrelationRef,
@@ -24,7 +24,7 @@ import type {
   ProcedureId,
   Session,
 } from '../domain/types'
-import type { CardBillingContext } from '../domain/billing/validateCardForBilling'
+import type { BookingBillingContext } from '../domain/billing/validateBookingForBilling'
 import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -68,16 +68,16 @@ export function listsForDate(state: AppState, dateISO: string): List[] {
     )
 }
 
-export function cardsForList(state: Pick<AppState, 'schedule'>, listId: string): Card[] {
-  return Object.values(state.schedule.cards)
+export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: string): Booking[] {
+  return Object.values(state.schedule.bookings)
     .filter((c) => c.listId === listId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** Procedures in Card order (creation order — the billing ordinal). */
-export function proceduresForCard(state: Pick<AppState, 'schedule'>, cardId: string): Procedure[] {
+/** Procedures in Booking order (creation order — the billing ordinal). */
+export function proceduresForBooking(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure[] {
   return Object.values(state.schedule.procedures)
-    .filter((p) => p.cardId === cardId)
+    .filter((p) => p.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -152,11 +152,11 @@ export function billedLists(state: Pick<AppState, 'schedule'>): List[] {
     .sort((a, b) => (b.billedAtISO ?? '').localeCompare(a.billedAtISO ?? ''))
 }
 
-/** A List's invoices (via its Cards), in raise order (Phase 08). */
+/** A List's invoices (via its Bookings), in raise order (Phase 08). */
 export function invoicesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): Invoice[] {
-  const cardIds = new Set(cardsForList(state, listId).map((c) => c.id))
+  const bookingIds = new Set(bookingsForList(state, listId).map((c) => c.id))
   return Object.values(state.billing.invoices)
-    .filter((i) => cardIds.has(i.cardId))
+    .filter((i) => bookingIds.has(i.bookingId))
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -176,7 +176,7 @@ export function invoiceCountsByList(state: Pick<AppState, 'schedule' | 'billing'
   const counts: Record<string, number> = {}
   for (const invoice of Object.values(state.billing.invoices)) {
     if (invoice.kind !== 'standard') continue
-    const listId = state.schedule.cards[invoice.cardId]?.listId
+    const listId = state.schedule.bookings[invoice.bookingId]?.listId
     if (listId !== undefined) counts[listId] = (counts[listId] ?? 0) + 1
   }
   return counts
@@ -186,18 +186,18 @@ export function invoiceCountsByList(state: Pick<AppState, 'schedule' | 'billing'
 // Billing cases (Phase 08 record; Phase 09 monitor + retry)
 // ---------------------------------------------------------------------------
 
-/** Every BillingCase for a Card, in id order. */
-export function casesForCard(state: Pick<AppState, 'billing'>, cardId: string): BillingCase[] {
+/** Every BillingCase for a Booking, in id order. */
+export function casesForBooking(state: Pick<AppState, 'billing'>, bookingId: string): BillingCase[] {
   return Object.values(state.billing.cases)
-    .filter((c) => c.cardId === cardId)
+    .filter((c) => c.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** Every BillingCase for the Cards on a List, in id order. */
+/** Every BillingCase for the Bookings on a List, in id order. */
 export function casesForList(state: Pick<AppState, 'schedule' | 'billing'>, listId: string): BillingCase[] {
-  const cardIds = new Set(cardsForList(state, listId).map((c) => c.id))
+  const bookingIds = new Set(bookingsForList(state, listId).map((c) => c.id))
   return Object.values(state.billing.cases)
-    .filter((c) => cardIds.has(c.cardId))
+    .filter((c) => bookingIds.has(c.bookingId))
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -254,7 +254,7 @@ export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters'
         invoiceNumber: invoice?.invoiceNumber ?? r.invoiceId,
         patientName:
           invoice !== undefined
-            ? patientNameFor(state, state.schedule.cards[invoice.cardId]?.patientId ?? '')
+            ? patientNameFor(state, state.schedule.bookings[invoice.bookingId]?.patientId ?? '')
             : 'Patient unavailable',
         counterpartyLabel: invoice !== undefined ? counterpartyName(state, invoice.counterparty) : r.contactId,
         amountDue: r.amountDue,
@@ -278,19 +278,19 @@ export function caseOutstandingAmount(state: Pick<AppState, 'billing'>, c: Billi
 
 /**
  * WI2a intake check: does this patient have an unpaid PRIOR episode (a different
- * Card whose billing case still has money outstanding)? Reads the billing mirror
+ * Booking whose billing case still has money outstanding)? Reads the billing mirror
  * + schedule only — the NHI dedupe is the contact-resolution keying on the
- * hidden id, not this balance check. Excludes cancelled cards.
+ * hidden id, not this balance check. Excludes cancelled bookings.
  */
 export function patientHasOutstandingPriorEpisode(
   state: Pick<AppState, 'billing' | 'schedule'>,
   patientId: string,
-  excludeCardId: string,
+  excludeBookingId: string,
 ): boolean {
   for (const c of Object.values(state.billing.cases)) {
-    if (c.cardId === excludeCardId) continue
-    const card = state.schedule.cards[c.cardId]
-    if (card === undefined || card.patientId !== patientId || card.cancellation !== undefined) continue
+    if (c.bookingId === excludeBookingId) continue
+    const booking = state.schedule.bookings[c.bookingId]
+    if (booking === undefined || booking.patientId !== patientId || booking.cancellation !== undefined) continue
     if (caseOutstandingAmount(state, c) > 0) return true
   }
   return false
@@ -304,50 +304,50 @@ export function patientHasOutstandingPriorEpisode(
 // ---------------------------------------------------------------------------
 
 /** True when a non-cancelled procedure requires pre-payment (derived, never stored). */
-export function cardRequiresPrepayment(state: Pick<AppState, 'schedule'>, cardId: string): boolean {
-  const card = state.schedule.cards[cardId]
-  if (card === undefined || card.cancellation !== undefined) return false
-  return proceduresForCard(state, cardId).some(
+export function bookingRequiresPrepayment(state: Pick<AppState, 'schedule'>, bookingId: string): boolean {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined || booking.cancellation !== undefined) return false
+  return proceduresForBooking(state, bookingId).some(
     (p) => p.billingRoute === 'billableParty' && p.patientPaymentCategory === 'selfFundedPrepayment',
   )
 }
 
-/** The `prePayment`-kind invoices raised for a Card, in id order. */
-export function prePaymentInvoicesForCard(state: Pick<AppState, 'billing'>, cardId: string): Invoice[] {
+/** The `prePayment`-kind invoices raised for a Booking, in id order. */
+export function prePaymentInvoicesForBooking(state: Pick<AppState, 'billing'>, bookingId: string): Invoice[] {
   return Object.values(state.billing.invoices)
-    .filter((i) => i.cardId === cardId && i.kind === 'prePayment')
+    .filter((i) => i.bookingId === bookingId && i.kind === 'prePayment')
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 /**
- * A paid pre-payment case for a Card, if any. Keyed on the MIRROR MONEY
+ * A paid pre-payment case for a Booking, if any. Keyed on the MIRROR MONEY
  * (received covers the invoice total), not the status label — a fully-paid case
  * may already read `disbursed` (D-money-state: status is a derived label, the
  * amounts are the source of truth). Phase 10's webhook flips the case live; the
  * seed ships one already cleared.
  */
-export function paidPrePaymentCaseForCard(state: Pick<AppState, 'billing'>, cardId: string): BillingCase | undefined {
-  const prePaymentInvoiceIds = new Set(prePaymentInvoicesForCard(state, cardId).map((i) => i.id))
+export function paidPrePaymentCaseForBooking(state: Pick<AppState, 'billing'>, bookingId: string): BillingCase | undefined {
+  const prePaymentInvoiceIds = new Set(prePaymentInvoicesForBooking(state, bookingId).map((i) => i.id))
   return Object.values(state.billing.cases).find((c) => {
-    if (c.cardId !== cardId || c.invoiceId === undefined || !prePaymentInvoiceIds.has(c.invoiceId)) return false
+    if (c.bookingId !== bookingId || c.invoiceId === undefined || !prePaymentInvoiceIds.has(c.invoiceId)) return false
     const total = state.billing.invoices[c.invoiceId]?.total ?? 0
     return toCents(c.receivedAmount) >= toCents(total) && toCents(total) > 0
   })
 }
 
 /**
- * The EX-GST amount already invoiced per procedure via a Card's pre-payment
+ * The EX-GST amount already invoiced per procedure via a Booking's pre-payment
  * invoices (deposit for split, full fee for full), WITH the counterparty the
  * pre-invoice was raised against. The balance run threads this into the invoice
  * builder so the post-procedure invoice bills only the remaining balance, and
- * the builder fails the Card if the payer changed since the deposit was raised.
+ * the builder fails the Booking if the payer changed since the deposit was raised.
  */
 export function prePaidByProcedure(
   state: Pick<AppState, 'billing'>,
-  cardId: string,
+  bookingId: string,
 ): Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }> {
   const out: Record<ProcedureId, { amount: number; counterparty: CounterpartyRef }> = {}
-  for (const invoice of prePaymentInvoicesForCard(state, cardId)) {
+  for (const invoice of prePaymentInvoicesForBooking(state, bookingId)) {
     for (const line of Object.values(state.billing.invoiceLines)) {
       if (line.invoiceId !== invoice.id || line.procedureId === undefined) continue
       const existing = out[line.procedureId]
@@ -363,17 +363,17 @@ export function prePaidByProcedure(
 export type PrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid' | 'overridden'
 
 /**
- * The ONE derived pre-payment status for a Card — the single source the
- * completion gate, the three flag surfaces (mobile card, admin day view,
+ * The ONE derived pre-payment status for a Booking — the single source the
+ * completion gate, the three flag surfaces (mobile booking, admin day view,
  * review) and the review flag all read. `required` = prepayment needed, no
  * invoice raised yet; `outstanding` = invoice raised, unpaid, not overridden;
  * `paid` = the pre-invoice cleared; `overridden` = the office lifted the gate.
  */
-export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing'>, cardId: string): PrepaymentStatus {
-  if (!cardRequiresPrepayment(state, cardId)) return 'none'
-  if (paidPrePaymentCaseForCard(state, cardId) !== undefined) return 'paid'
-  if (state.schedule.cards[cardId]?.prepaymentOverride !== undefined) return 'overridden'
-  if (prePaymentInvoicesForCard(state, cardId).length > 0) return 'outstanding'
+export function prepaymentStatusFor(state: Pick<AppState, 'schedule' | 'billing'>, bookingId: string): PrepaymentStatus {
+  if (!bookingRequiresPrepayment(state, bookingId)) return 'none'
+  if (paidPrePaymentCaseForBooking(state, bookingId) !== undefined) return 'paid'
+  if (state.schedule.bookings[bookingId]?.prepaymentOverride !== undefined) return 'overridden'
+  if (prePaymentInvoicesForBooking(state, bookingId).length > 0) return 'outstanding'
   return 'required'
 }
 
@@ -388,16 +388,16 @@ export interface MonitorStage {
   state: MonitorStageState
   detail: string
 }
-export interface MonitorCardRow {
-  cardId: string
+export interface MonitorBookingRow {
+  bookingId: string
   patientName: string
   status: BillingPipelineStatus | 'cancelled'
   caseId?: string
   invoiceIds: string[]
   failure?: { code: string; message: string; procedureId?: ProcedureId }
-  /** A Xero handoff fault on this card's case (Phase 10) — retry re-invokes the handoff. */
+  /** A Xero handoff fault on this booking's case (Phase 10) — retry re-invokes the handoff. */
   handoffFailure?: { code: string; message: string }
-  /** WI2a: this card's patient has an unpaid prior episode (repeat patient). */
+  /** WI2a: this booking's patient has an unpaid prior episode (repeat patient). */
   outstandingPriorBalance?: boolean
   /** Money mirror for the two-state display (paid-in / disbursed). */
   receivedAmount: number
@@ -417,12 +417,12 @@ export interface MonitorListRow {
   /** Cases whose Xero handoff faulted (Phase 10). */
   handoffFailedCount: number
   stages: MonitorStage[]
-  cardRows: MonitorCardRow[]
+  bookingRows: MonitorBookingRow[]
 }
 
 /**
  * Derive the billing-flow monitor: one row per AUTHORISED List (billed first),
- * each with its pipeline stage statuses and per-Card rows. Reuses the Phase 08
+ * each with its pipeline stage statuses and per-Booking rows. Reuses the Phase 08
  * selectors so the monitor and the Invoices screen never diverge. The Xero
  * stage is a Phase-10 stub. Pure over AppState (tested + inspector-shareable).
  */
@@ -445,21 +445,21 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     c.invoiceId !== undefined && state.billing.invoices[c.invoiceId]?.kind === 'prePayment'
 
   return lists.map((list) => {
-    const cards = cardsForList(state, list.id)
+    const bookings = bookingsForList(state, list.id)
     // The monitor tracks the billing RUN, so it counts only standard (run)
     // invoices and cases — never the pre-payment pre-invoice, which is raised
-    // separately (else a card with a paid deposit would read 'paid' and mask
+    // separately (else a booking with a paid deposit would read 'paid' and mask
     // its unpaid run invoice, and its list would overcount).
     const stdInvoices = invoicesForList(state, list.id).filter((i) => i.kind === 'standard')
     const cases = casesForList(state, list.id)
-    const caseByCard = new Map<string, BillingCase[]>()
-    for (const c of cases) caseByCard.set(c.cardId, [...(caseByCard.get(c.cardId) ?? []), c])
+    const caseByBooking = new Map<string, BillingCase[]>()
+    for (const c of cases) caseByBooking.set(c.bookingId, [...(caseByBooking.get(c.bookingId) ?? []), c])
 
-    const cardRows: MonitorCardRow[] = cards.map((card) => {
-      if (card.cancellation !== undefined) {
+    const bookingRows: MonitorBookingRow[] = bookings.map((booking) => {
+      if (booking.cancellation !== undefined) {
         return {
-          cardId: card.id,
-          patientName: patientNameFor(state, card.patientId),
+          bookingId: booking.id,
+          patientName: patientNameFor(state, booking.patientId),
           status: 'cancelled',
           invoiceIds: [],
           receivedAmount: 0,
@@ -467,15 +467,15 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
           disbursedAmount: 0,
         }
       }
-      const runCases = (caseByCard.get(card.id) ?? []).filter((c) => !isPrePaymentCase(c))
+      const runCases = (caseByBooking.get(booking.id) ?? []).filter((c) => !isPrePaymentCase(c))
       const failed = runCases.find((c) => c.status === 'failed')
       const handoffFailed = runCases.find((c) => c.handoffFailure !== undefined)
       const invoiceIds = runCases.filter((c) => c.invoiceId !== undefined).map((c) => c.invoiceId as string)
       // Prefer a billing failure, then a handoff fault, for the retry action.
       const primary = failed ?? handoffFailed ?? runCases[0]
-      const row: MonitorCardRow = {
-        cardId: card.id,
-        patientName: patientNameFor(state, card.patientId),
+      const row: MonitorBookingRow = {
+        bookingId: booking.id,
+        patientName: patientNameFor(state, booking.patientId),
         status: failed !== undefined ? 'failed' : primary?.status ?? 'pending',
         invoiceIds,
         receivedAmount: runCases.reduce((n, c) => n + c.receivedAmount, 0),
@@ -489,7 +489,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       if (paidInAtISO !== undefined) row.paidInAtISO = paidInAtISO
       const disbursedAtISO = runCases.find((c) => c.disbursedAtISO !== undefined)?.disbursedAtISO
       if (disbursedAtISO !== undefined) row.disbursedAtISO = disbursedAtISO
-      if (patientHasOutstandingPriorEpisode(state, card.patientId, card.id)) row.outstandingPriorBalance = true
+      if (patientHasOutstandingPriorEpisode(state, booking.patientId, booking.id)) row.outstandingPriorBalance = true
       return row
     })
 
@@ -499,7 +499,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
     const handoffFailedCount = listRunCases.filter((c) => c.handoffFailure !== undefined && c.accRecId === undefined).length
     const handoffEligible = listRunCases.filter((c) => c.invoiceId !== undefined && c.status !== 'failed').length
 
-    const failedCount = cardRows.filter((r) => r.status === 'failed').length
+    const failedCount = bookingRows.filter((r) => r.status === 'failed').length
     const emailedCount = stdInvoices.filter((i) => i.emailedAtISO !== undefined).length
     const billed = list.billedAtISO !== undefined
 
@@ -511,7 +511,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
         state: billed ? (failedCount > 0 ? 'partial' : 'done') : 'pending',
         detail: billed
           ? failedCount > 0
-            ? `${failedCount} card${failedCount === 1 ? '' : 's'} need attention; the rest billed.`
+            ? `${failedCount} booking${failedCount === 1 ? '' : 's'} need attention; the rest billed.`
             : 'Completed.'
           : 'Not run yet.',
       },
@@ -558,7 +558,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       failedCount,
       handoffFailedCount,
       stages,
-      cardRows,
+      bookingRows,
     }
     const hospitalName = list.hospitalId !== undefined ? state.masters.hospitals[list.hospitalId]?.name : undefined
     if (hospitalName !== undefined) monitorRow.hospitalName = hospitalName
@@ -575,7 +575,7 @@ function patientNameFor(state: Pick<AppState, 'masters'>, patientId: string): st
 // These read the Billing Engine's mirror (`billing`) + `masters` + the clock
 // ONLY — NEVER `state.xero` (convention 9; the greppable source-scan enforces
 // it for the mobile/web apps). Each ACCPAY invoice is a case→invoice join,
-// attributed to the anaesthetist via card→list. Outstanding balance is a FLAT
+// attributed to the anaesthetist via booking→list. Outstanding balance is a FLAT
 // list, one row per ACCPAY invoice, no rollup (RFP). The next-day visibility
 // rule: an invoice is visible only the day AFTER it was raised.
 // ---------------------------------------------------------------------------
@@ -610,8 +610,8 @@ export interface AccpayInvoiceRow {
 }
 
 function anaesthetistIdForCase(state: Pick<AppState, 'schedule'>, c: BillingCase): string | undefined {
-  const card = state.schedule.cards[c.cardId]
-  const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
+  const booking = state.schedule.bookings[c.bookingId]
+  const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   return list?.anaesthetistId
 }
 
@@ -619,19 +619,19 @@ function accpayRowForCase(state: MirrorState, c: BillingCase, todayISO: string):
   if (c.invoiceId === undefined || c.accRecId === undefined) return undefined
   const invoice = state.billing.invoices[c.invoiceId]
   if (invoice === undefined || invoice.raisedAtISO === undefined) return undefined
-  const card = state.schedule.cards[c.cardId]
-  if (card === undefined) return undefined
+  const booking = state.schedule.bookings[c.bookingId]
+  if (booking === undefined) return undefined
   const agingDays = epochDayOf(todayISO) - epochDayOf(invoice.raisedAtISO)
   const outstanding = Math.max(0, roundToCents(invoice.total - c.receivedAmount))
   return {
     caseId: c.id,
     invoiceId: c.invoiceId,
     invoiceNumber: invoice.invoiceNumber,
-    patientId: card.patientId,
-    patientName: patientNameFor(state, card.patientId),
+    patientId: booking.patientId,
+    patientName: patientNameFor(state, booking.patientId),
     counterparty: invoice.counterparty,
     counterpartyLabel: counterpartyName(state, invoice.counterparty),
-    accRelated: proceduresForCard(state, c.cardId).some((p) => p.accRelated),
+    accRelated: proceduresForBooking(state, c.bookingId).some((p) => p.accRelated),
     amountTotal: invoice.total,
     receivedAmount: c.receivedAmount,
     disbursedAmount: c.disbursedAmount,
@@ -776,9 +776,9 @@ export function paymentHistoryFor(
     if (anaesthetistIdForCase(state, c) !== anaesthetistId) continue
     if (toCents(c.receivedAmount) <= 0 || c.invoiceId === undefined) continue
     const invoice = state.billing.invoices[c.invoiceId]
-    const card = state.schedule.cards[c.cardId]
+    const booking = state.schedule.bookings[c.bookingId]
     const receivedAtISO = latestReceiptByCase.get(c.id) ?? c.paidInAtISO
-    if (invoice === undefined || card === undefined || receivedAtISO === undefined) continue
+    if (invoice === undefined || booking === undefined || receivedAtISO === undefined) continue
 
     const fullyReceived = toCents(c.receivedAmount) >= toCents(invoice.total)
     const anyDisbursed = toCents(c.disbursedAmount) > 0
@@ -797,7 +797,7 @@ export function paymentHistoryFor(
     rows.push({
       caseId: c.id,
       invoiceNumber: invoice.invoiceNumber,
-      patientName: patientNameFor(state, card.patientId),
+      patientName: patientNameFor(state, booking.patientId),
       payerLabel: counterpartyName(state, invoice.counterparty),
       receivedAtISO,
       grossReceived: c.receivedAmount,
@@ -833,13 +833,13 @@ export function counterpartyName(state: Pick<AppState, 'masters'>, ref: Counterp
   }
 }
 
-/** Assemble the validator context for a Card from store state. */
-export function billingContextForCard(state: AppState, card: Card): CardBillingContext | undefined {
-  const list = state.schedule.lists[card.listId]
+/** Assemble the validator context for a Booking from store state. */
+export function billingContextForBooking(state: AppState, booking: Booking): BookingBillingContext | undefined {
+  const list = state.schedule.lists[booking.listId]
   if (list === undefined) return undefined
   const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) return undefined
-  const ctx: CardBillingContext = {
+  const ctx: BookingBillingContext = {
     anaesthetist,
     rvgCodes: state.masters.rvgCodes,
     contracts: state.masters.contracts,
@@ -865,7 +865,7 @@ export interface EntityCounts {
   patients: number
   billableParties: number
   lists: number
-  cards: number
+  bookings: number
   procedures: number
   billingLines: number
   audit: number
@@ -885,7 +885,7 @@ export function entityCounts(state: AppState): EntityCounts {
     patients: Object.keys(state.masters.patients).length,
     billableParties: Object.keys(state.masters.billableParties).length,
     lists: Object.keys(state.schedule.lists).length,
-    cards: Object.keys(state.schedule.cards).length,
+    bookings: Object.keys(state.schedule.bookings).length,
     procedures: Object.keys(state.schedule.procedures).length,
     billingLines: Object.keys(state.schedule.billingLines).length,
     audit: state.audit.length,
@@ -906,15 +906,15 @@ export { clockISO }
 // ---------------------------------------------------------------------------
 
 /**
- * Locate a Card by its integration correlation ref (`{sourceFeedId,
+ * Locate a Booking by its integration correlation ref (`{sourceFeedId,
  * externalAppointmentId}`) — how S13/S14/S15 messages find the appointment they
  * modify, never by patient guesswork. Returns the first match (any state).
  */
-export function findCardByCorrelation(
+export function findBookingByCorrelation(
   state: Pick<AppState, 'schedule'>,
   ref: IntegrationCorrelationRef,
-): Card | undefined {
-  return Object.values(state.schedule.cards).find(
+): Booking | undefined {
+  return Object.values(state.schedule.bookings).find(
     (c) =>
       c.correlationRef !== undefined &&
       c.correlationRef.sourceFeedId === ref.sourceFeedId &&
@@ -922,9 +922,9 @@ export function findCardByCorrelation(
   )
 }
 
-/** Non-cancelled Cards on a List whose patient carries the given (normalised) NHI (PDF dedupe). */
-export function cardsOnListByNhi(state: Pick<AppState, 'schedule' | 'masters'>, listId: string, normalisedNhi: string): Card[] {
-  return cardsForList(state, listId).filter(
+/** Non-cancelled Bookings on a List whose patient carries the given (normalised) NHI (PDF dedupe). */
+export function bookingsOnListByNhi(state: Pick<AppState, 'schedule' | 'masters'>, listId: string, normalisedNhi: string): Booking[] {
+  return bookingsForList(state, listId).filter(
     (c) => c.cancellation === undefined && state.masters.patients[c.patientId]?.nhi === normalisedNhi,
   )
 }
@@ -947,7 +947,7 @@ export interface IntegrationMonitorRow {
   displayStatus: string
   attempts: number
   failureReason?: string
-  resultCardId?: string
+  resultBookingId?: string
   atISO: string
 }
 
@@ -986,7 +986,7 @@ export function integrationMonitor(state: Pick<AppState, 'integrations'>): Integ
       if (m.correlationRef !== undefined) row.appointmentId = m.correlationRef.externalAppointmentId
       if (m.patientRef !== undefined) row.patientRef = m.patientRef
       if (m.failureReason !== undefined) row.failureReason = m.failureReason
-      if (m.resultCardId !== undefined) row.resultCardId = m.resultCardId
+      if (m.resultBookingId !== undefined) row.resultBookingId = m.resultBookingId
       return row
     })
     .sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id))

@@ -1,7 +1,7 @@
 {
   "id": "US-06.3.2",
   "status": "partial",
-  "absentReason": "Status is shown per card (required, outstanding, overridden, received) and as a flag on the admin day grid. There is no part paid status and no list of all upcoming prepaid bookings.",
+  "absentReason": "Status is shown per booking (required, outstanding, overridden, received) and as a flag on the admin day grid. There is no part paid status and no list of all upcoming prepaid bookings.",
   "shots": [
     {
       "name": "day-grid-flag",
@@ -27,7 +27,7 @@
     {
       "name": "card-status",
       "app": "admin",
-      "caption": "Pre-payment status on the card",
+      "caption": "Pre-payment status on the booking",
       "start": "/admin/day/2026-07-24",
       "states": [
         {
@@ -41,7 +41,7 @@
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
             },
             {
-              "wait": "[data-shot=card-prepayment]"
+              "wait": "[data-shot=booking-prepayment]"
             },
             {
               "click": "role=button[name=\"Raise pre-procedure invoice\"]"
@@ -51,7 +51,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=card-prepayment]"
+            "[data-shot=booking-prepayment]"
           ]
         },
         {
@@ -59,14 +59,14 @@
           "caption": "Pre-payment received, warning cleared",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-24/cards/C0038"
+              "goto": "/admin/day/2026-07-24/bookings/BK0038"
             },
             {
-              "wait": "[data-shot=card-prepayment]"
+              "wait": "[data-shot=booking-prepayment]"
             }
           ],
           "highlight": [
-            "[data-shot=card-prepayment]"
+            "[data-shot=booking-prepayment]"
           ]
         }
       ]

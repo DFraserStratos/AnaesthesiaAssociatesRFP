@@ -6,7 +6,7 @@ import { useSurface } from '../surface'
 
 interface PrepaymentOverrideSheetProps {
   open: boolean
-  cardId: string
+  bookingId: string
   actor: Actor
   onClose: () => void
   onOverridden: () => void
@@ -16,9 +16,9 @@ interface PrepaymentOverrideSheetProps {
  * Office override of the pre-payment completion gate (Phase 09; B7). A browser
  * prototype cannot verify a real-world payment, so the office records its
  * "proceed anyway" judgement with a mandatory reason. The override is audited
- * and shown as a flagged state wherever the Card appears; it is NOT a silent pass.
+ * and shown as a flagged state wherever the Booking appears; it is NOT a silent pass.
  */
-export function PrepaymentOverrideSheet({ open, cardId, actor, onClose, onOverridden }: PrepaymentOverrideSheetProps) {
+export function PrepaymentOverrideSheet({ open, bookingId, actor, onClose, onOverridden }: PrepaymentOverrideSheetProps) {
   const { Overlay } = useSurface()
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +32,7 @@ export function PrepaymentOverrideSheet({ open, cardId, actor, onClose, onOverri
 
   function submit() {
     setError(null)
-    const outcome = overridePrepaymentGate(useAppStore, actor, cardId, reason)
+    const outcome = overridePrepaymentGate(useAppStore, actor, bookingId, reason)
     if (!outcome.ok) {
       setError(outcome.message)
       return
@@ -47,7 +47,7 @@ export function PrepaymentOverrideSheet({ open, cardId, actor, onClose, onOverri
         <div style={{ fontSize: 18, fontWeight: 700 }}>Override the pre-payment gate</div>
         <div style={{ fontSize: 13, color: neutral.slate }}>
           Pre-payment must be collected before the procedure. Only override when the office has confirmed payment
-          outside the system. The override is audited and shown as a flagged state on the card everywhere it appears.
+          outside the system. The override is audited and shown as a flagged state on the booking everywhere it appears.
         </div>
         <TextArea label="Reason" value={reason} onChange={setReason} placeholder="e.g. Patient paid by EFTPOS in clinic, receipt on file." />
         {error !== null && (

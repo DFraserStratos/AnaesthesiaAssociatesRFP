@@ -7,12 +7,12 @@
       "name": "contract-rate",
       "app": "admin",
       "caption": "Booking priced at the contract's agreed $24 per unit instead of Dr Rutherford's $32",
-      "start": "/admin/day/2026-07-09/cards/C0031",
+      "start": "/admin/day/2026-07-09/bookings/BK0031",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-testid=booking-calculation]"
           ]
         }
       ]

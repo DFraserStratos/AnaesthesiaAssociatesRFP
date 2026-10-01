@@ -4,40 +4,41 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
-import { HistorySheet } from '../../../shared/card'
+import { HistorySheet } from '../../../shared/booking'
 import { sessionTimeRange } from '../../../shared/format'
+import { AttachmentStrip } from '../../../shared/attachments'
 import { attentionReasons, isBooked, surnameFirst } from '../util'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
-import { MoveCardFlow } from '../flows/MoveCardFlow'
+import { MoveBookingFlow } from '../flows/MoveBookingFlow'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 
 interface ListDrawerProps {
   listId: string
   actor: Actor
   onClose: () => void
-  onOpenCard: (cardId: string) => void
+  onOpenBooking: (bookingId: string) => void
 }
 
 type Sheet = 'none' | 'edit' | 'reassign' | 'phone' | 'history' | { move: string }
 
-export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerProps) {
+export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawerProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const masters = useAppStore((s) => s.masters)
   const [sheet, setSheet] = useState<Sheet>('none')
 
   if (list === undefined) return null
-  const cards = Object.values(cardsRecord)
+  const bookings = Object.values(bookingsRecord)
     .filter((c) => c.listId === listId)
     .sort((a, b) => a.id.localeCompare(b.id))
-  const activeCards = cards.filter((c) => c.cancellation === undefined)
+  const activeBookings = bookings.filter((c) => c.cancellation === undefined)
   const anae = masters.anaesthetists[list.anaesthetistId]
   const hospital = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : 'Unassigned'
   const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : 'Not assigned'
   const reasons = attentionReasons(list)
-  const isFreeEmpty = list.statusKey === 'free' && activeCards.length === 0
+  const isFreeEmpty = list.statusKey === 'free' && activeBookings.length === 0
 
   return (
     <>
@@ -71,31 +72,40 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
             {list.notes !== undefined && list.notes.trim() !== '' && <Row label="Note">{list.notes}</Row>}
           </Section>
 
-          <Section label={`Cards (${activeCards.length})`}>
-            {cards.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No cards on this list yet.</div>}
-            {cards.map((card) => {
-              const patient = masters.patients[card.patientId]
-              const cancelled = card.cancellation !== undefined
+          <Section label={`Bookings (${activeBookings.length})`}>
+            {bookings.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No bookings on this List yet.</div>}
+            {bookings.map((booking) => {
+              const patient = masters.patients[booking.patientId]
+              const cancelled = booking.cancellation !== undefined
               return (
-                <div key={card.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, opacity: cancelled ? 0.5 : 1 }}>
+                <div key={booking.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, opacity: cancelled ? 0.5 : 1 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: neutral.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{patient?.name ?? 'Unknown'}</div>
-                    <div style={{ fontSize: 11, color: neutral.slate }}>{cancelled ? 'Cancelled' : card.completed ? 'Completed' : 'In progress'}</div>
+                    <div style={{ fontSize: 11, color: neutral.slate }}>{cancelled ? 'Cancelled' : booking.completed ? 'Completed' : 'In progress'}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
-                    <DrawerLink onClick={() => onOpenCard(card.id)}>Open</DrawerLink>
-                    {!cancelled && list.state !== 'AUTHORISED' && <DrawerLink onClick={() => setSheet({ move: card.id })}>Move</DrawerLink>}
+                    <DrawerLink onClick={() => onOpenBooking(booking.id)}>Open</DrawerLink>
+                    {!cancelled && list.state !== 'AUTHORISED' && <DrawerLink onClick={() => setSheet({ move: booking.id })}>Move</DrawerLink>}
                   </div>
                 </div>
               )
             })}
           </Section>
+
+          {/* The List's own attachments (US-03.1.3), read-only by design in the
+              drawer: the phase adds no Admin attach UI, although the store's
+              rights would let the office attach on DRAFT and SUBMITTED. */}
+          <div data-shot="admin-list-attachments">
+            <Section label={`Attachments (${(list.attachments ?? []).length})`}>
+              <AttachmentStrip attachments={list.attachments ?? []} canRemove={false} emptyText="No attachments on this List." />
+            </Section>
+          </div>
         </div>
 
         {/* Actions */}
         <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
           <ActionBtn onClick={() => setSheet('edit')}>Edit list</ActionBtn>
-          {(isBooked(list.statusKey) || activeCards.length > 0) && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
+          {(isBooked(list.statusKey) || activeBookings.length > 0) && <ActionBtn onClick={() => setSheet('reassign')}>Reassign list</ActionBtn>}
           <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
           {isFreeEmpty && <ActionBtn primary onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
         </div>
@@ -107,7 +117,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenCard }: ListDrawerPro
       <ReassignListFlow open={sheet === 'reassign'} list={list} actor={actor} onClose={() => setSheet('none')} onReassigned={() => { setSheet('none'); onClose() }} />
       <PhoneAdviceBooking open={sheet === 'phone'} list={list} actor={actor} onClose={() => setSheet('none')} onBooked={() => setSheet('none')} />
       {typeof sheet === 'object' && (
-        <MoveCardFlow open cardId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />
+        <MoveBookingFlow open bookingId={sheet.move} actor={actor} onClose={() => setSheet('none')} onMoved={() => setSheet('none')} />
       )}
     </>
   )

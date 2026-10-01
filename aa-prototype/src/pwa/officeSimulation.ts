@@ -19,7 +19,7 @@
  * authorises a List off the back of the anaesthetist's own submit, and this must
  * never be presented as proposed behaviour. A real submission goes to the
  * OFFICE REVIEW QUEUE, where a person checks it (missing billing references,
- * pre-payment gates, cancelled cards, phone notes) and authorises it
+ * pre-payment gates, cancelled bookings, phone notes) and authorises it
  * deliberately — that separation is the whole point of the SUBMITTED state, and
  * the Admin Review screen is where the prototype demonstrates it. What this job
  * simulates is only the PASSAGE OF TIME and the presence of that person. It is
@@ -40,7 +40,7 @@
  * THE CHAIN IT COMPLETES. A few seconds after a List transitions DRAFT ->
  * SUBMITTED it authorises that List as the office, through the ordinary
  * `authoriseList` guard with an office-shaped Actor. That commits the
- * SUBMITTED -> AUTHORISED transition, locks the Cards, and emits
+ * SUBMITTED -> AUTHORISED transition, locks the Bookings, and emits
  * `listAuthorised`; `wireBillingRun` (wired by the PWA entry exactly as
  * `main.tsx` wires it) consumes the event, runs the billing run, raises the
  * Invoices and their BillingCases, stamps `billedAtISO`, and hands the cases off

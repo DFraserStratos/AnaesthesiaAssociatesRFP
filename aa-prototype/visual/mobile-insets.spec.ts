@@ -21,7 +21,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
  *      for a `calc()` gets an arithmetic proof rather than an eyeball.
  *   2. It is the guarantee that the desktop prototype stayed PIXEL-IDENTICAL
  *      through the PWA work. The vendor workshops run on the framed build; a
- *      silent 6px drift in the card dock is the kind of thing nobody notices
+ *      silent 6px drift in the booking dock is the kind of thing nobody notices
  *      until it is on a projector.
  *
  * It also locks the contract's own foundation — that `.aa-inset-simulated` is
@@ -69,8 +69,8 @@ async function openList(page: Page): Promise<void> {
   await page.waitForTimeout(400)
 }
 
-/** ... and on into Margaret Ellison's card, which carries the completion dock. */
-async function openCard(page: Page): Promise<void> {
+/** ... and on into Margaret Ellison's booking, which carries the completion dock. */
+async function openBooking(page: Page): Promise<void> {
   await openList(page)
   await page.getByText('Margaret Ellison', { exact: false }).first().click()
   await page.waitForTimeout(500)
@@ -123,18 +123,18 @@ test('List detail: header 60, scroller 130, submit footer 32', async ({ page }) 
   expect(await computed(page.getByTestId('mobile-list-footer'), 'padding-bottom')).toBe('32px')
 })
 
-test('Card detail: header 60, completion dock 32', async ({ page }) => {
-  await openCard(page)
+test('Booking detail: header 60, completion dock 32', async ({ page }) => {
+  await openBooking(page)
 
   // calc(54 + 6)
-  expect(await computed(page.getByTestId('mobile-card-header'), 'padding-top')).toBe('60px')
+  expect(await computed(page.getByTestId('mobile-booking-header'), 'padding-top')).toBe('60px')
   // max(calc(34 - 2), 14)
-  expect(await computed(page.getByTestId('mobile-card-commit'), 'padding-bottom')).toBe('32px')
+  expect(await computed(page.getByTestId('mobile-booking-commit'), 'padding-bottom')).toBe('32px')
 })
 
 test('BottomSheet panel: 36', async ({ page }) => {
   await openList(page)
-  await page.getByText('Add a card', { exact: false }).first().click()
+  await page.getByText('Add a booking', { exact: false }).first().click()
 
   // The panel, not the scrim: `[role="dialog"]` is the sheet itself, and it is
   // inside the phone (BottomSheet is absolute to MobileApp's root).
@@ -183,25 +183,25 @@ test('Availability, Balances and More: 64 top, 116 bottom', async ({ page }) => 
   expect(await clearance(more)).toBe('116px')
 })
 
-test('read-only Card scroller: 40 when the completion dock is absent', async ({ page }) => {
-  await openCard(page)
+test('read-only Booking scroller: 40 when the completion dock is absent', async ({ page }) => {
+  await openBooking(page)
 
   // With a dock the scroller's clearance is the MEASURED dock height plus
   // a little, plus `--aa-keyboard-inset` so the reserved space grows with the software
   // keyboard. Neither term is a safe-area inset, and the keyboard one is unset
-  // outside the PWA host, so THIS spec's inset expression only shows on a card
-  // with no dock. Make one: a cancelled card is read-only, drops its dock
-  // (`showBar` false AND `summary` null) and stays on screen. Every card
+  // outside the PWA host, so THIS spec's inset expression only shows on a booking
+  // with no dock. Make one: a cancelled booking is read-only, drops its dock
+  // (`showBar` false AND `summary` null) and stays on screen. Every booking
   // the seed puts in front of the anaesthetist is either capturable or
   // completed, so both keep their dock; cancelling in-test is the reliable
   // route to the dockless branch.
-  await page.getByRole('button', { name: 'Cancel card' }).click()
+  await page.getByRole('button', { name: 'Cancel booking' }).click()
   const sheet = page.locator('[data-aa-mobile-product] [role="dialog"]')
-  await sheet.getByLabel('Reason').fill('Inset lock: reach the dockless card layout')
-  await sheet.getByRole('button', { name: 'Cancel card', exact: true }).click()
+  await sheet.getByLabel('Reason').fill('Inset lock: reach the dockless booking layout')
+  await sheet.getByRole('button', { name: 'Cancel booking', exact: true }).click()
   await expect(sheet).toHaveCount(0)
 
-  await expect(page.getByTestId('mobile-card-commit')).toHaveCount(0)
+  await expect(page.getByTestId('mobile-booking-commit')).toHaveCount(0)
   // max(calc(34 - 6), 12), plus this column's 12px gap = the 40 it replaced.
-  expect(await clearance(page.getByTestId('mobile-card-scroll'))).toBe('28px')
+  expect(await clearance(page.getByTestId('mobile-booking-scroll'))).toBe('28px')
 })

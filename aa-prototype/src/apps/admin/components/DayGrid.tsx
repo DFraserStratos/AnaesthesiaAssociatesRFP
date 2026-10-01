@@ -17,10 +17,10 @@ interface DayGridProps {
   /** AM/PM lists for the selected date, keyed by anaesthetist id. */
   listsByAnaesthetist: Record<string, List[]>
   masters: AppState['masters']
-  /** Active (non-cancelled) card count per list — a Free list that gains cards
+  /** Active (non-cancelled) booking count per list — a Free list that gains bookings
    *  via the phone-advice path renders as a booked block. */
-  activeCardCounts: Record<string, number>
-  /** Lists holding a card whose pre-payment is flagged (Phase 09): outstanding
+  activeBookingCounts: Record<string, number>
+  /** Lists holding a booking whose pre-payment is flagged (Phase 09): outstanding
    *  (required / invoiced-unpaid) or an office-overridden gate. */
   prepaymentFlags: Map<string, 'outstanding' | 'overridden'>
   onSelectList: (listId: string) => void
@@ -69,7 +69,7 @@ function hasNoteSignal(list: List, displayKey: StatusKey): boolean {
   return hasText && isBooked(displayKey) && list.surgeonId !== undefined
 }
 
-export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCardCounts, prepaymentFlags, onSelectList }: DayGridProps) {
+export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBookingCounts, prepaymentFlags, onSelectList }: DayGridProps) {
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<StatusKey>>(() => new Set())
   const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
 
@@ -79,8 +79,8 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
         anaesthetist,
         segments: segmentsFor(listsByAnaesthetist[anaesthetist.registrationNumber] ?? []).map(
           (segment): DisplaySegment => {
-            const hasCards = (activeCardCounts[segment.list.id] ?? 0) > 0
-            const displayKey = displayStatusKeyForList(segment.list, hasCards)
+            const hasBookings = (activeBookingCounts[segment.list.id] ?? 0) > 0
+            const displayKey = displayStatusKeyForList(segment.list, hasBookings)
             return {
               ...segment,
               displayKey,
@@ -91,7 +91,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeCar
           },
         ),
       })),
-    [activeCardCounts, anaesthetists, listsByAnaesthetist, prepaymentFlags],
+    [activeBookingCounts, anaesthetists, listsByAnaesthetist, prepaymentFlags],
   )
 
   const filteredRows = useMemo(
@@ -277,7 +277,7 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
 
 function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: AppState['masters']; onClick: () => void }) {
   const { list } = seg
-  // A Free list booked via the phone-advice path (cards added or a hospital
+  // A Free list booked via the phone-advice path (bookings added or a hospital
   // assigned) renders as a booked block, even though its statusKey stays free
   // (status is reassign/reconcile-owned, not office-editable).
   const { displayKey, needsAttention, hasNote: hasNoteSignal, prepaymentFlag } = seg

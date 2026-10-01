@@ -1,10 +1,10 @@
 /**
- * Minimum-data validation for billing a Card. Returns STRUCTURED field-level
+ * Minimum-data validation for billing a Booking. Returns STRUCTURED field-level
  * failures — the mobile UI renders the messages verbatim (so they are written
- * as user-facing copy, no dashes). An empty array means the Card is billable.
+ * as user-facing copy, no dashes). An empty array means the Booking is billable.
  *
  * Completion is validation-gated; submission is completion-gated (1st review
- * #1) — this function is the validation half. Cancelled Cards are excluded
+ * #1) — this function is the validation half. Cancelled Bookings are excluded
  * from validation entirely (7th review B23).
  */
 
@@ -12,7 +12,7 @@ import type {
   Anaesthetist,
   BillableParty,
   BillingLine,
-  Card,
+  Booking,
   Contract,
   ContractPrice,
   Insurer,
@@ -23,7 +23,7 @@ import { feeFor } from './fee'
 import { toCents } from './money'
 
 export interface BillingValidationFailure {
-  /** Absent for Card-level failures. */
+  /** Absent for Booking-level failures. */
   procedureId?: string
   /** The offending field, for UI anchoring. */
   field: string
@@ -53,7 +53,7 @@ export function billingReferenceMissing(procedure: Procedure): boolean {
   )
 }
 
-export interface CardBillingContext {
+export interface BookingBillingContext {
   anaesthetist: Anaesthetist
   /** RVG master, keyed by code. */
   rvgCodes: Readonly<Record<string, RvgCode>>
@@ -69,7 +69,7 @@ export interface CardBillingContext {
 }
 
 /**
- * Assemble the `feeFor` context for one procedure from a card billing context
+ * Assemble the `feeFor` context for one procedure from a booking billing context
  * and its 1-based ordinal. Single-sourced so the completion validator's
  * conservation check and the office's per-line allocation guard (Phase 06's
  * `setBillingLineAllocation`) compute the procedure fee identically.
@@ -77,7 +77,7 @@ export interface CardBillingContext {
 export function feeContextFor(
   procedure: Procedure,
   procedureOrdinal: number,
-  ctx: CardBillingContext,
+  ctx: BookingBillingContext,
 ): Parameters<typeof feeFor>[1] {
   const storedLines = ctx.billingLines.filter((l) => l.procedureId === procedure.id)
   const nonRvgLines = storedLines.filter((l) => l.chargeBasis !== 'rvg')
@@ -97,17 +97,17 @@ export function feeContextFor(
 }
 
 /**
- * Validate a Card's procedures for billing. `procedures` must be in Card
+ * Validate a Booking's procedures for billing. `procedures` must be in Booking
  * order — a procedure's ordinal (2nd-procedure contract pricing) is its
  * 1-based position in this array.
  */
-export function validateCardForBilling(
-  card: Card,
+export function validateBookingForBilling(
+  booking: Booking,
   procedures: readonly Procedure[],
-  ctx: CardBillingContext,
+  ctx: BookingBillingContext,
 ): BillingValidationFailure[] {
-  // Cancelled Cards are retained but excluded from validation and billing.
-  if (card.cancellation !== undefined) return []
+  // Cancelled Bookings are retained but excluded from validation and billing.
+  if (booking.cancellation !== undefined) return []
 
   const failures: BillingValidationFailure[] = []
   const fail = (procedureId: string, field: string, message: string) => {

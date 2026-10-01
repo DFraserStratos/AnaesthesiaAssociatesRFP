@@ -1,16 +1,16 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { neutral, radius } from '../../theme/tokens'
-import { CardTotalPanel } from '../capture'
+import { BookingTotalPanel } from '../capture'
 import { DockSpacer } from '../ui/DockSpacer'
 import { BottomSheet } from './BottomSheet'
 import { Dialog } from './Dialog'
-import { SurfaceCtx, type CardLayoutSlots, type Surface, type SurfaceVariant } from './context'
+import { SurfaceCtx, type BookingLayoutSlots, type Surface, type SurfaceVariant } from './context'
 
 /**
  * `SurfaceProvider` supplies the platform surface (convention 16). Mobile's
  * `Overlay` is the existing `BottomSheet` verbatim; web's is the centred
- * `Dialog`. `CardLayout` arranges the card-detail slots per platform, `CardTotal`
- * is the money object (web only: the phone only ever shows anaesthetist Cards,
+ * `Dialog`. `BookingLayout` arranges the booking-detail slots per platform, `BookingTotal`
+ * is the money object (web only: the phone only ever shows anaesthetist Bookings,
  * which carry no calculation), and `Pair` is the one density
  * primitive a shared capture block needs. `variant` is exposed for the few
  * remaining density tweaks (touch 44/48px targets vs desktop).
@@ -24,7 +24,7 @@ const EXPAND_AT = 6
 const WEB_COMMIT_HALO = 12
 
 /**
- * Mobile card layout — the phone-frame `flex:1; overflow:auto` scroll region,
+ * Mobile booking layout — the phone-frame `flex:1; overflow:auto` scroll region,
  * every slot in one column in capture order, between a masthead that folds as
  * you work and the pinned completion dock.
  *
@@ -39,7 +39,7 @@ const WEB_COMMIT_HALO = 12
  *
  * The bar swaps for the shorter success state, so bottom clearance is MEASURED.
  */
-function MobileCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
+function MobileBookingLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: BookingLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
   const dockRef = useRef<HTMLDivElement | null>(null)
   const [dockHeight, setDockHeight] = useState(0)
@@ -54,7 +54,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
     // `offsetHeight`, NOT `getBoundingClientRect().height`: the rect is the
     // POST-transform box, and PhoneFrame scales the whole device. At 0.7 zoom
     // the rect reads ~30% short, so the scroll pad below leaves the tail of the
-    // card hidden behind the dock. `SlidingSegmentedControl` documents the same
+    // booking hidden behind the dock. `SlidingSegmentedControl` documents the same
     // trap for the same reason.
     const measure = () => setDockHeight(el.offsetHeight)
     measure()
@@ -75,7 +75,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
    *
    * Written on `documentElement`, not on the dock or the scroller, because the
    * property has to INHERIT to the reader and the pill is a sibling of the
-   * whole product tree rather than a descendant of the card layer. Cleared
+   * whole product tree rather than a descendant of the booking layer. Cleared
    * whenever there is no dock and on unmount, because a value left behind
    * would keep the pill floating high on Lists, Availability and More.
    *
@@ -107,7 +107,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
       <div
         ref={contentRef}
         onScroll={onScroll}
-        data-testid="mobile-card-scroll"
+        data-testid="mobile-booking-scroll"
         style={{
           flex: 1,
           overflow: 'auto',
@@ -116,7 +116,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
           paddingRight: 20,
           // Zero, because the dock clearance is the `DockSpacer` at the tail of
           // this column instead. Trailing padding contributes no scrollable
-          // extent, so on a card whose content stops just short of filling the
+          // extent, so on a booking whose content stops just short of filling the
           // scroller the tail would sit under the dock with no way to scroll it
           // out; see `DockSpacer` for the measurement that found this.
           paddingBottom: 0,
@@ -133,7 +133,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
         {/* With a dock this auto-tracks the MEASURED dock height (which itself
             tracks the inset) plus whatever the keyboard is covering: the dock
             rides up by `--aa-keyboard-inset` (see below), so the clearance has
-            to move with it or the card's tail (the last BTM block, "Add another
+            to move with it or the booking's tail (the last BTM block, "Add another
             procedure", the quiet actions) ends up behind the dock or the keys.
             Only the device host sets that var, so in the frame it resolves to
             0 and the reserved space is unchanged. Without a dock, clear the
@@ -151,7 +151,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
       {commit !== null && (
         <div
           ref={dockRef}
-          data-testid="mobile-card-commit"
+          data-testid="mobile-booking-commit"
           style={{
             position: 'absolute',
             left: 0,
@@ -182,16 +182,16 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
 }
 
 /**
- * Web card layout — the desktop record page, on the same 12-column grid as the
+ * Web booking layout — the desktop record page, on the same 12-column grid as the
  * dashboard (`repeat(12, 1fr)`, 16px gutters, panels on the grey canvas rather
  * than nested inside one big white panel).
  *
- *   span 12  card-wide banners when present (a pre-payment gate governs everything)
+ *   span 12  booking-wide banners when present (a pre-payment gate governs everything)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
- *            pins the Card calculation (office Cards) with a separate,
+ *            pins the Booking calculation (office Bookings) with a separate,
  *            matching-width complete/amend bar below it, or the bar alone on an
- *            anaesthetist Card; patient
+ *            anaesthetist Booking; patient
  *            / time / attachments / notes and quiet actions follow.
  *
  * The commit block is `sticky`, so the calculation or completion
@@ -207,7 +207,7 @@ function MobileCardLayout({ contentRef, header, history, banners, context, captu
  * set `align-items: start`: the rail must stretch to the row height or the sticky
  * block has nowhere to travel.
  */
-function WebCardLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: CardLayoutSlots) {
+function WebBookingLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: BookingLayoutSlots) {
   const commit =
     summary !== null ? (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -251,7 +251,7 @@ function WebCardLayout({ contentRef, header, history, banners, context, capture,
         >
           {commit !== null && (
             <div
-              data-testid="web-card-commit"
+              data-testid="web-booking-commit"
               style={{
                 position: 'sticky',
                 top: 0,
@@ -297,16 +297,16 @@ function WebPair({ children, align = 'stretch' }: { children: ReactNode; align?:
 const MOBILE_SURFACE: Surface = {
   variant: 'mobile',
   Overlay: BottomSheet,
-  CardLayout: MobileCardLayout,
-  CardTotal: () => null,
+  BookingLayout: MobileBookingLayout,
+  BookingTotal: () => null,
   Pair: MobilePair,
 }
 
 const WEB_SURFACE: Surface = {
   variant: 'web',
   Overlay: Dialog,
-  CardLayout: WebCardLayout,
-  CardTotal: CardTotalPanel,
+  BookingLayout: WebBookingLayout,
+  BookingTotal: BookingTotalPanel,
   Pair: WebPair,
 }
 

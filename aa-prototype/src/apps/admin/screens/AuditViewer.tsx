@@ -23,17 +23,17 @@ const CAP = 500
  * `state.audit`, newest first. Filter by entity type, source (anaesthetist /
  * office / integration / system / demo) and a date range. Each row shows the
  * acting Role · Source on every entry — the RBAC "who did what, as which role,
- * from which source" surface (A7). Reconstructs a Card edited + reassigned +
+ * from which source" surface (A7). Reconstructs a Booking edited + reassigned +
  * authorised as a single mixed-source trail.
  *
  * Reads through the shared audit-narrative layer: the human action label leads,
  * with the machine code beneath it (this is the compliance surface, so the code
  * stays greppable), and the change cell is a COMPACT one-liner — the leading
  * field's movement plus a count of the rest. The full field ledger belongs on the
- * Card history sheet, where someone is reading a single record; a 500-row feed
+ * Booking history sheet, where someone is reading a single record; a 500-row feed
  * has to stay scannable.
  *
- * Unlike the Card sheet, this surface never collapses `Role · source` and never
+ * Unlike the Booking sheet, this surface never collapses `Role · source` and never
  * coalesces consecutive edits: the compliance view stays explicit and one stored
  * entry stays one row.
  */
@@ -56,7 +56,7 @@ export function AuditViewer() {
       return true
     })
     // Sorted on `atISO` (id as the tiebreak), not insertion order — the same
-    // shared sort the Card history sheet uses, so the two agree (finding 01.3).
+    // shared sort the Booking history sheet uses, so the two agree (finding 01.3).
     return sortAuditNewestFirst(rows)
   }, [audit, entityType, source, fromISO, toISO])
 

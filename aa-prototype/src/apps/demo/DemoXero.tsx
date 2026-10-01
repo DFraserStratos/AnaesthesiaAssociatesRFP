@@ -351,7 +351,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           </span>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             <InlineId label="Case reference" value={pair.engine.caseReference ?? pair.engine.caseId ?? 'Unavailable'} />
-            <InlineId label="Card ID" value={pair.engine.cardId ?? 'Unavailable'} />
+            <InlineId label="Booking ID" value={pair.engine.bookingId ?? 'Unavailable'} />
             <InlineId label="Billing invoice ID" value={pair.engine.billingInvoiceId} />
           </div>
           <div style={{ fontSize: 13, color: neutral.ink }}>

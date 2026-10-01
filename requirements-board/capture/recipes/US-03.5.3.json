@@ -7,7 +7,7 @@
       "name": "adjustment-reason",
       "app": "web",
       "caption": "Reason recorded with an adjustment",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "required",
@@ -63,13 +63,13 @@
       "name": "adjustment-reason",
       "app": "mobile",
       "caption": "Reason recorded with an adjustment",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "required",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 1900
             },
             {
@@ -98,7 +98,7 @@
           "state": "saved",
           "steps": [
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 1900
             },
             {

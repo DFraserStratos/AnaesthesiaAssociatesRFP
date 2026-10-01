@@ -6,7 +6,7 @@
     {
       "name": "raise-prepayment-invoice",
       "app": "admin",
-      "caption": "Office raises the pre-procedure invoice from the card",
+      "caption": "Office raises the pre-procedure invoice from the booking",
       "start": "/admin/day/2026-07-24",
       "states": [
         {
@@ -20,11 +20,11 @@
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
             },
             {
-              "wait": "[data-shot=card-prepayment]"
+              "wait": "[data-shot=booking-prepayment]"
             }
           ],
           "highlight": [
-            "[data-shot=card-prepayment]"
+            "[data-shot=booking-prepayment]"
           ]
         },
         {
@@ -45,7 +45,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=card-prepayment]"
+            "[data-shot=booking-prepayment]"
           ]
         }
       ]

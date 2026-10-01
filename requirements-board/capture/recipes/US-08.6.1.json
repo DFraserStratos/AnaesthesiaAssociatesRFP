@@ -1,7 +1,7 @@
 {
   "id": "US-08.6.1",
   "status": "partial",
-  "absentReason": "The post-op charge becomes a new linked addendum card on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.",
+  "absentReason": "The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.",
   "shots": [
     {
       "name": "post-op-event",
@@ -72,18 +72,18 @@
               "trigger": "office-authorises-list"
             },
             {
-              "goto": "/mobile/lists/L-34821-2026-07-21-AM/cards/C0001"
+              "goto": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001"
             },
             {
               "wait": 800
             },
             {
-              "scroll": "[data-testid=slide-card] >> text=/A post-op charge \\(an HDU review/"
+              "scroll": "[data-testid=slide-booking] >> text=/A post-op charge \\(an HDU review/"
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] >> text=/A post-op charge \\(an HDU review/",
-            "[data-testid=slide-card] >> role=button[name=\"Add post-op event\"]"
+            "[data-testid=slide-booking] >> text=/A post-op charge \\(an HDU review/",
+            "[data-testid=slide-booking] >> role=button[name=\"Add post-op event\"]"
           ]
         }
       ]
@@ -91,7 +91,7 @@
     {
       "name": "post-op-addendum",
       "app": "admin",
-      "caption": "Post-op addendum raised on a locked, invoiced card",
+      "caption": "Post-op addendum raised on a locked, invoiced booking",
       "start": "/admin/day/2026-07-14",
       "setup": [
         {

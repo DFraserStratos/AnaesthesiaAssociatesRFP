@@ -7,7 +7,7 @@
       "name": "absorbed-positioning",
       "app": "web",
       "caption": "Positioning not added on a hip replacement, whose base code already includes it",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [],
@@ -22,13 +22,13 @@
       "name": "absorbed-positioning",
       "app": "mobile",
       "caption": "Positioning not added on a hip replacement, whose base code already includes it",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "[data-testid=slide-card] [data-shot=capture-modifiers] button:has-text(\"Positioning\")",
-            "[data-testid=slide-card] [data-shot=capture-modifiers] >> text=/already includes P1/"
+            "[data-testid=slide-booking] [data-shot=capture-modifiers] button:has-text(\"Positioning\")",
+            "[data-testid=slide-booking] [data-shot=capture-modifiers] >> text=/already includes P1/"
           ]
         }
       ]

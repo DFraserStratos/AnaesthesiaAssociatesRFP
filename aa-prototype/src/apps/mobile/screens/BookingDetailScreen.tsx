@@ -5,13 +5,14 @@ import { motion } from '../../../theme/motion'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
-import { CardDetailBody } from '../../../shared/card'
+import { BookingDetailBody } from '../../../shared/booking'
 
-interface CardDetailScreenProps {
-  cardId: string
+interface BookingDetailScreenProps {
+  bookingId: string
   actor: Actor
   onBack: () => void
-  onCopied: () => void
+  /** Opens the new Booking a Copy made. */
+  onCopied: (newBookingId: string) => void
 }
 
 /**
@@ -24,48 +25,48 @@ const FOLD = `max-height ${motion.cardAdvance.return}ms ${motion.cardAdvance.eas
 const REVEAL = `max-width ${motion.cardAdvance.return}ms ${motion.cardAdvance.easing}, opacity 200ms ease-out`
 
 /**
- * Mobile card detail — phone chrome (the host's top inset plus 6px, back link,
- * patient masthead) around the shared `CardDetailBody` (Phase 05). All the capture,
+ * Mobile booking detail — phone chrome (the host's top inset plus 6px, back link,
+ * patient masthead) around the shared `BookingDetailBody` (Phase 05). All the capture,
  * validation and lifecycle behaviour lives in the shared body, so mobile and the
- * web card view behave identically; only this masthead and the surrounding
+ * web booking view behave identically; only this masthead and the surrounding
  * `position:relative` phone-frame column are mobile-specific.
  *
  * The masthead FOLDS. At rest it is the patient's name over a status / History
  * action row and the operation; past 24px of scroll it becomes a 44px nav row
  * carrying the name inline beside the back link, iOS large-title fashion.
  * History folds away with the expanded row so the compact title cannot crowd.
- * The fold reclaims the room that pays for the Card total pinned in the dock.
+ * The fold reclaims the room that pays for the Booking total pinned in the dock.
  *
  * It is handed to the layout as a function of `collapsed` rather than rendered
- * here, because the scroll region it reacts to belongs to `MobileCardLayout`.
+ * here, because the scroll region it reacts to belongs to `MobileBookingLayout`.
  *
  * The NHI and date of birth are deliberately NOT here. They were duplicated
  * verbatim by the Patient card two rows into the column, which is the card's one
  * home for patient reference data; the masthead's job is to say whose record
  * this is and which list it belongs to.
  */
-export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetailScreenProps) {
-  const card = useAppStore((s) => s.schedule.cards[cardId])
+export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: BookingDetailScreenProps) {
+  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
 
-  const list = card !== undefined ? listsRecord[card.listId] : undefined
+  const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
-    if (card === undefined) return undefined
+    if (booking === undefined) return undefined
     return Object.values(proceduresRecord)
-      .filter((p) => p.cardId === cardId)
+      .filter((p) => p.bookingId === bookingId)
       .sort((a, b) => a.id.localeCompare(b.id))[0]
-  }, [card, cardId, proceduresRecord])
+  }, [booking, bookingId, proceduresRecord])
 
-  if (card === undefined || list === undefined) return null
-  const patient = masters.patients[card.patientId]
+  if (booking === undefined || list === undefined) return null
+  const patient = masters.patients[booking.patientId]
   const patientName = patient?.name ?? 'Unknown patient'
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
   const header = (collapsed: boolean, history: ReactNode) => (
     <div
-      data-testid="mobile-card-header"
+      data-testid="mobile-booking-header"
       style={{ flex: 'none', padding: 'calc(var(--aa-inset-top, 54px) + 6px) 20px 14px', borderBottom: `1px solid ${neutral.line}`, background: neutral.surface }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
@@ -101,7 +102,7 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
         aria-hidden={collapsed}
       >
         <div
-          data-testid="mobile-card-header-actions"
+          data-testid="mobile-booking-header-actions"
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
         >
           <StatusChip status={list.statusKey} />
@@ -116,7 +117,7 @@ export function CardDetailScreen({ cardId, actor, onBack, onCopied }: CardDetail
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
     </div>
   )
 }

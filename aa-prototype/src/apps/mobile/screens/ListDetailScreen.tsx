@@ -2,39 +2,40 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Plus } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
-import type { Card } from '../../../domain/types'
-import { useAppStore, useToday, type Actor } from '../../../store'
+import type { Booking } from '../../../domain/types'
+import { removeAttachment, useAppStore, useToday, type Actor } from '../../../store'
 import { DockSpacer, StatusChip } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
 import { sessionTimeRange } from '../../../shared/format'
+import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
 interface ListDetailScreenProps {
   listId: string
   actor: Actor
   onBack: () => void
-  onOpenCard: (cardId: string) => void
-  onAddCard: () => void
+  onOpenBooking: (bookingId: string) => void
+  onAddBooking: () => void
 }
 
-interface CardRow {
-  card: Card
+interface BookingRow {
+  booking: Booking
   time: string
   patientName: string
   nhi: string | undefined
   operation: string
 }
 
-export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard }: ListDetailScreenProps) {
+export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBooking }: ListDetailScreenProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const patients = useAppStore((s) => s.masters.patients)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
-  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
+  const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'attachment'>('none')
   const [showSubmitted, setShowSubmitted] = useState(false)
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
   }
   if (initialCompleted.current === null) {
     initialCompleted.current = new Set(
-      Object.values(cardsRecord)
+      Object.values(bookingsRecord)
         .filter((c) => c.listId === listId && c.completed)
         .map((c) => c.id),
     )
@@ -62,29 +63,29 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
 
   const model = useMemo(() => {
     if (list === undefined) return undefined
-    // Primary op per card = the lowest-id (first-created) procedure's description.
-    const firstProcByCard = new Map<string, { id: string; description: string }>()
+    // Primary op per booking = the lowest-id (first-created) procedure's description.
+    const firstProcByBooking = new Map<string, { id: string; description: string }>()
     for (const p of Object.values(proceduresRecord)) {
-      const current = firstProcByCard.get(p.cardId)
-      if (current === undefined || p.id < current.id) firstProcByCard.set(p.cardId, { id: p.id, description: p.description })
+      const current = firstProcByBooking.get(p.bookingId)
+      if (current === undefined || p.id < current.id) firstProcByBooking.set(p.bookingId, { id: p.id, description: p.description })
     }
-    const rows: CardRow[] = Object.values(cardsRecord)
+    const rows: BookingRow[] = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId)
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
-      .map((card) => {
-        const patient = patients[card.patientId]
+      .map((booking) => {
+        const patient = patients[booking.patientId]
         return {
-          card,
-          time: card.scheduledTime ?? '·',
+          booking,
+          time: booking.scheduledTime ?? '·',
           patientName: patient?.name ?? 'Unknown patient',
           nhi: patient?.nhi,
-          operation: firstProcByCard.get(card.id)?.description || 'Procedure to capture',
+          operation: firstProcByBooking.get(booking.id)?.description || 'Procedure to capture',
         }
       })
-    const active = rows.filter((r) => r.card.cancellation === undefined)
-    const done = active.filter((r) => r.card.completed).length
+    const active = rows.filter((r) => r.booking.cancellation === undefined)
+    const done = active.filter((r) => r.booking.completed).length
     return { rows, activeCount: active.length, done }
-  }, [list, listId, cardsRecord, proceduresRecord, patients])
+  }, [list, listId, bookingsRecord, proceduresRecord, patients])
 
   if (list === undefined || model === undefined) return null
 
@@ -100,6 +101,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
     sessionTimeRange(list),
   ].filter((p): p is string => p !== undefined && p !== '')
   const canEdit = list.state === 'DRAFT'
+  const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
@@ -160,14 +162,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
       {/* Clearance for the submit footer below (which tracks the inset 1:1) is
           a `DockSpacer` at the tail, NOT padding here. See that component: this
           screen is where trailing padding was found to create no scroll extent
-          on WebKit, stranding "Add a card" under the dock. */}
+          on WebKit, stranding "Add a booking" under the dock. */}
       <div data-testid="mobile-list-scroll" style={{ flex: 1, overflow: 'auto', padding: '12px 20px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {model.rows.map((r) => {
-          const cancelled = r.card.cancellation !== undefined
+          const cancelled = r.booking.cancellation !== undefined
           return (
             <button
-              key={r.card.id}
-              onClick={() => onOpenCard(r.card.id)}
+              key={r.booking.id}
+              onClick={() => onOpenBooking(r.booking.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -206,8 +208,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
               </span>
               {cancelled ? (
                 <span style={{ fontSize: 11, fontWeight: 600, color: semantic.error.onTint, flex: 'none' }}>Cancelled</span>
-              ) : r.card.completed ? (
-                <TickBadge size={28} animate={!(initialCompleted.current?.has(r.card.id) ?? false)} />
+              ) : r.booking.completed ? (
+                <TickBadge size={28} animate={!(initialCompleted.current?.has(r.booking.id) ?? false)} />
               ) : (
                 <span
                   style={{
@@ -227,9 +229,31 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
           )
         })}
 
+        {/* List attachments (US-03.1.3): files for the List as a whole. Hidden
+            when the List is locked and holds none, so a read-only List does not
+            grow an empty section. */}
+        {(canEdit || listAttachments.length > 0) && (
+          <section
+            data-shot="list-attachments"
+            aria-label="List attachments"
+            style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>List attachments</span>
+              {canEdit && <AddAttachmentButton onClick={() => setSheet('attachment')} />}
+            </div>
+            <AttachmentStrip
+              attachments={listAttachments}
+              canRemove={canEdit}
+              onRemove={(id) => removeAttachment(useAppStore, actor, { kind: 'list', id: listId }, id)}
+              emptyText="No attachments on this List."
+            />
+          </section>
+        )}
+
         {canEdit && (
           <button
-            onClick={onAddCard}
+            onClick={onAddBooking}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -247,7 +271,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
             }}
           >
             <Plus size={18} strokeWidth={2.4} aria-hidden />
-            Add a card
+            Add a booking
           </button>
         )}
         {/* 96 - 10 for the column gap, so the reserved space is unchanged. */}
@@ -267,7 +291,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
           paddingTop: 14,
           paddingLeft: 20,
           paddingRight: 20,
-          // Matches the card dock: inset - 2, floored at the footer's own top pad.
+          // Matches the booking dock: inset - 2, floored at the footer's own top pad.
           paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
           background: 'rgba(246,248,247,0.92)',
           backdropFilter: 'blur(14px)',
@@ -354,7 +378,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenCard, onAddCard 
         )}
       </div>
 
-      {sheet !== 'none' && (
+      <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'list', id: listId }} actor={actor} onClose={() => setSheet('none')} />
+      {(sheet === 'blockers' || sheet === 'confirm') && (
         <SubmitListSheet
           open
           listId={listId}

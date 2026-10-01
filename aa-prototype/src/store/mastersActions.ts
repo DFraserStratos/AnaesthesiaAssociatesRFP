@@ -206,7 +206,7 @@ export function editAnaesthetist(
       action: 'anaesthetist.update',
       before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof Anaesthetist]])),
       after: patch,
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({
       masters: {
@@ -353,7 +353,7 @@ export function addHospitalHoliday(
       entityId: alloc.id,
       action: 'holiday.create',
       after: { hospitalId, dateISO, name: trimmedName },
-      stampCardId: null,
+      stampBookingId: null,
     })
     const lists = { ...s.schedule.lists }
     for (const l of affected) {
@@ -363,7 +363,7 @@ export function addHospitalHoliday(
         entityId: l.id,
         action: 'list.conflict',
         after: { kind: 'holiday', message },
-        stampCardId: null,
+        stampBookingId: null,
       })
     }
     return {
@@ -426,7 +426,7 @@ export function addPermanentList(
       entityId: alloc.id,
       action: 'permanentList.create',
       after: { anaesthetistId: fields.anaesthetistId, dayOfWeek: fields.dayOfWeek, session: fields.session },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return {
       masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [alloc.id]: template } },
@@ -463,7 +463,7 @@ export function editPermanentList(
       action: 'permanentList.update',
       before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof PermanentList]])),
       after: patch,
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({
       masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [id]: next } },

@@ -2,24 +2,25 @@ import { useMemo, useState } from 'react'
 import { Check, ChevronLeft, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
-import type { Card, Procedure } from '../../../domain/types'
-import { useAppStore, type Actor } from '../../../store'
+import type { Booking, Procedure } from '../../../domain/types'
+import { removeAttachment, useAppStore, type Actor } from '../../../store'
 import { StatusChip, TickBadge } from '../../../shared'
-import { cardFee } from '../../../shared/capture'
-import { AddCardFlow, SubmitListSheet } from '../../../shared/flows'
+import { bookingFee } from '../../../shared/capture'
+import { AddBookingFlow, SubmitListSheet } from '../../../shared/flows'
 import { formatCurrency, sessionTimeRange } from '../../../shared/format'
 import { Panel } from '../components'
+import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
 interface ListDetailViewProps {
   listId: string
   actor: Actor
   todayISO: string
   onBack: () => void
-  onOpenCard: (cardId: string) => void
+  onOpenBooking: (bookingId: string) => void
 }
 
-interface CardRow {
-  card: Card
+interface BookingRow {
+  booking: Booking
   time: string
   patientName: string
   nhi: string
@@ -31,47 +32,48 @@ interface CardRow {
 
 /**
  * Web List detail (drill-down page; W2 / M6-M7 parity). Same guarded flows as
- * mobile — the shared `AddCardFlow` (a dialog on web via the surface seam) and
+ * mobile — the shared `AddBookingFlow` (a dialog on web via the surface seam) and
  * the shared completion-gated `SubmitListSheet` — but a desktop screen rather
  * than the phone's stack of tappable cards: the page header and `Panel flush`
  * table of the neighbouring Lists screen, so drilling in never changes idiom.
  *
  * The width a desktop has buys columns the phone cannot afford: NHI, units and
- * fee per card, and a totals row. Figures come from the Phase 01 calculator via
- * `cardFee`, the same call the review screen and the completion overlay make.
+ * fee per booking, and a totals row. Figures come from the Phase 01 calculator via
+ * `bookingFee`, the same call the review screen and the completion overlay make.
  * Submitting is the page's primary action, top right, where every other web
  * screen puts one.
  */
-export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: ListDetailViewProps) {
+export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking }: ListDetailViewProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
   const [addOpen, setAddOpen] = useState(false)
+  const [attachOpen, setAttachOpen] = useState(false)
   const [submitSheet, setSubmitSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
 
   const model = useMemo(() => {
     if (list === undefined) return undefined
-    const procsByCard = new Map<string, Procedure[]>()
+    const procsByBooking = new Map<string, Procedure[]>()
     for (const p of Object.values(proceduresRecord)) {
-      const bucket = procsByCard.get(p.cardId)
-      if (bucket === undefined) procsByCard.set(p.cardId, [p])
+      const bucket = procsByBooking.get(p.bookingId)
+      if (bucket === undefined) procsByBooking.set(p.bookingId, [p])
       else bucket.push(p)
     }
-    for (const bucket of procsByCard.values()) bucket.sort((a, b) => a.id.localeCompare(b.id))
+    for (const bucket of procsByBooking.values()) bucket.sort((a, b) => a.id.localeCompare(b.id))
 
-    const rows: CardRow[] = Object.values(cardsRecord)
+    const rows: BookingRow[] = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId)
       .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
-      .map((card) => {
-        const procs = procsByCard.get(card.id) ?? []
-        const totals = card.cancellation === undefined ? cardFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0 }
+      .map((booking) => {
+        const procs = procsByBooking.get(booking.id) ?? []
+        const totals = booking.cancellation === undefined ? bookingFee(procs, list, masters, billingLinesRecord) : { units: 0, total: 0 }
         return {
-          card,
-          time: card.scheduledTime ?? '·',
-          patientName: masters.patients[card.patientId]?.name ?? 'Unknown patient',
-          nhi: masters.patients[card.patientId]?.nhi ?? 'NHI pending',
+          booking,
+          time: booking.scheduledTime ?? '·',
+          patientName: masters.patients[booking.patientId]?.name ?? 'Unknown patient',
+          nhi: masters.patients[booking.patientId]?.nhi ?? 'NHI pending',
           operation: procs[0]?.description || 'Procedure to capture',
           extraProcedures: Math.max(0, procs.length - 1),
           units: totals.units,
@@ -79,15 +81,15 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
         }
       })
 
-    const active = rows.filter((r) => r.card.cancellation === undefined)
+    const active = rows.filter((r) => r.booking.cancellation === undefined)
     return {
       rows,
       activeCount: active.length,
-      done: active.filter((r) => r.card.completed).length,
+      done: active.filter((r) => r.booking.completed).length,
       units: active.reduce((n, r) => n + r.units, 0),
       fee: active.reduce((n, r) => n + r.fee, 0),
     }
-  }, [list, listId, cardsRecord, proceduresRecord, billingLinesRecord, masters])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
 
   if (list === undefined || model === undefined) return null
 
@@ -100,6 +102,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
   const canEdit = list.state === 'DRAFT'
+  const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
 
@@ -132,7 +135,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
 
       <Panel
         flush
-        title="Cards"
+        title="Bookings"
         action={
           <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
@@ -160,16 +163,16 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
               {model.rows.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ padding: '24px 20px', textAlign: 'center', color: neutral.mist }}>
-                    No cards on this list yet.
+                    No bookings on this List yet.
                   </td>
                 </tr>
               )}
               {model.rows.map((r) => {
-                const cancelled = r.card.cancellation !== undefined
+                const cancelled = r.booking.cancellation !== undefined
                 return (
                   <tr
-                    key={r.card.id}
-                    onClick={() => onOpenCard(r.card.id)}
+                    key={r.booking.id}
+                    onClick={() => onOpenBooking(r.booking.id)}
                     style={{ borderBottom: `1px solid ${neutral.sunken}`, cursor: 'pointer', opacity: cancelled ? 0.6 : 1 }}
                   >
                     <Td mono>
@@ -193,7 +196,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
                     <Td align="right">
                       {cancelled ? (
                         <span style={{ fontSize: 12, fontWeight: 600, color: semantic.error.onTint }}>Cancelled</span>
-                      ) : r.card.completed ? (
+                      ) : r.booking.completed ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: semantic.success.onTint }}>
                           Complete <TickBadge size={26} />
                         </span>
@@ -228,13 +231,30 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
               onClick={() => setAddOpen(true)}
               style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 16px', background: neutral.surface, border: `1.5px dashed ${neutral.lineStrong}`, borderRadius: radius.ctl, fontFamily: 'inherit', color: accent.base, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >
-              <Plus size={17} strokeWidth={2.4} aria-hidden /> Add a card
+              <Plus size={17} strokeWidth={2.4} aria-hidden /> Add a booking
             </button>
           </div>
         )}
       </Panel>
 
-      <AddCardFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
+      {/* List attachments (US-03.1.3): the web List detail's second panel, the
+          Booking detail's panel pattern. Hidden when the List is locked and
+          holds none. */}
+      {(canEdit || listAttachments.length > 0) && (
+        <div data-shot="list-attachments">
+          <Panel title="List attachments" action={canEdit ? <AddAttachmentButton onClick={() => setAttachOpen(true)} /> : undefined}>
+            <AttachmentStrip
+              attachments={listAttachments}
+              canRemove={canEdit}
+              onRemove={(id) => removeAttachment(useAppStore, actor, { kind: 'list', id: listId }, id)}
+              emptyText="No attachments on this List."
+            />
+          </Panel>
+        </div>
+      )}
+
+      <AddAttachmentSheet open={attachOpen} target={{ kind: 'list', id: listId }} actor={actor} onClose={() => setAttachOpen(false)} />
+      <AddBookingFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
       {submitSheet !== 'none' && (
         <SubmitListSheet open listId={listId} actor={actor} mode={submitSheet} onClose={() => setSubmitSheet('none')} onSubmitted={() => setSubmitSheet('none')} />
       )}
@@ -246,7 +266,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenCard }: 
  * The page's primary action, in the header slot the dashboard uses for "Offer
  * cover". Three states, all of them the same object: already submitted (a
  * static confirmation), blocked (the count of what is left, still clickable so
- * the blockers sheet can say which cards), or ready.
+ * the blockers sheet can say which bookings), or ready.
  */
 function SubmitAction({
   state,

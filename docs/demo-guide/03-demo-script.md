@@ -15,7 +15,7 @@ Where a scenario needs a worked example, use one recognisable business object:
 
 The seed keeps her design-day tableau (Tue 21 Jul), the split-billing and two-funder Lists (Mon 20
 Jul), a submitted review-queue List, forward Lists for the integration bookings (Tue 28 Jul), and the
-unfinished Margaret Ellison Card designed for live capture.
+unfinished Margaret Ellison Booking designed for live capture.
 
 ## Pre-demo setup
 
@@ -49,7 +49,7 @@ view respectively.
 |---|---|
 | Forward Lists | `/mobile/lists` |
 | List detail | `/mobile/lists/<listId>` |
-| Card detail | `/mobile/lists/<listId>/cards/<cardId>` |
+| Booking detail | `/mobile/lists/<listId>/bookings/<bookingId>` |
 | Availability | `/mobile/availability` |
 | Balances | `/mobile/balances` |
 | More | `/mobile/more` |
@@ -59,7 +59,7 @@ view respectively.
 | Dashboard | `/web` (another week: `/web?week=2026-07-27`) |
 | Lists table | `/web/lists` |
 | List detail | `/web/lists/<listId>` |
-| Card detail | `/web/lists/<listId>/cards/<cardId>` |
+| Booking detail | `/web/lists/<listId>/bookings/<bookingId>` |
 | Availability grid | `/web/availability` |
 | Accounts, outstanding | `/web/accounts/overdue` |
 | Accounts, GST activity | `/web/accounts/gst` |
@@ -67,7 +67,7 @@ view respectively.
 | Admin Web App | URL |
 |---|---|
 | Day view | `/admin/day/2026-07-21` (A to Z order: add `?sort=az`) |
-| Card detail | `/admin/day/2026-07-21/cards/<cardId>` |
+| Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
 | Review queue | `/admin/review` |
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
@@ -98,7 +98,7 @@ mobile background and changes nothing here.
 
 ## S1 · Booking to theatre
 
-**Serves:** the RFP's near-real-time hospital integration, the Card as the billing anchor, and BTM
+**Serves:** the RFP's near-real-time hospital integration, the Booking as the billing anchor, and BTM
 capture. **Time:** 5 to 6 minutes.
 
 > **Caveat: HL7 v2 and FHIR are Future scope; present Beat 1 as an illustration of intake.** The
@@ -120,13 +120,13 @@ working List rather than an empty one.
   - Pause on the result line.
   - Reopen the Tue 28 Jul AM List.
 - **Say:** "Existing hospitals may still send HL7 v2, but the target is FHIR-native. Messages are
-  mapped per hospital, processed near real time, and audited. This booking created a patient Card
+  mapped per hospital, processed near real time, and audited. This booking created a patient Booking
   without anyone re-keying it."
-- **Expected:** the message shows as processed; the List now carries a fourth Card for Sarah Mitchell,
+- **Expected:** the message shows as processed; the List now carries a fourth Booking for Sarah Mitchell,
   slotted into her 08:30 place between the first two cases. Her NHI matched an existing record, so
   intake reused it, no duplicate.
 
-### Beat 2: the Card fills over the days before theatre
+### Beat 2: the Booking fills over the days before theatre
 
 - **Click:**
   - Open the live clock beside the app switcher.
@@ -134,6 +134,9 @@ working List rather than an empty one.
 - **Say:** "Between booking and theatre, patient and booking data can change right up to the day. The
   canvas rolls forward deterministically as the clock advances."
 - **Expected:** the clock reads Tuesday 28 July 2026, 9:00.
+- **Optional aside:** open the List (Mobile or Web) and point at **List attachments**: the seeded
+  theatre-list PDF from St George's sits on the List as a whole. **Add attachment** opens the simulated
+  file picker (badged), and a photo or file can go on a single Booking the same way.
 
 ### Beat 3: capture BTM on mobile
 
@@ -147,15 +150,15 @@ working List rather than an empty one.
     **Mark list completed · 3 to finish**.
 - **Say:** "The anaesthetist captures the billing inputs, not just a dollar figure. The fee is Base plus
   tiered Time plus Modifiers at her own value per unit. The List only goes to the office once every
-  active Card is complete, so one captured Card out of four submits nothing yet. That gate is the
-  reason the List is the unit of approval, not the Card."
+  active Booking is complete, so one captured Booking out of four submits nothing yet. That gate is the
+  reason the List is the unit of approval, not the Booking."
 - **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
-  **Cards still to finish** sheet, which names each remaining Card by time and patient with what it
+  **Bookings still to finish** sheet, which names each remaining Booking by time and patient with what it
   needs. The List stays `DRAFT`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
   the seeded Review queue.
 - **Worth pointing at:** only **Mark complete** is pinned to the bottom of the phone; the anaesthetist
-  captures inputs and sees no running fee, which the office sees on the Admin Card in S2. Scroll down
-  once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Card
+  captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll down
+  once and the masthead folds to a nav row to make room. If Mark complete finds missing data, the Booking
   moves directly to the first incomplete control and focuses it.
 
 **Discovery point:** partial-interval time rounding is a prototype assumption (round up per started
@@ -186,13 +189,13 @@ already seeded.
 - **Click:**
   - Open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**.
   - Choose **St George's Hospital** and **Mr T. Hale**; keep 13:00 to 17:00.
-  - Select **Continue to add card → Enter manually → Look up**.
-  - Pause on the populated card.
-  - Select **Review → Save card → Done**.
+  - Select **Continue to add booking → Enter manually → Look up**.
+  - Pause on the populated booking.
+  - Select **Review → Save booking → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
 - **Expected:** the lookup fills the complete booking and leaves every field editable. The Free block
-  repaints as booked on the admin day grid and the new Card sits on that List (open the block's drawer
+  repaints as booked on the admin day grid and the new Booking sits on that List (open the block's drawer
   to see it). The anaesthetist's own web and mobile views still label the session Free for now; if
   asked, name that honestly as an open polish item on the phone-booking path.
 
@@ -202,20 +205,20 @@ already seeded.
   - Go to Wednesday 22 July and open **Dr James Rutherford's AM Christchurch Eye Surgery List**.
   - Select **Reassign list → Dr Priya Sharma → Unavailable → Confirm reassignment**.
   - Pause on the confirmation, then reopen **Sharma AM → History**.
-- **Say:** "A whole-List reassignment preserves the Cards and audit trail. It is different from moving
-  one patient Card. The free-target, absorb and regenerate mechanics are the prototype's proposal for
+- **Say:** "A whole-List reassignment preserves the Bookings and audit trail. It is different from moving
+  one patient Booking. The free-target, absorb and regenerate mechanics are the prototype's proposal for
   keeping the fixed canvas intact."
 - **Expected:** a brief **List reassigned** success moment confirms the move before the modal closes.
-  The List and its Cards move to Sharma, the vacated slot regenerates, and History records the reassignment.
+  The List and its Bookings move to Sharma, the vacated slot regenerates, and History records the reassignment.
 
 ### Beat 4: authorise a submitted List
 
 - **Click:**
   - Go to **Review queue → Dr Kate Morrison, Mon 20 Jul → Review**.
   - Pause on the submitted List, then select **Authorise for billing → Confirm**.
-- **Say:** "The office reviews the Cards as a set, a human sanity check, not an automatic gate. If
+- **Say:** "The office reviews the Bookings as a set, a human sanity check, not an automatic gate. If
   something needs clarification the office phones and corrects it here. The List is never returned.
-  Authorisation locks every Card and hands the whole List to the Billing Engine."
+  Authorisation locks every Booking and hands the whole List to the Billing Engine."
 - **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
 
 **Discovery points:** whether availability/holiday conflicts are hard constraints or warnings (the
@@ -230,8 +233,8 @@ in Admin Web or a separate surface (the prototype places it in Admin Web).
 states. **Time:** 6 to 8 minutes. This is the money story's payoff, so authorise live.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
-Lists are already in the Review queue: AM (Forte Health, the split-billing Card) and PM
-(St George's, the two-funder Card). Their invoices do not exist until you authorise the Lists live.
+Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM
+(St George's, the two-funder Booking). Their invoices do not exist until you authorise the Lists live.
 
 ### Beat 1: authorise and generate invoices
 
@@ -243,16 +246,16 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Card)
   - Pause on the invoice, then select **Email invoice → All invoices**.
   - Locate the fixed comparison rows and pause:
     - **AA-2026-0002 · Brian Holt · Forte Health · $396.18** is the one-invoice,
-      same-funder split Card.
+      same-funder split Booking.
     - **AA-2026-0005 · Alan Prentice · nib · $152.38** and
       **AA-2026-0006 · Alan Prentice · St George's · $91.43** are the two invoices from the same
-      Card at 14:00.
+      Booking at 14:00.
 - **Say:** "The Billing Engine, not Xero, produces the invoice. It resolves the explicit payer per
   Procedure, applies the governing Contract, and groups by counterparty. Xero follows as the
   receivables and banking service."
 - **Expected:** invoice rows appear for both Lists, derived from the same captured data; one invoice
-  for the split-billing Card, two for the two-funder Card.
-- **Optional aside:** to also show the patient invoice layout, reallocate part of the two-funder Card's
+  for the split-billing Booking, two for the two-funder Booking.
+- **Optional aside:** to also show the patient invoice layout, reallocate part of the two-funder Booking's
   fee to the patient via **Funder allocation** before authorising the PM List.
 
 ### Beat 2: the Xero collection and payable pair
@@ -307,7 +310,7 @@ actions** on the screen named in its beat.
   - Pause on the pre-payment block.
   - Go to **Admin Day view → Fri 24 Jul → Souter AM → Annette Riley**.
   - Select **Override pre-payment gate**, enter **Manager approved theatre exception**, and save.
-  - Return to Mobile and complete the Card.
+  - Return to Mobile and complete the Booking.
 - **Say:** "A patient-funded pre-payment must be paid before the procedure. A browser prototype cannot
   gate a theatre list, so completion is blocked until the pre-invoice is paid or the office records a
   reasoned, audited override."
@@ -320,20 +323,20 @@ actions** on the screen named in its beat.
   - Go to **Admin Day view → Tue 14 Jul → Dr Priya Sharma's AM List → Sarah Mitchell**.
   - Open **Demo actions → Stage post-op scenario → Run** (it shows only for this List).
   - Select **Add post-op event**.
-  - Pause on the new addendum Card.
-- **Say:** "A later pain consult or ward review can create another charge. The original authorised Card
-  stays immutable; the addendum is a new linked Card with its own submit, authorise and bill cycle."
-- **Expected:** a new addendum Card; the original stays locked.
+  - Pause on the new addendum Booking.
+- **Say:** "A later pain consult or ward review can create another charge. The original authorised Booking
+  stays immutable; the addendum is a new linked Booking with its own submit, authorise and bill cycle."
+- **Expected:** a new addendum Booking; the original stays locked.
 
 ### Beat 3: billing failure and retry
 
 - **Click:**
   - Go to **Admin billing monitor → Demo actions → Trigger billing failure → Run**.
   - On the same screen, **Losa Tuilagi → Resolve & retry**.
-- **Say:** "A Card can fail rating after the List is authorised, here because a group-held contract with
-  no default fallback was dated out. The prototype isolates that Card, still invoices its clean sibling,
+- **Say:** "A Booking can fail rating after the List is authorised, here because a group-held contract with
+  no default fallback was dated out. The prototype isolates that Booking, still invoices its clean sibling,
   then lets the office correct and retry."
-- **Expected:** the failed Card shows the rating failure while its sibling is billed; retry clears it.
+- **Expected:** the failed Booking shows the rating failure while its sibling is billed; retry clears it.
 
 ### Beat 4: integration dead-letter and manual fix
 
@@ -371,22 +374,22 @@ List are parked for manual intervention.
 evaluators will probe. **Time:** 5 to 6 minutes.
 
 **Stage it:** control panel, Scenario jumps, **S5 · Compliance tour → Jump → Confirm jump**. This
-resets to rich booking-to-clinical histories on every Card, adds three live edits to David Chen's
+resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's
 trail, and authorises Dr Whitaker's Fri 17 Jul List to raise the Health NZ contract snapshot
 invoices. Use **Go to Admin app** and **Go to Xero sim**.
 
-### Beat 1: the audit trail of a much-edited Card
+### Beat 1: the audit trail of a much-edited Booking
 
 - **Click:**
   - Go to **Admin Day view → Tue 21 Jul → Dr Souter PM**.
   - Open **David Chen → History**.
   - Pause on the audit trail.
-- **Say:** "Every Card and Procedure change, including automated ones, writes an append-only audit entry
+- **Say:** "Every Booking and Procedure change, including automated ones, writes an append-only audit entry
   with who, role, source and before/after. The captured inputs stay reproducible, not just the final
   total."
 - **Expected:** a multi-entry trail from booking and Procedure setup through capture and completion,
   followed by the staged anaesthetist and office edits. Every row shows who, role, source and
-  before/after, and the manual time-unit adjustment retains overridden provenance. Any other Card
+  before/after, and the manual time-unit adjustment retains overridden provenance. Any other Booking
   can also be opened to demonstrate its seeded history without staging first.
 
 ### Beat 2: NHI dual-format validator
@@ -394,7 +397,7 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
 - **Click:**
   - Go to **Admin Integrations → Demo actions → Fire hospital message → MSG-STG-1002 (new-format
     NHI) → Run**.
-  - Optional: add a Card manually and try both NHI formats.
+  - Optional: add a Booking manually and try both NHI formats.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
   new-format NHI with a mod-23 check letter validates and processes end to end."
 - **Expected:** the new-format NHI validates; an invalid one is rejected with a reason.
@@ -443,8 +446,8 @@ last-write-wins, with the multi-source reality shown via the audit trail and liv
 - Health NZ's FHIR-first policy and real OAuth/Keycloak setup.
 - Real email, OCR, Xero and hospital integrations: the prototype simulates them in-browser.
 
-The most persuasive clicks are the state changes: a message or manual booking creates a Card; Finish
-now changes Time units and fee; Card completion enables submission; submission changes who may edit;
+The most persuasive clicks are the state changes: a message or manual booking creates a Booking; Finish
+now changes Time units and fee; Booking completion enables submission; submission changes who may edit;
 authorisation locks the List; the billing run generates invoices; the invoice-detail shortcut records
 payment and payout; the Web Payments history keeps the settled invoice visible.
 
@@ -459,7 +462,7 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
   performs the same whole-demo reset without making you return to the control panel.
 - Lost the screen a demo action lives on? The control panel's **Demo actions by screen** has an
   **Open screen** link for every entry (with a hint where a tab is needed, such as Surgeon PDFs).
-- If **Finish now** was stamped too early, reset and advance the clock before reopening the Card.
+- If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.
 - A stray refresh is no longer a problem: it returns you to the same screen. If you have clicked
   somewhere unexpected, the browser back button retraces your steps, or paste the beat's address from
   **Direct URLs** above.

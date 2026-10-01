@@ -7,19 +7,19 @@
       "name": "per-procedure",
       "app": "admin",
       "caption": "The Booking's fee broken down by Procedure, on the office view",
-      "start": "/admin/day/2026-07-20/cards/C0022",
+      "start": "/admin/day/2026-07-20/bookings/BK0022",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=card-calculation]"
+              "scroll": "[data-testid=booking-calculation]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-testid=booking-calculation]"
           ]
         }
       ]

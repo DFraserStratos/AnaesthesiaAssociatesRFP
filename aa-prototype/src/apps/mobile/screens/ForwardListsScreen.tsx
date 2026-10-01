@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
-import type { Card, List } from '../../../domain/types'
+import type { Booking, List } from '../../../domain/types'
 import { isListBilled, useAppStore, useToday } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, drSurname, sessionStart } from '../../../shared/format'
@@ -37,7 +37,7 @@ interface ForwardListsScreenProps {
 
 export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList, onOfferCover }: ForwardListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
@@ -48,10 +48,10 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   const greetingName = drSurname(personaName)
 
   const sections = useMemo(() => {
-    const cardsByList = new Map<string, Card[]>()
-    for (const c of Object.values(cardsRecord)) {
-      const arr = cardsByList.get(c.listId)
-      if (arr === undefined) cardsByList.set(c.listId, [c])
+    const bookingsByList = new Map<string, Booking[]>()
+    for (const c of Object.values(bookingsRecord)) {
+      const arr = bookingsByList.get(c.listId)
+      if (arr === undefined) bookingsByList.set(c.listId, [c])
       else arr.push(c)
     }
 
@@ -65,13 +65,13 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       (l) => l.anaesthetistId === anaesthetistId && !isListBilled(l),
     )
 
-    function activeCards(listId: string): Card[] {
-      return (cardsByList.get(listId) ?? []).filter((c) => c.cancellation === undefined)
+    function activeBookings(listId: string): Booking[] {
+      return (bookingsByList.get(listId) ?? []).filter((c) => c.cancellation === undefined)
     }
 
     function inWindow(l: List): boolean {
       if (filter === 'todo') {
-        return l.state === 'DRAFT' && activeCards(l.id).some((c) => !c.completed)
+        return l.state === 'DRAFT' && activeBookings(l.id).some((c) => !c.completed)
       }
       // Done = submitted or authorised and still unbilled (an authorised list
       // is still unbilled until Phase 08's run stamps it).
@@ -123,7 +123,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       if (l.statusKey === 'unavailable') return null
 
       // Booked list (private / public / preop).
-      const active = activeCards(l.id)
+      const active = activeBookings(l.id)
       const total = active.length
       const done = active.filter((c) => c.completed).length
       const isPreop = l.statusKey === 'preop'
@@ -143,7 +143,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       }
 
       const base = isPreop ? 'AA rooms' : surgeonLine(l)
-      const unit = isPreop ? 'appointments' : 'cards'
+      const unit = isPreop ? 'appointments' : 'bookings'
       const subtitle = countInSubtitle
         ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')
         : base || undefined
@@ -166,7 +166,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         date,
         rows: dayRows.sort((a, b) => a.list.session.localeCompare(b.list.session)),
       }))
-  }, [listsRecord, cardsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
+  }, [listsRecord, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

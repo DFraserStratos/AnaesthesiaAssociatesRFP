@@ -28,7 +28,7 @@ artifact. It needs no server and no internet: open the file in a browser.
 
 ## The one-sentence product description
 
-Anaesthesia Associates coordinates anaesthetists' half-day operating Lists, keeps the patient Cards
+Anaesthesia Associates coordinates anaesthetists' half-day operating Lists, keeps the patient Bookings
 within those Lists current, captures the clinical inputs needed for billing, checks and authorises
 completed Lists, then calculates invoices and manages collection and disbursement through Xero.
 
@@ -39,19 +39,19 @@ Schedule
   -> Day
     -> Anaesthetist
       -> AM List and PM List
-        -> Card (one patient appointment)
+        -> Booking (one patient appointment)
           -> Procedure(s)
             -> Billing line(s)
 ```
 
 - The system creates a rolling four-month canvas containing exactly two Lists, AM and PM, for every
   active anaesthetist on every day.
-- Permanent arrangements, availability, hospital, surgeon, status and Cards are applied to that
+- Permanent arrangements, availability, hospital, surgeon, status and Bookings are applied to that
   canvas.
-- A List is not an employment shift and a Card is not a shift application.
-- The anaesthetist completes Cards and submits the whole List.
+- A List is not an employment shift and a Booking is not a shift application.
+- The anaesthetist completes Bookings and submits the whole List.
 - The office checks and authorises the whole List.
-- Authorisation locks its Cards and hands the List to the Billing Engine.
+- Authorisation locks its Bookings and hands the List to the Billing Engine.
 
 ## Important terminology correction
 
@@ -88,7 +88,7 @@ Snapshot date: **24 July 2026**
 
 | Area | Status | Safe demo position |
 |---|---|---|
-| Mobile Lists, Cards, BTM capture, completion and submit | Ready | Strong primary workflow |
+| Mobile Lists, Bookings, BTM capture, completion and submit | Ready | Strong primary workflow |
 | Anaesthetist web dashboard, Lists, availability and accounts views | Ready | Strong supporting workflow |
 | Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
 | Billing run and invoice documents | Ready | Phase 08 |
@@ -106,8 +106,8 @@ Demo-only surfaces stay honestly labelled. The Xero simulator, integration simul
 panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
 product screens. The billing monitor is proposed product UI; only its simulation triggers are badged.
 
-The anaesthetist Card (Mobile and Anaesthetist Web) shows no units or fee: only **Mark complete** is
-pinned, and the Card-complete animation shows the tick alone. Admin Card details keep the full
+The anaesthetist Booking (Mobile and Anaesthetist Web) shows no units or fee: only **Mark complete** is
+pinned, and the Booking-complete animation shows the tick alone. Admin Booking details keep the full
 billing view. The top bar's **Reset → Confirm reset** control restores the pristine data and clock
 from any app while preserving the current app.
 
@@ -117,7 +117,7 @@ Use one continuous business object rather than touring unrelated screens:
 
 > Dr Melanie Souter's Tuesday 21 July PM List at Southern Cross.
 
-It contains patient Cards using the three main billing routes and one unfinished Card, Margaret
+It contains patient Bookings using the three main billing routes and one unfinished Booking, Margaret
 Ellison, that is designed for live BTM capture.
 
 The full story now runs end to end without narration gaps:

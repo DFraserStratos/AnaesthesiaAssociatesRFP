@@ -10,12 +10,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { authoriseList, completeCard, submitList } from './lifecycle'
+import { authoriseList, completeBooking, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { receivePayment, gstComponentOf, proRataAuthorised } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
-import { casesForList, casesForCard, prepaymentStatusFor } from './selectors'
+import { casesForList, casesForBooking, prepaymentStatusFor } from './selectors'
 import { roundToCents, toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
@@ -31,14 +31,14 @@ function marker(key: string): string {
   if (m === undefined) throw new Error(`missing marker ${key}`)
   return m.entityId
 }
-function listOf(api: BoundAppStore, cardId: string): string {
-  const card = api.getState().schedule.cards[cardId]
-  if (card === undefined) throw new Error(`missing card ${cardId}`)
-  return card.listId
+function listOf(api: BoundAppStore, bookingId: string): string {
+  const booking = api.getState().schedule.bookings[bookingId]
+  if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
+  return booking.listId
 }
 /** Bill + hand off the single-invoice COS list, returning its case + ACCREC. */
 function billCosAndHandoff(api: BoundAppStore): { caseId: string; accRecId: string; amountDue: number; amountPayable: number } {
-  const listId = listOf(api, marker('cosAccContractCard'))
+  const listId = listOf(api, marker('cosAccContractBooking'))
   expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)
@@ -153,22 +153,22 @@ describe('reconciliation poll (safety net)', () => {
 describe('pre-payment webhook clears the completion gate (closes Phase 09 deferral)', () => {
   it('paying the split pre-payment pre-invoice clears the gate without an override', () => {
     const api = store()
-    const riley = marker('prepaymentCard')
+    const riley = marker('prepaymentBooking')
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('required')
 
     // Office raises the pre-invoice → handoff → ACCREC to the patient.
     expect(raisePreProcedureInvoice(api, OFFICE, riley).ok).toBe(true)
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('outstanding')
-    const preCase = casesForCard(api.getState(), riley)[0]!
+    const preCase = casesForBooking(api.getState(), riley)[0]!
     const accRec = api.getState().xero.accRecs[preCase.accRecId!]!
 
     // Webhook pays it in full → case 'paid' → gate clears.
     expect(receivePayment(api, { accRecId: accRec.id, amount: accRec.amountDue, idempotencyKey: 'PRE', source: 'webhook' }).ok).toBe(true)
     expect(prepaymentStatusFor(api.getState(), riley)).toBe('paid')
 
-    // The card now completes with no override (its only blocker was the gate).
-    expect(api.getState().schedule.cards[riley]!.prepaymentOverride).toBeUndefined()
-    const done = completeCard(api, SOUTER, riley)
+    // The booking now completes with no override (its only blocker was the gate).
+    expect(api.getState().schedule.bookings[riley]!.prepaymentOverride).toBeUndefined()
+    const done = completeBooking(api, SOUTER, riley)
     expect(done.ok).toBe(true)
     expect(toCents(accRec.amountDue)).toBeGreaterThan(0)
   })

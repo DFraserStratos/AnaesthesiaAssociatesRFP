@@ -46,7 +46,7 @@ import {
  * `src/pwa/pwaPurity.test.ts` is what stops that eroding.
  *
  * The URLs stay `/mobile/*` verbatim. `MOBILE_TAB_PATH`, `listsStackLocation`'s
- * `matchPath('/mobile/lists/:listId/cards/:cardId', …)` and every
+ * `matchPath('/mobile/lists/:listId/bookings/:bookingId', …)` and every
  * `navigate('/mobile/…')` hard-code the prefix, and `basename="/mobile"` does
  * NOT fix that — under it, `navigate('/mobile/lists')` yields
  * `/mobile/mobile/lists`. Rebasing would mean parameterising a shared pure

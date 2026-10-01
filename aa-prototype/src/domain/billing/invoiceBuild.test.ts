@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   GST_RATE,
-  buildInvoicesForCard,
+  buildInvoicesForBooking,
   counterpartyForProcedure,
   layoutFor,
   resolveContractForProcedure,
@@ -21,7 +21,7 @@ import {
   HANDOVER_1030,
   START_0800,
   mkAnaesthetist,
-  mkCard,
+  mkBooking,
   mkContract,
   mkProcedure,
 } from './fixtures'
@@ -214,7 +214,7 @@ describe('counterpartyForProcedure + layoutFor', () => {
   })
 })
 
-describe('buildInvoicesForCard', () => {
+describe('buildInvoicesForBooking', () => {
   /** B10 + T11 (2h30m) + M0 = 21 units at $30 = $630. */
   const primary = mkProcedure({
     id: 'proc-1',
@@ -234,7 +234,7 @@ describe('buildInvoicesForCard', () => {
   })
 
   it('same-counterparty procedures share ONE invoice; the additional line is time-only', () => {
-    const result = buildInvoicesForCard(mkCard(), [primary, additional], mkCtx())
+    const result = buildInvoicesForBooking(mkBooking(), [primary, additional], mkCtx())
     expect(result.kind).toBe('invoices')
     if (result.kind !== 'invoices') return
     expect(result.invoices).toHaveLength(1)
@@ -255,7 +255,7 @@ describe('buildInvoicesForCard', () => {
   it('procedures with DIFFERENT funders split into separate invoices (the §11 reading)', () => {
     const elective = { ...additional, billingRoute: 'billableParty' as const }
     delete (elective as { governingContractId?: string }).governingContractId
-    const result = buildInvoicesForCard(mkCard(), [primary, elective], mkCtx())
+    const result = buildInvoicesForBooking(mkBooking(), [primary, elective], mkCtx())
     expect(result.kind).toBe('invoices')
     if (result.kind !== 'invoices') return
     expect(result.invoices).toHaveLength(2)
@@ -273,7 +273,7 @@ describe('buildInvoicesForCard', () => {
       ...primary,
       priceOverride: { kind: 'dollarAdjustment' as const, amount: -50, reason: 'Family discount' },
     }
-    const result = buildInvoicesForCard(mkCard(), [overridden], mkCtx())
+    const result = buildInvoicesForBooking(mkBooking(), [overridden], mkCtx())
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.lines).toHaveLength(2)
@@ -294,7 +294,7 @@ describe('buildInvoicesForCard', () => {
       },
       { id: 'bl-2', procedureId: 'proc-1', chargeBasis: 'rvg', amount: 230, description: 'Patient portion' },
     ]
-    const result = buildInvoicesForCard(mkCard(), [primary], mkCtx({ billingLines: lines }))
+    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     expect(result.invoices).toHaveLength(2)
     const insurer = result.invoices.find((i) => i.counterparty.kind === 'insurer')
@@ -304,7 +304,7 @@ describe('buildInvoicesForCard', () => {
     expect(hospital?.subtotal).toBe(230)
   })
 
-  it('a resolution exception on any procedure fails the whole Card with its procedure id', () => {
+  it('a resolution exception on any procedure fails the whole Booking with its procedure id', () => {
     const dated = mkContract({
       id: 'con-surg',
       holderType: 'surgeon',
@@ -314,16 +314,16 @@ describe('buildInvoicesForCard', () => {
       effectiveToISO: '2026-06-30',
     })
     const broken = { ...additional, governingContractId: 'con-surg' }
-    const result = buildInvoicesForCard(mkCard(), [primary, broken], withContracts(HOSPITAL_DEFAULT, dated))
+    const result = buildInvoicesForBooking(mkBooking(), [primary, broken], withContracts(HOSPITAL_DEFAULT, dated))
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.procedureId).toBe('proc-2')
   })
 
-  it('a cancelled Card yields no invoices', () => {
-    const cancelled = mkCard({
+  it('a cancelled Booking yields no invoices', () => {
+    const cancelled = mkBooking({
       cancellation: { reason: 'Patient unwell', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-20T09:00:00' },
     })
-    const result = buildInvoicesForCard(cancelled, [primary], mkCtx())
+    const result = buildInvoicesForBooking(cancelled, [primary], mkCtx())
     expect(result).toEqual({ kind: 'invoices', invoices: [] })
   })
 
@@ -335,7 +335,7 @@ describe('buildInvoicesForCard', () => {
     })
     const ctx = withContracts(HOSPITAL_DEFAULT, discounted)
     ctx.anaesthetist = mkAnaesthetist({ unitValue: 27.5 })
-    const result = buildInvoicesForCard(mkCard(), [{ ...primary, governingContractId: 'con-disc' }], ctx)
+    const result = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-disc' }], ctx)
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const line = result.invoices[0]!.lines[0]!
     // 27.50 less 7% = 25.575 → rounds to $25.58 BEFORE charging: 21 x 25.58.
@@ -349,7 +349,7 @@ describe('buildInvoicesForCard', () => {
     const addOn = { ...additional, governingContractId: 'con-t3' }
     // A row with NO ordinal priced the code as a primary: the add-on must not
     // bill it in full — it falls to the BTM path, time-only.
-    const standaloneOnly = buildInvoicesForCard(mkCard(), [addOn], {
+    const standaloneOnly = buildInvoicesForBooking(mkBooking(), [addOn], {
       ...ctx,
       contractPrices: [{ id: 'cp-1', contractId: 'con-t3', rvgBaseCode: BASE_SINGLE_10.code, price: 2400 }],
     })
@@ -357,7 +357,7 @@ describe('buildInvoicesForCard', () => {
     expect(standaloneOnly.invoices[0]!.lines[0]!.description).toContain('time units only')
     expect(standaloneOnly.invoices[0]!.subtotal).toBe(330)
     // An ordinal-keyed row IS the contract's own second-procedure price.
-    const ordinalKeyed = buildInvoicesForCard(mkCard(), [{ ...primary, governingContractId: 'con-t3' }, addOn], {
+    const ordinalKeyed = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-t3' }, addOn], {
       ...ctx,
       contractPrices: [
         { id: 'cp-1', contractId: 'con-t3', rvgBaseCode: BASE_SINGLE_10.code, price: 2400 },
@@ -381,7 +381,7 @@ describe('buildInvoicesForCard', () => {
       // 400 + 100 = 500, but the fee under the resolved contract is 630.
       { id: 'bl-2', procedureId: 'proc-1', chargeBasis: 'rvg', amount: 100, description: 'Balance' },
     ]
-    const result = buildInvoicesForCard(mkCard(), [primary], mkCtx({ billingLines: lines }))
+    const result = buildInvoicesForBooking(mkBooking(), [primary], mkCtx({ billingLines: lines }))
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.code).toBe('allocationStale')
   })
@@ -391,7 +391,7 @@ describe('buildInvoicesForCard', () => {
       ...primary,
       priceOverride: { kind: 'dollarAdjustment' as const, amount: -1000, reason: 'Stress test' },
     }
-    const result = buildInvoicesForCard(mkCard(), [gouged], mkCtx())
+    const result = buildInvoicesForBooking(mkBooking(), [gouged], mkCtx())
     expect(result.kind).toBe('exception')
     if (result.kind === 'exception') expect(result.code).toBe('negativeTotal')
   })
@@ -402,7 +402,7 @@ describe('buildInvoicesForCard', () => {
     const lines: BillingLine[] = [
       { id: 'bl-1', procedureId: 'proc-1', chargeBasis: 'fixed', amount: 100.33, description: 'Consumables' },
     ]
-    const result = buildInvoicesForCard(mkCard(), [feeOnly], mkCtx({ billingLines: lines }))
+    const result = buildInvoicesForBooking(mkBooking(), [feeOnly], mkCtx({ billingLines: lines }))
     if (result.kind !== 'invoices') throw new Error('expected invoices')
     const invoice = result.invoices[0]!
     expect(invoice.subtotal).toBe(100.33)

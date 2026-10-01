@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react'
 import { accent, neutral, radius } from '../../theme/tokens'
 import { type Actor } from '../../store'
+import type { BookingSource } from '../../domain/types'
 import { DemoBadge } from '../DemoBadge'
-import { ManualCardForm } from './ManualCardForm'
+import { ManualBookingForm } from './ManualBookingForm'
 import { SAMPLE_EXTRACTIONS, type SampleExtraction } from './sampleExtractions'
 
 interface PhotoCaptureFlowProps {
   listId: string
   actor: Actor
-  onSaved: (result: { cardId: string; reused: boolean }) => void
+  source?: BookingSource
+  onSaved: (result: { bookingId: string; reused: boolean }) => void
 }
 
 type Step = { kind: 'pick' } | { kind: 'processing'; sample: SampleExtraction } | { kind: 'review'; sample: SampleExtraction }
 
 /**
  * The photo-of-paper-list path: pick one of two bundled sample cards, a brief
- * simulated processing state (demo-badged), then a pre-filled `ManualCardForm`
+ * simulated processing state (demo-badged), then a pre-filled `ManualBookingForm`
  * for review/correct/save. No real OCR — the extraction is canned per sample.
  */
-export function PhotoCaptureFlow({ listId, actor, onSaved }: PhotoCaptureFlowProps) {
+export function PhotoCaptureFlow({ listId, actor, source, onSaved }: PhotoCaptureFlowProps) {
   const [step, setStep] = useState<Step>({ kind: 'pick' })
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function PhotoCaptureFlow({ listId, actor, onSaved }: PhotoCaptureFlowPro
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 17, fontWeight: 700 }}>Photo of the paper list</div>
-        <DemoBadge label="Simulated capture · sample cards" />
+        <DemoBadge label="Simulated capture · sample paper cards" />
         <div style={{ fontSize: 13, color: neutral.slate }}>Pick a sample paper card to scan.</div>
         <div style={{ display: 'flex', gap: 12 }}>
           {SAMPLE_EXTRACTIONS.map((sample) => (
@@ -73,7 +75,7 @@ export function PhotoCaptureFlow({ listId, actor, onSaved }: PhotoCaptureFlowPro
           alt="Scanning"
           style={{ width: 160, borderRadius: 8, border: `1px solid ${neutral.line}`, opacity: 0.85 }}
         />
-        <div style={{ fontSize: 16, fontWeight: 600, color: accent.pressed }}>Reading the card…</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: accent.pressed }}>Reading the paper card…</div>
         <DemoBadge label="Simulated OCR · no real processing" />
       </div>
     )
@@ -84,13 +86,14 @@ export function PhotoCaptureFlow({ listId, actor, onSaved }: PhotoCaptureFlowPro
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <DemoBadge label="Review the extracted details" />
       <div style={{ fontSize: 13, color: neutral.slate }}>
-        We pre-filled the card from the scan. Check and correct anything before saving.
+        We pre-filled the booking from the scan. Check and correct anything before saving.
       </div>
-      <ManualCardForm
+      <ManualBookingForm
         listId={listId}
         actor={actor}
         initial={step.sample.fields}
         attachment={{ name: `Paper card ${step.sample.id}`, kind: 'photo', dataUrl: step.sample.imageUrl }}
+        source={source}
         onSaved={onSaved}
       />
     </div>

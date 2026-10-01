@@ -1,7 +1,7 @@
 {
   "id": "US-01.4.1",
   "status": "partial",
-  "absentReason": "Reassignment moves the List and its cards to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.",
+  "absentReason": "Reassignment moves the List and its bookings to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.",
   "shots": [
     {
       "name": "reassign",

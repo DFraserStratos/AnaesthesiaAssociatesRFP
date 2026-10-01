@@ -8,7 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa'
  * The second build target: the Anaesthetist Mobile App as an installable PWA.
  *
  * One codebase, two Vite configs — not a fork. Only 14 of the ~163 files in the
- * mobile import closure are mobile-exclusive; the rest is the shared card body,
+ * mobile import closure are mobile-exclusive; the rest is the shared booking body,
  * the BTM capture suite, the sheets, the whole store and the whole domain. A
  * copy would drift on the first polish fix. This target differs from
  * `vite.config.ts` in its root, its entry, and this plugin.

@@ -22,7 +22,7 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Cards' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Bookings' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Submitted' })).toBeVisible()
   const queueWidth = await page.getByTestId('review-queue-screen').evaluate((element) => element.getBoundingClientRect().width)
   const tableWidth = await page.getByTestId('review-queue-table-shell').evaluate((element) => element.getBoundingClientRect().width)
@@ -42,10 +42,10 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await expect(page.getByTestId('review-btm-value').first()).toHaveCSS('white-space', 'nowrap')
   await page.screenshot({ path: 'visual/shots/a7-02-review.png', fullPage: true })
 
-  // Per-card History reconstructs the trail (card + its procedures/lines).
+  // Per-booking History reconstructs the trail (booking + its procedures/lines).
   await page.getByRole('button', { name: 'History', exact: true }).first().click()
   await page.waitForTimeout(200)
-  await expect(page.getByText('Card history')).toBeVisible()
+  await expect(page.getByText('Booking history')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-08-history.png', fullPage: true })
   await page.keyboard.press('Escape')
   await page.waitForTimeout(150)

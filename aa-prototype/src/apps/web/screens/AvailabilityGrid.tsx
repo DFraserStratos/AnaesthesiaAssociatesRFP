@@ -33,7 +33,7 @@ interface GridRow {
  * column and AM/PM cell buttons (status bar + two lines). Free cells are dashed
  * with a "Book" affordance that flips to a solid green "Cover requested ✓" once
  * a request is sent (driven by `list.coverRequest`). Every read is session
- * status only (A8) — no card / patient detail leaks.
+ * status only (A8) — no booking / patient detail leaks.
  */
 export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCover }: AvailabilityGridProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)

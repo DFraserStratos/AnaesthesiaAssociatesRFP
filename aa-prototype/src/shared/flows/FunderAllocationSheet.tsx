@@ -11,7 +11,7 @@ interface FunderAllocationSheetProps {
   open: boolean
   procedure: Procedure
   list: List
-  /** 1-based position of the procedure on its Card. */
+  /** 1-based position of the procedure on its Booking. */
   ordinal: number
   actor: Actor
   onClose: () => void
@@ -62,11 +62,11 @@ export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, o
     }
   }, [procedure, list, ordinal, masters, billingLinesRecord])
 
-  const patientId = useAppStore((s) => s.schedule.cards[procedure.cardId]?.patientId)
+  const patientId = useAppStore((s) => s.schedule.bookings[procedure.bookingId]?.patientId)
 
   const options = useMemo<FunderOption[]>(() => {
     const opts: FunderOption[] = [{ key: 'none', label: 'Default route (no override)', ref: null }]
-    // The card's patient is the natural payer for the self-funded portion.
+    // The booking's patient is the natural payer for the self-funded portion.
     if (patientId !== undefined) {
       const p = masters.patients[patientId]
       opts.push({ key: `patient:${patientId}`, label: `Patient · ${p?.name ?? patientId}`, ref: { kind: 'patient', id: patientId } })

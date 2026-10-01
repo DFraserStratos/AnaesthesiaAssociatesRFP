@@ -28,15 +28,15 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
   const listsRecord = schedule.lists
-  const cardsRecord = schedule.cards
+  const bookingsRecord = schedule.bookings
 
-  const cardCount = useMemo(() => {
+  const bookingCount = useMemo(() => {
     const counts: Record<string, number> = {}
-    for (const c of Object.values(cardsRecord)) {
+    for (const c of Object.values(bookingsRecord)) {
       if (c.cancellation === undefined) counts[c.listId] = (counts[c.listId] ?? 0) + 1
     }
     return counts
-  }, [cardsRecord])
+  }, [bookingsRecord])
 
   const submitTimes = useMemo(() => {
     const map: Record<string, string> = {}
@@ -74,7 +74,7 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 980 }}>
             <thead>
               <tr>
-                {['Anaesthetist', 'List', 'List date', 'Cards', 'Submitted', ''].map((heading, index) => (
+                {['Anaesthetist', 'List', 'List date', 'Bookings', 'Submitted', ''].map((heading, index) => (
                   <th
                     key={heading === '' ? 'review' : heading}
                     style={{
@@ -111,7 +111,7 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
                     </td>
                     <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>{dayMicroCap(list.dateISO)}</td>
                     <td className="mono" style={{ ...cellStyle, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {cardCount[list.id] ?? 0}
+                      {bookingCount[list.id] ?? 0}
                     </td>
                     <td className="mono" style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
                       {submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}

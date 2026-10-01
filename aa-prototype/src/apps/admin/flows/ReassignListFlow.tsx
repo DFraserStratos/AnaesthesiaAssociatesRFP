@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { List, ListStatusKey } from '../../../domain/types'
-import { cardsForList, listForSlot, reassignList, useAppStore, type Actor } from '../../../store'
+import { bookingsForList, listForSlot, reassignList, useAppStore, type Actor } from '../../../store'
 import { Button } from '../../../shared/ui'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
@@ -51,7 +51,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
     return Object.values(anaesthetists)
       .filter((a) => a.registrationNumber !== list.anaesthetistId)
       .map((a) => ({ anae: a, slot: listForSlot(state, a.registrationNumber, list.dateISO, list.session) }))
-      .filter(({ slot }) => slot !== undefined && slot.statusKey === 'free' && slot.state === 'DRAFT' && cardsForList(state, slot.id).length === 0)
+      .filter(({ slot }) => slot !== undefined && slot.statusKey === 'free' && slot.state === 'DRAFT' && bookingsForList(state, slot.id).length === 0)
   }, [anaesthetists, list.anaesthetistId, list.dateISO, list.session, state])
 
   const target = targetId !== null ? anaesthetists[targetId] : undefined
@@ -97,7 +97,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         ) : (
           <>
             <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
-              {surnameFirst(target?.name ?? '')}'s free {list.session} becomes this list (cards, status and audit intact).
+              {surnameFirst(target?.name ?? '')}'s free {list.session} becomes this list (bookings, status and audit intact).
               {' '}{surnameFirst(sourceName)}'s {list.session} slot regenerates as the status below.
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

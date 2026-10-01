@@ -22,19 +22,19 @@
       "name": "card-fee",
       "app": "admin",
       "caption": "The fee on the office's view of the Booking, at the anaesthetist's unit value",
-      "start": "/admin/day/2026-07-21/cards/C0001",
+      "start": "/admin/day/2026-07-21/bookings/BK0001",
       "states": [
         {
           "steps": [
             {
-              "scroll": "[data-testid=card-calculation]"
+              "scroll": "[data-testid=booking-calculation]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-testid=card-calculation]"
+            "[data-testid=booking-calculation]"
           ]
         }
       ]

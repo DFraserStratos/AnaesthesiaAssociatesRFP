@@ -40,7 +40,7 @@ export const BILLABLE_PARTIES: readonly BillableParty[] = [
   },
 ] as const
 
-/** Pinned patient ids the card seeder references by name. */
+/** Pinned patient ids the booking seeder references by name. */
 export const PAT = {
   tane: 'PT0001',
   marsh: 'PT0002',
@@ -64,7 +64,7 @@ export const PAT = {
 } as const
 
 const PINNED: readonly Patient[] = [
-  // The design day's Southern Cross PM cards.
+  // The design day's Southern Cross PM bookings.
   { hiddenInternalId: PAT.tane, nhi: 'ZBC1123', name: 'Wiremu Tane', dobISO: '1979-08-22', phone: '021 555 3011', ethnicityCode: '21111' },
   { hiddenInternalId: PAT.marsh, nhi: 'ZAD2210', name: 'Susan Marsh', dobISO: '1961-02-09', phone: '03 555 3122', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.chen, nhi: 'ZAE0310', name: 'David Chen', dobISO: '1988-11-30', phone: '021 555 3230', ethnicityCode: '42111' },
@@ -86,7 +86,7 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.foster, nhi: 'ZAK8873', name: 'Diane Foster', dobISO: '1958-09-19', phone: '03 555 4459', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.riley, nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', phone: '021 555 4561', ethnicityCode: '52111' },
   { hiddenInternalId: PAT.gray, nhi: 'ZAM1098', name: 'Fiona Gray', dobISO: '1963-06-13', phone: '03 555 4678', ethnicityCode: '11111' },
-  // The Phase 04 rate x time CAPTURE card's patient (Souter, Mon 27 Jul).
+  // The Phase 04 rate x time CAPTURE booking's patient (Souter, Mon 27 Jul).
   { hiddenInternalId: PAT.sinclair, nhi: 'ZAN2219', name: 'Heather Sinclair', dobISO: '1968-02-21', phone: '021 555 4785', ethnicityCode: '11111' },
 ] as const
 
@@ -154,7 +154,7 @@ export function buildPatients(seed: number): Patient[] {
   return patients
 }
 
-/** Ids of the generic pool (assigned to generated cards in order). */
+/** Ids of the generic pool (assigned to generated bookings in order). */
 export function genericPatientIds(): string[] {
   return Array.from({ length: GENERIC_COUNT }, (_, i) => `PT${String(PINNED.length + i + 1).padStart(4, '0')}`)
 }

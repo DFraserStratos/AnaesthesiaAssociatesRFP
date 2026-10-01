@@ -108,7 +108,7 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
   await expect(page.getByText('Recently billed')).toBeVisible()
   await expect(page.getByText(/AA-2026-\d{4}/).first()).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Patient / card' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Patient / booking' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
@@ -116,7 +116,7 @@ test('authorise raises invoices; contract-holder document + email + print', asyn
   expect(invoiceWidth).toBeGreaterThan(1080)
   await page.screenshot({ path: 'visual/shots/a8-02-invoices-table.png', fullPage: true })
 
-  // The source List is a real link. Since the Patient / card cell became a link
+  // The source List is a real link. Since the Patient / booking cell became a link
   // too, both cells share ONE compact neutral chrome (`.aa-table-entity-link`:
   // inline-flex row + chevron, no underline, colour inherited from the cell)
   // rather than the List cell alone wearing a status-tinted pill — so this

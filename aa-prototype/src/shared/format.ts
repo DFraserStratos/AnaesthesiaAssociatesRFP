@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BillingRoute, List } from '../domain/types'
+import type { BillingRoute, BookingSource, List } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -159,4 +159,18 @@ export function initialsOf(name: string): string {
     .map((w) => w[0]?.toUpperCase() ?? '')
     .slice(0, 2)
     .join('')
+}
+
+/**
+ * How a Booking entered the system, as shown on the Booking (DM-39; catch-up
+ * Phase 15). Display-only: the Booking detail shows one quiet line when a
+ * source is recorded and nothing when it is not.
+ */
+export const BOOKING_SOURCE_LABELS: Record<BookingSource, string> = {
+  hospitalDownload: 'Hospital download',
+  surgeonPdf: 'Surgeon PDF',
+  admin: 'Office entry',
+  anaesthetistAdHoc: 'Added by anaesthetist',
+  anaesthetistPhoto: 'Added from a photo of the booking card',
+  copy: 'Copy of another Booking',
 }

@@ -3,8 +3,8 @@ import { runDemoAction } from './demoActions'
 
 /**
  * Phase 09 admin walkthrough — the billing monitor (trigger a failure, see
- * per-card isolation, resolve & retry) and the pre-payment gate surfaced on a
- * card (the outstanding banner + the office raise / override actions). A working
+ * per-booking isolation, resolve & retry) and the pre-payment gate surfaced on a
+ * booking (the outstanding banner + the office raise / override actions). A working
  * artifact for eyeballing plus light assertions.
  */
 
@@ -21,18 +21,18 @@ test('admin phase 09: billing monitor failure, resolve and retry', async ({ page
   await page.keyboard.press('Escape')
 
   // The monitor updated without leaving the screen.
-  // The failed COS card and its resolve action are present; the sibling billed.
+  // The failed COS booking and its resolve action are present; the sibling billed.
   await expect(page.getByRole('button', { name: /Resolve/ }).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })
 
-  // Resolve & retry recovers the failed card.
+  // Resolve & retry recovers the failed booking.
   await page.getByRole('button', { name: /Resolve/ }).first().click()
   await page.waitForTimeout(400)
   await expect(page.getByRole('button', { name: /Resolve/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-03-retried.png', fullPage: true })
 })
 
-test('admin phase 09: pre-payment gate on a card', async ({ page }) => {
+test('admin phase 09: pre-payment gate on a booking', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
 
@@ -46,7 +46,7 @@ test('admin phase 09: pre-payment gate on a card', async ({ page }) => {
   await expect(page.getByText('Pre-payment flagged')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-04-friday.png', fullPage: true })
 
-  // Open Souter's AM list (Forte / Ms G. Lim) and its card → the gate banner.
+  // Open Souter's AM list (Forte / Ms G. Lim) and its booking → the gate banner.
   await page.getByText('Ms G. Lim', { exact: false }).first().click()
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()

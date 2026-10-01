@@ -1,7 +1,7 @@
 {
   "id": "US-08.3.4",
   "status": "partial",
-  "absentReason": "Receipts and disbursements are tracked per invoice and shown per card, but there is no equilibrium view for AA overall, per anaesthetist or per patient.",
+  "absentReason": "Receipts and disbursements are tracked per invoice and shown per booking, but there is no equilibrium view for AA overall, per anaesthetist or per patient.",
   "shots": [
     {
       "name": "money-in-out",

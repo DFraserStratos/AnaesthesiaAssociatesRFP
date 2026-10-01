@@ -7,7 +7,7 @@
       "name": "insured-reimbursement",
       "app": "admin",
       "caption": "Insured patient invoiced directly, to claim from their insurer",
-      "start": "/admin/day/2026-07-16/cards/C0030",
+      "start": "/admin/day/2026-07-16/bookings/BK0030",
       "states": [
         {
           "steps": [],

@@ -42,7 +42,7 @@ export function PwaDemoActions() {
         style={{
           position: 'absolute',
           right: 'calc(var(--aa-inset-right, 0px) + 14px)',
-          // Clears the Lists tab bar, the List's submit footer and the Card's
+          // Clears the Lists tab bar, the List's submit footer and the Booking's
           // measured dock (`--aa-dock-height`, published on documentElement).
           bottom: 'calc(var(--aa-inset-bottom, 0px) + max(96px, var(--aa-dock-height, 0px) + 12px))',
           zIndex: 55,

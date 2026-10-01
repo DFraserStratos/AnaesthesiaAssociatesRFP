@@ -62,7 +62,7 @@ export interface ContractPriceQuery {
   contractId: string
   rvgBaseCode?: string
   surgeonId?: string
-  /** 1-based position of the procedure on its Card. */
+  /** 1-based position of the procedure on its Booking. */
   procedureOrdinal?: number
 }
 

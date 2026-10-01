@@ -1,9 +1,9 @@
 /**
  * Billing failure isolation + resolve-and-retry tests (Phase 09; A5).
  *
- * The seeded multi-card failure list bills its clean hospital-route card while
- * the COS-held card fails (its organisation contract dated out has no default
- * fallback) — per-card isolation. `retryBillingCase` recovers the fixed card
+ * The seeded multi-booking failure list bills its clean hospital-route booking while
+ * the COS-held booking fails (its organisation contract dated out has no default
+ * fallback) — per-booking isolation. `retryBillingCase` recovers the fixed booking
  * without duplicating the list's other invoices, is idempotent, and is refused
  * on a non-failed case and to non-office actors.
  */
@@ -30,8 +30,8 @@ function marker(key: string): string {
   if (m === undefined) throw new Error(`missing marker ${key}`)
   return m.entityId
 }
-function invoicesForCard(api: BoundAppStore, cardId: string): Invoice[] {
-  return Object.values(api.getState().billing.invoices).filter((i) => i.cardId === cardId)
+function invoicesForBooking(api: BoundAppStore, bookingId: string): Invoice[] {
+  return Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === bookingId)
 }
 
 /** Date the COS ACC contract out (before the failure list's Thu 16 date), then run. */
@@ -46,19 +46,19 @@ function triggerFailure(api: BoundAppStore): void {
 }
 
 describe('failure isolation', () => {
-  it('the COS card fails while the clean sibling still invoices', () => {
+  it('the COS booking fails while the clean sibling still invoices', () => {
     const api = store()
     triggerFailure(api)
     const listId = SEED_LIST_IDS.billingFailure
-    const failureCard = marker('billingFailureCard')
+    const failureBooking = marker('billingFailureBooking')
 
-    // Only the sibling billed; the COS card produced no invoice.
+    // Only the sibling billed; the COS booking produced no invoice.
     expect(invoicesForList(api.getState(), listId)).toHaveLength(1)
-    expect(invoicesForCard(api, failureCard)).toHaveLength(0)
+    expect(invoicesForBooking(api, failureBooking)).toHaveLength(0)
 
     const failed = failedCases(api.getState())
     expect(failed).toHaveLength(1)
-    expect(failed[0]!.cardId).toBe(failureCard)
+    expect(failed[0]!.bookingId).toBe(failureBooking)
     expect(failed[0]!.failure?.code).toBe('contractIneffective')
     // The list still completed its run (the settled billedAt reading).
     expect(api.getState().schedule.lists[listId]!.billedAtISO).toBeDefined()
@@ -66,11 +66,11 @@ describe('failure isolation', () => {
 })
 
 describe('retryBillingCase', () => {
-  it('recovers the fixed card without duplicating the list other invoices; idempotent; guarded', () => {
+  it('recovers the fixed booking without duplicating the list other invoices; idempotent; guarded', () => {
     const api = store()
     triggerFailure(api)
     const listId = SEED_LIST_IDS.billingFailure
-    const failureCard = marker('billingFailureCard')
+    const failureBooking = marker('billingFailureBooking')
     const failedCaseId = failedCases(api.getState())[0]!.id
 
     // Office-only.
@@ -85,7 +85,7 @@ describe('retryBillingCase', () => {
     const retried = retryBillingCase(api, OFFICE, failedCaseId)
     expect(retried.ok).toBe(true)
 
-    expect(invoicesForCard(api, failureCard)).toHaveLength(1)
+    expect(invoicesForBooking(api, failureBooking)).toHaveLength(1)
     // The reused case is now invoiced with the new invoice.
     const reused = api.getState().billing.cases[failedCaseId]!
     expect(reused.status).toBe('invoiced')

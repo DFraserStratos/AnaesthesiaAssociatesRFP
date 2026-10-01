@@ -4,7 +4,7 @@ import type { List } from '../../../domain/types'
 import { ANAE, HOSP, SURG } from '../../../domain/seed'
 import { editList, useAppStore, type Actor, type ListPatch } from '../../../store'
 import { Button, FieldLabel } from '../../../shared/ui'
-import { AddCardFlow } from '../../../shared/flows'
+import { AddBookingFlow } from '../../../shared/flows'
 import { useSurface } from '../../../shared/surface'
 
 interface PhoneAdviceBookingProps {
@@ -12,7 +12,7 @@ interface PhoneAdviceBookingProps {
   list: List
   actor: Actor
   onClose: () => void
-  onBooked: (cardId: string) => void
+  onBooked: (bookingId: string) => void
 }
 
 const selectStyle = {
@@ -38,7 +38,7 @@ const PHONE_ADVICE_LOOKUP_PREFILL = {
 /**
  * Phone-advice booking on a Free list ("call from the surgeon's rooms"). Step 1
  * sets the list context (hospital / surgeon / times) via `editList`; step 2
- * reuses the shared `AddCardFlow` to capture the patient, procedure and initial
+ * reuses the shared `AddBookingFlow` to capture the patient, procedure and initial
  * billing route. The Free block then renders booked on the admin grid (Step 3's
  * derived display); the anaesthetist's own views still show the session as
  * Free, since booking does not repaint the List status (parked as P5 in
@@ -49,7 +49,7 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
 
-  const [step, setStep] = useState<'context' | 'card'>('context')
+  const [step, setStep] = useState<'context' | 'booking'>('context')
   const [hospitalId, setHospitalId] = useState('')
   const [surgeonId, setSurgeonId] = useState('')
   const [startTime, setStartTime] = useState(list.session === 'AM' ? '08:00' : '13:00')
@@ -67,22 +67,22 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
     }
   }, [open, list.session])
 
-  function continueToCard() {
+  function continueToBooking() {
     setError(null)
     if (hospitalId === '') {
       setError('Choose the hospital advising this booking.')
       return
     }
-    setStep('card')
+    setStep('booking')
   }
 
-  // Write the list context only once the card is actually created, so an
-  // abandoned flow never leaves a Free list carrying a hospital but no card.
-  function onCardCreated(cardId: string) {
+  // Write the list context only once the booking is actually created, so an
+  // abandoned flow never leaves a Free list carrying a hospital but no booking.
+  function onBookingCreated(bookingId: string) {
     const patch: ListPatch = { hospitalId, startTime, endTime }
     if (surgeonId !== '') patch.surgeonId = surgeonId
     editList(useAppStore, actor, list.id, patch)
-    onBooked(cardId)
+    onBooked(bookingId)
   }
 
   const isScriptedS2Booking =
@@ -92,15 +92,15 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
     hospitalId === HOSP.stg &&
     surgeonId === SURG.hale
 
-  if (step === 'card') {
+  if (step === 'booking') {
     return (
-      <AddCardFlow
+      <AddBookingFlow
         open={open}
         listId={list.id}
         actor={actor}
         manualEmptyLookupPrefill={isScriptedS2Booking ? PHONE_ADVICE_LOOKUP_PREFILL : undefined}
         onClose={onClose}
-        onCreated={onCardCreated}
+        onCreated={onBookingCreated}
       />
     )
   }
@@ -110,7 +110,7 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Book (phone advice)</div>
         <div style={{ fontSize: 13, color: neutral.slate }}>
-          A call from the surgeon's rooms. Set the list context, then add the patient's card.
+          A call from the surgeon's rooms. Set the list context, then add the patient's booking.
         </div>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -147,7 +147,7 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="primary" block onClick={continueToCard}>Continue to add card</Button>
+        <Button variant="primary" block onClick={continueToBooking}>Continue to add booking</Button>
       </div>
     </Overlay>
   )

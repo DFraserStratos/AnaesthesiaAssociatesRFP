@@ -60,7 +60,7 @@ export const RVG_CODES: readonly RvgCode[] = [
 /** Eye-site codes, used to keep Christchurch Eye Surgery lists ophthalmic. */
 export const EYE_CODES: readonly string[] = ['42702', '42725', '42794'] as const
 
-/** General filler codes for generated cards (excludes bariatric and eye codes). */
+/** General filler codes for generated bookings (excludes bariatric and eye codes). */
 export const GENERAL_CODES: readonly string[] = [
   '20941', '20905', '20950', '49115', '49120', '47516', '47519', '50120',
   '49518', '49558', '49561', '48939', '46360', '41764', '41789', '45623',

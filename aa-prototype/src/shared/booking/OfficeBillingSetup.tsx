@@ -10,7 +10,7 @@ import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from
 interface OfficeBillingSetupProps {
   procedure: Procedure
   list: List
-  /** 1-based position on the Card. */
+  /** 1-based position on the Booking. */
   ordinal: number
   actor: Actor
   /** Office may edit (DRAFT or SUBMITTED, not AUTHORISED, not cancelled). */
@@ -27,7 +27,7 @@ type Sheet = 'none' | 'setup' | 'override' | 'funder'
 
 /**
  * The office billing-setup section (Phase 06), rendered per procedure in
- * `CardDetailBody` only for an `office` actor. Surfaces the full RFP billing
+ * `BookingDetailBody` only for an `office` actor. Surfaces the full RFP billing
  * setup as summary rows and opens the three office editors: billing setup
  * (route / insurer / category / governing contract / reference / guardian),
  * the full typed price override, and per-line funder allocation. Mobile and

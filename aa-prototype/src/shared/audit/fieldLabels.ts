@@ -2,7 +2,7 @@
  * Human labels for the patch keys that appear in an audit entry's
  * `before` / `after` objects (A7 presentation).
  *
- * Covers the editable fields of `Card`, `Procedure`, `List`, `Contract`,
+ * Covers the editable fields of `Booking`, `Procedure`, `List`, `Contract`,
  * `ContractPrice`, `Patient`, `Anaesthetist` and `BillingLine`, plus the
  * audit-only keys the store synthesises for events that are not field edits
  * (`{ cancelled, reason }`, `{ invoiceCount, exceptionCount }`, and so on).
@@ -18,26 +18,27 @@
  */
 
 export const FIELD_LABELS: Record<string, string> = {
-  // --- Card ----------------------------------------------------------------
+  // --- Booking ----------------------------------------------------------------
   listId: 'List',
   patientId: 'Patient id',
   scheduledTime: 'Scheduled time',
   completed: 'Completed',
   completedAtISO: 'Completed at',
-  copiedFromCardId: 'Copied from card',
-  cardType: 'Card type',
-  addendumOfCardId: 'Addendum of card',
+  copiedFromBookingId: 'Copied from booking',
+  bookingType: 'Booking type',
+  addendumOfBookingId: 'Addendum of booking',
   correlationRef: 'Appointment reference',
   cancellation: 'Cancellation',
   cancelled: 'Cancelled',
   prepaymentOverride: 'Pre-payment override',
   attachments: 'Attachments',
+  attachmentId: 'Attachment',
   notes: 'Notes for the office',
   lastModifiedBy: 'Last modified by',
   lastModifiedAtISO: 'Last modified at',
 
   // --- Procedure -----------------------------------------------------------
-  cardId: 'Card',
+  bookingId: 'Booking',
   description: 'Description',
   billingRoute: 'Billing route',
   governingContractId: 'Governing contract',
@@ -151,7 +152,8 @@ export const FIELD_LABELS: Record<string, string> = {
   fullyPaid: 'Fully paid',
   fullyPaidOut: 'Fully paid out',
   payablesRunId: 'Payables run',
-  source: 'Payment source',
+  // Shared: a payment's source and a Booking's source (catch-up Phase 15).
+  source: 'Source',
   idempotencyKey: 'Idempotency key',
   archived: 'Archived',
 

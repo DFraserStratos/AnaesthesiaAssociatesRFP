@@ -35,7 +35,7 @@ describe('no NHI in the Xero slice (convention 8 / Appendix 2)', () => {
     expect(runBillingForList(api, morrison).ok).toBe(true)
     handoffListCases(api, morrison)
     // A patient-payer pair (self-funded pre-payment).
-    expect(raisePreProcedureInvoice(api, OFFICE, SEED_MARKERS.prepaymentCard!.entityId).ok).toBe(true)
+    expect(raisePreProcedureInvoice(api, OFFICE, SEED_MARKERS.prepaymentBooking!.entityId).ok).toBe(true)
     // Pay everything, then disburse.
     let i = 0
     for (const cand of openAccRecs(api.getState())) {

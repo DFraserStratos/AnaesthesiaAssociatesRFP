@@ -1,5 +1,7 @@
 # Prototype map: shell, demo surfaces, PWA, router
 
+> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+
 Scope: `aa-prototype/src/shell`, `src/apps/demo`, `src/pwa`, `aa-prototype/pwa`, `src/router.tsx`, `src/App.tsx` (plus the two entry files `src/main.tsx` and `pwa/main.tsx` that wire them). All paths below are relative to `aa-prototype/` unless absolute. Written from the code, not the build docs.
 
 **Orientation.** `src/App.tsx` (5 lines) renders `AppRouter` (`src/router.tsx`). A single layout route mounts `AppShell` (`src/shell/AppShell.tsx`): a 48px dark "harness bar" (product name, "Prototype" pill, persona chip, app switcher, demo clock menu, Reset button) above an `<Outlet/>`. The outlet shows one of three product apps (`/mobile`, `/web`, `/admin`; their internal routes are mapped by other files) or one of four demo-only "surfaces" (`/demo/control`, `/demo/xero`, `/demo/integrations`, `/demo/data`). The URL is the source of truth for the current app; the shell mirrors it into `store.shell.currentApp`. There is NO screen-contextual demo control anywhere in the harness bar today: the bar is global and static; every scenario trigger lives on the `/demo/control` page (or on other demo surfaces). The PWA (`pwa/main.tsx`) is a separate entry that mounts only the Mobile App with no AppShell; its presenter controls are a `PwaDemoPanel` injected into the More tab. All state is the zustand store in `src/store`; nothing here does `fetch`.

@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { useAppStore } from '../../store'
-import { AddCardFlow, RequestCoverSheet } from '../../shared/flows'
+import { AddBookingFlow, RequestCoverSheet } from '../../shared/flows'
 import { SlideStack, type SlideLayer } from './components'
 import {
   AvailabilityScreen,
   BalancesScreen,
-  CardDetailScreen,
+  BookingDetailScreen,
   ForwardListsScreen,
   ListDetailScreen,
   MoreScreen,
 } from './screens'
+import { LegacyBookingRedirect, legacyBookingPath } from '../../shared/legacy'
 import { listsStackLocation } from './navigation'
 import { useMobileOutlet } from './outlet'
 
@@ -34,35 +35,37 @@ export function MobileListsRoute() {
   const { actor, anaesthetistId, personaName, initials } = useMobileOutlet()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { depth, listId: urlListId, cardId: urlCardId } = listsStackLocation(pathname)
+  const { depth, listId: urlListId, bookingId: urlBookingId } = listsStackLocation(pathname)
 
   const [addOpen, setAddOpen] = useState(false)
   const [offer, setOffer] = useState<OfferTarget | null>(null)
 
   // A POPPED layer has to stay mounted so it can slide out — exactly what the
   // old `onBack={() => setDepth(0)}` did, which moved depth but left listId /
-  // cardId in place. So the last-seen ids are remembered here and never cleared:
+  // bookingId in place. So the last-seen ids are remembered here and never cleared:
   // the URL drives which layer is ACTIVE, this ref keeps the outgoing one alive.
-  const seen = useRef<{ listId: string | null; cardId: string | null }>({ listId: null, cardId: null })
+  const seen = useRef<{ listId: string | null; bookingId: string | null }>({ listId: null, bookingId: null })
   useEffect(() => {
     if (urlListId !== null) seen.current.listId = urlListId
-    if (urlCardId !== null) seen.current.cardId = urlCardId
-  }, [urlListId, urlCardId])
+    if (urlBookingId !== null) seen.current.bookingId = urlBookingId
+  }, [urlListId, urlBookingId])
 
   // Stale ids fall back a layer rather than blanking (URLs outlive the seed).
   const listMissing = useAppStore((s) => urlListId !== null && s.schedule.lists[urlListId] === undefined)
-  const cardMissing = useAppStore((s) => urlCardId !== null && s.schedule.cards[urlCardId] === undefined)
+  const bookingMissing = useAppStore((s) => urlBookingId !== null && s.schedule.bookings[urlBookingId] === undefined)
+  // A pre-Phase-15 `/cards/` link: hand it to the `/bookings/` URL first.
+  if (legacyBookingPath(pathname) !== null) return <LegacyBookingRedirect />
   if (listMissing) return <Navigate to="/mobile/lists" replace />
-  if (cardMissing) return <Navigate to={`/mobile/lists/${urlListId}`} replace />
+  if (bookingMissing) return <Navigate to={`/mobile/lists/${urlListId}`} replace />
 
   const listId = urlListId ?? seen.current.listId
-  const cardId = urlCardId ?? seen.current.cardId
+  const bookingId = urlBookingId ?? seen.current.bookingId
   // Both pops REPLACE the current entry. Drill-ins stay pushes, so history
   // still records the way in, but a pop that PUSHED left the screen just exited
   // sitting FORWARD of us: installed as a PWA the OS back gesture is history,
-  // and one press after a chevron tap re-drilled into the card instead of
+  // and one press after a chevron tap re-drilled into the booking instead of
   // unwinding. Replace is not free either — it leaves the destination twice in a
-  // row ([lists, list, list] after popping a card), so the first system back
+  // row ([lists, list, list] after popping a booking), so the first system back
   // press after a pop lands on an identical URL and nothing visibly moves. One
   // dead press beats a surprise re-entry.
   const backToLists = () => navigate('/mobile/lists', { replace: true })
@@ -111,17 +114,17 @@ export function MobileListsRoute() {
             listId={listId}
             actor={actor}
             onBack={backToLists}
-            onOpenCard={(id) => navigate(`/mobile/lists/${listId}/cards/${id}`)}
-            onAddCard={() => setAddOpen(true)}
+            onOpenBooking={(id) => navigate(`/mobile/lists/${listId}/bookings/${id}`)}
+            onAddBooking={() => setAddOpen(true)}
           />
         ) : null,
     },
     {
-      key: 'card',
-      mounted: cardId !== null,
+      key: 'booking',
+      mounted: bookingId !== null,
       node:
-        cardId !== null ? (
-          <CardDetailScreen cardId={cardId} actor={actor} onBack={backToList} onCopied={backToList} />
+        bookingId !== null ? (
+          <BookingDetailScreen key={bookingId} bookingId={bookingId} actor={actor} onBack={backToList} onCopied={(newId) => navigate(`/mobile/lists/${listId}/bookings/${newId}`)} />
         ) : null,
     },
   ]
@@ -131,7 +134,7 @@ export function MobileListsRoute() {
       <SlideStack layers={listsLayers} depth={depth} onPop={popLayer} />
 
       {listId !== null && (
-        <AddCardFlow
+        <AddBookingFlow
           open={addOpen}
           listId={listId}
           actor={actor}

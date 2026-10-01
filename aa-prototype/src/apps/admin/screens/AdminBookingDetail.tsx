@@ -4,41 +4,43 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
-import { CardDetailBody } from '../../../shared/card'
+import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
 
-interface AdminCardDetailProps {
-  cardId: string
+interface AdminBookingDetailProps {
+  bookingId: string
   actor: Actor
   todayISO: string
   onBack: () => void
+  /** Opens the new Booking a Copy made. */
+  onCopied: (newBookingId: string) => void
   backLabel?: string
 }
 
 /**
- * Admin card detail — desktop chrome around the shared `CardDetailBody` with the
+ * Admin booking detail — desktop chrome around the shared `BookingDetailBody` with the
  * OFFICE actor, so it gains the office billing-setup section (Step 2), edit
  * rights on SUBMITTED lists, the audited soft-cancel, and BTM/patient edits, all
  * audited `source=office`. Identical guards and validation to the other apps,
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
-export function AdminCardDetail({ cardId, actor, todayISO, onBack, backLabel = 'Day view' }: AdminCardDetailProps) {
-  const card = useAppStore((s) => s.schedule.cards[cardId])
+export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, onCopied, backLabel = 'Day view' }: AdminBookingDetailProps) {
+  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const masters = useAppStore((s) => s.masters)
 
-  const list = card !== undefined ? listsRecord[card.listId] : undefined
+  const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const primary: Procedure | undefined = useMemo(() => {
-    if (card === undefined) return undefined
+    if (booking === undefined) return undefined
     return Object.values(proceduresRecord)
-      .filter((p) => p.cardId === cardId)
+      .filter((p) => p.bookingId === bookingId)
       .sort((a, b) => a.id.localeCompare(b.id))[0]
-  }, [card, cardId, proceduresRecord])
+  }, [booking, bookingId, proceduresRecord])
 
-  if (card === undefined || list === undefined) return null
-  const patient = masters.patients[card.patientId]
+  if (booking === undefined || list === undefined) return null
+  const patient = masters.patients[booking.patientId]
   const badge = nhiBadge(patient?.nhi)
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
 
@@ -65,7 +67,7 @@ export function AdminCardDetail({ cardId, actor, todayISO, onBack, backLabel = '
         <StatusChip status={list.statusKey} />
       </div>
 
-      <CardDetailBody cardId={cardId} actor={actor} onBack={onBack} onCopied={onBack} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} />
     </div>
   )
 }

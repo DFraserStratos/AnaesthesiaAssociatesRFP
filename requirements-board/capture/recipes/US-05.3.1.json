@@ -7,7 +7,7 @@
       "name": "additional-base",
       "app": "web",
       "caption": "Additional procedure: base units not charged and not editable",
-      "start": "/web/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
           "steps": [],
@@ -21,12 +21,12 @@
       "name": "additional-base",
       "app": "mobile",
       "caption": "Additional procedure: base units not charged and not editable",
-      "start": "/mobile/lists/L-34821-2026-07-20-AM/cards/C0022",
+      "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0022",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "[data-testid=slide-card] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
+            "[data-testid=slide-booking] [data-shot=capture-units] >> nth=1 >> [data-shot=units-row-b]"
           ]
         }
       ]

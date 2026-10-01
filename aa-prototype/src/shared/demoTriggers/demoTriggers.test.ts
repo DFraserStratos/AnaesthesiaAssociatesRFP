@@ -8,7 +8,7 @@ import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
 import { resetDemo } from '../../store/clockActions'
-import { cardsForList, openAccRecs } from '../../store/selectors'
+import { bookingsForList, openAccRecs } from '../../store/selectors'
 import { OFFICE_ACTOR } from '../../store/demoActors'
 import { CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
@@ -89,12 +89,12 @@ describe('route scoping', () => {
     expect(ids(createAppStore(), '/admin/day/2026-07-21')).toEqual([])
   })
 
-  it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Card, and nowhere else', () => {
+  it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Booking, and nowhere else', () => {
     const api = createAppStore()
     expect(ids(api, `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`)).toContain('stage-post-op')
-    const card = cardsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]
-    expect(card).toBeDefined()
-    expect(ids(api, `/admin/day/2026-07-14/cards/${card?.id ?? ''}`)).toContain('stage-post-op')
+    const booking = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]
+    expect(booking).toBeDefined()
+    expect(ids(api, `/admin/day/2026-07-14/bookings/${booking?.id ?? ''}`)).toContain('stage-post-op')
     expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
@@ -107,7 +107,7 @@ describe('route scoping', () => {
 
   it('hospital messages show on the three mobile Lists layers, on both surfaces', () => {
     const api = createAppStore()
-    for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/cards/C1']) {
+    for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/bookings/BK1']) {
       expect(ids(api, path, 'bar')).toContain('fire-hospital-message')
       expect(ids(api, path, 'pwa')).toContain('fire-hospital-message')
     }
@@ -123,7 +123,7 @@ describe('route scoping', () => {
 })
 
 describe('re-homed bodies match the Control Panel', () => {
-  it('billing failure fails the COS Card, bills its sibling, then reads Already triggered', () => {
+  it('billing failure fails the COS Booking, bills its sibling, then reads Already triggered', () => {
     const api = createAppStore()
     wireBillingRun(api)
     const t = byId('billing-failure')
@@ -132,7 +132,7 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.run(api, ctx).ok).toBe(true)
     const state = api.getState()
     expect(state.masters.contracts[CONTRACT.cosAcc]?.effectiveToISO).toBe('2026-07-15')
-    const cases = Object.values(state.billing.cases).filter((c) => cardsForList(state, SEED_LIST_IDS.billingFailure).some((card) => card.id === c.cardId))
+    const cases = Object.values(state.billing.cases).filter((c) => bookingsForList(state, SEED_LIST_IDS.billingFailure).some((booking) => booking.id === c.bookingId))
     expect(cases.some((c) => c.status === 'failed')).toBe(true)
     expect(cases.some((c) => c.status !== 'failed' && c.invoiceId !== undefined)).toBe(true)
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already triggered')
@@ -155,7 +155,7 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctx)).toMatch(/^Already staged/)
   })
 
-  it('PDF ingest creates, then updates the same Card', () => {
+  it('PDF ingest creates, then updates the same Booking', () => {
     const api = createAppStore()
     const t = byId('ingest-pdf-row')
     const ctx = ctxFor('/admin/integrations', {}, { 'integrations.tab': 'pdfs' })
@@ -235,7 +235,7 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(byId('replay-hospital-message').disabledReason(api.getState(), ctx)).toBe('Fire a message first')
     expect(byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1001').ok).toBe(true)
     expect(byId('replay-hospital-message').run(api, ctx).message).toMatch(/^Deduplicated/)
-    // After a reset the message is gone from the log: replay refuses rather than re-creating the Card.
+    // After a reset the message is gone from the log: replay refuses rather than re-creating the Booking.
     resetDemo(api)
     expect(byId('replay-hospital-message').disabledReason(api.getState(), ctx)).toMatch(/reset/)
     expect(byId('replay-hospital-message').run(api, ctx).ok).toBe(false)
@@ -255,7 +255,7 @@ describe('session 2 entries', () => {
     wireBillingRun(api)
     const listId = SEED_LIST_IDS.souterMon20Am
     expect(ids(api, `/mobile/lists/${listId}`, 'pwa')).toContain('office-authorises-list')
-    expect(ids(api, `/mobile/lists/${listId}/cards/C1`, 'pwa')).toContain('office-authorises-list')
+    expect(ids(api, `/mobile/lists/${listId}/bookings/BK1`, 'pwa')).toContain('office-authorises-list')
     expect(ids(api, `/mobile/lists/${listId}`, 'bar')).not.toContain('office-authorises-list')
     expect(ids(api, '/mobile/lists', 'pwa')).not.toContain('office-authorises-list')
     const t = byId('office-authorises-list')

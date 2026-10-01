@@ -14,7 +14,7 @@
           "caption": "NHI entered for a returning patient",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 400
@@ -45,7 +45,7 @@
           "caption": "Booking linked to the existing patient record, no duplicate created",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 400
@@ -71,7 +71,7 @@
               "value": "Laparoscopic cholecystectomy"
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"Save card\"]"
+              "click": "[role=dialog] >> role=button[name=\"Save booking\"]"
             },
             {
               "wait": 500
@@ -94,7 +94,7 @@
           "caption": "NHI entered for a returning patient",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 400
@@ -123,7 +123,7 @@
           "caption": "Booking linked to the existing patient record, no duplicate created",
           "steps": [
             {
-              "click": "text=\"Add a card\" >> nth=0"
+              "click": "text=\"Add a booking\" >> nth=0"
             },
             {
               "wait": 400
@@ -149,7 +149,7 @@
               "value": "Laparoscopic cholecystectomy"
             },
             {
-              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Save card\"]"
+              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Save booking\"]"
             },
             {
               "wait": 500

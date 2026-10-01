@@ -1,32 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, ImagePlus, Minus, Plus, Receipt, ShieldAlert, Stethoscope, X, XCircle } from 'lucide-react'
-import { accent, elevation, neutral, radius, semantic } from '../../theme/tokens'
+import { Copy, History, Minus, Plus, Receipt, ShieldAlert, Stethoscope, XCircle } from 'lucide-react'
+import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
-  validateCardForBilling,
+  validateBookingForBilling,
   type BillingValidationFailure,
-  type CardBillingContext,
+  type BookingBillingContext,
 } from '../../domain/billing'
 import {
   addPostOpAddendum,
   addProcedure,
-  completeCard,
-  copyCard,
-  editCard,
+  completeBooking,
+  copyBooking,
+  editBooking,
   prepaymentStatusFor,
   raisePreProcedureInvoice,
-  uncompleteCard,
+  removeAttachment,
+  uncompleteBooking,
   useAppStore,
   useToday,
   type Actor,
 } from '../../store'
 import { Button } from '../ui'
-import { useSurface, type CardTotalLine } from '../surface'
-import { BtmCaptureBlock, CompleteBar, CompletionOverlay, cardFee, procedureFee } from '../capture'
-import { ageYears, formatDob, nhiBadge } from '../format'
-import { PAPER_CARD_A } from '../../assets/samplePaperCards'
+import { useSurface, type BookingTotalLine } from '../surface'
+import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, procedureFee } from '../capture'
+import { ageYears, BOOKING_SOURCE_LABELS, formatDob, nhiBadge } from '../format'
+import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../attachments'
 import {
-  CancelCardSheet,
+  CancelBookingSheet,
   EditPatientSheet,
   EditProcedureSheet,
   PrepaymentOverrideSheet,
@@ -35,13 +36,13 @@ import {
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { HistorySheet } from './HistorySheet'
 
-interface CardDetailBodyProps {
-  cardId: string
+interface BookingDetailBodyProps {
+  bookingId: string
   actor: Actor
   /** Called after the completion overlay dismisses (chrome pops back to the list). */
   onBack: () => void
-  /** Called after a Card Copy (chrome pops back to the list). */
-  onCopied: () => void
+  /** Called with the new Booking's id after Copy; the chrome opens it. */
+  onCopied: (newBookingId: string) => void
   /**
    * The platform masthead, handed to the layout rather than rendered above the
    * body, for chrome that wants it to react to the scroll it does not own.
@@ -57,6 +58,7 @@ type SheetState =
   | 'cancel'
   | 'patient'
   | 'prepaymentOverride'
+  | 'attachment'
   | { kind: 'procedure'; procedureId: string }
   | { kind: 'removeProcedure'; procedureId: string; ordinal: number }
 
@@ -70,7 +72,7 @@ function shiftTime(time: string, deltaMin: number): string {
 
 function Section({ label, action, children }: { label: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div data-shot={`card-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div data-shot={`booking-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
         {action}
@@ -106,43 +108,43 @@ const officeActionStyle: React.CSSProperties = {
 }
 
 /**
- * The card-detail body (Phase 05 extraction). Everything from the old mobile
- * `CardDetailScreen` below the header: the patient / scheduled-time /
+ * The booking-detail body (Phase 05 extraction). Everything from the old mobile
+ * `BookingDetailScreen` below the header: the patient / scheduled-time /
  * attachments / notes sections, the per-procedure BTM capture blocks (ordinal
- * ordered), the live `validateCardForBilling` + the showValidation latch, the
+ * ordered), the live `validateBookingForBilling` + the showValidation latch, the
  * copy / cancel / add-procedure / complete / amend handlers, the edit sheets,
  * the completion overlay, and the complete/amend bar. Both mobile's
- * `CardDetailScreen` and web's `CardDetailView` are thin chrome wrappers around
+ * `BookingDetailScreen` and web's `BookingDetailView` are thin chrome wrappers around
  * it — one body, one set of guards / validation, so a BTM edit behaves
  * identically on both platforms.
  *
  * It names the pieces (`header` / `history` / `banners` / `context` / `capture` /
  * `actions` / `summary` / `completeBar` / `overlay`) and hands them to
- * `useSurface().CardLayout`, which owns the arrangement: one phone column, or
+ * `useSurface().BookingLayout`, which owns the arrangement: one phone column, or
  * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
-export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: CardDetailBodyProps) {
-  const { CardLayout, CardTotal } = useSurface()
-  const card = useAppStore((s) => s.schedule.cards[cardId])
+export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }: BookingDetailBodyProps) {
+  const { BookingLayout, BookingTotal } = useSurface()
+  const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
-  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, cardId))
+  const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId))
   const audit = useAppStore((s) => s.audit)
-  // The anaesthetist Card carries no calculation; only the office sees the fee.
-  const showCardTotal = actor.role !== 'anaesthetist'
+  // The anaesthetist Booking carries no calculation; only the office sees the fee.
+  const showBookingTotal = actor.role !== 'anaesthetist'
   const todayISO = useToday()
 
-  const list = card !== undefined ? listsRecord[card.listId] : undefined
+  const list = booking !== undefined ? listsRecord[booking.listId] : undefined
   const procedures: Procedure[] = useMemo(() => {
-    if (card === undefined) return []
+    if (booking === undefined) return []
     return Object.values(proceduresRecord)
-      .filter((p) => p.cardId === cardId)
+      .filter((p) => p.bookingId === bookingId)
       .sort((a, b) => a.id.localeCompare(b.id))
-  }, [card, cardId, proceduresRecord])
+  }, [booking, bookingId, proceduresRecord])
 
-  const [notes, setNotes] = useState(card?.notes ?? '')
+  const [notes, setNotes] = useState(booking?.notes ?? '')
   const [error, setError] = useState<string | null>(null)
   const [sheet, setSheet] = useState<SheetState>('none')
   /** Validation renders only after a refused Mark-complete (the latch) —
@@ -150,16 +152,14 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   const [showValidation, setShowValidation] = useState(false)
   const [completeError, setCompleteError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
-  /** Which attachment is showing its Remove button (hover, or keyboard focus). */
-  const [hoveredPhoto, setHoveredPhoto] = useState<string | null>(null)
   const [overlay, setOverlay] = useState(false)
   const [postOpMsg, setPostOpMsg] = useState<string | null>(null)
   const overlayTimer = useRef<number | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setNotes(card?.notes ?? '')
-  }, [card?.notes])
+    setNotes(booking?.notes ?? '')
+  }, [booking?.notes])
 
   useEffect(
     () => () => {
@@ -168,15 +168,15 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     [],
   )
 
-  const cancelled = card?.cancellation !== undefined
+  const cancelled = booking?.cancellation !== undefined
 
-  // Live validation (ctx assembled as billingContextForCard does). Failures
+  // Live validation (ctx assembled as billingContextForBooking does). Failures
   // render per-procedure anchors only after the showValidation latch.
   const failures: BillingValidationFailure[] = useMemo(() => {
-    if (card === undefined || list === undefined || cancelled) return []
+    if (booking === undefined || list === undefined || cancelled) return []
     const anaesthetist = masters.anaesthetists[list.anaesthetistId]
     if (anaesthetist === undefined) return []
-    const ctx: CardBillingContext = {
+    const ctx: BookingBillingContext = {
       anaesthetist,
       rvgCodes: masters.rvgCodes,
       contracts: masters.contracts,
@@ -186,26 +186,26 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
       billingLines: Object.values(billingLinesRecord),
     }
     if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
-    return validateCardForBilling(card, procedures, ctx)
-  }, [card, list, cancelled, masters, billingLinesRecord, procedures])
+    return validateBookingForBilling(booking, procedures, ctx)
+  }, [booking, list, cancelled, masters, billingLinesRecord, procedures])
 
-  const cardTotals = useMemo(() => {
+  const bookingTotals = useMemo(() => {
     if (list === undefined || procedures.length === 0) return { units: 0, total: 0 }
-    return cardFee(procedures, list, masters, billingLinesRecord)
+    return bookingFee(procedures, list, masters, billingLinesRecord)
   }, [list, procedures, masters, billingLinesRecord])
 
   /**
-   * The breakdown behind the pinned Card total. Rows are per PROCEDURE on a
-   * multi-procedure Card, and per FEE LINE when a single procedure has more than
+   * The breakdown behind the pinned Booking total. Rows are per PROCEDURE on a
+   * multi-procedure Booking, and per FEE LINE when a single procedure has more than
    * one (a rate-by-time line beside the RVG fee).
    *
-   * The rate label is shown only where every procedure agrees on it: a Card
+   * The rate label is shown only where every procedure agrees on it: a Booking
    * mixing a Type 3 fixed price with a units-by-rate procedure has no single
    * rate to state, and inventing one would be worse than omitting it.
    */
-  const cardBreakdown = useMemo(() => {
+  const bookingBreakdown = useMemo(() => {
     const empty = {
-      lines: [] as CardTotalLine[],
+      lines: [] as BookingTotalLine[],
       rateLabel: null as string | null,
       overrideNote: null as string | null,
     }
@@ -220,10 +220,10 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     )
     const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
 
-    let lines: CardTotalLine[]
+    let lines: BookingTotalLine[]
     if (procedures.length > 1) {
       lines = procedures.map((procedure, index) => {
-        const line: CardTotalLine = {
+        const line: BookingTotalLine = {
           label: procedure.description === '' ? `Procedure ${index + 1}` : procedure.description,
           amount: views[index]!.fee.total,
         }
@@ -248,21 +248,21 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     return { lines, rateLabel, overrideNote }
   }, [list, procedures, masters, billingLinesRecord])
 
-  // The card's full history: its own id plus its procedures' and billing lines'
+  // The booking's full history: its own id plus its procedures' and billing lines'
   // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
   //
   // Live records alone would lose the trail of anything REMOVED — the procedure
   // that was added, captured and then deleted would leave audit entries no
   // screen could reach, which is exactly what A6/A7 forbid. So the removals are
   // read back out of the log: a `procedure.remove` entry snapshots the whole
-  // procedure into `before`, which names the Card it belonged to, and the lines
+  // procedure into `before`, which names the Booking it belonged to, and the lines
   // that went with it are matched on that procedure id.
   const removedEntityIds = useMemo(() => {
     const procedureIds = new Set<string>()
     for (const entry of audit) {
       if (entry.entityType !== 'procedure' || entry.action !== 'procedure.remove') continue
-      const before = entry.before as { cardId?: string } | undefined
-      if (before?.cardId === cardId) procedureIds.add(entry.entityId)
+      const before = entry.before as { bookingId?: string } | undefined
+      if (before?.bookingId === bookingId) procedureIds.add(entry.entityId)
     }
     if (procedureIds.size === 0) return []
     const lineIds = audit
@@ -273,7 +273,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
       })
       .map((entry) => entry.entityId)
     return [...procedureIds, ...new Set(lineIds)]
-  }, [audit, cardId])
+  }, [audit, bookingId])
 
   const historyEntityIds = useMemo(() => {
     const procedureIds = procedures.map((p) => p.id)
@@ -281,13 +281,13 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     const lineIds = Object.values(billingLinesRecord)
       .filter((l) => procedureIdSet.has(l.procedureId))
       .map((l) => l.id)
-    return [cardId, ...procedureIds, ...lineIds, ...removedEntityIds]
-  }, [cardId, procedures, billingLinesRecord, removedEntityIds])
+    return [bookingId, ...procedureIds, ...lineIds, ...removedEntityIds]
+  }, [bookingId, procedures, billingLinesRecord, removedEntityIds])
 
   /**
-   * Which procedure each history row belongs to — only on a Card that HAS more
+   * Which procedure each history row belongs to — only on a Booking that HAS more
    * than one, where the merged trail is otherwise ambiguous. A single-procedure
-   * card needs no scope line, and adding one would just be noise.
+   * booking needs no scope line, and adding one would just be noise.
    */
   const historyEntityLabels = useMemo(() => {
     if (procedures.length < 2) return undefined
@@ -302,22 +302,22 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     return labels
   }, [procedures, billingLinesRecord])
 
-  if (card === undefined || list === undefined) return null
-  const patient = masters.patients[card.patientId]
+  if (booking === undefined || list === undefined) return null
+  const patient = masters.patients[booking.patientId]
   // Mirror the store's editRefusal so the UI never offers an action the guard
   // would refuse, nor hides one it allows: the office edits DRAFT and SUBMITTED
   // (never AUTHORISED); the anaesthetist only their own DRAFT. This is what lets
   // the office correct billing setup, edit the patient/times/BTM, amend and
-  // cancel a Card on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
+  // cancel a Booking on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
   // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
   // behaviour is unchanged (DRAFT-only).
   const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'DRAFT' || actor.role === 'office')
-  const canCapture = canEdit && !card.completed
+  const canCapture = canEdit && !booking.completed
   const isOffice = actor.role === 'office'
   const badge = nhiBadge(patient?.nhi)
 
-  const showBar = !cancelled && (card.completed || canCapture)
-  const cardLevelFailures = showValidation ? failures.filter((f) => f.procedureId === undefined) : []
+  const showBar = !cancelled && (booking.completed || canCapture)
+  const bookingLevelFailures = showValidation ? failures.filter((f) => f.procedureId === undefined) : []
 
   function run(outcome: { ok: boolean; message?: string }) {
     if (!outcome.ok) setError(outcome.message ?? 'That action was refused.')
@@ -325,55 +325,33 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   }
 
   function stepTime(delta: number) {
-    run(editCard(useAppStore, actor, cardId, { scheduledTime: shiftTime(card!.scheduledTime ?? '', delta) }))
+    run(editBooking(useAppStore, actor, bookingId, { scheduledTime: shiftTime(booking!.scheduledTime ?? '', delta) }))
   }
 
   function saveNotes() {
-    if (notes === (card!.notes ?? '')) return
-    run(editCard(useAppStore, actor, cardId, { notes }))
+    if (notes === (booking!.notes ?? '')) return
+    run(editBooking(useAppStore, actor, bookingId, { notes }))
   }
 
-  function addPhoto() {
-    // One past the highest index ever used on this Card, not the count: after
-    // removing Photo 2 of 3 the count would name the next one Photo 3 as well,
-    // and two attachments sharing an id make Remove take both. Counting up
-    // rather than filling the gap keeps the row in order, so a removal reads
-    // as a missing number instead of a shuffled one.
-    const n =
-      card!.attachments.reduce((highest, a) => {
-        const match = /-A(\d+)$/.exec(a.id)
-        return match === null ? highest : Math.max(highest, Number(match[1]))
-      }, 0) + 1
-    run(
-      editCard(useAppStore, actor, cardId, {
-        attachments: [...card!.attachments, { id: `${cardId}-A${n}`, name: `Photo ${n}`, kind: 'photo', dataUrl: PAPER_CARD_A }],
-      }),
-    )
-  }
-
-  function removePhoto(attachmentId: string) {
-    run(
-      editCard(useAppStore, actor, cardId, {
-        attachments: card!.attachments.filter((a) => a.id !== attachmentId),
-      }),
-    )
+  function removeBookingAttachment(attachmentId: string) {
+    return removeAttachment(useAppStore, actor, { kind: 'booking', id: bookingId }, attachmentId)
   }
 
   function doCopy() {
-    const outcome = copyCard(useAppStore, actor, cardId)
+    const outcome = copyBooking(useAppStore, actor, bookingId)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
-    onCopied()
+    onCopied(outcome.value.bookingId)
   }
 
   function doAddProcedure() {
-    run(addProcedure(useAppStore, actor, cardId))
+    run(addProcedure(useAppStore, actor, bookingId))
   }
 
   function markComplete() {
-    const outcome = completeCard(useAppStore, actor, cardId)
+    const outcome = completeBooking(useAppStore, actor, bookingId)
     if (!outcome.ok) {
       // The refusal message renders verbatim; the latch turns inline
       // validation on (it live-clears as fields are fixed).
@@ -447,7 +425,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   }
 
   function amend() {
-    const outcome = uncompleteCard(useAppStore, actor, cardId)
+    const outcome = uncompleteBooking(useAppStore, actor, bookingId)
     if (!outcome.ok) setError(outcome.message)
     else {
       setError(null)
@@ -456,11 +434,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
   }
 
   function doRaisePrepayment() {
-    run(raisePreProcedureInvoice(useAppStore, actor, cardId))
+    run(raisePreProcedureInvoice(useAppStore, actor, bookingId))
   }
 
   function doAddPostOp() {
-    const outcome = addPostOpAddendum(useAppStore, actor, cardId)
+    const outcome = addPostOpAddendum(useAppStore, actor, bookingId)
     if (!outcome.ok) {
       setPostOpMsg(null)
       setError(outcome.message)
@@ -470,7 +448,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     setPostOpMsg("Post-op addendum created on today's free session for this anaesthetist. Open it from the day view or list to capture and bill it.")
   }
 
-  /* History affordance (Phase 07) — the card's reconstructable audit trail,
+  /* History affordance (Phase 07) — the booking's reconstructable audit trail,
      available on every platform (A6/A7). Own-data view is fine per A8. */
   const history = (
     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -486,8 +464,8 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
 
   const hasBanners =
     cancelled ||
-    card.copiedFromCardId !== undefined ||
-    card.cardType === 'postOpAddendum' ||
+    (booking.copiedFromBookingId !== undefined && !booking.completed) ||
+    booking.bookingType === 'postOpAddendum' ||
     prepaymentStatus !== 'none' ||
     error !== null ||
     (completeError !== null && showValidation)
@@ -496,21 +474,21 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
     <>
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
-          <strong>Card cancelled.</strong> {card.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
+          <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
         </div>
       )}
-      {card.copiedFromCardId !== undefined && (
+      {booking.copiedFromBookingId !== undefined && !booking.completed && (
         <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-          Additional procedure, copied from an earlier card on this list. It bills for time units only.
+          Copied from another Booking for this patient on this List. Capture its procedure, then mark it complete.
         </div>
       )}
-      {card.cardType === 'postOpAddendum' && (
+      {booking.bookingType === 'postOpAddendum' && (
         <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-          <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new card through its own cycle; the original card stays locked and immutable (the RFP immutability answer).
+          <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new booking through its own cycle; the original booking stays locked and immutable (the RFP immutability answer).
         </div>
       )}
       {prepaymentStatus !== 'none' && (
-        <div data-shot="card-prepayment" style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.warning.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.warning.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div data-shot="booking-prepayment" style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.warning.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.warning.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
             <ShieldAlert size={16} aria-hidden />
             {prepaymentStatus === 'required' && 'Pre-payment required'}
@@ -520,11 +498,11 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
           </div>
           <span>
             {prepaymentStatus === 'required' &&
-              'A patient-funded procedure on this card requires pre-payment before the procedure proceeds. Completing the card is blocked until the pre-invoice is paid or the office records an override.'}
+              'A patient-funded procedure on this booking requires pre-payment before the procedure proceeds. Completing the booking is blocked until the pre-invoice is paid or the office records an override.'}
             {prepaymentStatus === 'outstanding' &&
-              'The pre-procedure invoice has been raised but is not yet paid. Completing the card is blocked until payment clears or the office records an override.'}
+              'The pre-procedure invoice has been raised but is not yet paid. Completing the booking is blocked until payment clears or the office records an override.'}
             {prepaymentStatus === 'overridden' &&
-              `The office lifted the pre-payment gate. Reason: ${card.prepaymentOverride?.reason ?? 'not recorded'}.`}
+              `The office lifted the pre-payment gate. Reason: ${booking.prepaymentOverride?.reason ?? 'not recorded'}.`}
             {prepaymentStatus === 'paid' && 'The pre-payment invoice has been paid. The completion gate is cleared.'}
           </span>
           {(prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && (
@@ -554,7 +532,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
       {completeError !== null && showValidation && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <strong>{completeError}</strong>
-          {cardLevelFailures.map((f, i) => (
+          {bookingLevelFailures.map((f, i) => (
             <span key={i}>{f.message}</span>
           ))}
         </div>
@@ -591,7 +569,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             passing, and it keeps its 44px target for the phone. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: canEdit ? 44 : undefined }}>
           <span style={{ width: 96, flex: 'none', fontSize: 12, color: neutral.mist }}>Scheduled</span>
-          <span className="mono" style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{card.scheduledTime ?? 'Not set'}</span>
+          <span className="mono" style={{ flex: 1, fontSize: 14, color: neutral.ink }}>{booking.scheduledTime ?? 'Not set'}</span>
           {canEdit && (
             <>
               <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
@@ -600,47 +578,22 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
           )}
         </div>
       </Section>
+      {/* How the Booking entered the system (DM-39): one quiet line when it is
+          recorded, nothing when it is not. Display-only; nothing reads it. */}
+      {booking.source !== undefined && (
+        <div data-shot="booking-source" style={{ display: 'flex', alignItems: 'baseline', gap: 6, padding: '0 2px', fontSize: 11, color: neutral.mist }}>
+          <span style={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Source</span>
+          <span aria-hidden>·</span>
+          <span style={{ fontSize: 12, color: neutral.slate }}>{BOOKING_SOURCE_LABELS[booking.source]}</span>
+        </div>
+      )}
 
-      {/* Attachments */}
-      <Section label="Attachments" action={canEdit ? <button onClick={addPhoto} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><ImagePlus size={16} aria-hidden /> Add photo</button> : undefined}>
-        {card.attachments.length === 0 ? (
-          <div style={{ fontSize: 13, color: neutral.mist }}>No attachments.</div>
-        ) : (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {card.attachments.map((a) => (
-              <div
-                key={a.id}
-                onMouseEnter={() => setHoveredPhoto(a.id)}
-                onMouseLeave={() => setHoveredPhoto((current) => (current === a.id ? null : current))}
-                style={{ width: 72, display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}
-              >
-                {a.dataUrl !== undefined ? (
-                  <img src={a.dataUrl} alt={a.name} style={{ width: 72, height: 92, objectFit: 'cover', borderRadius: 8, border: `1px solid ${neutral.line}` }} />
-                ) : (
-                  <div style={{ width: 72, height: 92, borderRadius: 8, background: neutral.sunken, display: 'flex', alignItems: 'center', justifyContent: 'center', color: neutral.mist, fontSize: 11 }}>{a.kind}</div>
-                )}
-                {/* On the thumbnail, not a row of Remove links: the target is
-                    what it deletes. It fades in on hover so a wall of scans
-                    reads as scans, and stays MOUNTED while hidden — focus
-                    reveals it, which is what keeps it reachable by keyboard. */}
-                {canEdit && (
-                  <button
-                    type="button"
-                    aria-label={`Remove ${a.name}`}
-                    title={`Remove ${a.name}`}
-                    onClick={() => removePhoto(a.id)}
-                    onFocus={() => setHoveredPhoto(a.id)}
-                    onBlur={() => setHoveredPhoto((current) => (current === a.id ? null : current))}
-                    style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: `1px solid ${neutral.line}`, background: neutral.surface, color: semantic.error.onTint, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: elevation.e1, opacity: hoveredPhoto === a.id ? 1 : 0, transition: 'opacity 120ms ease-out' }}
-                  >
-                    <X size={13} strokeWidth={2.6} aria-hidden />
-                  </button>
-                )}
-                <span style={{ fontSize: 10, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Attachments (US-03.1.3): written only through addAttachment / removeAttachment. */}
+      <Section
+        label="Attachments"
+        action={canEdit ? <AddAttachmentButton onClick={() => setSheet('attachment')} /> : undefined}
+      >
+        <AttachmentStrip attachments={booking.attachments} canRemove={canEdit} onRemove={removeBookingAttachment} emptyText="No attachments." />
       </Section>
 
       {/* Notes for the office */}
@@ -654,7 +607,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             style={{ width: '100%', boxSizing: 'border-box', minHeight: 72, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, padding: 12, fontFamily: 'inherit', fontSize: 15, resize: 'none', background: neutral.bg }}
           />
         ) : (
-          <div style={{ fontSize: 14, color: card.notes !== undefined ? neutral.ink : neutral.mist }}>{card.notes ?? 'No notes.'}</div>
+          <div style={{ fontSize: 14, color: booking.notes !== undefined ? neutral.ink : neutral.mist }}>{booking.notes ?? 'No notes.'}</div>
         )}
       </Section>
     </>
@@ -662,7 +615,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
 
   const capture = (
     <>
-      {/* Outcome / BTM capture — one block per procedure, in Card order
+      {/* Outcome / BTM capture — one block per procedure, in Booking order
           (the ordinal feeds Type 3 second-procedure pricing). */}
       {!cancelled &&
         procedures.map((procedure, index) => (
@@ -705,21 +658,27 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
       {/* Actions */}
       {canEdit && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-          <Button variant="secondary" block onClick={doCopy}>
-            <Copy size={16} aria-hidden /> Copy for an additional procedure
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Button variant="secondary" block onClick={doCopy}>
+              <Copy size={16} aria-hidden /> Copy booking
+            </Button>
+            <span style={{ fontSize: 11.5, color: neutral.mist }}>
+              Starts a new Booking for this patient on this List.
+              {canCapture && ' To add a procedure to this Booking, use Add another procedure.'}
+            </span>
+          </div>
           <button
             onClick={() => setSheet('cancel')}
             style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: semantic.error.onTint, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
-            <XCircle size={16} aria-hidden /> Cancel card
+            <XCircle size={16} aria-hidden /> Cancel booking
           </button>
         </div>
       )}
 
-      {/* Post-op addendum (B8) — on a locked (authorised/billed) card. The
-          original stays immutable; the addendum is a new linked card. */}
-      {!cancelled && list.state === 'AUTHORISED' && card.cardType !== 'postOpAddendum' && (
+      {/* Post-op addendum (B8) — on a locked (authorised/billed) booking. The
+          original stays immutable; the addendum is a new linked booking. */}
+      {!cancelled && list.state === 'AUTHORISED' && booking.bookingType !== 'postOpAddendum' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           {postOpMsg !== null && (
             <div style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
@@ -730,8 +689,8 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
             <Stethoscope size={16} aria-hidden /> Add post-op event
           </Button>
           <span style={{ fontSize: 11.5, color: neutral.mist }}>
-            A post-op charge (an HDU review, pain consult or nerve catheter) bills as a new linked card on today's
-            free session; this locked card stays immutable (the RFP immutability answer).
+            A post-op charge (an HDU review, pain consult or nerve catheter) bills as a new linked booking on today's
+            free session; this locked booking stays immutable (the RFP immutability answer).
           </span>
         </div>
       )}
@@ -740,7 +699,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
 
   return (
     <>
-      <CardLayout
+      <BookingLayout
         contentRef={contentRef}
         header={header ?? null}
         history={history}
@@ -749,15 +708,15 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         capture={capture}
         actions={actions}
         summary={
-          cancelled || procedures.length === 0 || !showCardTotal
+          cancelled || procedures.length === 0 || !showBookingTotal
             ? null
             : (action) => (
-                <CardTotal
-                  units={cardTotals.units}
-                  fee={cardTotals.total}
-                  lines={cardBreakdown.lines}
-                  rateLabel={cardBreakdown.rateLabel}
-                  overrideNote={cardBreakdown.overrideNote}
+                <BookingTotal
+                  units={bookingTotals.units}
+                  fee={bookingTotals.total}
+                  lines={bookingBreakdown.lines}
+                  rateLabel={bookingBreakdown.rateLabel}
+                  overrideNote={bookingBreakdown.overrideNote}
                   action={action}
                 />
               )
@@ -765,7 +724,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         completeBar={
           showBar ? (
             <CompleteBar
-              completed={card.completed}
+              completed={booking.completed}
               canAmend={canEdit}
               onComplete={markComplete}
               onAmend={amend}
@@ -775,19 +734,20 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         overlay={
           overlay ? (
             <CompletionOverlay
-              units={cardTotals.units}
-              fee={cardTotals.total}
-              showCalculation={showCardTotal}
+              units={bookingTotals.units}
+              fee={bookingTotals.total}
+              showCalculation={showBookingTotal}
               onDismiss={dismissOverlay}
             />
           ) : null
         }
       />
 
-      <CancelCardSheet open={sheet === 'cancel'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
-      <PrepaymentOverrideSheet open={sheet === 'prepaymentOverride'} cardId={cardId} actor={actor} onClose={() => setSheet('none')} onOverridden={() => setError(null)} />
+      <AddAttachmentSheet open={sheet === 'attachment'} target={{ kind: 'booking', id: bookingId }} actor={actor} onClose={() => setSheet('none')} />
+      <CancelBookingSheet open={sheet === 'cancel'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onCancelled={() => setError(null)} />
+      <PrepaymentOverrideSheet open={sheet === 'prepaymentOverride'} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} onOverridden={() => setError(null)} />
       {patient !== undefined && (
-        <EditPatientSheet open={sheet === 'patient'} patient={patient} cardId={cardId} actor={actor} onClose={() => setSheet('none')} />
+        <EditPatientSheet open={sheet === 'patient'} patient={patient} bookingId={bookingId} actor={actor} onClose={() => setSheet('none')} />
       )}
       {typeof sheet === 'object' && sheet.kind === 'procedure' && proceduresRecord[sheet.procedureId] !== undefined && (
         <EditProcedureSheet
@@ -811,7 +771,7 @@ export function CardDetailBody({ cardId, actor, onBack, onCopied, header }: Card
         open={historyOpen}
         entityIds={historyEntityIds}
         {...(historyEntityLabels !== undefined ? { entityLabels: historyEntityLabels } : {})}
-        title="Card history"
+        title="Booking history"
         onClose={() => setHistoryOpen(false)}
       />
     </>

@@ -7,7 +7,7 @@
       "name": "adjustment",
       "app": "web",
       "caption": "Anaesthetist adjustment",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "entry",
@@ -67,28 +67,28 @@
       "name": "adjustment",
       "app": "mobile",
       "caption": "Anaesthetist adjustment",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "entry",
           "caption": "Adjustment with a reason",
           "steps": [
             {
-              "click": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+              "click": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
             },
             {
               "wait": 200
             },
             {
-              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
               "value": "-40"
             },
             {
-              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
               "value": "Agreed discount with patient"
             },
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 250
             },
             {
@@ -96,7 +96,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge]"
+            "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge]"
           ]
         },
         {
@@ -104,28 +104,28 @@
           "caption": "Adjustment applied, the Booking total shows the fee before it",
           "steps": [
             {
-              "click": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
+              "click": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] >> role=button[name=\"Adjustment $\"]"
             },
             {
               "wait": 200
             },
             {
-              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
+              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"-25.00\"]",
               "value": "-40"
             },
             {
-              "fill": "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
+              "fill": "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge] input[placeholder=\"Why the price differs\"]",
               "value": "Agreed discount with patient"
             },
             {
-              "click": "[data-testid=slide-card] >> role=button[name=\"Save override\"]"
+              "click": "[data-testid=slide-booking] >> role=button[name=\"Save override\"]"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] [data-shot=capture-adjustment-and-charge]"
+            "[data-testid=slide-booking] [data-shot=capture-adjustment-and-charge]"
           ]
         }
       ]

@@ -101,7 +101,7 @@ export function resolveBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdo
 
 /**
  * The RFP's split-billing rule: an additional procedure (e.g. on a copied
- * Card) yields TIME UNITS ONLY; base and modifiers charge on the first
+ * Booking) yields TIME UNITS ONLY; base and modifiers charge on the first
  * procedure alone.
  */
 export function splitBillingUnits(procedure: Procedure, btm: BtmBreakdown): number {
@@ -122,7 +122,7 @@ export interface FeeContext {
   baseCode?: RvgCode
   /** For Type 3 price matching. */
   surgeonId?: string
-  /** 1-based position of the procedure on its Card (2nd-procedure rules). */
+  /** 1-based position of the procedure on its Booking (2nd-procedure rules). */
   procedureOrdinal?: number
   /**
    * The procedure's captured NON-RVG billing lines (fixed / rate x time).

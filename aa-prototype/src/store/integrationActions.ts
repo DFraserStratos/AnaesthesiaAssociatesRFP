@@ -2,14 +2,14 @@
  * Integration processing (Phase 11) — the store side of the HL7/FHIR + PDF
  * story. Pure translation lives in `domain/integrations`; this module APPLIES a
  * parsed message to the schedule through the SAME audited write-paths the manual
- * app uses (`createCard`/`editCard`/`reassignCard`/`cancelCard`, patients via
+ * app uses (`createBooking`/`editBooking`/`reassignBooking`/`cancelBooking`, patients via
  * `upsertPatient`), always with an `source:'integration'` actor. That is what
  * makes the lifecycle source guard, the validators and `upsertPatient`'s
  * ethnicity quarantine load-bearing here — no integration-specific domain maths.
  *
  * Correlation keys do two jobs: MSH-10 dedupes MESSAGES (a replay is a no-op,
  * logged `duplicate`); the SCH-2 appointment id correlates APPOINTMENTS
- * (S13/S14/S15 locate their Card by `{sourceFeedId, externalAppointmentId}`).
+ * (S13/S14/S15 locate their Booking by `{sourceFeedId, externalAppointmentId}`).
  *
  * Reliability: `MAX_ATTEMPTS` retries. A transient fault fails once then
  * succeeds; a deterministic fault (a bad NHI under a wrong mapping) fails every
@@ -34,9 +34,9 @@ import {
 } from '../domain/integrations'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi, BoundAppStore } from './appStore'
-import { createCard } from './cardActions'
-import { cancelCard, editCard, editProcedure, reassignCard, type CardPatch } from './lifecycle'
-import { cardsOnListByNhi, findCardByCorrelation, listForSlot, proceduresForCard } from './selectors'
+import { createBooking } from './bookingActions'
+import { cancelBooking, editBooking, editProcedure, reassignBooking, type BookingPatch } from './lifecycle'
+import { bookingsOnListByNhi, findBookingByCorrelation, listForSlot, proceduresForBooking } from './selectors'
 
 export const MAX_ATTEMPTS = 3
 
@@ -61,7 +61,7 @@ interface RowInit {
   attempts: number
   failureReason?: string
   patientRef?: string
-  resultCardId?: string
+  resultBookingId?: string
 }
 
 function createMessageRow(api: AppStoreApi, actor: Actor, canned: CannedMessage, init: RowInit): string {
@@ -84,13 +84,13 @@ function createMessageRow(api: AppStoreApi, actor: Actor, canned: CannedMessage,
     }
     if (init.failureReason !== undefined) row.failureReason = init.failureReason
     if (init.patientRef !== undefined) row.patientRef = init.patientRef
-    if (init.resultCardId !== undefined) row.resultCardId = init.resultCardId
+    if (init.resultBookingId !== undefined) row.resultBookingId = init.resultBookingId
     metas.push({
       entityType: 'integrationMessage',
       entityId: id,
       action: 'integration.receive',
       after: { status: init.status, feed: canned.feedId, event: canned.eventType },
-      stampCardId: null,
+      stampBookingId: null,
     })
     return {
       integrations: { ...s.integrations, messages: { ...s.integrations.messages, [id]: row } },
@@ -119,7 +119,7 @@ function updateMessageRow(
       action,
       before: { status: existing.status, attempts: existing.attempts },
       after: { status: patch.status ?? existing.status, attempts: patch.attempts ?? existing.attempts },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => {
       const cur = s.integrations.messages[rowId]
@@ -139,7 +139,7 @@ function applyEffect(
   actor: Actor,
   parsed: ParsedMessage,
   canned: CannedMessage,
-): Outcome<{ cardId: string }> {
+): Outcome<{ bookingId: string }> {
   const appointmentId = parsed.appointmentId ?? canned.correlationAppointmentId
 
   if (canned.eventType === 'S12') {
@@ -147,7 +147,7 @@ function applyEffect(
     if (routing === undefined) return refuse('noTargetList', 'This booking has no target session configured.')
     const list = listForSlot(api.getState(), routing.anaesthetistId, routing.dateISO, routing.session)
     if (list === undefined) return refuse('noTargetList', 'The target session for this booking does not exist on the canvas.')
-    const outcome = createCard(api, actor, list.id, {
+    const outcome = createBooking(api, actor, list.id, {
       patient: {
         ...(parsed.patient.nhi !== undefined ? { nhi: parsed.patient.nhi } : {}),
         name: parsed.patient.name ?? 'Unknown patient',
@@ -158,22 +158,25 @@ function applyEffect(
       billingRoute: 'hospital',
       ...(parsed.scheduledTime !== undefined ? { scheduledTime: parsed.scheduledTime } : {}),
       correlationRef: { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId },
+      // Interim until Phase 33 routes hospital rows through the matching screen:
+      // today's HL7/FHIR create stands in for the hospital download.
+      source: 'hospitalDownload',
     })
     if (!outcome.ok) return outcome
-    return ok({ cardId: outcome.value.cardId })
+    return ok({ bookingId: outcome.value.bookingId })
   }
 
-  // Modify events locate the Card by its appointment correlation ref.
-  const card = findCardByCorrelation(api.getState(), { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId })
-  if (card === undefined) {
+  // Modify events locate the Booking by its appointment correlation ref.
+  const booking = findBookingByCorrelation(api.getState(), { sourceFeedId: canned.feedId, externalAppointmentId: appointmentId })
+  if (booking === undefined) {
     return refuse('noMatch', 'No booking matches this appointment id. Parked for the office to reconcile.')
   }
-  const currentList = api.getState().schedule.lists[card.listId]
-  if (currentList === undefined) return refuse('noMatch', 'The matched Card has no List. Parked for the office.')
+  const currentList = api.getState().schedule.lists[booking.listId]
+  if (currentList === undefined) return refuse('noMatch', 'The matched Booking has no List. Parked for the office.')
   // A stale update for an appointment the office already cancelled is not applied
-  // (integrations never edit a soft-cancelled Card); it parks for reconciliation.
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'The matched appointment is cancelled. This update is not applied; the office should reconcile it.')
+  // (integrations never edit a soft-cancelled Booking); it parks for reconciliation.
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'The matched appointment is cancelled. This update is not applied; the office should reconcile it.')
   }
 
   if (canned.eventType === 'S13') {
@@ -181,39 +184,39 @@ function applyEffect(
       parsed.scheduledDateISO !== undefined
         ? listForSlot(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, timeToSession(parsed.scheduledTime))
         : undefined
-    if (target !== undefined && target.id !== card.listId) {
-      // Cross-List reschedule: move the Card FIRST (the guarded, refusable step),
+    if (target !== undefined && target.id !== booking.listId) {
+      // Cross-List reschedule: move the Booking FIRST (the guarded, refusable step),
       // then set the new time. Reassign-before-edit means a refused move commits
-      // nothing, so a locked target never strands a time change on the source Card.
-      const moved = reassignCard(api, actor, card.id, target.id)
+      // nothing, so a locked target never strands a time change on the source Booking.
+      const moved = reassignBooking(api, actor, booking.id, target.id)
       if (!moved.ok) return moved
       if (parsed.scheduledTime !== undefined) {
-        const timed = editCard(api, actor, card.id, { scheduledTime: parsed.scheduledTime })
+        const timed = editBooking(api, actor, booking.id, { scheduledTime: parsed.scheduledTime })
         if (!timed.ok) return timed
       }
-      return ok({ cardId: card.id })
+      return ok({ bookingId: booking.id })
     }
     // Same-List reschedule: a scheduledTime change.
-    const patch: CardPatch = {}
+    const patch: BookingPatch = {}
     if (parsed.scheduledTime !== undefined) patch.scheduledTime = parsed.scheduledTime
-    const retimed = editCard(api, actor, card.id, patch)
+    const retimed = editBooking(api, actor, booking.id, patch)
     if (!retimed.ok) return retimed
-    return ok({ cardId: card.id })
+    return ok({ bookingId: booking.id })
   }
 
   if (canned.eventType === 'S14') {
-    const patch: CardPatch = {}
+    const patch: BookingPatch = {}
     if (parsed.scheduledTime !== undefined) patch.scheduledTime = parsed.scheduledTime
     if (parsed.note !== undefined) patch.notes = parsed.note
-    const modified = editCard(api, actor, card.id, patch)
+    const modified = editBooking(api, actor, booking.id, patch)
     if (!modified.ok) return modified
-    return ok({ cardId: card.id })
+    return ok({ bookingId: booking.id })
   }
 
   if (canned.eventType === 'S15') {
-    const cancelled = cancelCard(api, actor, card.id, parsed.cancelReason ?? 'Cancelled by the hospital feed')
+    const cancelled = cancelBooking(api, actor, booking.id, parsed.cancelReason ?? 'Cancelled by the hospital feed')
     if (!cancelled.ok) return cancelled
-    return ok({ cardId: card.id })
+    return ok({ bookingId: booking.id })
   }
 
   return refuse('unknownEvent', `Unsupported event type ${canned.eventType}.`)
@@ -223,7 +226,7 @@ function applyEffect(
 // processMessage / retryMessage / reprocessMessage
 // ---------------------------------------------------------------------------
 
-function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; cardId?: string }> {
+function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
   const state = api.getState()
   const row = state.integrations.messages[rowId]
   if (row === undefined) return refuse('notFound', 'Message not found.')
@@ -267,7 +270,7 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
       result.code === 'listAuthorised' ||
       result.code === 'noMatch' ||
       result.code === 'noTargetList' ||
-      result.code === 'cardCancelled'
+      result.code === 'bookingCancelled'
     ) {
       updateMessageRow(api, actor, rowId, {
         status: 'manualIntervention',
@@ -290,11 +293,11 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
   updateMessageRow(api, actor, rowId, {
     status: 'processed',
     attempts: nextAttempts,
-    resultCardId: result.value.cardId,
+    resultBookingId: result.value.bookingId,
     failureReason: undefined,
     ...(patientRef !== undefined ? { patientRef } : {}),
   })
-  return ok({ outcome: 'processed', cardId: result.value.cardId })
+  return ok({ outcome: 'processed', bookingId: result.value.bookingId })
 }
 
 /**
@@ -303,7 +306,7 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
  * effect; an in-flight (retrying/pending) row continues; otherwise a fresh row
  * is created and processed.
  */
-export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ outcome: string; cardId?: string }> {
+export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ outcome: string; bookingId?: string }> {
   const canned = cannedMessage(cannedId)
   if (canned === undefined) return refuse('unknownMessage', 'No such message in the library.')
   const state = api.getState()
@@ -316,7 +319,7 @@ export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ ou
     createMessageRow(api, integrationActor(feed.id), canned, {
       status: 'duplicate',
       attempts: 1,
-      failureReason: `Duplicate of ${canned.id}, already processed. Deduped by control id, no second Card created.`,
+      failureReason: `Duplicate of ${canned.id}, already processed. Deduped by control id, no second Booking created.`,
       ...(already.patientRef !== undefined ? { patientRef: already.patientRef } : {}),
     })
     return ok({ outcome: 'duplicate' })
@@ -328,12 +331,12 @@ export function processMessage(api: AppStoreApi, cannedId: string): Outcome<{ ou
 }
 
 /** Re-attempt a `retrying` message (the auto-retry timer + the manual retry button). */
-export function retryMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; cardId?: string }> {
+export function retryMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
   return attemptMessage(api, rowId)
 }
 
 /** Reprocess a dead-lettered / parked message after a fix (feed mapping edit), with a fresh retry budget. */
-export function reprocessMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; cardId?: string }> {
+export function reprocessMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: string; bookingId?: string }> {
   const row = api.getState().integrations.messages[rowId]
   if (row === undefined) return refuse('notFound', 'Message not found.')
   updateMessageRow(api, integrationActor(row.feedId), rowId, { status: 'pending', attempts: 0, failureReason: undefined }, 'integration.reprocess')
@@ -360,7 +363,7 @@ export function setFeedMapping(api: AppStoreApi, actor: Actor, feedId: string, k
       action: 'feed.update',
       before: { [key]: feed.fieldMapping[key] },
       after: { [key]: sourcePath },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => {
       const f = s.integrations.feeds[feedId]
@@ -404,7 +407,7 @@ export function correctEthnicityCode(api: AppStoreApi, actor: Actor, patientId: 
       action: 'patient.ethnicity.correct',
       before: { pending: patient.ethnicityPending?.receivedCode },
       after: { ethnicityCode: verdict.code },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => {
       const p = s.masters.patients[patientId]
@@ -422,9 +425,9 @@ export function correctEthnicityCode(api: AppStoreApi, actor: Actor, patientId: 
 // ---------------------------------------------------------------------------
 
 /**
- * Ingest one reviewed PDF row onto a List. A row whose NHI matches a Card
+ * Ingest one reviewed PDF row onto a List. A row whose NHI matches a Booking
  * already on that List UPDATES it (scheduled time + operation) rather than
- * duplicating; otherwise a new Card is created (patient via the shared
+ * duplicating; otherwise a new Booking is created (patient via the shared
  * `upsertPatient`). Office-actor; a bad NHI refuses so the office must fix it in
  * review first.
  */
@@ -433,7 +436,7 @@ export function ingestPdfRow(
   actor: Actor,
   targetListId: string,
   row: PdfRow,
-): Outcome<{ cardId: string; outcome: 'created' | 'updated' }> {
+): Outcome<{ bookingId: string; outcome: 'created' | 'updated' }> {
   const state = api.getState()
   const list = state.schedule.lists[targetListId]
   if (list === undefined) return refuse('notFound', 'Target List not found.')
@@ -447,21 +450,21 @@ export function ingestPdfRow(
     normalisedNhi = verdict.normalised
   }
 
-  const existing = normalisedNhi !== undefined ? cardsOnListByNhi(state, targetListId, normalisedNhi)[0] : undefined
+  const existing = normalisedNhi !== undefined ? bookingsOnListByNhi(state, targetListId, normalisedNhi)[0] : undefined
   if (existing !== undefined) {
     if (row.scheduledTime !== '') {
-      const timed = editCard(api, actor, existing.id, { scheduledTime: row.scheduledTime })
+      const timed = editBooking(api, actor, existing.id, { scheduledTime: row.scheduledTime })
       if (!timed.ok) return timed
     }
-    const first = proceduresForCard(state, existing.id)[0]
+    const first = proceduresForBooking(state, existing.id)[0]
     if (first !== undefined && row.operation.trim() !== '') {
       const desc = editProcedure(api, actor, first.id, { description: row.operation.trim() })
       if (!desc.ok) return desc
     }
-    return ok({ cardId: existing.id, outcome: 'updated' })
+    return ok({ bookingId: existing.id, outcome: 'updated' })
   }
 
-  const created = createCard(api, actor, targetListId, {
+  const created = createBooking(api, actor, targetListId, {
     patient: {
       ...(row.nhi.trim() !== '' ? { nhi: row.nhi.trim() } : {}),
       name: row.name,
@@ -471,9 +474,10 @@ export function ingestPdfRow(
     operation: row.operation,
     billingRoute: 'hospital',
     ...(row.scheduledTime !== '' ? { scheduledTime: row.scheduledTime } : {}),
+    source: 'surgeonPdf',
   })
   if (!created.ok) return created
-  return ok({ cardId: created.value.cardId, outcome: 'created' })
+  return ok({ bookingId: created.value.bookingId, outcome: 'created' })
 }
 
 // ---------------------------------------------------------------------------

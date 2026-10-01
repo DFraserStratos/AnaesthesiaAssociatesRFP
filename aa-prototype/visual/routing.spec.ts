@@ -16,7 +16,7 @@ import { expect, test, type Page } from '@playwright/test'
 // Anaesthetist Web App
 // ---------------------------------------------------------------------------
 
-test('web: drilling writes the URL; refresh holds the card; Back unwinds the drill', async ({ page }) => {
+test('web: drilling writes the URL; refresh holds the booking; Back unwinds the drill', async ({ page }) => {
   await page.goto('/web')
   await page.waitForLoadState('networkidle')
   await expect(page).toHaveURL(/\/web$/)
@@ -29,13 +29,13 @@ test('web: drilling writes the URL; refresh holds the card; Back unwinds the dri
   const listURL = page.url()
 
   await page.getByText('Margaret Ellison').first().click()
-  await expect(page).toHaveURL(/\/web\/lists\/[^/]+\/cards\/[^/]+$/)
-  const cardURL = page.url()
+  await expect(page).toHaveURL(/\/web\/lists\/[^/]+\/bookings\/[^/]+$/)
+  const bookingURL = page.url()
 
-  // The behaviour being bought: a refresh stays on the card.
+  // The behaviour being bought: a refresh stays on the booking.
   await page.reload()
   await page.waitForLoadState('networkidle')
-  expect(page.url()).toBe(cardURL)
+  expect(page.url()).toBe(bookingURL)
   await expect(page.getByText('ASA status')).toBeVisible()
 
   // ... and Back unwinds one screen at a time.
@@ -164,23 +164,23 @@ test('admin: an invoice document is a URL that survives a refresh', async ({ pag
   await expect(page.getByTestId('invoice-info-rail')).toBeVisible()
 })
 
-test('admin: a card opened from the day drawer is a URL under its day', async ({ page }) => {
+test('admin: a booking opened from the day drawer is a URL under its day', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
 
   // Open a booked block → the List drawer (a transient overlay, deliberately
-  // NOT in the URL), then a card from it → a routed screen under the day.
+  // NOT in the URL), then a booking from it → a routed screen under the day.
   await page.getByText("St George's").first().click()
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/cards\/[^/]+$/)
-  const cardURL = page.url()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/bookings\/[^/]+$/)
+  const bookingURL = page.url()
 
   await page.reload()
   await page.waitForLoadState('networkidle')
-  expect(page.url()).toBe(cardURL)
+  expect(page.url()).toBe(bookingURL)
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
-  // The drawer did not come back with the card: it was never in the URL.
+  // The drawer did not come back with the booking: it was never in the URL.
   await expect(page.getByRole('button', { name: 'Edit list' })).toHaveCount(0)
 
   await page.goBack()
@@ -191,7 +191,7 @@ test('admin: a card opened from the day drawer is a URL under its day', async ({
 // Anaesthetist Mobile App
 // ---------------------------------------------------------------------------
 
-test('mobile: the slide stack is in the URL; refresh holds the card, Back pops it', async ({ page }) => {
+test('mobile: the slide stack is in the URL; refresh holds the booking, Back pops it', async ({ page }) => {
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
   await expect(page).toHaveURL(/\/mobile\/lists$/)
@@ -201,12 +201,12 @@ test('mobile: the slide stack is in the URL; refresh holds the card, Back pops i
   const listURL = page.url()
 
   await page.getByText('Margaret Ellison', { exact: false }).first().click()
-  await expect(page).toHaveURL(/\/mobile\/lists\/[^/]+\/cards\/[^/]+$/)
-  const cardURL = page.url()
+  await expect(page).toHaveURL(/\/mobile\/lists\/[^/]+\/bookings\/[^/]+$/)
+  const bookingURL = page.url()
 
   await page.reload()
   await page.waitForLoadState('networkidle')
-  expect(page.url()).toBe(cardURL)
+  expect(page.url()).toBe(bookingURL)
   await expect(page.getByText('ASA status')).toBeVisible()
   // Drilled in, the tab bar is still hidden after the refresh.
   await expect(page.getByRole('button', { name: 'Balances' })).toHaveCount(0)
@@ -290,4 +290,32 @@ test('stale ids redirect to their parent instead of blanking', async ({ page }) 
 
   await page.goto('/mobile/lists/NOPE')
   await expect(page).toHaveURL(/\/mobile\/lists$/)
+})
+
+// ---------------------------------------------------------------------------
+// Legacy Card URLs (catch-up Phase 15)
+// ---------------------------------------------------------------------------
+
+test('legacy /cards/ bookmarks redirect, replacing history, to the same Booking', async ({ page }) => {
+  // C0009 was Margaret Ellison's Card; the rename kept the number, so BK0009.
+  const list = 'L-34821-2026-07-21-PM'
+  const cases = [
+    { from: `/web/lists/${list}/cards/C0009`, to: `/web/lists/${list}/bookings/BK0009` },
+    { from: `/admin/day/2026-07-21/cards/C0009`, to: `/admin/day/2026-07-21/bookings/BK0009` },
+    { from: `/mobile/lists/${list}/cards/C0009`, to: `/mobile/lists/${list}/bookings/BK0009` },
+  ]
+  for (const { from, to } of cases) {
+    await page.goto('/web')
+    await page.goto(from)
+    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL(new RegExp(`${to.replace(/[/.]/g, '\\$&')}$`))
+    await expect(page.getByText('Margaret Ellison').first()).toBeVisible()
+    // `replace`: Back skips the legacy URL rather than bouncing into it again.
+    await page.goBack()
+    await expect(page).toHaveURL(/\/web$/)
+  }
+
+  // A legacy link to a Booking that no longer exists bounces like any stale id.
+  await page.goto(`/web/lists/${list}/cards/C9999`)
+  await expect(page).toHaveURL(new RegExp(`/web/lists/${list}$`))
 })

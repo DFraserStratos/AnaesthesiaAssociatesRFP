@@ -46,7 +46,7 @@ export interface XeroInvoicePairView {
     caseReference?: string
     accPayId?: string
     billingInvoiceId: string
-    cardId?: string
+    bookingId?: string
     patientName?: string
     anaesthetistId?: string
   }
@@ -95,11 +95,11 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
         linkedCase?.accPayId !== undefined
           ? state.xero.accPays[linkedCase.accPayId]
           : accPaysByAccRecId.get(rec.id)
-      const cardId = linkedCase?.cardId ?? invoice?.cardId
-      const card = cardId !== undefined ? state.schedule.cards[cardId] : undefined
-      const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
+      const bookingId = linkedCase?.bookingId ?? invoice?.bookingId
+      const booking = bookingId !== undefined ? state.schedule.bookings[bookingId] : undefined
+      const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
       const patientName =
-        card !== undefined ? state.masters.patients[card.patientId]?.name : undefined
+        booking !== undefined ? state.masters.patients[booking.patientId]?.name : undefined
       const invoiceNumber = invoice?.invoiceNumber ?? rec.invoiceId
       const payer = contactView(state.xero.contacts[rec.contactId])
       const payee =
@@ -155,7 +155,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
               : {}),
           billingInvoiceId: rec.invoiceId,
           ...(linkedCase?.accPayId !== undefined ? { accPayId: linkedCase.accPayId } : {}),
-          ...(cardId !== undefined ? { cardId } : {}),
+          ...(bookingId !== undefined ? { bookingId } : {}),
           ...(patientName !== undefined ? { patientName } : {}),
           ...(list?.anaesthetistId !== undefined ? { anaesthetistId: list.anaesthetistId } : {}),
         },

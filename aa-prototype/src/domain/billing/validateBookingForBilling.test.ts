@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { validateCardForBilling, type CardBillingContext } from './validateCardForBilling'
+import { validateBookingForBilling, type BookingBillingContext } from './validateBookingForBilling'
 import {
   BASE_RANGE_5_9,
   BASE_SINGLE_10,
   HANDOVER_1030,
   mkAnaesthetist,
   mkBillableParty,
-  mkCard,
+  mkBooking,
   mkContract,
   mkInsurer,
   mkProcedure,
@@ -14,7 +14,7 @@ import {
 } from './fixtures'
 import type { BillingLine, Procedure } from '../types'
 
-function mkCtx(overrides: Partial<CardBillingContext> = {}): CardBillingContext {
+function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingContext {
   return {
     anaesthetist: mkAnaesthetist({ unitValue: 30 }),
     rvgCodes: { GA10: BASE_SINGLE_10, NR59: BASE_RANGE_5_9 },
@@ -41,15 +41,15 @@ function validProcedure(overrides: Partial<Procedure> = {}): Procedure {
   })
 }
 
-const card = mkCard()
+const booking = mkBooking()
 
 function fieldsOf(failures: { field: string }[]): string[] {
   return failures.map((f) => f.field)
 }
 
-describe('validateCardForBilling — happy paths', () => {
+describe('validateBookingForBilling — happy paths', () => {
   it('a complete RVG procedure passes', () => {
-    expect(validateCardForBilling(card, [validProcedure()], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [validProcedure()], mkCtx())).toEqual([])
   })
 
   it('BillableParty route with a patient present and NO override record PASSES (patient is the default payer)', () => {
@@ -57,11 +57,11 @@ describe('validateCardForBilling — happy paths', () => {
       billingRoute: 'billableParty',
       patientPaymentCategory: 'selfFundedPostProcedure',
     })
-    expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
-  it('a cancelled Card is excluded from validation entirely', () => {
-    const cancelled = mkCard({
+  it('a cancelled Booking is excluded from validation entirely', () => {
+    const cancelled = mkBooking({
       cancellation: {
         reason: 'Patient unwell',
         by: 'Kirsty W.',
@@ -70,22 +70,22 @@ describe('validateCardForBilling — happy paths', () => {
         atISO: '2026-07-21T09:00:00',
       },
     })
-    // Deliberately broken procedure — still no failures because the Card is cancelled.
+    // Deliberately broken procedure — still no failures because the Booking is cancelled.
     const broken = mkProcedure({ billingRoute: undefined })
-    expect(validateCardForBilling(cancelled, [broken], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(cancelled, [broken], mkCtx())).toEqual([])
   })
 })
 
-describe('validateCardForBilling — required data', () => {
+describe('validateBookingForBilling — required data', () => {
   it('fails a missing billing route', () => {
     const p = validProcedure({ billingRoute: undefined })
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(fieldsOf(failures)).toContain('billingRoute')
   })
 
   it('fails when there is no base code and no non-RVG billing line', () => {
     const p = mkProcedure()
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(fieldsOf(failures)).toContain('rvgBaseCode')
   })
 
@@ -97,13 +97,13 @@ describe('validateCardForBilling — required data', () => {
       amount: 150,
       description: 'Consult',
     }
-    const failures = validateCardForBilling(card, [mkProcedure()], mkCtx({ billingLines: [line] }))
+    const failures = validateBookingForBilling(booking, [mkProcedure()], mkCtx({ billingLines: [line] }))
     expect(failures).toEqual([])
   })
 
   it('fails missing start/handover times on the RVG path', () => {
     const p = validProcedure({ anaestheticStartISO: undefined, handoverISO: undefined })
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(fieldsOf(failures)).toEqual(
       expect.arrayContaining(['anaestheticStartISO', 'handoverISO']),
     )
@@ -111,47 +111,47 @@ describe('validateCardForBilling — required data', () => {
 
   it('fails times out of order', () => {
     const p = validProcedure({ anaestheticStartISO: HANDOVER_1030, handoverISO: START_0800 })
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(failures.some((f) => f.field === 'handoverISO' && /after/.test(f.message))).toBe(true)
   })
 
   it('fails a range base code with a missing or out-of-range selection', () => {
     const missing = validProcedure({ rvgBaseCode: 'NR59' })
-    expect(fieldsOf(validateCardForBilling(card, [missing], mkCtx()))).toContain('baseUnitsSelected')
+    expect(fieldsOf(validateBookingForBilling(booking, [missing], mkCtx()))).toContain('baseUnitsSelected')
 
     const outOfRange = validProcedure({ rvgBaseCode: 'NR59', baseUnitsSelected: 12 })
-    expect(fieldsOf(validateCardForBilling(card, [outOfRange], mkCtx()))).toContain('baseUnitsSelected')
+    expect(fieldsOf(validateBookingForBilling(booking, [outOfRange], mkCtx()))).toContain('baseUnitsSelected')
 
     const inRange = validProcedure({ rvgBaseCode: 'NR59', baseUnitsSelected: 7 })
-    expect(validateCardForBilling(card, [inRange], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [inRange], mkCtx())).toEqual([])
   })
 })
 
-describe('validateCardForBilling — routes', () => {
+describe('validateBookingForBilling — routes', () => {
   it('fails the Insurer route without an insurer', () => {
     const p = validProcedure({ billingRoute: 'insurer' })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('insurerId')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('insurerId')
   })
 
   it('rejects an insurer that does not accept direct claims', () => {
     const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-nodirect' })
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(failures.some((f) => f.field === 'insurerId' && /direct claims/.test(f.message))).toBe(true)
   })
 
   it('passes the Insurer route with a direct-claims insurer', () => {
     const p = validProcedure({ billingRoute: 'insurer', insurerId: 'ins-direct' })
-    expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
   it('an informational insurer on the Hospital route passes clean, even without direct claims (03.4)', () => {
     const p = validProcedure({ insurerId: 'ins-nodirect' })
-    expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
   it('fails the BillableParty route without a patient payment category', () => {
     const p = validProcedure({ billingRoute: 'billableParty' })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('patientPaymentCategory')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('patientPaymentCategory')
   })
 
   it('fails an unresolvable billable-party override', () => {
@@ -160,11 +160,11 @@ describe('validateCardForBilling — routes', () => {
       patientPaymentCategory: 'selfFundedPostProcedure',
       billablePartyId: 'bp-ghost',
     })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('billablePartyId')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('billablePartyId')
   })
 })
 
-describe('validateCardForBilling — pre-payment typing', () => {
+describe('validateBookingForBilling — pre-payment typing', () => {
   const base = {
     billingRoute: 'billableParty',
     patientPaymentCategory: 'selfFundedPrepayment',
@@ -172,23 +172,23 @@ describe('validateCardForBilling — pre-payment typing', () => {
 
   it('requires a prepayment detail for the self funded pre-payment category', () => {
     const p = validProcedure({ ...base })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('prepaymentDetail')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('prepaymentDetail')
   })
 
   it('a split pre-payment without a deposit amount fails', () => {
     const p = validProcedure({ ...base, prepaymentDetail: { type: 'split' } })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('prepaymentDetail')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('prepaymentDetail')
   })
 
   it('full pre-payment, and split with a deposit, pass', () => {
     const full = validProcedure({ ...base, prepaymentDetail: { type: 'full' } })
     const split = validProcedure({ ...base, prepaymentDetail: { type: 'split', depositAmount: 300 } })
-    expect(validateCardForBilling(card, [full], mkCtx())).toEqual([])
-    expect(validateCardForBilling(card, [split], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [full], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [split], mkCtx())).toEqual([])
   })
 })
 
-describe('validateCardForBilling — rate x time gate (Method 3)', () => {
+describe('validateBookingForBilling — rate x time gate (Method 3)', () => {
   const rateTimeLine: BillingLine = {
     id: 'bl-rt',
     procedureId: 'proc-1',
@@ -203,45 +203,45 @@ describe('validateCardForBilling — rate x time gate (Method 3)', () => {
     const permitting = mkContract({ id: 'con-ia', permitsIndividualArrangement: true })
     const p = mkProcedure({ governingContractId: 'con-ia' })
     const ctx = mkCtx({ contracts: { 'con-ia': permitting }, billingLines: [rateTimeLine] })
-    expect(validateCardForBilling(card, [p], ctx)).toEqual([])
+    expect(validateBookingForBilling(booking, [p], ctx)).toEqual([])
   })
 
   it('fails under a non-permitting contract, and with no contract at all', () => {
     const nonPermitting = mkContract({ id: 'con-std' })
     const p = mkProcedure({ governingContractId: 'con-std' })
     const ctx = mkCtx({ contracts: { 'con-std': nonPermitting }, billingLines: [rateTimeLine] })
-    expect(fieldsOf(validateCardForBilling(card, [p], ctx))).toContain('billingLines')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], ctx))).toContain('billingLines')
 
     const orphan = mkProcedure()
     const ctx2 = mkCtx({ billingLines: [rateTimeLine] })
-    expect(fieldsOf(validateCardForBilling(card, [orphan], ctx2))).toContain('billingLines')
+    expect(fieldsOf(validateBookingForBilling(booking, [orphan], ctx2))).toContain('billingLines')
   })
 })
 
-describe('validateCardForBilling — price override reason', () => {
+describe('validateBookingForBilling — price override reason', () => {
   it('an override with an empty reason fails', () => {
     const p = validProcedure({ priceOverride: { kind: 'fixedFee', amount: 500, reason: '  ' } })
-    expect(fieldsOf(validateCardForBilling(card, [p], mkCtx()))).toContain('priceOverride')
+    expect(fieldsOf(validateBookingForBilling(booking, [p], mkCtx()))).toContain('priceOverride')
   })
 
   it('an override with a reason passes', () => {
     const p = validProcedure({
       priceOverride: { kind: 'dollarAdjustment', amount: -50, reason: 'Agreed discount' },
     })
-    expect(validateCardForBilling(card, [p], mkCtx())).toEqual([])
+    expect(validateBookingForBilling(booking, [p], mkCtx())).toEqual([])
   })
 
   it('an override that drives the fee negative fails (8th review: no negative invoices)', () => {
     const p = validProcedure({
       priceOverride: { kind: 'dollarAdjustment', amount: -10000, reason: 'Stress test' },
     })
-    const failures = validateCardForBilling(card, [p], mkCtx())
+    const failures = validateBookingForBilling(booking, [p], mkCtx())
     expect(fieldsOf(failures)).toContain('priceOverride')
     expect(failures.some((f) => f.message.includes('negative'))).toBe(true)
   })
 })
 
-describe('validateCardForBilling — two-funder conservation', () => {
+describe('validateBookingForBilling — two-funder conservation', () => {
   // The spot-check procedure fee: (10 + 11 + 3) x 30 = $720.
   const allocation = (secondAmount: number): BillingLine[] => [
     {
@@ -263,12 +263,12 @@ describe('validateCardForBilling — two-funder conservation', () => {
 
   it('an allocation that conserves the procedure fee passes', () => {
     const ctx = mkCtx({ billingLines: allocation(220) })
-    expect(validateCardForBilling(card, [validProcedure()], ctx)).toEqual([])
+    expect(validateBookingForBilling(booking, [validProcedure()], ctx)).toEqual([])
   })
 
   it('a non-conserving allocation fails with the fee in the message', () => {
     const ctx = mkCtx({ billingLines: allocation(200) })
-    const failures = validateCardForBilling(card, [validProcedure()], ctx)
+    const failures = validateBookingForBilling(booking, [validProcedure()], ctx)
     expect(failures).toHaveLength(1)
     expect(failures[0]?.field).toBe('billingLines')
     expect(failures[0]?.message).toContain('$720.00')

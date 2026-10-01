@@ -51,7 +51,7 @@ const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRe
 const ADMIN_INTEGRATIONS = '/admin/integrations'
 const INTEGRATIONS_SIM = '/demo/integrations'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
-const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/cards/:cardId'] as const
+const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 
 // ---------------------------------------------------------------------------
 // Seed-scoped targets
@@ -148,8 +148,8 @@ function replayDisabledReason(state: AppState): string | null {
 function souterOpenAccRecs(state: AppState) {
   return openAccRecs(state).filter((c) => {
     const invoice = state.billing.invoices[c.invoiceId]
-    const card = invoice !== undefined ? state.schedule.cards[invoice.cardId] : undefined
-    const list = card !== undefined ? state.schedule.lists[card.listId] : undefined
+    const booking = invoice !== undefined ? state.schedule.bookings[invoice.bookingId] : undefined
+    const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
     return list?.anaesthetistId === ANAE.souter
   })
 }
@@ -170,7 +170,7 @@ function souterPaymentDisabled(state: AppState, choiceId: string | undefined): s
 /**
  * A message replay must find the message already in the integration log, or it
  * is not a replay: after a reset the same canned id would be processed afresh
- * and create its Card again instead of showing the dedupe.
+ * and create its Booking again instead of showing the dedupe.
  */
 function messageReplayDisabledReason(state: AppState): string | null {
   const last = useDemoTriggerMemory.getState().lastMessageId
@@ -197,7 +197,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      'Dates out the externally held COS ACC contract and authorises Dr Ropata\'s Thu 16 Jul List. One Card fails to rate; its clean sibling still invoices.',
+      'Dates out the externally held COS ACC contract and authorises Dr Ropata\'s Thu 16 Jul List. One Booking fails to rate; its clean sibling still invoices.',
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
@@ -206,13 +206,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       state.schedule.lists[SEED_LIST_IDS.billingFailure]?.billedAtISO !== undefined ? 'Already triggered' : null,
     // Phase 09 demo trigger: date out the COS ACC contract (no default fallback)
     // and authorise the seeded failure list; the wired billing run raises the
-    // sibling's invoice and fails the COS card, which surfaces in the monitor.
+    // sibling's invoice and fails the COS booking, which surfaces in the monitor.
     run: (api) => {
       const listId = SEED_LIST_IDS.billingFailure
       const list = api.getState().schedule.lists[listId]
       if (list === undefined) return { ok: false, message: 'The billing-failure list is not present in this seed.' }
       if (list.billedAtISO !== undefined) {
-        return { ok: false, message: 'Already triggered. Use Resolve & retry on the failed card in the billing monitor.' }
+        return { ok: false, message: 'Already triggered. Use Resolve & retry on the failed booking in the billing monitor.' }
       }
       editContract(api, OFFICE_ACTOR, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' })
       if (list.state === 'DRAFT') submitList(api, OFFICE_ACTOR, listId)
@@ -220,7 +220,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: outcome.ok,
         message: outcome.ok
-          ? 'Done. In the Admin app billing monitor the COS card shows a rating failure while its clean sibling billed. Use Resolve & retry.'
+          ? 'Done. In the Admin app billing monitor the COS booking shows a rating failure while its clean sibling billed. Use Resolve & retry.'
           : `Refused: ${outcome.message}`,
       }
     },
@@ -307,26 +307,26 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => '/admin/audit',
   },
 
-  // ── Admin · Review and Card detail (seed-scoped) ──────────────────────
+  // ── Admin · Review and Booking detail (seed-scoped) ──────────────────────
   {
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Card. It lands on her free Tue 21 PM session.',
-    screen: 'Admin · Review and Card detail',
-    routes: ['/admin/review/:listId', '/admin/day/:dateISO/cards/:cardId'],
+      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Booking. It lands on her free Tue 21 PM session.',
+    screen: 'Admin · Review and Booking detail',
+    routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId'],
     surfaces: ['bar'],
     when: (state, ctx) => {
-      const listId = ctx.params['listId'] ?? state.schedule.cards[ctx.params['cardId'] ?? '']?.listId
+      const listId = ctx.params['listId'] ?? state.schedule.bookings[ctx.params['bookingId'] ?? '']?.listId
       return listId === POST_OP_ORIGINAL_LIST_ID && state.schedule.lists[listId] !== undefined
     },
     disabledReason: (state) =>
       state.schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state === 'AUTHORISED'
-        ? 'Already staged: use Add post-op event on the Card'
+        ? 'Already staged: use Add post-op event on the Booking'
         : null,
     // Phase 09 demo trigger: authorise (lock + bill) an original episode and keep
     // a free empty session today for its anaesthetist, so "Add post-op event" on
-    // the locked card has somewhere to land.
+    // the locked booking has somewhere to land.
     run: (api) => {
       const listId = POST_OP_ORIGINAL_LIST_ID
       const list = api.getState().schedule.lists[listId]
@@ -337,7 +337,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message:
-          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its card and use "Add post-op event"; it lands on her free Tue 21 PM session.',
+          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its booking and use "Add post-op event"; it lands on her free Tue 21 PM session.',
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
@@ -348,7 +348,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'ingest-pdf-row',
     label: 'Ingest PDF row',
     description:
-      'A surgeon\'s emailed PDF arrives: ingests its reviewed row R2 onto Dr Souter\'s Mon 27 Jul AM List, deduped by NHI. Re-firing updates the same Card.',
+      'A surgeon\'s emailed PDF arrives: ingests its reviewed row R2 onto Dr Souter\'s Mon 27 Jul AM List, deduped by NHI. Re-firing updates the same Booking.',
     screen: 'Admin · Integrations',
     routes: [ADMIN_INTEGRATIONS],
     surfaces: ['bar'],
@@ -363,7 +363,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: res.ok,
         message: res.ok
-          ? `${res.value.outcome === 'created' ? 'Created' : 'Updated'} a Card for ${row.name} on Dr Souter's Mon 27 Jul AM List from ${pdf.fromSurgeon}'s emailed list. Re-firing updates the same Card (deduped by NHI), never a duplicate. The full review-and-edit-before-ingest flow, including the deliberately mistyped NHI row, opens from the PDF in this tab.`
+          ? `${res.value.outcome === 'created' ? 'Created' : 'Updated'} a Booking for ${row.name} on Dr Souter's Mon 27 Jul AM List from ${pdf.fromSurgeon}'s emailed list. Re-firing updates the same Booking (deduped by NHI), never a duplicate. The full review-and-edit-before-ingest flow, including the deliberately mistyped NHI row, opens from the PDF in this tab.`
           : `Refused: ${res.message}`,
       }
     },
@@ -429,7 +429,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'Stands in for the office, which has no app on the phone: authorises this submitted List and runs billing, as Kirsty would from the Admin review queue.',
     screen: 'Mobile · List',
-    routes: ['/mobile/lists/:listId', '/mobile/lists/:listId/cards/:cardId'],
+    routes: ['/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
     disabledReason: (state, ctx) => officeStandInRefusal(state, ctx.params['listId'] ?? ''),
@@ -475,7 +475,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'replay-hospital-message',
     label: 'Replay last message (dedupe)',
     description:
-      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second Card.',
+      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second Booking.',
     screen: 'Mobile · Lists',
     routes: [...MOBILE_LISTS, ADMIN_INTEGRATIONS, INTEGRATIONS_SIM],
     surfaces: ['bar', 'pwa'],
@@ -490,7 +490,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: res.ok,
         message: res.ok
           ? res.value.outcome === 'duplicate'
-            ? 'Deduplicated: same message control ID, no second Card created.'
+            ? 'Deduplicated: same message control ID, no second Booking created.'
             : `Replayed ${last}: ${res.value.outcome}.`
           : `Refused: ${res.message}`,
       }

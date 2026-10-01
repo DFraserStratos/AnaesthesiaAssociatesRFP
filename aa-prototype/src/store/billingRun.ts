@@ -2,13 +2,13 @@
  * The billing run (Phase 08) — the RFP's Billing Engine Integration Point.
  *
  * It acts on a single event, a List reaching AUTHORISED, and consumes the
- * whole List as a unit: iterate Cards and Procedures, resolve the counterparty
+ * whole List as a unit: iterate Bookings and Procedures, resolve the counterparty
  * per Procedure, rate via the Phase 01 calculator, group by counterparty per
- * Card into Invoices (+ a BillingCase each), and stamp `List.billedAtISO`.
+ * Booking into Invoices (+ a BillingCase each), and stamp `List.billedAtISO`.
  *
  * `billedAtISO` = COMPLETION OF THE LIST'S BILLING RUN (§11 labelled reading;
  * 3rd review #12): it is what removes the List from the anaesthetist's views.
- * A per-card exception does not hold the List on screen (its invoice lands on
+ * A per-booking exception does not hold the List on screen (its invoice lands on
  * retry via the Phase 09 monitor), and a Xero handoff failure (Phase 10) does
  * not restore visibility.
  *
@@ -23,10 +23,10 @@
  * directly or wire explicitly and unsubscribe.
  */
 
-import type { BillingCase, CardId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
+import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
 import {
-  buildInvoicesForCard,
-  type CardBuildResult,
+  buildInvoicesForBooking,
+  type BookingBuildResult,
   type InvoiceBuildContext,
 } from '../domain/billing/invoiceBuild'
 import {
@@ -40,15 +40,15 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { billingContextForCard, cardsForList, casesForList, prePaidByProcedure, proceduresForCard } from './selectors'
-import { getCard } from './lifecycle'
+import { billingContextForBooking, bookingsForList, casesForList, prePaidByProcedure, proceduresForBooking } from './selectors'
+import { getBooking } from './lifecycle'
 import { onAppEvent } from './events'
 import { handoffCase } from './xeroHandoff'
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
 
 export interface BillingRunException {
-  cardId: CardId
+  bookingId: BookingId
   code: string
   message: string
   /** The Procedure that failed resolution, when the failure is procedure-level. */
@@ -62,7 +62,7 @@ export interface BillingRunResult {
 
 /**
  * Run billing for one AUTHORISED, not-yet-billed List. Idempotent by the
- * `alreadyBilled` guard — one run per List, ever (retries of failed Cards are
+ * `alreadyBilled` guard — one run per List, ever (retries of failed Bookings are
  * the Phase 09 monitor's job, against the stored BillingCase).
  */
 export function runBillingForList(api: AppStoreApi, listId: string): Outcome<BillingRunResult> {
@@ -76,50 +76,50 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     return refuse('alreadyBilled', 'This List has already completed its billing run.')
   }
 
-  // Decide everything first (pure), then commit once. Cancelled Cards are
+  // Decide everything first (pure), then commit once. Cancelled Bookings are
   // retained but excluded from billing entirely.
-  const cards = cardsForList(state, listId).filter((c) => c.cancellation === undefined)
-  const built: { cardId: CardId; result: CardBuildResult }[] = cards.map((card) => {
-    const cardCtx = billingContextForCard(state, card)
-    if (cardCtx === undefined) {
+  const bookings = bookingsForList(state, listId).filter((c) => c.cancellation === undefined)
+  const built: { bookingId: BookingId; result: BookingBuildResult }[] = bookings.map((booking) => {
+    const bookingCtx = billingContextForBooking(state, booking)
+    if (bookingCtx === undefined) {
       return {
-        cardId: card.id,
+        bookingId: booking.id,
         result: {
           kind: 'exception',
           procedureId: '',
           code: 'noContext',
-          message: 'Billing context could not be assembled for this Card.',
+          message: 'Billing context could not be assembled for this Booking.',
         },
       }
     }
-    // Net off any pre-payment already invoiced for this card (Phase 09): the
+    // Net off any pre-payment already invoiced for this booking (Phase 09): the
     // run bills only the remaining balance (a full pre-payment nets to $0 and
     // raises no balance invoice).
-    const prePaid = prePaidByProcedure(state, card.id)
+    const prePaid = prePaidByProcedure(state, booking.id)
     const buildCtx: InvoiceBuildContext = {
-      ...cardCtx,
+      ...bookingCtx,
       listDateISO: list.dateISO,
-      patientId: card.patientId,
+      patientId: booking.patientId,
       ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
       ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
     }
-    // Per-card isolation is absolute: a build error becomes a failed
+    // Per-booking isolation is absolute: a build error becomes a failed
     // BillingCase, never a throw — the run executes inside authoriseList's
     // event emit, and a throw there would strand the List AUTHORISED-unbilled
     // with the authorise already committed (8th review).
     try {
       return {
-        cardId: card.id,
-        result: buildInvoicesForCard(card, proceduresForCard(state, card.id), buildCtx),
+        bookingId: booking.id,
+        result: buildInvoicesForBooking(booking, proceduresForBooking(state, booking.id), buildCtx),
       }
     } catch (error) {
       return {
-        cardId: card.id,
+        bookingId: booking.id,
         result: {
           kind: 'exception',
           procedureId: '',
           code: 'runError',
-          message: error instanceof Error ? error.message : 'The billing run failed on this Card.',
+          message: error instanceof Error ? error.message : 'The billing run failed on this Booking.',
         },
       }
     }
@@ -136,7 +136,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
     const cases = { ...s.billing.cases }
     const atISO = clockISO(s.clock)
 
-    for (const { cardId, result } of built) {
+    for (const { bookingId, result } of built) {
       if (result.kind === 'exception') {
         const bc = allocateId(counters, 'billingCase')
         counters = bc.counters
@@ -145,7 +145,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         // monitor retries against; the audit entry is the history.
         cases[bc.id] = {
           id: bc.id,
-          cardId,
+          bookingId,
           status: 'failed',
           receivedAmount: 0,
           authorisedAmount: 0,
@@ -157,27 +157,27 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           },
         } satisfies BillingCase
         exceptions.push({
-          cardId,
+          bookingId,
           code: result.code,
           message: result.message,
           ...(procedureId !== undefined ? { procedureId } : {}),
         })
         metas.push({
-          entityType: 'card',
-          entityId: cardId,
-          action: 'card.billingException',
+          entityType: 'booking',
+          entityId: bookingId,
+          action: 'booking.billingException',
           after: {
             billingCaseId: bc.id,
             code: result.code,
             message: result.message,
             ...(procedureId !== undefined ? { procedureId } : {}),
           },
-          stampCardId: null, // AUTHORISED Cards are locked; billing never stamps them
+          stampBookingId: null, // AUTHORISED Bookings are locked; billing never stamps them
         })
         continue
       }
 
-      const cardInvoiceIds: InvoiceId[] = []
+      const bookingInvoiceIds: InvoiceId[] = []
       for (const draft of result.invoices) {
         const bc = allocateId(counters, 'billingCase')
         counters = bc.counters
@@ -187,12 +187,12 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
         counters = num.counters
 
         // The BillingCase id doubles as the internal CaseReference (links the
-        // invoice back to its Card; display-only, never the remittance key).
+        // invoice back to its Booking; display-only, never the remittance key).
         const invoice: Invoice = {
           id: inv.id,
           invoiceNumber: num.id,
           caseReference: bc.id,
-          cardId,
+          bookingId,
           counterparty: draft.counterparty,
           layout: draft.layout,
           kind: 'standard',
@@ -215,8 +215,8 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           if (line.units !== undefined) stored.units = line.units
           invoiceLines[il.id] = stored
         }
-        cases[bc.id] = { id: bc.id, cardId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
-        cardInvoiceIds.push(inv.id)
+        cases[bc.id] = { id: bc.id, bookingId, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
+        bookingInvoiceIds.push(inv.id)
         metas.push({
           entityType: 'invoice',
           entityId: inv.id,
@@ -224,23 +224,23 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
           after: {
             invoiceNumber: num.id,
             caseReference: bc.id,
-            cardId,
+            bookingId,
             counterparty: draft.counterparty,
             subtotal: draft.subtotal,
             gst: draft.gst,
             total: draft.total,
           },
-          stampCardId: null,
+          stampBookingId: null,
         })
       }
 
-      invoiceIds.push(...cardInvoiceIds)
+      invoiceIds.push(...bookingInvoiceIds)
       metas.push({
-        entityType: 'card',
-        entityId: cardId,
-        action: 'card.billed',
-        after: { invoiceIds: cardInvoiceIds },
-        stampCardId: null,
+        entityType: 'booking',
+        entityId: bookingId,
+        action: 'booking.billed',
+        after: { invoiceIds: bookingInvoiceIds },
+        stampBookingId: null,
       })
     }
 
@@ -249,7 +249,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       entityId: listId,
       action: 'list.billed',
       after: { billedAtISO: atISO, invoiceCount: invoiceIds.length, exceptionCount: exceptions.length },
-      stampCardId: null,
+      stampBookingId: null,
     })
 
     return {
@@ -272,14 +272,14 @@ const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system',
 
 /**
  * Resolve-and-retry a single failed BillingCase (Phase 09 monitor). Rebuilds
- * ONLY that Card against current data (after the office fixed it, e.g. restored
+ * ONLY that Booking against current data (after the office fixed it, e.g. restored
  * a contract) and, on success, flips the failed case to `invoiced` reusing its
  * id. Idempotent: a case that is not `failed` is refused (a second retry after
  * success is a no-op), and a rebuild that still fails leaves the case untouched.
  * The rebill is a billing-engine action, so it audits source=system regardless
  * of who pressed the button; office-gated (the monitor button is office).
  *
- * Failure isolation (the recorded reading): retrying one Card never touches the
+ * Failure isolation (the recorded reading): retrying one Booking never touches the
  * List's other invoices — no duplication.
  */
 export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string): Outcome<BillingRunResult> {
@@ -292,26 +292,26 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
   if (failed.status !== 'failed') {
     return refuse('caseNotFailed', 'This billing case is not in a failed state; nothing to retry.')
   }
-  const found = getCard(state, failed.cardId)
-  if (found === undefined) return refuse('notFound', 'The failed case has no Card.')
-  const { card, list } = found
+  const found = getBooking(state, failed.bookingId)
+  if (found === undefined) return refuse('notFound', 'The failed case has no Booking.')
+  const { booking, list } = found
 
-  const cardCtx = billingContextForCard(state, card)
-  if (cardCtx === undefined) return refuse('noContext', 'Billing context could not be assembled for this Card.')
-  const prePaid = prePaidByProcedure(state, card.id)
+  const bookingCtx = billingContextForBooking(state, booking)
+  if (bookingCtx === undefined) return refuse('noContext', 'Billing context could not be assembled for this Booking.')
+  const prePaid = prePaidByProcedure(state, booking.id)
   const buildCtx: InvoiceBuildContext = {
-    ...cardCtx,
+    ...bookingCtx,
     listDateISO: list.dateISO,
-    patientId: card.patientId,
+    patientId: booking.patientId,
     ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
     ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
   }
 
-  let result: CardBuildResult
+  let result: BookingBuildResult
   try {
-    result = buildInvoicesForCard(card, proceduresForCard(state, card.id), buildCtx)
+    result = buildInvoicesForBooking(booking, proceduresForBooking(state, booking.id), buildCtx)
   } catch (error) {
-    return refuse('runError', error instanceof Error ? error.message : 'The billing run failed on this Card.')
+    return refuse('runError', error instanceof Error ? error.message : 'The billing run failed on this Booking.')
   }
   if (result.kind === 'exception') {
     // Still failing — the data is not fixed. Leave the case failed unchanged.
@@ -346,7 +346,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
         id: inv.id,
         invoiceNumber: num.id,
         caseReference: bcId,
-        cardId: card.id,
+        bookingId: booking.id,
         counterparty: draft.counterparty,
         layout: draft.layout,
         kind: 'standard',
@@ -364,23 +364,23 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
         if (line.units !== undefined) stored.units = line.units
         invoiceLines[il.id] = stored
       }
-      cases[bcId] = { id: bcId, cardId: card.id, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
+      cases[bcId] = { id: bcId, bookingId: booking.id, invoiceId: inv.id, status: 'invoiced', receivedAmount: 0, authorisedAmount: 0, disbursedAmount: 0 } satisfies BillingCase
       invoiceIds.push(inv.id)
       metas.push({
         entityType: 'invoice',
         entityId: inv.id,
         action: 'invoice.create',
-        after: { invoiceNumber: num.id, caseReference: bcId, cardId: card.id, counterparty: draft.counterparty, total: draft.total },
-        stampCardId: null,
+        after: { invoiceNumber: num.id, caseReference: bcId, bookingId: booking.id, counterparty: draft.counterparty, total: draft.total },
+        stampBookingId: null,
       })
     })
 
     metas.push({
-      entityType: 'card',
-      entityId: card.id,
-      action: 'card.billed',
+      entityType: 'booking',
+      entityId: booking.id,
+      action: 'booking.billed',
       after: { invoiceIds, retriedCaseId: failed.id },
-      stampCardId: null,
+      stampBookingId: null,
     })
 
     return { billing: { ...s.billing, invoices, invoiceLines, cases }, counters }
@@ -423,7 +423,7 @@ export function markInvoiceEmailed(api: AppStoreApi, actor: Actor, invoiceId: st
       entityId: invoiceId,
       action: 'invoice.email',
       after: { emailedAtISO },
-      stampCardId: null,
+      stampBookingId: null,
     },
     (s) => ({
       billing: {

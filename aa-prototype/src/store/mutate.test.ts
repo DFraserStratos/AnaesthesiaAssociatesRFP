@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
-import { cancelCard, completeCard, editCard, editProcedure } from './lifecycle'
-import { auditForEntity, proceduresForCard } from './selectors'
+import { cancelBooking, completeBooking, editBooking, editProcedure } from './lifecycle'
+import { auditForEntity, proceduresForBooking } from './selectors'
 import { mutate, type Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 
@@ -25,51 +25,51 @@ function marker(key: string): string {
   return m.entityId
 }
 
-const ELLISON_CARD = marker('pendingCaptureCard')
+const ELLISON_BOOKING = marker('pendingCaptureBooking')
 
 describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry', () => {
-  it('on card edits', () => {
+  it('on booking edits', () => {
     const api = createAppStore()
-    expect(editCard(api, OFFICE, ELLISON_CARD, { notes: 'note' }).ok).toBe(true)
+    expect(editBooking(api, OFFICE, ELLISON_BOOKING, { notes: 'note' }).ok).toBe(true)
     const state = api.getState()
-    const card = state.schedule.cards[ELLISON_CARD]
-    const entry = auditForEntity(state, ELLISON_CARD).at(-1)
-    expect(entry?.action).toBe('card.update')
-    expect(card?.lastModifiedBy).toBe('Kirsty W.')
-    expect(card?.lastModifiedAtISO).toBe(entry?.atISO)
+    const booking = state.schedule.bookings[ELLISON_BOOKING]
+    const entry = auditForEntity(state, ELLISON_BOOKING).at(-1)
+    expect(entry?.action).toBe('booking.update')
+    expect(booking?.lastModifiedBy).toBe('Kirsty W.')
+    expect(booking?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
-  it('on procedure edits (stamping the PARENT card)', () => {
+  it('on procedure edits (stamping the PARENT booking)', () => {
     const api = createAppStore()
-    const procedure = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+    const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (procedure === undefined) throw new Error('no procedure')
     expect(editProcedure(api, OFFICE, procedure.id, { billingReference: 'SX-2026-7000' }).ok).toBe(true)
     const state = api.getState()
-    const card = state.schedule.cards[ELLISON_CARD]
+    const booking = state.schedule.bookings[ELLISON_BOOKING]
     const entry = auditForEntity(state, procedure.id).at(-1)
     expect(entry?.action).toBe('procedure.update')
-    expect(card?.lastModifiedBy).toBe('Kirsty W.')
-    expect(card?.lastModifiedAtISO).toBe(entry?.atISO)
+    expect(booking?.lastModifiedBy).toBe('Kirsty W.')
+    expect(booking?.lastModifiedAtISO).toBe(entry?.atISO)
   })
 
   it('on completion and cancellation', () => {
     const api = createAppStore()
     // Ellison seeds pre-capture — stamp her finish so completion validates.
-    const ellisonProc = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+    const ellisonProc = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (ellisonProc === undefined) throw new Error('no procedure')
     expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
-    expect(completeCard(api, SOUTER, ELLISON_CARD).ok).toBe(true)
+    expect(completeBooking(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     let state = api.getState()
-    expect(state.schedule.cards[ELLISON_CARD]?.lastModifiedBy).toBe('Dr Melanie Souter')
-    expect(state.schedule.cards[ELLISON_CARD]?.lastModifiedAtISO).toBe(
-      auditForEntity(state, ELLISON_CARD).at(-1)?.atISO,
+    expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedBy).toBe('Dr Melanie Souter')
+    expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedAtISO).toBe(
+      auditForEntity(state, ELLISON_BOOKING).at(-1)?.atISO,
     )
 
-    const cancelTarget = marker('twoFunderCard')
-    expect(cancelCard(api, OFFICE, cancelTarget, 'Rebooked').ok).toBe(true)
+    const cancelTarget = marker('twoFunderBooking')
+    expect(cancelBooking(api, OFFICE, cancelTarget, 'Rebooked').ok).toBe(true)
     state = api.getState()
-    expect(state.schedule.cards[cancelTarget]?.lastModifiedBy).toBe('Kirsty W.')
-    expect(state.schedule.cards[cancelTarget]?.lastModifiedAtISO).toBe(
+    expect(state.schedule.bookings[cancelTarget]?.lastModifiedBy).toBe('Kirsty W.')
+    expect(state.schedule.bookings[cancelTarget]?.lastModifiedAtISO).toBe(
       auditForEntity(state, cancelTarget).at(-1)?.atISO,
     )
   })
@@ -77,8 +77,8 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
   it('audit is append-only and ids are sequential', () => {
     const api = createAppStore()
     const before = api.getState().audit.length
-    expect(editCard(api, OFFICE, ELLISON_CARD, { notes: 'a' }).ok).toBe(true)
-    expect(editCard(api, OFFICE, ELLISON_CARD, { notes: 'b' }).ok).toBe(true)
+    expect(editBooking(api, OFFICE, ELLISON_BOOKING, { notes: 'a' }).ok).toBe(true)
+    expect(editBooking(api, OFFICE, ELLISON_BOOKING, { notes: 'b' }).ok).toBe(true)
     const audit = api.getState().audit
     expect(audit.length).toBe(before + 2)
     const [first, second] = audit.slice(-2)

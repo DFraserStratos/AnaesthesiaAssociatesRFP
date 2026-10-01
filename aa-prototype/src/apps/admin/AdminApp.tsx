@@ -58,7 +58,7 @@ export function AdminApp() {
  */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
-  const cardsRecord = useAppStore((s) => s.schedule.cards)
+  const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
@@ -136,25 +136,25 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     return map
   }, [dayLists])
 
-  const activeCardCounts = useMemo(() => {
+  const activeBookingCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    for (const c of Object.values(cardsRecord)) {
+    for (const c of Object.values(bookingsRecord)) {
       if (c.cancellation === undefined) counts[c.listId] = (counts[c.listId] ?? 0) + 1
     }
     return counts
-  }, [cardsRecord])
+  }, [bookingsRecord])
 
   const summary = useMemo(() => {
-    // A Free list booked via phone-advice (cards or an assigned hospital) counts
+    // A Free list booked via phone-advice (bookings or an assigned hospital) counts
     // as a session, not free, matching the grid's derived display.
     const effectivelyBooked = (l: List) =>
-      isBooked(l.statusKey) || (l.statusKey === 'free' && ((activeCardCounts[l.id] ?? 0) > 0 || l.hospitalId !== undefined))
+      isBooked(l.statusKey) || (l.statusKey === 'free' && ((activeBookingCounts[l.id] ?? 0) > 0 || l.hospitalId !== undefined))
     const anaes = new Set(dayLists.map((l) => l.anaesthetistId)).size
     const sessions = dayLists.filter(effectivelyBooked).length
     const free = dayLists.filter((l) => l.statusKey === 'free' && !effectivelyBooked(l)).length
     const submitted = dayLists.filter((l) => l.state === 'SUBMITTED').length
     return `${anaes} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted`
-  }, [dayLists, activeCardCounts])
+  }, [dayLists, activeBookingCounts])
 
   // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
   const reviewLists = useMemo(
@@ -171,14 +171,14 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       reviewLists.map((l) => {
         const anae = masters.anaesthetists[l.anaesthetistId]
         const hospital = l.hospitalId !== undefined ? masters.hospitals[l.hospitalId]?.name : 'Unassigned'
-        const count = Object.values(cardsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
+        const count = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
         return {
           listId: l.id,
           title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${l.session}`,
-          sub: `${count} card${count === 1 ? '' : 's'} · submitted`,
+          sub: `${count} booking${count === 1 ? '' : 's'} · submitted`,
         }
       }),
-    [reviewLists, masters, cardsRecord],
+    [reviewLists, masters, bookingsRecord],
   )
 
   // Billing exceptions across the pipeline (the billing-monitor nav badge):
@@ -186,21 +186,21 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
   const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
 
-  // Lists on the selected day holding a card whose pre-payment is flagged — a
+  // Lists on the selected day holding a booking whose pre-payment is flagged — a
   // day-grid indicator (Phase 09). Outstanding (required/invoiced-unpaid) wins
   // over an overridden gate on the same list; both surface so an override is
   // never invisible at a glance.
   const prepaymentFlags = useMemo(() => {
     const map = new Map<string, 'outstanding' | 'overridden'>()
-    for (const card of Object.values(cardsRecord)) {
-      const list = listsRecord[card.listId]
+    for (const booking of Object.values(bookingsRecord)) {
+      const list = listsRecord[booking.listId]
       if (list === undefined || list.dateISO !== selectedDate) continue
-      const status = prepaymentStatusFor({ schedule, billing }, card.id)
+      const status = prepaymentStatusFor({ schedule, billing }, booking.id)
       if (status === 'required' || status === 'outstanding') map.set(list.id, 'outstanding')
       else if (status === 'overridden' && !map.has(list.id)) map.set(list.id, 'overridden')
     }
     return map
-  }, [cardsRecord, listsRecord, selectedDate, schedule, billing])
+  }, [bookingsRecord, listsRecord, selectedDate, schedule, billing])
 
   const notes = dayNotesRecord[selectedDate] ?? []
 
@@ -212,7 +212,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     anaesthetists,
     listsByAnaesthetist,
     masters,
-    activeCardCounts,
+    activeBookingCounts,
     prepaymentFlags,
     summary,
     notes,
@@ -251,7 +251,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
           listId={drawerListId}
           actor={OFFICE_ACTOR}
           onClose={() => setDrawerListId(null)}
-          onOpenCard={(cardId) => navigate(`/admin/day/${selectedDate}/cards/${cardId}`)}
+          onOpenBooking={(bookingId) => navigate(`/admin/day/${selectedDate}/bookings/${bookingId}`)}
         />
       )}
     </div>

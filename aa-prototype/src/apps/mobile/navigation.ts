@@ -23,10 +23,10 @@ export function mobileTabForPath(pathname: string): MobileTab {
 }
 
 export interface ListsStackLocation {
-  /** `SlideStack` depth: 0 = Forward Lists, 1 = List detail, 2 = Card detail. */
+  /** `SlideStack` depth: 0 = Forward Lists, 1 = List detail, 2 = Booking detail. */
   depth: 0 | 1 | 2
   listId: string | null
-  cardId: string | null
+  bookingId: string | null
 }
 
 /**
@@ -36,9 +36,9 @@ export interface ListsStackLocation {
  * outgoing screen and kill the pop (Decisions log 2026-07-23, upheld).
  */
 export function listsStackLocation(pathname: string): ListsStackLocation {
-  const card = matchPath('/mobile/lists/:listId/cards/:cardId', pathname)
-  if (card !== null) return { depth: 2, listId: card.params.listId ?? null, cardId: card.params.cardId ?? null }
+  const booking = matchPath('/mobile/lists/:listId/bookings/:bookingId', pathname)
+  if (booking !== null) return { depth: 2, listId: booking.params.listId ?? null, bookingId: booking.params.bookingId ?? null }
   const list = matchPath('/mobile/lists/:listId', pathname)
-  if (list !== null) return { depth: 1, listId: list.params.listId ?? null, cardId: null }
-  return { depth: 0, listId: null, cardId: null }
+  if (list !== null) return { depth: 1, listId: list.params.listId ?? null, bookingId: null }
+  return { depth: 0, listId: null, bookingId: null }
 }

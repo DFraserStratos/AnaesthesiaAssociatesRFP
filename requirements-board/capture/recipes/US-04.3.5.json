@@ -7,7 +7,7 @@
       "name": "contract-before",
       "app": "admin",
       "caption": "Billing setup still editable while the list awaits review",
-      "start": "/admin/day/2026-07-20/cards/C0012",
+      "start": "/admin/day/2026-07-20/bookings/BK0012",
       "states": [
         {
           "steps": [],
@@ -21,7 +21,7 @@
       "name": "locked-contract",
       "app": "admin",
       "caption": "Billing setup locked once the list is authorised",
-      "start": "/admin/day/2026-07-20/cards/C0012",
+      "start": "/admin/day/2026-07-20/bookings/BK0012",
       "setup": [
         {
           "goto": "/admin/review/L-25490-2026-07-20-AM"

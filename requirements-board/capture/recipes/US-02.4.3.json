@@ -7,29 +7,39 @@
       "name": "copy-card",
       "app": "web",
       "caption": "Copy a Booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0006",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0006",
       "states": [
         {
           "state": "button",
-          "caption": "Copy for an additional procedure, on a Booking",
-          "steps": [],
+          "caption": "Copy booking starts a new Booking for this patient on this List",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Copy booking\"]"
+            }
+          ],
           "highlight": [
-            "role=button[name=\"Copy for an additional procedure\"]"
+            "role=button[name=\"Copy booking\"]"
           ]
         },
         {
           "state": "copied",
-          "caption": "The copy keeps the patient and List, with the procedure left to capture",
+          "caption": "The copy keeps the patient, List and billing reference, with its own procedure to capture",
           "steps": [
             {
-              "click": "role=button[name=\"Copy for an additional procedure\"]"
+              "scroll": "role=button[name=\"Copy booking\"]"
             },
             {
-              "wait": 1000
+              "click": "role=button[name=\"Copy booking\"]"
+            },
+            {
+              "wait": "text=\"Copy of another Booking\""
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "tr:has-text(\"Procedure to capture\")"
+            "[data-shot=booking-source]"
           ]
         }
       ]
@@ -38,33 +48,39 @@
       "name": "copy-card",
       "app": "mobile",
       "caption": "Copy a Booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "button",
-          "caption": "Copy for an additional procedure, on a Booking",
+          "caption": "Copy booking starts a new Booking for this patient on this List",
           "steps": [
             {
-              "scroll": "[data-testid=slide-card] >> role=button[name=\"Copy for an additional procedure\"]"
+              "scroll": "[data-testid=slide-booking] >> role=button[name=\"Copy booking\"]"
             }
           ],
           "highlight": [
-            "[data-testid=slide-card] >> role=button[name=\"Copy for an additional procedure\"]"
+            "[data-testid=slide-booking] >> role=button[name=\"Copy booking\"]"
           ]
         },
         {
           "state": "copied",
-          "caption": "The copy keeps the patient and List, with the procedure left to capture",
+          "caption": "The copy keeps the patient, List and billing reference, with its own procedure to capture",
           "steps": [
             {
-              "click": "role=button[name=\"Copy for an additional procedure\"]"
+              "scroll": "[data-testid=slide-booking] >> role=button[name=\"Copy booking\"]"
             },
             {
-              "wait": 1000
+              "click": "[data-testid=slide-booking] >> role=button[name=\"Copy booking\"]"
+            },
+            {
+              "wait": "text=\"Copy of another Booking\""
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-testid=slide-list] button:has-text(\"Procedure to capture\")"
+            "[data-testid=slide-booking] >> [data-shot=booking-source]"
           ]
         }
       ]

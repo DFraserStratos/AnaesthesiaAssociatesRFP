@@ -1,5 +1,5 @@
 /**
- * Patient intake — the ONE upsert path every card-creation flow uses (manual,
+ * Patient intake — the ONE upsert path every booking-creation flow uses (manual,
  * photo, HL7, FHIR, PDF; Phases 03/11). The RFP's Appendix 2 places dedupe at
  * intake: match by NHI when present (either format) and enrich + reuse the
  * existing Patient; without an NHI, create a provisional record. One person,
@@ -11,7 +11,7 @@ import { validateNhi } from '../domain/nhi'
 import { validateEthnicityCode } from '../domain/nzhis'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { editRefusal, getCard } from './lifecycle'
+import { editRefusal, getBooking } from './lifecycle'
 
 export interface PatientIntakeDetails {
   nhi?: string
@@ -131,15 +131,15 @@ export function upsertPatient(
 // editPatient
 // ---------------------------------------------------------------------------
 
-/** Editable patient demographics (Phase 03 Card-screen patient block). */
+/** Editable patient demographics (Phase 03 Booking-screen patient block). */
 export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone' | 'email' | 'address'>>
 
 /**
  * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
- * Mirrors `editCard`: when a `viaCardId` is supplied (the Card screen always
- * does), the same `editRefusal` gate applies against that Card's List, so a
+ * Mirrors `editBooking`: when a `viaBookingId` is supplied (the Booking screen always
+ * does), the same `editRefusal` gate applies against that Booking's List, so a
  * SUBMITTED List is read-only to the anaesthetist and an AUTHORISED List is
- * locked. Called without a card context (later office master edits) it skips
+ * locked. Called without a booking context (later office master edits) it skips
  * the list gate.
  */
 export function editPatient(
@@ -147,14 +147,14 @@ export function editPatient(
   actor: Actor,
   patientId: string,
   patch: PatientEditPatch,
-  viaCardId?: string,
+  viaBookingId?: string,
 ): Outcome {
   const state = api.getState()
   const patient = state.masters.patients[patientId]
   if (patient === undefined) return refuse('notFound', 'Patient not found.')
-  if (viaCardId !== undefined) {
-    const found = getCard(state, viaCardId)
-    if (found === undefined) return refuse('notFound', 'Card not found.')
+  if (viaBookingId !== undefined) {
+    const found = getBooking(state, viaBookingId)
+    if (found === undefined) return refuse('notFound', 'Booking not found.')
     const rights = editRefusal(actor, found.list)
     if (rights !== null) return rights
   }

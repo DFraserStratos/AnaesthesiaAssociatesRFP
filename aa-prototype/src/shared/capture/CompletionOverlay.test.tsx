@@ -13,7 +13,7 @@ describe('CompletionOverlay calculation display', () => {
     expect(screen.getByText('3 units · $79.50')).toBeInTheDocument()
 
     view.rerender(<CompletionOverlay units={3} fee={79.5} showCalculation={false} />)
-    expect(screen.getByText('Card complete')).toBeInTheDocument()
+    expect(screen.getByText('Booking complete')).toBeInTheDocument()
     expect(screen.queryByText(/3 units/)).not.toBeInTheDocument()
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
   })

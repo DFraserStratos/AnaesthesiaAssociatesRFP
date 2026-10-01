@@ -129,7 +129,7 @@ const prefersReducedMotion = (): boolean =>
  *    by the screen itself, which makes them DESCENDANTS of this layer: their
  *    `pointerdown` bubbles straight into these handlers, and `zIndex: 70`
  *    changes paint order, not propagation. (Only the two the Lists route renders
- *    as siblings of the stack, `AddCardFlow` and `RequestCoverSheet`, are
+ *    as siblings of the stack, `AddBookingFlow` and `RequestCoverSheet`, are
  *    genuinely outside it.) Unguarded, a drag on a sheet or its scrim took the
  *    whole layer with it and popped, and because a screen does not reset its own
  *    `sheet` state on the way out, re-entering showed the stale sheet still

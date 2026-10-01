@@ -6,7 +6,7 @@
     {
       "name": "card-failure",
       "app": "admin",
-      "caption": "One card fails to bill while its sibling still invoices",
+      "caption": "One booking fails to bill while its sibling still invoices",
       "start": "/admin/billing",
       "setup": [
         {

@@ -36,10 +36,10 @@ describe('authoriseAsSimulatedOffice', () => {
       expect(list !== undefined && isListBilled(list)).toBe(true)
       const authoriseRows = state.audit.filter((a) => a.entityId === SUBMITTED && a.who === 'AA office (simulated)')
       expect(authoriseRows.length).toBeGreaterThan(0)
-      const invoices = Object.values(state.billing.invoices).filter((i) => state.schedule.cards[i.cardId]?.listId === SUBMITTED)
+      const invoices = Object.values(state.billing.invoices).filter((i) => state.schedule.bookings[i.bookingId]?.listId === SUBMITTED)
       const again = authoriseAsSimulatedOffice(api, SUBMITTED)
       expect(again.ok).toBe(false)
-      expect(Object.values(api.getState().billing.invoices).filter((i) => api.getState().schedule.cards[i.cardId]?.listId === SUBMITTED)).toHaveLength(invoices.length)
+      expect(Object.values(api.getState().billing.invoices).filter((i) => api.getState().schedule.bookings[i.bookingId]?.listId === SUBMITTED)).toHaveLength(invoices.length)
     })
   }
 

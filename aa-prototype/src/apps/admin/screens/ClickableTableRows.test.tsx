@@ -3,7 +3,7 @@ import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-d
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { freshAppState, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
-import { AdminCardDetailRoute } from '../routes'
+import { AdminBookingDetailRoute } from '../routes'
 import { InvoicesScreen } from './InvoicesScreen'
 import { ReviewQueue } from './ReviewQueue'
 
@@ -57,7 +57,7 @@ describe('admin clickable table rows', () => {
     expect(onSelect).toHaveBeenCalledWith(invoice.id)
   })
 
-  it('links the patient and card to the underlying card without opening the invoice row', () => {
+  it('links the patient and booking to the underlying booking without opening the invoice row', () => {
     const onSelect = vi.fn()
     render(
       <MemoryRouter>
@@ -70,13 +70,13 @@ describe('admin clickable table rows', () => {
     const invoice = Object.values(useAppStore.getState().billing.invoices)
       .filter((candidate) => !isBackdropInvoice(candidate))
       .sort((a, b) => b.id.localeCompare(a.id))[0]!
-    const card = useAppStore.getState().schedule.cards[invoice.cardId]!
-    const list = useAppStore.getState().schedule.lists[card.listId]!
+    const booking = useAppStore.getState().schedule.bookings[invoice.bookingId]!
+    const list = useAppStore.getState().schedule.lists[booking.listId]!
     const patientLink = row.querySelectorAll('a')[0]!
 
     fireEvent.click(patientLink)
 
-    expect(screen.getByTestId('location-probe')).toHaveTextContent(`/admin/day/${list.dateISO}/cards/${card.id}`)
+    expect(screen.getByTestId('location-probe')).toHaveTextContent(`/admin/day/${list.dateISO}/bookings/${booking.id}`)
     expect(screen.getByTestId('location-probe')).toHaveAttribute('data-from-invoice-id', invoice.id)
     expect(onSelect).not.toHaveBeenCalled()
   })
@@ -98,16 +98,16 @@ describe('admin clickable table rows', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
-  it('returns an invoice-origin card to that exact invoice', () => {
+  it('returns an invoice-origin booking to that exact invoice', () => {
     const invoice = Object.values(useAppStore.getState().billing.invoices)
       .filter((candidate) => !isBackdropInvoice(candidate))[0]!
-    const card = useAppStore.getState().schedule.cards[invoice.cardId]!
-    const list = useAppStore.getState().schedule.lists[card.listId]!
+    const booking = useAppStore.getState().schedule.bookings[invoice.bookingId]!
+    const list = useAppStore.getState().schedule.lists[booking.listId]!
 
     render(
       <MemoryRouter
         initialEntries={[{
-          pathname: `/admin/day/${list.dateISO}/cards/${card.id}`,
+          pathname: `/admin/day/${list.dateISO}/bookings/${booking.id}`,
           state: { fromInvoiceId: invoice.id },
         }]}
       >
@@ -117,7 +117,7 @@ describe('admin clickable table rows', () => {
               path="/admin"
               element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}
             >
-              <Route path="day/:dateISO/cards/:cardId" element={<AdminCardDetailRoute />} />
+              <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="invoices/:invoiceId" element={<div>Returned to invoice</div>} />
             </Route>
           </Routes>

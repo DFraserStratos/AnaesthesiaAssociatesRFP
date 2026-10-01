@@ -46,12 +46,12 @@ export function HistoryTimeline({
 }: {
   entries: readonly AuditEntry[]
   /**
-   * Optional `entityId` -> scope label ("Procedure 2 · Total hip"), for a Card
+   * Optional `entityId` -> scope label ("Procedure 2 · Total hip"), for a Booking
    * whose trail merges several procedures. Omitted on a single-entity history,
    * where naming the entity on every row would be noise.
    */
   entityLabels?: Record<string, string>
-  /** What the empty state calls the thing being read ("card", "list"). */
+  /** What the empty state calls the thing being read ("booking", "list"). */
   subject?: string
 }) {
   const todayISO = useToday()

@@ -1,7 +1,7 @@
 /**
- * Card-creation guards (Phase 03) — the ad-hoc/manual + photo path and the
- * additional-procedure Card Copy (M6). Modelled exactly on `cancelCard` /
- * `editCard`: an `editRefusal` gate, then one audited `mutate()` commit with
+ * Booking-creation guards (Phase 03) — the ad-hoc/manual + photo path and
+ * Booking Copy (a skeleton-only new Booking since catch-up Phase 15). Modelled exactly on `cancelBooking` /
+ * `editBooking`: an `editRefusal` gate, then one audited `mutate()` commit with
  * the audit metas allocated inside the recipe (the `reassignList` pattern).
  *
  * Domain logic lives here, not in components (PROGRESS convention 4). Every
@@ -10,8 +10,9 @@
 
 import type {
   BillingRoute,
-  Card,
-  CardAttachment,
+  Attachment,
+  Booking,
+  BookingSource,
   IntegrationCorrelationRef,
   PatientPaymentCategory,
   Procedure,
@@ -27,15 +28,16 @@ import {
   type Outcome,
 } from './mutate'
 import type { AppStoreApi } from './appStore'
-import { editRefusal, getCard } from './lifecycle'
+import { editRefusal, getBooking } from './lifecycle'
+import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
-import { cardsForList, listForSlot, proceduresForCard } from './selectors'
+import { bookingsForList, listForSlot, proceduresForBooking } from './selectors'
 
 // ---------------------------------------------------------------------------
-// createCard
+// createBooking
 // ---------------------------------------------------------------------------
 
-export interface CreateCardInput {
+export interface CreateBookingInput {
   /** Patient details — routed through the shared `upsertPatient` dedupe. */
   patient: PatientIntakeDetails
   scheduledTime?: string
@@ -50,29 +52,35 @@ export interface CreateCardInput {
   billingReference?: string
   notes?: string
   /** A photo/file to attach (the photo-capture path adds a `kind:'photo'` one). */
-  attachment?: { name: string; kind: CardAttachment['kind']; dataUrl?: string }
+  attachment?: { name: string; kind: Attachment['kind']; dataUrl?: string }
   /**
    * Integration provenance (Phase 11): the `{sourceFeedId, externalAppointmentId}`
    * correlation ref an HL7/FHIR create stamps, so later S13/S14/S15 messages
-   * locate this Card by its appointment id. Backward-compatible: manual/photo/
+   * locate this Booking by its appointment id. Backward-compatible: manual/photo/
    * PDF paths omit it.
    */
   correlationRef?: IntegrationCorrelationRef
+  /**
+   * How the Booking entered the system, when the calling path knows it
+   * (DM-39). Display-only: stored on the Booking and in the create audit, read
+   * by no rule.
+   */
+  source?: BookingSource
 }
 
 /**
- * Create an ad-hoc Card (the manual and photo paths share this — the photo path
+ * Create an ad-hoc Booking (the manual and photo paths share this — the photo path
  * simply pre-fills `input` and passes an attachment). Runs the shared
- * `upsertPatient` first (NHI dedupe: reuse or create), then creates the Card
- * and its first Procedure (`isAdditional:false`), audited `card.create` +
+ * `upsertPatient` first (NHI dedupe: reuse or create), then creates the Booking
+ * and its first Procedure (`isAdditional:false`), audited `booking.create` +
  * `procedure.create`. The patient audit comes from `upsertPatient`.
  */
-export function createCard(
+export function createBooking(
   api: AppStoreApi,
   actor: Actor,
   listId: string,
-  input: CreateCardInput,
-): Outcome<{ cardId: string; patientId: string }> {
+  input: CreateBookingInput,
+): Outcome<{ bookingId: string; patientId: string }> {
   const state = api.getState()
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
@@ -83,36 +91,32 @@ export function createCard(
   }
 
   // Shared intake dedupe — may reuse an existing Patient or create one. A bad
-  // NHI is surfaced verbatim before any Card is created.
+  // NHI is surfaced verbatim before any Booking is created.
   const intake = upsertPatient(api, actor, input.patient)
   if (!intake.ok) return intake
   const patientId = intake.value.patient.hiddenInternalId
 
-  let cardId = ''
+  let bookingId = ''
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let counters = s.counters
-    const cardAlloc = allocateId(counters, 'card')
-    counters = cardAlloc.counters
-    cardId = cardAlloc.id
+    const bookingAlloc = allocateId(counters, 'booking')
+    counters = bookingAlloc.counters
+    bookingId = bookingAlloc.id
     const procAlloc = allocateId(counters, 'procedure')
     counters = procAlloc.counters
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
 
-    const attachments: CardAttachment[] = []
+    const attachments: Attachment[] = []
     if (input.attachment !== undefined) {
-      const attachment: CardAttachment = {
-        id: `${cardId}-A1`,
-        name: input.attachment.name,
-        kind: input.attachment.kind,
-      }
-      if (input.attachment.dataUrl !== undefined) attachment.dataUrl = input.attachment.dataUrl
-      attachments.push(attachment)
+      const built = newAttachment(counters, input.attachment)
+      counters = built.counters
+      attachments.push(built.attachment)
     }
 
-    const card: Card = {
-      id: cardId,
+    const booking: Booking = {
+      id: bookingId,
       listId,
       patientId,
       completed: false,
@@ -120,13 +124,14 @@ export function createCard(
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
-    if (input.scheduledTime !== undefined) card.scheduledTime = input.scheduledTime
-    if (input.notes !== undefined && input.notes.trim() !== '') card.notes = input.notes.trim()
-    if (input.correlationRef !== undefined) card.correlationRef = input.correlationRef
+    if (input.scheduledTime !== undefined) booking.scheduledTime = input.scheduledTime
+    if (input.notes !== undefined && input.notes.trim() !== '') booking.notes = input.notes.trim()
+    if (input.correlationRef !== undefined) booking.correlationRef = input.correlationRef
+    if (input.source !== undefined) booking.source = input.source
 
     const procedure: Procedure = {
       id: procedureId,
-      cardId,
+      bookingId,
       description: input.operation.trim(),
       billingRoute: input.billingRoute,
       accRelated: false,
@@ -142,7 +147,12 @@ export function createCard(
     }
 
     metas.push(
-      { entityType: 'card', entityId: cardId, action: 'card.create', after: { listId, patientId } },
+      {
+        entityType: 'booking',
+        entityId: bookingId,
+        action: 'booking.create',
+        after: input.source !== undefined ? { listId, patientId, source: input.source } : { listId, patientId },
+      },
       {
         entityType: 'procedure',
         entityId: procedureId,
@@ -153,99 +163,109 @@ export function createCard(
     return {
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: card },
+        bookings: { ...s.schedule.bookings, [bookingId]: booking },
         procedures: { ...s.schedule.procedures, [procedureId]: procedure },
       },
       counters,
     }
   })
 
-  return ok({ cardId, patientId })
+  return ok({ bookingId, patientId })
 }
 
 // ---------------------------------------------------------------------------
-// copyCard
+// copyBooking
 // ---------------------------------------------------------------------------
 
 /**
- * Card Copy — the RFP's additional-procedure mechanism (M6; 3rd review #2). The
- * copy lands in the SAME List, records `copiedFromCardId`, reuses the patient,
- * and clears notes/attachments and completion. Its one skeleton Procedure is
- * `isAdditional:true` from the first (Phase 04 renders it time-only, base and
- * modifiers structurally disabled) so copy cannot double-charge base units the
- * original Card already claimed. Billing route/context inherit from the
- * source's first procedure. Audited `card.copy` + `procedure.create`.
+ * Copy a Booking (US-02.4.3; catch-up Phase 15). A NEW Booking with only the
+ * skeleton: the same List and patient, and the source's billing reference (the
+ * reading of "references" recorded in the Decisions log; never the hospital
+ * appointment correlation, because a copy is a different appointment). It has
+ * one fresh PRIMARY Procedure and inherits nothing else: no notes,
+ * attachments, time, procedure details, insurer, billable party, payment
+ * category or Contract. Additional Procedures are added inside a Booking with
+ * `addProcedure`, which is the only additional-procedure path.
+ *
+ * `billingRoute: 'hospital'` is a DEFAULT, not an inheritance: the same
+ * starting value the add flow offers any new Booking, so the anaesthetist can
+ * capture and complete the copy without an office step (interim until Phase 20
+ * replaces the route with the default hospital Contract). Audited
+ * `booking.copy` + `procedure.create`; the source Booking is untouched.
  */
-export function copyCard(api: AppStoreApi, actor: Actor, sourceCardId: string): Outcome<{ cardId: string }> {
+export function copyBooking(api: AppStoreApi, actor: Actor, sourceBookingId: string): Outcome<{ bookingId: string }> {
   const state = api.getState()
-  const found = getCard(state, sourceCardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card: source, list } = found
+  const found = getBooking(state, sourceBookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking: source, list } = found
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  const first = proceduresForCard(state, sourceCardId)[0]
+  const billingReference = proceduresForBooking(state, sourceBookingId)[0]?.billingReference
 
-  let cardId = ''
+  let bookingId = ''
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let counters = s.counters
-    const cardAlloc = allocateId(counters, 'card')
-    counters = cardAlloc.counters
-    cardId = cardAlloc.id
+    const bookingAlloc = allocateId(counters, 'booking')
+    counters = bookingAlloc.counters
+    bookingId = bookingAlloc.id
     const procAlloc = allocateId(counters, 'procedure')
     counters = procAlloc.counters
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
 
-    const card: Card = {
-      id: cardId,
+    const booking: Booking = {
+      id: bookingId,
       listId: source.listId,
       patientId: source.patientId,
       completed: false,
-      copiedFromCardId: sourceCardId,
+      copiedFromBookingId: sourceBookingId,
+      source: 'copy',
       attachments: [],
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
     }
-    if (source.scheduledTime !== undefined) card.scheduledTime = source.scheduledTime
 
     const procedure: Procedure = {
       id: procedureId,
-      cardId,
+      bookingId,
       description: '',
+      billingRoute: 'hospital',
       accRelated: false,
-      isAdditional: true,
+      isAdditional: false,
       selectedModifierCodes: [],
     }
-    // Inherit the funding context only (the same episode), never the base /
-    // modifier / time specifics — those are cleared for the additional line.
-    if (first?.billingRoute !== undefined) procedure.billingRoute = first.billingRoute
-    if (first?.insurerId !== undefined) procedure.insurerId = first.insurerId
-    if (first?.billablePartyId !== undefined) procedure.billablePartyId = first.billablePartyId
-    if (first?.patientPaymentCategory !== undefined) procedure.patientPaymentCategory = first.patientPaymentCategory
-    if (first?.governingContractId !== undefined) procedure.governingContractId = first.governingContractId
+    if (billingReference !== undefined) procedure.billingReference = billingReference
 
     metas.push(
       {
-        entityType: 'card',
-        entityId: cardId,
-        action: 'card.copy',
-        after: { copiedFromCardId: sourceCardId, listId: source.listId, patientId: source.patientId },
+        entityType: 'booking',
+        entityId: bookingId,
+        action: 'booking.copy',
+        after: { copiedFromBookingId: sourceBookingId, listId: source.listId, patientId: source.patientId, source: 'copy' },
       },
-      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { isAdditional: true } },
+      {
+        entityType: 'procedure',
+        entityId: procedureId,
+        action: 'procedure.create',
+        after:
+          billingReference !== undefined
+            ? { isAdditional: false, billingRoute: 'hospital', billingReference }
+            : { isAdditional: false, billingRoute: 'hospital' },
+      },
     )
     return {
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: card },
+        bookings: { ...s.schedule.bookings, [bookingId]: booking },
         procedures: { ...s.schedule.procedures, [procedureId]: procedure },
       },
       counters,
     }
   })
 
-  return ok({ cardId })
+  return ok({ bookingId })
 }
 
 // ---------------------------------------------------------------------------
@@ -255,8 +275,8 @@ export function copyCard(api: AppStoreApi, actor: Actor, sourceCardId: string): 
 /**
  * Post-op addendum (B8; Phase 09) — a post-procedure charge against a
  * billed/locked episode (e.g. an HDU review, pain consult, nerve catheter).
- * The RFP's immutability answer: the original Card stays LOCKED; the addendum
- * is a NEW linked Card (`cardType: 'postOpAddendum'`, `addendumOfCardId`) that
+ * The RFP's immutability answer: the original Booking stays LOCKED; the addendum
+ * is a NEW linked Booking (`bookingType: 'postOpAddendum'`, `addendumOfBookingId`) that
  * runs its own capture -> submit -> authorise -> bill cycle.
  *
  * It lands on the original anaesthetist's empty/free DRAFT List for today (AM
@@ -265,22 +285,22 @@ export function copyCard(api: AppStoreApi, actor: Actor, sourceCardId: string): 
  * bill them together (same pattern as Phase 06 phone-advice booking). Refused
  * `noOpenSession` when neither of today's sessions is a free, empty DRAFT List.
  * The patient is reused; the billing setup is inherited from the original's
- * first procedure. Audited `card.create` + `procedure.create`; original untouched.
+ * first procedure. Audited `booking.create` + `procedure.create`; original untouched.
  */
 export function addPostOpAddendum(
   api: AppStoreApi,
   actor: Actor,
-  originalCardId: string,
-): Outcome<{ cardId: string; listId: string }> {
+  originalBookingId: string,
+): Outcome<{ bookingId: string; listId: string }> {
   const state = api.getState()
-  const found = getCard(state, originalCardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card: original, list: originalList } = found
+  const found = getBooking(state, originalBookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking: original, list: originalList } = found
 
   if (originalList.state !== 'AUTHORISED') {
     return refuse(
       'notAuthorised',
-      'A post-op addendum is only added to a locked (authorised) episode. The original Card is not authorised yet.',
+      'A post-op addendum is only added to a locked (authorised) episode. The original Booking is not authorised yet.',
     )
   }
 
@@ -295,7 +315,7 @@ export function addPostOpAddendum(
       l.statusKey === 'free' &&
       l.hospitalId === undefined &&
       l.surgeonId === undefined &&
-      cardsForList(state, l.id).filter((c) => c.cancellation === undefined).length === 0,
+      bookingsForList(state, l.id).filter((c) => c.cancellation === undefined).length === 0,
   )
   if (target === undefined) {
     return refuse(
@@ -307,28 +327,30 @@ export function addPostOpAddendum(
   const rights = editRefusal(actor, target)
   if (rights !== null) return rights
 
-  const first = proceduresForCard(state, originalCardId)[0]
+  const first = proceduresForBooking(state, originalBookingId)[0]
 
-  let cardId = ''
+  let bookingId = ''
   const listId = target.id
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let counters = s.counters
-    const cardAlloc = allocateId(counters, 'card')
-    counters = cardAlloc.counters
-    cardId = cardAlloc.id
+    const bookingAlloc = allocateId(counters, 'booking')
+    counters = bookingAlloc.counters
+    bookingId = bookingAlloc.id
     const procAlloc = allocateId(counters, 'procedure')
     counters = procAlloc.counters
     const procedureId = procAlloc.id
     const atISO = clockISO(s.clock)
 
-    const card: Card = {
-      id: cardId,
+    const booking: Booking = {
+      id: bookingId,
       listId,
       patientId: original.patientId,
       completed: false,
-      cardType: 'postOpAddendum',
-      addendumOfCardId: originalCardId,
+      bookingType: 'postOpAddendum',
+      addendumOfBookingId: originalBookingId,
+      // Interim until Phase 39 replaces the addendum: the source follows the actor.
+      source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
       attachments: [],
       lastModifiedBy: actor.who,
       lastModifiedAtISO: atISO,
@@ -336,7 +358,7 @@ export function addPostOpAddendum(
 
     const procedure: Procedure = {
       id: procedureId,
-      cardId,
+      bookingId,
       description: '',
       accRelated: false,
       isAdditional: false,
@@ -359,24 +381,30 @@ export function addPostOpAddendum(
 
     metas.push(
       {
-        entityType: 'card',
-        entityId: cardId,
-        action: 'card.create',
-        after: { listId, patientId: original.patientId, cardType: 'postOpAddendum', addendumOfCardId: originalCardId },
+        entityType: 'booking',
+        entityId: bookingId,
+        action: 'booking.create',
+        after: {
+          listId,
+          patientId: original.patientId,
+          bookingType: 'postOpAddendum',
+          addendumOfBookingId: originalBookingId,
+          source: actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc',
+        },
       },
-      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { cardId } },
+      { entityType: 'procedure', entityId: procedureId, action: 'procedure.create', after: { bookingId } },
     )
     return {
       schedule: {
         ...s.schedule,
-        cards: { ...s.schedule.cards, [cardId]: card },
+        bookings: { ...s.schedule.bookings, [bookingId]: booking },
         procedures: { ...s.schedule.procedures, [procedureId]: procedure },
       },
       counters,
     }
   })
 
-  return ok({ cardId, listId })
+  return ok({ bookingId, listId })
 }
 
 // ---------------------------------------------------------------------------
@@ -384,29 +412,29 @@ export function addPostOpAddendum(
 // ---------------------------------------------------------------------------
 
 /**
- * Add an additional Procedure to an existing Card (Phase 04's "Add another
+ * Add an additional Procedure to an existing Booking (Phase 04's "Add another
  * procedure"). Additional from the first (RFP split-billing rule): it bills
  * time units only — base and modifier units stay on the first procedure. The
- * skeleton mirrors copyCard's: empty description, `isAdditional: true`, the
+ * skeleton mirrors copyBooking's: empty description, `isAdditional: true`, the
  * funding context (route / insurer / billable party / category / contract)
- * inherited from the Card's FIRST procedure. Audited `procedure.create`.
+ * inherited from the Booking's FIRST procedure. Audited `procedure.create`.
  */
-export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Outcome<{ procedureId: string }> {
+export function addProcedure(api: AppStoreApi, actor: Actor, bookingId: string): Outcome<{ procedureId: string }> {
   const state = api.getState()
-  const found = getCard(state, cardId)
-  if (found === undefined) return refuse('notFound', 'Card not found.')
-  const { card, list } = found
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  const { booking, list } = found
 
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'This Card is cancelled and cannot take another procedure.')
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled and cannot take another procedure.')
   }
-  if (card.completed) {
-    return refuse('cardCompleted', 'This Card is already marked complete. Amend it before adding a procedure.')
+  if (booking.completed) {
+    return refuse('bookingCompleted', 'This Booking is already marked complete. Amend it before adding a procedure.')
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  const first = proceduresForCard(state, cardId)[0]
+  const first = proceduresForBooking(state, bookingId)[0]
 
   let procedureId = ''
   const metas: MutationMeta[] = []
@@ -416,7 +444,7 @@ export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Ou
 
     const procedure: Procedure = {
       id: procedureId,
-      cardId,
+      bookingId,
       description: '',
       accRelated: false,
       isAdditional: true,
@@ -434,7 +462,7 @@ export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Ou
       entityType: 'procedure',
       entityId: procedureId,
       action: 'procedure.create',
-      after: { cardId, isAdditional: true },
+      after: { bookingId, isAdditional: true },
     })
     return {
       schedule: { ...s.schedule, procedures: { ...s.schedule.procedures, [procedureId]: procedure } },
@@ -450,20 +478,20 @@ export function addProcedure(api: AppStoreApi, actor: Actor, cardId: string): Ou
 // ---------------------------------------------------------------------------
 
 /**
- * Remove an ADDITIONAL procedure from a Card — the undo for `addProcedure` (and
+ * Remove an ADDITIONAL procedure from a Booking — the undo for `addProcedure` (and
  * for a second procedure captured in error). A HARD delete with the removed row
  * snapshotted into `before`, mirroring `removeBillingLine`: a procedure is a
- * sub-entity of the Card, not a billable record in its own right, so there is
- * nothing for a soft-cancel state to remain visible on. The Card itself keeps
+ * sub-entity of the Booking, not a billable record in its own right, so there is
+ * nothing for a soft-cancel state to remain visible on. The Booking itself keeps
  * its soft-cancel; that is the audited "this happened and then did not" case.
  *
  * Two things make it safe:
- *  - **The Card's first procedure is not removable** (user ruling, 2026-07-27).
+ *  - **The Booking's first procedure is not removable** (user ruling, 2026-07-27).
  *    It is the anchor: it carries the base and modifier units the additional
  *    ones deliberately do not, and its position feeds Type 3 second-procedure
- *    pricing. Deleting it would leave a Card billing time units only, and
+ *    pricing. Deleting it would leave a Booking billing time units only, and
  *    silently promoting the next one would rewrite the billing basis of a
- *    procedure nobody touched. A Card booked wholly in error is a card
+ *    procedure nobody touched. A Booking booked wholly in error is a booking
  *    CANCELLATION, which is the refusal's pointer.
  *  - **Its billing lines go with it**, each separately audited in the same
  *    commit, so no line is orphaned onto a procedure that no longer exists
@@ -475,27 +503,27 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
   const state = api.getState()
   const procedure = state.schedule.procedures[procedureId]
   if (procedure === undefined) return refuse('notFound', 'Procedure not found.')
-  const found = getCard(state, procedure.cardId)
-  if (found === undefined) return refuse('notFound', 'The procedure has no Card.')
-  const { card, list } = found
+  const found = getBooking(state, procedure.bookingId)
+  if (found === undefined) return refuse('notFound', 'The procedure has no Booking.')
+  const { booking, list } = found
 
-  if (card.cancellation !== undefined) {
-    return refuse('cardCancelled', 'This Card is cancelled. Its procedures cannot be changed.')
+  if (booking.cancellation !== undefined) {
+    return refuse('bookingCancelled', 'This Booking is cancelled. Its procedures cannot be changed.')
   }
-  if (card.completed) {
-    return refuse('cardCompleted', 'This Card is already marked complete. Amend it before removing a procedure.')
+  if (booking.completed) {
+    return refuse('bookingCompleted', 'This Booking is already marked complete. Amend it before removing a procedure.')
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
   // Position, not the stored `isAdditional` flag: what may not be removed is
-  // whatever the Card currently anchors on, which is what the UI numbers
+  // whatever the Booking currently anchors on, which is what the UI numbers
   // PROCEDURE 1.
-  const siblings = proceduresForCard(state, card.id)
+  const siblings = proceduresForBooking(state, booking.id)
   if (siblings[0]?.id === procedureId) {
     return refuse(
       'primaryProcedure',
-      "A Card's first procedure cannot be removed. Remove the additional procedures, or cancel the Card if the whole booking is wrong.",
+      "A Booking's first procedure cannot be removed. Remove the additional procedures, or cancel the Booking if the whole booking is wrong.",
     )
   }
 
@@ -513,7 +541,7 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
       entityId: procedureId,
       action: 'procedure.remove',
       before: procedure,
-      stampCardId: card.id,
+      stampBookingId: booking.id,
     },
     ...lines.map(
       (line): MutationMeta => ({
@@ -521,7 +549,7 @@ export function removeProcedure(api: AppStoreApi, actor: Actor, procedureId: str
         entityId: line.id,
         action: 'billingLine.remove',
         before: line,
-        stampCardId: card.id,
+        stampBookingId: booking.id,
       }),
     ),
   ]

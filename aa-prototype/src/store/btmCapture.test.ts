@@ -9,8 +9,8 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { advanceClockMinutes } from './clockActions'
-import { completeCard, editProcedure, submitList } from './lifecycle'
-import { auditForEntity, isListBilled, proceduresForCard } from './selectors'
+import { completeBooking, editProcedure, submitList } from './lifecycle'
+import { auditForEntity, isListBilled, proceduresForBooking } from './selectors'
 import { clockISO, mutate, type Actor } from './mutate'
 import { feeFor, resolveBtm } from '../domain/billing/fee'
 import { ANAE, SEED_MARKERS, SEED_LIST_IDS } from '../domain/seed'
@@ -31,23 +31,23 @@ function marker(key: string): string {
 }
 
 const SOUTER_PM = SEED_LIST_IDS.souterPm21
-const ELLISON_CARD = marker('pendingCaptureCard')
+const ELLISON_BOOKING = marker('pendingCaptureBooking')
 
 function store(): BoundAppStore {
   return createAppStore()
 }
 
-/** Per-procedure fees for a card, assembled exactly as the capture UI does. */
-function feeForCard(api: BoundAppStore, cardId: string): { totals: number[]; units: number[] } {
+/** Per-procedure fees for a booking, assembled exactly as the capture UI does. */
+function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[]; units: number[] } {
   const state = api.getState()
-  const card = state.schedule.cards[cardId]
-  if (card === undefined) throw new Error(`missing card ${cardId}`)
-  const list = state.schedule.lists[card.listId]
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
+  const list = state.schedule.lists[booking.listId]
   const anaesthetist = list !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
   if (list === undefined || anaesthetist === undefined) throw new Error('missing context')
   const totals: number[] = []
   const units: number[] = []
-  proceduresForCard(state, cardId).forEach((procedure, index) => {
+  proceduresForBooking(state, bookingId).forEach((procedure, index) => {
     const contract =
       procedure.governingContractId !== undefined
         ? state.masters.contracts[procedure.governingContractId]
@@ -74,7 +74,7 @@ function feeForCard(api: BoundAppStore, cardId: string): { totals: number[]; uni
 }
 
 function ellisonProcedureId(api: BoundAppStore): string {
-  const procedure = proceduresForCard(api.getState(), ELLISON_CARD)[0]
+  const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
   if (procedure === undefined) throw new Error('Ellison has no procedure')
   return procedure.id
 }
@@ -85,8 +85,8 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
     const outcome = submitList(api, SOUTER, SOUTER_PM)
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) {
-      expect(outcome.code).toBe('cardsNotCompleted')
-      expect(outcome.details).toEqual([ELLISON_CARD])
+      expect(outcome.code).toBe('bookingsNotCompleted')
+      expect(outcome.details).toEqual([ELLISON_BOOKING])
     }
   })
 
@@ -101,15 +101,15 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
 
     // The relocated mockup pins (Decisions log 2026-07-23): B7 + T5 + M1 at
     // the SXAP $26.50 = 13 units, $344.50; the PM list's review totals row.
-    expect(feeForCard(api, ELLISON_CARD)).toEqual({ totals: [344.5], units: [13] })
-    const pmCards = Object.values(api.getState().schedule.cards)
+    expect(feeForBooking(api, ELLISON_BOOKING)).toEqual({ totals: [344.5], units: [13] })
+    const pmBookings = Object.values(api.getState().schedule.bookings)
       .filter((c) => c.listId === SOUTER_PM)
       .sort((a, b) => a.id.localeCompare(b.id))
-      .map((c) => feeForCard(api, c.id))
-    expect(pmCards.reduce((s, f) => s + (f.units[0] ?? 0), 0)).toBe(41)
-    expect(pmCards.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(1086.5, 2)
+      .map((c) => feeForBooking(api, c.id))
+    expect(pmBookings.reduce((s, f) => s + (f.units[0] ?? 0), 0)).toBe(41)
+    expect(pmBookings.reduce((s, f) => s + (f.totals[0] ?? 0), 0)).toBeCloseTo(1086.5, 2)
 
-    expect(completeCard(api, SOUTER, ELLISON_CARD).ok).toBe(true)
+    expect(completeBooking(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(api.getState().schedule.lists[SOUTER_PM]?.state).toBe('SUBMITTED')
 
@@ -134,7 +134,7 @@ describe('per-anaesthetist rates (Type 1 default path)', () => {
     // anaesthetist's OWN unit value applies.
     const procedure: Procedure = {
       id: 'P-TEST',
-      cardId: 'C-TEST',
+      bookingId: 'C-TEST',
       description: 'Laparoscopic cholecystectomy',
       accRelated: false,
       isAdditional: false,

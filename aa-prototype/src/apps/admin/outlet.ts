@@ -20,7 +20,7 @@ export interface AdminOutletContext {
   anaesthetists: Anaesthetist[]
   listsByAnaesthetist: Record<string, List[]>
   masters: AppState['masters']
-  activeCardCounts: Record<string, number>
+  activeBookingCounts: Record<string, number>
   prepaymentFlags: Map<string, 'outstanding' | 'overridden'>
   summary: string
   notes: DayNote[]

@@ -9,9 +9,9 @@ interface CompleteBarProps {
 }
 
 /**
- * The Card screen's sticky-footer CONTENT (mockup screen 3): the teal "Mark
+ * The Booking screen's sticky-footer CONTENT (mockup screen 3): the teal "Mark
  * complete" CTA, or once completed the static success bar with the "Amend" link
- * (→ the audited uncompleteCard) while the list is still DRAFT.
+ * (→ the audited uncompleteBooking) while the list is still DRAFT.
  *
  * Phase 05 split the outer positioning out into the surface `Footer` (mobile
  * absolute bar vs web sticky bar), so this renders only the inner control and
@@ -43,7 +43,7 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend }: Comple
           strokeLinejoin="round"
         />
       </svg>
-      Card complete
+      Booking complete
       {canAmend && (
         <button
           type="button"

@@ -44,11 +44,11 @@
             },
             {
               "select": "[data-shot=data-guard-console] select >> nth=1",
-              "value": "editCard"
+              "value": "editBooking"
             },
             {
               "select": "[data-shot=data-guard-console] select >> nth=2",
-              "value": "HC05"
+              "value": "HBK05"
             },
             {
               "wait": 300

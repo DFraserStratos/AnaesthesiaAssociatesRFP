@@ -6,16 +6,16 @@
  *   - applies the recipe's patch,
  *   - appends the append-only AuditEntry per meta (timestamp from the demo
  *     clock state, id from the persisted counter),
- *   - stamps `lastModifiedBy/AtISO` on the touched Card — procedure and
- *     billing-line edits stamp the PARENT Card (7th review A8: the summary
+ *   - stamps `lastModifiedBy/AtISO` on the touched Booking — procedure and
+ *     billing-line edits stamp the PARENT Booking (7th review A8: the summary
  *     fields and the log can never drift apart).
  *
  * Refusals are data, not exceptions: guards return `Outcome` so Phase 11's
  * monitor can surface integration refusals as manual-intervention items.
  */
 
-import type { ActorRole, AuditEntry, AuditSource, CardId } from '../domain/types'
-import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_CARD_ID } from '../domain/seed'
+import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/types'
+import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
 
@@ -60,7 +60,8 @@ export function clockISO(clock: DemoClockState): string {
 /** Runtime id prefixes per counter kind (seed ids share the formats). */
 const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   audit: { prefix: 'A', pad: 4 },
-  card: { prefix: 'C', pad: 4 },
+  booking: { prefix: 'BK', pad: 4 },
+  attachment: { prefix: 'AT', pad: 4 },
   procedure: { prefix: 'P', pad: 4 },
   billingLine: { prefix: 'BL', pad: 4 },
   patient: { prefix: 'PT', pad: 4 },
@@ -119,11 +120,11 @@ export interface MutationMeta {
   before?: unknown
   after?: unknown
   /**
-   * Card whose `lastModifiedBy/AtISO` this mutation stamps. Omit to derive
-   * from the entity (card → itself; procedure/billingLine → parent card);
+   * Booking whose `lastModifiedBy/AtISO` this mutation stamps. Omit to derive
+   * from the entity (booking → itself; procedure/billingLine → parent booking);
    * pass null to stamp nothing (List/master mutations).
    */
-  stampCardId?: CardId | null
+  stampBookingId?: BookingId | null
 }
 
 /** What a recipe may replace. Audit is the wrapper's job — never the recipe's. */
@@ -131,19 +132,19 @@ export type DomainPatch = Partial<
   Pick<AppState, 'masters' | 'schedule' | 'settings' | 'counters' | 'billing' | 'xero' | 'integrations' | 'dayNotes'>
 >
 
-function deriveStampCardId(meta: MutationMeta, schedule: AppState['schedule']): CardId | null {
-  if (meta.stampCardId !== undefined) return meta.stampCardId
-  if (meta.entityType === 'card') return schedule.cards[meta.entityId] !== undefined ? meta.entityId : null
-  if (meta.entityType === 'procedure') return schedule.procedures[meta.entityId]?.cardId ?? null
+function deriveStampBookingId(meta: MutationMeta, schedule: AppState['schedule']): BookingId | null {
+  if (meta.stampBookingId !== undefined) return meta.stampBookingId
+  if (meta.entityType === 'booking') return schedule.bookings[meta.entityId] !== undefined ? meta.entityId : null
+  if (meta.entityType === 'procedure') return schedule.procedures[meta.entityId]?.bookingId ?? null
   if (meta.entityType === 'billingLine') {
     const procedureId = schedule.billingLines[meta.entityId]?.procedureId
-    return procedureId !== undefined ? (schedule.procedures[procedureId]?.cardId ?? null) : null
+    return procedureId !== undefined ? (schedule.procedures[procedureId]?.bookingId ?? null) : null
   }
   return null
 }
 
 /**
- * Apply a domain mutation: recipe patch + audit append + Card stamp, one
+ * Apply a domain mutation: recipe patch + audit append + Booking stamp, one
  * `setState` commit. `metas` may be a single entry or several (e.g. List
  * reassignment audits the move, the absorb and the regenerate together).
  */
@@ -185,18 +186,18 @@ export function mutate(
     entries.push(entry)
   }
 
-  // Stamp the touched Cards in the same commit as their audit entries.
+  // Stamp the touched Bookings in the same commit as their audit entries.
   let schedule = patch.schedule ?? state.schedule
   for (const meta of metaList) {
-    const cardId = deriveStampCardId(meta, schedule)
-    if (cardId === null) continue
-    const card = schedule.cards[cardId]
-    if (card === undefined) continue
+    const bookingId = deriveStampBookingId(meta, schedule)
+    if (bookingId === null) continue
+    const booking = schedule.bookings[bookingId]
+    if (booking === undefined) continue
     schedule = {
       ...schedule,
-      cards: {
-        ...schedule.cards,
-        [cardId]: { ...card, lastModifiedBy: actor.who, lastModifiedAtISO: atISO },
+      bookings: {
+        ...schedule.bookings,
+        [bookingId]: { ...booking, lastModifiedBy: actor.who, lastModifiedAtISO: atISO },
       },
     }
   }
@@ -219,7 +220,7 @@ export function resetDomainState(api: AppStoreApi): void {
   const seed = buildSeed()
   // Restore the seeded PAID pre-payment slice through the same seam as
   // freshAppState (Phase 09), with the counters it bumped.
-  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_CARD_ID)
+  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID)
   api.setState({
     clock: INITIAL_CLOCK,
     masters: seed.masters,

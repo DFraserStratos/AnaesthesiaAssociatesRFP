@@ -33,7 +33,7 @@ interface BtmCaptureBlockProps {
   procedure: Procedure
   list: List
   actor: Actor
-  /** 1-based position on the Card — feeds Type 3 second-procedure pricing. */
+  /** 1-based position on the Booking — feeds Type 3 second-procedure pricing. */
   ordinal: number
   /** True count of procedures (header shows PROCEDURE n only when > 1). */
   procedureCount: number
@@ -44,7 +44,7 @@ interface BtmCaptureBlockProps {
   /** Open the EditProcedureSheet for THIS procedure. */
   onEdit: () => void
   /** Open the RemoveProcedureSheet for THIS procedure. Never offered on the
-   *  Card's first procedure, which `removeProcedure` refuses to delete. */
+   *  Booking's first procedure, which `removeProcedure` refuses to delete. */
   onRemove?: (() => void) | undefined
   onError: (message: string) => void
 }
@@ -54,9 +54,9 @@ interface BtmCaptureBlockProps {
  * Phase 01 calculator = the maths). Composition: context header → ASA →
  * procedure code → times → B/T/M + chips → override → billing lines → notes.
  *
- * No money object of its own: Fee mode pins the Card total in the desktop rail
+ * No money object of its own: Fee mode pins the Booking total in the desktop rail
  * or phone dock, and a per-procedure panel here would duplicate it. Units and
- * Off are presentation choices over the same calculator. Where a Card has
+ * Off are presentation choices over the same calculator. Where a Booking has
  * several procedures, the full pinned total names each one's contribution.
  *
  * Write strategy (the logged capture-UX decision):
@@ -158,7 +158,7 @@ export function BtmCaptureBlock({
             >
               Edit
             </button>
-            {/* Additional procedures only: the Card's first is its anchor and
+            {/* Additional procedures only: the Booking's first is its anchor and
                 `removeProcedure` refuses it, so never show an action that
                 cannot work. */}
             {onRemove !== undefined && canCapture && ordinal > 1 && (

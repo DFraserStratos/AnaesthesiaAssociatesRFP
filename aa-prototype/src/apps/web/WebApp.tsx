@@ -28,11 +28,11 @@ function tabForPath(pathname: string): WebTab {
  * Anaesthetist Web App (Phase 05) — the desktop twin of the mobile app for
  * Dr Souter. This is the app's LAYOUT: the top nav, the max-width container and
  * the persona actor; the screens themselves are router sub-routes
- * (`/web`, `/web/lists/:listId/cards/:cardId`, `/web/accounts/:subTab` …) so a
+ * (`/web`, `/web/lists/:listId/bookings/:bookingId`, `/web/accounts/:subTab` …) so a
  * refresh, the back button and a shared URL all land on the same screen
  * (Decisions log 2026-07-27, reversing the 2026-07-23 app-owned-nav ruling).
  * Wrapped in `<SurfaceProvider variant="web">` so every shared flow / capture
- * sheet / card body renders as a centred dialog. Every read is view-scoped to
+ * sheet / booking body renders as a centred dialog. Every read is view-scoped to
  * Souter (A8); there are no authorise controls anywhere.
  *
  * The cover dialog stays local state: a sheet in the URL would make Back close

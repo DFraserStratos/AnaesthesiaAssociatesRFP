@@ -65,7 +65,7 @@ function RightCluster({ right }: { right: ListRowRight }) {
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <Pill bg={s.tint} color={s.onTint}>
-          {right.count} {right.count === 1 ? 'card' : 'cards'}
+          {right.count} {right.count === 1 ? 'booking' : 'bookings'}
         </Pill>
         <Chevron />
       </span>
@@ -101,7 +101,7 @@ function RightCluster({ right }: { right: ListRowRight }) {
  * column, the hospital/surgeon/count line, and a right-side state. Free rows use
  * a dashed-green body with an "Offer cover" pill; Holiday rows a crimson-tint
  * body. The load-bearing list primitive; moved to `src/shared/schedule` in
- * Phase 05 so the web app reuses it (mobile Forward Lists + web Lists / card
+ * Phase 05 so the web app reuses it (mobile Forward Lists + web Lists / booking
  * rows).
  */
 export function ListRow({

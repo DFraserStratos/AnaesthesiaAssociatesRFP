@@ -7,7 +7,7 @@
       "name": "modifiers",
       "app": "web",
       "caption": "Itemised modifiers",
-      "start": "/web/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -28,7 +28,7 @@
       "name": "modifiers",
       "app": "mobile",
       "caption": "Itemised modifiers",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/cards/C0009",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
           "state": "bands",
@@ -37,7 +37,7 @@
               "scroll": "[data-shot=capture-modifiers]"
             },
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": -60
             },
             {
@@ -59,7 +59,7 @@
               "wait": 400
             },
             {
-              "scroll": "[data-testid=mobile-card-scroll]",
+              "scroll": "[data-testid=mobile-booking-scroll]",
               "by": 450
             }
           ],

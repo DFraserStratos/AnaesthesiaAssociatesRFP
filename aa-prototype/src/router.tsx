@@ -7,7 +7,7 @@ import { AdminApp } from './apps/admin/AdminApp'
 import {
   WebAccountsRoute,
   WebAvailabilityRoute,
-  WebCardDetailRoute,
+  WebBookingDetailRoute,
   WebDashboardRoute,
   WebListDetailRoute,
   WebListsRoute,
@@ -21,7 +21,7 @@ import {
 import {
   AdminAuditRoute,
   AdminBillingRoute,
-  AdminCardDetailRoute,
+  AdminBookingDetailRoute,
   AdminDayRoute,
   AdminIndexRedirect,
   AdminIntegrationsRoute,
@@ -35,6 +35,7 @@ import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
 import { DemoData } from './apps/demo/DemoData'
 import { useAppStore } from './store'
+import { LegacyBookingRedirect } from './shared/legacy'
 import { APP_CONFIG } from './shell/appConfig'
 
 /** Redirect the bare route (and unknown routes) to the last-selected app. */
@@ -52,10 +53,10 @@ function RootRedirect() {
  *
  * Path segments carry NAVIGATION; query params carry VIEW PREFERENCES
  * (`?week=` on the web dashboard, `?sort=` on the admin day view). Transient
- * overlays — cover sheets, the add-card flow, the admin list drawer — stay
+ * overlays — cover sheets, the add-booking flow, the admin list drawer — stay
  * local state, because a sheet in the URL makes Back close the sheet.
  *
- * `:listId` / `:cardId` / `:invoiceId` are nested one segment deep under the
+ * `:listId` / `:bookingId` / `:invoiceId` are nested one segment deep under the
  * collection they belong to so `RequireEntity`'s route-relative `..` fallback
  * lands on that collection.
  */
@@ -73,7 +74,8 @@ export function AppRouter() {
               <Route index element={<WebListsRoute />} />
               <Route path=":listId">
                 <Route index element={<WebListDetailRoute />} />
-                <Route path="cards/:cardId" element={<WebCardDetailRoute />} />
+                <Route path="bookings/:bookingId" element={<WebBookingDetailRoute />} />
+                <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
               </Route>
             </Route>
             <Route path="availability" element={<WebAvailabilityRoute />} />
@@ -89,7 +91,8 @@ export function AppRouter() {
             <Route index element={<AdminIndexRedirect />} />
             <Route path="day/:dateISO">
               <Route index element={<AdminDayRoute />} />
-              <Route path="cards/:cardId" element={<AdminCardDetailRoute />} />
+              <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
+              <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
             <Route path="review">
               <Route index element={<AdminReviewQueueRoute />} />

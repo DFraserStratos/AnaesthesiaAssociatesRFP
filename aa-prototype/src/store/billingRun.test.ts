@@ -11,13 +11,13 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { markInvoiceEmailed, runBillingForList, wireBillingRun, type BillingRunResult } from './billingRun'
-import { authoriseList, completeCard, editProcedure, reassignCard, submitList } from './lifecycle'
+import { authoriseList, completeBooking, editProcedure, reassignBooking, submitList } from './lifecycle'
 import { deleteContract, editContract, editContractPrice } from './contractActions'
 import { editAnaesthetist } from './mastersActions'
 import { setBillingLineAllocation } from './billingLineActions'
 import { advanceClockMinutes } from './clockActions'
 import { clockISO, type Actor } from './mutate'
-import { invoicesForList, isListBilled, proceduresForCard, submittedLists } from './selectors'
+import { invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
 import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, SURG, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
 import type { Invoice, InvoiceLine } from '../domain/types'
@@ -44,10 +44,10 @@ function store(): BoundAppStore {
   return createAppStore()
 }
 
-function listOf(api: BoundAppStore, cardId: string): string {
-  const card = api.getState().schedule.cards[cardId]
-  if (card === undefined) throw new Error(`missing card ${cardId}`)
-  return card.listId
+function listOf(api: BoundAppStore, bookingId: string): string {
+  const booking = api.getState().schedule.bookings[bookingId]
+  if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
+  return booking.listId
 }
 
 /** DRAFT → submit (office) → authorise → run. Every step must succeed. */
@@ -71,9 +71,9 @@ function linesOf(api: BoundAppStore, invoiceId: string): InvoiceLine[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-function invoicesForCard(api: BoundAppStore, cardId: string): Invoice[] {
+function invoicesForBooking(api: BoundAppStore, bookingId: string): Invoice[] {
   return Object.values(api.getState().billing.invoices)
-    .filter((i) => i.cardId === cardId)
+    .filter((i) => i.bookingId === bookingId)
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -104,7 +104,7 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     return stageAndBill(api, MORRISON_LIST)
   }
 
-  it('6 completed hospital-route cards yield 6 St George invoices; the cancelled card yields none', () => {
+  it('6 completed hospital-route bookings yield 6 St George invoices; the cancelled booking yields none', () => {
     const api = store()
     const result = billMorrison(api)
     expect(result.exceptions).toEqual([])
@@ -118,32 +118,32 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
       expect(inv.gst).toBe(roundToCents(inv.subtotal * 0.15))
       expect(inv.total).toBe(roundToCents(inv.subtotal + inv.gst))
     }
-    expect(invoicesForCard(api, marker('cancelledCard'))).toHaveLength(0)
+    expect(invoicesForBooking(api, marker('cancelledBooking'))).toHaveLength(0)
   })
 
-  it('Type 2 rates on the ACC card ($25/unit via stgAcc), Type 1 standard elsewhere ($35/unit)', () => {
+  it('Type 2 rates on the ACC booking ($25/unit via stgAcc), Type 1 standard elsewhere ($35/unit)', () => {
     const api = store()
     billMorrison(api)
-    const accInvoice = invoicesForCard(api, marker('accRelatedCard'))[0]
+    const accInvoice = invoicesForBooking(api, marker('accRelatedBooking'))[0]
     expect(accInvoice).toBeDefined()
     expect(linesOf(api, accInvoice!.id)[0]!.description).toContain('at $25.00 per unit')
-    const missingRefCardId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.cardId
-    const standardInvoice = invoicesForCard(api, missingRefCardId)[0]
+    const missingRefBookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
+    const standardInvoice = invoicesForBooking(api, missingRefBookingId)[0]
     expect(standardInvoice).toBeDefined()
     expect(linesOf(api, standardInvoice!.id)[0]!.description).toContain('at $35.00 per unit')
   })
 
-  it('the missing-billing-reference card bills anyway (an advisory, never a billing blocker)', () => {
+  it('the missing-billing-reference booking bills anyway (an advisory, never a billing blocker)', () => {
     const api = store()
     billMorrison(api)
-    const cardId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.cardId
-    expect(invoicesForCard(api, cardId)).toHaveLength(1)
+    const bookingId = api.getState().schedule.procedures[marker('missingBillingRef1')]!.bookingId
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(1)
   })
 
-  it('audits the whole run source=system and never stamps a locked card', () => {
+  it('audits the whole run source=system and never stamps a locked booking', () => {
     const api = store()
     const before = Object.fromEntries(
-      Object.values(api.getState().schedule.cards)
+      Object.values(api.getState().schedule.bookings)
         .filter((c) => c.listId === MORRISON_LIST)
         .map((c) => [c.id, c.lastModifiedAtISO]),
     )
@@ -151,11 +151,11 @@ describe('the Morrison run (same-counterparty grouping, audit, view effects)', (
     const state = api.getState()
     const runAudit = state.audit.filter((a) => a.source === 'system' && a.who === 'Billing run')
     expect(runAudit.filter((a) => a.action === 'invoice.create')).toHaveLength(6)
-    expect(runAudit.filter((a) => a.action === 'card.billed')).toHaveLength(6)
+    expect(runAudit.filter((a) => a.action === 'booking.billed')).toHaveLength(6)
     expect(runAudit.filter((a) => a.action === 'list.billed')).toHaveLength(1)
     expect(runAudit.filter((a) => a.action === 'list.billed')[0]!.entityId).toBe(MORRISON_LIST)
-    for (const [cardId, atISO] of Object.entries(before)) {
-      expect(state.schedule.cards[cardId]!.lastModifiedAtISO).toBe(atISO)
+    for (const [bookingId, atISO] of Object.entries(before)) {
+      expect(state.schedule.bookings[bookingId]!.lastModifiedAtISO).toBe(atISO)
     }
   })
 
@@ -188,9 +188,9 @@ describe('charge bases and holders', () => {
 
   it('the surgeon-held bariatric Type 3 resolves BY HOLDER and bills its fixed prices on one invoice', () => {
     const api = store()
-    const cardId = marker('bariatricType3Card')
-    stageAndBill(api, listOf(api, cardId))
-    const invoices = invoicesForCard(api, cardId)
+    const bookingId = marker('bariatricType3Booking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(1)
     const invoice = invoices[0]!
     expect(invoice.counterparty).toEqual({ kind: 'surgeon', id: SURG.doyle })
@@ -203,11 +203,11 @@ describe('charge bases and holders', () => {
     expect(invoice.total).toBe(4312.5)
   })
 
-  it('the rate x time card bills hours x the agreed rate under the billableParty-held contract', () => {
+  it('the rate x time booking bills hours x the agreed rate under the billableParty-held contract', () => {
     const api = store()
-    const cardId = marker('rateTimeCard')
-    stageAndBill(api, listOf(api, cardId))
-    const invoice = invoicesForCard(api, cardId)[0]
+    const bookingId = marker('rateTimeBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
     expect(invoice!.counterparty).toEqual({ kind: 'billableParty', id: BP.ariaClinic })
     expect(invoice!.layout).toBe('patient')
@@ -217,23 +217,23 @@ describe('charge bases and holders', () => {
     expect(lines[0]!.description).toContain('hours')
   })
 
-  it('the insured-reimbursement card bills the PATIENT at standard rates (not the insurer)', () => {
+  it('the insured-reimbursement booking bills the PATIENT at standard rates (not the insurer)', () => {
     const api = store()
-    const cardId = marker('insuredReimbursementCard')
-    stageAndBill(api, listOf(api, cardId))
-    const invoice = invoicesForCard(api, cardId)[0]
+    const bookingId = marker('insuredReimbursementBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
-    const patientId = api.getState().schedule.cards[cardId]!.patientId
+    const patientId = api.getState().schedule.bookings[bookingId]!.patientId
     expect(invoice!.counterparty).toEqual({ kind: 'patient', id: patientId })
     expect(invoice!.layout).toBe('patient')
     expect(linesOf(api, invoice!.id)[0]!.description).toContain('at $32.00 per unit')
   })
 
-  it('the COS card bills the ORGANISATION holder at its Type 2 rate ($24/unit)', () => {
+  it('the COS booking bills the ORGANISATION holder at its Type 2 rate ($24/unit)', () => {
     const api = store()
-    const cardId = marker('cosAccContractCard')
-    stageAndBill(api, listOf(api, cardId))
-    const invoice = invoicesForCard(api, cardId)[0]
+    const bookingId = marker('cosAccContractBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoice = invoicesForBooking(api, bookingId)[0]
     expect(invoice).toBeDefined()
     expect(invoice!.counterparty).toEqual({ kind: 'organisation', id: ORG.cos })
     expect(linesOf(api, invoice!.id)[0]!.description).toContain('at $24.00 per unit')
@@ -243,9 +243,9 @@ describe('charge bases and holders', () => {
 describe('split billing', () => {
   it('same funder: the split pair shares ONE invoice and the additional procedure is time-only', () => {
     const api = store()
-    const cardId = marker('splitBillingCard')
-    stageAndBill(api, listOf(api, cardId))
-    const invoices = invoicesForCard(api, cardId)
+    const bookingId = marker('splitBillingBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(1)
     expect(invoices[0]!.counterparty).toEqual({ kind: 'hospital', id: HOSP.forte })
     const lines = linesOf(api, invoices[0]!.id)
@@ -258,15 +258,15 @@ describe('split billing', () => {
 
   it('different funders: rerouting the additional procedure to the patient yields TWO invoices (the §11 reading)', () => {
     const api = store()
-    const cardId = marker('splitBillingCard')
-    const proc2 = proceduresForCard(api.getState(), cardId)[1]!
+    const bookingId = marker('splitBillingBooking')
+    const proc2 = proceduresForBooking(api.getState(), bookingId)[1]!
     const edited = editProcedure(api, OFFICE, proc2.id, {
       billingRoute: 'billableParty',
       patientPaymentCategory: 'selfFundedPostProcedure',
     })
     expect(edited.ok).toBe(true)
-    stageAndBill(api, listOf(api, cardId))
-    const invoices = invoicesForCard(api, cardId)
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(2)
     const patientInvoice = invoices.find((i) => i.counterparty.kind === 'patient')
     expect(patientInvoice).toBeDefined()
@@ -277,9 +277,9 @@ describe('split billing', () => {
 
   it('two funders, as seeded: the un-overridden line bills the procedure counterparty (St George)', () => {
     const api = store()
-    const cardId = marker('twoFunderCard')
-    stageAndBill(api, listOf(api, cardId))
-    const invoices = invoicesForCard(api, cardId)
+    const bookingId = marker('twoFunderBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(2)
     const nib = invoices.find((i) => i.counterparty.kind === 'insurer')
     const hospital = invoices.find((i) => i.counterparty.kind === 'hospital')
@@ -291,9 +291,9 @@ describe('split billing', () => {
 
   it('two funders, office-allocated to the patient: nib and patient invoices ($132.50 + $79.50)', () => {
     const api = store()
-    const cardId = marker('twoFunderCard')
-    const patientId = api.getState().schedule.cards[cardId]!.patientId
-    const proc = proceduresForCard(api.getState(), cardId)[0]!
+    const bookingId = marker('twoFunderBooking')
+    const patientId = api.getState().schedule.bookings[bookingId]!.patientId
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     const plainLine = Object.values(api.getState().schedule.billingLines).find(
       (l) => l.procedureId === proc.id && l.funderOverride === undefined,
     )
@@ -302,8 +302,8 @@ describe('split billing', () => {
       funderOverride: { kind: 'patient', id: patientId },
     })
     expect(allocated.ok).toBe(true)
-    stageAndBill(api, listOf(api, cardId))
-    const invoices = invoicesForCard(api, cardId)
+    stageAndBill(api, listOf(api, bookingId))
+    const invoices = invoicesForBooking(api, bookingId)
     expect(invoices).toHaveLength(2)
     const patientInvoice = invoices.find((i) => i.counterparty.kind === 'patient')
     expect(patientInvoice?.counterparty).toEqual({ kind: 'patient', id: patientId })
@@ -328,36 +328,36 @@ describe('contract lifecycle at billing time', () => {
     }
   })
 
-  it('an organisation-held contract dated out is a per-card exception; the list still completes its run', () => {
+  it('an organisation-held contract dated out is a per-booking exception; the list still completes its run', () => {
     const api = store()
-    const cardId = marker('cosAccContractCard')
+    const bookingId = marker('cosAccContractBooking')
     // The COS list is 2026-07-09; date the organisation-held ACC contract out.
     expect(editContract(api, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2026-07-08' }).ok).toBe(true)
-    const result = stageAndBill(api, listOf(api, cardId))
+    const result = stageAndBill(api, listOf(api, bookingId))
     expect(result.exceptions).toHaveLength(1)
-    expect(result.exceptions[0]).toMatchObject({ cardId, code: 'contractIneffective' })
-    expect(invoicesForCard(api, cardId)).toHaveLength(0)
+    expect(result.exceptions[0]).toMatchObject({ bookingId, code: 'contractIneffective' })
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
     const state = api.getState()
     const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
     expect(failed).toHaveLength(1)
-    expect(failed[0]!.cardId).toBe(cardId)
-    const exceptionAudit = state.audit.filter((a) => a.action === 'card.billingException')
+    expect(failed[0]!.bookingId).toBe(bookingId)
+    const exceptionAudit = state.audit.filter((a) => a.action === 'booking.billingException')
     expect(exceptionAudit).toHaveLength(1)
     expect(exceptionAudit[0]!.source).toBe('system')
-    // A per-card failure does NOT hold the list on screen (the settled billedAt reading).
-    expect(isListBilled(state.schedule.lists[listOf(api, cardId)]!)).toBe(true)
+    // A per-booking failure does NOT hold the list on screen (the settled billedAt reading).
+    expect(isListBilled(state.schedule.lists[listOf(api, bookingId)]!)).toBe(true)
   })
 
   it('a discretionary override is snapshotted onto the invoice with its reason', () => {
     const api = store()
-    const cardId = marker('accRelatedCard')
-    const proc = proceduresForCard(api.getState(), cardId)[0]!
+    const bookingId = marker('accRelatedBooking')
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     const edited = editProcedure(api, OFFICE, proc.id, {
       priceOverride: { kind: 'dollarAdjustment', amount: -50, reason: 'Quoted package discount' },
     })
     expect(edited.ok).toBe(true)
     stageAndBill(api, MORRISON_LIST)
-    const invoice = invoicesForCard(api, cardId)[0]!
+    const invoice = invoicesForBooking(api, bookingId)[0]!
     const overrideLine = linesOf(api, invoice.id).find((l) => l.description.startsWith('Price override'))
     expect(overrideLine).toBeDefined()
     expect(overrideLine!.description).toBe('Price override, Quoted package discount')
@@ -366,8 +366,8 @@ describe('contract lifecycle at billing time', () => {
 
   it('snapshot immunity: mutating the contract or its price list after billing leaves the invoice unchanged', () => {
     const api = store()
-    const cardId = marker('bariatricType3Card')
-    stageAndBill(api, listOf(api, cardId))
+    const bookingId = marker('bariatricType3Booking')
+    stageAndBill(api, listOf(api, bookingId))
     const before = JSON.parse(JSON.stringify(api.getState().billing)) as unknown
     expect(editContractPrice(api, OFFICE, 'CP-BAR-1', { price: 9999 }).ok).toBe(true)
     expect(editContract(api, OFFICE, CONTRACT.doyleBariatric, { effectiveToISO: '2026-07-31' }).ok).toBe(true)
@@ -408,23 +408,23 @@ describe('invoice identity and delivery', () => {
     expect(api.getState().audit.filter((a) => a.action === 'invoice.email' && a.entityId === hospitalInvoice.id)).toHaveLength(1)
     expect(markInvoiceEmailed(api, OFFICE, hospitalInvoice.id)).toMatchObject({ ok: false, code: 'alreadyEmailed' })
 
-    const twoFunderCard = marker('twoFunderCard')
-    stageAndBill(api, listOf(api, twoFunderCard))
-    const nibInvoice = invoicesForCard(api, twoFunderCard).find((i) => i.counterparty.kind === 'insurer')!
+    const twoFunderBooking = marker('twoFunderBooking')
+    stageAndBill(api, listOf(api, twoFunderBooking))
+    const nibInvoice = invoicesForBooking(api, twoFunderBooking).find((i) => i.counterparty.kind === 'insurer')!
     expect(markInvoiceEmailed(api, OFFICE, nibInvoice.id)).toMatchObject({ ok: false, code: 'uploadPortal' })
   })
 })
 
 describe('review-pass hardening (8th review)', () => {
-  it('a route-less card moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
+  it('a route-less booking moved onto a submitted list fails as a BillingCase, never a throw; authorise stays committed', () => {
     const api = store()
     const unwire = wireBillingRun(api)
     try {
-      // The seeded provisional PDF-referral card has no billing route and no
+      // The seeded provisional PDF-referral booking has no billing route and no
       // contract; the office may move it onto a SUBMITTED list (3rd review #7).
-      const provisional = Object.values(api.getState().schedule.cards).find((c) => c.patientId === PAT.provisional)
+      const provisional = Object.values(api.getState().schedule.bookings).find((c) => c.patientId === PAT.provisional)
       expect(provisional).toBeDefined()
-      expect(reassignCard(api, OFFICE, provisional!.id, MORRISON_LIST).ok).toBe(true)
+      expect(reassignBooking(api, OFFICE, provisional!.id, MORRISON_LIST).ok).toBe(true)
       const outcome = authoriseList(api, OFFICE, MORRISON_LIST)
       expect(outcome.ok).toBe(true)
       const state = api.getState()
@@ -432,10 +432,10 @@ describe('review-pass hardening (8th review)', () => {
       expect(invoicesForList(state, MORRISON_LIST)).toHaveLength(6)
       const failed = Object.values(state.billing.cases).filter((c) => c.status === 'failed')
       expect(failed).toHaveLength(1)
-      expect(failed[0]!.cardId).toBe(provisional!.id)
+      expect(failed[0]!.bookingId).toBe(provisional!.id)
       expect(failed[0]!.failure).toMatchObject({
         code: 'noBillingRoute',
-        procedureId: proceduresForCard(state, provisional!.id)[0]!.id,
+        procedureId: proceduresForBooking(state, provisional!.id)[0]!.id,
       })
     } finally {
       unwire()
@@ -452,17 +452,17 @@ describe('review-pass hardening (8th review)', () => {
     expect(outcome).toMatchObject({ ok: false, code: 'defaultContractProtected' })
   })
 
-  it('a stale funder allocation fails the card for review instead of billing silently short', () => {
+  it('a stale funder allocation fails the booking for review instead of billing silently short', () => {
     const api = store()
-    const cardId = marker('twoFunderCard')
+    const bookingId = marker('twoFunderBooking')
     // The $132.50/$79.50 split conserved against 8 units at $26.50; a rate
     // change after completion makes it stale.
     expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 30 }).ok).toBe(true)
-    const result = stageAndBill(api, listOf(api, cardId))
-    const exception = result.exceptions.find((e) => e.cardId === cardId)
+    const result = stageAndBill(api, listOf(api, bookingId))
+    const exception = result.exceptions.find((e) => e.bookingId === bookingId)
     expect(exception).toMatchObject({ code: 'allocationStale' })
-    expect(invoicesForCard(api, cardId)).toHaveLength(0)
-    const failed = Object.values(api.getState().billing.cases).find((c) => c.cardId === cardId)
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
+    const failed = Object.values(api.getState().billing.cases).find((c) => c.bookingId === bookingId)
     expect(failed?.failure?.message).toContain('$212.00')
   })
 
@@ -471,27 +471,27 @@ describe('review-pass hardening (8th review)', () => {
     expect(deleteContract(api, OFFICE, CONTRACT.doyleBariatric)).toMatchObject({ ok: false, code: 'contractInUse' })
   })
 
-  it('a negative override total fails the card as an exception, never a negative invoice', () => {
+  it('a negative override total fails the booking as an exception, never a negative invoice', () => {
     const api = store()
-    const cardId = marker('accRelatedCard')
-    const proc = proceduresForCard(api.getState(), cardId)[0]!
+    const bookingId = marker('accRelatedBooking')
+    const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     expect(
       editProcedure(api, OFFICE, proc.id, {
         priceOverride: { kind: 'dollarAdjustment', amount: -10000, reason: 'Stress test' },
       }).ok,
     ).toBe(true)
     const result = stageAndBill(api, MORRISON_LIST)
-    expect(result.exceptions.find((e) => e.cardId === cardId)).toMatchObject({ code: 'negativeTotal' })
-    expect(invoicesForCard(api, cardId)).toHaveLength(0)
-    // The other five cards billed normally; per-card isolation holds.
+    expect(result.exceptions.find((e) => e.bookingId === bookingId)).toMatchObject({ code: 'negativeTotal' })
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
+    // The other five bookings billed normally; per-booking isolation holds.
     expect(invoicesForList(api.getState(), MORRISON_LIST)).toHaveLength(5)
   })
 
   it('insurer invoices refuse email on the intrinsic fact before the role check', () => {
     const api = store()
-    const cardId = marker('twoFunderCard')
-    stageAndBill(api, listOf(api, cardId))
-    const nib = invoicesForCard(api, cardId).find((i) => i.counterparty.kind === 'insurer')!
+    const bookingId = marker('twoFunderBooking')
+    stageAndBill(api, listOf(api, bookingId))
+    const nib = invoicesForBooking(api, bookingId).find((i) => i.counterparty.kind === 'insurer')!
     expect(markInvoiceEmailed(api, SOUTER, nib.id)).toMatchObject({ ok: false, code: 'uploadPortal' })
   })
 })
@@ -500,10 +500,10 @@ describe('the design-day live path', () => {
   it('finish Ellison → complete → submit → authorise → 4 invoices: SX x2, nib direct, patient layout', () => {
     const api = store()
     advanceClockMinutes(api, 9 * 60 + 20) // presenter advances to 17:20
-    const ellison = marker('pendingCaptureCard')
-    const ellisonProc = proceduresForCard(api.getState(), ellison)[0]!
+    const ellison = marker('pendingCaptureBooking')
+    const ellisonProc = proceduresForBooking(api.getState(), ellison)[0]!
     expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: clockISO(api.getState().clock) }).ok).toBe(true)
-    expect(completeCard(api, SOUTER, ellison).ok).toBe(true)
+    expect(completeBooking(api, SOUTER, ellison).ok).toBe(true)
     expect(submitList(api, SOUTER, SOUTER_PM).ok).toBe(true)
     expect(authoriseList(api, OFFICE, SOUTER_PM).ok).toBe(true)
     const run = runBillingForList(api, SOUTER_PM)
@@ -524,9 +524,9 @@ describe('the design-day live path', () => {
     stageAndBill(api, MORRISON_LIST)
     stageAndBill(api, WHITAKER_LIST)
     const state = api.getState()
-    const billedCardIds = new Set(Object.values(state.billing.invoices).map((i) => i.cardId))
-    const nhis = [...billedCardIds]
-      .map((id) => state.schedule.cards[id]?.patientId)
+    const billedBookingIds = new Set(Object.values(state.billing.invoices).map((i) => i.bookingId))
+    const nhis = [...billedBookingIds]
+      .map((id) => state.schedule.bookings[id]?.patientId)
       .map((pid) => (pid !== undefined ? state.masters.patients[pid]?.nhi : undefined))
       .filter((nhi): nhi is string => nhi !== undefined)
     expect(nhis.length).toBeGreaterThan(0)

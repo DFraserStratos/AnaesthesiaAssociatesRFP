@@ -37,24 +37,24 @@ export {
   type DomainPatch,
 } from './mutate'
 export {
-  completeCard,
-  uncompleteCard,
+  completeBooking,
+  uncompleteBooking,
   completionBlockersFor,
   submitList,
   authoriseList,
   logListNote,
-  cancelCard,
-  editCard,
+  cancelBooking,
+  editBooking,
   editProcedure,
   reassignList,
-  reassignCard,
+  reassignBooking,
   setAvailability,
   requestCover,
   editList,
   editRefusal,
-  getCard,
+  getBooking,
   type CompletionBlocker,
-  type CardPatch,
+  type BookingPatch,
   type ProcedurePatch,
   type ListPatch,
 } from './lifecycle'
@@ -66,14 +66,15 @@ export {
   type PatientEditPatch,
 } from './intake'
 export {
-  createCard,
-  copyCard,
+  createBooking,
+  copyBooking,
   addProcedure,
   removeProcedure,
   addPostOpAddendum,
-  type CreateCardInput,
-} from './cardActions'
+  type CreateBookingInput,
+} from './bookingActions'
 export { raisePreProcedureInvoice, overridePrepaymentGate } from './prepaymentActions'
+export { addAttachment, removeAttachment, type AttachmentFile, type AttachmentTarget } from './attachmentActions'
 export {
   addBillingLine,
   removeBillingLine,
@@ -118,7 +119,7 @@ export {
   type BillingRunResult,
   type BillingRunException,
 } from './billingRun'
-export { handoffCase, handoffCasesForCard, type HandoffResult } from './xeroHandoff'
+export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
 export { OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
 export { authoriseAsSimulatedOffice, officeStandInRefusal } from './officeStandIn'

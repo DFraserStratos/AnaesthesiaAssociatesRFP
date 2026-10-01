@@ -1,19 +1,20 @@
 /**
- * Seed Cards, Procedures and BillingLines — the design-day tableau, the
+ * Seed Bookings, Procedures and BillingLines — the design-day tableau, the
  * ready-made scenario states later phases rely on, and generic filler (past
  * two weeks rich, thinning about ten days out).
  *
  * This builder records authoritative staged lifecycle facts (submitted Lists,
- * the cancelled Card, and pinned completions). `seed/audit.ts` then composes
+ * the cancelled Booking, and pinned completions). `seed/audit.ts` then composes
  * those with deterministic booking, Procedure, fee-line and missing completion
- * history for every Card, including generic and historical rows.
+ * history for every Booking, including generic and historical rows.
  */
 
 import type {
   AuditEntry,
   BillingLine,
-  Card,
-  CardCancellation,
+  Booking,
+  BookingCancellation,
+  BookingSource,
   IntegrationCorrelationRef,
   List,
   Procedure,
@@ -30,7 +31,7 @@ import { EYE_CODES, GENERAL_CODES, RVG_CODES } from './rvgCodes'
 // Result & scenario id shapes
 // ---------------------------------------------------------------------------
 
-export interface CardScenarioIds {
+export interface BookingScenarioIds {
   tane: string
   marsh: string
   chen: string
@@ -53,7 +54,7 @@ export interface CardScenarioIds {
   repeatWalker: [string, string]
   /** Procedure ids with the deliberately missing billing references. */
   missingRefProcedures: [string, string]
-  /** Phase 11 integration-origin Cards (correlationRef set) the modify messages target. */
+  /** Phase 11 integration-origin Bookings (correlationRef set) the modify messages target. */
   integrationS13Time: string
   integrationS13Move: string
   integrationS14: string
@@ -61,14 +62,14 @@ export interface CardScenarioIds {
   integrationLockedTarget: string
 }
 
-export interface CardsBuild {
-  cards: Card[]
+export interface BookingsBuild {
+  bookings: Booking[]
   procedures: Procedure[]
   billingLines: BillingLine[]
   audit: AuditEntry[]
-  scenario: CardScenarioIds
+  scenario: BookingScenarioIds
   /** Next free numeric suffix per entity (store counters continue from here). */
-  next: { card: number; procedure: number; billingLine: number; audit: number }
+  next: { booking: number; procedure: number; billingLine: number; audit: number }
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +104,7 @@ function minutesToTime(total: number): string {
 }
 
 /** The seed clock instant (Tue 21 Jul 08:00 = DEMO_TODAY at 08:00): the
- *  modification stamp for cards that have not yet been completed. */
+ *  modification stamp for bookings that have not yet been completed. */
 const SEED_NOW_ISO = iso(TUE21, '08:00')
 
 const REF_PREFIX: Record<string, string> = {
@@ -126,14 +127,33 @@ const DEFAULT_CONTRACT_BY_HOSPITAL: Record<string, string> = {
 // The build
 // ---------------------------------------------------------------------------
 
-export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
+/** Hospitals with a seeded hospital feed (`domain/integrations` feeds). */
+const FEED_HOSPITALS: ReadonlySet<string> = new Set([HOSP.stg, HOSP.sx, HOSP.cph])
+/** The surgeon-PDF hospitals (`domain/integrations/pdfSamples.ts`). */
+const PDF_HOSPITALS: ReadonlySet<string> = new Set([HOSP.forte, HOSP.ces])
+
+/**
+ * The seed's Booking source rule, in order: (1) a Booking the script describes
+ * as phoned in or added by the anaesthetist (none is seeded today); (2) a
+ * Booking with a correlation ref, or on a feed hospital's List, came from the
+ * hospital download; (3) one at a surgeon-PDF hospital came from the surgeon's
+ * PDF; (4) anything else (a List with no hospital) is an office entry.
+ */
+function seedSourceFor(booking: Booking, list: List | undefined): BookingSource {
+  const hospitalId = list?.hospitalId
+  if (booking.correlationRef !== undefined || (hospitalId !== undefined && FEED_HOSPITALS.has(hospitalId))) return 'hospitalDownload'
+  if (hospitalId !== undefined && PDF_HOSPITALS.has(hospitalId)) return 'surgeonPdf'
+  return 'admin'
+}
+
+export function buildBookings(seed: number, lists: readonly List[]): BookingsBuild {
   const listById = new Map(lists.map((l) => [l.id, l]))
-  const cards: Card[] = []
+  const bookings: Booking[] = []
   const procedures: Procedure[] = []
   const billingLines: BillingLine[] = []
   const audit: AuditEntry[] = []
 
-  let cardN = 0
+  let bookingN = 0
   let procN = 0
   let lineN = 0
   let auditN = 0
@@ -148,16 +168,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     return id
   }
 
-  interface CardSpec {
+  interface BookingSpec {
     listId: string
     patientId: string
     scheduledTime?: string
-    /** Completion time; presence marks the card completed. */
+    /** Completion time; presence marks the booking completed. */
     completedAtISO?: string
-    cancellation?: CardCancellation
-    /** Write a card.complete audit entry (staged cards only). */
+    cancellation?: BookingCancellation
+    /** Write a booking.complete audit entry (staged bookings only). */
     auditComplete?: boolean
-    /** Integration provenance (Phase 11) — modify messages locate the Card by it. */
+    /** Integration provenance (Phase 11) — modify messages locate the Booking by it. */
     correlationRef?: IntegrationCorrelationRef
   }
 
@@ -166,44 +186,44 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     return list !== undefined ? (NAME_BY_ID.get(list.anaesthetistId) ?? 'Unknown') : 'Unknown'
   }
 
-  function addCard(spec: CardSpec): Card {
+  function addBooking(spec: BookingSpec): Booking {
     const list = listById.get(spec.listId)
-    if (list === undefined) throw new Error(`seed card references missing list ${spec.listId}`)
-    cardN += 1
+    if (list === undefined) throw new Error(`seed booking references missing list ${spec.listId}`)
+    bookingN += 1
     const who = anaesthetistNameFor(spec.listId)
-    const card: Card = {
-      id: `C${String(cardN).padStart(4, '0')}`,
+    const booking: Booking = {
+      id: `BK${String(bookingN).padStart(4, '0')}`,
       listId: spec.listId,
       patientId: spec.patientId,
       completed: spec.completedAtISO !== undefined,
       attachments: [],
       lastModifiedBy: spec.completedAtISO !== undefined ? who : 'Kirsty W.',
-      // Completed cards carry their completion time; not-yet-completed cards
+      // Completed bookings carry their completion time; not-yet-completed bookings
       // are stamped at the seed clock (Tue 21 Jul 08:00), never their list's
-      // own date, so cards on upcoming lists don't read "modified in the
+      // own date, so bookings on upcoming lists don't read "modified in the
       // future" relative to the demo clock (2026-07-23 review fix).
       lastModifiedAtISO: spec.completedAtISO ?? SEED_NOW_ISO,
     }
-    if (spec.scheduledTime !== undefined) card.scheduledTime = spec.scheduledTime
-    if (spec.completedAtISO !== undefined) card.completedAtISO = spec.completedAtISO
-    if (spec.correlationRef !== undefined) card.correlationRef = spec.correlationRef
+    if (spec.scheduledTime !== undefined) booking.scheduledTime = spec.scheduledTime
+    if (spec.completedAtISO !== undefined) booking.completedAtISO = spec.completedAtISO
+    if (spec.correlationRef !== undefined) booking.correlationRef = spec.correlationRef
     if (spec.cancellation !== undefined) {
-      card.cancellation = spec.cancellation
-      card.lastModifiedBy = spec.cancellation.by
-      card.lastModifiedAtISO = spec.cancellation.atISO
+      booking.cancellation = spec.cancellation
+      booking.lastModifiedBy = spec.cancellation.by
+      booking.lastModifiedAtISO = spec.cancellation.atISO
     }
-    cards.push(card)
+    bookings.push(booking)
 
     if (spec.auditComplete === true && spec.completedAtISO !== undefined) {
       auditN += 1
       audit.push({
         id: `A${String(auditN).padStart(4, '0')}`,
-        entityType: 'card',
-        entityId: card.id,
+        entityType: 'booking',
+        entityId: booking.id,
         who,
         role: 'anaesthetist',
         source: 'anaesthetist',
-        action: 'card.complete',
+        action: 'booking.complete',
         after: { completed: true },
         atISO: spec.completedAtISO,
       })
@@ -212,17 +232,17 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       auditN += 1
       audit.push({
         id: `A${String(auditN).padStart(4, '0')}`,
-        entityType: 'card',
-        entityId: card.id,
+        entityType: 'booking',
+        entityId: booking.id,
         who: spec.cancellation.by,
         role: spec.cancellation.role,
         source: spec.cancellation.source,
-        action: 'card.cancel',
+        action: 'booking.cancel',
         after: { cancelled: true, reason: spec.cancellation.reason },
         atISO: spec.cancellation.atISO,
       })
     }
-    return card
+    return booking
   }
 
   interface ProcedureSpec {
@@ -245,11 +265,11 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     timeUnitsOverride?: number
   }
 
-  function addProcedure(card: Card, spec: ProcedureSpec): Procedure {
+  function addProcedure(booking: Booking, spec: ProcedureSpec): Procedure {
     procN += 1
     const procedure: Procedure = {
       id: `P${String(procN).padStart(4, '0')}`,
-      cardId: card.id,
+      bookingId: booking.id,
       description: spec.description,
       accRelated: spec.accRelated ?? false,
       isAdditional: spec.isAdditional ?? false,
@@ -308,16 +328,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     { patient: takePatient() ?? PAT.walker, code: '50120', sched: '11:20', start: '11:22', end: '12:10', asa: 'AS2' as const, desc: 'Femur ORIF, proximal' },
     { patient: takePatient() ?? PAT.walker, code: '49558', sched: '12:15', start: '12:15', end: '12:52', asa: 'AS1' as const, desc: 'Knee arthroscopy' },
   ]
-  const amCards: Card[] = []
+  const amBookings: Booking[] = []
   amSpecs.forEach((s, i) => {
-    const card = addCard({
+    const booking = addBooking({
       listId: souterAm21,
       patientId: s.patient,
       scheduledTime: s.sched,
       completedAtISO: iso(TUE21, minutesToTime(Number(s.end.slice(0, 2)) * 60 + Number(s.end.slice(3)) + 4)),
       auditComplete: true,
     })
-    addProcedure(card, {
+    addProcedure(booking, {
       description: s.desc,
       rvgBaseCode: s.code,
       startISO: iso(TUE21, s.start),
@@ -327,23 +347,23 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       governingContractId: CONTRACT.stgDefault,
       billingReference: `SG-2026-08${21 + i}`,
     })
-    amCards.push(card)
+    amBookings.push(booking)
   })
 
   // -------------------------------------------------------------------------
-  // Souter PM Southern Cross / Ms Patel: the four mockup cards
+  // Souter PM Southern Cross / Ms Patel: the four mockup bookings
   // -------------------------------------------------------------------------
 
   const souterPm21 = listIdForSlot(ANAE.souter, TUE21, 'PM')
 
-  const taneCard = addCard({
+  const taneBooking = addBooking({
     listId: souterPm21,
     patientId: PAT.tane,
     scheduledTime: '13:00',
     completedAtISO: iso(TUE21, '14:22'),
     auditComplete: true,
   })
-  addProcedure(taneCard, {
+  addProcedure(taneBooking, {
     description: 'Laparoscopic cholecystectomy',
     rvgBaseCode: '20941',
     startISO: iso(TUE21, '13:02'),
@@ -354,14 +374,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     billingReference: 'SX-2026-1201',
   })
 
-  const marshCard = addCard({
+  const marshBooking = addBooking({
     listId: souterPm21,
     patientId: PAT.marsh,
     scheduledTime: '14:15',
     completedAtISO: iso(TUE21, '15:09'),
     auditComplete: true,
   })
-  addProcedure(marshCard, {
+  addProcedure(marshBooking, {
     description: 'Right knee arthroscopy',
     rvgBaseCode: '49558',
     startISO: iso(TUE21, '14:20'),
@@ -372,14 +392,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.nibDefault,
   })
 
-  const chenCard = addCard({
+  const chenBooking = addBooking({
     listId: souterPm21,
     patientId: PAT.chen,
     scheduledTime: '15:10',
     completedAtISO: iso(TUE21, '16:02'),
     auditComplete: true,
   })
-  addProcedure(chenCard, {
+  addProcedure(chenBooking, {
     description: 'Inguinal hernia repair',
     rvgBaseCode: '49115',
     startISO: iso(TUE21, '15:12'),
@@ -392,12 +412,12 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     timeUnitsOverride: 4,
   })
 
-  const ellisonCard = addCard({
+  const ellisonBooking = addBooking({
     listId: souterPm21,
     patientId: PAT.ellison,
     scheduledTime: '16:00',
   })
-  addProcedure(ellisonCard, {
+  addProcedure(ellisonBooking, {
     description: 'Left total hip replacement',
     rvgBaseCode: '47516',
     // No handover: the finish is stamped LIVE in the demo ("Tap Finish now →
@@ -428,16 +448,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     { code: '37623', start: '12:44', end: '13:22', asa: 'AS1' as const, desc: 'Ureteroscopy with lithotripsy', ref: 'SG-2026-0776' },
   ]
   let missingRefProc1 = ''
-  let accRelatedCardId = ''
+  let accRelatedBookingId = ''
   morrisonSpecs.forEach((s, i) => {
-    const card = addCard({
+    const booking = addBooking({
       listId: morrisonMon20,
       patientId: takePatient() ?? PAT.walker,
       scheduledTime: s.start,
       completedAtISO: iso(MON20, minutesToTime(Number(s.end.slice(0, 2)) * 60 + Number(s.end.slice(3)) + 5)),
       auditComplete: true,
     })
-    const procedure = addProcedure(card, {
+    const procedure = addProcedure(booking, {
       description: s.desc,
       rvgBaseCode: s.code,
       startISO: iso(MON20, s.start),
@@ -449,10 +469,10 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       ...(s.acc === true ? { accRelated: true } : {}),
     })
     if (i === 1) missingRefProc1 = procedure.id
-    if (s.acc === true) accRelatedCardId = card.id
+    if (s.acc === true) accRelatedBookingId = booking.id
   })
 
-  const cancelledCard = addCard({
+  const cancelledBooking = addBooking({
     listId: morrisonMon20,
     patientId: PAT.gray,
     scheduledTime: '12:45',
@@ -464,7 +484,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       atISO: iso(MON20, '09:05'),
     },
   })
-  addProcedure(cancelledCard, {
+  addProcedure(cancelledBooking, {
     description: 'Cystoscopy',
     rvgBaseCode: '36561',
     billingRoute: 'hospital',
@@ -486,16 +506,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     { patient: takePatient() ?? PAT.walker, code: '49115', start: '11:08', end: '11:52', asa: 'AS2' as const, desc: 'Inguinal hernia repair', ref: 'HNZ-2026-3314' },
     { patient: takePatient() ?? PAT.walker, code: '20905', start: '12:00', end: '13:10', asa: 'AS3' as const, desc: 'Laparotomy, exploratory', ref: 'HNZ-2026-3315' },
   ]
-  const whitakerCards: Card[] = []
+  const whitakerBookings: Booking[] = []
   for (const s of whitakerSpecs) {
-    const card = addCard({
+    const booking = addBooking({
       listId: whitakerFri17,
       patientId: s.patient,
       scheduledTime: s.start,
       completedAtISO: iso(FRI17, minutesToTime(Number(s.end.slice(0, 2)) * 60 + Number(s.end.slice(3)) + 5)),
       auditComplete: true,
     })
-    addProcedure(card, {
+    addProcedure(booking, {
       description: s.desc,
       rvgBaseCode: s.code,
       startISO: iso(FRI17, s.start),
@@ -505,7 +525,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       governingContractId: CONTRACT.healthNz,
       billingReference: s.ref,
     })
-    whitakerCards.push(card)
+    whitakerBookings.push(booking)
   }
   addListAudit(whitakerFri17, 'list.submit', 'Dr Ben Whitaker', iso(FRI17, '16:38'))
 
@@ -515,14 +535,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
 
   const souterMon20Am = listIdForSlot(ANAE.souter, MON20, 'AM')
 
-  const splitCard = addCard({
+  const splitBooking = addBooking({
     listId: souterMon20Am,
     patientId: PAT.holt,
     scheduledTime: '08:00',
     completedAtISO: iso(MON20, '09:50'),
     auditComplete: true,
   })
-  addProcedure(splitCard, {
+  addProcedure(splitBooking, {
     description: 'Inguinal hernia repair',
     rvgBaseCode: '49115',
     startISO: iso(MON20, '08:05'),
@@ -532,7 +552,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.forteDefault,
     billingReference: 'FH-2026-2101',
   })
-  addProcedure(splitCard, {
+  addProcedure(splitBooking, {
     description: 'Umbilical hernia repair, same anaesthetic',
     rvgBaseCode: '49120',
     startISO: iso(MON20, '09:15'),
@@ -544,7 +564,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     isAdditional: true,
   })
 
-  const missingRefCard = addCard({
+  const missingRefBooking = addBooking({
     listId: souterMon20Am,
     patientId: takePatient() ?? PAT.holt,
     scheduledTime: '09:55',
@@ -552,7 +572,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     auditComplete: true,
   })
   // Deliberately missing billing reference #2.
-  const missingRefProc2 = addProcedure(missingRefCard, {
+  const missingRefProc2 = addProcedure(missingRefBooking, {
     description: 'Laparoscopic cholecystectomy',
     rvgBaseCode: '20941',
     startISO: iso(MON20, '09:58'),
@@ -562,7 +582,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.forteDefault,
   })
 
-  const monAmFiller = addCard({
+  const monAmFiller = addBooking({
     listId: souterMon20Am,
     patientId: takePatient() ?? PAT.holt,
     scheduledTime: '11:10',
@@ -582,7 +602,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   addListAudit(souterMon20Am, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '12:20'))
 
   // -------------------------------------------------------------------------
-  // Souter Mon 20 PM St George's / Ms Lim — the two-funder card
+  // Souter Mon 20 PM St George's / Ms Lim — the two-funder booking
   // -------------------------------------------------------------------------
 
   const souterMon20Pm = listIdForSlot(ANAE.souter, MON20, 'PM')
@@ -590,14 +610,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Fee: B4 + T4 (60 min) + M0 (AS1) = 8 units x $26.50 = $212.00. Once any
   // line carries a funder override, the stored lines are the explicit
   // allocation of the WHOLE fee (validator-checked to the cent).
-  const twoFunderCard = addCard({
+  const twoFunderBooking = addBooking({
     listId: souterMon20Pm,
     patientId: PAT.prentice,
     scheduledTime: '14:00',
     completedAtISO: iso(MON20, '15:05'),
     auditComplete: true,
   })
-  const twoFunderProc = addProcedure(twoFunderCard, {
+  const twoFunderProc = addProcedure(twoFunderBooking, {
     description: 'Knee arthroscopy, funding split with nib',
     rvgBaseCode: '49558',
     startISO: iso(MON20, '14:00'),
@@ -619,14 +639,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     description: 'Patient portion',
   })
 
-  const rangeCard = addCard({
+  const rangeBooking = addBooking({
     listId: souterMon20Pm,
     patientId: takePatient() ?? PAT.prentice,
     scheduledTime: '15:15',
     completedAtISO: iso(MON20, '16:25'),
     auditComplete: true,
   })
-  addProcedure(rangeCard, {
+  addProcedure(rangeBooking, {
     description: 'Complex skin flap repair',
     rvgBaseCode: '45030',
     baseUnitsSelected: 5,
@@ -638,7 +658,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     billingReference: 'SG-2026-0792',
   })
 
-  const monPmFiller = addCard({
+  const monPmFiller = addBooking({
     listId: souterMon20Pm,
     patientId: takePatient() ?? PAT.prentice,
     scheduledTime: '16:30',
@@ -658,20 +678,20 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   addListAudit(souterMon20Pm, 'list.submit', NAME_BY_ID.get(ANAE.souter) ?? 'Dr Melanie Souter', iso(MON20, '17:40'))
 
   // -------------------------------------------------------------------------
-  // Scenario cards on past lists
+  // Scenario bookings on past lists
   // -------------------------------------------------------------------------
 
   // Bariatric Type 3 with the second-procedure ordinal rule (Fitzgerald,
   // Tue 14 Jul, Southern Cross / Mr Doyle).
   const fitzTue14 = listIdForSlot(ANAE.fitzgerald, TUE14, 'AM')
-  const bariatricCard = addCard({
+  const bariatricBooking = addBooking({
     listId: fitzTue14,
     patientId: PAT.mills,
     scheduledTime: '08:00',
     completedAtISO: iso(TUE14, '10:50'),
     auditComplete: true,
   })
-  addProcedure(bariatricCard, {
+  addProcedure(bariatricBooking, {
     description: 'Gastric bypass, laparoscopic',
     rvgBaseCode: '20880',
     baseUnitsSelected: 10,
@@ -682,7 +702,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.doyleBariatric,
     billingReference: 'BAR-2026-014',
   })
-  addProcedure(bariatricCard, {
+  addProcedure(bariatricBooking, {
     description: 'Umbilical hernia repair, concurrent',
     rvgBaseCode: '49120',
     startISO: iso(TUE14, '10:15'),
@@ -697,14 +717,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Rate x time under the billable-party-held individual-arrangement contract
   // (Fitzgerald, Wed 15 Jul, Forte / Ms Lim).
   const fitzWed15 = listIdForSlot(ANAE.fitzgerald, WED15, 'AM')
-  const rateTimeCard = addCard({
+  const rateTimeBooking = addBooking({
     listId: fitzWed15,
     patientId: PAT.bennett,
     scheduledTime: '08:30',
     completedAtISO: iso(WED15, '11:45'),
     auditComplete: true,
   })
-  const rateTimeProc = addProcedure(rateTimeCard, {
+  const rateTimeProc = addProcedure(rateTimeBooking, {
     description: 'Abdominoplasty, individually arranged hourly rate (Aria Skin and Laser Clinic)',
     billingRoute: 'billableParty',
     billablePartyId: BP.ariaClinic,
@@ -722,14 +742,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Insured reimbursement: the patient pays and claims back from AIA Health
   // (informational only — NOT the direct-claim Insurer route).
   const ruthThu16 = listIdForSlot(ANAE.rutherford, THU16, 'AM')
-  const reimbursementCard = addCard({
+  const reimbursementBooking = addBooking({
     listId: ruthThu16,
     patientId: PAT.webb,
     scheduledTime: '08:15',
     completedAtISO: iso(THU16, '09:35'),
     auditComplete: true,
   })
-  addProcedure(reimbursementCard, {
+  addProcedure(reimbursementBooking, {
     description: 'Shoulder arthroscopy, patient to claim from AIA Health (reimbursement)',
     rvgBaseCode: '48939',
     startISO: iso(THU16, '08:20'),
@@ -741,14 +761,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
 
   // COS externally held ACC contract (Rutherford, Thu 9 Jul, STG / Mr Hale).
   const ruthThu09 = listIdForSlot(ANAE.rutherford, THU09, 'AM')
-  const cosAccCard = addCard({
+  const cosAccBooking = addBooking({
     listId: ruthThu09,
     patientId: PAT.foster,
     scheduledTime: '08:00',
     completedAtISO: iso(THU09, '09:30'),
     auditComplete: true,
   })
-  addProcedure(cosAccCard, {
+  addProcedure(cosAccBooking, {
     description: 'ACL reconstruction, ACC claim via Canterbury Orthopaedic Surgeons',
     rvgBaseCode: '49561',
     startISO: iso(THU09, '08:05'),
@@ -762,7 +782,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
 
   // Repeat patient: Sarah Mitchell's first episode (Sharma, Tue 14 Jul, CPH).
   const sharmaTue14 = listIdForSlot(ANAE.sharma, TUE14, 'AM')
-  const mitchellFirst = addCard({
+  const mitchellFirst = addBooking({
     listId: sharmaTue14,
     patientId: PAT.mitchell,
     scheduledTime: '08:00',
@@ -781,17 +801,17 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   })
 
   // -------------------------------------------------------------------------
-  // Scenario cards on upcoming lists
+  // Scenario bookings on upcoming lists
   // -------------------------------------------------------------------------
 
   // Guardian pays for a minor (Grace Park, 12) — Chen, Fri 24 Jul, CES / Reid.
   const chenFri24 = listIdForSlot(ANAE.chen, FRI24, 'AM')
-  const guardianCard = addCard({
+  const guardianBooking = addBooking({
     listId: chenFri24,
     patientId: PAT.park,
     scheduledTime: '08:30',
   })
-  addProcedure(guardianCard, {
+  addProcedure(guardianBooking, {
     description: 'Strabismus correction, guardian to be invoiced',
     rvgBaseCode: '42794',
     billingRoute: 'billableParty',
@@ -805,12 +825,12 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // agreed professional fee ($1,200), so an $800 deposit leaves a coherent
   // $400 balance (deposit + balance = the full fee).
   const souterFri24Am = listIdForSlot(ANAE.souter, FRI24, 'AM')
-  const prepaymentCard = addCard({
+  const prepaymentBooking = addBooking({
     listId: souterFri24Am,
     patientId: PAT.riley,
     scheduledTime: '09:00',
   })
-  const prepaymentProc = addProcedure(prepaymentCard, {
+  const prepaymentProc = addProcedure(prepaymentBooking, {
     description: 'Rhinoplasty, self funded, pre-payment required',
     billingRoute: 'billableParty',
     patientPaymentCategory: 'selfFundedPrepayment',
@@ -825,16 +845,16 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
   // — Souter, Mon 27 Jul, Forte / Mr Okafor.
   const souterMon27 = listIdForSlot(ANAE.souter, MON27, 'AM')
-  const provisionalCard = addCard({
+  const provisionalBooking = addBooking({
     listId: souterMon27,
     patientId: PAT.provisional,
     scheduledTime: '08:00',
   })
-  addProcedure(provisionalCard, {
+  addProcedure(provisionalBooking, {
     description: 'Inguinal hernia repair, booked from PDF referral (NHI pending)',
     rvgBaseCode: '49115',
   })
-  const mitchellRepeat = addCard({
+  const mitchellRepeat = addBooking({
     listId: souterMon27,
     patientId: PAT.mitchell,
     scheduledTime: '09:30',
@@ -847,17 +867,17 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     billingReference: 'FH-2026-2140',
   })
 
-  // Rate x time CAPTURE card (Phase 04): not yet captured, on Souter's own
+  // Rate x time CAPTURE booking (Phase 04): not yet captured, on Souter's own
   // pinned Mon 27 list so the mobile app can reach it — the presenter adds the
   // hours x rate billing line live under the Aria individual-arrangement
-  // contract. Fitzgerald's completed card above stays Phase 08's billing
+  // contract. Fitzgerald's completed booking above stays Phase 08's billing
   // exemplar (Decisions log 2026-07-23).
-  const rateTimeCaptureCard = addCard({
+  const rateTimeCaptureBooking = addBooking({
     listId: souterMon27,
     patientId: PAT.sinclair,
     scheduledTime: '10:45',
   })
-  addProcedure(rateTimeCaptureCard, {
+  addProcedure(rateTimeCaptureBooking, {
     description: 'Laser skin resurfacing, individually arranged hourly rate (Aria Skin and Laser Clinic)',
     billingRoute: 'billableParty',
     billablePartyId: BP.ariaClinic,
@@ -865,7 +885,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.ariaHourly,
   })
 
-  // MIXED + FULL pre-payment card, designated for the seeded PAID pre-invoice
+  // MIXED + FULL pre-payment booking, designated for the seeded PAID pre-invoice
   // (Phase 09; B7) — Souter Fri 24 PM. One hospital-funded procedure that bills
   // normally, plus one BillableParty selfFundedPrepayment{full} procedure whose
   // full fee is pre-invoiced and seeded paid (see domain/seed/billing.ts): it
@@ -874,12 +894,12 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // NOT completed so the presenter clears the gate live; both procedures carry
   // full capture so only the (already cleared) gate stands between it and done.
   const souterFri24Pm = listIdForSlot(ANAE.souter, FRI24, 'PM')
-  const prepaidCard = addCard({
+  const prepaidBooking = addBooking({
     listId: souterFri24Pm,
     patientId: PAT.nair,
     scheduledTime: '13:00',
   })
-  addProcedure(prepaidCard, {
+  addProcedure(prepaidBooking, {
     description: 'Septoplasty, hospital funded',
     rvgBaseCode: '41789',
     startISO: iso(FRI24, '13:00'),
@@ -889,7 +909,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     governingContractId: CONTRACT.forteDefault,
     billingReference: 'FH-2026-2150',
   })
-  addProcedure(prepaidCard, {
+  addProcedure(prepaidBooking, {
     description: 'Rhinoplasty, cosmetic component, self funded (pre-paid in full)',
     rvgBaseCode: '41800',
     startISO: iso(FRI24, '14:00'),
@@ -901,21 +921,21 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   })
 
   // Billing FAILURE exemplar (Phase 09; A5) — a dedicated SUBMITTED, complete,
-  // MULTI-card list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
-  // card is on the COS externally held ACC Type 2 (an organisation holder with
+  // MULTI-booking list (Ropata, Thu 16 Jul, St George's / Mr Hale). The failing
+  // booking is on the COS externally held ACC Type 2 (an organisation holder with
   // NO default fallback), effective when seeded; the billing-failure demo trigger dates
-  // it out then authorises this list, so the card is a genuine rating failure
+  // it out then authorises this list, so the booking is a genuine rating failure
   // (contractIneffective). The clean hospital-route sibling still invoices,
-  // demonstrating per-card failure isolation.
+  // demonstrating per-booking failure isolation.
   const ropataThu16 = listIdForSlot(ANAE.ropata, THU16, 'AM')
-  const failureCard = addCard({
+  const failureBooking = addBooking({
     listId: ropataThu16,
     patientId: PAT.tuilagi,
     scheduledTime: '08:00',
     completedAtISO: iso(THU16, '09:35'),
     auditComplete: true,
   })
-  addProcedure(failureCard, {
+  addProcedure(failureBooking, {
     description: 'ACL reconstruction, ACC via Canterbury Orthopaedic Surgeons',
     rvgBaseCode: '49561',
     startISO: iso(THU16, '08:05'),
@@ -926,14 +946,14 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     billingReference: 'ACC45-118844',
     accRelated: true,
   })
-  const failureSiblingCard = addCard({
+  const failureSiblingBooking = addBooking({
     listId: ropataThu16,
     patientId: PAT.walker,
     scheduledTime: '09:45',
     completedAtISO: iso(THU16, '10:40'),
     auditComplete: true,
   })
-  addProcedure(failureSiblingCard, {
+  addProcedure(failureSiblingBooking, {
     description: 'Knee arthroscopy',
     rvgBaseCode: '49558',
     startISO: iso(THU16, '09:50'),
@@ -946,7 +966,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   addListAudit(ropataThu16, 'list.submit', NAME_BY_ID.get(ANAE.ropata) ?? 'Dr Hannah Ropata', iso(THU16, '11:00'))
 
   // -------------------------------------------------------------------------
-  // Integration-origin cards (Phase 11) — bookings that arrived via the St
+  // Integration-origin bookings (Phase 11) — bookings that arrived via the St
   // George's feed, each carrying `{sourceFeedId, externalAppointmentId}` so the
   // S13/S14/S15 messages locate them by appointment id (never patient
   // guesswork). Their forward DRAFT St George's Lists are deliberately separate
@@ -960,27 +980,27 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   const souterMon03AugPm = listIdForSlot(ANAE.souter, MON03_AUG, 'PM')
   // Delaney Fri 17 AM (St George's / Mr Doyle) — a real past operating list (Delaney
   // is not on leave then; Beaumont/Morrison/Whitaker were unsuitable). Marked
-  // SUBMITTED in index.ts to host the locked-target Card.
+  // SUBMITTED in index.ts to host the locked-target Booking.
   const delaneyFri17Am = listIdForSlot(ANAE.delaney, FRI17, 'AM')
 
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
-  const s13TimeCard = addCard({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
-  addProcedure(s13TimeCard, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0901' })
+  const s13TimeBooking = addBooking({ listId: souterTue04AugAm, patientId: PAT.holt, scheduledTime: '08:30', correlationRef: stgRef(APPT.s13Time) })
+  addProcedure(s13TimeBooking, { description: 'Knee arthroscopy', rvgBaseCode: '49558', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0901' })
 
-  const s13MoveCard = addCard({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
-  addProcedure(s13MoveCard, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0902' })
+  const s13MoveBooking = addBooking({ listId: souterMon03AugPm, patientId: PAT.webb, scheduledTime: '13:30', correlationRef: stgRef(APPT.s13Move) })
+  addProcedure(s13MoveBooking, { description: 'Wrist ORIF, distal radius', rvgBaseCode: '46360', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0902' })
 
-  const s14Card = addCard({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
-  addProcedure(s14Card, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0903' })
+  const s14Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.foster, scheduledTime: '11:00', correlationRef: stgRef(APPT.s14) })
+  addProcedure(s14Booking, { description: 'Total hip replacement', rvgBaseCode: '47516', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0903' })
 
-  const s15Card = addCard({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
-  addProcedure(s15Card, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0904' })
+  const s15Booking = addBooking({ listId: souterTue04AugAm, patientId: PAT.gray, scheduledTime: '12:00', correlationRef: stgRef(APPT.s15) })
+  addProcedure(s15Booking, { description: 'Cystoscopy', rvgBaseCode: '36561', billingRoute: 'hospital', governingContractId: CONTRACT.stgDefault, billingReference: 'SG-2026-0904' })
 
   // Locked target on a SUBMITTED List (Delaney Fri 17, St George's / Mr Doyle):
   // completed + valid, so index.ts marks the List SUBMITTED. The S14
   // locked-target message addresses it and parks as manual-intervention.
-  const lockedTargetCard = addCard({
+  const lockedTargetBooking = addBooking({
     listId: delaneyFri17Am,
     patientId: PAT.prentice,
     scheduledTime: '10:00',
@@ -988,7 +1008,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     auditComplete: true,
     correlationRef: stgRef(APPT.lockedTarget),
   })
-  addProcedure(lockedTargetCard, {
+  addProcedure(lockedTargetBooking, {
     description: 'TURP',
     rvgBaseCode: '36840',
     startISO: iso(FRI17, '10:05'),
@@ -1008,13 +1028,13 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   eyeSpecs.forEach((code, i) => {
     const patient = takePatient()
     if (patient === null) return
-    const card = addCard({
+    const booking = addBooking({
       listId: wed22Ces,
       patientId: patient,
       scheduledTime: minutesToTime(8 * 60 + i * 40),
     })
     const rvg = RVG_BY_CODE.get(code)
-    addProcedure(card, {
+    addProcedure(booking, {
       description: rvg?.description ?? 'Eye procedure',
       rvgBaseCode: code,
       billingRoute: 'hospital',
@@ -1028,13 +1048,13 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   acuteSpecs.forEach((code, i) => {
     const patient = takePatient()
     if (patient === null) return
-    const card = addCard({
+    const booking = addBooking({
       listId: thu23Cph,
       patientId: patient,
       scheduledTime: minutesToTime(7 * 60 + 45 + i * 35),
     })
     const rvg = RVG_BY_CODE.get(code)
-    addProcedure(card, {
+    addProcedure(booking, {
       description: rvg?.description ?? 'Acute procedure',
       rvgBaseCode: code,
       billingRoute: 'hospital',
@@ -1047,12 +1067,12 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   for (let i = 0; i < 6; i++) {
     const patient = takePatient()
     if (patient === null) break
-    const card = addCard({
+    const booking = addBooking({
       listId: thu23Preop,
       patientId: patient,
       scheduledTime: minutesToTime(13 * 60 + i * 40),
     })
-    addProcedure(card, { description: 'Pre-op assessment' })
+    addProcedure(booking, { description: 'Pre-op assessment' })
   }
 
   // -------------------------------------------------------------------------
@@ -1062,7 +1082,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   // three stay uncaptured and Sarah Mitchell lands among them at 08:30 as the
   // fourth row. Deliberately no completions: a List a week out has none, and
   // the demo's interest is the arrival and the capture, not the submit (three
-  // incomplete Cards keep the List's completion gate closed, by design).
+  // incomplete Bookings keep the List's completion gate closed, by design).
   // -------------------------------------------------------------------------
 
   const tue28AmSpecs = [
@@ -1073,12 +1093,12 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
   tue28AmSpecs.forEach((s) => {
     const patient = takePatient()
     if (patient === null) return
-    const card = addCard({
+    const booking = addBooking({
       listId: souterTue28Am,
       patientId: patient,
       scheduledTime: s.sched,
     })
-    addProcedure(card, {
+    addProcedure(booking, {
       description: RVG_BY_CODE.get(s.code)?.description ?? 'Orthopaedic procedure',
       rvgBaseCode: s.code,
       billingRoute: 'hospital',
@@ -1125,7 +1145,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
       cursor = end + 8
 
       const captured = capture === 'past'
-      const card = addCard({
+      const booking = addBooking({
         listId: list.id,
         patientId: patient,
         scheduledTime: minutesToTime(start),
@@ -1160,7 +1180,7 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
         spec.governingContractId = DEFAULT_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgDefault
         spec.billingReference = `${REF_PREFIX[hospitalId] ?? 'SG'}-2026-${4000 + procN}`
       }
-      addProcedure(card, spec)
+      addProcedure(booking, spec)
     }
   }
 
@@ -1204,39 +1224,44 @@ export function buildCards(seed: number, lists: readonly List[]): CardsBuild {
     futureBudget -= count
   }
 
+  // Booking.source (catch-up Phase 15, DM-39): optional and display-only, so
+  // nothing reads it. Stamped deterministically (no RNG draw) on every Booking
+  // built here; the generated history Bookings in `history.ts` stay unset.
+  for (const booking of bookings) booking.source = seedSourceFor(booking, listById.get(booking.listId))
+
   return {
-    cards,
+    bookings,
     procedures,
     billingLines,
     audit,
     scenario: {
-      tane: taneCard.id,
-      marsh: marshCard.id,
-      chen: chenCard.id,
-      ellison: ellisonCard.id,
-      splitBilling: splitCard.id,
-      twoFunder: twoFunderCard.id,
-      cancelled: cancelledCard.id,
-      rateTime: rateTimeCard.id,
-      rateTimeCapture: rateTimeCaptureCard.id,
-      bariatric: bariatricCard.id,
-      cosAcc: cosAccCard.id,
-      accRelated: accRelatedCardId,
-      guardianMinor: guardianCard.id,
-      prepayment: prepaymentCard.id,
-      prepaymentPaid: prepaidCard.id,
-      billingFailure: failureCard.id,
-      insuredReimbursement: reimbursementCard.id,
-      provisionalNoNhi: provisionalCard.id,
+      tane: taneBooking.id,
+      marsh: marshBooking.id,
+      chen: chenBooking.id,
+      ellison: ellisonBooking.id,
+      splitBilling: splitBooking.id,
+      twoFunder: twoFunderBooking.id,
+      cancelled: cancelledBooking.id,
+      rateTime: rateTimeBooking.id,
+      rateTimeCapture: rateTimeCaptureBooking.id,
+      bariatric: bariatricBooking.id,
+      cosAcc: cosAccBooking.id,
+      accRelated: accRelatedBookingId,
+      guardianMinor: guardianBooking.id,
+      prepayment: prepaymentBooking.id,
+      prepaymentPaid: prepaidBooking.id,
+      billingFailure: failureBooking.id,
+      insuredReimbursement: reimbursementBooking.id,
+      provisionalNoNhi: provisionalBooking.id,
       repeatMitchell: [mitchellFirst.id, mitchellRepeat.id],
-      repeatWalker: [whitakerCards[0]?.id ?? '', amCards[0]?.id ?? ''],
+      repeatWalker: [whitakerBookings[0]?.id ?? '', amBookings[0]?.id ?? ''],
       missingRefProcedures: [missingRefProc1, missingRefProc2.id],
-      integrationS13Time: s13TimeCard.id,
-      integrationS13Move: s13MoveCard.id,
-      integrationS14: s14Card.id,
-      integrationS15: s15Card.id,
-      integrationLockedTarget: lockedTargetCard.id,
+      integrationS13Time: s13TimeBooking.id,
+      integrationS13Move: s13MoveBooking.id,
+      integrationS14: s14Booking.id,
+      integrationS15: s15Booking.id,
+      integrationLockedTarget: lockedTargetBooking.id,
     },
-    next: { card: cardN + 1, procedure: procN + 1, billingLine: lineN + 1, audit: auditN + 1 },
+    next: { booking: bookingN + 1, procedure: procN + 1, billingLine: lineN + 1, audit: auditN + 1 },
   }
 }
