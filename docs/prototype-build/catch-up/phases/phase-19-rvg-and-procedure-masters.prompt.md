@@ -28,6 +28,7 @@ Then do the drift check in the phase doc:
 Then enter plan mode: map the phase doc's work items onto the files as Phases 14 to 18 actually left them, split the work into the two sessions the doc describes, and wait for my approval.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Baseline first. Commit nothing, but add a phase-19 fixture to Phase 18's fee parity harness (src/domain/billing/feeParity.test.ts), generated from the untouched code before any edit, and never regenerate it with -u. It must come out identical at the end: no S1 to S5 figure moves. Keep the run sheet's figures by remapping, never by re-pricing.
 - One base-unit resolver, pure, in src/domain/billing/baseUnits.ts, with this precedence:
   1. the manual override;

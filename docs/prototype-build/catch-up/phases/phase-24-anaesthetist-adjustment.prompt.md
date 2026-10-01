@@ -52,6 +52,7 @@ Then do the drift check in the phase doc:
 Then enter plan mode, turn the work items into work-sized steps, and wait for my approval. The phase is planned as one tight session; if it runs over, stop green after work item 6 and do items 7 to 12 in a second session.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Mock backend only. Every write goes through a store action and the audited mutate(), with before and after metas and demo-clock timestamps. Components never own domain state.
 - Keep the two layers separate:
   - rename priceOverride to officeOverride (same union, plus by and atISO);

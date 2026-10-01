@@ -28,6 +28,7 @@ Then do the drift check in the phase doc:
 Then enter plan mode: turn the plan into work-sized steps, and wait for my approval.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Pin the figures first (item 1's invoice fixture, including suppliers, the Prentice split and 24's delta lines). The lock changes where the numbers come from, never the numbers. S3, S4 and S5 figures and 16's BCTI counts must match Phase 24 exactly, and the fixture is never updated with -u.
 - Model, lock builder, engine and seed first, re-greened (build, build:pwa, vitest) before any UI. This phase realistically takes two sessions: plan to stop after work item 9, green, and do items 10 to 16, the demo guide and the review pass in a second session.
 - Every Contract-writing action appends exactly one immutable version in the same mutate() commit, including payment-setting, invoicing, multi-procedure, base-unit override and allows-adjustment changes. Earlier versions never change.

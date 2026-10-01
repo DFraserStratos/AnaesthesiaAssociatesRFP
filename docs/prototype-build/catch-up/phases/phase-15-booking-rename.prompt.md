@@ -40,6 +40,7 @@ Then do the drift check in the phase doc:
 If an item changed, adjust the work items. If US-03.1.3 is now Retired or Future, drop the attachment items and note it for PROGRESS.md. If the glossary renamed Booking again, stop and ask me. Then enter plan mode, turn the plan into work-sized steps, and wait for my approval.
 
 While working:
+- Session 1 is a mechanical rename and needs no skill; session 2's attachment, source-line and copy UI does. Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Session 1 is the mechanical rename only (work items 1 to 9), with no behaviour change. Re-green build, build:pwa, vitest and shots, and check that the screenshots differ only in wording, before any field addition. If the session ends there, leave the phase IN PROGRESS with the checkpoint recorded.
 - Classify every "card" hit before renaming it:
   - the entity becomes Booking;

@@ -58,6 +58,7 @@ Then enter plan mode and turn the work items into session-sized steps:
 Wait for my approval.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Mock backend only. Every write goes through a store action and the audited mutate(), with before and after metas and timestamps from the demo clock. Components never own domain state. The writes are create, assign, re-date and remove for Draft Lists, Bookings added to and moved off them through the existing Booking actions, the unavailability return, and the pairing refusals.
 - A Draft List is a List record with no anaesthetist and no Slot, plus a draft trail (origin, source, since, by). There is no separate collection, so its Bookings hang off its List id and assignment keeps the id.
   - createDraftList must leave schedule.slots and every other List untouched; prove it with a test.

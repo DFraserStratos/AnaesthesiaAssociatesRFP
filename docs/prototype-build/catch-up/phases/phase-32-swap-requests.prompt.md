@@ -52,6 +52,7 @@ Then enter plan mode, turn the work items into session-sized steps, and wait for
 - session 2 does items 9 to 15, then the demo guide, the milestone read, the review pass and PROGRESS.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Mock backend only. Every write is a store action through the audited mutate(), with before/after metas and timestamps from the demo clock. Components never own domain state.
 - Layering: src/domain imports neither src/store nor src/shared. The move helpers take domain-typed slices and a todayISO, never AppState, and use master-record names, not shared/format.ts.
 - Build D7 as answered, with no provisional hint:

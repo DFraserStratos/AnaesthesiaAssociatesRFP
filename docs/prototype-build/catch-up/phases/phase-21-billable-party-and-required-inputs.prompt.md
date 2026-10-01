@@ -28,6 +28,7 @@ If a covered item is now Retired or Future, drop it and say so.
 Then enter plan mode: turn the plan into work-sized steps across the two sessions, and wait for my approval.
 
 While working:
+- Invoke the /frontend-design:frontend-design skill before building or reshaping any UI (screens, sheets, dialogs, panels, rows, banners, pills, empty and error states), and apply it inside this repo's design system: the docs/design files and src/theme tokens stay authoritative (convention 17, ROADMAP.md "Front-end design"), so use the skill for layout, hierarchy, spacing, states and finish, never for a new palette, typeface or visual language. Store, seed and pure-domain steps do not need it.
 - Billable party first, re-greened, then required inputs. Session 1 is items 1 to 8, and must end green and demoable (build, build:pwa, vitest, shots) before session 2 starts.
 - The billable party is independent of pricing. No fee path may read it. Each Procedure's default comes from its Contract (OQ-55); a hospital override on the default RVG Contract changes who is invoiced, never the fee. funderOverride lines still beat the party until Phase 22, so S3's figures ($396.18, $152.38, $91.43) must not move.
 - Nothing goes back on the Booking for the insurer or funding source (D2). An insurer that takes no direct claims is read through the Contract holder (Insurer.acceptsDirectClaims): its Procedures default to the patient, with a "claim from {insurer}" note. The insurer member number is a required-input value only.
