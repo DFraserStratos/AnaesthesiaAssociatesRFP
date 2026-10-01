@@ -6,7 +6,7 @@ import { planDelete, type DeletePlan } from '../../shared/remove.ts'
 import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, openQuestionsFor, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
+import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
 import { statusClass } from '../vocab.ts'
 import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
@@ -253,20 +253,25 @@ function siblingsOf(index: Index, item: Item): Item[] {
 function SheetHead({ item, index, leave }: { item: Item; index: Index; leave: (go: () => void) => void }) {
   const open = useOpen()
   const lineage = ancestorsOf(index, item.id)
-  const sibs = siblingsOf(index, item)
-  const at = sibs.findIndex((s) => s.id === item.id)
-  const prev = at > 0 ? sibs[at - 1] : undefined
-  const next = at >= 0 ? sibs[at + 1] : undefined
+  const walk = useMemo(() => readingWalk(index), [index])
+  // Previous and Next walk the whole catalogue in reading order; a card outside it steps its siblings.
+  const steps = walk.some((w) => w.id === item.id) ? walk : siblingsOf(index, item)
+  const at = steps.findIndex((s) => s.id === item.id)
+  const prev = at > 0 ? steps[at - 1] : undefined
+  const next = at >= 0 ? steps[at + 1] : undefined
+  // The count is a story's place among its feature's stories; epics and features show no count.
+  const stories = item.type === 'story' ? siblingsOf(index, item).filter((s) => s.type === 'story') : []
+  const storyAt = stories.findIndex((s) => s.id === item.id)
   return (
     <div className="sheet-head">
       {lineage.length > 0 ? <Lineage chain={lineage} onPick={(id) => leave(() => open.item(id))} /> : <span className="lineage" />}
-      <button className="btn icon ghost" disabled={!prev} onClick={() => prev && leave(() => open.item(prev.id))} title={prev ? `Previous: ${prev.title}` : undefined} aria-label="Previous sibling">
+      <button className="btn icon ghost" disabled={!prev} onClick={() => prev && leave(() => open.item(prev.id))} title={prev ? `Previous: ${prev.title}` : undefined} aria-label="Previous">
         <ChevronLeft size={17} />
       </button>
-      <span className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-        {at + 1} of {sibs.length}
+      <span className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }} aria-label={storyAt >= 0 ? `Story ${storyAt + 1} of ${stories.length}` : undefined}>
+        {storyAt >= 0 ? `${storyAt + 1} of ${stories.length}` : '·'}
       </span>
-      <button className="btn icon ghost" disabled={!next} onClick={() => next && leave(() => open.item(next.id))} title={next ? `Next: ${next.title}` : undefined} aria-label="Next sibling">
+      <button className="btn icon ghost" disabled={!next} onClick={() => next && leave(() => open.item(next.id))} title={next ? `Next: ${next.title}` : undefined} aria-label="Next">
         <ChevronRight size={17} />
       </button>
       <button className="btn icon ghost" onClick={() => leave(open.close)} aria-label="Close">

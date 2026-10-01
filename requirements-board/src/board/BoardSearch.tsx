@@ -79,7 +79,7 @@ export function BoardSearch({
         <input
           ref={inputRef}
           className="input"
-          placeholder="Search the board"
+          placeholder="Search"
           title="Search the board (/ or Ctrl F)"
           role="combobox"
           aria-expanded={open}

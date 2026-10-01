@@ -10,7 +10,7 @@ import {
   type NodeChange,
   type Viewport,
 } from '@xyflow/react'
-import { Filter, LayoutGrid, Map as MapIcon, Maximize, Redo2, Sparkles, Undo2, X } from 'lucide-react'
+import { Filter, LayoutGrid, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
@@ -53,8 +53,6 @@ const DOCK_MIN = 380
 const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
-/** The platform's undo modifier, for button titles. */
-const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'
 /** How much of a wide card (an epic) must be on screen to count as in view. */
 const CARD_PEEK = 240
 
@@ -110,9 +108,6 @@ function Board({ mode }: { mode: BoardMode }) {
   const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   const setPositions = useCatalogue((s) => s.setPositions)
   const moveItems = useCatalogue((s) => s.moveItems)
-  const undoNext = useCatalogue((s) => s.past.at(-1))
-  const redoNext = useCatalogue((s) => s.future.at(-1))
-  const stepping = useCatalogue((s) => s.stepping)
   const view = useView()
   const open = useOpen()
   const rf = useReactFlow<BoardNode>()
@@ -451,7 +446,7 @@ function Board({ mode }: { mode: BoardMode }) {
     if (restore && from) void rf.setViewport(limit(from), { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
   }
 
-  const fit = () => void rf.fitView({ ...FIT, padding: { ...FIT.padding, left: `${dockPx + 24}px` }, duration: 400 })
+  const fit = () => rf.fitView({ ...FIT, padding: { ...FIT.padding, left: `${dockPx + 24}px` }, duration: 400 })
   const tidy = (ids: string[], label: string) => setPositions(Object.fromEntries(ids.map((id) => [id, null])), { label })
   const selectedItem = selected ? index.byId.get(selected) : undefined
   const epicOfSelected = selectedItem ? (selectedItem.type === 'epic' ? selectedItem : ancestorsOf(index, selectedItem.id)[0]) : undefined
@@ -507,9 +502,17 @@ function Board({ mode }: { mode: BoardMode }) {
           {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
           {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
           <PanLimits bounds={bounds} dock={dockPx} limit={limit} />
-          {view.showMinimap && (
-            <BoardMinimap bounds={bounds} nodes={nodes} lanes={map?.lanes} selected={selected} dock={dockPx} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} limit={limit} onFit={fit} />
-          )}
+          <BoardMinimap
+            bounds={bounds}
+            nodes={nodes}
+            lanes={map?.lanes}
+            selected={selected}
+            dock={dockPx}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            limit={limit}
+            onFit={fit}
+          />
           {map && <LaneHeaders bands={map.lanes} collapsed={collapsedLanes} onToggle={toggleLane} inset={dockPx} />}
         </ReactFlow>
 
@@ -541,8 +544,16 @@ function Board({ mode }: { mode: BoardMode }) {
                 {hitCursor >= 0 ? `${hitCursor + 1} of ${hits.length}` : `${hits.length} match${hits.length === 1 ? '' : 'es'}`}
               </span>
             )}
-            <button ref={filtersRef} className="btn" aria-pressed={showFilters || (filtering && !view.search)} aria-expanded={showFilters} onClick={() => setShowFilters((v) => !v)}>
-              <Filter size={15} /> Filters
+            <button
+              ref={filtersRef}
+              className="btn icon"
+              aria-pressed={showFilters || (filtering && !view.search)}
+              aria-expanded={showFilters}
+              onClick={() => setShowFilters((v) => !v)}
+              aria-label="Filters"
+              title="Filters"
+            >
+              <Filter size={15} />
             </button>
             {filtering && (
               <button className="btn icon ghost" onClick={view.clearFilters} aria-label="Clear search and filters" title="Clear search and filters">
@@ -590,30 +601,6 @@ function Board({ mode }: { mode: BoardMode }) {
                 }}
               />
             )}
-            <button
-              className="btn icon ghost"
-              disabled={!undoNext || stepping}
-              onClick={() => step('undo')}
-              aria-label={undoNext ? `Undo ${undoNext.label}` : 'Undo'}
-              title={undoNext ? `Undo ${undoNext.label} (${MOD}Z)` : 'Nothing to undo'}
-            >
-              <Undo2 size={15} />
-            </button>
-            <button
-              className="btn icon ghost"
-              disabled={!redoNext || stepping}
-              onClick={() => step('redo')}
-              aria-label={redoNext ? `Redo ${redoNext.label}` : 'Redo'}
-              title={redoNext ? `Redo ${redoNext.label} (${MOD}${MOD === '⌘' ? '⇧Z' : 'Y'})` : 'Nothing to redo'}
-            >
-              <Redo2 size={15} />
-            </button>
-            <button className="btn icon ghost" onClick={fit} aria-label="Fit the whole map" title="Fit the whole map">
-              <Maximize size={15} />
-            </button>
-            <button className="btn icon ghost" aria-pressed={view.showMinimap} onClick={() => view.set({ showMinimap: !view.showMinimap })} aria-label="Minimap" title="Minimap">
-              <MapIcon size={15} />
-            </button>
           </div>
         </div>
 

@@ -128,12 +128,20 @@ scrolls) and as the modal elsewhere.
 - **The board is bounded, not an infinite whiteboard.** However it is panned, a map edge comes in no
   further than the middle of the visible board (right of the docked panel), at every zoom, so the map
   can never be scrolled off screen (`src/board/panLimits.ts`).
-- **Minimap**, bottom right in both modes (the toolbar's map button hides it): the whole map in a
-  frame that is the map's own bounds, so it holds still while panning, shaped like the map (a strip
-  for Mapped). Cards are blocks in their type colours, lanes faint rules, the open card ringed teal,
-  search misses faded. The part on screen is outlined in teal and the rest lightly veiled. Press
-  anywhere to jump the view there; hold and drag to sweep along. Under it, the zoom row: fit, zoom
-  out, the zoom as a percentage (press for 100%), zoom in.
+- **View controls**, bottom right in both modes, beside the new-card plus (never up in the toolbar,
+  so the pointer stays in one corner): a small bar of two buttons centred on the plus. The **map
+  button** opens the minimap to the left of the bar while the pointer rests on it; the pointer can
+  slide straight across onto the minimap without it closing (the two are one hover zone with no
+  gap), and it closes a moment after the pointer leaves both, with short open and close delays so it
+  never flickers. Pressing the map button pins it open (pressed state) or unpins it. The **zoom
+  toggle**: a zoom-out glass fits the whole map, then, until the view moves, a zoom-in glass takes it
+  back to where it was (or to 100% if it was no closer in). No other zoom buttons: the trackpad,
+  wheel and pinch zoom. The minimap is the whole map in a frame that is the map's own bounds, so it
+  holds still while panning, shaped like the map (a strip for Mapped). Cards are blocks in their
+  type colours, lanes faint rules, the open card ringed teal, search misses faded. The part on
+  screen is outlined in teal and the rest lightly veiled. Press anywhere to jump the view there;
+  hold and drag to sweep along. Undo and redo are keyboard only (Cmd Z, Cmd Shift Z), with no
+  toolbar buttons.
 - Motion only on action (sheet open, lineage fade, pan to card); respect reduced motion. Stepping
   between records (prev/next sibling, a lineage pill, an open question) swaps the sheet's contents
   in place and skips the entrance, so the page behind never flashes through a re-fading scrim.

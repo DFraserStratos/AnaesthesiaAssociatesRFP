@@ -487,6 +487,24 @@ export function shownIndex(index: Index, showRetired: boolean, keep?: string | n
   return { ...index, items: index.items.filter(shown), epics: index.epics.filter(shown), children }
 }
 
+/**
+ * The catalogue in reading order, for the item sheet's Previous and Next: each epic, then each of
+ * its features followed by that feature's stories, then the next epic. Cards whose parent is
+ * missing are left out (the sheet falls back to their siblings).
+ */
+export function readingWalk(index: Index): Item[] {
+  const out: Item[] = []
+  const seen = new Set<string>()
+  const visit = (it: Item) => {
+    if (seen.has(it.id)) return
+    seen.add(it.id)
+    out.push(it)
+    for (const c of index.children.get(it.id) ?? []) visit(c)
+  }
+  for (const e of index.epics) visit(e)
+  return out
+}
+
 /** `shownIndex` over the live catalogue and the Retired toggle. */
 export function useShownIndex(keep?: string | null): Index {
   const index = useIndex()
@@ -531,7 +549,6 @@ export interface ViewPrefs {
   types: ItemType[]
   onlyWithQuestions: boolean
   showRetired: boolean
-  showMinimap: boolean
   /** Freeform: cards anywhere, positions in board-layout.json. Mapped: a story map with lanes, order in the files. */
   boardMode: BoardMode
   /** Mapped lanes drawn as a header strip only, by `laneKey`. A per-browser preference, not a catalogue fact. */
@@ -548,7 +565,6 @@ const DEFAULT_PREFS: ViewPrefs = {
   types: [],
   onlyWithQuestions: false,
   showRetired: false,
-  showMinimap: true,
   boardMode: 'freeform',
   collapsedLanes: [],
 }
