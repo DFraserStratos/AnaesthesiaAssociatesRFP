@@ -65,7 +65,7 @@ and post-op events use.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Read the hunks for US-03.1.6, US-03.1.7, FT-03.1, US-03.1.1, US-03.1.4, US-03.7.1, FT-07.4,
@@ -155,7 +155,7 @@ and post-op events use.
 
 **Code entry points** (paths under `aa-prototype/src/`, except `pwa/main.tsx` and `visual/*.spec.ts`,
 which sit under `aa-prototype/` itself; `pwa/pwaPurity.test.ts` is `src/pwa/`; line numbers from
-501b0b8, pre-15 names in brackets; phases 14 to 38 will have moved them):
+3d3a18c, pre-15 names in brackets; phases 14 to 38 will have moved them):
 
 - Clock and canvas: `domain/clock.ts` (`HORIZON_PAST_DAYS` 86, `HORIZON_FUTURE_MONTHS` 88,
   `horizonFor` 100); `store/clockActions.ts` (`rollCanvasForward` 29, append-only: it never prunes

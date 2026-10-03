@@ -1,8 +1,8 @@
 # Phase 40a · NHI lookup and identity standards
 
 **Requirements covered:**
-[FT-14.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-14.4.md) NZ identity standards (Proposed; the NHI and HPI CPN parts, changed at `501b0b8`: "HPI number" became **HPI CPN**) ·
-[US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed; changed at `501b0b8`: the HPI CPN wording, and a new note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day).
+[FT-14.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-14.4.md) NZ identity standards (Proposed; the NHI and HPI CPN parts, changed at `3d3a18c`: "HPI number" became **HPI CPN**) ·
+[US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed; changed at `3d3a18c`: the HPI CPN wording, and a new note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day).
 Treated here without closing it: [DM-30](../analysis/domain-model-delta.md#dm-30) (its sentence "The
 NHI can be refreshed from the central register" only; the rest of DM-30 is Phase 40's).
 Read alongside (not closed here):
@@ -74,7 +74,7 @@ external system, so it is built from the seed by a pure function and never persi
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Read the hunks for FT-14.4, US-14.4.1, US-11.1.2, US-11.1.1, US-11.1.5, US-12.1.4, US-13.6.2,

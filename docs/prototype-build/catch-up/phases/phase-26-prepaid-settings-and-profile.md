@@ -6,7 +6,7 @@
 [US-06.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.2.md) Admin can maintain on behalf (Proposed) ·
 [US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md) Dollar value per unit (Proposed; the anaesthetist-facing half, the lock half is Phase 25's) ·
 [US-12.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.3.md) Prepaid procedures (Confirmed; the stored list, the derivation is Phase 27's) ·
-[US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) Anaesthetist identity, contact and bank details (Verify; changed at `501b0b8`: the identifier is one **HPI CPN**, OQ-52) ·
+[US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) Anaesthetist identity, contact and bank details (Verify; changed at `3d3a18c`: the identifier is one **HPI CPN**, OQ-52) ·
 [DM-19](../analysis/domain-model-delta.md#dm-19) prepaid settings on the anaesthetist profile (RVG codes and groups) ·
 [DM-33](../analysis/domain-model-delta.md#dm-33) anaesthetist profile: bank details, prepaid settings, HPI CPN, GST number, admin-editable (its start date is Phase 28's).
 No RV finding is closed here. RV-09 (prepayment as a patient category and a completion gate) is
@@ -61,17 +61,17 @@ The record's start date (US-01.1.3) is Phase 28's and is not added here.
 
 ## Before you start: drift check
 
-1. Run `git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
+1. Run `git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
    and read the hunks for FT-06.1, US-06.1.1, US-06.1.2, FT-12.1, US-12.1.1, US-12.1.2, US-12.1.3,
    US-12.1.4, US-08.4.5, US-01.1.3, US-06.2.1, US-05.1.3, OQ-14, OQ-25, OQ-52 and OQ-73, plus the
    domain model's entity diagram (`PREPAID_SETTING`, `PROFILE`), the HPI CPN glossary row and the
    Prepayment calculation rule. If an item changed, re-read it whole and adjust the work items. If one
    is now Retired or Future, drop its work and say so in the PROGRESS entry.
-2. Confirm the Verify and Proposed readings. At `501b0b8` (2026-10-01 update) US-12.1.4 names one
+2. Confirm the Verify and Proposed readings. At `3d3a18c` (2026-10-01 update) US-12.1.4 names one
    **HPI CPN** (OQ-52 answered) and US-06.2.1 limits prepayment to a patient billable party (OQ-73 open,
    Phase 27's). Nothing in this phase is provisional unless an answer below changes.
 
-| Item | Build (the reading as at `501b0b8`) | If it has changed |
+| Item | Build (the reading as at `3d3a18c`) | If it has changed |
 |---|---|---|
 | **US-12.1.4** (Verify): bank details in the system, on the profile; one HPI CPN | Office-held bank account (name and number) on the Anaesthetist, display-only; masked read-only on the anaesthetist's profile; payables run shows and snapshots the destination. `hpiId` labelled "HPI CPN", office-edited, format-checked | If the AC moves bank details to Xero only: add no bank field. Show "Bank account held in Xero" on both profiles and skip work item 7. If the anaesthetist may edit it: move `bankAccount` into the self-editable set. If OQ-52 is reopened: stop and ask before item 3 |
 | **US-12.1.1** (Proposed): "each anaesthetist sets their own" unit value | The anaesthetist edits it on the profile; the office can too | If it becomes office-set only: the profile shows it read-only with "Set by the AA office" |
@@ -80,7 +80,7 @@ The record's start date (US-01.1.3) is Phase 28's and is not added here.
 | **US-08.4.5** (Phase 22's): the anaesthetist's GST number on invoices issued in their name | The anaesthetist edits their own `gstNumber` on the profile with 22's validator; issued invoices keep 22's supplier snapshot | If the GST number becomes office-held: read-only on the profile with "Held by the AA office" |
 
 3. Read what the earlier phases actually built (their PROGRESS entries). File names below are as at
-   `501b0b8` (the prototype code is unchanged since `501b0b8`); Phase 15 renamed Card to Booking
+   `3d3a18c` (the prototype code is unchanged since `3d3a18c`); Phase 15 renamed Card to Booking
    (`CardDetailBody`, `cardFee` and so on may have new names). In particular:
    - Phase 19: the exact names of `RvgGroup`, `RvgGroupRef`, `masters.rvgGroups`, `codesInGroup`,
      `groupsOfCode`, `searchRvgCodes`, and the seeded groups (Cosmetic, Plastics, Dental, Bariatric)
@@ -108,7 +108,7 @@ The record's start date (US-01.1.3) is Phase 28's and is not added here.
      `src/pwa/MobileViewport.tsx` (not on the More tab), shown only on routes with PWA triggers. Confirm
      where it landed, that no trigger is registered for the More route, and that the new More cards do
      not collide with it or with `PwaDemoPanel` (the `moreExtra` slot).
-4. Record the current `PERSIST_VERSION` (13 at `501b0b8`; Phases 14 to 25 will have bumped it).
+4. Record the current `PERSIST_VERSION` (13 at `3d3a18c`; Phases 14 to 25 will have bumped it).
 
 ## Reference
 
@@ -144,7 +144,7 @@ RV-09 (context: why nothing is derived here). `../analysis/prototype-map-apps-mo
 Accounts GST tab, routes), `prototype-map-admin.md` section 9 (Master data), `prototype-map-store-seed.md`
 (masters, seed cast), `prototype-map-shell-demo-pwa.md` (the PWA `moreExtra` slot and `pwaPurity`).
 
-**Code entry points (at `501b0b8`).**
+**Code entry points (at `3d3a18c`).**
 
 - Types: `src/domain/types.ts` `Anaesthetist` (141 to 151; `hpiId` doc comment at 148 says "HPI
   practitioner identifier", reword to HPI CPN), `GstPeriod` (153), `AuditEntry` (645),
@@ -159,7 +159,7 @@ Accounts GST tab, routes), `prototype-map-admin.md` section 9 (Master data), `pr
   `23STRO`); `src/domain/seed/index.ts` (`SeedMasters`); `src/domain/seed/cards.ts`, which Phase 15
   renamed `bookings.ts` (`SEED_PREPAID_BOOKING_ID`, `SEED_MARKERS.prepaymentBooking`; Nair's Booking:
   41789 septoplasty plus 41800 rhinoplasty on Souter Fri 24 PM; Riley's split-deposit Booking on Souter
-  Fri 24 AM, uncoded at `501b0b8`);
+  Fri 24 AM, uncoded at `3d3a18c`);
   `src/domain/seed/seed.test.ts`. `src/store/appStore.ts` `PERSIST_VERSION`.
 - Mobile: `src/apps/mobile/screens/MoreScreen.tsx`, `src/apps/mobile/routes.tsx` `MobileMoreRoute`
   (173), `src/apps/mobile/outlet.ts` (actor, anaesthetistId, `moreExtra`), `src/pwa/PwaDemoPanel.tsx`
@@ -324,7 +324,7 @@ Model, pure helpers, store and seed first, then screens.
      - **prepaid coherence (the guard for Phase 27):** for each anaesthetist, the seeded Bookings whose
        Procedures carry a code in `expandPrepaidCodes` **and** whose effective billable party is a
        person paying for the patient (21's `billablePartyForProcedure` passing `isPersonParty`: the
-       patient or a guardian, never an organisation; US-06.2.1 as changed at `501b0b8` and OQ-73's
+       patient or a guardian, never an organisation; US-06.2.1 as changed at `3d3a18c` and OQ-73's
        recommendation, the reading Phase 27 builds) are exactly the Bookings Phase 20
        seeded with the interim `prepayment` flag, and no others. That means Nair's Booking hits on
        41800 and not on 41789 (the "checked across the whole Booking" case), and Riley's Booking, still

@@ -1,27 +1,34 @@
 # Phase 18 · Contract model
 
 **Requirements covered:**
-[US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) (Contract categories),
+[US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) (Contract categories; Verify, Greg is reviewing the model, OQ-78),
 [US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) (create, edit, retire Contracts),
-[US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) (AA identifier for every Contract; Verify),
-[US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) (holder, scope including master-list procedures, and organisational reach; Verify),
-[US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) (fixed fee schedule lines, with holder codes kept as searchable references),
-[US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) (pricing effective from a date),
-[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md) (fixed fee schedule pricing);
+[US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) (a unique short AA code on every Contract, searchable; Verify),
+[US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) (holder, the billable party the Contract always defines, scope including master-list procedures, and organisational reach; Verify, OQ-78),
+[US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) (fixed fee schedule lines, with holder codes kept as searchable references; OQ-89),
+[US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) (pricing effective from a date);
 [DM-07](../analysis/domain-model-delta.md#dm-07) (Contract reshaped to category, holder, scope, pricing basis and `aaCode`),
 [DM-09](../analysis/domain-model-delta.md#dm-09) (ContractPrice becomes FeeScheduleLine);
 [RV-20](../analysis/reverse-check.md#rv-20-acc-treated-as-a-visible-special-case) (ACC treated as a visible special case).
-Open questions (still open, built as their recommendation and labelled provisional):
+[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+(fixed fee pricing) left this phase: it was simplified on 2026-10-02 to "the fixed fee is the total
+price" and now Matches. Its fixed path is kept through the reshape (work items 4 and 11) and its
+recipe is re-pointed (Catalogue screenshots).
+Open questions (still open, built as their recommendation and labelled provisional in one place):
 [OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md) (which date picks the price),
-[OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md) (the AA code scheme),
-[OQ-67](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-67.md) (who a Contract belongs to).
+[OQ-78](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-78.md) (default Contracts, or the hospital holding every Contract: keep the catalogue's model),
+[OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md) (fixed fee after the rewording: the matched line's fee is the price, and lines keep time bands and add-ons).
 Answered and built as answered:
 [OQ-18](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-18.md) (holder codes are kept for reference and are searchable; a Procedure and Contract pair can carry both an RVG code and a holder code),
-[OQ-55](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-55.md) (owner decision D2: insurer and funding source sit on neither the Booking nor the Patient; the Contract defines the billable party).
+[OQ-55](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-55.md) (owner decision D2: insurer and funding source sit on neither the Booking nor the Patient),
+[OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md) (owner decision D16: a short structured AA code per Contract, searchable; the format is still to be designed, so it is ours, made in one function),
+[OQ-67](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-67.md) (owner decision D17: the Contract always defines the billable party, with as many Contracts as AA needs; Phase 21 builds the payer capture and removes the per-Booking override).
 **Depends on:** Phase 17 (the Surgeon Group record that the Surgeon Group holder points at). Phases 14
-and 15 are in place: Card is now Booking, and triggers live in the screen-contextual registry.
+and 15 are built (Card is now Booking, and triggers live in the screen-contextual registry), and the
+plan runs 15a, 15b and 16 before this phase, so take the Booking names, the warning routine and the
+`PERSIST_VERSION` you find.
 **Estimated:** 2 sessions, at the upper limit. Session 1: work items 1 to 8 (model, seed, pricing,
-AA code and search helpers, store, parity green). Session 2: work items 9 to 13 (Admin Contract
+category table, AA code and search helpers, store, parity green). Session 2: work items 9 to 13 (Admin Contract
 catalogue with search, Contract detail, office billing setup, ACC removal, copy, demo guide), then
 shots, the review pass and PROGRESS. If session 1 runs long, stop green after work item 6 (parity
 fixture matching) and start session 2 with work item 7; do not start UI work before the store actions
@@ -31,32 +38,45 @@ exist.
 
 The Contract stops being "Type 1/2/3 plus a holder" and becomes the catalogue's four-part record:
 
-- a **category**: the six catalogue categories, with no Pre-paid category;
-- a **holder**;
-- **scope filters**, including the master-list procedures it is set against;
+- a **category**: the six catalogue categories, with no Pre-paid category, held as **data in one
+  table** rather than spread through the code, because US-04.1.1 is Verify and Greg floated a model
+  with no default Contracts (OQ-78);
+- a **holder**: the **billable party the Contract always defines** (D17, OQ-67 answered): a
+  hospital, a surgeon, a surgeon group, an insurer, or the payer named on the Booking;
+- **scope filters**, including the master-list procedures it is set against (modelled here, filled
+  by Phase 19a);
 - a **pricing basis**.
 
-Every Contract carries **AA's own unique identifier** (`aaCode`), separate from its system id and from
-any holder code, shown in the catalogue and the editor and searchable (US-04.1.4). Each Contract also
-gets a review date and an explicit retire. `ContractPrice` becomes a **FeeScheduleLine**. A line has
-the holder's own code and description (kept for reference and searchable), GST-exclusive and
-GST-inclusive prices, an optional RVG mapping, time band, add-on flag and quantity rule, and
-effective-dated prices with a visible "Upcoming from <date>". Contract rates and discounts are
-effective-dated the same way.
+Every Contract carries **AA's own short structured AA code** (`aaCode`, D16, OQ-66 answered),
+separate from its system id and from any holder code, shown in the catalogue and the editor and
+searchable (US-04.1.4). AA has not set a format ("we need to design a contract"), so the format is
+ours and comes from one generator function. Each Contract also gets a review date and an explicit
+retire. `ContractPrice` becomes a **FeeScheduleLine**. A line has the holder's own code and
+description (kept for reference and searchable), GST-exclusive and GST-inclusive prices, an optional
+RVG mapping, time band, add-on flag and quantity rule, and effective-dated prices with a visible
+"Upcoming from <date>". Contract rates and discounts are effective-dated the same way. Under a fixed
+fee Contract the matched line's fee is the whole price, not the BTM units (US-05.2.5), and lines keep
+their time bands and add-ons (OQ-89's recommendation, provisional).
 
 `fee.ts` prices from the new shape. Every seeded fee and every existing worked example is
 re-expressed as a parity test, so **the S3, S4 and S5 figures do not move**. Selection keeps
 today's resolver (`resolveContractForProcedure` and the default fallback in `invoiceBuild.ts`), so
-the app stays green: scope is modelled and edited here, and only narrows the picker in Phase 20.
-Insurer and funding-source scope are **data only**: they describe the Contract and never narrow a
-choice, because no Booking or Patient holds an insurer or funding source (OQ-55) and who a Contract
-belongs to is still open (OQ-67). ACC loses its special-case markers and is priced as an ordinary
-holder's Contract. The Admin Contract catalogue (Master data, Contracts) is rebuilt around the new
-record, with search, because Contracts are expected to number in the thousands.
+the app stays green: scope is modelled and edited here, Phase 19a fills its procedures, and it only
+narrows the picker in Phase 20. Insurer and funding-source scope are **data only**: they describe the
+Contract and never narrow a choice, because no Booking or Patient holds an insurer or funding source
+(D2, OQ-55). The holder already decides who each seeded invoice goes to; this phase changes no
+counterparty, and Phase 21 captures the payer's name and email for a default or patient-direct
+Contract. ACC loses its special-case markers and is priced as an ordinary holder's Contract. The
+Admin Contract catalogue (Master data, Contracts) is rebuilt around the new record, with search,
+because Contracts are expected to number in the thousands.
+
+The fourth pricing basis is kept as today's **rate x time** interim. The catalogue renamed it a
+Contract defined unit rate (US-05.2.6, DM-46); Phase 24 builds that and retires the hourly line, so
+here it only keeps the Aria figures.
 
 The add-on schedule lines built here are what Phase 39b offers as Contract add-on billing lines.
 
-This is the largest pricing ripple in the plan. Behaviour changes are for Phases 20 to 25. This phase
+This is the largest pricing ripple in the plan. Behaviour changes are for Phases 19a to 25. This phase
 changes the shape and keeps the numbers.
 
 ## Before you start: drift check
@@ -64,58 +84,84 @@ changes the shape and keeps the numbers.
 1. Run the drift diff and read it for this phase's items:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
-   Check `US-04.1.1`, `US-04.1.2`, `US-04.1.4`, `US-04.2.1`, `US-04.2.4`, `US-04.2.10`, `US-05.2.5`,
-   `OQ-18`, `OQ-48`, `OQ-55`, `OQ-66`, `OQ-67`, and the "Contract (recommended structure)" (now with
-   `aaCode`, `procedures[]` scope and `paymentSetting`) and "Fee schedule line" tables and the
-   "Selection" paragraph in `domain-model.md`. Also skim `US-04.2.2` (pricing basis), `US-04.2.11`
-   (combination Contracts), `US-04.3.2` (the picker and its holder-code search), `US-04.4.1` (default
-   Contract) and `US-05.5.1` (ACC), because this phase's shape has to fit them.
-   - At `501b0b8` the domain-model `category` row still lists "RVG Default Pre-paid". US-04.1.1 (no
+   Check `US-04.1.1`, `US-04.1.2`, `US-04.1.4`, `US-04.2.1`, `US-04.2.4`, `US-04.2.10`, `OQ-18`,
+   `OQ-48`, `OQ-55`, `OQ-66`, `OQ-67`, `OQ-78`, `OQ-89`, and the "Contract (recommended structure)"
+   table (with `aaCode`, the `holder / billableParty` row, `procedures[]` scope and `paymentSetting`),
+   the "Fee schedule line" table and the "Selection" paragraph in `domain-model.md`. Also skim
+   `US-04.2.2` (pricing basis, now Verify, with the Contract defined unit rate as the fourth basis),
+   `US-04.2.11` (combination Contracts), `US-04.3.2` (the picker: procedure then hospital, the default
+   RVG Contract always offered, AA-code and holder-code search), `US-04.4.1` (default Contract),
+   `US-04.4.2` (default RVG Contracts per procedure, Phase 19a), `US-05.2.5` (fixed fee, now Matches),
+   `US-05.2.6` (Contract defined rate, Phase 24), `US-05.5.1` (ACC) and `US-11.2.2` (the payer set
+   through the Contract, Phase 21), because this phase's shape has to fit them.
+   - At `3d3a18c` the domain-model `category` row still lists "RVG Default Pre-paid". US-04.1.1 (no
      Pre-paid category) and OQ-25 win over that stale row (DM-07's note); do not build it.
    - If an item changed, re-read it and adjust the work items below before building. For example,
-     a Pre-paid category coming back, a seventh category, or a new line field.
+     a Pre-paid category coming back, a seventh category, Greg's Contract design (OQ-78), or a new
+     line field.
    - If an item is now Retired or Future, drop it from this phase and say so in the PROGRESS entry.
    - A new item that touches the Contract record goes into this phase only if it is shape-only.
-     Behaviour belongs in 20 to 25.
-2. **US-04.1.4 and US-04.2.1 are Verify.** US-04.2.1's acceptance criterion (organisational by
-   default, narrowed to specific anaesthetists) is already met in substance; US-04.1.4's first
-   criterion is true in data today (`CTN-nnn` ids) but never shown. If both are still Verify, build
-   them as written and note the status in PROGRESS. No UI label for Verify.
+     Behaviour belongs in 19a to 25.
+2. **US-04.1.1, US-04.1.4 and US-04.2.1 are Verify.** US-04.1.1 became Verify on 2026-10-02: the
+   categories "could use a little bit of fleshing out" and Greg is not yet on board with the Contract
+   model. US-04.2.1's organisational-by-default criterion is already met in substance; US-04.1.4's
+   first criterion is true in data today (`CTN-nnn` ids) but never shown. Build all three as written,
+   with the categories as one data table (work item 2) so a changed category set is a table edit, and
+   note the status in PROGRESS. No UI label for Verify.
 3. **Owner decision D2 (OQ-55, answered).** Confirm it still reads: insurer and funding source sit on
-   neither the Booking nor the Patient, and the Contract defines the billable party. So
-   `FundingSource` is a Contract-only type: nothing on the Booking, Procedure or Patient gains it.
+   neither the Booking nor the Patient. So `FundingSource` is a Contract-only type: nothing on the
+   Booking, Procedure or Patient gains it, and insurer and funding-source scope describe the Contract
+   and narrow nothing (US-04.2.1: "They stay as scope filters").
 4. **OQ-18 (answered).** Build the answer: holder codes are kept on fee schedule lines as references
    and are searchable; the Procedure and its Contract together can carry both the procedure's RVG code
    and the chosen line's holder code. There is no anaesthetist holder-code picker: the pick is
    procedure first, then Contract (Phases 19 and 20). Here the line on a Procedure is either chosen by
    the office in billing setup or found through the line's RVG mapping. No provisional label.
-5. **OQ-48 (which date decides the price in force).** If it is still open, build the recommendation:
+5. **Owner decision D16 (OQ-66, answered).** Build the answer: a short structured AA code per
+   Contract, searchable in the catalogue (and, from Phase 20, in the picker). AA has not set a format
+   ("It's to be designed"), so build ours, `<category prefix>-<nnnn>`, from **one** generator function
+   (`nextAaCode`, work item 3), so the format Greg designs is a one-function change. No provisional
+   note in the app; put the format on the "For the owner's review" list. If the drift shows a format,
+   implement it in the same function and update the pinned seed table.
+6. **Owner decision D17 (OQ-67, answered).** Build the answer: the Contract always defines the
+   billable party, with as many Contracts as AA needs, and there is no per-Booking override. In this
+   phase that means the holder **is** the billable party (a doc comment on `ContractHolder`), and the
+   patient-direct holder kind reads "Payer named on the Booking" (the domain model's "the payer named
+   on the Booking"). Keep every seeded counterparty as it is: Phase 21 captures the payer's name and
+   email when a default or patient-direct Contract is picked and removes the guardian override. No
+   provisional note. Whether a Contract belongs to the hospital or to the funding source is still not
+   settled; nothing here reads it.
+7. **OQ-48 (which date decides the price in force).** If it is still open, build the recommendation:
    the date of the procedure, which Greg leaned to on 2026-10-01 and which in the prototype is the
    **List date**, what Contracts are already tested against. Add it to the provisional notes (work
    item 13): "Provisional: the price in force is the one effective on the date of the procedure." If
    it is answered "procedure date", drop that note. If it is answered with a different date (Booking
    created, or invoice raised), thread that date through `pricingDateISO` in work item 4 instead, and
    update the tests.
-6. **OQ-66 (the AA code scheme).** If it is still open, build its recommendation: a short structured
-   AA code per Contract, made by **one** generator function (`nextAaCode`, work item 3), so a
-   different scheme is a one-function change. Provisional note: "Provisional: the AA code format is
-   still to be agreed with AA." If it is answered with a scheme, implement that scheme in the same
-   function and drop the note.
-7. **OQ-67 (who a Contract belongs to, and who pays).** If it is still open, insurer and
-   funding-source scope stay **data only**: stored, edited and shown, read by no selection, picker or
-   billing code. Provisional note: "Provisional: insurer and funding source describe the Contract and
-   do not narrow which Contracts are offered." If it is answered "by funding source", still build only
-   the data here and hand the narrowing to Phase 20.
-8. **Read Phase 17's PROGRESS entry.** Note the surgeon-group entity it built (Phase 17's plan: type
-   `SurgeonGroup`, master `masters.surgeonGroups`, seed id `SG-COS` "Canterbury Orthopaedic
-   Surgeons", counter prefix `SGN`), whether it has any link to the `ORG.cos` organisation record,
-   and confirm `ContractHolderOrganisation` / `masters.organisations` still exist (Phase 17 left them
-   for this phase to decide). Work items 2 and 3 depend on this.
-9. **Capture the parity baseline before any model change** (work item 1). This comes before any
-   edit to `types.ts`.
+8. **OQ-78 (default Contracts, or the hospital holding every Contract).** If it is still open, build
+   its recommendation, the catalogue's model: six categories, the protected RVG Default Hospital per
+   hospital, the insurer default and one RVG Default Post-paid. Provisional note: "Provisional: the
+   Contract categories and the default Contracts follow the current model, which AA is reviewing." If
+   it is answered with Greg's model (no default Contracts, the hospital holding every Contract), stop
+   and re-plan the categories and defaults before building, and say so in PROGRESS.
+9. **OQ-89 (fixed fee after the rewording).** If it is still open, build its recommendation for
+   schedule lines: the matched line's fee is the whole price (US-05.2.5), lines keep their time bands
+   (which pick the line), add-ons (which add their own line) and quantity rules. Provisional note:
+   "Provisional: fee schedule lines keep time bands and add-ons, with the matched line's fee as the
+   price." Its other two parts (whether the Contract defined rate is the agreed contract rate, and
+   whether it prices the whole Procedure) are Phase 24's; leave the `rateTime` basis as the interim.
+   If it is answered "bands and add-ons are dropped", build the line without them and drop the CES band
+   and add-on rows from the seed.
+10. **Read Phase 17's PROGRESS entry.** Note the surgeon-group entity it built (Phase 17's plan: type
+    `SurgeonGroup`, master `masters.surgeonGroups`, seed id `SG-COS` "Canterbury Orthopaedic
+    Surgeons", counter prefix `SGN`), whether it has any link to the `ORG.cos` organisation record,
+    and confirm `ContractHolderOrganisation` / `masters.organisations` still exist (Phase 17 left them
+    for this phase to decide). Work items 2 and 3 depend on this.
+11. **Capture the parity baseline before any model change** (work item 1). This comes before any
+    edit to `types.ts`.
 
 ## Reference
 
@@ -131,48 +177,63 @@ No mockup covers Master data. Extend the admin's own table, panel and pill patte
 invent a new visual language. Admin is a desktop layout, so use a wide side panel or overlay, not a
 bottom sheet.
 
-**Catalogue:** the seven covered files above; `domain-model.md` §2 "Contract (recommended
-structure)", "Fee schedule line" and "Selection";
+**Catalogue:** the six covered files above; `domain-model.md` §2 "Contract (recommended
+structure)" (its `holder / billableParty` row), "Fee schedule line" and "Selection";
 [US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md)
-(the four pricing bases);
+(the four pricing bases, Verify);
 [US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md)
 (a combination Contract sits under each parent procedure, so procedure scope is a list);
 [US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md)
-(the picker's holder-code search, which wraps this phase's per-Contract matcher);
+(the picker's filters and its AA-code and holder-code search, which wrap this phase's per-Contract
+matcher);
+[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md)
+(default RVG Contracts per procedure, built by Phase 19a);
+[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+(the fixed fee is the total price);
 [US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md)
-(rate x time);
+(the Contract defined rate, built by Phase 24);
 [US-05.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.5.1.md)
-(ACC through the holder's Contract); OQ-18, OQ-48, OQ-55, OQ-66, OQ-67; the evidence note
-`catalogue/notes/2026-10-01-aa-meeting-with-greg.md` #10, #27, #29, #49 and #64.
+(ACC through the holder's Contract);
+[US-11.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.2.md)
+(the payer set through the Contract, built by Phase 21); OQ-18, OQ-48, OQ-55, OQ-66, OQ-67, OQ-78,
+OQ-89; the evidence notes `catalogue/notes/2026-10-01-aa-meeting-with-greg.md` #10, #27, #29, #49
+and #64, `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` #7, #8, #37 and #41, and
+`catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` #12, #19, #38, #54 and #64.
 
 **Analysis:**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 3 ("Contract replaces the billing route"), the
   "Structural first" DM-07 bullet, and the EP-04 and EP-05 tables.
 - [epics/EP-04.md](../epics/EP-04.md) and [epics/EP-05.md](../epics/EP-05.md).
-- `gaps.json`: the entries for the covered IDs, DM-07, DM-09 and RV-20.
+- `gaps.json`: the entries for the covered IDs, DM-07, DM-09 and RV-20 (re-graded at `3d3a18c`).
+- [analysis/domain-model-delta.md](../analysis/domain-model-delta.md) DM-07, DM-09 and DM-46 (the
+  rate x time basis becoming a Contract defined unit rate, Phase 24).
 - [analysis/prototype-map-domain.md](../analysis/prototype-map-domain.md) §2 and §5.
 - [analysis/prototype-map-store-seed.md](../analysis/prototype-map-store-seed.md).
 - [analysis/prototype-map-admin.md](../analysis/prototype-map-admin.md).
 
-**Code entry points** (names as at `501b0b8`; Phase 15 renamed Card to Booking, so use the Booking
-names you find):
+**Code entry points** (names and lines as at `3d3a18c`, after Phases 14, 15 and 15a session 1;
+15a session 2, 15b, 16 and 17 run first, so check the lines you find):
 - `aa-prototype/src/domain/types.ts`: `ContractHolderType`, `ContractScope`, `ContractType2Detail`,
-  `Contract`, `ContractPrice` (about lines 190 to 258), `Procedure.accRelated`, `CounterpartyRef`.
+  `Contract`, `ContractPrice` (about lines 180 to 258), `Procedure.accRelated` (about line 486),
+  `CounterpartyRef`.
 - `aa-prototype/src/domain/billing/contracts.ts`: `isEffectiveOn`, `selectContract`,
   `matchContractPrice`.
 - `aa-prototype/src/domain/billing/fee.ts`: `FeeContext`, `feeFor`, the Type 1/2/3 branches.
-- `aa-prototype/src/domain/billing/invoiceBuild.ts`: `defaultContractFor`,
-  `resolveContractForProcedure`, `counterpartyForProcedure`, `HOLDER_LABEL`, `GST_RATE`.
-- `aa-prototype/src/domain/billing/validateCardForBilling.ts`: `feeContextFor`,
-  `CardBillingContext.contractPrices` (about line 62), `INDIVIDUAL_ARRANGEMENT_MESSAGE`, the rate x
-  time gate.
+- `aa-prototype/src/domain/billing/invoiceBuild.ts`: `defaultContractFor` (about line 86),
+  `resolveContractForProcedure`, `counterpartyForProcedure`, `buildInvoicesForBooking`,
+  `HOLDER_LABEL` (about line 72, and the "protected default Type 1" message at about line 103),
+  `GST_RATE`.
+- `aa-prototype/src/domain/billing/validateBookingForBilling.ts`: `feeContextFor`,
+  `BookingBillingContext.contractPrices` (about line 62), `INDIVIDUAL_ARRANGEMENT_MESSAGE` (about
+  line 39), the rate x time gate (about line 228).
 - `aa-prototype/src/domain/billing/fixtures.ts`: `mkContract`, `mkProcedure`.
 - `aa-prototype/src/domain/seed/contracts.ts`: `CONTRACT`, `CONTRACTS`, `CONTRACT_PRICES`, and the
   `defaultType1` helper.
-- `aa-prototype/src/domain/seed/index.ts`: `masters.contracts` / `contractPrices`, the counters, and
-  the scenario markers `cosAccContractCard` and `accRelatedCard`.
-- `aa-prototype/src/domain/seed/cards.ts`: the seeded `governingContractId`s and `accRelated`
-  flags.
+- `aa-prototype/src/domain/seed/index.ts`: `masters.contracts` / `contractPrices` (about lines 97
+  and 438), the counters, and the scenario markers `cosAccContractBooking` and `accRelatedBooking`
+  (about lines 616 to 655, with "Type 3" and "Type 2" in their labels and details).
+- `aa-prototype/src/domain/seed/bookings.ts`: the seeded `governingContractId`s, `accRelated`
+  flags and `accRelatedBookingId` (about lines 451 to 472 and 1248).
 - `aa-prototype/src/domain/seed/history.ts`: `accRelated` on seeded history rows.
 - `aa-prototype/src/domain/seed/billing.ts`: its fee context.
 - `aa-prototype/src/store/contractActions.ts`: `createContract` (allocates the `CTN` id, about line
@@ -183,34 +244,44 @@ names you find):
 - `aa-prototype/src/store/mutate.ts`: the id specs `contract: { prefix: 'CTN', pad: 3 }` (about line
   72; the system id stays, `aaCode` is separate) and `contractPrice: { prefix: 'CPN', pad: 3 }` (the
   allocation counter kind; it is not in the seed).
-- `aa-prototype/src/store/selectors.ts`: `contractPrices` in the billing context at about line 846;
-  `accRelated` on `AccpayInvoiceRow` (about line 601) and its selector (about line 634);
-  `counterpartyName` (about line 827, the `organisation` case).
+- `aa-prototype/src/store/selectors.ts`: `contractPrices` in the billing context at about line 845;
+  `accRelated` on `AccpayInvoiceRow` (about line 600) and its selector (about line 633);
+  `counterpartyName` (about line 818, the `organisation` case).
 - `aa-prototype/src/store/index.ts`: the contract action exports.
-- `aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx`: calls `editContract(...,
-  { effectiveToISO: undefined })` to restore a dated-out Contract; it must keep working.
+- `aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx` (about line 82): calls
+  `editContract(..., { effectiveToISO: undefined })` to restore a dated-out Contract; it must keep
+  working.
 - `aa-prototype/src/shared/audit/auditNarrative.ts`: narrates `CounterpartyRef`, `ContractScope` and
   `ContractType2Detail` values (about lines 148 to 163).
 - Tests that build Contracts or read the old fields: `domain/billing/{contracts,fee,invoiceBuild,
-  validateCardForBilling,prePaymentInvoice}.test.ts`, `domain/seed/seed.test.ts`,
-  `store/{billingRun,billingRetry,mastersActions,btmCapture,intake,prepayment}.test.ts`
+  validateBookingForBilling,prePaymentInvoice}.test.ts`, `domain/seed/seed.test.ts`,
+  `store/{billingRun,billingRetry,mastersActions,btmCapture,intake,prepayment,bookingActions}.test.ts`
   (`billingRetry.test.ts` dates out and restores the COS ACC Contract through `editContract`),
-  `apps/admin/reviewFlags.test.ts`. There is no `contractActions.test.ts` yet; create it (new) for
+  `shared/demoTriggers/demoTriggers.test.ts`, `apps/admin/reviewFlags.test.ts`; the marker readers
+  `store/{payablesActions,seedBilling}.test.ts`. There is no `contractActions.test.ts` yet; create it (new) for
   work item 7.
 - `aa-prototype/src/store/billingLineActions.ts`: the rate x time gate.
 - `aa-prototype/src/store/lifecycle.ts`: `editProcedure` and `ProcedurePatch`.
 - `aa-prototype/src/store/appStore.ts`: `PERSIST_VERSION`.
-- `aa-prototype/src/shared/capture/feeContext.ts`, `shared/capture/AddBillingLineSheet.tsx`,
-  `shared/card/CardDetailBody.tsx` (now the Booking detail body),
-  `shared/card/OfficeBillingSetup.tsx`, `shared/flows/EditBillingSetupSheet.tsx` (the
+- `aa-prototype/src/shared/capture/feeContext.ts` (about line 53),
+  `shared/capture/AddBillingLineSheet.tsx` (the ACC pre-op flat-fee copy at about line 107, kept),
+  `shared/booking/BookingDetailBody.tsx` (its fee context at about line 182),
+  `shared/booking/OfficeBillingSetup.tsx`, `shared/flows/EditBillingSetupSheet.tsx` (the
   governing-contract select), `shared/audit/fieldLabels.ts`.
 - `aa-prototype/src/apps/admin/screens/MasterData.tsx` (`ContractsView`, about line 198: today
   columns Name, Type, Holder, Scope, From, To, no id column and no search) and
-  `apps/admin/flows/ContractEditSheet.tsx` (`PriceRows`).
-- ACC markers: `apps/admin/reviewFlags.ts` (flag c) and its test; `apps/mobile/screens/BalancesScreen.tsx`
-  (the ACC chip); `apps/web/screens/AccountsScreen.tsx` (the ACC column).
-- `apps/demo/DemoControlPanel.tsx`: scenario text that names Contracts.
-- `visual/admin-phase07.spec.ts`: asserts "default Type 1" copy.
+  `apps/admin/flows/ContractEditSheet.tsx` (`PriceRows`, about line 217, hook
+  `contract-price-rows`). `MasterData.tsx` also says "default Type 1" in the Hospitals and Insurers
+  headers and the add-hospital result (about lines 287, 323 and 377).
+- ACC markers: `apps/admin/reviewFlags.ts` (flag c, about line 82) and its test;
+  `apps/mobile/screens/BalancesScreen.tsx` (the ACC chip in `AgeChip`, about lines 102 and 140);
+  `apps/web/screens/AccountsScreen.tsx` (the ACC column); `store/bookingActions.ts` (`accRelated` on
+  a new Procedure).
+- `apps/demo/DemoControlPanel.tsx` (about line 340, "Health NZ agreed rate") and `apps/demo/DemoData.tsx`:
+  scenario text that names Contracts.
+- `shared/demoTriggers/registry.ts`: Phase 14's "Trigger billing failure" (about line 198), which
+  dates out the COS ACC Contract.
+- `visual/admin-phase07.spec.ts`: asserts "default Type 1" copy (about lines 93 and 107).
 
 ## Work items
 
@@ -221,9 +292,8 @@ Model, seed and pricing come first and are re-greened before any UI.
    - For every seeded procedure, it records `feeFor(...).total`, `lines` (basis and amount) and
      `billableUnits`, using the same context the app builds (the List date and the stored
      governing contract).
-   - For every seeded Booking, it records the `buildInvoicesForCard` (or its Phase 15 name) draft
-     totals per counterparty (kind and id), so a holder remapping that changes who is billed fails
-     parity.
+   - For every seeded Booking, it records the `buildInvoicesForBooking` draft totals per
+     counterparty (kind and id), so a holder remapping that changes who is billed fails parity.
    - It records amounts, units, bases and counterparties, not line descriptions. The fixed line's
      description changes on purpose in work item 4 ("Contract price" becomes the holder code and
      description); an existing test that asserts the old words is a copy update, not a parity
@@ -240,16 +310,35 @@ Model, seed and pricing come first and are re-greened before any UI.
 2. **Types: the four-part Contract** (`domain/types.ts`). Replace `ContractHolderType`,
    `ContractScope`, `ContractType2Detail` and the `type` / `permitsIndividualArrangement` /
    `type2Detail` fields.
-   - `ContractCategory` = `'rvgDefaultPostPaid' | 'rvgDefaultHospital' | 'hospital' | 'surgeonSolo' |
-     'surgeonGroup' | 'insurance'`. There is no Pre-paid category and ACC is not a category
-     (US-04.1.1).
-   - `ContractHolder`, a discriminated union:
+   - **Categories are data** (US-04.1.1 is Verify; OQ-78 is open). One exported table,
+     `CONTRACT_CATEGORIES` in `domain/billing/contractCategories.ts` (new), holds each category's
+     `id`, `label`, allowed holder kind, AA code prefix and `mintedOnly` flag (only the minting paths
+     create it):
+
+     | id | label | holder kind | prefix | mintedOnly |
+     |---|---|---|---|---|
+     | `rvgDefaultPostPaid` | RVG Default Post-paid | payer named on the Booking | `RDP` | no |
+     | `rvgDefaultHospital` | RVG Default Hospital | hospital | `RDH` | yes |
+     | `hospital` | Hospital | hospital | `HOS` | no |
+     | `surgeonSolo` | Surgeon Solo | surgeon | `SSO` | no |
+     | `surgeonGroup` | Surgeon Group | surgeon group | `SGR` | no |
+     | `insurance` | Insurance | insurer | `INS` | no |
+
+     `ContractCategory` is the id union derived from the table. There is no Pre-paid category and
+     ACC is not a category (US-04.1.1). Nothing outside the table, its helpers (work item 3) and the
+     two minting paths (`createHospital`, `setInsurerDirectClaims`) branches on a category id, so a
+     changed category set after Greg's review is a table edit plus a seed change.
+   - `ContractHolder`, a discriminated union. A doc comment says the holder **is the billable party
+     the Contract defines** (D17, OQ-67): there is no separate billable-party field and no per-Booking
+     override in the model (the existing guardian override stays until Phase 21 removes it):
      - `{ kind: 'hospital'; hospitalId }`
      - `{ kind: 'surgeon'; surgeonId }`
      - `{ kind: 'surgeonGroup'; surgeonGroupId }` (Phase 17's group id)
      - `{ kind: 'insurer'; insurerId }`
-     - `{ kind: 'bookingBillableParty' }`: the Booking's own billable party. It has no fixed id
-       (US-04.2.1; fixes "holder is a fixed party id").
+     - `{ kind: 'bookingBillableParty' }`: the payer named on the Booking, for patient-direct and
+       default Contracts. It has no fixed id (US-04.2.1; fixes "holder is a fixed party id"). Its
+       label is "Payer named on the Booking"; Phase 21 captures the payer's name and email when such
+       a Contract is picked. Keep the kind name: Phases 20 and 21 read it.
    - `FundingSource` = `'private' | 'SXAP' | 'HNZ' | 'ACC'` (domain-model.md). It is a
      **Contract-only** type: the funding source describes the Contract and is never looked up from
      the Patient or the Booking (OQ-55, D2). No Booking, Procedure or Patient field uses it.
@@ -258,12 +347,16 @@ Model, seed and pricing come first and are re-greened before any UI.
      dimension, and empty `anaesthetistIds` means organisational (US-04.2.1 AC).
      - `procedureTypeIds` holds the master-list procedures the Contract is set against (US-04.2.1;
        a combination Contract will list each parent procedure, US-04.2.11). Type it as `string[]`
-       here; Phase 19 adds the `ProcedureType` master and its id alias, its editor chips and the
-       seeded values. Every seeded Contract has it empty in this phase.
+       here; Phase 19 adds the `ProcedureType` master, retypes it and adds its editor chips, and
+       Phase 19a fills it for every Contract (from its schedule lines' RVG mapping) so Phase 20's
+       procedure filter returns real Contracts. Every seeded Contract has it empty in this phase.
      - `insurerIds` and `fundingSources` are **descriptive data**: a doc comment says no selection,
-       picker or billing code reads them (OQ-55; OQ-67 open). One exported constant,
+       picker or billing code reads them, because no Booking or Patient holds an insurer or funding
+       source (D2, OQ-55). One exported constant,
        `SCOPE_NARROWING_DIMENSIONS`, lists the dimensions that may narrow a choice (procedures,
-       hospitals, surgeons, RVG codes, anaesthetists) so Phase 20 reads one list.
+       hospitals, surgeons, RVG codes, anaesthetists) so Phase 20 reads one list. Surgeon narrowing
+       is "possibly the surgeon, not settled" (US-04.2.1, US-04.3.2); Phase 20 decides and drops
+       `surgeons` from the constant if it does not narrow by surgeon.
      - RVG groups arrive with Phase 19's group master.
    - `ContractRateStep` = `{ effectiveFromISO, rate: { basis: 'agreedUnitRate'; unitRate } | {
      basis: 'percentDiscount'; percent } }`.
@@ -271,16 +364,22 @@ Model, seed and pricing come first and are re-greened before any UI.
      - `{ kind: 'rvgUnitsAnaesthetistRate' }`
      - `{ kind: 'rvgUnitsContractRate'; rates: ContractRateStep[] }`
      - `{ kind: 'fixedSchedule' }`
-     - `{ kind: 'rateTime' }`
+     - `{ kind: 'rateTime' }`: a labelled interim. The catalogue's fourth basis is now a Contract
+       defined unit rate (US-04.2.2, US-05.2.6, DM-46); Phase 24 builds it, prices whole Procedures
+       through one rate function and retires the hourly line. Here it only carries today's hourly
+       rate x time gate, so the Aria $1,440 holds.
 
      This is the DM-07 mapping: Type 1, Type 2, Type 3 and `permitsIndividualArrangement`.
    - `Contract` = `{ id, aaCode, name, category, holder, scope, pricingBasis, isDefault,
      effectiveFromISO, effectiveToISO?, reviewDateISO?, retiredAtISO? }`.
-     - `aaCode` is AA's own unique identifier (US-04.1.4): set once at creation, never edited, never
-       reused, distinct from the system `id` (`CT-...` / `CTN-nnn`) and from any holder code.
+     - `aaCode` is AA's own short structured code (US-04.1.4, D16): set once at creation, never
+       edited, never reused, distinct from the system `id` (`CT-...` / `CTN-nnn`) and from any holder
+       code.
      - `isDefault` stays the protected-default marker. It covers the RVG Default Hospital per
        hospital, the insurer default for a direct-billing insurer, and the one RVG Default
-       Post-paid.
+       Post-paid (the catalogue's model, OQ-78's recommendation). Phase 19a adds the default RVG
+       Contracts per procedure (US-04.4.2) and decides their category and protection then; do not
+       model them here.
    - `FeeScheduleLine` replaces `ContractPrice` (DM-09, US-04.2.4):
      - `{ id, contractId, holderCode, description, mappedRvgCodes: string[], timeBand?: {
        fromMinutes, toMinutes? }, isAddOn, quantityRule?: { unitLabel }, procedureOrdinal?, prices:
@@ -288,6 +387,9 @@ Model, seed and pricing come first and are re-greened before any UI.
      - `FeeSchedulePrice` = `{ effectiveFromISO, priceExGst, priceIncGst }`.
      - `holderCode` and `description` are the holder's own reference (SXAP AP codes, CES HNZ codes,
        ACC OPT codes); they are searchable (work item 3) and never replace `aaCode`.
+     - `timeBand`, `isAddOn` and `quantityRule` stay on the line (OQ-89's recommendation,
+       provisional): a band picks the line, an add-on adds its own line, and the matched line's fee
+       is the whole price.
      - `procedureOrdinal` is a labelled interim that keeps the bariatric second-procedure row. It
        moves to the Contract's multi-procedure rule in Phase 23.
      - The `surgeonId` match key is dropped, because surgeon narrowing is Contract scope now. No
@@ -297,9 +399,10 @@ Model, seed and pricing come first and are re-greened before any UI.
      feeScheduleLineId" of DM-09 and the OQ-18 answer: with it, the Procedure and its Contract carry
      both the RVG code and the holder code. `lineId` absent means the line is found through its RVG
      mapping.
-   - Remove `Procedure.accRelated` (RV-20). DM-12's verification notes the field could survive as
-     information, but its only readers are the flag, chip and column RV-20 removes, and ACC is now
-     the Contract's funding source.
+   - Remove `Procedure.accRelated` (RV-20). RV-20's verification narrowed the conflict to the review
+     flag and called the chip and column harmless "unless a later phase drops `accRelated`". This
+     phase drops it: its only readers are that flag, chip and column, and ACC is now the Contract's
+     funding source, so the chip and column go with the field.
    - **Surgeon groups:** point `surgeonGroupId` at the entity Phase 17 built (`SG-COS` for COS). If
      Phase 17 left COS only as a `ContractHolderOrganisation`, use that record as the group here. Do
      **not** rename `CounterpartyKind` in this phase, because it ripples into Xero contacts,
@@ -313,34 +416,36 @@ Model, seed and pricing come first and are re-greened before any UI.
      holder. The Admin Organisations view stays, relabelled only if its copy calls it a Contract
      holder. Record the choice in PROGRESS.
 3. **Pure Contract helpers** (`domain/billing/contracts.ts`, with Vitest tests in `contracts.test.ts`):
-   - `holderKindFor(category)` gives the allowed holder kind per category:
-     - `rvgDefaultHospital`, `hospital`: hospital;
-     - `surgeonSolo`: surgeon;
-     - `surgeonGroup`: surgeon group;
-     - `insurance`: insurer;
-     - `rvgDefaultPostPaid`: the Booking's billable party.
+   - `holderKindFor(category)` and `categoryInfo(category)` read `CONTRACT_CATEGORIES` (work item
+     2): hospital for `rvgDefaultHospital` and `hospital`, surgeon for `surgeonSolo`, surgeon group
+     for `surgeonGroup`, insurer for `insurance`, and the payer named on the Booking for
+     `rvgDefaultPostPaid`. Test that every category has exactly one holder kind and a unique prefix.
 
-     Labelled reading for `rvgDefaultHospital`: the holder records whose default it is, which keeps
-     every seeded hospital-route invoice on the same counterparty. The domain model says the default
-     "does not decide who is invoiced", and the 2026-10-01 meeting said "a default contract bills the
-     patient"; Phase 21 owns that tension under OQ-67. Do not change who it bills here.
-   - `nextAaCode(category, existingCodes)`: the **only** place an AA code is made (OQ-66). It
-     returns `<prefix>-<nnnn>`, the next free number for that prefix, with prefixes `RDP` (RVG
-     Default Post-paid), `RDH` (RVG Default Hospital), `HOS` (Hospital), `SSO` (Surgeon Solo),
-     `SGR` (Surgeon Group) and `INS` (Insurance), held in one `AA_CODE_PREFIX` map. The code is
-     stamped at creation and does not follow a later re-categorise: it identifies, it does not
-     describe. Tests: deterministic, unique across prefixes, never reuses a retired or deleted
+     Labelled reading for `rvgDefaultHospital`: its holder is the hospital, which keeps every seeded
+     hospital-route invoice on the same counterparty. OQ-67 is answered (the Contract defines the
+     billable party), and the domain model now says a default Contract asks for the payer's name and
+     email, while default RVG pricing invoiced to a hospital is a Contract with that hospital as
+     billable party. How the hospital default sits with that, and with the per-procedure default RVG
+     Contracts, is unsettled (US-04.4.2's note, OQ-78). Phase 21 owns who it bills; do not change it
+     here.
+   - `nextAaCode(category, existingCodes)`: the **only** place an AA code is made (D16, OQ-66). It
+     returns `<prefix>-<nnnn>`, the next free number for that prefix, the prefix read from the
+     category's row in `CONTRACT_CATEGORIES` (`RDP`, `RDH`, `HOS`, `SSO`, `SGR`, `INS`). AA accepted
+     a short structured code but has not designed the format, so this is ours; a different format is
+     a change to this one function and the pinned seed table. The code is stamped at creation and
+     does not follow a later re-categorise: it identifies, it does not describe. Tests: deterministic, unique across prefixes, never reuses a retired or deleted
      Contract's code (the generator takes every code ever issued, which the store keeps), and the
      seeded codes are pinned.
    - `contractSearch(query, { contracts, feeScheduleLines, holderNameOf })` returns the matching
      Contract ids, each with the fields it matched on and any matched lines. It matches, case- and
      space-insensitively, the AA code, the name, the holder's name, and each line's holder code and
-     description (US-04.2.4: typing a holder code finds its Contract). An empty query returns
+     description (US-04.2.4: typing a holder code finds its Contract; US-04.1.4: admins search by
+     AA code). An empty query returns
      everything. It is built on an exported per-Contract matcher, `contractMatchesQuery(contract,
      lines, holderName, query)`, which returns the matched fields and lines or undefined. The Admin
-     catalogue uses `contractSearch` here. Phase 20's picker runs its own `matchesContractQuery`
-     inside the in-scope set only; it should wrap `contractMatchesQuery`, not re-implement the
-     matching. Both live in `src/domain/billing` and import nothing from the apps.
+     catalogue uses `contractSearch` here. Phase 20's picker (US-04.3.2: AA-code and holder-code
+     search inside the procedure and hospital filter) runs its own `matchesContractQuery` inside the
+     in-scope set only; it should wrap `contractMatchesQuery`, not re-implement the matching. Both live in `src/domain/billing` and import nothing from the apps.
      Tests: an AA code, a partial holder code ("HNZVIT" finds the CES schedule with four matched
      lines), a holder name, and no match.
    - `holderCounterparty(holder, surgeonGroups)` returns today's `CounterpartyRef`: a surgeon group
@@ -360,8 +465,10 @@ Model, seed and pricing come first and are re-greened before any UI.
      39b offers the same lines as Contract add-on billing lines, so there is one definition of "an
      add-on this Contract offers".
    - `permitsRateTime(contract)` = `pricingBasis.kind === 'rateTime'`. It is the single source of
-     the Method 3 gate that `validateCardForBilling`, `billingLineActions` and
-     `AddBillingLineSheet` now read, and `INDIVIDUAL_ARRANGEMENT_MESSAGE` stays single-sourced.
+     the Method 3 gate that `validateBookingForBilling`, `billingLineActions` and
+     `AddBillingLineSheet` now read, and `INDIVIDUAL_ARRANGEMENT_MESSAGE` stays single-sourced. It is
+     interim: Phase 24 replaces the basis with the Contract defined unit rate, and Phase 39b's
+     UNIT x RATE line reads Phase 24's rate function.
    - `selectContract` keeps today's precedence. Individual scope becomes `scope.anaesthetistIds`
      non-empty: rank 2 when it contains the anaesthetist, skipped when it does not. The holder
      test uses `holderMatches`. It reads no other scope dimension, and never the insurer or funding
@@ -389,8 +496,9 @@ Model, seed and pricing come first and are re-greened before any UI.
    - `rvgUnitsAnaesthetistRate`, or no contract: units x `anaesthetist.unitValue`.
    - `rvgUnitsContractRate`: units x `rateInForce(...)`. An agreed rate is used as is; a percent
      discount is rounded to cents here, exactly as today.
-   - `fixedSchedule`:
-     - the matched line's price in force, ex GST, x quantity. The quantity is
+   - `fixedSchedule` (US-05.2.5: the fixed fee is the total price for the procedure, not the BTM
+     units; bands and add-ons as OQ-89's recommendation):
+     - the matched line's price in force, ex GST, x quantity, is the procedure's fee. The quantity is
        `procedure.feeSchedule.quantity` when the line has a quantity rule, else 1;
      - the fee line reads `"<holderCode> · <description>"`, plus `" × n <unitLabel>"` when the
        quantity is not 1;
@@ -399,7 +507,7 @@ Model, seed and pricing come first and are re-greened before any UI.
      - B/T/M are still computed and returned (US-05.2.5);
      - no main-line match falls to the BTM path as today;
      - `FeeLine` gains an optional `feeScheduleLineId` (Phase 25 locks it).
-   - `rateTime`:
+   - `rateTime` (interim until Phase 24's Contract defined unit rate):
      - the fee is the captured rate x time lines plus any fixed ancillary lines;
      - B/T/M are recorded but not charged;
      - labelled reading: the catalogue says a Contract sets exactly one basis. Seeded Aria
@@ -419,8 +527,8 @@ Model, seed and pricing come first and are re-greened before any UI.
        replaces the "unreachable" throw for that case, with a test;
      - pass `pricingDateISO` = List date;
      - copy that says "protected default Type 1" becomes "default Contract".
-   - `validateCardForBilling.ts`:
-     - `CardBillingContext.contractPrices` becomes `feeScheduleLines` (plus `surgeonGroups` for
+   - `validateBookingForBilling.ts`:
+     - `BookingBillingContext.contractPrices` becomes `feeScheduleLines` (plus `surgeonGroups` for
        `holderCounterparty`), and `feeContextFor` passes the date and the lines;
      - the rate x time gate reads `permitsRateTime`;
      - new rule: a `rateTime` Contract needs at least one rate x time line to complete, so that a
@@ -428,11 +536,11 @@ Model, seed and pricing come first and are re-greened before any UI.
      - new rule: `feeSchedule` references must be lines on the governing Contract (single-sourced
        message).
    - `shared/capture/feeContext.ts`, `domain/seed/billing.ts`, the billing context built in
-     `store/selectors.ts` (about line 846) and the Booking detail body's fee context all pass
+     `store/selectors.ts` (about line 845) and the Booking detail body's fee context all pass
      `pricingDateISO` from the List and pass `feeScheduleLines`.
    - `fixtures.ts`: `mkContract` defaults to `{ aaCode: 'HOS-9999', category: 'hospital', holder:
      hospital, scope: all empty, pricingBasis: rvgUnitsAnaesthetistRate }`.
-6. **Seed** (`domain/seed/contracts.ts`, `seed/index.ts`, `seed/cards.ts`, `seed/history.ts`).
+6. **Seed** (`domain/seed/contracts.ts`, `seed/index.ts`, `seed/bookings.ts`, `seed/history.ts`).
    Keep every existing Contract id.
    - **AA codes:** every seeded Contract gets its `aaCode` from `nextAaCode`, applied in `CONTRACTS`
      order, so the seed is deterministic. Insert `CT-RVG-POSTPAID` straight after the nib default
@@ -446,13 +554,15 @@ Model, seed and pricing come first and are re-greened before any UI.
 
      The insert changes no selection: `selectContract` filters by holder first, and the Booking's
      billable party never matches a hospital or insurer query.
-   - Every seeded Contract has `scope.procedureTypeIds` empty (Phase 19 fills it).
+   - Every seeded Contract has `scope.procedureTypeIds` empty (Phase 19a fills it, once Phase 19 has
+     added the procedure list).
    - Every hospital-held Contract lists its holder in `scope.hospitalIds` (the five defaults, SXAP,
      Health NZ, St George's ACC and the CES HNZ schedule), so the catalogue's Scope column reads
      the hospital and Phase 20's seed assertion already holds. It narrows nothing here.
    - The five hospital defaults become `rvgDefaultHospital`, holder the hospital,
      `scope.hospitalIds = [that hospital]`, `isDefault`, and are named "<Hospital> RVG Default
-     Hospital".
+     Hospital" (for example "St George's RVG Default Hospital", replacing "St George's standard units
+     (default Type 1)").
    - nib: `insurance`, `isDefault`, `insurerIds [nib]`, named "nib insurer default".
    - SXAP: `hospital`, Southern Cross, `fundingSources ['SXAP']`, and one rate step of $26.50 from
      2024-07-01. The Decisions log 2026-07-23 figure is kept.
@@ -460,12 +570,20 @@ Model, seed and pricing come first and are re-greened before any UI.
      2026-07-01, so "Review due" shows on day one.
    - St George's ACC: `hospital`, `['ACC']`, $25.
    - COS ACC: `surgeonGroup` (COS), `['ACC']`, $24.
-   - Doyle bariatric: `surgeonSolo`, Mr Doyle, `fixedSchedule`.
-   - Aria: `rvgDefaultPostPaid`, holder `bookingBillableParty`, `rateTime`, and `anaesthetistIds
-     [Souter, Fitzgerald]`. That set covers the two seeded Aria Bookings and shows the "set of
-     anaesthetists" scope. This is a labelled reading: there is no individually-arranged category,
-     and patient-direct is the only category family whose holder is the Booking's billable party.
-     Raise it with the owner.
+   - Doyle bariatric: `surgeonSolo`, Mr Doyle, `fixedSchedule`, renamed "Bariatric fee schedule, Mr
+     P. Doyle" (today "Bariatric fixed prices, Mr P. Doyle (Type 3)"). The demo trigger, the manual
+     tests and the re-pointed recipes use this name.
+   - Aria: `rvgDefaultPostPaid`, holder `bookingBillableParty` (the payer named on the Booking, today
+     the Aria clinic billable party), `rateTime`, and `anaesthetistIds [Souter, Fitzgerald]`. That set
+     covers the two seeded Aria Bookings and shows the "set of anaesthetists" scope. This is a
+     labelled reading: there is no individually-arranged category, and patient-direct is the only
+     category family whose holder is the payer named on the Booking. Put it on the owner's review
+     list; Phase 24 re-bases it onto the Contract defined unit rate.
+     - Today Aria is `type: 2` with an agreed $26.50 per unit beside `permitsIndividualArrangement`.
+       Under `rateTime` that unit rate goes and B/T/M are not charged (work item 4). Neither seeded
+       Aria procedure has an RVG code or captured times, so parity holds; but a presenter who
+       captures times on the Mon 27 Aria Booking no longer sees time units x $26.50 beside the hourly
+       line. Log this in the phase entry; no demo script beat depends on it.
    - Funding sources and insurers above are descriptive only (work item 2); no selection reads them.
    - Drop "(Type n)" and "(default Type 1)" from every name.
    - New: `CT-RVG-POSTPAID` "RVG Default Post-paid", `rvgDefaultPostPaid`, `bookingBillableParty`,
@@ -504,10 +622,12 @@ Model, seed and pricing come first and are re-greened before any UI.
    - The store keeps every AA code ever issued (`masters.issuedAaCodes`, seeded with the seed's
      codes), so a deleted Contract's code is never handed out again.
    - Phase 17's `SG-COS` gains `billingOrganisationId: ORG.cos` (work item 2).
-   - Remove `accRelated` from `seed/cards.ts` specs and `seed/history.ts` rows.
-   - Rename the scenario marker `accRelatedCard` to `accContractCard` ("ACC procedure under St
+   - Remove `accRelated` from `seed/bookings.ts` specs (and `accRelatedBookingId`) and from
+     `seed/history.ts` rows.
+   - Rename the scenario marker `accRelatedBooking` to `accContractBooking` ("ACC procedure under St
      George's ACC Contract"). Update `store/prepayment.test.ts` and `store/billingRun.test.ts`, and
-     reword the `cosAccContractCard` detail, dropping "Type 2".
+     reword the `cosAccContractBooking` detail, dropping "Type 2", and the bariatric marker's
+     "Type 3 fixed price booking" label ("Fee schedule booking (bariatric)").
    - **Bump `PERSIST_VERSION` by one** from the value you find, with a comment line in the history
      block.
 7. **Store** (`store/contractActions.ts`, `store/mastersActions.ts`). Every action is office-only
@@ -516,8 +636,8 @@ Model, seed and pricing come first and are re-greened before any UI.
      - the input carries category, holder, scope, pricing basis, dates and review date, and **no**
        AA code: the store stamps `aaCode` from `nextAaCode` over `issuedAaCodes` and appends it there;
      - the store refuses a holder kind that does not fit the category (`holderKindFor`);
-     - it refuses `rvgDefaultHospital` and any `isDefault`, because only `createHospital` and
-       `setInsurerDirectClaims` mint defaults;
+     - it refuses a `mintedOnly` category (`rvgDefaultHospital`, read from `CONTRACT_CATEGORIES`) and
+       any `isDefault`, because only `createHospital` and `setInsurerDirectClaims` mint defaults;
      - it refuses a contract-rate basis with no step, or whose first step starts after the
        Contract's `effectiveFromISO`.
    - `editContract`:
@@ -528,7 +648,7 @@ Model, seed and pricing come first and are re-greened before any UI.
        re-categorising, re-basing away from `rvgUnitsAnaesthetistRate`, and retiring. It allows
        renaming, the review date and scope edits;
      - for any Contract, the patched record must still pass `holderKindFor`, and re-categorising
-       into `rvgDefaultHospital` or setting `isDefault` is refused (only the minting paths make
+       into a `mintedOnly` category or setting `isDefault` is refused (only the minting paths make
        defaults);
      - a basis change drops stale rates.
    - `retireContract(api, actor, id, { effectiveToISO? })` is new:
@@ -569,6 +689,9 @@ Model, seed and pricing come first and are re-greened before any UI.
      several match). `data-shot="contract-search"`.
    - Table columns: AA code (mono), Name, Category, Holder, Pricing, Scope, From, To, Review,
      Status.
+     - The Holder column is who the Contract invoices (D17); "Payer named on the Booking" for the
+       patient-direct holder.
+     - Category labels come from `CONTRACT_CATEGORIES`.
      - The protected lock icon stays on defaults.
      - Pricing reads "Anaesthetist rate", "$26.50 per unit", "10% discount", "Fee schedule · 3
        lines" or "Rate x time".
@@ -578,25 +701,29 @@ Model, seed and pricing come first and are re-greened before any UI.
      - Status pills are "Retired" (neutral), "Review due" (the `semantic.warning` tint), and
        "Upcoming price" (neutral) when any rate or line has an upcoming step. `src/theme` has no
        info colour, so do not invent one.
-   - Category filter chips above the table, and a "Show retired" toggle that is off by default.
+   - Category filter chips above the table (one per `CONTRACT_CATEGORIES` row), and a "Show retired" toggle that is off by default.
      Search, chips and the toggle combine.
-   - The header copy loses "default Type 1": protected defaults are "RVG Default Hospital and
-     insurer default Contracts".
+   - The header copy loses "default Type 1": the protected defaults are "the RVG Default Hospital,
+     insurer default and RVG Default Post-paid Contracts". The Hospitals and Insurers headers and
+     the add-hospital result say "default Contract" in place of "default Type 1".
    - The provisional notes (work item 13) show once, collapsed, under the header.
    - `data-shot="contract-catalogue"`.
 10. **Contract detail** (`apps/admin/flows/ContractEditSheet.tsx`, rebuilt as a wide desktop panel
     with sections; covers US-04.1.1, 04.1.2, 04.1.4, 04.2.1, 04.2.4 and 04.2.10):
     - **Header:** the AA code in mono beside the name, read-only, with "Assigned on save" on a new
       Contract.
-    - **Definition:** name, then category (segmented or select), then a holder picker filtered to
-      the category's holder kind (hospitals, `masters.surgeons`, `masters.surgeonGroups`,
-      insurers; organisations are no longer offered). "Booking's billable party" shows as fixed
-      text.
+    - **Definition:** name, then category (segmented or select, its options from
+      `CONTRACT_CATEGORIES` less the `mintedOnly` ones on a new Contract), then a holder picker
+      labelled "Holder (invoiced)", filtered to the category's holder kind (hospitals,
+      `masters.surgeons`, `masters.surgeonGroups`, insurers; organisations are no longer offered).
+      "Payer named on the Booking" shows as fixed text. The OQ-78 provisional note sits beside this
+      section.
     - **Scope:** multi-select chips for hospitals, surgeons, RVG codes and anaesthetists. An empty
       field reads "Any". Empty anaesthetists reads "Whole organisation". A separate **Describes**
-      group below holds insurers and funding sources, with the OQ-67 provisional note beside it.
-      Procedures from the master list arrive with Phase 19, which adds the master; no placeholder
-      field here.
+      group below holds insurers and funding sources, with a plain helper line (not a provisional
+      note; D2 is answered): "Describes the Contract. Does not change which Contracts are offered."
+      Procedures from the master list arrive with Phase 19, which adds the master, and Phase 19a
+      fills them; no placeholder field here.
     - **Pricing:**
       - basis selector;
       - for contract rate: a rate table (effective from, $ per unit or %, and a Current / Upcoming
@@ -609,15 +736,18 @@ Model, seed and pricing come first and are re-greened before any UI.
         "Holder's description" so it is clear they are references beside the AA code. On a new
         fee-schedule Contract the panel stays open after the first save, with the line table ready,
         so lines never need a close and reopen (today rows can only be added to an existing Type 3);
-      - the OQ-48 provisional note beside the pricing section.
+      - the OQ-48 provisional note beside the pricing section, and the OQ-89 note beside the line
+        table;
+      - the basis selector's fourth option reads "Rate x time" (`PRICING_BASIS_LABEL`) until Phase
+        24 replaces it with the Contract defined rate.
     - **Dates:** effective from, effective to and review date.
     - **Actions:** Save (teal primary); "Retire contract", which confirms with the unbilled-reference
       count; "Delete", only for never-used Contracts. Protected defaults show the lock notice and
       disable what the store refuses.
     - Hooks: `data-shot="contract-detail"` and `data-shot="fee-schedule-lines"`, replacing
       `contract-price-rows`.
-11. **Office billing setup** (`shared/flows/EditBillingSetupSheet.tsx`, `shared/card/OfficeBillingSetup.tsx`;
-    covers US-05.2.5):
+11. **Office billing setup** (`shared/flows/EditBillingSetupSheet.tsx`, `shared/booking/OfficeBillingSetup.tsx`;
+    keeps US-05.2.5, which now Matches, working on the reshaped lines):
     - The governing-contract select labels each option "<AA code> · <name> · <category>", no
       longer "(Type n)". It excludes retired Contracts unless one is already selected, in which case
       it shows "(retired)". It still lists every Contract otherwise, because scope narrowing and
@@ -637,7 +767,8 @@ Model, seed and pricing come first and are re-greened before any UI.
     - delete the ACC chip on mobile Balances (`AgeChip`'s `accRelated` prop);
     - delete the ACC column on web Accounts;
     - delete `accRelated` from `AccpayInvoiceRow` and its selector, and from `fieldLabels`,
-      `seed/audit.ts`, `cardActions.ts`, `fixtures.ts` and `store/btmCapture.test.ts`.
+      `seed/audit.ts`, `store/bookingActions.ts`, `fixtures.ts`, `store/bookingActions.test.ts`
+      and `store/btmCapture.test.ts`.
 
     ACC work is now visible only as the holder's ACC Contract (funding source ACC) on the Booking.
     Keep the ACC pre-op flat-fee codes copy in `AddBillingLineSheet` unchanged: Phase 39b turns the
@@ -646,25 +777,28 @@ Model, seed and pricing come first and are re-greened before any UI.
     - **Provisional notes in one place:** `src/shared/contracts/provisionalNotes.ts` (new; the
       `src/shared/contracts/` folder is new too) exports the
       still-open readings this phase builds, each with its OQ id: OQ-48 (price on the date of the
-      procedure), OQ-66 (AA code format) and OQ-67 (insurer and funding source describe, do not
-      narrow). The catalogue and the detail panel render them from there, and nowhere else spells
-      them out. An answered OQ is one deleted entry. No OQ-18 note: it is answered.
+      procedure), OQ-78 (the categories and default Contracts follow the current model, which AA is
+      reviewing) and OQ-89 (fee schedule lines keep time bands and add-ons, with the matched line's
+      fee as the price). The catalogue and the detail panel render them from there, and nowhere else
+      spells them out. An answered OQ is one deleted entry. No note for OQ-18, OQ-55, OQ-66 or OQ-67:
+      they are answered (the AA code format goes on the owner's review list instead).
     - `shared/audit/fieldLabels.ts`: labels for AA code, category, holder, scope (including
       procedures), pricing basis, rates, review date, retired, holder code, time band, add-on,
       quantity rule, prices and fee schedule. Remove the Type fields.
     - `shared/audit/auditNarrative.ts`: replace the `ContractScope` (`organisation` /
       `individualAnaesthetist`) and `ContractType2Detail` branches with narration for the new
-      holder ("Held by Southern Cross", "Held by the Booking's billable party"), scope ("Whole
+      holder ("Held by Southern Cross", "Held by the payer named on the Booking"), scope ("Whole
       organisation", "2 anaesthetists", filters), pricing basis, rate steps and price steps, so a
       History entry for a Contract edit never shows raw JSON. A Contract's history entries name it
       by AA code and name. Keep the `CounterpartyRef` branch.
-    - A `CONTRACT_CATEGORY_LABEL` / `PRICING_BASIS_LABEL` map in `src/shared/contracts/labels.ts`
-      (new), one home for the three apps.
+    - `src/shared/contracts/labels.ts` (new), one home for the three apps: `PRICING_BASIS_LABEL`,
+      `HOLDER_KIND_LABEL`, and a `contractCategoryLabel` that reads `CONTRACT_CATEGORIES` (no second
+      category list).
     - Grep `aa-prototype/src` for "Type 1", "Type 2", "Type 3", "default Type 1" and
       "permitsIndividualArrangement" in rendered strings, and fix them. Comments that describe
       history may stay.
-    - Update `DemoControlPanel.tsx` scenario text that names "Health NZ agreed rate (Type 2)" or
-      "COS ACC Type 2".
+    - Update `DemoControlPanel.tsx` and `DemoData.tsx` scenario text that names "Health NZ agreed
+      rate (Type 2)", "COS ACC Type 2" or "bariatric Type 3".
     - Update the Phase 14 registry label or text for "Trigger billing failure" if it names the
       Contract.
     - Update the `visual/admin-phase07.spec.ts` assertions and screenshot. Add Playwright shots for
@@ -689,22 +823,31 @@ normal use.
   the same organisation counterparty as before.
 - **PWA equivalent:** none needed. The effect is on the Admin Contract catalogue, and the PWA has
   no Admin. The mobile fee breakdown is unchanged in value.
+- **Phase 15a's shared "Raise sample warnings":** no change. This phase registers no warning rule,
+  so it adds no sample.
 
 ## Out of scope
 
 These Contract fields and behaviours belong to later phases. Do not add fields for them here
 (convention 15):
 
-- The procedure master, its scope chips in the editor and seeded procedure scope; RVG groups in
-  scope; base-unit overrides: 19 and 23.
-- The scope-filtered picker (by procedure and hospital) with holder-code search wrapping
-  `contractMatchesQuery`, default hospital Contract selection, removing route, payment category and
-  `Procedure.insurerId`: 20. Insurer and funding source never go on the Booking or the Patient (D2).
-- Required booking inputs, billable party, the not-on-schedule flag replacing the BTM fallback: 21.
-- The payment setting (FULL or SPLIT, US-04.2.12), invoice layout, delivery method, GST treatment: 22.
+- The procedure master, its scope chips in the editor, RVG groups in scope: 19.
+- The default RVG Contracts per procedure holding base units (US-04.4.2), the Contract base-unit
+  override, every Contract's procedure scope filled from its lines' RVG mapping, and RVG time tiers
+  as data: 19a.
+- The scope-filtered picker (by procedure, then hospital, with the default RVG Contract always
+  offered) and its AA-code and holder-code search wrapping `contractMatchesQuery`, default hospital
+  Contract selection, removing route, payment category and `Procedure.insurerId`: 20. Insurer and
+  funding source never go on the Booking or the Patient (D2).
+- Required booking inputs, the payer's name and email captured for a default or patient-direct
+  Contract, the guardian override removed (D17), the not-on-schedule flag replacing the BTM
+  fallback: 21.
+- The payment setting (FULL or SPLIT with typed $ or % shares set on the Booking, D18), invoice
+  layout, delivery method, GST treatment: 22.
 - Multi-procedure rule, including moving `procedureOrdinal` out of the line, and combination
   Contracts set against each parent procedure (US-04.2.11): 23.
-- `allowsAnaesthetistAdjustment`: 24.
+- `allowsAnaesthetistAdjustment`, and the Contract defined unit rate replacing the `rateTime` basis
+  and the hourly line (US-05.2.6, DM-46): 24.
 - Contract version history and the AUTHORISED lock: 25. US-04.1.2's "version" wording is met there;
   here, rate and price steps keep old prices and the audit trail keeps old values.
 - Contract add-on fees as billing lines on pre-op and post-op events: 39b (it reads
@@ -718,8 +861,10 @@ These Contract fields and behaviours belong to later phases. Do not add fields f
 The agent runs every item itself in the running app and reports it with evidence; none is handed
 to the owner (ROADMAP.md "Owner review: agents test themselves").
 
-- [ ] Admin, Master data, Contracts: every seeded Contract shows an AA code, a category, holder,
+- [ ] Admin, Master data, Contracts: every seeded Contract shows a short AA code, a category, holder,
       pricing and scope, and none shows "Type n". The AA codes are unique and match the seed test.
+      Every seeded invoice's counterparty is unchanged (the parity fixture), and the Aria row's
+      holder reads "Payer named on the Booking".
       The five hospital defaults, nib and RVG Default Post-paid carry the lock. Health NZ shows
       "Review due". "Show retired" is off and the category chips filter.
 - [ ] Search: "HNZVIT" finds only the CES HNZ schedule and shows "Line HNZVIT60 · Vitrectomy up to
@@ -728,9 +873,10 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       category chips.
 - [ ] New contract: the header reads "Assigned on save", and after save it shows the next AA code
       for its category. Choosing "Surgeon Group" limits the holder list to surgeon groups; "RVG
-      Default Post-paid" shows "Booking's billable party"; RVG Default Hospital is not offered. Scope
+      Default Post-paid" shows "Payer named on the Booking"; RVG Default Hospital is not offered. Scope
       chips save; an empty anaesthetists field reads "Whole organisation"; insurers and funding
-      sources sit under "Describes" with the provisional note. The AA code cannot be edited.
+      sources sit under "Describes" with its plain helper line (no provisional note). The AA code
+      cannot be edited.
 - [ ] Delete a never-used new Contract, create another: it gets a new AA code, not the deleted one.
 - [ ] A protected default refuses end-dating, re-basing, re-holding and retiring, with the store's
       message; renaming it and setting a review date both work.
@@ -742,15 +888,17 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       procedure.
 - [ ] CES HNZ schedule: take a vitrectomy (42725) Booking on Dr Souter's seeded Wed 22 Jul CES
       List, capture start and handover 75 minutes apart, and in office billing setup set its
-      Contract to "Christchurch Eye Surgery HNZ schedule". It prices `HNZVIT90` at $960.00, the read view shows
-      42725 beside "HNZVIT90 · Vitrectomy 61 to 90 min", and B/T/M are still shown. Add "GA add-on"
+      Contract to "Christchurch Eye Surgery HNZ schedule". It prices `HNZVIT90` at $960.00 as the
+      procedure's whole fee (no units x rate line), the read view shows 42725 beside "HNZVIT90 ·
+      Vitrectomy 61 to 90 min", and B/T/M are still shown. Add "GA add-on"
       and "each extra 15 min" x 2 and the total adds $370 + $200. Pick `HNZCATall` explicitly and it
       prices that line instead.
 - [ ] Retire a negotiated Contract with no unbilled references. It leaves the catalogue unless
       "Show retired" is on (still with its AA code), and it drops out of the office
       governing-contract select. The audit shows `contract.retire`.
-- [ ] The provisional notes (price date, AA code format, insurer and funding source) appear once in
-      the catalogue and beside their sections in the detail panel, and nowhere else.
+- [ ] The provisional notes (price date, categories and default Contracts, fee schedule lines)
+      appear once in the catalogue and beside their sections in the detail panel, and nowhere else.
+      No note mentions the AA code format, the billable party or insurer and funding source.
 - [ ] Every seeded fee is unchanged: the S3 figures, the S4 Beat 3 billing failure (Phase 14's
       trigger on the COS ACC Contract still fails that Booking and invoices its sibling), and the
       S5 Beat 4 end-date on "Health NZ agreed rate" leaves the Hemi Walker invoice unchanged.
@@ -761,7 +909,10 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Mobile (framed and PWA) and web Booking detail: fees unchanged. The bariatric fixed line
       reads "BAR-BYP · Laparoscopic gastric bypass".
 - [ ] `npm run shots` green, with the Phase 07 spec updated and the new shots captured.
-- [ ] Catalogue screenshots: the recipes for US-04.1.1, US-04.1.2, US-04.1.4, US-04.2.1, US-04.2.4, US-04.2.10 and US-05.2.5 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
+- [ ] Catalogue screenshots: the recipes for US-04.1.1, US-04.1.2, US-04.1.4, US-04.2.1, US-04.2.4
+      and US-04.2.10 are created or updated, any recipe this phase broke is re-pointed (US-05.2.5
+      among them), a full `npm run capture` ends with no failed recipe and no story without a
+      recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run verify:board` green, with the parity fixture
       matched.
 
@@ -770,13 +921,15 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 Mirror each change in the same section of `docs/demo-guide/master-demo-guide.html`.
 
 - **`04-presenter-cheat-sheet.md`:**
-  - rewrite "Contracts": categories, holder, scope, the four pricing bases, AA's own code on every
-    Contract, fee schedule lines with the holder's codes kept for reference and searchable, and
-    effective-dated prices with "Upcoming";
+  - rewrite "Contracts": categories, holder (the Contract always says who is invoiced), scope, the
+    pricing bases (say the fourth is being reworked into a Contract defined rate, without naming a
+    phase), AA's own short code on every Contract, fee schedule lines with the holder's codes kept
+    for reference and searchable, a fixed fee as the procedure's whole price, and effective-dated
+    prices with "Upcoming";
   - fix the "ACC route" row in "Terms not to use": use instead "the holder's ACC Contract", because
     ACC is not a route or a category;
-  - in "Contracts", add "AA code: AA's own identifier on every Contract; holder codes are
-    references beside it";
+  - in "Contracts", add "AA code: AA's own short code on every Contract, searchable; holder codes
+    are references beside it";
   - keep "Statements to avoid: ACC has its own billing route" and RFP ambiguities §12 (ACC pre-op
     flat-fee codes); add "Statements to avoid: the patient's insurer picks the Contract" (D2);
   - add two one-line tips: "show an upcoming price": open the Doyle Contract, then press "+7 days";
@@ -807,16 +960,15 @@ new screen from this phase:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) Contract categories | partial · admin-contract-types | `captured`. Re-shoot `admin-contract-types`: the catalogue with the Category column and category chips, and a `new-contract` state with the six categories offered (no Pre-paid) and the holder list filtered to the category. Highlight the category control. Drop the partial reason. Caption "New contract, choosing the category and holder" |
+| [US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) Contract categories | partial · admin-contract-types | `captured` (Verify does not hold the shot back). Re-shoot `admin-contract-types`: the catalogue with the Category column and category chips, and a `new-contract` state with the category control (no Pre-paid, and no RVG Default Hospital on a new Contract) and the holder list filtered to the category. Highlight the category control. Drop the partial reason. Caption "New contract, choosing the category and holder". The catalogue's Category column and chips show all six; the new-contract control offers five, because RVG Default Hospital is minted only with a new hospital (US-04.4.1), which the `admin-add-hospital` shot of US-04.4.1 shows |
 | [US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) Create, edit, retire Contracts | partial · admin-contracts, admin-edit-contract | `partial`. Re-shoot both: the catalogue with From, To, Review and Status ("Review due" on Health NZ), and the detail panel dates. Add a `retire` state (Retire contract confirm). Rewrite the reason to the one gap left: "Editing still changes a Contract in place; versioning is built in Phase 25." |
-| [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) AA identifier for every Contract | absent · placeholder, no shots | Add the shots, `captured`. Shots: `aa-code` (catalogue with the mono AA code column, highlight the column), a `search` state typing "HNZVIT" with the matched line "Line HNZVIT60 · Vitrectomy up to 60 min", and the detail header showing "Assigned on save" on a new Contract. Caption "Every Contract has AA's own code; holder codes are references beside it" |
-| [US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder | `partial`. Re-shoot: the detail panel Definition and Scope sections (holder picker filtered to the category, chips for hospitals, surgeons, RVG codes and anaesthetists, "Whole organisation" when empty, and the "Describes" group). Rewrite the reason: "The procedures filter arrives with Phase 19 and the scope narrowing the picker with Phase 20." Phase 19 and Phase 20 move it on |
-| [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | `captured`. Re-shoot as `admin-price-rows` (keep the name) on `[data-shot=fee-schedule-lines]` for the CES HNZ schedule: holder code, description, RVG mapping, time band, add-on, quantity rule, ex GST and inc GST. Drop the partial reason. Caption "Each line keeps the holder's own code and description" |
+| [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) AA identifier for every Contract | absent · placeholder, no shots | Add the shots, `captured`. Shots: `aa-code` (catalogue with the mono short AA code column, highlight the column), a `search` state typing a seeded AA code (`SSO-0001` finds the Doyle Contract) and one typing "HNZVIT" with the matched line "Line HNZVIT60 · Vitrectomy up to 60 min", and the detail header showing "Assigned on save" on a new Contract. Caption "Every Contract has AA's own short code, searchable; holder codes are references beside it" |
+| [US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder (plus the organisational and individual scope shots the catalogue now lists first) | `partial`. Re-shoot: the detail panel Definition and Scope sections (the "Holder (invoiced)" picker filtered to the category, "Payer named on the Booking" for RVG Default Post-paid, chips for hospitals, surgeons, RVG codes and anaesthetists, "Whole organisation" when empty, and the "Describes" group). Caption "The holder is who the Contract invoices; scope says where it applies". Rewrite the reason: "The procedures filter is filled by Phase 19a and narrows the picker in Phase 20." Phases 19a and 20 move it on. Its `images` still list two hand-added `assets/US-04.2.9/admin-contract-scope-*.png` shots from the retired US-04.2.9 (the old Organisational or Individual sheet); the capture keeps hand-added images, so add `scope-organisational` (catalogue Scope column reading "Organisation" and "2 anaesthetists") and `scope-individual` (a new Contract narrowed to one anaesthetist) states to this recipe, and delete those two stale entries from US-04.2.1's frontmatter, then `npm run check` |
+| [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | `captured` (OQ-89 is built as its recommendation, so it does not hold the shot back). Re-shoot as `admin-price-rows` (keep the name) on `[data-shot=fee-schedule-lines]` for the CES HNZ schedule: holder code, description, RVG mapping, time band, add-on, quantity rule, ex GST and inc GST. Drop the partial reason. Caption "Each line keeps the holder's own code and description" |
 | [US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) Pricing effective from a date | absent · placeholder, no shots | Add the shots, `captured`. Shot `upcoming-price`: the Doyle Contract (`BAR-BYP`) line showing "$2,800.00 current" and "Upcoming from 28 Jul 2026 · $2,950.00", highlight that price cell. A second state after the existing clock "+7 days" press (or "Procedure day · 28 Jul") if the recipe can press it, showing $2,950.00 current. Caption "Current and upcoming prices are both visible" |
-| [US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | `captured`. Re-shoot `admin-fixed-price`: office billing setup on a fee-schedule Booking with the "Schedule line" select, the read view showing the RVG code beside the matched line "BAR-BYP · Laparoscopic gastric bypass", add-ons and the B/T/M still shown. Highlight the matched line. Drop the partial reason |
 
 **Recipes this phase breaks.**
-- `US-04.2.2` (pricing basis, covered by Phase 20), `US-04.2.4`, `US-04.2.5`: they select
+- `US-04.2.2` (pricing basis, covered by Phase 24), `US-04.2.4`, `US-04.2.5` (Phase 23): they select
   `[data-shot=contract-price-rows]`, which work item 10 replaces with `fee-schedule-lines`, and click
   rows by name (`tr:has-text("Bariatric fixed prices")`, `"St George's standard units"`,
   `"Southern Cross Affiliated Provider"`, `"Aria Skin and Laser Clinic"`). The seed renames the
@@ -832,9 +984,15 @@ new screen from this phase:
 - `US-05.5.1` (ACC contract, hook `office-billing-setup-1`) and `US-05.5.2`: ACC loses its flag, chip
   and column (work item 12) and the Contract names change. Re-check the captions. The ACC pre-op
   help text is kept.
-- The Admin Master data recipes that open the Contracts tab (`FT-04.1`, `US-04.2.3`, `US-04.2.6`,
-  `US-04.4.1` and similar): the wide detail panel replaces the old sheet, so re-point any
-  `[role=dialog]` selector the `--dry` run fails on.
+- The Admin Master data recipes that open the Contracts tab (`FT-04.1`, `US-04.1.3`, `US-04.4.1`,
+  `US-13.4.1` and similar; `US-04.2.9` is Retired and its recipe is not captured): the wide detail
+  panel replaces the old sheet, so re-point any `[role=dialog]` selector the `--dry` run fails on.
+- `US-05.2.5` (fixed fee pricing, `admin-fixed-price` on `/admin/day/2026-07-14/bookings/BK0028`,
+  highlight `[data-testid=booking-calculation]`): it left this phase's covers because it now
+  Matches, but the reshape changes its shot. Re-shoot it so the calculation shows the fixed line
+  "BAR-BYP · Laparoscopic gastric bypass" as the procedure's whole fee with B/T/M still recorded, set
+  it `captured`, and drop its stale partial reason (it still names "Type 3" and "no time band or
+  add-on"). Check the Booking id with `--dry`.
 - The Phase 07 Playwright spec (`visual/admin-phase07.spec.ts`) is separate from the capture
   recipes, and work item 13 already updates it.
 
@@ -867,10 +1025,11 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
   - scope filters change no selection outcome yet, except the anaesthetist rank;
   - every seeded invoice goes to the same counterparty kind and id as before (COS stays
     `{ kind: 'organisation', id: ORG.cos }`; Aria stays the Aria clinic billable party).
-- **Insurer and funding source (D2, OQ-67):** no selection, picker, validator or billing path reads
+- **Insurer and funding source (D2, OQ-55):** no selection, picker, validator or billing path reads
   `scope.insurerIds` or `scope.fundingSources`; no Booking, Procedure or Patient field holds a
   funding source; `SCOPE_NARROWING_DIMENSIONS` excludes both.
-- **AA code (US-04.1.4, OQ-66):** made only by `nextAaCode`; stamped on every create path (seed,
+- **AA code (US-04.1.4, D16):** a short structured code made only by `nextAaCode`, its prefix from
+  `CONTRACT_CATEGORIES`; stamped on every create path (seed,
   `createContract`, `createHospital`, `setInsurerDirectClaims`); unique; immutable through the store
   even with a raw patch; never reused after delete; distinct from the system id and from holder
   codes; shown in mono in the catalogue, the detail and the office select.
@@ -893,8 +1052,17 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
   defaults (not end-dated, re-based, re-held or retired), only minted defaults are `isDefault`,
   retire and delete refusals, holder codes unique per Contract, and every write goes through
   `mutate()` with an audit entry.
-- **Provisional notes:** the three open readings live only in `provisionalNotes.ts`; there is no
-  OQ-18 note.
+- **Categories are data (US-04.1.1 Verify, OQ-78):** the six categories, their holder kinds,
+  prefixes and the `mintedOnly` flag live only in `CONTRACT_CATEGORIES`; no component, store action
+  or billing path branches on a category id outside its helpers and the two minting paths, and no
+  second category list exists in the apps.
+- **Billable party (D17):** the holder is documented as the billable party the Contract defines;
+  no counterparty moved (the parity fixture), and the patient-direct holder reads "Payer named on
+  the Booking" in every surface.
+- **Fixed fee (US-05.2.5, OQ-89):** under a fee schedule the matched line's fee is the whole price,
+  with no units x rate line beside it; bands pick the line and add-ons add their own lines.
+- **Provisional notes:** the three open readings (OQ-48, OQ-78, OQ-89) live only in
+  `provisionalNotes.ts`; there is no note for OQ-18, OQ-55, OQ-66 or OQ-67.
 - **ACC:** no ACC special case is left anywhere (flag, chip, column, `accRelated`, or copy
   implying an ACC route). The ACC pre-op flat-fee codes survive.
 - **Copy and design:**
@@ -912,41 +1080,58 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): the defaults built for open questions, provisional readings, anything logged
-  rather than fixed, and the screens worth a look, each with its route and persona.
-- **Catalogue screenshots result:** the recipes filled in (US-04.1.4, US-04.2.10) and changed (the other five covered items, plus the broken ones such as US-04.2.2 and US-04.2.5), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and the partial reasons handed on: US-04.1.2 to Phase 25 (versioning) and US-04.2.1 to Phases 19 and 20 (procedures filter, picker narrowing).
+  themselves"): the provisional readings built for open questions (OQ-48 price date, OQ-78 the
+  categories and default Contracts, OQ-89 bands and add-ons on fixed fee lines), the AA code format
+  we chose for D16 (`<category prefix>-<nnnn>`, until Greg designs the Contract), the Aria category
+  reading (and its dropped $26.50 unit rate), RVG Default Hospital made only with a new hospital
+  (not offered on New contract), the RVG Default Hospital holder reading handed to Phase 21, anything logged rather than
+  fixed, and the screens worth a look (Admin, Master data, Contracts: the catalogue, a search for
+  "HNZVIT", the Doyle detail with its Upcoming price; office billing setup on the bariatric Booking),
+  each with its route and persona.
+- **Catalogue screenshots result:** the recipes filled in (US-04.1.4, US-04.2.10) and changed (the
+  other four covered items, plus the broken ones such as US-04.2.2, US-04.2.5 and US-05.2.5), the
+  `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after,
+  and the partial reasons handed on: US-04.1.2 to Phase 25 (versioning) and US-04.2.1 to Phases 19a
+  and 20 (procedures filter, picker narrowing).
 - **Status row:** add Phase 18 (Contract model) as DONE with the date, or IN PROGRESS after session 1
   with what remains.
 - **Phase entry** in the template:
-  - the drift-check result (items; US-04.1.4 and US-04.2.1 status; OQ-18 and OQ-55 answered and how
-    they were built; OQ-48, OQ-66 and OQ-67 status);
+  - the drift-check result against `3d3a18c` (items; US-04.1.1, US-04.1.4 and US-04.2.1 status;
+    OQ-18, OQ-55, OQ-66 and OQ-67 answered and how they were built; OQ-48, OQ-78 and OQ-89 status;
+    US-05.2.5 now Matches and out of this phase's covers);
   - what Phase 17's surgeon-group entity was, and how COS maps to it;
   - the AA code format and the seeded id to code table;
+  - the `CONTRACT_CATEGORIES` table as built;
   - the parity fixture path and its result;
   - the `PERSIST_VERSION` bump;
   - the review pass;
-  - the handoffs to 19 (the procedure master fills `scope.procedureTypeIds` and adds its editor
-    chips; RVG groups in scope), 20 (scope narrows the picker by procedure and hospital, reading
-    `SCOPE_NARROWING_DIMENSIONS`; its in-scope holder-code search wraps `contractMatchesQuery`;
-    RVG Default Post-paid becomes selectable), 21 (the BTM fallback is still in place), 22 (the payment setting), 23
-    (`procedureOrdinal` on the line; combination Contracts list each parent in
-    `scope.procedureTypeIds`), 25 (rate and price steps and `feeScheduleLineId` to lock), 39b
-    (`addOnLinesInForce` and the CES add-on lines) and 42 (the organisations master behind surgeon
-    groups).
+  - the handoffs to 19 (the procedure master retypes `scope.procedureTypeIds` and adds its editor
+    chips; RVG groups in scope), 19a (fills every Contract's `scope.procedureTypeIds` from its lines'
+    RVG mapping; the per-procedure default RVG Contracts take a row in `CONTRACT_CATEGORIES` or an
+    existing one; the base-unit override), 20 (scope narrows the picker by procedure then hospital,
+    reading `SCOPE_NARROWING_DIMENSIONS`; its in-scope AA-code and holder-code search wraps
+    `contractMatchesQuery`; RVG Default Post-paid becomes selectable), 21 (the payer named on the
+    Booking is captured for `bookingBillableParty`; who the RVG Default Hospital bills; the guardian
+    override; the BTM fallback is still in place), 22 (the payment setting), 23 (`procedureOrdinal`
+    on the line; combination Contracts list each parent in `scope.procedureTypeIds`), 24 (the
+    `rateTime` basis and `permitsRateTime` become the Contract defined unit rate), 25 (rate and price
+    steps and `feeScheduleLineId` to lock), 39b (`addOnLinesInForce` and the CES add-on lines) and 42
+    (the organisations master behind surgeon groups).
 - **Decisions log:**
   - (a) **Supersedes the 6th review #3 and 7th review A5/B3 ACC advisory**: `accRelated` and the
     review flag, chip and column are removed (RV-20; US-05.5.1). ACC is the holder's Contract with
     funding source ACC.
   - (b) **Amends "Contract-holder placements (seed)" (2026-07-23):**
     - COS is a Surgeon Group holder;
-    - Aria is `rvgDefaultPostPaid` with holder "Booking's billable party", pricing basis rate x
-      time, and a two-anaesthetist scope (the labelled category reading);
+    - Aria is `rvgDefaultPostPaid` with holder "Payer named on the Booking", pricing basis rate x
+      time (interim), and a two-anaesthetist scope (the labelled category reading);
     - the ACC Contracts are ordinary Hospital and Surgeon Group Contracts with funding source ACC.
   - (c) **Protected default vocabulary:** "default Type 1" becomes "RVG Default Hospital or insurer
     default". The invariant is unchanged. RVG Default Post-paid is also protected.
   - (d) **Price in force = date of the procedure (the List date)**, for both rate steps and line
     prices (OQ-48 recommendation, Greg's lean; provisional while OQ-48 is open).
-  - (e) **Rate x time basis charges no RVG units** and needs a rate x time line to complete.
+  - (e) **Rate x time basis is an interim** (US-05.2.6 now a Contract defined unit rate, DM-46): it
+    charges no RVG units and needs a rate x time line to complete; Phase 24 replaces it.
   - (f) **Holder codes are references on the line (OQ-18 answered):** a Procedure and its Contract
     carry both the RVG code and the chosen line's holder code; the line is office-chosen or found
     through its RVG mapping; holder codes are searchable. Record that the 2026-07-22 Type 3 BTM
@@ -955,8 +1140,16 @@ entry, run the standard **adversarial review-and-fix pass (PROGRESS convention 1
     invoices `SurgeonGroup.billingOrganisationId`, so COS stays the `ORG.cos` counterparty and Xero
     contact. Organisations are no longer Contract holders but the master survives (Phase 42 gives it
     retire and reinstate as a surviving master); any `CounterpartyKind` change is out of scope.
-  - (h) **AA code (US-04.1.4):** `<category prefix>-<nnnn>` from one generator, stamped at creation,
-    immutable and never reused; it identifies, it does not follow a re-categorise (OQ-66
-    recommendation; provisional while OQ-66 is open).
-  - (i) **Insurer and funding-source scope are descriptive data** (D2/OQ-55 answered; OQ-67 open):
-    stored and shown, read by no selection.
+  - (h) **AA code (US-04.1.4, D16 answered):** a short structured code, `<category prefix>-<nnnn>`,
+    from one generator, stamped at creation, immutable and never reused; it identifies, it does not
+    follow a re-categorise. The format is ours until Greg designs the Contract.
+  - (i) **Insurer and funding-source scope are descriptive data** (D2, OQ-55 answered): stored and
+    shown, read by no selection.
+  - (j) **The holder is the billable party the Contract defines** (D17, OQ-67 answered): no
+    separate billable-party field; no counterparty changes in this phase; Phase 21 builds the payer
+    capture and removes the per-Booking override.
+  - (k) **Categories are one data table** (US-04.1.1 Verify; OQ-78's recommendation, provisional):
+    the catalogue's six categories and its default-Contract model, held in `CONTRACT_CATEGORIES` so
+    Greg's review is a table edit.
+  - (l) **A fixed fee is the whole price; lines keep bands and add-ons** (US-05.2.5; OQ-89's
+    recommendation, provisional).

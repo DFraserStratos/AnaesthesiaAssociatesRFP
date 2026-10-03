@@ -1,139 +1,111 @@
 # Prototype map: `aa-prototype/src/shared` + `src/theme`
 
-> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+Paths are relative to `aa-prototype/src/` unless prefixed. Read from code at HEAD (after Phase 15a). "Booking" = old "Card" (renamed Phase 15). Line numbers are anchors, approximate.
 
-All paths relative to `aa-prototype/src/` unless prefixed. Line numbers are approximate anchors from the code as read.
+**Orientation.** `shared/` has NO routes of its own. It holds UI and logic reused by the three apps (mobile = anaesthetist PWA/phone, web = anaesthetist desktop, admin = office). Centrepiece is the **Booking detail body** (`shared/booking/BookingDetailBody.tsx`): one component rendering a booked case (patient, scheduled time, attachments, notes for office, one BTM capture block per procedure, office billing setup, copy / cancel / post-op, pre-payment banner, mark complete / amend, History). Three thin chrome wrappers mount it: `apps/mobile/screens/BookingDetailScreen.tsx` (route `/mobile/lists/:listId/bookings/:bookingId`, `apps/mobile/routes.tsx:127`), `apps/web/screens/BookingDetailView.tsx` (`/web/lists/:listId/bookings/:bookingId`, `router.tsx:77`), `apps/admin/screens/AdminBookingDetail.tsx` (`/admin/day/:dateISO/bookings/:bookingId`, `router.tsx:94`). Platform differences (bottom sheet vs dialog, one column vs 12-col grid, fee shown or not) come through `useSurface()` (`shared/surface`). The `Actor` (`role` anaesthetist | office, `source`) decides editability and whether money shows. All writes call audited store actions (`store/lifecycle.ts`, `bookingActions.ts`, ...); fee maths is pure `domain/billing`. Everything stateful is a store hook; shared components hold only draft/UI state.
 
-**Orientation.** `shared/` holds UI and logic used by two or three of the apps (mobile, web anaesthetist, admin/office). It has NO routes of its own. Its centrepiece is the **Card detail** (`shared/card/CardDetailBody.tsx`): one component that renders a booked case ("Card") with patient, times, attachments, notes, per-procedure BTM (Base/Time/Modifier units) capture, billing lines, price override, copy/cancel/post-op, pre-payment gate and mark-complete. Mobile (`apps/mobile/screens/CardDetailScreen`), web (`apps/web/screens/CardDetailView`) and admin (`apps/admin/screens/AdminCardDetail`) are thin chrome wrappers. Platform differences (bottom sheet vs dialog, one column vs two-column grid, whether a fee is shown) are injected via `useSurface()` (`shared/surface`). The actor's role (`anaesthetist` / `office`) decides what is editable and whether money is shown. All writes call audited store actions in `store/` (`editCard`, `editProcedure`, `completeCard` ...); maths is pure in `domain/billing`. Also here: Add-card flows (manual form + simulated photo OCR + simulated NHI lookup), audit-trail presentation (`shared/audit`), formatting helpers, demo-clock shortcuts. `theme/` = tokens, status colours, motion, haptics, mobile gradient (visual only).
-
-**Contents**
-1. Routes/screens (none) and who mounts what
-2. Surface seam (`shared/surface`)
-3. Card detail body (`shared/card`)
-4. Capture blocks (`shared/capture`)
-5. Flows and sheets (`shared/flows`)
-6. Audit presentation (`shared/audit`)
-7. Schedule row, status components, UI primitives, format
-8. Demo/simulator affordances
-9. Business rules and validations index
-10. Stubbed / hardcoded / visual-only
-11. Theme (tokens only)
+## Contents
+1. Surface seam (`shared/surface`)
+2. Booking detail body (`shared/booking`)
+3. BTM capture suite (`shared/capture`)
+4. Flows and sheets (`shared/flows`)
+5. Attachments, audit/History, legacy redirect
+6. Schedule row, status components, ui primitives, format
+7. Demo affordances (`demoTriggers`, `demoClockShortcuts`, DemoBadge, simulated pickers)
+8. Theme (tokens only)
+9. Stubbed / hardcoded / visual-only / absent (checklist for reviewers)
 
 ---
-## 1. Routes / screens
-`shared/` defines no routes. Consumers (from grep of `apps/`, `shell/`, `pwa/`):
-- `CardDetailBody`: `apps/mobile/screens/CardDetailScreen.tsx`, `apps/web/screens/CardDetailView.tsx`, `apps/admin/screens/AdminCardDetail.tsx`.
-- `AddCardFlow`: `apps/web/screens/ListDetailView.tsx`, `apps/admin/flows/PhoneAdviceBooking.tsx`, `apps/mobile/routes.tsx`, `apps/mobile/components/SlideStack.tsx`.
-- `RequestCoverSheet`: `apps/web/WebApp.tsx`, `apps/mobile/routes.tsx`, `apps/mobile/screens/AvailabilityScreen.tsx`, `SlideStack.tsx`.
-- `SubmitListSheet`: `apps/web/screens/ListDetailView.tsx`, `apps/mobile/screens/ListDetailScreen.tsx`.
-- `HistorySheet`: `apps/admin/screens/ReviewScreen.tsx`, `apps/admin/components/ListDrawer.tsx` (and inside CardDetailBody, so all three apps).
-- `ListRow`: `apps/admin/screens/BillingMonitorScreen.tsx`, `apps/mobile/screens/ForwardListsScreen.tsx`.
-- `StatusLegend`: `apps/web/screens/ListsScreen.tsx`, `apps/admin/components/DayGrid.tsx`.
-- `SuccessOverlay`: mobile `ListDetailScreen`, admin `flows/ReassignListFlow.tsx`.
-- `demoClockShortcuts`: `apps/demo/DemoControlPanel.tsx`, `shell/DemoClockMenu.tsx`, `pwa/PwaDemoPanel.tsx`.
-- Audit helpers (`coalesceAudit`, `actionLabel`...): `apps/admin/screens/AuditViewer.tsx` + `HistoryTimeline`.
-- `SurfaceProvider` mounted in `apps/web/WebApp.tsx`, `apps/admin/AdminApp.tsx`; mobile uses the default mobile surface.
+## 1. Surface seam (`shared/surface`)
+- `context.ts`: `Surface {variant 'mobile'|'web', Overlay, BookingLayout, BookingTotal, Pair}`; `useSurface()` throws outside provider. Slots type `BookingLayoutSlots` (header, history, banners, context, capture, actions, summary, completeBar, overlay).
+- `SurfaceProvider.tsx`: MOBILE_SURFACE = `Overlay: BottomSheet`, `BookingTotal: () => null` (phone never shows fee), `Pair` = stacked. WEB_SURFACE = `Overlay: Dialog`, `BookingTotal: BookingTotalPanel`, `Pair` = 2 equal columns. Admin uses the web surface (office sees fee).
+  - `MobileBookingLayout`: one scroll column, masthead folds after 24px scroll (unfold at 6), pinned dock holds `summary(completeBar)` or the bar; publishes `--aa-dock-height`; `DockSpacer` tail; rides above keyboard (`--aa-keyboard-inset`).
+  - `WebBookingLayout`: 12-col grid, capture span 8, sticky right rail span 4 = total panel + separate complete bar, then context + actions. Completion overlay `position:fixed`.
+- `BottomSheet.tsx` (scrim + slide-up 320ms, role=dialog, handle/scrim close); `Dialog.tsx` (centred, Escape/scrim close).
+- NB: comments in `context.ts` / `BtmCaptureBlock` mention "Fee / Units / Off" total modes. No such mode switch exists in shared code (grep: none). Total is always fee + units on web, nothing on phone.
 
-## 2. Surface seam: `shared/surface/`
-- `context.ts`: `Surface { variant: 'mobile'|'web'; Overlay; Footer; CardLayout; CardTotal; Pair }`; `useSurface()` throws outside a provider. Types `CardLayoutSlots` (header, history, banners, context, capture, actions, summary, completeBar, overlay), `CardTotalProps { units, fee, lines, rateLabel, overrideNote, action }`, `CardTotalLine`.
-- `SurfaceProvider.tsx`: two bundles. Mobile (~l.301): `Overlay=BottomSheet`, `CardTotal: () => null` (phone never shows a fee), `Pair=MobilePair` (stack). Web (~l.309): `Overlay=Dialog`, `CardTotal=CardTotalPanel`, `Pair=WebPair` (side by side). `MobileCardLayout` (l.42): single scroll column, masthead folds on scroll (thresholds), pinned completion dock, publishes `--aa-dock-height` CSS var, reads `--aa-inset-bottom`. `WebCardLayout` (l.184): 12-col grid, banners span 12, capture span 8, sticky commit rail span 4 (calculation + complete bar + patient/time/attachments/notes + actions).
-- `BottomSheet.tsx` (slide-up 320ms, scrim, drag handle), `Dialog.tsx` (centred, Escape/scrim closes).
-- Stale comments mention "Fee / Units / Off" calculation modes (`context.ts` l.96/122, `BtmCaptureBlock` l.57). No such mode switch exists in code (grep found none): the fee is shown by role only.
+## 2. Booking detail body (`shared/booking`)
+Props: `bookingId, actor, onBack, onCopied(newId), header?`. Store reads: `schedule.bookings/lists/procedures/billingLines`, `masters`, `audit`, `prepaymentStatusFor`, `useToday`.
+- **Editability** (`BookingDetailBody.tsx:313`): `canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'DRAFT' || actor.role === 'office')`. So anaesthetist: own DRAFT only; office: DRAFT and SUBMITTED, never AUTHORISED. `canCapture = canEdit && !booking.completed`. Mirrors store `editRefusal` (`store/lifecycle.ts`).
+- **Fee shown** only when `actor.role !== 'anaesthetist'` (:135).
+- **Live validation** (:174): `validateBookingForBilling(booking, procedures, ctx)` (`domain/billing/validateBookingForBilling.ts:104`); failures per `procedureId`+`field`. Rendered only after a refused Mark complete (`showValidation` latch), then live-clear; first failing control scrolled/focused via `data-validation-fields` attrs (:352-400).
+- **Sections** (context slot): Patient (NHI badge via `nhiBadge`, DOB + age at demo today, phone or "Not recorded", Edit -> `EditPatientSheet`); Scheduled time with -5/+5 min stepper (`shiftTime`, :64, calls `editBooking {scheduledTime}`; clamps 00:00 to 23:55); Source line (`BOOKING_SOURCE_LABELS`, DM-39, display only, only if `booking.source` set); Attachments (`AttachmentStrip` + `AddAttachmentSheet`, canEdit only); Notes for the office (textarea, saved on blur via `editBooking {notes}`; read-only text when not canEdit).
+- **Capture slot**: per procedure (sorted by id, ordinal = index+1): `BtmCaptureBlock`; office actor also gets `OfficeBillingSetup`. "Add another procedure" (`addProcedure`) when canCapture.
+- **Banners**: cancelled (reason + "excluded from completion count and billing"); copied-from banner (if `copiedFromBookingId` and not completed); post-op addendum banner; pre-payment banner; error; complete-error + booking-level failures.
+- **Pre-payment banner** (:464-515): from `prepaymentStatusFor(state, bookingId)` (`store/selectors.ts:372`): `required | outstanding | paid | none`; text from `domain/warnings.ts` (`PREPAYMENT_REQUIRED_TEXT`, `PREPAYMENT_UNPAID_TEXT`). Warning only: "never a block". Office, status `required`, canEdit: button "Raise pre-procedure invoice" -> `raisePreProcedureInvoice` (`store/prepaymentActions.ts:51`).
+- **Actions**: Copy booking (`copyBooking`, new Booking for same patient/list; calls `onCopied`); Cancel booking (opens `CancelBookingSheet`); on `list.state === 'AUTHORISED'` and not already an addendum: "Add post-op event" -> `addPostOpAddendum` (`store/bookingActions.ts:290`), success message says it lands on today's free session for the anaesthetist; original stays immutable.
+- **Complete / amend**: `CompleteBar` (shown if not cancelled and (completed or canCapture)). `completeBooking` (`store/lifecycle.ts:115`) refuses on cancelled, integration actor, edit rights, already completed, validation blockers. Success -> `CompletionOverlay` (1050 ms auto-dismiss at :405, or tap), then `onBack`. Amend -> `uncompleteBooking` (:164), only if `canEdit` (so only while List DRAFT for anaesthetist; office also on SUBMITTED).
+- **Totals** (:191-250): `bookingFee` sum; breakdown rows per procedure when >1 else per fee line when >1; rate label `FEE @ $x.xx/UNIT` or `FIXED CONTRACT PRICE`, shown only when all procedures agree; override note ("Override applied · was $x", or "on n of m procedures"). Additional procedures labelled "Time units only".
+- **History**: "History" link opens `HistorySheet` with entity ids = booking + its procedures + billing lines + REMOVED procedures/lines recovered from `procedure.remove` audit snapshots (:259). Multi-procedure bookings get per-row scope labels "Procedure n · desc".
+- `OfficeBillingSetup.tsx`: office-only summary card per procedure (Route via `ROUTE_LABELS`, Insurer, Category/Payer for billableParty, Contract name, Reference or "Missing" via `billingReferenceMissing`, Override label, Funders "n of m lines reallocated"). Buttons (if canEdit): "Edit billing setup", "Price override", "Funder allocation" -> three sheets (section 4).
+- Tests: `BookingDetailSource.test.tsx` (source line).
 
-## 3. Card detail body: `shared/card/CardDetailBody.tsx`
-Props `{cardId, actor, onBack, onCopied, header?}`. Reads store: card, lists, procedures, billingLines, masters, `prepaymentStatusFor`, audit, `useToday`.
+## 3. BTM capture suite (`shared/capture`)
+`BtmCaptureBlock.tsx` per procedure, order fixed: header (PROCEDURE n if >1, description or "Operation to capture", Edit [list DRAFT only: `editable = list.state === 'DRAFT'` at :119, so office cannot Edit via this link on SUBMITTED] / Remove [ordinal>1, canCapture]) -> read-only context line (route chip `Hospital / contract holder | Billable party | Insurer (direct claim) | Route not set`, then contract name, insurer, billable party, billing reference) -> additional-procedure note ("bills for time units only; base and modifier units stay on the first procedure") -> `[AsaCard | ProcedureCodeCard]` -> `TimesCard` -> `UnitsCard` -> `[OverrideCard | BillingLinesCard]` -> `NotesCard` -> "Also outstanding" failures not anchored to a card. Write strategy: write-through per tap (each tap = one audited `editProcedure`), free text on blur/Save.
+- `feeContext.ts`: `procedureFee` wraps `domain/billing/fee.ts feeFor` (:180) with the procedure's STORED `governingContractId` (never auto-suggest), ordinal (Type 3 second-procedure pricing), non-rvg lines; `bookingFee` sums units + total (rounded cents).
+- `AsaCard`: segmented AS1..AS4 shown as I..IV; writes `asaClass`; caption "ASA III seeds +n modifier units" from `ASA_SEED_UNITS` (`domain/billing/modifierCodes.ts:137`). Disabled on additional procedure. Supports none selected.
+- `ProcedureCodeCard` + `CodePickerSheet`: RVG code picker (search code/description, grouped by `anatomicalSite`); pick writes `rvgBaseCode` and CLEARS `baseUnitsSelected`/`baseUnitsCaptured`. Range codes show min-max steppers writing `baseUnitsSelected` (clamped). Caption when base code absorbs P1.
+- `TimesCard`: "Start now"/"Finish now" stamp the DEMO CLOCK (`clockISO`); finish stamp falls back to start+5 min if <5 min elapsed; nudges -5/+5 keep >=5 min gap; fields `anaestheticStartISO`, `handoverISO`; string-maths in `timeIso.ts` (never Date->UTC). Validation messages (domain): "Record the anaesthetic start time.", "Record the handover time.", "Handover must be after the anaesthetic start." (`validateBookingForBilling.ts:140-149`).
+- `UnitsCard`: B / T / M rows from calculator `BtmBreakdown`; step writes `{units: resolved±1 (floor 0), source:'overridden'}` to `baseUnitsCaptured | timeUnitsCaptured | modifierUnitsCaptured`; "Adjusted manually · Use seeded value" resets. B and M not steppable on additional procedures. T caption: "part intervals round up (assumption)". M caption lists seeded composition (refused/absorbed codes excluded).
+- `ModifierChips` (+ `modifierLabels.ts`): bands from domain `modifierBandOf` (PA, A, OB exclusive -> segmented controls; AS belongs to AsaCard); free-stacking codes PA5, ASE, P1, AI1, PO1, PO2 as chips; `toggleModifierCode` swaps siblings in one tap; codes absorbed by base code shown struck-through with domain refusal reason. Caption: "Modifier values are demo-plausible within the RFP's stated ranges, not an authoritative NZSA schedule." (HARDCODED demo values in domain `MODIFIER_CODES`.)
+- `OverrideCard` (anaesthetist-grade): modes None / Charge (fixedFee, amount>0) / Adjustment (dollarAdjustment, amount != 0); MANDATORY reason; Save writes `priceOverride`. % adjustment is office only (`PriceOverrideSheet`); card shows it read-only.
+- `BillingLinesCard` + `AddBillingLineSheet`: non-RVG lines only. Add: "Fixed" (description, amount>0) or "Rate x time" (hours, rate; live preview `roundToCents`), rate x time only if governing `contract.permitsIndividualArrangement`, else disabled with `INDIVIDUAL_ARRANGEMENT_MESSAGE` (`validateBookingForBilling.ts:39`). Funder-override lines show "Billed to <counterpartyName>" and hide Remove for anaesthetist. Hint text: "ACC pre-operative assessment uses its own flat-fee code set (CS250, CS260, CS70)". Store: `addBillingLine` (`billingLineActions.ts:46`), `removeBillingLine` (:300).
+- `NotesCard`: Int notes / Op notes (`intNotes`, `opNotes`), commit on blur.
+- `BookingTotalPanel` (web rail only): ink panel, units + fee tick via `useTickingValue` (320ms rAF tween, green flash, honours reduced motion), rate label, breakdown lines, override note, embeds action.
+- `CompleteBar`: teal "Mark complete" or green completed bar with "Amend" link (if canAmend). `CompletionOverlay`: `SuccessOverlay` "Booking complete" + `n units · $x.xx` only if `showCalculation` (office).
+- `ui.tsx`: `CaptureSection`, `StepperButton`, `NudgeButton`, `FailureNotes` (verbatim domain failure messages), `Caption`.
 
-**Permission/state model (l.314):** `canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state==='DRAFT' || actor.role==='office')`; `canCapture = canEdit && !card.completed`. So: anaesthetist edits own DRAFT only; office edits DRAFT and SUBMITTED; AUTHORISED locked for all. Mirrors `store/lifecycle.ts:48 editRefusal` (also blocks non-owner anaesthetist, integration on non-DRAFT). `showCardTotal = actor.role !== 'anaesthetist'` (l.134): anaesthetist sees no fee/units calculation.
-
-**Sections (slots):**
-- Banners (l.487+): Card cancelled (shows `card.cancellation.reason`; excluded from list completion count and billing); Post-op addendum note (`cardType==='postOpAddendum'`); Pre-payment banner by `prepaymentStatus` (`none|required|outstanding|overridden|paid`, from `store/selectors.ts:372`), with note "timing vs AUTHORISED trigger is an RFP open question"; office-only buttons "Raise pre-procedure invoice" (`raisePreProcedureInvoice`, when `required`) and "Override gate" (opens `PrepaymentOverrideSheet`); generic `error` box; post-latch validation box (`completeError` + card-level failures).
-- Context: Patient (NHI badge via `nhiBadge`, name, DOB + age via `ageYears`/`formatDob`, phone as "Contact"; Edit link opens `EditPatientSheet`); Scheduled time with -5/+5 min steppers (`stepTime` -> `editCard {scheduledTime}`, `shiftTime` clamps 00:00 to 23:55, default base 08:00); Attachments (Add = `addPhoto`, always adds hardcoded `PAPER_CARD_A` sample image named "Photo n", id `${cardId}-A${n}` with n = highest existing +1; Remove per attachment via `editCard {attachments}`); "Notes for the office" textarea saved on blur via `editCard {notes}`.
-- Capture: per procedure a `BtmCaptureBlock` (ordinal = position sorted by procedure id), plus for office actor `OfficeBillingSetup`; "Add another procedure" (`addProcedure`) when `canCapture`.
-- Actions: "Copy for an additional procedure" (`copyCard`), "Cancel card" (opens `CancelCardSheet`) when `canEdit`; "Add post-op event" (`addPostOpAddendum`) shown on cards in an AUTHORISED list that are not already addenda: creates a new linked card on "today's free session for this anaesthetist"; original stays immutable.
-- History: button opens `HistorySheet` with entity ids = card + procedures + billing lines + removed procedures/lines recovered from `procedure.remove` audit snapshots (l.260); multi-procedure cards label rows "Procedure n · desc".
-- Summary: `CardTotal` (web office only) with `cardFee`/`procedureFee` totals, per-procedure lines (or per fee line for one procedure), rate label ("FEE @ $x/UNIT" or "FIXED CONTRACT PRICE", only if all procedures agree), override note ("Override applied · was $x").
-- Complete bar + `CompletionOverlay`.
-
-**Validation latch (l.175, l.375):** live `validateCardForBilling(card, procedures, ctx)` (domain/billing) runs always; failures shown only after a refused "Mark complete" (`showValidation` latch), then live-clear; on refusal scrolls/focuses the first failing control via `data-validation-procedure-id`/`data-validation-fields` attributes. `completeCard` (`store/lifecycle.ts:130`) refuses using `completionBlockersFor` (l.93): (1) billing validation failures, (2) pre-payment gate unpaid (`prepaymentUnpaid`, when status `required|outstanding`). Amend = `uncompleteCard`. Overlay auto-dismiss timer then `onBack`.
-
-**`OfficeBillingSetup.tsx`** (office only, per procedure): rows Route (`ROUTE_LABELS`), Insurer (`(informational)` if route hospital), Category and Payer (billableParty route; payer shown with relationship, default "Patient (default)"), Contract, Reference (flagged "Missing" via `billingReferenceMissing`), Override (fixed fee / +-$ / +-%), Funders ("n of m lines reallocated"). Buttons open `EditBillingSetupSheet`, `PriceOverrideSheet`, `FunderAllocationSheet` when `canEdit`.
-
-**`HistorySheet.tsx` / `HistoryTimeline.tsx`**: Overlay listing merged audit entries for the entity ids, newest first (`sortAuditNewestFirst`), day headings, "who . role . source" line (collapsed if role==source), change ledger `LABEL old -> new`, coalesced groups with count chip and toggle. Read-only. Empty state names subject ("card"/"list").
-
-## 4. Capture: `shared/capture/`
-`BtmCaptureBlock.tsx` composes per procedure: header ("PROCEDURE n" only if >1 procedures; description or "Operation to capture"); **Edit** button only when `list.state==='DRAFT'` (l.119; so office cannot open EditProcedureSheet on SUBMITTED, they use OfficeBillingSetup) and **Remove** only for ordinal>1 and `canCapture`; read-only billing context line (route chip: "Hospital / contract holder", "Billable party", "Insurer (direct claim)" or "Route not set", + contract . insurer . billable party . reference); additional-procedure note ("bills for time units only; base and modifier units stay on the first procedure"). Then `AsaCard` + `ProcedureCodeCard` (Pair), `TimesCard`, `UnitsCard`, `OverrideCard` + `BillingLinesCard` (Pair), `NotesCard`, and "Also outstanding" unanchored failures. Write policy: write-through audited `editProcedure` per tap for steppers/chips/ASA/nudges/stamps; free text on blur/Save.
-
-- `AsaCard`: ASA class segmented control (sets `asaClass`); caption from `ASA_SEED_UNITS`; none-selected allowed; disabled on additional procedures.
-- `ProcedureCodeCard` + `CodePickerSheet`: RVG base code picker (search code/name, grouped by anatomical site). Pick clears `baseUnitsSelected` and `baseUnitsCaptured`. Range codes (`baseUnits.kind` != single) show an in-range stepper writing `baseUnitsSelected`. If code absorbs P1: caption "Includes positioning; P1 is not added separately." Validation fields `rvgBaseCode`, `baseUnitsSelected`.
-- `TimesCard` (+ `timeIso.ts`): "Start now"/"Finish now" stamp the demo clock (`clockISO`); Finish stamp falls back to start+5 min if clock earlier; -5/+5 nudges keep >=5 minutes between start and finish. String maths on local-naive ISO (no UTC, NZ DST note). Fields `anaestheticStartISO`, `handoverISO`.
-- `UnitsCard` (l.42): B/T/M rows read the resolved `BtmBreakdown`; a step writes `{units: resolved+-1, source:'overridden'}` (floor 0); "Adjusted manually . Use seeded value" resets (no auto-clear on equality). On additional procedures B and M are not steppable ("Not charged on an additional procedure"). T caption "part intervals round up (assumption)". M caption lists composition e.g. "AS1 +0 . A1 very old +1", omitting refused modifiers.
-- `ModifierChips` (+ `modifierLabels.ts`): three exclusive bands (PA, A, OB) as segmented controls (from domain `modifierBandOf`), free-stacking codes (PA5, ASE, P1, AI1, PO1, PO2) as chips ("Also applies"); writes `selectedModifierCodes` via `toggleModifierCode`; absorbed codes shown struck through with domain refusal text.
-- `OverrideCard`: modes none / adjustment ($, non-zero, negative reduces) / charge (fixed fee, >0); MANDATORY reason; writes typed `priceOverride` `{kind: dollarAdjustment|fixedFee, amount, reason}`. Percent variant is office-only (`PriceOverrideSheet`).
-- `BillingLinesCard` + `AddBillingLineSheet`: lists non-RVG lines; Remove hidden for anaesthetist on `funderOverride` lines ("Billed to <counterparty>"); Add sheet: basis Fixed amount (`amount>0`) or Rate x time (hours x rate, previewed with `roundToCents`), latter only if governing `contract.permitsIndividualArrangement` (else disabled with validator sentence). Calls `addBillingLine`/`removeBillingLine` (`store/billingLineActions.ts`).
-- `NotesCard`: Int notes and Op notes, commit on blur.
-- `feeContext.ts`: `procedureFee` (feeFor with governing contract = stored explicit `governingContractId`, ordinal, non-rvg lines, surgeon) and `cardFee` (sums billable units and fee, rounds 2dp). `CardTotalPanel.tsx`: desktop ink panel with ticking numbers (`useTickingValue`: 320ms tween, green flash). `CompleteBar.tsx`: "Mark complete" / completed bar + "Amend" (only when `canAmend`). `CompletionOverlay.tsx`: tick pop; `N units . $X` line only if `showCalculation` (office). `ui.tsx`: `CaptureSection`, `Caption`, `FailureNotes`.
-
-## 5. Flows/sheets: `shared/flows/` (all via `useSurface().Overlay`)
-| Component | What the user does | Store call / notes |
+## 4. Flows and sheets (`shared/flows`; all render via `useSurface().Overlay`)
+| Component | What | Store action / domain |
 |---|---|---|
-| `AddCardFlow` | "Add a card": chooser -> Manual form or Photo path -> "Card added" (says if patient reused) | Back chevron between prongs |
-| `ManualCardForm` | Patient (NHI w/ "Look up NHI" button, name, DOB, phone, ethnicity code from lookup), Operation (RVG code picker, operation text, scheduled time free text e.g. "15:30"), Billing route (hospital/insurer/billableParty; insurer dropdown; payer dropdown "The patient pays"; payment category; billing reference) | `createCard(api, actor, listId, {...})` (`store/cardActions.ts:70`); patient dedupe by NHI (`patient.reuse` audit); optional `attachment` |
-| `PhotoCaptureFlow` | Pick sample paper card A or B, 900ms simulated processing, review pre-filled form | DemoBadges "Simulated capture", "Simulated OCR"; canned data `sampleExtractions.ts` (A: Wiremu Tane, RVG 20941, hospital, NHI ZBC1123; B: Losa Tuilagi, 49558, insurer I-NIB, NHI JKL1188) |
-| `CancelCardSheet` | Reason required | `cancelCard` (`lifecycle.ts:363`) |
-| `PrepaymentOverrideSheet` | Mandatory reason to lift pre-pay gate | `overridePrepaymentGate` (`prepaymentActions.ts:181`) |
-| `RequestCoverSheet` | kind `offer` (hand over own free session) or `request` (ask colleague), optional message | `requestCover` (`lifecycle.ts:844`); copy addresses "Dr Surname" |
+| `AddBookingFlow` | chooser: "Enter manually" / "Photo of paper list" (demo), then "Booking added" (says whether patient reused by NHI). Back chevron from sub-prongs. Source stamped: office -> `admin`; anaesthetist -> `anaesthetistAdHoc` (manual) / `anaesthetistPhoto` (photo) | `createBooking` via form |
+| `ManualBookingForm` | NHI + "Look up" (simulated NHI FHIR lookup, DemoBadge), name, DOB, phone, RVG code select (auto-fills operation), operation, scheduled time (free text "15:30"), billing route Segmented (Hospital / Billable party / Insurer), insurer select (insurer route; optional informational on hospital), billable party + payment category (Self-funded / Pre-payment / Reimbursement) on billableParty, billing reference (hospital). Save needs name + DOB + operation. Ethnicity code only comes from lookup/photo (no field). | `createBooking(api, actor, listId, {...})` (`store/bookingActions.ts:78`); `lookupNhi` (`domain/nzhis.ts:116`); reuse detected by last `patient.reuse` audit |
+| `PhotoCaptureFlow` | pick one of 2 bundled sample paper cards -> 900 ms fake "Reading the paper card…" -> pre-filled `ManualBookingForm` + photo attachment. `sampleExtractions.ts`: A = Wiremu Tane (existing patient NHI ZBC1123, dedupe demo, RVG 20941, hospital); B = Losa Tuilagi (JKL1188, RVG 49558, insurer I-NIB) | simulated OCR, canned |
 | `EditPatientSheet` | name, DOB, phone, email, address | `editPatient` (`store/intake.ts:145`) |
-| `EditProcedureSheet` | operation, billing route, insurer, payment category, billing reference | `editProcedure` |
-| `RemoveProcedureSheet` | confirm; states billing lines removed; no reason field | `removeProcedure` (`cardActions.ts:474`; first procedure refused) |
-| `EditBillingSetupSheet` | office: route, insurer, category, governing contract, reference, billable party incl. "New guardian" (name, relationship, contact) which creates a BillableParty first | `editProcedure` (+ billable-party create) |
-| `PriceOverrideSheet` | office: fixed fee / $ adj / % adj, reason required | `editProcedure {priceOverride}` |
-| `FunderAllocationSheet` | office: per billing line choose funder + amount; shows allocated vs fee; Save blocked unless reconciles | `setProcedureFunderAllocation` (`billingLineActions.ts:218`, atomic; `allocationNotConserved` backstop) |
-| `SubmitListSheet` | mode `blockers`: lists incomplete non-cancelled cards with verbatim validation messages (via `completionBlockersFor`) or "Ready to complete"; mode `confirm`: explains SUBMITTED then confirms | `submitList` (`lifecycle.ts:225`) |
-Billing route labels: `ROUTE_LABELS` in `format.ts` (hospital="Contract holder", billableParty, insurer). Payment categories: selfFundedPostProcedure "Self-funded", selfFundedPrepayment "Pre-payment", insuredReimbursement "Reimbursement".
+| `EditProcedureSheet` | operation description + billing route/insurer/category/reference (NOT code, contract, billable-party) | `editProcedure` |
+| `RemoveProcedureSheet` | confirm, names procedure and count of billing lines lost; no reason; never for ordinal 1 | `removeProcedure` (`bookingActions.ts:502`) |
+| `CancelBookingSheet` | reason required (soft cancel, stays visible) | `cancelBooking` (`lifecycle.ts:348`) |
+| `RequestCoverSheet` | kind `offer` (own free session) / `request` (ask colleague), optional message, "Request sent" tick. Used by mobile Availability and web | `requestCover` (`lifecycle.ts:843`) |
+| `SubmitListSheet` | mode `blockers`: lists each not-complete, not-cancelled booking with `completionBlockersFor` messages; mode `confirm`: "You will not be able to change these bookings afterwards" then "Submit to office" | `submitList` (`lifecycle.ts:210`) |
+| `EditBillingSetupSheet` (office) | route (Contract holder / Billable party / Insurer), insurer, category, governing contract select, billing reference, billable party select or "New guardian" (name, relationship, phone) | `createBillableParty`, `editProcedure` |
+| `PriceOverrideSheet` (office) | None / Fixed fee / $ adjust / % adjust; mandatory reason | `editProcedure {priceOverride}` |
+| `FunderAllocationSheet` (office) | per billing line: funder (Default route, Patient, each Insurer, list's Hospital, each Billable party) + amount; Save blocked unless amounts sum to procedure fee (cents); all lines saved atomically | `setProcedureFunderAllocation` (`billingLineActions.ts:218`) |
+Consumers: `AddBookingFlow` in `apps/web/screens/ListDetailView.tsx`, `apps/admin/flows/PhoneAdviceBooking.tsx`, `apps/mobile/routes.tsx` / `components/SlideStack.tsx`; `SubmitListSheet` in web `ListDetailView` and mobile `ListDetailScreen`; `RequestCoverSheet` in `apps/web/WebApp.tsx`, mobile `AvailabilityScreen`.
 
-## 6. Audit presentation: `shared/audit/`
-Read-only view layer over `AuditEntry {id, entityType, entityId, who, role, source, action, before?, after?, atISO}` (`domain/types.ts:645`). `actionLabels.ts` (`ACTION_LABELS`, ~100 action codes such as `card.*`, `list.*`, `procedure.*`, `billingLine.*`, `xero.*`, `invoice.*`, `settings.*`; unmapped codes get a derived label), `fieldLabels.ts` (`FIELD_LABELS`, ~170), `auditNarrative.ts`: `auditFieldChanges` (diff over union of keys; "not set"; seeded-fallback keys show "back to the seeded value"; money keys formatted), `formatAuditValue`, `sortAuditNewestFirst`, `coalesceAudit` (l.308: merges consecutive single-field edits by same actor/entity/timestamp into one net row with steps), `formatAuditStamp` ("d MMM HH:mm"), `summariseAuditChanges`. Has Vitest coverage. Never writes.
+## 5. Attachments, audit/History, legacy
+- `attachments/AttachmentStrip`: thumbnails (photo/PDF with "PDF" chip), remove on thumbnail (hover on desktop, always on phone). Used for Booking and List attachments (`apps/web ListDetailView`, `apps/admin/components/ListDrawer`, `apps/mobile ListDetailScreen`).
+- `AddAttachmentSheet`: SIMULATED picker (DemoBadge "Simulated file picker") offering bundled `assets/sampleAttachments` (SAMPLE_PHOTOS "Take a photo", SAMPLE_FILES "Choose a file"). Target `{kind:'booking'|'list', id}`. `addAttachment`/`removeAttachment` (`store/attachmentActions.ts:69/115`), rights via `editRefusal`. No real camera/file input (data URLs would bloat localStorage).
+- `booking/HistorySheet` + `HistoryTimeline`: merged append-only audit for given entity ids, newest first (`sortAuditNewestFirst`, id tiebreak because demo clock is pinned), day heading, change ledger `label old -> new`, coalesced groups (consecutive single-field edits by one actor/timestamp collapse, count chip). No semantic colour. Also used by `apps/admin/screens/ReviewScreen.tsx`, `apps/admin/components/ListDrawer.tsx`. Anaesthetist sees full trail of own booking incl. office/integration actions.
+- `audit/`: `actionLabels.ts` maps every action code to English (booking.*, procedure.*, billingLine.*, list.*, canvas/permanentList/holiday/dayNote, patient.*, contract.*, invoice.*, xero.*, integration.receive, settings.*, account.provisioned, auth.signIn/signInFailed/passwordReset). Test scans `store/` and `domain/seed/` and fails on an unlabelled code. `fieldLabels.ts` single map of patch key -> label (includes warning-clearance keys `ruleId/strength/warning`, `correlationRef`, `prepaymentDetail`, `accRelated`, `ethnicityPending`, `source`). `auditNarrative.ts`: `auditFieldChanges` (diff over union of keys; cleared B/T/M reads "back to the seeded value"), `coalesceAudit`, `formatAuditValue`, `formatAuditStamp`, `summariseAuditChanges` (admin Audit feed). Tests: `auditNarrative.test.ts`.
+- `legacy/`: `legacyBookingId` (`C0009`->`BK0009`, `HC05`->`HBK05`), `legacyBookingPath` (`.../cards/:id` -> `.../bookings/:id`), `LegacyBookingRedirect` used at `router.tsx:78,95` and `apps/mobile/routes.tsx:57`. Routing aid only.
 
-## 7. Schedule row, status components, UI primitives, format
-- `schedule/ListRow.tsx`: mobile-style list row; `ListRowRight` kinds `doneUnbilled | toFinish(count) | count(statusKey) | offerCover | chip | custom`; variants default/free/holiday; session AM/PM + mono time.
-- `StatusChip`, `StatusBlock`, `StatusLegend` (variant `full`|`chips`, optional toggle filter): six statuses (private, public, preop, holiday, unavailable [hatched], free [dashed]) from `theme/statusColours.ts`. `Avatar` (initials), `Logo`, `Wordmark`, `DemoBadge` (warning-tint "Demo simulation" pill).
-- `ui/`: `Button` (variants incl. secondary, pill; block), `TickBadge`, `SuccessOverlay` (circle pop + tick + haptic; tap-to-dismiss safety valve), `Field` (`FieldLabel`, `TextField`, `TextArea`, `Segmented`), `SlidingSegmentedControl`, `DockSpacer` (scroll tail spacer under floating dock/tab bar).
-- `format.ts`: `dayMicroCap` ("TUE 21 JUL"), `hhmm`, `dateTimeMicroCap`, `dayHeading` (TODAY prefix), `formatDob`, `ageYears`, `sessionTimeRange` (uses list's actual startTime/endTime else "Morning"/"Afternoon"), `sessionStart`, `nhiBadge` ("NHI ABC1234" or "NHI pending" using `domain/nhi validateNhi`), `mondayOf`/`weekDays`/`shiftWeeks` (Monday-anchored), `formatCurrency` (NZD 2dp, no GST logic), `routeLabel`, name helpers `nameWithoutTitle`, `surnameOf`, `drSurname`, `initialsOf`. Tests in `format.test.ts`.
+## 6. Schedule row, status components, ui primitives, format
+- `schedule/ListRow.tsx`: Forward-Lists row; `statusKey` rail, AM/PM + mono time, title/subtitle, right cluster kinds `doneUnbilled` ("Done · unbilled"), `toFinish` ("n to finish"), `count` ("n booking(s)"), `offerCover` (visual pill; click handled by row), `chip`, `custom`; variants default / free (dashed green) / holiday. Consumer: `apps/mobile/screens/ForwardListsScreen.tsx` only.
+- `StatusChip`, `StatusBlock`, `StatusLegend` (full or `chips` compact, optional toggle filter; sample texts are hardcoded demo strings, e.g. "St George's / Mr Hale"), consumers `apps/web/screens/ListsScreen.tsx`, `apps/admin/components/DayGrid.tsx`. `Avatar` (initials), `Logo` (image), `Wordmark` (text, dark nav), `DemoBadge` (`tone` demo amber | future neutral "Future scope").
+- `ui/`: `Button` (primary/secondary/pill, >=44px), `Field` (`FieldLabel`, `TextField`, `TextArea`, `Segmented`), `SlidingSegmentedControl` (row/two-column/wrap; variants teal/surface/ink), `SuccessOverlay` (full-surface tick, haptic via `theme/haptics.ts`, tap-to-dismiss valve), `TickBadge`, `DockSpacer`.
+- `format.ts`: `dayMicroCap` ("TUE 21 JUL"), `hhmm`, `dateTimeMicroCap`, `dayHeading` (prefix TODAY), `formatDob`, `ageYears(dob, today)`, `sessionTimeRange` (actual list times, fallback Morning/Afternoon), `sessionStart`, `nhiBadge` ("NHI ABC1234" via `validateNhi`, or "NHI pending"), `mondayOf/weekDays/shiftWeeks` (Mon-anchored), `formatCurrency` (NZ$ 2dp, no GST logic), name helpers `nameWithoutTitle/surnameOf/drSurname/initialsOf`, `ROUTE_LABELS` (Contract holder / Billable party / Insurer), `routeLabel`, `BOOKING_SOURCE_LABELS` (hospitalDownload "Hospital download", surgeonPdf "Surgeon PDF", admin "Office entry", anaesthetistAdHoc "Added by anaesthetist", anaesthetistPhoto "Added from a photo of the booking card", copy "Copy of another Booking"). NB capture context chip uses different route wording (`BtmCaptureBlock` ROUTE_LABEL) from `ROUTE_LABELS`; `ManualBookingForm` says "Hospital".
 
-## 8. Demo / simulator affordances in this area
-- `demoClockShortcuts.ts`: shortcut list used by presenter clock surfaces: +15 min, +1 hour, Next day, Next morning, +7 days, "Procedure day . 28 Jul" (`S1_PROCEDURE_DAY='2026-07-28'`, disabled once today >= that date). Calls `store/clockActions`. Clock is forward-only.
-- `ManualCardForm`: "Look up NHI" button with DemoBadge "NHI FHIR lookup . Digital Services Hub", calls `domain/nzhis.ts:116 lookupNhi` (canned fictional patients; hit fills name, DOB, phone, ethnicity; can prefill a whole booking via `emptyLookupPrefill`).
-- `PhotoCaptureFlow`: fake OCR (900ms timer), two canned sample cards.
-- `DemoBadge` used to mark simulators elsewhere. Phone Advice booking uses `AddCardFlow` (admin).
-- `theme/gradientLabGate.ts`: `GRADIENT_LAB_ENABLED = true`, the only feature flag (temporary Gradient Lab UI in `shell/gradientLab`).
+## 7. Demo affordances
+- `demoTriggers/` (Phase 14 registry; NOT in `shared/index.ts` barrel). `types.ts` `DemoTrigger {id,label,description,screen,routes[],surfaces['bar'|'pwa'],badge,when,choices,disabledReason,run,indexPath}`; `match.ts demoTriggersFor` matches `matchPath` route patterns; `useDemoTriggers.ts useDemoTriggerRows` shared by `shell/DemoActionsMenu.tsx` (framed bar) and `pwa/PwaDemoActions.tsx`; `context.ts` UI-only store for screen state (`integrations.tab`, `integrationsSim.selectedMessageId`); `memory.ts` replay memory (last message id, last webhook; not persisted). `registry.ts` entries (id: screen: surface: effect):
+  - `billing-failure` (Admin billing monitor, bar): authorise seeded failure list so billing run fails the COS booking.
+  - `arm-handoff-fault` (billing monitor, bar): arms Xero handoff fault.
+  - `run-reconciliation-poll`, `run-archive-job` (billing monitor + Xero sim, bar).
+  - `simulate-sign-in` (`/admin/audit`, bar): fake sign-in attempts (FT-13.5).
+  - `stage-post-op` (admin review + booking detail, bar): submits+authorises Dr Sharma's Tue 14 Jul AM list (`POST_OP_ORIGINAL_LIST_ID`) so "Add post-op event" works.
+  - `ingest-pdf-row` (`/admin/integrations`, bar): surgeon PDF 1 row R2.
+  - `payment-full`, `payment-half`, `payment-replay` (admin invoice pages / `/demo/xero/invoices/:accRecId`, bar): `sendPaymentWebhook` -> `receivePayment` key `WEBHOOK-<accRecId>-<n>`, pro-rata ACCPAY authorise; disabled for fully paid or seeded history invoices.
+  - `office-authorises-list` (mobile list/booking, pwa, badge office-stand-in): authorises submitted List and runs billing as the office would.
+  - `fire-hospital-message`, `replay-hospital-message` (mobile lists, admin integrations, integrations sim; bar+pwa; badge future-scope): canned HL7-like `CANNED_MESSAGES`, dedupe on replay.
+  - `pwa-payment-full`, `pwa-payment-half` (`/mobile/balances`, pwa): Dr Souter's open invoices.
+- `demoClockShortcuts.ts`: +15 min, +1 hour, Next day, Next morning, +7 days, "Procedure day · 28 Jul" (`S1_PROCEDURE_DAY` 2026-07-28; disabled once today >= it). Calls `store/clockActions`. Used by `shell/DemoClockMenu.tsx`, `pwa/PwaDemoPanel.tsx`, `apps/demo/DemoControlPanel.tsx`. Clock forward-only.
+- Simulated in this area: NHI lookup (`ManualBookingForm`), photo OCR (`PhotoCaptureFlow`), file picker (`AddAttachmentSheet`), all badged `DemoBadge`.
 
-## 9. Business rules / validations index (visible in this area)
-- Edit rights: `CardDetailBody:314` + `store/lifecycle.ts:48` (see section 3).
-- Completion blockers: billing validation + pre-payment gate (`lifecycle.ts:93`). Refusal text rendered verbatim.
-- Pre-payment states and office actions: `prepaymentStatusFor` (`selectors.ts:372`); B7 gate; override needs reason and is audited.
-- Cancel: reason required; card stays visible, excluded from completion count and billing.
-- Copy card for additional procedure; additional procedure bills time units only (B and M locked).
-- Post-op addendum on authorised card (B8): new linked card, original immutable.
-- Type 3 (fixed-price contract) second-procedure pricing depends on ordinal (`feeContext.ts`); governing contract is stored explicit, not auto-selected.
-- Billing lines: Method 3 rate x time only if contract `permitsIndividualArrangement`; funder allocation must conserve procedure total; anaesthetist cannot remove funder-override lines.
-- Price override: reason mandatory; kinds fixedFee / dollarAdjustment / percentAdjustment (% office only).
-- BTM provenance (`source: 'overridden'`) kept until explicit reset.
-- Time capture: demo clock authoritative; min 5-minute gap; first procedure cannot be removed.
-- Billing reference: `billingReferenceMissing(procedure)` flagged for hospital route in OfficeBillingSetup.
-- NHI: `validateNhi`, "NHI pending" provisional state.
-- Attachments: photos only (kind 'photo').
+## 8. Theme (tokens only)
+`theme/tokens.ts` (neutral, brand crimson identity-only, accent teal = only action colour, semantic success/warning/error triples, fonts Schibsted Grotesk / Spline Sans Mono / Georgia, type scale, 4pt space, radius, elevation, scrim); `statusColours.ts` (six statuses private/public/preop/holiday/unavailable(hatched)/free(dashed), `STATUS_ORDER`); `motion.ts` (four named patterns + `easing`); `haptics.ts` (complete-tick vibrate 12ms at 200ms, no-op iOS); `mobileGradient.ts` (+`gradientLabGate.ts` `GRADIENT_LAB_ENABLED = true`; `AA_DEFAULT_GRADIENT`, localStorage key `aa-gradient-lab`); `global.css` (Tailwind `@theme` mirror, keyframes, `--aa-inset-*` safe-area vars). No domain logic.
 
-## 10. Stubbed / hardcoded / visual-only
-- Attachment "Add" always inserts the same sample image `PAPER_CARD_A` (no camera/file upload). Photo OCR is canned, not real.
-- NHI lookup is a canned in-memory table.
-- Calculation shown only for office role on web/admin; phone never shows fee (`CardTotal: () => null`).
-- Stale "Fee/Units/Off mode" comments with no matching code.
-- Pre-payment banner text hardcodes "RFP open question" wording.
-- Post-op addendum copy hardcodes "today's free session" placement.
-- Scheduled time is a free-text/stepper field (no calendar validation in ManualCardForm; typed "e.g. 15:30").
-- `formatCurrency` has no GST/rounding rules; GST handled elsewhere (domain).
-- Haptics: `navigator.vibrate` no-op on iOS.
-- Read-only CardDetail patient section shows only phone; email/address editable in `EditPatientSheet` but not displayed in the body.
-
-## 11. Theme (tokens only)
-`theme/tokens.ts`: neutrals (ink #172320 ... surface), `brand` crimson #A91E3E (identity only), `accent` teal #0D6E63 (only action colour), `semantic` success/warning/error triples, radii, elevations. `statusColours.ts`: six statuses (solid/tint/onTint/label/treatment), `STATUS_ORDER`, `freeDashedBorder`, `unavailableHatchTint`. `motion.ts`: four named patterns (sheetIn 320/260ms, value tick, complete tick, card advance) + easings. `haptics.ts`: complete-tick vibrate 12ms at `hapticAt`. `mobileGradient.ts`: `AA_DEFAULT_GRADIENT` phone atmosphere. `global.css`: Tailwind `@theme` mirror, keyframes, reduced-motion, inset vars. No requirement-relevant behaviour.
+## 9. Stubbed / hardcoded / visual-only / absent
+Stubbed or simulated: NHI lookup (canned `domain/nzhis.ts`), photo OCR (2 canned samples, 900 ms timer), attachment picker (bundled samples), hospital messages/PDF/payment webhooks (demo triggers), modifier unit values (demo-plausible, stated in UI), ACC flat-fee code note (text only).
+Hardcoded: `StatusLegend` sample strings; `S1_PROCEDURE_DAY`; sample extractions; rate label strings; `ROUTE_OPTIONS` labels per form; post-op message text.
+Visual-only or comment-only: `ListRow` `offerCover` pill (no action of its own); "Fee/Units/Off" modes referenced in comments only; `BookingTotal` null on phone; `StatusLegend` filter is optional prop.
+Not present in `shared/` (do not assume it exists here; check apps/store): UI to clear a warning or show warning rules other than pre-payment (only audit labels `booking.warningCleared`, `ruleId/strength/warning`); ACC-related toggle (`accRelated` has audit label only); ethnicity entry/correction UI (only passes through lookup/photo); billable-party/contract edit on anaesthetist surfaces; editing procedure code from the office billing setup (code picker is capture-only, `canCapture`); cover-request acceptance (only sending lives here); any invoice/payment/List-authorise UI; accounts/sign-in UI (only audit labels); per-booking completion of a post-op addendum beyond creation; surgeon/hospital editing on Booking; booking reassignment UI (`booking.reassign` audit label only); `Booking.correlationRef` display (label only).
+Quirks worth checking: `BtmCaptureBlock` Edit link visible only when `list.state === 'DRAFT'` while `canEdit` for office also allows SUBMITTED (office edits route via `OfficeBillingSetup` instead; patient/time/notes editable on SUBMITTED); `EditProcedureSheet` clears `insurerId` unless route is insurer/hospital; `ManualBookingForm` scheduled time is unvalidated free text; `shiftTime` clamps to 23:55.

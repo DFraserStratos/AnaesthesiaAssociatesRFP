@@ -8,21 +8,34 @@ invoices a year, without any drop in performance) ·
 Privacy and data minimisation (Proposed: the NHI never reaches Xero, never leaks through logs, error
 messages, monitoring or non-production data; failed hospital data shows only what is needed, with the
 raw payload under restricted access; non-production holds synthetic data only).
+Both are unchanged at `3d3a18c`.
+Exercised at scale, owned by Phase 37:
+[US-13.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.1.md)
+(processing monitor, **Confirmed** at `3d3a18c`: "This list will get quite large", so Phase 37 restyles
+the Billing monitor into groups per anaesthetist with sorting, filtering, Problems only and "Open in
+Review" on Lists awaiting approval). This phase loads that large list and makes the restyled monitor
+hold up at full scale (work item 6).
 Context only, must stay green:
 [FT-01.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.1.md)
-(the four-month rolling canvas the Slot count is measured against),
+(the rolling canvas the Slot count is measured against: "four months in the current practice", but
+any number of months, Phase 28's horizon setting; very long horizons "we don't have to worry about for
+now"),
 [US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md)
-(Xero contacts identified without the NHI),
+(Xero contacts identified by the hidden internal ID, never the NHI; Phase 16 also took patient names
+and other personal information out of Xero),
 [US-09.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.3.md)
 (scheduled archiving, which cites the 28,000 invoices),
 [US-11.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.1.md)
-(patient record keyed on NHI),
+(patient record keyed on NHI; Matches),
 [US-02.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.4.md)
 (the unmatched queue, Phase 33, where the restricted raw-row view lives),
 [US-13.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.1.md)
-(role-based access) and
+(role-based access, **Confirmed**: "a very small number of roles"; signing in is US-13.5.3, Phase 43a)
+and
 [US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md)
-(audit trail of all actions).
+(audit trail of all actions, **Confirmed**: its list now names invoices and credit notes, and payments
+and disbursements left it because "it's done in Xero"; how deep the audit goes is a developer
+discussion with storage cost in mind).
 [US-14.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.5.1.md)
 (integration failure visibility, the dead-lettered HL7 case) is **Future** and is not built: its
 "working view shows only what is needed, raw payload behind restricted access" rule is applied here to
@@ -34,22 +47,31 @@ No DM or RV item is owned here. The phase builds on
 [DM-28](../analysis/domain-model-delta.md#dm-28) (import rows, Phase 33); no
 [reverse-check](../analysis/reverse-check.md) finding is closed here (RV-05 and RV-06, which note the raw
 PID shown on the HL7 tooling, were closed by Phase 34's Future-scope demotion).
-Open question for context:
+Answered question this phase builds:
 [OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (NHI in Xero,
-Appendix 1 vs Appendix 2, Open). No owner decision (D1 to D11) gates this phase.
+Appendix 1 vs Appendix 2, **Answered**: "No PII in Xero. So Xero doesn't have NHI details. Xero will have
+an unique ID which allows transactions to link back to invoices in our system."). The Appendix 2 reading
+is the answer, not a default: the leak scan's Xero area checks for the NHI **and** the other personal
+information Phase 16 keeps out of Xero (work item 13). No owner decision (D1 to D25) gates this phase;
+the generator follows the shapes the answered ones produced (D1's monthly AA fee invoice, D13's events,
+D14's stored Slots with user-maintained statuses and no "slot" in the UI, D17's Contract-defined
+billable party).
 **Depends on:** Phase 42 (every master editable and the controlled loader, so the generator reads the
-final master shapes), Phase 36 (the ledger pair as the system of record, which the generated invoice
+final master shapes), Phase 37 (the restyled Billing monitor, `billingMonitorView`, and the Xero sync
+queue the scan reads), Phase 36 (the ledger pair as the system of record, which the generated invoice
 history must follow) and Phase 34 (the Intake home at `/admin/intake/matching`, the Future-scope
 HL7/FHIR surface). Through them: Phase 14 (the demo-trigger registry, `useDemoTriggerContext`, the
-shared actor constants), 15 (Bookings), 16 (AA-FEE invoices), 20 to 25 (one Contract per Procedure,
-billable party, the AUTHORISED lock), 28 (Slots and Lists), 33 (import rows and the matching screen) and
-37 (the Xero sync queue).
+shared actor constants), 15 (Bookings), 15a (the warning routine and the to-do list), 16 (the monthly
+AA-FEE invoice, the BCTI count function, Xero contacts with no personal information), 20 to 25 (one
+Contract per Procedure, the Contract-defined billable party, the AUTHORISED lock), 28 (Slots, Lists and
+the horizon setting), 29 (the status master), 31 (Draft Lists), 32 (the notification pool), 33 (import
+rows and the matching screen), 38b and 39 (events and credit notes) and 40 (the patient record).
 **Estimated:** 1 session in the outline, realistically 2. The generator alone (71 anaesthetists, a year
 of billed history through the real builders, the Xero mirror and audit, with its integrity tests) is a
 full session's work. Plan for the split: session 1 is work items 1 to 9 (the full-scale dataset, paused
-persistence, the timings and the paged screens), stopped green; session 2 is the privacy half (items 10
-to 15), the triggers' tests, the demo guide and the review pass. Do both in one only if session 1 runs
-well.
+persistence, the timings and the paged screens, the Billing monitor included), stopped green; session 2
+is the privacy half (items 10 to 15), the triggers' tests, the demo guide and the review pass. Do both in
+one only if session 1 runs well.
 
 ## Goal
 
@@ -57,24 +79,28 @@ Two claims the prototype has so far only narrated become things a presenter can 
 
 - **Scale.** A "Load full-scale data" demo action replaces the demo data with a full-practice dataset
   built in memory from the seeded RNG: 85 anaesthetists (the 14 demo anaesthetists plus 71 synthetic
-  ones), about 20,000 Slots in the four-month horizon, and about 28,000 invoices raised over the last
-  12 months, each with its Booking, locked record, ledger pair and Xero mirror. The 14 demo
-  anaesthetists' records are untouched, so S1 to S5 still run at scale and Dr Souter's figures do not
-  move. localStorage cannot hold it, so saving pauses with a clear banner; nothing is written, not even
-  serialised, until Reset. A banner shows generation and render timings, and each paged screen records
-  its render time at demo scale and at full scale side by side, so "no drop in performance" is shown,
-  not claimed. Admin Day, Invoices and Audit page at that scale (the Day view gets the legacy "1 of 3"
-  pager the footer has so far only described). Reset, a scenario jump or a reload returns to the
-  normal seed.
+  ones), about 20,000 Slots across the horizon setting (four months in current practice; the app says
+  "sessions", never "slot"), and about 28,000 invoices raised over the last 12 months, each with its
+  Booking, locked record, ledger pair and Xero mirror. The 14 demo anaesthetists' records are
+  untouched, so S1 to S5 still run at scale and Dr Souter's figures do not move. localStorage cannot
+  hold it, so saving pauses with a clear banner; nothing is written, not even serialised, until Reset.
+  A banner shows generation and render timings, and each paged screen records its render time at demo
+  scale and at full scale side by side, so "no drop in performance" is shown, not claimed. Admin Day,
+  Invoices, Audit and Phase 37's restyled Billing monitor (the processing monitor, which US-13.3.1 says
+  "will get quite large") page, sort and filter at that scale (the Day view gets the legacy "1 of 3"
+  pager the footer has so far only described; the monitor's anaesthetist groups page, with its sort,
+  anaesthetist filter and Problems only applied first). Reset, a scenario jump or a reload returns to
+  the normal seed.
 - **Privacy.** Three things make the NHI policy visible and checkable:
   - a restricted **View raw row** on the matching screen: the working view shows only the fields the
     office needs to resolve a row; everything else the hospital sent sits behind an office-only view
     that asks for a reason, writes an audit entry and shows the payload with identifiers masked. A
     Demo actions entry shows the same request refused, and audited, for another role;
   - a **Scan for NHI leaks** demo action on the Data Inspector that searches the Xero slice (including
-    the sync queue), the diagnostic log, error and refusal messages and failure reasons for any NHI,
-    known or merely valid-looking, and reports zero hits per area, with a "planted leak" choice that
-    proves the scan finds one;
+    the sync queue) for any NHI or other personal information (OQ-30: "No PII in Xero"), and the
+    diagnostic log, error and refusal messages and failure reasons (the Billing monitor's included) for
+    any NHI, known or merely valid-looking, and reports zero hits per area, with a "planted leak" choice
+    that proves the scan finds one;
   - a **Synthetic data only** badge in the harness bar and in the Anaesthetist Web and Admin apps,
     matching the statement the mobile More tab already makes.
 
@@ -83,53 +109,78 @@ Two claims the prototype has so far only narrated become things a presenter can 
 1. Run:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
-   Read the hunks for US-15.0.4, US-15.0.6, FT-01.1, US-09.3.1, US-09.3.3, US-11.1.1, US-02.1.4,
-   US-13.5.1, US-13.5.2, US-14.5.1, OQ-30, and the domain-model lines on Slots, the NHI and the patient
-   record.
-2. If an item changed, re-read it in full and adjust the work items before building. If an item is now
-   Retired or Future, drop its work and say so in the PROGRESS entry:
+   Read the hunks for US-15.0.4, US-15.0.6, US-13.3.1, FT-01.1, US-09.3.1, US-09.3.3, US-11.1.1,
+   US-02.1.4, US-13.5.1, US-13.5.2, US-14.5.1, OQ-30, and the domain-model lines on Slots, the horizon,
+   the NHI and the patient record. At `3d3a18c` this plan already reflects: US-15.0.4, US-15.0.6 and
+   US-14.5.1 unchanged; US-13.3.1 Confirmed with "This list will get quite large" and the standard
+   sorting and filtering (Phase 37 restyles the monitor; this phase loads it at scale); FT-01.1's
+   horizon "four months in the current practice" but any number of months (Phase 28's setting; this
+   phase generates across whatever it holds); US-13.5.1 and US-13.5.2 Confirmed, with payments and
+   disbursements off US-13.5.2's audited list and credit notes on it (the generated audit trail follows
+   the runtime's codes, work item 2); OQ-30 Answered, "No PII in Xero" (the scan's Xero area checks
+   personal information as well as the NHI, work item 13).
+2. If an item changed since `3d3a18c`, re-read it in full and adjust the work items before building. If
+   an item is now Retired or Future, drop its work and say so in the PROGRESS entry:
    - **US-15.0.4** Retired or Future: drop work items 1 to 9. If its figures changed (anaesthetists,
      Slots, invoices per year), change the one `FULL_SCALE` constants block (work item 2) and every copy
      line that quotes a figure; nothing else hard-codes them.
    - **US-15.0.6** Retired or Future: drop items 10 to 15. If its technical discussion drops the
      restricted raw payload, drop items 10 to 12; if it drops logs and telemetry, drop item 13's
-     diagnostics log but keep the Xero area of the scan (US-09.3.1 still requires it).
+     diagnostics log but keep the Xero area of the scan (US-09.3.1 and OQ-30 still require it).
+   - **US-13.3.1** settles its Notes differently (grouping, filters or approval inside the monitor):
+     follow what Phase 37 actually shipped; this phase only makes that view hold up at scale and never
+     adds a second authorise path.
    - **US-14.5.1** moved out of Future into scope: the dead-lettered HL7 message becomes a real surface
      again. Do not build its queue here; record it for Phase 44's handoff and apply work item 11's
      restricted view to it only if the session has room.
-   - **OQ-30** answered for Appendix 1 (the NHI as a custom field on the Xero contact): the catalogue's
-     US-09.3.1 will have changed too. The Xero area of the scan then reports the permitted field
-     separately ("held by design") instead of as a leak; the rest of the scan is unchanged. If OQ-30 is
-     still Open, build the Appendix 2 reading (nothing NHI-shaped in Xero), as the catalogue does today.
-3. **Open questions.** None blocks this phase. OQ-30 is covered above. The masking policy for the raw
-   row (which fields are masked and how) is not in the catalogue: build the provisional policy in work
-   item 10 and label it "Masking policy is provisional, for AA to agree" in the sheet.
+3. **Open questions.** None blocks this phase. OQ-30 is answered (Appendix 2, no PII in Xero) and is
+   built as the answer. The masking policy for the raw row (which fields are masked and how) is not in
+   the catalogue and no open question asks it: build the policy in work item 10 as one labelled block,
+   show "Masking policy is for AA to agree" in the sheet, and put it on the "For the owner's review"
+   list.
 4. **Confirm the base.** This is the last build phase before 44, so most names below are those the
    earlier catch-up phases planned; read their PROGRESS entries and use the names they actually shipped:
-   - Phase 28: the Slot record and its id format, `schedule.slots`, the canvas generator
-     (`generateCanvasForDates` at plan time) and `CanvasMasters`.
+   - Phase 28: the Slot record and its id format (`S-<reg>-<date>-<AM|PM>` at plan time),
+     `schedule.slots`, the canvas generator (`generateCanvasForDates` at plan time), `CanvasMasters`,
+     the schedule-settings record (`appSettings.schedule.horizonMonths`, 4), `scheduleHorizon(state)`,
+     `horizonFor(today, months)` and `setHorizonMonths` (capped at 24). Phase 29: the status master
+     (fixed ids, editable labels and colours). Phase 31: Draft Lists and the Day dashboard's Draft List
+     strip. Phase 32: the notification pool.
+   - Phase 15a (built): the warning routine `evaluateWarnings` in `domain/warnings/routine.ts`, and
+     `openWarnings`, `warningSummaryByList` and `warningsForList` in `store/warnings.ts`, which the
+     to-do list, the Day grid triangles and Review read; check how later phases registered their rules
+     and whether billed Bookings are evaluated.
    - Phase 15 and 23 to 25: the Booking and Procedure shapes, the primary Procedure, and the per-Procedure
      locked record written at authorise; the pure builders the billing run uses to price from the lock
      and to build invoices (the generator must call the same ones).
    - Phase 36: `billing.ledger` (`LedgerPair`, kinds), `LedgerReceipt`, `LedgerDisbursement`,
-     `aaFeeInvoices`, the Admin Ledger screen route and its imbalance indicator. Phase 16: the AA-FEE
-     invoice and its numbering. Phase 37: `billing.xeroQueue` and its item shape (the scan reads its
-     payloads and errors).
+     `aaFeeInvoices`, the Admin Ledger screen route and its imbalance indicator. Phase 16: the monthly
+     AA-FEE invoice and its numbering, the one pure BCTI count function (one BCTI per receivable
+     invoice), the Xero contact label helper (no name, no NHI, no other personal information) and the
+     Xero privacy scan it grew in `xeroNhi.test.ts`. Phase 37: `billing.xeroQueue` and its item shape
+     (the scan reads its payloads and errors), and the restyled Billing monitor at `/admin/billing`:
+     the pure `billingMonitorView(state, options)` (`totals`, `groups`, `listProblems`), its URL search
+     params (`anaesthetist`, `hospital`, `from`, `to`, `problems`, `sort`, `list`),
+     `MONITOR_EXPAND_ALL_UP_TO` and its handoff note on scale. Phases 38b, 39 and 39a: the event, credit
+     note and payables run shapes (the generated history may leave them sparse but must not break them).
    - Phase 33 and 34: `ImportRow`, `IncomingBookingFields`, `HOSPITAL_DOWNLOAD_SAMPLES` and the manual
-     sheet fixtures, `stageHospitalRows`, `importRowViews`, the derived unmatched state and its reasons,
+     sheet fixtures, `stageImportRows` (Phase 33's one staging entry point, at plan time), `importRowViews`, the derived unmatched state and its reasons,
      the context key `matching.selectedRowId`, and the matching route (`/admin/intake/matching` at plan
      time). Whether any rows are seeded on load (a scheduled sync on boot) decides whether the
      `PERSIST_VERSION` bump in work item 10 also reseeds rows.
    - Phase 42: the master shapes (hospitals, insurers, surgeons and rooms, Contracts, RVG and Procedure
      masters, public holidays) and whether its loader keeps rejected rows with their values (the scan
      then covers its row-validation messages).
-   - Phase 14: the registry file, `DemoTrigger` (whether it has a confirm step; at plan time `run` is
-     synchronous and returns `{ ok, message }`), the memory store, the shared actor constants in
-     `store/demoActors.ts` (`OFFICE_ACTOR`, `SOUTER_ACTOR`), the pinned per-screen counts in
-     `demoTriggers.test.ts`, and `pwaPurity.test.ts`.
+   - Phase 14 (built): `DemoTrigger` in `shared/demoTriggers/types.ts` has `routes`, `surfaces`,
+     `badge`, `when`, `choices`, `defaultChoice`, `disabledReason`, a synchronous `run(api, ctx,
+     choiceId)` returning a `DemoTriggerResult`, and `indexPath`, but **no confirm step** (the Demo
+     triggers section adds one); the registry in `shared/demoTriggers/registry.ts`, the memory store in
+     `memory.ts`, the shared actor constants in `store/demoActors.ts` (`OFFICE_ACTOR`, `SOUTER_ACTOR`,
+     `OFFICE_SIMULATION_ACTOR`), the pinned per-screen counts in `demoTriggers.test.ts`, and
+     `pwaPurity.test.ts`. Check later phases have not added a confirm field before adding one.
    - Phases 38 to 41: the ledger-backed web Accounts (Dr Souter's figures must not move at scale), the
      credit-and-rebill and additional-invoice shapes (Phase 39), the patient record and Admin · Patients
      screen (Phase 40: the generated patients follow its shape; check whether the screen lists every
@@ -137,9 +188,9 @@ Two claims the prototype has so far only narrated become things a presenter can 
      may leave empty but must not break). The generator follows the shapes as shipped by 41, not as at the
      snapshot.
    - Note the current `PERSIST_VERSION`.
-5. **Measure first.** Before writing the generator, time today's Admin Day, Invoices and Audit screens
-   on the pristine seed (work item 7's hook can be added first) so the "demo scale" column of the timing
-   table has a real baseline. Record the numbers in the PROGRESS entry.
+5. **Measure first.** Before writing the generator, time today's Admin Day, Invoices, Audit and Billing
+   monitor screens on the pristine seed (work item 7's hook can be added first) so the "demo scale"
+   column of the timing table has a real baseline. Record the numbers in the PROGRESS entry.
 6. Record the result (changed items, the shipped names used, the baseline timings) in the PROGRESS
    entry.
 
@@ -149,7 +200,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 report or an environment badge, so extend existing patterns; do not invent a new visual language.
 - [Design Language.dc.html](../../../design/Design%20Language.dc.html): teal `#0D6E63` only for the
   actions this phase adds ("View raw row", the pager's current-page state, Search); semantic warning
-  tint `#F9F0DC` / on-tint `#7C4D08` for the "Saving paused" banner and the provisional masking line;
+  tint `#F9F0DC` / on-tint `#7C4D08` for the "Saving paused" banner and the masking-policy line;
   success tint `#E3F4EB` / on-tint `#157A49` for a zero-hit scan area; error tint `#FAE9E7` / on-tint
   `#9C332F` only for a scan area with hits; neutrals (ink, slate, mist, line) for the Synthetic data
   badge, which is an environment marker, not an action, a status or identity; pills at radius 999;
@@ -159,28 +210,30 @@ report or an environment badge, so extend existing patterns; do not invent a new
 - [Admin Day.dc.html](../../../design/Admin%20Day.dc.html): the day grid, its header summary line and
   footer; the pager sits in the footer strip, in the footer's type and colour.
 - [Admin Review.dc.html](../../../design/Admin%20Review.dc.html): table, stats strip and side-sheet
-  anatomy for the Invoices and Audit pagers and the raw-row sheet.
+  anatomy for the Invoices, Audit and Billing monitor pagers and the raw-row sheet.
 - [Web Dashboard.dc.html](../../../design/Web%20Dashboard.dc.html): the web top nav where the badge sits
   beside the persona.
 
 **Catalogue.** The two covered stories are short: US-15.0.4 is one sentence plus a note that performance
 testing is a Testing-milestone task; US-15.0.6's technical discussion carries the three constraints
 (logs and telemetry, failed message handling, non-production environments). US-14.5.1 states the
-restricted raw-payload rule in the dead-letter setting.
+restricted raw-payload rule in the dead-letter setting. US-13.3.1's body and Notes say why the monitor
+must hold up at volume; OQ-30's answer ("No PII in Xero") sets the Xero area of the scan.
 
 **Analysis.**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): "Demo-trigger buttons" (the Oversight/NFR cluster: Load
   full-scale data, Scan for NHI leaks) and the EP-15 table and header note; per-gap detail in
-  [epics/EP-15.md](../epics/EP-15.md) (sections US-15.0.4 and US-15.0.6).
+  [epics/EP-15.md](../epics/EP-15.md) (sections US-15.0.4 and US-15.0.6) and the US-13.3.1 section of
+  [epics/EP-13.md](../epics/EP-13.md).
 - [analysis/prototype-map-store-seed.md](../analysis/prototype-map-store-seed.md) sections 1 (store
   core and persistence), 7 (seed) and 10;
-  [prototype-map-admin.md](../analysis/prototype-map-admin.md) sections 3 (Day view), 6 (Invoices) and
-  10 (Audit viewer);
+  [prototype-map-admin.md](../analysis/prototype-map-admin.md) sections 3 (Day view), 6 (Invoices), 7
+  (Billing monitor) and 10 (Audit viewer);
   [prototype-map-shell-demo-pwa.md](../analysis/prototype-map-shell-demo-pwa.md) sections 2 (harness
   bar), 4 (Reset), 5.4 (Data Inspector), 7 (PWA) and 9 (extension points).
 
-**Code entry points** (paths under `aa-prototype/src/`, names as at the snapshot; re-read them after
-Phases 14 to 42):
+**Code entry points** (paths under `aa-prototype/src/`, names as read at `3d3a18c` with Phases 14,
+15 and 15a built; re-read them after Phases 15b to 42):
 - Persistence: `store/persistStorage.ts` (`resilientLocalStorage`, `flushPersist`, `persistStatus`,
   `bytes`, `STORAGE_BUDGET_BYTES`; the header explains why every mutation re-serialises the whole store);
   `store/appStore.ts` (`createAppStore`, the `persist` options with `createJSONStorage`, `PERSIST_KEY`,
@@ -189,7 +242,7 @@ Phases 14 to 42):
   `storeDiscipline` test in `mutate.test.ts` keeps raw `setState` there), `store/clockActions.ts`
   `resetDemo`, `rollCanvasForward`, `applyClock`; `shell/DemoResetButton.tsx`; the PWA reset in
   `pwa/PwaDemoPanel.tsx` (removes `PERSIST_KEY`, then `resetDemo`).
-- Seed and generators: `domain/seed/index.ts` (`SEED`, `buildSeed`, `volumeStory` at ~430),
+- Seed and generators: `domain/seed/index.ts` (`SEED`, `buildSeed`, `volumeStory` at ~461),
   `domain/seed/canvas.ts` (Phase 28's generator), `domain/seed/slotHash.ts` (`slotRng`,
   `hashStringToSeed`), `domain/seed/patients.ts` (`buildPatients`, the `FIRST_NAMES` and `SURNAMES`
   pools), `domain/nhi.ts` (`validateNhi`, `generateNhi(format, rng)`), `domain/seed/history.ts`
@@ -201,11 +254,14 @@ Phases 14 to 42):
   production scale (~85) this view pages and virtualises ... narrated here, not simulated"),
   `apps/admin/screens/InvoicesScreen.tsx` (renders every non-backdrop invoice today),
   `apps/admin/screens/AuditViewer.tsx` (`CAP = 500`, `sortAuditNewestFirst` on every filter change),
-  `apps/admin/screens/MasterData.tsx` (~543, the narrated scale line), the Phase 36 Ledger screen, and
-  `store/selectors.ts` (`entityCounts` ~874, `billingAttentionCount`, `submittedListCount`).
+  `apps/admin/screens/MasterData.tsx` (~543, the "Scale (narrated, not simulated)" line under the
+  Nightly contact-archive job), the Phase 36 Ledger screen, and
+  `store/selectors.ts` (`entityCounts` ~874, `billingAttentionCount`, `submittedListCount`,
+  `billingMonitor`); `apps/admin/screens/BillingMonitorScreen.tsx` and Phase 37's pure
+  `store/billingMonitorView.ts`; `store/warnings.ts` (`openWarnings`, `warningSummaryByList`, 15a).
 - Demo surfaces: `apps/demo/DemoData.tsx` (subscribes to the whole store; the persisted-size panel;
   `guardTargets` builds a `select` over every non-DRAFT List and its Bookings), `apps/demo/DemoXero.tsx`
-  (the contacts and invoices tables render every row; the "Contact archiving and volume" callout ~86
+  (the contacts and invoices tables render every row; the "Contact archiving & volume" callout ~82
   reads `settings.volumeStory`).
 - Shell: `shell/AppShell.tsx` (the harness bar left group: product name, "Prototype" pill, the DEV-only
   Requirements link), `apps/web/components/WebNav.tsx` (persona group ~62),
@@ -213,7 +269,7 @@ Phases 14 to 42):
   (~62 to 66, "All patients, lists and figures are fictional"), `shared/DemoBadge.tsx`.
 - Privacy today: `store/xeroNhi.test.ts` (the Xero-slice probe this phase generalises), `store/intake.ts`
   (`upsertPatient`; audit `patient.create` carries the NHI in `after`, which is core platform),
-  the four `console.*` calls (`pwa/swRegistration.ts:39`, `pwa/officeSimulation.ts:159`,
+  the four `console.*` calls (`pwa/swRegistration.ts:39`, `pwa/officeSimulation.ts:144`,
   `store/persistStorage.ts:111`, `store/events.ts:29`), `store/mutate.ts` `refuse` (~43).
 - Matching (Phase 33 and 34): `apps/admin/screens/MatchingScreen.tsx` and `apps/admin/matching/` (the row
   detail panel, the `RowField` correction control), `store/matchingActions.ts`, `domain/intake/`
@@ -260,7 +316,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      the archive rule (`eligibleArchiveContactIds` in `store/archiveActions.ts`, rewritten as a pure
      `domain/billing/contactArchive.ts` that groups ACCRECs by contact once, so it is linear; today's loop
      re-filters every ACCREC per contact, which is quadratic at 28,000 contacts), and any selector the
-     billing run leans on (`billingContextForCard`, `casesForList`, `prePaidByProcedure` in
+     billing run leans on (`billingContextForBooking`, `casesForList`, `prePaidByProcedure` in
      `store/selectors.ts` at the snapshot) if the generator needs it. Use whatever Phases 25 and 36 made
      pure for pricing from the lock and building ledger pairs.
    - `FIRST_NAMES` and `SURNAMES` in `domain/seed/patients.ts` are module-private today: export them (no
@@ -269,8 +325,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      (so 71 generated), `historyMonths: 12`, `targetInvoicesPerYear: 28000`, the booking density per
      booked List, the share of split Bookings, the payment mix of the history (paid and disbursed, part
      paid, outstanding by age), the share of one-time patients (read from `settings.volumeStory.oneTimePct`,
-     99), and the page sizes used by the screens (Day 30 anaesthetists, Invoices 50, Audit 100). Every
-     figure in copy is read from here or counted from the data, never typed.
+     99), `monitorProblemShare`, and the page sizes used by the screens (Day 30 anaesthetists, Invoices
+     50, Audit 100, Billing monitor 20 anaesthetist groups and 25 Lists per group). The horizon is not
+     here: it is Phase 28's setting. Every figure in copy is read from here, the setting or counted from
+     the data, never typed.
    - `buildFullScaleDataset(base: AppState-shaped seed, clock): FullScaleDataset`, deterministic, built
      on top of the pristine seed (the 14 demo anaesthetists and every seeded record are kept exactly):
      - **Anaesthetists** (71): synthetic names from the seed's `FIRST_NAMES` and `SURNAMES` pools with a
@@ -279,18 +337,35 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        and Permanent List templates drawn like the cast's (so `rollCanvasForward` keeps generating their
        far edge when the clock moves). Their profile fields follow Phase 26 (prepaid set empty).
      - **Slots and Lists** across the horizon via Phase 28's generator with the extended
-       `CanvasMasters`: about 21,000 Slots from today to the four-month edge (85 x 124 days x 2) and about
-       23,500 including the two weeks back. Forward booked Lists for the 71 get Bookings at the seed's
+       `CanvasMasters`, reading the horizon from `appSettings.schedule.horizonMonths` (FT-01.1: four
+       months in current practice, any number allowed), never a constant: at the default, about 21,000
+       Slots from today to the edge (85 x 124 days x 2) and about 23,500 including the two weeks back.
+       Slot statuses use Phase 29's status master by fixed id; availability follows the order Phase 28
+       paints (availability first, then recurring bookings), so a generated anaesthetist's
+       unavailability never holds a List; a recurring booking that falls on it becomes a Draft List by
+       Phase 31's rule (OQ-81), at a practice-sized handful, so the Day dashboard's Draft List strip and
+       the "unassigned" count stay realistic. Forward booked Lists for the 71 get Bookings at the seed's
        filler density (richest over the next 10 days, thinning after), on the existing hospitals,
-       surgeons and default Contracts.
+       surgeons and Contracts (each Procedure's Contract from Phase 20's picker rules: the procedure's
+       default RVG Contract unless a hospital Contract is scoped to it).
      - **Billed history** for the 71 over the last 12 months before `DEMO_TODAY`: worked Lists (each with
        its Slot, following whatever Phase 28 does for pre-horizon history), Bookings with a primary
-       Procedure, a Contract per Procedure (Phase 20's default), a billable party (Phase 21), the locked
-       record written at authorise (Phase 25), then invoices, ledger pairs, receipts and disbursements
-       built with **the same pure builders the billing run and ledger use** (never store actions:
-       `mutate()` per record would copy the audit array each time and go quadratic). Invoices land at
-       about `targetInvoicesPerYear`, AA-FEE invoices (Phase 16, one per generated anaesthetist per fee
-       period) included and counted separately.
+       Procedure, a Contract per Procedure (Phase 20), the billable party the Contract defines (Phase 21,
+       D17: no per-Booking override), the locked record written at authorise (Phase 25), then invoices,
+       one BCTI (ACCPAY) per receivable invoice, ledger pairs, receipts and disbursements built with
+       **the same pure builders the billing run and ledger use** (never store actions: `mutate()` per
+       record would copy the audit array each time and go quadratic). Invoices land at about
+       `targetInvoicesPerYear`. The monthly AA-FEE invoices (Phase 16, D1: one per generated anaesthetist
+       per month, fixed items plus the per-BCTI charge counted by Phase 16's one pure count function, never
+       a second count) are included and counted separately. Events and credit notes (Phases 38b and 39)
+       may be left out of the generated history; if any are generated they go through the same builders.
+       Generated billed history raises no open warnings (15a's routine); only the forward Bookings and the
+       review backlog raise what the rules naturally raise, so the to-do list stays practice-sized.
+     - **A realistic problem set for the Billing monitor** (US-13.3.1): a small, deterministic share of
+       generated authorised Lists (`FULL_SCALE.monitorProblemShare`, a few in a thousand) carry a
+       problem Phase 37's `listProblems` recognises, built through the shipped shapes (a billing
+       exception through Phase 36's builder, an open Xero queue item through Phase 37's), so Problems only
+       at scale shows a practice-sized handful, not zero and not thousands.
      - **A realistic review backlog**: the 71's worked Lists from the last two working days before
        `DEMO_TODAY` are left SUBMITTED (Bookings complete, not authorised, not billed), so the Review
        queue shows the practice-sized backlog it would carry (about 100 to 170 Lists) and not only the
@@ -298,15 +373,20 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      - **Patients**: about one per history Booking at the one-time share, with synthetic names, DOBs,
        ethnicity codes and phones drawn like `buildPatients`, and NHIs from `generateNhi` (about one in
        nine new-format) against a used-set seeded with every existing NHI, so every NHI is valid and
-       unique. Every patient carries a hidden internal id as today.
-     - **Xero mirror**: one contact per patient and organisation keyed on the hidden internal id, an
+       unique. Every patient carries a hidden internal id as today, in Phase 40's patient-record shape.
+     - **Xero mirror**: one contact per patient and organisation keyed on the hidden internal id and
+       named by Phase 16's label helper (no patient name, NHI or other personal information: OQ-30), an
        ACCREC and ACCPAY per ledger pair, payments and disbursements matching the ledger, and contacts
        archived by the same rule `eligibleArchiveContactIds` applies (fully paid and inactive past the
        window), so the active-contact count is real. `settings.volumeStory.activeContacts` is set to that
        count in the full-scale state.
-     - **Audit**: a compact, realistic trail per generated record (Booking create, complete, List
-       submit, authorise, billed, payment, disbursement), correct actors and sources, clock timestamps
-       from the record's own dates, sorted by `atISO`; then one newest entry `demo.fullScaleLoaded`
+     - **Audit**: a compact, realistic trail per generated record, using exactly the action codes the
+       runtime writes for the same steps (Booking create, complete, List submit, authorise, invoice; a
+       credit note where one is generated). US-13.5.2 now lists invoices and credit notes and leaves
+       payments and disbursements to Xero, so they get an entry only if the runtime as shipped writes one
+       (for example Phase 37's disbursement detected from Xero), never an invented one. Correct actors
+       and sources, clock timestamps from the record's own dates, sorted by `atISO`; then one newest
+       entry `demo.fullScaleLoaded`
        (actor "Demo control", source demo, `after: { anaesthetists, slots, invoices, auditEntries }`).
      - **Ids and numbers**: every id comes from the counters, which the dataset returns advanced, so the
        first runtime allocation after loading continues past them. Generated invoice numbers use a
@@ -319,14 +399,18 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
        record id, amount and date, in key order);
      - the seed survives: every seeded record (the 14 anaesthetists' Slots, Lists, Bookings, invoices,
        ledger pairs, Xero rows, audit) is deep-equal to the pristine seed's;
-     - the claims: 85 anaesthetists; Slots from today to the horizon edge at least 20,000; exactly two
-       Slots per anaesthetist per day; invoices raised in the last 12 months within 27,500 to 28,500;
+     - the claims: 85 anaesthetists; at the default four-month horizon, Slots from today to the edge at
+       least 20,000; exactly two Slots per anaesthetist per day; a shorter horizon setting gives
+       proportionally fewer Slots and no Slot past its edge; invoices raised in the last 12 months within
+       27,500 to 28,500; the AA-FEE count per anaesthetist per month is one, and its per-BCTI line equals
+       Phase 16's count function over the generated invoices; `billingMonitorView` with Problems only
+       returns exactly the generated problem Lists;
      - integrity: every ledger pair balanced (disbursed at most authorised, authorised at most received,
        received at most due, Phase 36's invariants); every invoice links to a Booking and a locked record;
        every Booking has exactly one primary Procedure and one Contract per Procedure; every NHI valid and
        unique; no id collides with the seed; the next allocated id of each kind is unused;
-     - privacy: the leak scan (work item 13) over the full-scale state finds zero NHIs in the Xero
-       slice.
+     - privacy: the leak scan (work item 13) over the full-scale state finds zero NHIs and zero other
+       personal information in the Xero slice.
 3. **Installing and leaving full scale** (`store/mutate.ts`, new `store/scaleMode.ts`, `store/clockActions.ts`)
    (US-15.0.4):
    - `installDomainState(api, state)` in `mutate.ts`: the wholesale replace that `resetDomainState` already
@@ -362,11 +446,15 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
    - Profile with the timing hook first; fix only what the numbers show. The likely hot spots are the
      per-render full scans in `AdminApp.tsx` (`dayLists` over every List, `reviewLists`, the side-nav
      badge counts), `AuditViewer`'s sort and `entityTypes` set on every render, `InvoicesScreen`'s
-     `failedCases` filter, and the clock jobs: the archive job (made linear in work item 2) and the
-     reconciliation poll must each stay well under a second on Next day at full scale.
+     `failedCases` filter, 15a's `openWarnings` and `warningSummaryByList` (the to-do list and the Day
+     grid triangles evaluate every Booking), Phase 37's `billingMonitorView` (every authorised List of
+     the year, mapped to queue items and divergences), Phase 30's conflict dashboard, Phase 31's Draft
+     List strip, Phase 32's notification pool, and the clock jobs: the archive job (made linear in work
+     item 2) and the reconciliation poll must each stay well under a second on Next day at full scale.
    - Add memoised indexes keyed on the record map's identity (a `WeakMap` per map, rebuilt only when the
-     map object changes): Lists and Slots by date, Bookings by List, invoices sorted newest first, audit
-     sorted newest first with an entity-type set. Components keep deriving through `useMemo` as the
+     map object changes): Lists and Slots by date, Lists by anaesthetist, Bookings by List, invoices
+     sorted newest first, audit sorted newest first with an entity-type set, and open warnings by List
+     (billed Bookings skipped if 15a's rules never fire on them). Components keep deriving through `useMemo` as the
      selectors file's header requires.
    - Vitest: each index returns the same result as the plain scan on the pristine seed and on a small
      generated dataset, and is rebuilt after a mutation that replaces the map.
@@ -383,10 +471,11 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      the page.
    - `DayGrid.test.tsx`: no pager at 14 rows; at 85 rows three pages, filters narrow before paging, a
      date change returns to page 1.
-6. **Invoices and Audit page at 28,000** (`InvoicesScreen.tsx`, `AuditViewer.tsx`, and the Phase 36
-   Ledger screen if it lists every pair) (US-15.0.4):
-   - A shared `Pager` component, new `apps/admin/components/Pager.tsx` (`tableChrome.ts` holds only style
-     helpers and stays `.ts`; the pager reuses its cell styles): "Showing 1 to 50 of 28,114" (mono,
+6. **Invoices, Audit and the Billing monitor page at 28,000** (`InvoicesScreen.tsx`, `AuditViewer.tsx`,
+   `BillingMonitorScreen.tsx`, and the Phase 36 Ledger screen if it lists every pair) (US-15.0.4;
+   US-13.3.1):
+   - A shared `Pager` component, new `apps/admin/components/Pager.tsx` (`apps/admin/tableChrome.ts` holds only
+     style helpers and stays `.ts`; the pager reuses its cell styles): "Showing 1 to 50 of 28,114" (mono,
      tabular), previous and next, first and last, keyboard focusable, `data-shot` hooks. The Day grid's
      footer pager (work item 5) uses it too.
    - Invoices: page size 50 over the existing sort, plus one search field ("Find by invoice number or
@@ -397,6 +486,25 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
    - Ledger (Phase 36): if its whole-ledger or per-anaesthetist view lists every pair, give it the same
      pager; the imbalance indicator must compute from the indexed totals, not by re-reading every pair per
      render.
+   - **Billing monitor** (Phase 37's restyle, US-13.3.1: "This list will get quite large"). Measure it
+     first at full scale with "All anaesthetists" and no filters (85 groups, a year of authorised Lists).
+     Phase 37 built no paging and asked this phase to decide; build:
+     - the anaesthetist groups page through the shared `Pager` at 20 groups ("Anaesthetists 1 to 20 of
+       85"), shown only when there are more groups than the page size, so the seed-scale monitor (14
+       groups) is unchanged. The anaesthetist and hospital filters, the date range, Problems only and the
+       sort apply in `billingMonitorView` **before** paging; the summary tiles ("Awaiting approval",
+       "Authorised", "With problems") count everything the filters keep, never the page. The page joins
+       Phase 37's URL state as `?page=` (`replace`), resets to 1 when any filter or the sort changes, and
+       survives the "Open in Review" round trip with the rest of the search;
+     - inside a group, the authorised rows show the first 25 in the current sort, with "Show all N" that
+       pages that group's table through the same `Pager`; awaiting rows always show (the backlog is a few
+       per anaesthetist). `MONITOR_EXPAND_ALL_UP_TO` keeps its meaning (a large view starts collapsed;
+       a List with a problem still opens expanded), and `?list=<listId>` lands on the page and group page
+       that hold the List;
+     - `billingMonitorView` reads the work item 4 indexes (Lists by anaesthetist, queue items and
+       divergences by pair) so filtering stays linear; it stays the one view model and `billingMonitor`
+       the one source of stages, as Phase 37 ruled.
+     There is still no Authorise on the monitor: "Open in Review" stays the only path, as Phase 37 built it.
    - Safety caps on the two demo tables that would otherwise render every row at scale: the Xero sim's
      Contacts and Invoices tables (`DemoXero.tsx`) and the Data Inspector's lifecycle table and guard
      console selects (`DemoData.tsx`) show the first 200 rows with "Showing 200 of N" (the guard console
@@ -404,13 +512,16 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      Admin · Patients list renders every patient, it gets the shared `Pager` at 50 over its existing search
      (about 28,000 patients at scale). These are caps, not features.
    - Component tests: the pager's ranges and edges (0 rows, exactly one page, last partial page);
-     Invoices search then page; Audit filter resets the page.
+     Invoices search then page; Audit filter resets the page; the Billing monitor shows no pager at 14
+     groups, pages at 85 with Problems only applied before paging, resets to page 1 on a filter change,
+     and `?list=` opens the right page.
 7. **Timings you can see** (new `src/shared/scale/`: `useScreenTiming.ts`, `ScaleBanner.tsx`) (US-15.0.4):
    - `scaleMode.ts` also exports `timed(fn)` (returns the result and elapsed ms), the one way any other
      module measures (the leak scan in work item 13 uses it), so `performance.now()` stays in the two
      permitted places.
-   - `useScreenTiming(key)` in Admin Day, Review queue, Invoices, Audit and the Ledger screen (the Review
-     queue is timed and indexed, not paged: its backlog at scale is a few hundred rows at most): takes `performance.now()`
+   - `useScreenTiming(key)` in Admin Day, Review queue, Invoices, Audit, the Billing monitor and the
+     Ledger screen (the Review queue is timed and indexed, not paged: its backlog at scale is a few
+     hundred rows at most): takes `performance.now()`
      at the start of the render and records the elapsed time in a layout effect (render and commit), then
      a paint sample after two animation frames, into `scaleMode`'s per-screen samples tagged with the
      current mode. It samples on mount and on page, filter and date changes. It is cheap and runs at both
@@ -418,9 +529,12 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
    - `ScaleBanner` (`data-shot="scale-banner"`), rendered by `AppShell` directly under the harness bar
      while `mode` is `generating` or `fullScale`, in the warning tint:
      - generating: "Generating full-scale data from the seed. This takes a few seconds.";
-     - loaded: "Full-scale data · 85 anaesthetists · 21,080 Slots in the four-month horizon · 28,114
-       invoices in the last 12 months · generated in 3.4 s · saving paused. Reset or reload returns to
-       the demo data." (all figures from `counts` and the timings);
+     - loaded: "Full-scale data · 85 anaesthetists · 21,080 sessions over the four-month horizon ·
+       28,114 invoices in the last 12 months · generated in 3.4 s · saving paused. Reset or reload returns
+       to the demo data." (all figures from `counts`, the horizon setting and the timings). Per OQ-64 the
+       word "slot" never reaches app copy: say sessions, AM or PM (the banner, the Timings table, the Data
+       Inspector counts and the trigger messages included; Slot stays a code word). A copy test asserts
+       none of this phase's strings contains "slot";
      - a "Timings" disclosure: a small table of each sampled screen, "Demo data" and "Full scale" columns
        (median of the last five samples, ms, mono), plus generation, install and first paint. If
        `performance.memory` exists (Chrome), one line "JS heap about N MB".
@@ -428,9 +542,10 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
      product UI.
    - Data Inspector: the persisted-size panel says "Saving paused: full-scale data is held in memory only"
      while paused, and `entityCounts` gains `slots`, `bookings`, `invoices`, `ledgerPairs`,
-     `xeroContacts` (whichever the shipped names are).
-8. **Narrated scale becomes counted** (`MasterData.tsx` ~543, `DemoXero.tsx` ~86):
-   - While `mode === 'fullScale'` the "Xero and archiving" line and the Xero sim's volume callout read the
+     `xeroContacts` (whichever the shipped names are; the Slot count is labelled "Sessions").
+8. **Narrated scale becomes counted** (`MasterData.tsx` ~543, `DemoXero.tsx` ~82):
+   - While `mode === 'fullScale'` the "Scale (narrated, not simulated)" line under the Nightly
+     contact-archive job and the Xero sim's "Contact archiving & volume" callout read the
      real counts (invoices in the last 12 months, contacts, active contacts against the soft limit) and
      say "counted from the loaded data"; at demo scale they keep today's narrated wording.
 9. **Re-green the scale half.** `npm run build`, `npm run build:pwa`, `npx vitest run`. This is the
@@ -440,11 +555,12 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
 
 10. **The raw hospital row, held but not shown** (`domain/types.ts`, `domain/intake/`, `store/matchingActions.ts`)
     (US-15.0.6 failed message handling; US-02.1.4):
-    - `ImportRow.raw: RawImportRow`, where `RawImportRow = { format: 'sheetRow' | 'downloadRow' |
-      'feedMessage'; columns: readonly { name: string; value: string }[] }`: the row exactly as the
+    - `ImportRow.raw: RawImportRow`, where `RawImportRow = { columns: readonly { name: string; value: string
+      }[] }` (the row's existing `channel`, Phase 33's `'download' | 'manualSheet' | 'feedMessage'` at plan
+      time, says which kind of source it came from; do not add a second union): the row exactly as the
       hospital sent it, including the columns the matcher does not map (for example address, next of kin
       and phone, referrer, clinical note, the hospital's own patient number). Written once by
-      `stageHospitalRows` and never edited (corrections stay in `corrections`).
+      `stageImportRows` and never edited (corrections stay in `corrections`).
     - Fixtures: a pure `rawRowFor(sampleRow)` in `domain/intake/` builds each sample's raw columns from its
       incoming fields plus a few deterministic synthetic extras, so no fixture is typed twice. A
       `feedMessage` row's raw columns are the parsed segments of the Future-scope message text.
@@ -452,7 +568,8 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
       Add one line under the row detail's incoming fields: "Only the fields needed to match are shown.
       The rest of what the hospital sent is held under restricted access."
     - `maskRawRow(raw, policy)` in new `src/domain/privacy/mask.ts` with `RAW_ROW_MASKING`, one labelled
-      provisional block: NHI-shaped values keep the first three characters and mask the rest
+      block (the catalogue sets no masking policy, so it is AA's to agree and goes on the owner's review
+      list): NHI-shaped values keep the first three characters and mask the rest
       ("ZAA••••"), dates of birth keep the year, phone numbers keep the last three digits, email keeps
       the domain, street addresses keep the suburb, next-of-kin names become initials; other columns show
       as sent. Pure, Vitest in `mask.test.ts`: every masked output of every fixture contains no NHI (by the
@@ -475,8 +592,7 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
       "Restricted. Viewing is recorded with your reason."; a reason field with three quick reasons
       ("Find why this row did not match", "Check what the hospital sent", "Hospital asked us to confirm a
       value") and free text; the teal "View raw row" button (disabled until a reason is given). On success
-      the sheet shows the masked columns (name, value in mono) and "Masking policy is provisional, for AA
-      to agree". Closing the sheet hides the payload; opening it again asks for a reason again. The panel
+      the sheet shows the masked columns (name, value in mono) and "Masking policy is for AA to agree". Closing the sheet hides the payload; opening it again asks for a reason again. The panel
       shows "Raw row viewed 2 times · last Kirsty W. 10:42".
     - Vitest: each refusal; the denied attempt writes exactly one audit entry and returns no payload; the
       office view writes one entry with the reason and no values; the returned payload is masked; a
@@ -499,34 +615,42 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
       non-test sources under `src/` and `aa-prototype/pwa/`.
 13. **The NHI leak scan** (new `src/store/privacyScan.ts`) (US-15.0.6; US-09.3.1):
     - `scanForNhiLeaks(state, options?)` returns a report: per area, what was scanned, how many items,
-      and every hit (area, location, the masked token, never the raw NHI). The known-NHI set is every
+      and every hit (area, location, the masked token, never the raw value). The known-NHI set is every
       patient NHI plus every NHI in import rows; the detector also flags any valid NHI-shaped token even
       if no patient holds it. Areas, each tokenised once so the scan is linear even at full scale:
-      - **Xero** (must be zero): the whole `xero` slice, and `billing.xeroQueue` payloads and errors
-        (Phase 37);
+      - **Xero** (must be zero; OQ-30 answered "No PII in Xero"): the whole `xero` slice, and
+        `billing.xeroQueue` payloads and errors (Phase 37), checked for NHIs **and** for the personal
+        information of patients and billable parties (names, phones, emails, addresses, dates of birth
+        from `masters.patients` and `masters.billableParties`, as Phase 16's Xero privacy scan does), so
+        the scan proves the answer, not only the NHI half. Organisation names (hospitals, insurers,
+        surgeons, anaesthetist payees) are not personal information here. The personal-information match
+        is a known-value set built once (lower-cased, whole-token for names), so it stays linear;
       - **Diagnostic log**: `recentDiagnostics()`, including recorded refusals;
-      - **Failure reasons**: ledger and billing exceptions (Phase 36), Xero queue errors and divergence
-        notes (Phase 37), import row unmatched reasons and flags (Phase 33), the Future-scope message
-        log's failure reasons, and Phase 42 loader row-validation messages if it keeps them;
+      - **Failure reasons** (US-15.0.6 names monitoring): ledger and billing exceptions (Phase 36), Xero
+        queue errors and divergence notes (Phase 37), the problem reasons the Billing monitor shows
+        (`listProblems`, Phase 37), import row unmatched reasons and flags (Phase 33), the Future-scope
+        message log's failure reasons, and Phase 42 loader row-validation messages if it keeps them;
       - **Held inside the core platform (allowed)**: patients, Bookings, import rows (including `raw`) and
-        the audit trail, reported as counts with "Held by design" and never as leaks. If OQ-30 was
-        answered for Appendix 1 (drift check), the permitted Xero contact field joins this group.
+        the audit trail, reported as counts with "Held by design" and never as leaks.
     - The report's scan time comes from `timed()` in `store/scaleMode.ts` (work item 7), never from a
       direct `performance.now()` call here.
     - `options.plantTestLeak`: adds one clearly labelled synthetic diagnostic line containing a real seeded
       NHI to the scan input only (never to the buffer or the store), so the report shows one hit in
       "Diagnostic log (planted test line)".
-    - Vitest in `privacyScan.test.ts` (it supersedes the body of `xeroNhi.test.ts`, which becomes a thin
-      call): after the whole money chain (authorise, billing run, handoff, payment, payables, an AA-FEE
-      invoice), a matching import with a raw-row view and a refused one, a Xero outage and restore, and a
-      billing failure, every leak area reports zero; a planted leak reports exactly one; a hand-injected
-      NHI in a billing failure message is found (proves the area is wired); the scan never includes an
-      unmasked NHI in its report.
+    - Vitest in `privacyScan.test.ts` (it supersedes the body of `xeroNhi.test.ts`, which Phase 16 grew
+      into a Xero privacy scan and which becomes a thin call, keeping every assertion Phase 16 added):
+      after the whole money chain (authorise, billing run, handoff, payment, payables run, the monthly
+      AA-FEE invoice, an additional invoice event (Phase 38b) and a credit note (Phase 39)), a matching
+      import with a raw-row view and a refused one, a Xero outage and restore, and a billing failure,
+      every leak area reports zero; a planted leak reports exactly one; a hand-injected NHI in a billing
+      failure message is found, and a hand-injected patient name in a Xero contact is found (proves both
+      checks are wired); the scan never includes an unmasked NHI or personal value in its report.
 14. **The scan report on the Data Inspector** (`apps/demo/DemoData.tsx`):
     - A "Privacy checks" panel (`data-shot="nhi-scan-report"`): before any scan, "Run Demo actions, Scan
       for NHI leaks"; after one, a table of areas (Area, What was scanned, Items, NHIs found) with a
       success pill "0 found" or an error pill "1 found" and the hit locations, the "Held inside the core
-      platform" rows in neutral, the scan time in ms and the clock time it ran. The report is kept in
+      platform" rows in neutral, the scan time in ms and the clock time it ran. The Xero row's column
+      reads "NHIs or personal details found". The report is kept in
       Phase 14's memory store (not persisted, cleared by Reset).
 15. **Synthetic data only, everywhere** (new `src/shared/SyntheticDataBadge.tsx`) (US-15.0.6 non-production
     environments):
@@ -544,13 +668,15 @@ only in `src/store/scaleMode.ts` and `src/shared/scale/`.
 ## Demo triggers
 
 All are registered through the Phase 14 registry with a `run(api, ctx)` on the screen's entity or its
-published context, a disabled state with its reason, and a demo badge. None is added to the Control
+published context and a disabled state with its reason. None sets `badge` (the field holds only
+`'future-scope'` and `'office-stand-in'`, and none of the three is either: the harness bar marks them as
+demo actions already). None is added to the Control
 Panel page, which lists them under their screens automatically.
 
 | id | Label | Screen (routes) | Surfaces | Effect | Disabled when |
 |---|---|---|---|---|---|
-| `load-full-scale` | Load full-scale data | Admin · Day view (`/admin/day/:dateISO`) and Admin · Invoices (`/admin/invoices`, `/admin/invoices/:invoiceId`) | bar | `loadFullScaleData`: resets, builds 85 anaesthetists, about 21,000 Slots in the horizon and about 28,000 invoices in memory, pauses saving, shows the scale banner. Message: "Generating full-scale data. Timings appear in the banner." Needs a confirm step ("Replaces the current demo data. Reset returns to it."): use the registry's confirm if Phase 14 shipped one, otherwise add an optional `confirm?: string` to `DemoTrigger` (the menu shows a second Confirm click, like the Control Panel's jump) with a registry test | already generating ("Generating"); already loaded ("Full-scale data is loaded. Reset returns to the demo data.") |
-| `scan-nhi-leaks` | Scan for NHI leaks | Data Inspector (`/demo/data`) | bar | `choices`: "Scan now" and "Scan with a planted test leak (proves the scan finds one)"; runs `scanForNhiLeaks` and stores the report for the Privacy checks panel. Message: "Scanned 3 areas and 31,204 items in 180 ms. No NHI found outside the core platform." (figures from the report) | never |
+| `load-full-scale` | Load full-scale data | Admin · Day view (`/admin/day/:dateISO`) and Admin · Invoices (`/admin/invoices`, `/admin/invoices/:invoiceId`) | bar | `loadFullScaleData`: resets, builds 85 anaesthetists, about 21,000 Slots across the horizon setting and about 28,000 invoices in memory, pauses saving, shows the scale banner. Message: "Generating full-scale data. Timings appear in the banner." (no "slot" in the message). Needs a confirm step ("Replaces the current demo data. Reset returns to it."): Phase 14 shipped no confirm field, so add an optional `confirm?: string` to `DemoTrigger` in `shared/demoTriggers/types.ts` (the menu shows a second Confirm click, like the Control Panel's jump) with a registry test, unless a later phase already added one | already generating ("Generating"); already loaded ("Full-scale data is loaded. Reset returns to the demo data.") |
+| `scan-nhi-leaks` | Scan for NHI leaks | Data Inspector (`/demo/data`) | bar | `choices`: "Scan now" and "Scan with a planted test leak (proves the scan finds one)"; runs `scanForNhiLeaks` and stores the report for the Privacy checks panel. Message: "Scanned 3 areas and 31,204 items in 180 ms. No NHI outside the core platform, and no personal details in Xero." (figures from the report) | never |
 | `matching-raw-row-other-role` | View raw row as another role | Admin · Intake, Matching (`/admin/intake/matching`, the shipped route), with the published `matching.selectedRowId` | bar | `when`: a row is selected and it is unmatched or blocked. `choices`: "As Dr Melanie Souter (anaesthetist)" (Phase 14's `SOUTER_ACTOR`) and "As the hospital feed (integration)" (a new `HOSPITAL_FEED_ACTOR` in `store/demoActors.ts`: `{ who: 'Hospital feed', role: 'system', source: 'integration' }`; `ActorRole` has no integration role); calls `viewRawImportRow` with that actor and the reason "Demo: access check". Message: "Refused: only office staff can view a raw hospital row. The attempt is in the audit trail." | no row selected ("Select an unmatched row first"); the row is decided ("Raw rows are available only while a row needs resolving") |
 
 The office's own **View raw row** is a product action in the row detail panel (work item 11), not a demo
@@ -559,14 +685,15 @@ the restriction itself, because the Admin app always runs as the office, so the 
 the refusal. This is the reading of the plan's "View raw row" trigger; record it in the Decisions log.
 
 The "Load full-scale data" entry is listed on the Day view and Invoices screens because those are where
-scale is demonstrated; Audit and the Ledger then show it without a trigger of their own. Its `run` returns
+scale is demonstrated; Audit, the Billing monitor and the Ledger then show it without a trigger of their
+own. Its `run` returns
 at once (the registry's `run` is synchronous); progress, the result and any error show in the scale banner.
 
 Tests: update the pinned per-screen counts in `demoTriggers.test.ts` for the Day view, Invoices, Data
 Inspector and Matching; add a case per entry for its disabled reasons; if `confirm?` is added, a registry
 test that the menu needs the second click before `run` fires.
 
-**PWA equivalent:** none needed. The Day view, Invoices, Audit, Ledger, Matching and Data Inspector are
+**PWA equivalent:** none needed. The Day view, Invoices, Audit, Billing monitor, Ledger, Matching and Data Inspector are
 Admin or demo surfaces that do not exist in the PWA, and no mobile beat waits on them. All three entries
 declare `surfaces: ['bar']`; the full-scale generator is dynamically imported, so it is not in the PWA's
 static import closure. The PWA gets the Synthetic data badge on the More card (work item 15) and the
@@ -580,8 +707,12 @@ audit lists this phase as "no PWA stand-in required".
   belongs to the Testing milestone.
 - Saving the full-scale data, or loading it in the PWA.
 - Paging or scale work on screens the requirement does not name, beyond the safety caps in work item 6
-  (the Review queue is timed and indexed but not paged; Billing monitor and web Accounts stay as they are;
-  the 71 generated anaesthetists have no mobile or web persona).
+  (the Review queue is timed and indexed but not paged; web Accounts stays as it is; the 71 generated
+  anaesthetists have no mobile or web persona). The Billing monitor is in scope because US-13.3.1 names
+  its size; its grouping, filters and "Open in Review" are Phase 37's and are not reworked here, and
+  approving inside the monitor stays out.
+- Long horizons at full scale: the generator runs at whatever the horizon setting holds, but tuning for
+  very long horizons is not built (FT-01.1's note: "we don't have to worry about it for now").
 - The dead-letter queue and its raw HL7 view (US-14.5.1, Future). The Future-scope HL7/FHIR simulator keeps
   showing its raw messages, because it plays the hospital's side and carries its Future-scope badge; the
   Future-scope message log's patient name on failed rows is left for Phase 44's handoff.
@@ -590,6 +721,7 @@ audit lists this phase as "no PWA stand-in required".
 - Hosting, backups, disaster recovery, penetration testing, environments and the AI-tools statement from
   EP-15's technical discussion: presenter talk-track only.
 - Real authentication or role management: the office-only rule is the store guard, as everywhere else.
+  The simulated PWA sign-in (US-13.5.3) is Phase 43a's, which runs after this phase.
 - Catalogue screenshots beyond the "Catalogue screenshots" step below (the covered items and the recipes this phase breaks); `US-15.0.6`'s two Xero captures stay valid.
 
 ## Manual test checklist
@@ -602,8 +734,9 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] Admin Day on Tue 21 Jul at demo scale: no pager, the footer shows real counts and no "narrated"
       sentence; Demo actions lists "Load full-scale data".
 - [ ] Load full-scale data (with its confirm): the banner shows "Generating", then the counts (85
-      anaesthetists, at least 20,000 Slots in the horizon, invoices between 27,500 and 28,500) and the
-      generation time; the Data Inspector says saving is paused.
+      anaesthetists, at least 20,000 sessions over the four-month horizon, invoices between 27,500 and
+      28,500) and the generation time; no banner, table or message says "slot"; the Data Inspector says
+      saving is paused.
 - [ ] Admin Day at scale: 85 anaesthetists in 3 pages of 30; the header summary counts all 85; filters
       and A to Z sort apply before paging; changing the date returns to page 1; Dr Souter's Tue 21 AM and PM
       Lists look exactly as at demo scale.
@@ -611,14 +744,21 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       `AA-S-` number finds it; opening it shows a correct invoice with its ledger and Xero state.
 - [ ] Review queue at scale: the practice-sized backlog of submitted Lists (the 71's last two working
       days plus the cast's), responsive, its timing in the banner table; Dr Souter's Lists appear as at
-      demo scale.
+      demo scale. The Admin dashboard's to-do list stays practice-sized (no warnings from billed history).
+- [ ] Billing monitor at scale (`/admin/billing`): anaesthetist groups in pages of 20 ("Anaesthetists 1
+      to 20 of 85"); the summary tiles count every List the filters keep, not the page; one anaesthetist,
+      a hospital, a date range and Problems only each narrow before paging and return to page 1; Problems
+      only shows the generated handful of problem Lists; a group with a year of Lists shows 25 with "Show
+      all N"; "Open in Review" on an awaiting row opens Review and "Back to Billing monitor" returns to the
+      same page and filters; Dr Souter's group reads as at demo scale. At demo scale (Reset) the monitor
+      has no pager and looks as Phase 37 left it.
 - [ ] Audit at scale: pages of 100 over tens of thousands of entries; filtering by entity type and source
       resets the page; the newest entry is "Full-scale data loaded".
-- [ ] The banner's Timings table shows Day view, Invoices and Audit at demo scale and at full scale; no
+- [ ] The banner's Timings table shows Day view, Invoices, Audit and Billing monitor at demo scale and at full scale; no
       full-scale figure is more than a few times its demo-scale figure, and none is above about 200 ms on
       the presenter laptop (record the numbers).
-- [ ] Ledger screen at scale is in balance and pages; Xero sim tables show "Showing 200 of N"; the Xero and
-      archiving line counts real contacts.
+- [ ] Ledger screen at scale is in balance and pages; Xero sim tables show "Showing 200 of N"; the Master data
+      archive job's scale line and the Xero sim's volume callout count real contacts.
 - [ ] At scale, Next day works (170 new Slots, poll and archive run) and S3 still runs on Dr Souter's Mon 20
       Lists (authorise, invoice, payment).
 - [ ] Reload the page at scale: the app comes back on the pristine demo seed, saving active. Load again,
@@ -626,12 +766,12 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       a mutation).
 - [ ] Matching: select an unmatched row. The row detail says only the needed fields are shown. "View raw
       row" asks for a reason; with one, the sheet shows the masked columns (NHI as "ZAA••••" style, DOB as
-      a year) and the provisional masking line; closing and reopening asks again; the panel counts the
+      a year) and the "Masking policy is for AA to agree" line; closing and reopening asks again; the panel counts the
       views; the Audit viewer shows "Raw row viewed" with the reason and no values.
 - [ ] Demo actions, "View raw row as another role", As Dr Melanie Souter: refused with the reason; the audit
       shows the denied attempt; no payload appears. On a decided row the entry is disabled with its reason.
-- [ ] Data Inspector, Scan for NHI leaks, Scan now: every leak area reports 0 found, the core-platform rows
-      read "Held by design". Scan with a planted test leak: exactly one hit in "Diagnostic log (planted test
+- [ ] Data Inspector, Scan for NHI leaks, Scan now: every leak area reports 0 found (the Xero row checks
+      NHIs and personal details), the core-platform rows read "Held by design". Scan with a planted test leak: exactly one hit in "Diagnostic log (planted test
       line)", shown masked. Run the scan again at full scale: 0 found, with the scan time shown.
 - [ ] No new app copy contains an en or em dash; teal is the only action colour; figures, ids and timings
       are mono with tabular-nums.
@@ -648,14 +788,17 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of `m
     anaesthetists; the 28,000 annual invoices and Xero contact volume). They are now clickable.
   - **New optional aside "Full scale"** after S2 (Phase 44 folds it into the rewrite). Click: Admin, Day
     view, Demo actions, Load full-scale data, Confirm; page the Day view; open Invoices and Audit; open the
-    banner's Timings. Say: "This is the whole practice: 85 anaesthetists, twenty thousand Slots across
-    four months and a year of invoices, built in the browser from the same seed. Each screen shows its
-    render time at demo size and at this size." Expected: the figures as the banner shows them (take them
-    from the running app). Close with Reset.
+    Billing monitor and turn on Problems only; open the banner's Timings. Say: "This is the whole
+    practice: 85 anaesthetists, twenty thousand sessions across four months and a year of invoices, built
+    in the browser from the same seed. The billing monitor still finds the few lists that need attention.
+    Each screen shows its render time at demo size and at this size." Expected: the figures as the banner
+    shows them (take them from the running app). Never say "slot" aloud or in the guide copy. Close with
+    Reset.
   - **S5 Beat 3 (no NHI in Xero)** gains a step: Data Inspector, Demo actions, Scan for NHI leaks, Scan
-    now, then the planted-leak choice. Say: "We do not just avoid sending the NHI to Xero; we check the
-    Xero records, the diagnostic log, error messages and failure reasons for anything that looks like an
-    NHI." Expected: zero in every area, one planted hit.
+    now, then the planted-leak choice. Say: "AA's rule is no personal information in Xero. We do not just
+    avoid sending it; we check the Xero records for any NHI or patient detail, and the diagnostic log,
+    error messages and failure reasons for anything that looks like an NHI." Expected: zero in every area,
+    one planted hit.
   - **New S5 beat "Restricted raw data"** (or an aside if S5 is full): Admin, Intake, Matching, an unmatched
     row, View raw row with a reason, then Demo actions, View raw row as another role. Say: "The office sees
     what it needs to fix the row. The rest of what the hospital sent is restricted, masked and every view is
@@ -665,7 +808,8 @@ Patch in the same session, in `docs/demo-guide/` and the matching sections of `m
   badge; add "Can it handle 85 anaesthetists and 28,000 invoices a year?" (Load full-scale data and the
   timings, with the honest caveat that formal performance testing is a Testing-milestone task); "Present
   but honestly demo-only" gains Load full-scale data, Scan for NHI leaks and View raw row as another role;
-  a strong phrase "The NHI never leaves the core platform, and we check it."
+  a strong phrase "The NHI never leaves the core platform, no personal information goes to Xero, and we
+  check it."
 - `02-workflows-and-handoffs.md`: in the intake workflow, one line that the raw hospital row is held under
   restricted access and each view is audited.
 - `master-demo-guide.html`: the same passages.
@@ -686,8 +830,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-15.0.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.4.md) Volumes | absent (not demonstrated; scale only narrated in copy) | partial. Create real shots, then change the reason to: full-scale volumes are generated in memory and timed on screen; formal performance testing belongs to the Testing milestone and is not part of the prototype. Admin shots: `full-scale-day` (`/admin/day/2026-07-21`; setup runs the `load-full-scale` entry from `[data-shot=demo-actions]` and its confirm, then waits for the scale banner; states `banner` showing the 85 anaesthetists, 20,000+ Slots and 27,500 to 28,500 invoices with generation time and the Timings table, and `paged` showing "3 pages of 30"), `full-scale-invoices` (`/admin/invoices`, "Showing 1 to 50 of" about 28,000) and `full-scale-audit` (pages of 100, newest entry "Full-scale data loaded"). Highlight the banner and the pager. Caption: "Demonstration at full practice volume with measured screen timings". Replaces the stale "scale is only narrated" reason |
-| [US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts and xero-pair (simulator, Xero sim) | stays captured; the two Xero shots stay valid. Add admin shots `raw-row` (Matching, an unmatched row: row detail with only needed fields, then View raw row asks for a reason and shows the masked columns, NHI as "ZAA••••" style and DOB as a year, with the provisional masking line; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found outside the core platform, core rows "Held by design"; second state with the planted test leak, one masked hit) and `synthetic-badge` (the "Synthetic data only" marker in the admin side nav, plus a mobile shot of the More card on `/mobile` showing it). Caption: "NHI stays inside the core platform and non-production holds synthetic data only" |
+| [US-15.0.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.4.md) Volumes | absent (not demonstrated; scale only narrated in copy) | partial. Create real shots, then change the reason to: full-scale volumes are generated in memory and timed on screen; formal performance testing belongs to the Testing milestone and is not part of the prototype. Admin shots: `full-scale-day` (`/admin/day/2026-07-21`; setup runs the `load-full-scale` entry from `[data-shot=demo-actions]` and its confirm, then waits for the scale banner; states `banner` showing the 85 anaesthetists, 20,000+ sessions over the four-month horizon and 27,500 to 28,500 invoices with generation time and the Timings table (no "slot" anywhere in the shot), and `paged` showing "3 pages of 30"), `full-scale-invoices` (`/admin/invoices`, "Showing 1 to 50 of" about 28,000), `full-scale-audit` (pages of 100, newest entry "Full-scale data loaded") and `full-scale-billing-monitor` (`/admin/billing` at scale: "Anaesthetists 1 to 20 of 85", the summary tiles counting the whole practice, then a second state with Problems only on showing the generated handful). Highlight the banner and the pagers. Caption: "Demonstration at full practice volume with measured screen timings". Replaces the stale "scale is only narrated" reason |
+| [US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts and xero-pair (simulator, Xero sim) | stays captured; the two Xero shots stay valid. Add admin shots `raw-row` (Matching, an unmatched row: row detail with only needed fields, then View raw row asks for a reason and shows the masked columns, NHI as "ZAA••••" style and DOB as a year, with the "Masking policy is for AA to agree" line; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found outside the core platform, the Xero row checking NHIs and personal details, core rows "Held by design"; second state with the planted test leak, one masked hit) and `synthetic-badge` (the "Synthetic data only" marker in the admin side nav, plus a mobile shot of the More card on `/mobile` showing it). Caption: "NHI stays inside the core platform and non-production holds synthetic data only" |
 
 **Recipes this phase breaks.**
 
@@ -695,8 +839,9 @@ matches what was built:
 - `US-15.0.4.json` quotes the narrated paging sentence on the Day grid and the Xero simulation; it is rewritten above. Recipes that highlight Admin Day (`US-15.0.1`, `US-13.1.1`, `US-13.1.2` and the many `/admin/day/` recipes) must still resolve with the paging footer; at demo scale there is no pager, so no change expected.
 - `US-13.5.1.json`, `US-07.2.1.json` and `US-07.3.2.json` start on the Data Inspector (`/demo/data`), which gains a Privacy checks panel; `US-02.5.5.json` and `US-13.5.2.json` open the Audit viewer, whose 500-row cap becomes pages of 100. Re-check their highlights with `--dry`.
 - The matching screen's row detail changes (only mapped fields, View raw row); no recipe was found using `/admin/intake/matching`, but the `--dry` run is the check.
+- The Billing monitor gains a groups pager and per-group "Show all N", shown only above 20 groups or 25 Lists, so at seed scale nothing changes; the recipes that open `/admin/billing` (`US-13.3.1`, `FT-13.3`, `US-13.3.2`, `US-09.2.4`, `US-10.1.2`, `US-10.2.1`, `US-08.1.1`, `US-08.3.4`, `US-08.5.1`, `US-08.5.2`, `FT-08.5`, `US-11.3.2`, as Phase 37 left them) must still resolve; confirm with `--dry`. `US-13.5.2.json` also carries Phase 14's `admin-sign-in-attempts` shot on the Audit viewer: re-check it with the new pager.
 
-**ATLAS.md.** Update "Routes" (the Data Inspector's Privacy checks, Matching raw row), "Overlays that need clicks" (the confirm step for Load full-scale data, the raw-row reason prompt and sheet), "Gotchas" (the Synthetic data badge sits in every shell; full-scale generation takes a moment, so wait for the banner; the loaded set lives in memory and is lost on `goto`) and "Existing hooks" (the scale banner, the pager, the badge and the scan panel).
+**ATLAS.md.** Update "Routes" (the Data Inspector's Privacy checks, Matching raw row, the `/admin/billing` row's new `page` search param), "Overlays that need clicks" (the confirm step for Load full-scale data, the raw-row reason prompt and sheet), "Gotchas" (the Synthetic data badge sits in every shell; full-scale generation takes a moment, so wait for the banner; the loaded set lives in memory and is lost on `goto`) and "Existing hooks" (the scale banner, the pagers including the Billing monitor's, the badge and the scan panel).
 
 ## Adversarial review (after build)
 
@@ -717,7 +862,10 @@ anything settled in the Decisions log.
   unused.
 - Integrity at scale: generated history went through the same pure builders as the billing run and the
   ledger (no parallel pricing code), every ledger pair balances, the Ledger screen shows in balance, the
-  Xero mirror matches the ledger, archiving follows the real rule.
+  Xero mirror matches the ledger, archiving follows the real rule; the AA-FEE run is monthly and its
+  per-BCTI line uses Phase 16's one count function; every Procedure's billable party comes from its
+  Contract; the generated audit uses only the runtime's own codes (no invented payment or disbursement
+  entries); the Slots follow the horizon setting, not a constant.
 - Persistence: while paused nothing is serialised, not just not written; the pause is independent of the
   error latch; Reset resumes before it installs; a reload after loading returns the pristine seed; the PWA's
   storage path is unchanged.
@@ -727,25 +875,33 @@ anything settled in the Decisions log.
   quadratic, and Next day at full scale stays well under a second; the generator is not reachable by a
   static import from the main entry.
 - Paging correctness: filters and search before paging, page reset on change, edge pages, the Day view's
-  summary counting all rows, no pager at demo scale, `?page=` a replaceable view preference.
+  summary counting all rows, no pager at demo scale, `?page=` a replaceable view preference. On the
+  Billing monitor: the summary tiles count all kept Lists, Problems only and the anaesthetist filter
+  apply in `billingMonitorView` before paging, `?list=` lands on the right page, the "Open in Review"
+  round trip keeps the page, and no Authorise appears on the monitor.
 - Privacy: the raw payload never reaches the audit, the diagnostics buffer, the scan report or any
   refusal message; masking covers every fixture column that could identify a patient; a non-office attempt
   is refused and audited once; the detector's shapes and check digits match `validateNhi` for both formats;
-  every scan area is actually wired (the injected-leak test); no `console.` outside `diagnostics.ts`.
+  every scan area is actually wired (the injected-leak test); the Xero area also catches personal
+  information (OQ-30, "No PII in Xero") without flagging organisation names; no `console.` outside
+  `diagnostics.ts`.
 - Triggers: the three entries show only on their screens, `surfaces: ['bar']`, disabled states work, bodies
   in `src/store` / `src/shared`, the generator is dynamically imported, `pwaPurity.test.ts` green, every
   audit code has a label.
 - Design and copy: the Synthetic data badge is neutral (not crimson, not teal, not the demo warning tint),
   the banner is harness chrome, teal-only actions, semantic tints for scan results, mono figures, no en or
-  em dashes.
+  em dashes, and the word "slot" in no app copy (OQ-64).
 
 ## PROGRESS.md updates
 
 - **For the owner's review** (end of the phase entry; ROADMAP.md "Owner review: agents test
-  themselves"): the defaults built for open questions, provisional readings, anything logged
-  rather than fixed, and the screens worth a look, each with its route and persona.
+  themselves"): the raw-row masking policy (`RAW_ROW_MASKING`, which the catalogue does not set), the
+  Billing monitor's page sizes (20 groups, 25 Lists per group) and its "Show all N", the Day, Invoices and
+  Audit page sizes, the generated problem share, anything logged rather than fixed, and the screens worth
+  a look, each with its route and persona (Admin Day, Invoices, Audit and Billing monitor at full scale;
+  the Matching raw-row sheet; the Data Inspector's Privacy checks).
 - A catch-up status row for Phase 43 and an entry `### Catch-up Phase 43 · Scale and privacy (date)`: the
-  drift-check result (including OQ-30's state), the shipped names used from Phases 28, 33 to 37 and 42, the
+  drift-check result against `3d3a18c` (OQ-30 answered and built as "No PII in Xero"), the shipped names used from Phases 14, 15a, 16, 28, 29, 31 to 37, 40 and 42, the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in
   the browser, the checklist item by item, test counts, and the review pass.
 - **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
@@ -756,11 +912,15 @@ anything settled in the Decisions log.
     become counted only while the set is loaded.
   - "Admin Day, Invoices and Audit page" (page sizes 30, 50 and 100). Replaces the Day grid's narrated
     paging sentence and the Audit viewer's 500-row cap.
+  - "The Billing monitor pages its anaesthetist groups at scale" (20 groups, 25 Lists per group, filters,
+    sort and Problems only before paging; US-13.3.1). Answers Phase 37's handoff on whether the restyled
+    monitor needs paging; approval stays on Review.
   - "Hospital rows keep their raw payload under restricted access: office only, reason required, every view
-    audited, masked by a provisional policy" (US-15.0.6, applying US-14.5.1's rule to the in-scope failure
+    audited, masked by a policy for AA to agree" (US-15.0.6, applying US-14.5.1's rule to the in-scope failure
     surface). The harness entry exercises the refusal; the office view is a product action.
   - "Diagnostics are redacted and refusals are recorded, so the NHI leak scan covers logs and error
-    messages"; `xeroNhi.test.ts` becomes part of the scan's test.
+    messages"; `xeroNhi.test.ts` (Phase 16's Xero privacy scan) becomes part of the scan's test, and the
+    Xero area checks personal information as well as the NHI (OQ-30 answered: "No PII in Xero").
   - "Synthetic data only is an environment marker in neutral styling, not a demo badge."
 - **Handoff notes:** the Future-scope message log still shows the patient name on failed rows (US-14.5.1 is
   Future); US-15.0.4's formal performance testing belongs to the Testing milestone;
@@ -768,4 +928,6 @@ anything settled in the Decisions log.
   narrated; this phase's Catalogue screenshots step rewrites it (the Load full-scale data banner and the
   paged Day view); Phase 44's parity audit:
   no PWA stand-in required for this phase; the new optional "Full scale" aside and S5 beats for Phase 44's
-  rewrite.
+  rewrite; for Phase 43a, the simulated PWA sign-in screen (US-13.5.3) should carry the Synthetic data
+  only badge like the More card; long horizons at full scale are untested beyond the default four months
+  (FT-01.1's note).

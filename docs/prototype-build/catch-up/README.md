@@ -5,7 +5,7 @@ Since then the requirements catalogue (`docs/discovery-reference/Updated Require
 has moved a long way. This folder holds the gap analysis between the two and the build plan to close
 it: catch-up phases numbered from 14.
 
-Catalogue snapshot: `501b0b8` (2026-10-01).
+Catalogue snapshot: `3d3a18c` (2026-10-03).
 
 ## Start here
 
@@ -73,3 +73,4 @@ The tools the second skill drives, all run from the repo root:
 ## Update history
 
 - 2026-10-01 · `1f067a8..501b0b8` (AA meeting with Greg, D1 to D8 and D10 answered): 142 items re-graded; all 31 phases kept, 28 updated (14, 37, 43 baseline only); 6 phases added (15a warnings, 38a find past work, 39a payment runs, 39b pre/post-op events, 40a NHI lookup, 43a ease of use); US-08.6.4 unparked into 39. 37 phases, about 63 sessions (was 52).
+- 2026-10-03 · `501b0b8..3d3a18c` (three AA meetings with Greg on 2026-10-02, OQ-62 to OQ-75 answered): 164 items re-graded (Contradicts 55 to 62, Partial 102 to 105, Missing 33 to 41, Matches 72 to 61); all 35 existing unbuilt phases updated (15a session 2 only, its session 1 being built); 4 phases added (15b Copy and photo capture out, 19a default RVG Contracts hold the base units, 32a anaesthetist moves a single Booking, 38b events on a Procedure and the additional invoice). 41 phases, about 69 sessions (was 63).

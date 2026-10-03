@@ -8,9 +8,16 @@
 [US-12.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.2.md) GST period (the aligned window and the label drift; Phase 26 already lets the anaesthetist set it) ·
 [US-07.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.2.1.md) Anaesthetist loses edit access (the web "completed, unbilled" marker) ·
 [DM-29](../analysis/domain-model-delta.md#dm-29) GST schedule on a cash basis of payables actually paid ·
-[DM-36](../analysis/domain-model-delta.md#dm-36) List visibility after invoicing: unbilled to billed, not vanished ·
 [RV-18](../analysis/reverse-check.md#rv-18-dashboard-productivity-and-leave-panels) Dashboard Productivity and Leave panels ·
-[RV-19](../analysis/reverse-check.md#rv-19-receivables-aging-buckets-and-overdue-rollups) Receivables aging buckets and "overdue" rollups.
+[RV-19](../analysis/reverse-check.md#rv-19-receivables-ageing-buckets-age-chips-and-an-overdue-view) Receivables ageing buckets, age chips and an Overdue view ·
+[RV-32](../analysis/reverse-check.md#rv-32-gst-schedule-is-built-from-money-received-not-from-payables-paid-cash-basis) GST schedule built from money received, not from payables paid (cash basis; the RFP-era "amounts received" ruling superseded).
+**Left this phase at 3d3a18c:** [DM-36](../analysis/domain-model-delta.md#dm-36) (List visibility after
+invoicing) was dropped from the delta: the catalogue body of US-07.4.1 (a List drops out once its
+invoices are generated) matches the prototype, so it is no model change. The billed-Lists work stays
+here as owner decision **D9**'s default (US-07.4.1's Note and OQ-31: "move from unbilled to billed, not
+simply vanish"), still open and still labelled provisional, together with the web "completed, unbilled"
+marker US-07.2.1 asks for. It derives the state from `billedAtISO` and adds no entity, exactly as
+DM-36's stub says.
 Read alongside (not closed here):
 [US-08.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.5.md) (the per-anaesthetist ledger position: owed, collected, paid out; Phase 36 builds it, this phase puts it on the dashboard),
 [US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md) (the linked receivable and payable, which "unpaid payables" names),
@@ -18,13 +25,13 @@ Read alongside (not closed here):
 [US-05.2.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.7.md) (the GST component),
 [FT-07.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-07.4.md) and
 [US-07.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.4.1.md) (Open: when a List leaves the view),
-[US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) (the 90-day threshold is a mild or strong patient alert, Phase 40, not an ageing view),
+[US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) (the 90-day threshold, counted from the invoice date per OQ-74 / D24, is a mild or strong patient alert in Phase 40, not an ageing view),
 [OQ-59](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-59.md) (answered: the flat list),
 [OQ-31](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-31.md) (Open: the billed event),
 [OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md) and
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (GST agency treatment and the AA fee basis, both with AA's accountant),
+[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (GST agency treatment and the AA fee basis, both with AA's accountant; OQ-60 is still Open, but its 2026-10-02 "Meeting update" records Greg's view that the fee never nets against payables, "under trust law it mustn't", which Phase 16 builds as a rule),
 [OQ-33](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-33.md),
-the 2026-10-01 meeting note ([2026-10-01-aa-meeting-with-greg.md](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md), points 33, 40, 41 and 66), and the
+the 2026-10-01 meeting note ([2026-10-01-aa-meeting-with-greg.md](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md), points 33, 40, 41 and 66), the 2026-10-02 meeting note ([2026-10-02-aa-meeting-with-greg.md](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-02-aa-meeting-with-greg.md), point 1: the fee and trust law), and the
 "Internal ledger" section of [domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
 **Depends on:** 28 (Lists are their own records; `slotViewsForAnaesthetist`, `list.kind`,
 `approvalStateLabel`) and 36 (the internal ledger: receivable and payable legs, `LedgerDisbursement`
@@ -32,9 +39,11 @@ entries, and the per-anaesthetist position). By the roadmap order 14 (the demo-t
 its payment entries), 15 (Booking vocabulary), 16 (payable equals receivable, the monthly AA fee
 invoice and the AA fees tab), 21 (the billable party), 22 (the Contract's `gstTreatment`, which
 changes only how an invoice presents GST, never its stored amounts), 25,
-26 (the profile's GST period and the shared `gstPeriodLabel`) and 27 have also run. 37 and 39 may run
-before or after this phase. Ben called the GST schedule "one of the deliverables needed very early in
-the piece" (note point 40): if AA needs it sooner, this phase can run straight after 36.
+26 (the profile's GST period and the shared `gstPeriodLabel`), 27 and the Schedule track to 32a have
+also run. 37 and 38b may run before or after this phase, and so may 39 and 39a once 38b has run;
+39b cannot (it needs 38a, which follows this phase). Ben called the GST schedule "one of the
+deliverables needed very early in the piece" (2026-10-01 note point 40): if AA needs it sooner, this
+phase can run straight after 36.
 **Estimated:** 2 sessions. Session 1: work items 1 to 8 (the pure modules, the outstanding rework,
 ageing and seed removal, the dashboard and the Outstanding tab), green at the end. Session 2: items 9
 to 16 (the GST schedule screens, the label sweep, Balances, billed Lists, triggers, tests, the demo
@@ -48,7 +57,9 @@ its five panels (Productivity and Leave) are hardcoded seed constants for Dr Sou
 catalogue asks for the **financial position** instead: what the anaesthetist is **owed**, what has
 been **collected** and what has been **paid out** (US-08.3.5), read from the engine's ledger, which
 Phase 36 made the system of record. FT-12.2 gives the anaesthetist two reports of their own, both
-from that ledger: a flat list of what is owed to them and a GST schedule of what AA paid them.
+from that ledger: a flat list of what is owed to them and a GST schedule of what AA paid them. The
+prototype's GST view is still the RFP-era list of amounts received (RV-32), which the catalogue has
+superseded.
 
 This phase:
 
@@ -62,7 +73,7 @@ This phase:
   (US-12.2.1, Confirmed; RV-19). A row is the **unpaid payable** (US-12.2.1's words): it stays until
   AA has paid the anaesthetist, not only until the payer has paid AA;
 - turns the receipts-based **GST activity** report into the catalogue's **GST schedule** on a cash
-  basis (US-12.2.2, DM-29): the payables AA actually paid the anaesthetist in their GST period (from
+  basis (US-12.2.2, DM-29, RV-32): the payables AA actually paid the anaesthetist in their GST period (from
   the ledger's disbursement entries), the sale AA made for them and its GST component, and a check
   that it balances with what they were paid. A receipt alone adds nothing; anything collected but not
   yet paid out falls into the period it is paid in. The schedule follows the saved GST period
@@ -70,9 +81,10 @@ This phase:
   web, and the mobile peek shows the current period (US-12.1.2). One period label is used on every
   surface, fixing the "biMonthly" / "Bi-monthly" / "Two-monthly" drift;
 - keeps billed Lists visible: a List reads **"Done · unbilled"** once submitted and **"Done · billed"**
-  once its invoices are generated, on web and mobile, instead of vanishing (DM-36, owner decision
-  **D9**, still open: the default, labelled provisional while OQ-31 is open). The web Lists table and
-  week strip get the marker US-07.2.1 asks for.
+  once its invoices are generated, on web and mobile, instead of vanishing (owner decision **D9**,
+  still open: the default, labelled provisional while OQ-31 is open; US-07.4.1's body still says the
+  List drops out, its Note says it should move to billed). The web Lists table and week strip get the
+  "completed, unbilled" marker US-07.2.1 asks for, whichever way D9 goes.
 
 No new stored entity. The seed loses the `dashboards` slice, so `PERSIST_VERSION` is bumped.
 
@@ -81,24 +93,29 @@ No new stored entity. The seed loses the `dashboards` slice, so `PERSIST_VERSION
 1. Run the drift check against the plan's catalogue snapshot:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
    ```
 
    Read the diff for US-12.2.3, FT-12.2, US-12.2.1, US-12.2.2, US-12.1.2, US-07.2.1, the context
-   items US-08.3.5, US-08.3.1, US-10.1.2, FT-07.4, US-07.4.1, US-11.3.2, and OQ-31, OQ-29 and OQ-60. If
-   an item changed, re-read it and adjust the work items. If an item is now Retired or Future, drop
-   its work items and record that in the PROGRESS entry. At plan time (501b0b8) US-12.2.1 was
-   **Confirmed**, US-12.2.2 **Verify** (its release slot unconfirmed), US-07.4.1 **Open**, and
-   US-12.2.3, US-12.1.2 and US-07.2.1 **Proposed**; OQ-59 was answered and OQ-31, OQ-29 and OQ-60
-   were open.
+   items US-08.3.5, US-08.3.1, US-10.1.2, US-05.2.7, FT-07.4, US-07.4.1, US-11.3.2, and OQ-31, OQ-29,
+   OQ-59 and OQ-60. If an item changed, re-read it and adjust the work items. If an item is now Retired
+   or Future, drop its work items and record that in the PROGRESS entry. At plan time (3d3a18c)
+   US-12.2.1 was **Confirmed**, US-12.2.2 and US-11.3.2 **Verify** (US-12.2.2's release slot
+   unconfirmed), US-07.4.1 **Open**, and US-12.2.3, FT-12.2, US-12.1.2 and US-07.2.1 **Proposed**;
+   OQ-59 and OQ-33 were answered and OQ-31, OQ-29 and OQ-60 open. The 2026-10-02 meetings changed none
+   of the covered items: only OQ-60 (Greg's view, the fee never nets against payables and only paid
+   BCTIs count) and US-11.3.2 (the threshold counts from the invoice date, a credit balance is mild;
+   Phase 40's) moved, and DM-36 left this phase (see "Requirements covered").
 2. **Owner decisions** (the ROADMAP decisions table):
    - **D8 (ageing and an "Overdue" view): answered** at the 2026-10-01 meeting (OQ-59, "let's go with
      your recommendation for now"). Build the flat list, oldest first, no buckets, no age chips, no
      Overdue view. Nothing in the UI is labelled provisional for it. If the drift check shows OQ-59
      reopened, stop and ask the owner.
-   - **D9 (do billed Lists vanish): still open** (OQ-31). Build the default: they stay, shown as
-     "Done · unbilled" and then "Done · billed", labelled provisional in the UI (work item 13). If it
-     has been answered **they vanish**: keep the `isListBilled` filters in the anaesthetist views,
+   - **D9 (do billed Lists vanish): still open** (OQ-31; it was not taken at the 2026-10-01 or
+     2026-10-02 meetings). Build the default: they stay, shown as "Done · unbilled" and then
+     "Done · billed", labelled provisional in the UI (work item 13). If it has been answered **they
+     stay**, build the same and drop the provisional captions. If it has been answered **they
+     vanish**: keep the `isListBilled` filters in the anaesthetist views,
      still build the web "Done · unbilled" marker and the web Completed view for submitted and
      authorised Lists (US-07.2.1 needs both), and skip the "Done · billed" row kind. Record which
      branch was built.
@@ -107,10 +124,13 @@ No new stored entity. The seed loses the `dashboards` slice, so `PERSIST_VERSION
    "billed" event. Nothing in this phase moves that trigger; the List changes label instead of
    disappearing, and the Done filter and Completed view label the behaviour provisional.
 4. **US-12.2.2 is Verify.** Build its text as written (cash basis of payouts, the sale and its GST,
-   a balance check). Two points stay with AA's accountant and are not built: whether the BCTI is one
-   per procedure rather than one per receivable invoice (the plan's one provisional place; see
-   ROADMAP "BCTI granularity") and GST agency treatment (OQ-29). The schedule has one row per payable
-   (BCTI) so a flip changes only the row grain.
+   a balance check; RV-32 supersedes the RFP-era "amounts received" reading). Two points stay with
+   AA's accountant and are not built: whether the BCTI is one per procedure rather than one per
+   receivable invoice (the plan's one provisional place; see ROADMAP "BCTI granularity") and GST
+   agency treatment (OQ-29). The schedule has one row per payable (BCTI) so a flip changes only the
+   row grain. The AA fee never nets against payables (Greg, 2026-10-02, trust law; Phase 16's rule),
+   so the balance check needs no fee reconciling item. If OQ-60 is answered the other way, stop and
+   tell the owner: it contradicts FT-10.3.
 5. **Prerequisite names.** Confirm Phases 28 and 36 are DONE in PROGRESS.md and read their handoff
    notes:
    - from **36**: the name and shape of the per-anaesthetist position selector (planned as
@@ -137,12 +157,18 @@ No new stored entity. The seed loses the `dashboards` slice, so `PERSIST_VERSION
      schedule reads the stored GST and never recomputes it;
    - from **21**: the billable party label the money rows use (it replaces "payer");
    - from **14**: the ids and bodies of `payment-full` / `payment-half` and `pwa-payment-full` /
-     `pwa-payment-half`, and `office-authorises-list`;
+     `pwa-payment-half`, and `office-authorises-list` (its body is `authoriseAsSimulatedOffice` in
+     `src/store/officeStandIn.ts`, which reads `isListBilled`);
    - from **16**: the `fees` Accounts sub-tab and the AA fee invoice (AA's own invoice to the
      anaesthetist: never income, never on the GST schedule, never in the outstanding list).
+   - if **38b** has run: the event element and the admin additional invoice (an event on the
+     Procedure, invoiced to any billable party, D22), whose pairs join Outstanding and the GST schedule
+     like any procedure pair; check the ledger pair kind it uses and count it in work items 2 and 4;
    - if **39** or **39a** has run: credit legs and negative invoices, and whether 39a nets them in the
-     payables run (work item 2's balance check must then show the netting).
-6. Note the current `PERSIST_VERSION`.
+     payables run (work item 2's balance check must then show the netting). 39b (pre-op and post-op
+     event invoices) runs after 38a, so it is always later than this phase.
+6. Note the current `PERSIST_VERSION` (16 at plan time, after Phase 15a session 1; later phases bump
+   it further).
 
 ## Reference
 
@@ -172,20 +198,21 @@ availability; RV-18 and D8), so Productivity and ageing go.
 
 **Analysis files:**
 
-- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 11 (flat outstanding list, payout-basis GST
-  schedule), "Remove or rework" (ageing, receipts-based GST), the EP-12 and EP-07 tables; the DM-29,
-  DM-36, RV-18 and RV-19 rows.
+- `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 7 (money model: remove ageing, GST on
+  disbursed payables), theme 11 (removals: the Productivity and Leave panels), "Remove or rework" (ageing RV-19, GST basis RV-32), the EP-12 and EP-07 tables;
+  the DM-29, RV-18, RV-19 and RV-32 rows (DM-36 is now a dropped stub).
 - `docs/prototype-build/catch-up/epics/EP-12.md` (FT-12.2, US-12.2.1, US-12.2.2, US-12.2.3,
   US-12.1.2) and `epics/EP-07.md` (US-07.2.1, US-07.4.1).
-- `analysis/domain-model-delta.md` DM-29 and DM-36 (and DM-22, DM-23 for the ledger this phase
-  reads); `analysis/reverse-check.md` RV-18, RV-19 (and the dropped RV-16 note).
+- `analysis/domain-model-delta.md` DM-29, the DM-36 stub (dropped: why the billed state is a derived
+  label, not an entity), and DM-22, DM-23 for the ledger this phase reads;
+  `analysis/reverse-check.md` RV-18, RV-19, RV-32 (and the dropped RV-16 note).
 - `analysis/prototype-map-apps-mobile-web.md` (Dashboard, Lists, Accounts, Balances, Forward Lists,
   "Billed = gone", "Next-day handover", "Aging buckets"), `prototype-map-store-seed.md` (selectors,
   the `dashboards` seed, the backdrop disbursements), `prototype-map-shell-demo-pwa.md` (routes, the
   PWA).
 
-**Code entry points** (line numbers are from 501b0b8, where the prototype is unchanged from
-501b0b8; phases 14 to 36 will have moved them):
+**Code entry points** (line numbers are from 3d3a18c, the prototype after Phases 14, 15 and 15a
+session 1; Phases 15a session 2 to 37 will have moved them):
 
 - Web: `src/apps/web/screens/DashboardScreen.tsx` (`AGING_ROWS` 26, receivables 62, `daySummary`
   71 with its `billedAtISO === undefined` filter, Receivables panel 183, Productivity 220, Leave 255,
@@ -196,44 +223,49 @@ availability; RV-18 and D8), so Productivity and ageing go.
   `onViewOverdue` 57, `WebAccountsRoute` 133) and the `/web/accounts` redirect in `src/router.tsx`;
   `src/apps/web/screens/ListsScreen.tsx` (`!isListBilled` 63, From defaults to today 45);
   `src/apps/web/components/WeekStrip.tsx` (`!isListBilled` 40); `src/apps/web/screens/ListDetailView.tsx`
-  ("Submitted to office" pill ~277).
+  ("Submitted to office" pill ~299).
 - Mobile: `src/apps/mobile/screens/BalancesScreen.tsx` (outstanding 35, aging total 39, "GST this
   month" `monthStart` 43, GST section ~108, `AgeChip` 140); `src/apps/mobile/screens/ForwardListsScreen.tsx`
-  (`!isListBilled` 65, Done filter 78, `doneUnbilled` 135); `src/apps/mobile/screens/ListDetailScreen.tsx`;
+  (`!isListBilled` 65, Done filter 78, `doneUnbilled` 136); `src/apps/mobile/screens/ListDetailScreen.tsx`;
   `src/shared/schedule/ListRow.tsx` (`ListRowRight`, `RightCluster`). The mobile List detail also has
-  its own "Submitted to office" line (~303).
+  its own "Submitted to office" line (~327).
 - Store (pre-36 names; Phase 36 renames most of these and adds `src/store/ledgerSelectors.ts`):
   `src/store/selectors.ts` (`isListBilled` 118, `dashboardFiguresFor` 128, `isBackdropList`
-  141, `invoicesForList`, `casesForList` (36: `pairsForList`), `AccpayInvoiceRow` ~595 with
-  `agingDays` and `bucket`, `accpayRowForCase` 618 (outstanding is `invoice.total - receivedAmount`
-  today), `accpayInvoicesFor` 649 (36: `payableRowsFor`), `outstandingAccpayInvoicesFor` 663
-  (36: `outstandingPayableRowsFor`), `overdueAccountsFor` 668, `receivablesAgingFor` 679,
-  `gstActivityFor` 709 (over `billing.receipts`, receipt date), `paymentHistoryFor` 763);
+  141, `invoicesForList`, `casesForList` (36: `pairsForList`), `AccpayInvoiceRow` 592 with
+  `agingDays` and `bucket`, `accpayRowForCase` 617 (outstanding is `invoice.total - receivedAmount`
+  today), `accpayInvoicesFor` 648 (36: `payableRowsFor`), `outstandingAccpayInvoicesFor` 662
+  (36: `outstandingPayableRowsFor`), `overdueAccountsFor` 667, `receivablesAgingFor` 678,
+  `gstActivityFor` 708 (over `billing.receipts`, receipt date), `paymentHistoryFor` 762);
   `src/store/dashboard.test.ts`; `src/store/billingRun.ts` (header comment 1 to 13);
   `src/store/payablesActions.ts` (`runPayables`, the disbursement writes);
-  `src/store/appStore.ts` (`PERSIST_VERSION` 130, currently 13 before the catch-up; `AppState
+  `src/store/appStore.ts` (`PERSIST_VERSION` at line 136, 16 at 3d3a18c; `AppState
   extends SeedState`, so `dashboards` comes from the seed type; there is no `partialize`, the whole
   store persists, and `migrate` reseeds on a version mismatch); `src/store/mutate.ts`
   (`resetDomainState`, which does not copy `dashboards`); `src/store/persistMigrate.test.ts`.
-- Only non-anaesthetist caller of `isListBilled`: the PWA office stand-in `src/pwa/officeSimulation.ts`
-  (153). The admin Review queue, Invoices, Billing monitor and the Control Panel read `billedAtISO`
-  directly.
+- Only non-anaesthetist caller of `isListBilled`: the office stand-in `src/store/officeStandIn.ts`
+  (17, 43, 47; Phase 14 lifted it out of `src/pwa/officeSimulation.ts`, whose "Play the office" timer
+  and the `office-authorises-list` trigger share it; `officeSimulation.test.ts` asserts on it). The
+  admin Review queue, Invoices, Billing monitor and the Control Panel read `billedAtISO` directly.
 - Domain and seed: `src/domain/dateDays.ts` (`AgingBucketKey`, `bucketForAgingDays`);
-  `src/domain/types.ts` (`GstPeriod` 153, `Invoice.gst` and `total` ~672, `BillingReceipt.gstAmount`
-  742, `Disbursement.atISO` 809, `List.billedAtISO` comment ~320); `src/domain/billing/` (pure money
-  maths: `GST_RATE` in `invoiceBuild.ts`, 36's `ledger.ts`); `src/domain/seed/anaesthetistDashboard.ts`;
-  `src/domain/seed/index.ts` (imports 61, re-exports 71 to 78, `SeedState.dashboards` 122,
-  `dashboards: ANAESTHETIST_DASHBOARD` 432); `src/domain/seed/history.ts` (~317, the backdrop
-  `DSBH` disbursements with their `disbursedAtISO`, which give June and earlier periods real rows);
+  `src/domain/types.ts` (`GstPeriod` 153, `Invoice` ~672 with `gst` and `total`, `BillingReceipt.gstAmount`
+  758, `Disbursement` 819 with `atISO`, `List.billedAtISO` 323 and its comment); `src/domain/billing/`
+  (pure money maths: `GST_RATE` in `invoiceBuild.ts`, 36's `ledger.ts`); `src/domain/seed/anaesthetistDashboard.ts`;
+  `src/domain/seed/index.ts` (imports 64, re-exports ~75, `SeedState.dashboards` 138,
+  `dashboards: ANAESTHETIST_DASHBOARD` 464; it also imports `AgingBucketKey`); `src/domain/seed/history.ts`
+  (~82 to 110, the backdrop paid accounts with their `disbursedAtISO`, which give June and earlier
+  periods real rows);
   `src/domain/seed/billing.ts` (~218, the seeded prepayment disbursement);
   `src/domain/anaesthetistProfile.ts` (Phase 26: `gstPeriodLabel`, period options).
-- Admin: `src/apps/admin/screens/MasterData.tsx` (GST column ~180, raw enum today),
+- Admin: `src/apps/admin/screens/MasterData.tsx` (GST column 183, raw enum today),
   `src/apps/admin/flows/fieldChrome.ts` (`GST_OPTIONS`), `EditAnaesthetistSheet.tsx`,
   `AddAnaesthetistFlow`; `src/apps/admin/screens/BillingMonitorScreen.tsx` (the product "Run
-  payables" button, `data-shot="billing-payables-run"`).
-- Demo: `src/shared/demoTriggers/registry.ts` (Phase 14), `src/apps/demo/DemoData.tsx` (the guard
-  console), `src/apps/demo/DemoXero.tsx` ("Simulate payment and payout"), `src/shared/DemoBadge.tsx`.
-- Playwright: `visual/routing.spec.ts` (49 to 60 and 85: the Overdue redirect and the dashboard link),
+  payables" button, `data-shot="billing-payables-run"`, wherever Phase 37's processing-monitor restyle
+  left it).
+- Demo: `src/shared/demoTriggers/registry.ts` (Phase 14: `payment-full` ~376, `payment-half` ~389,
+  `office-authorises-list` ~427, `pwa-payment-full` ~503, `pwa-payment-half` ~515),
+  `src/apps/demo/DemoData.tsx` (the guard console), `src/apps/demo/DemoXero.tsx` ("Simulate payment
+  and payout" ~298), `src/shared/DemoBadge.tsx`.
+- Playwright: `visual/routing.spec.ts` (50 to 52 and 85 to 86: the Overdue redirect and the dashboard link),
   `visual/web-phase05.spec.ts` (59 to 68: `w-09-overdue.png`, `w-10-gst.png`), `visual/screens.spec.ts`.
 
 ## Work items
@@ -265,13 +297,14 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      kind; two calls deep-equal.
 
 2. **The GST schedule as pure billing maths** (`src/domain/billing/gstSchedule.ts`, exported from the
-   billing index; US-12.2.2, DM-29, FT-12.2). It replaces the receipts-based `gstActivityFor`.
+   billing index; US-12.2.2, DM-29, RV-32, FT-12.2). It replaces the receipts-based `gstActivityFor`.
    - `gstScheduleFrom({ pairs, invoices, disbursements, anaesthetistId, fromISO, toISO })`, over 36's
      ledger shapes only (never `state.xero`, never receipts):
      - **Rows: one per payable leg (one BCTI) with disbursement entries to this anaesthetist dated
        in the window** (inclusive date bounds on `atISO`'s date). Pair kinds `procedure` and
-       `prePayment` count, and any later kind 39 adds that pays the anaesthetist; `aaFee` never
-       (it has no payable leg, and AA's fee is not a sale AA made for them).
+       `prePayment` count, and any kind 38b (an event's additional invoice), 39 or 39b adds that pays
+       the anaesthetist; `aaFee` never (it has no payable leg, AA's fee is not a sale AA made for
+       them, and it never nets against a payable).
      - Each row: `pairId`, `invoiceNumber`, `payableNumber` (36's `-P` number), `paidOnISO` (the
        latest disbursement date in the window), `paidToYou` (the sum of that pair's disbursement
        amounts in the window), `saleInclGst` (the part of the invoice those payments cover:
@@ -315,7 +348,8 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
        `balances: false` with the issue named;
      - two fresh stores deep-equal.
 
-3. **List billing status as a pure derivation** (`src/domain/listBilling.ts`; DM-36, US-07.2.1).
+3. **List billing status as a pure derivation** (`src/domain/listBilling.ts`; US-07.2.1 and the D9
+   default; no entity, as the dropped DM-36 stub says).
    - `listBillingStatus(list)` returns `'open'` (DRAFT), `'unbilled'` (SUBMITTED, or AUTHORISED with
      no `billedAtISO`) or `'billed'` (`billedAtISO` set). No stored field: `billedAtISO` remains the one
      stamp, written only by the billing run.
@@ -329,8 +363,9 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
      reports `heldCount` 1; a backdrop invoice is never listed.
    - Rewrite the "Lists vanish" comments in `store/billingRun.ts` (header), `domain/types.ts`
      (`billedAtISO`) and `isListBilled`: the stamp now marks the List billed. Keep `isListBilled` for
-     the PWA office stand-in (`src/pwa/officeSimulation.ts`); the admin screens and the Control Panel
-     read `billedAtISO` directly and are unchanged.
+     the office stand-in (`src/store/officeStandIn.ts`, shared by the PWA's "Play the office" and
+     `office-authorises-list`); the admin screens and the Control Panel read `billedAtISO` directly and
+     are unchanged.
 
 4. **Outstanding is the unpaid payable, with no ageing** (US-12.2.1, RV-19, D8).
    - **Row meaning.** 36's `outstandingPayableRowsFor` today keeps the pre-36 reading (invoice total
@@ -505,7 +540,7 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
       paid you anything this period yet."
     - Header comment updated (flat list of unpaid payables, no ageing, period-aligned cash-basis GST).
 
-12. **Billed Lists stay visible** (DM-36, US-07.2.1, D9 default, provisional while OQ-31 is open).
+12. **Billed Lists stay visible** (US-07.2.1, D9 default, provisional while OQ-31 is open).
     - **Shared row** (`ListRow.tsx`): add `ListRowRight` kind `doneBilled`, the same tick cluster as
       `doneUnbilled` with the label `LIST_BILLING_LABEL.billed` in a neutral slate tone, so "billed"
       reads as settled rather than as a new success state. Both labels come from
@@ -521,7 +556,9 @@ Model, store and seed first, then UI. Keep the four commands green after each gr
       both). A billed List shows one read-only line under the header: "Invoiced · AA-2026-0005,
       AA-2026-0006", plus "1 Booking with the office" when `heldCount` is above zero. Bookings stay read
       only (the store's `editRefusal` already refuses anaesthetist edits on SUBMITTED and AUTHORISED
-      Lists); check no add, copy, capture or photo control appears on a billed List on either app.
+      Lists); check no add, capture or edit control appears on a billed List on either app (Copy left
+      the apps in Phase 15b; photo capture is at most a badged Future-scope demo there, and must not
+      appear on a billed List either).
     - **Web Lists** (`ListsScreen.tsx`): drop `!isListBilled`. Add a Segmented above the table:
       **Upcoming** (today's behaviour, From and To shown, default today to four weeks) and
       **Completed** (`data-shot="web-lists-completed"`: every SUBMITTED or AUTHORISED List of the
@@ -574,12 +611,12 @@ Everything this phase shows is reachable by normal use in the framed build: the 
 List (the billing run marks it billed), the Xero simulator's "Simulate payment and payout" or a
 payment followed by the Billing monitor's product "Run payables" button moves Collected and Paid out
 and adds the GST schedule row on the payout date, and the demo clock's "Next morning" brings
-yesterday's invoices into Outstanding. So there is **no new trigger**. Existing entries are
+yesterday's invoices into Outstanding. So there is **no new trigger behaviour** (the two web payment entries below reuse Phase 14's body). Existing entries are
 re-pointed or re-worded so the money beat can be driven from the screen being presented:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Payment received · full / half (re-pointed) | Web · Dashboard (`/web`) and Web · Accounts (`/web/accounts/:subTab`) | bar | Phase 14's `choices` is per entry, so the URL-driven `payment-full` / `payment-half` (Admin Invoice, Xero pair) stay exactly as they are. Instead the chooser entries `pwa-payment-full` / `pwa-payment-half` gain the web patterns and the `bar` surface on those patterns only (or, if the registry cannot scope a surface per pattern, two `web-payment-full` / `web-payment-half` entries calling the same shared body). The chooser lists the open ACCRECs from `openAccRecs` whose invoice belongs to the current persona (`ctx`), not a hardcoded Souter. The webhook lands: Collected rises at once, the Outstanding row turns "Paid in, due to you", and the GST schedule gains **no** row. Result message: "Payment received. It reaches your GST schedule when AA pays you". Disabled with "No open invoices yet" when empty |
+| Payment received · full / half (re-pointed) | Web · Dashboard (`/web`) and Web · Accounts (`/web/accounts/:subTab`) | bar | The URL-driven `payment-full` / `payment-half` (Admin Invoice, Xero pair) stay exactly as they are. At 3d3a18c `surfaces` and `routes` are per entry (`src/shared/demoTriggers/types.ts`), so adding `/web` patterns and `bar` to `pwa-payment-full` / `pwa-payment-half` would also put them in the bar on `/mobile/balances`: add two new entries, `web-payment-full` / `web-payment-half` (routes `/web` and `/web/accounts/:subTab`, surface `bar`), whose `choices` and `run` call the same shared body as the PWA entries (generalise `souterPaymentChoices` to the persona in `ctx`, which the `choices` signature already receives). Only if a later phase made surfaces per route, extend the PWA entries instead. The chooser lists the open ACCRECs from `openAccRecs` whose invoice belongs to the current persona (`ctx`), not a hardcoded Souter. The webhook lands: Collected rises at once, the Outstanding row turns "Paid in, due to you", and the GST schedule gains **no** row. Result message: "Payment received. It reaches your GST schedule when AA pays you". Disabled with "No open invoices yet" when empty |
 | Office runs payables (re-worded) | Mobile · Balances (`/mobile/balances`) | PWA only, badged office stand-in | Phase 36's body, unchanged. Its result message now reads "Paid out $X to Dr Souter. It leaves Outstanding and shows under GST this period" |
 | Office authorises this List (re-worded) | Mobile · List (`/mobile/lists/:listId`) | PWA only, badged office stand-in | Unchanged body. Its result message now reads "Authorised and billed. The List shows Done · billed; its invoices reach Balances tomorrow (Next morning on More)" |
 
@@ -600,24 +637,28 @@ automatically.
 
 - The ledger itself, the Admin whole-ledger and per-anaesthetist screens and the imbalance indicator
   (Phase 36). This phase only reads the anaesthetist's position and disbursements.
-- Disbursement detected from Xero, bulk remittance and voids (Phase 37); credit notes and rebills
-  leaving or joining the outstanding list (Phase 39); the payables run record, BCTI approval for a
-  period (US-10.2.6), negative invoices netted against payments and the remittance advice (Phase
-  39a). Each changes the figures through the ledger; 39a's netting must also appear in the GST
-  schedule's balance check (handoff note).
+- Disbursement detected from Xero, bulk remittance and voids (Phase 37); additional invoices as
+  events on a Procedure (Phase 38b) and pre-op and post-op event invoices (Phase 39b) joining the
+  outstanding list; credit notes and rebills leaving or joining it (Phase 39); the payables run
+  record, BCTI approval for a period (US-10.2.6), negative invoices netted against payments and the
+  remittance advice (Phase 39a; a negative invoice with no later payment is handled outside the
+  system, OQ-71). Each changes the figures through the ledger; 39a's netting must also appear in the
+  GST schedule's balance check (handoff note).
 - One BCTI per procedure rather than per receivable invoice (the plan's provisional point with AA's
   accountant, beside OQ-29 and OQ-60): the schedule's row grain follows 16's count if it flips.
 - GST agency treatment and BCTI presentation (OQ-29, Phase 22's wording).
-- Netting the AA fee against payables (OQ-60 part 3, open; the plan keeps the fee a separate
-  receivable, Phase 16). If AA chooses netting, a netted fee is a named reconciling item in the
-  balance check, never a lower sale.
-- The patient unpaid alert and its 90-day threshold (Phase 40, OQ-33, US-11.3.2).
+- Netting the AA fee against payables: never (Greg, 2026-10-02, OQ-60 part 3: "under trust law it
+  mustn't"; Phase 16 builds the fee as a separate invoice paid into AA's own account). The balance
+  check has no fee reconciling item, and a fee payment moves no figure here.
+- The patient unpaid alert and its 90-day threshold counted from the invoice date (Phase 40, OQ-33,
+  OQ-74, US-11.3.2).
 - A mobile dashboard or a mobile financial position (US-12.2.3 is the web app's dashboard); a mobile
   AA fee view (Phase 16 recorded it as a candidate; not built).
 - AA fee invoices on the dashboard, the outstanding list or the GST schedule: they stay on Phase 16's
   Accounts AA fees tab.
-- A leave request workflow or "Request leave" button (US-01.5.3 is Open; Phases 29 and 30 own
-  availability and leave).
+- A leave request workflow or "Request leave" button (US-01.5.3, Confirmed, is an availability
+  calendar the anaesthetist keeps, with no approval workflow; Phases 29 and 30 own availability and
+  leave).
 - A per-anaesthetist GST balance date: one labelled assumption (31 March) until AA says otherwise.
 - A free date range on the GST schedule (no longer in US-12.2.2).
 - Export, print or download of any accounts view, including the GST schedule.
@@ -649,7 +690,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       controls. Web → Lists → Completed shows both with the Progress marker; the week strip's Mon 20
       blocks carry the tick.
 - [ ] Submit a List without authorising it: mobile Done and web Completed show "Done · unbilled"; the
-      Demo Data guard console still refuses an anaesthetist edit on it.
+      Demo Data guard console still refuses an anaesthetist edit on it. On the billed and the unbilled
+      List no add, capture, Copy or edit control is reachable on either app.
 - [ ] Next morning (clock): yesterday's new invoices join Outstanding on web and mobile, and Owed to
       you still equals the Outstanding total.
 - [ ] On Web → Accounts → GST schedule, note the July rows. Harness bar → Demo actions → "Payment
@@ -658,7 +700,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       $152.38 collected, not yet paid to you. Admin → Billing monitor → Run payables, back to the GST
       schedule: one new row dated today, sale incl. GST $152.38, the invoice's own GST, paid to you
       $152.38; the balance check still reads "Balances". The Outstanding row is gone and Paid out
-      rose by $152.38.
+      rose by $152.38. Nothing on the tab reads "GST activity" or "received" (RV-32).
 - [ ] The bar's payment entries show on Web · Dashboard and Web · Accounts with a chooser of the
       current persona's open invoices; on Admin · Invoice the URL-driven entries behave as before.
       The entries do not show on Web → Lists or Availability.
@@ -696,7 +738,7 @@ Control Panel scenario text if it names Overdue, ageing, GST activity or the Lis
     activity" becomes "Accounts, GST schedule" (`/web/accounts/gst`); add `/web/accounts/payments`.
   - **S3 Beat 1** (after authorising the Mon 20 Lists): an optional aside, "on the phone or the web the
     Lists now read Done · billed instead of disappearing (provisional, OQ-31)".
-  - **S3 Beat 3** (payment, balances and disbursement): Expected gains "the web dashboard's Collected
+  - **S3 Beat 3** (payment, balances and disbursement, as Phases 16 and 36 left it): Expected gains "the web dashboard's Collected
     and Paid out each rise by $152.38, and the GST schedule for July gains AA-2026-0005 on today's
     date, balanced"; "It does not remain under Overdue because it is no longer outstanding" becomes
     "It leaves Outstanding because AA has now paid Dr Souter". Add an optional two-step aside: a
@@ -769,8 +811,8 @@ review-and-fix pass (PROGRESS convention 18)**:
   `state.xero` and never a seeded constant. The dashboard and 36's "Your position" strip show the same
   figures from one selector; Owed to you equals the Outstanding total to the cent; Collected and Paid
   out match the income receipts and disbursements; AA fee invoices and fee payments move none of
-  them. Hunt for any path where the Payments tab, the dashboard, the GST schedule and mobile Balances
-  disagree.
+  them, and no code nets the fee against a payable. Hunt for any path where the Payments tab, the
+  dashboard, the GST schedule and mobile Balances disagree.
 - **Unpaid payables.** An Outstanding row is the payable not yet paid out, not the receivable: a
   payer's payment keeps the row (stage "Paid in, due to you"), a payout removes it, a half payout
   halves it. No subtotal by stage.
@@ -778,8 +820,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   date; a payable paid across two periods splits correctly and its GST parts sum to the invoice's GST
   to the cent; GST comes from the invoice's own GST, not a flat 3/23; `aaFee` pairs never appear; the
   balance check sums disbursements independently of the rows and genuinely fails on an orphan or a
-  fee-pair disbursement; nothing reads receipts for GST any more. The maths lives in
-  `src/domain/billing/` with tests; the UI only formats.
+  fee-pair disbursement; nothing reads receipts for GST any more (RV-32), and no "GST activity" or
+  "amounts received" copy survives. The maths lives in `src/domain/billing/` with tests; the UI only
+  formats.
 - **No ageing left behind.** No bucket, "over 60 days", age chip, "overdue" copy or `AgingBucketKey`
   survives. The old `/web/accounts/overdue` URL redirects rather than 404s. No provisional badge for
   D8.
@@ -789,9 +832,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   saved period (no View by override left); no `Date.now()` or `new Date()`.
 - **Billed Lists.** One derivation (`listBillingStatus`) and one label source (`LIST_BILLING_LABEL`)
   on both apps; no anaesthetist view still filters on `isListBilled`; backdrop Lists stay out; a
-  billed List is read only everywhere (no add, copy, capture, photo or edit reachable, and the store
-  refuses it); the PWA office stand-in's `isListBilled` use and the admin `billedAtISO` reads are
-  untouched; the next-day rule for Outstanding still holds; the D9 provisional captions are present.
+  billed List is read only everywhere (no add, capture, photo or edit reachable, and the store
+  refuses it); the office stand-in's `isListBilled` use (`src/store/officeStandIn.ts`) and the admin
+  `billedAtISO` reads are untouched; the next-day rule for Outstanding still holds; the D9 provisional captions are present.
 - **Scope and triggers.** No Productivity or Leave remnants (components, seed, selectors, tests); no
   new Control Panel entry; the re-pointed payment entries show only on their routes and the PWA
   stand-ins stay PWA-only; bodies live in `src/shared` or `src/store` so `pwaPurity` holds.
@@ -807,8 +850,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 38, and a phase entry with:
-  - the drift-check result (items changed or not; OQ-31 status; D8 built as answered; D9 built as
-    the provisional default, or which branch if answered; US-12.2.2's status);
+  - the drift-check result against 3d3a18c (items changed or not; OQ-31 status; D8 built as
+    answered; D9 built as the provisional default, or which branch if answered; US-12.2.2's status;
+    OQ-60's status, with the fee-never-nets rule relied on);
   - what was built, with the name map for later phases: `receivablesAgingFor`, `overdueAccountsFor`,
     `AgingBucketKey`, `bucketForAgingDays`, `gstActivityFor`, `dashboardFiguresFor`,
     `useDashboardFigures`, `SeedState.dashboards` and `anaesthetistDashboard.ts` removed;
@@ -828,7 +872,7 @@ review-and-fix pass (PROGRESS convention 18)**:
      open); the stamp is still the event.
   2. **Superseded:** 2026-07-23 "Seeded anaesthetist-dashboard figures". The Productivity and Leave
      panels and their seed are removed (RV-18); the dashboard is calendar, financial position and cover.
-  3. **Superseded:** the 2026-07-22 seventh external plan review, A17/B16 ("GST report is a
+  3. **Superseded (RV-32):** the 2026-07-22 seventh external plan review, A17/B16 ("GST report is a
      transaction list of amounts received"). Per US-12.2.2 (2026-10-01) the GST schedule is on a cash
      basis of payables AA actually paid the anaesthetist, dated by the disbursement, with the sale, its
      GST from the invoice and a balance check; receipts no longer feed it.
@@ -853,6 +897,10 @@ review-and-fix pass (PROGRESS convention 18)**:
     remittance figures equal to the period's paid to you.
   - For **37**: a disbursement detected from Xero must raise Paid out and add its GST schedule row on
     its own date.
+  - For **38b**: an admin additional invoice (an event on the Procedure, to any billable party) is its
+    own receivable and payable; it joins Outstanding from the day after it is raised and the GST
+    schedule when AA pays it out, through `outstandingPayableRowsFor` and `gstScheduleFrom` with no new
+    code path. 39b's pre-op and post-op event invoices follow the same rule.
   - For **40**: the anaesthetist ageing view is gone; the 90-day patient threshold is Phase 40's own
     mild or strong alert on patient invoices.
   - For **41**: a prepayment held in trust adds no GST schedule row until it is disbursed after the

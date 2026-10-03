@@ -1,154 +1,191 @@
 # Prototype map: shell, demo surfaces, PWA, router
 
-> Phase 15 renamed Card to Booking; translate names with the map in PROGRESS.md (Phase 15 entry).
+Paths are relative to `aa-prototype/` unless noted. Line numbers from the code at HEAD (3d3a18c). `PERSIST_VERSION` is 16 (`src/store/appStore.ts:136`).
 
-Scope: `aa-prototype/src/shell`, `src/apps/demo`, `src/pwa`, `aa-prototype/pwa`, `src/router.tsx`, `src/App.tsx` (plus the two entry files `src/main.tsx` and `pwa/main.tsx` that wire them). All paths below are relative to `aa-prototype/` unless absolute. Written from the code, not the build docs.
-
-**Orientation.** `src/App.tsx` (5 lines) renders `AppRouter` (`src/router.tsx`). A single layout route mounts `AppShell` (`src/shell/AppShell.tsx`): a 48px dark "harness bar" (product name, "Prototype" pill, persona chip, app switcher, demo clock menu, Reset button) above an `<Outlet/>`. The outlet shows one of three product apps (`/mobile`, `/web`, `/admin`; their internal routes are mapped by other files) or one of four demo-only "surfaces" (`/demo/control`, `/demo/xero`, `/demo/integrations`, `/demo/data`). The URL is the source of truth for the current app; the shell mirrors it into `store.shell.currentApp`. There is NO screen-contextual demo control anywhere in the harness bar today: the bar is global and static; every scenario trigger lives on the `/demo/control` page (or on other demo surfaces). The PWA (`pwa/main.tsx`) is a separate entry that mounts only the Mobile App with no AppShell; its presenter controls are a `PwaDemoPanel` injected into the More tab. All state is the zustand store in `src/store`; nothing here does `fetch`.
+**Orientation.** Two entry points share `src/`. The framed all-apps prototype (`src/main.tsx` -> `App.tsx` -> `AppRouter` in `src/router.tsx`) wraps every route in `AppShell`: a 48px dark harness bar (title, persona, app switcher, Demo actions menu, demo clock menu, Reset) above a routed `<Outlet/>`. The installable PWA (`pwa/main.tsx`) mounts only the Anaesthetist Mobile App in `MobileViewport` with NO AppShell/harness bar; its presenter controls live on the More tab (`PwaDemoPanel`) and a floating "Demo" chip (`PwaDemoActions`). Since catch-up Phase 14 the demo triggers are a screen-contextual registry (`src/shared/demoTriggers/registry.ts`) shown in the bar menu and the PWA sheet; the `/demo/control` page is now only an index plus clock/reset/scenario jumps. The extension point for new screen-contextual demo buttons already exists (section 5). Four demo-only surfaces sit behind the switcher: Xero sim, Integrations sim, Control Panel, Data Inspector.
 
 ## Contents
-1. Router and URL map
-2. AppShell / harness bar (extension points)
-3. App switcher and app registry
-4. Global demo controls in the bar (clock, reset)
-5. Demo surfaces: Control Panel (every trigger), Xero sim, Integrations sim, Data Inspector
-6. Phone frame, Gradient Lab
-7. PWA target (entry, panel, office simulation, other modules)
-8. Where demo affordances exist outside this area
-9. Extension points for screen-contextual demo triggers
-10. Stubbed / hardcoded / visual-only
+1. Entry points and wiring (main.tsx, App, router, PWA main)
+2. Route table (every route)
+3. Harness bar and app switcher
+4. Clock menu, Reset, shared clock shortcuts
+5. Demo-trigger registry: contract, existing triggers, where they render, how they call the store, extension points
+6. Demo surfaces (`/demo/*`)
+7. PWA (`src/pwa`, `pwa/`): host, demo panel, demo sheet, office simulation, install/update
+8. PhoneFrame and Gradient Lab
+9. Stubbed / hardcoded / visual-only
+10. Quick index of "where would I look for..."
 
 ---
 
-## 1. Router and URL map (`src/router.tsx`)
+## 1. Entry points and wiring
 
-`BrowserRouter` with v7 future flags. One parent `<Route element={<AppShell/>}>` holds everything. Index and `*` render `RootRedirect` (`router.tsx:43-46`), which navigates to `APP_CONFIG[store.shell.currentApp].path` (default `mobile`, `src/store/appStore.ts:169`).
+- `src/App.tsx:1-5` renders `<AppRouter/>` only.
+- `src/main.tsx:16-25` wires store jobs once for the singleton store, in order: `wireBillingRun` (consumes `listAuthorised`, runs billing, hands cases to Xero), `wireReconciliationPoll` then `wireArchiveJob` (both on `dayAdvanced`, poll before archive), `wireIntegrationRetry` (timer auto-retry of `retrying` integration messages). Not wired here: `wireOfficeSimulation` (PWA only).
+- `pwa/main.tsx:46-52` wires the same four, plus `wireOfficeSimulation(useAppStore)` (off by default). Imports `src/pwa/installPrompt` for its side effect (captures `beforeinstallprompt` early). `markBootStart()` + `<BootMark/>` (cold-launch metric).
+- `pwa/index.html`: title "AA Booking & Billing", iOS standalone metas, theme-color #F3EAEC, font preloads. `vite.pwa.config.ts`: VitePWA `registerType: 'prompt'`, manifest `start_url: '/mobile/lists'`, `display: standalone`, injects `__BUILD_ID__` / `__BUILD_DATE__`.
+- Import-closure rule enforced by `src/pwa/pwaPurity.test.ts:40-49`: the PWA must never reach `apps/web`, `apps/admin`, `apps/demo`, `shell/AppShell.tsx`, router, `PhoneFrame`, `GradientLab`, or `shell/DemoActionsMenu.tsx`; it MUST reach `shared/demoTriggers/registry.ts` and `pwa/PwaDemoActions.tsx` (test at :155). Consequence: registry code must stay pure TS over `store` + `domain`, no `apps/*` or `shell/*` imports.
 
-| Path | Component (file) | Notes |
+## 2. Route table
+
+Router: `BrowserRouter` (v7 future flags), `src/router.tsx:94-172`. All routes nested under `<Route element={<AppShell/>}>`. URL is source of truth for the active app; `AppShell` mirrors it into `store.shell.currentApp` (`AppShell.tsx:201-203`). Path = navigation, query = view prefs (`?week=`, `?sort=`); overlays (sheets, add-booking flow, admin list drawer) are local state, not URLs.
+
+| Path | Element | Notes |
 |---|---|---|
-| `/web` (layout `WebApp`) | index `WebDashboardRoute`; `lists` `WebListsRoute`; `lists/:listId` `WebListDetailRoute`; `lists/:listId/cards/:cardId` `WebCardDetailRoute`; `availability` `WebAvailabilityRoute`; `accounts` -> redirect `accounts/overdue`; `accounts/:subTab` `WebAccountsRoute`; `*` -> `/web` | components in `src/apps/web/routes` (other map) |
-| `/admin` (layout `AdminApp`) | index `AdminIndexRedirect`; `day/:dateISO` `AdminDayRoute`; `day/:dateISO/cards/:cardId` `AdminCardDetailRoute`; `review` `AdminReviewQueueRoute`; `review/:listId` `AdminReviewRoute`; `invoices` and `invoices/:invoiceId` both `AdminInvoicesRoute`; `billing` `AdminBillingRoute`; `integrations` `AdminIntegrationsRoute`; `masters` `AdminMastersRoute`; `audit` `AdminAuditRoute`; `*` -> `/admin` | `src/apps/admin/routes` |
-| `/mobile` (layout `MobileApp host={PhoneFrame}`) | index -> `lists`; `lists/*` `MobileListsRoute` (single splat so the slide stack keeps layers mounted); `availability` `MobileAvailabilityRoute`; `balances` `MobileBalancesRoute`; `more` `MobileMoreRoute`; `*` -> `/mobile` | `src/apps/mobile/routes.tsx` |
-| `/demo/control` | `DemoControlPanel` | section 5.1 |
-| `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId` | `DemoXero` (same component, three URLs) | 5.2 |
-| `/demo/integrations` | `DemoIntegrations` | 5.3 |
-| `/demo/data` | `DemoData` | 5.4 |
+| `/` and `*` (unknown) | `RootRedirect` (router.tsx:73) | `Navigate` to `APP_CONFIG[currentApp].path` (last app, persisted) |
+| `/web` (layout `WebApp`) | index `WebDashboardRoute` | apps/web/routes |
+| `/web/lists` | `WebListsRoute` | |
+| `/web/lists/:listId` | `WebListDetailRoute` | |
+| `/web/lists/:listId/bookings/:bookingId` | `WebBookingDetailRoute` | |
+| `/web/lists/:listId/cards/:cardId` | `LegacyBookingRedirect` (shared/legacy) | rewrites old `cards` URL to `bookings` |
+| `/web/availability` | `WebAvailabilityRoute` | |
+| `/web/accounts` -> `/web/accounts/overdue`; `/web/accounts/:subTab` | `WebAccountsRoute` | (`payments?invoice=` used by Xero sim deep link) |
+| `/web/*` | Navigate `/web` | |
+| `/admin` (layout `AdminApp`) | index `AdminIndexRedirect` | |
+| `/admin/day/:dateISO` ; `/admin/day/:dateISO/bookings/:bookingId` ; `.../cards/:cardId` (legacy) | `AdminDayRoute`; `AdminBookingDetailRoute`; redirect | |
+| `/admin/review` ; `/admin/review/:listId` | `AdminReviewQueueRoute`; `AdminReviewRoute` | |
+| `/admin/invoices` ; `/admin/invoices/:invoiceId` | `AdminInvoicesRoute` (both) | |
+| `/admin/billing` | `AdminBillingRoute` | Billing monitor; four demo triggers |
+| `/admin/integrations` | `AdminIntegrationsRoute` | publishes `integrations.tab` |
+| `/admin/masters` | `AdminMastersRoute` | |
+| `/admin/audit` | `AdminAuditRoute` | demo trigger: simulate sign-in |
+| `/admin/*` | Navigate `/admin` | |
+| `/mobile` (layout `MobileApp host={PhoneFrame}`) | index -> `lists` | |
+| `/mobile/lists/*` | `MobileListsRoute` | ONE splat route; slide stack keeps layers mounted. Layers (`listsStackLocation`): `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| `/mobile/availability`, `/mobile/balances`, `/mobile/more` | `MobileAvailabilityRoute`, `MobileBalancesRoute`, `MobileMoreRoute` | |
+| `/mobile/*` | Navigate `/mobile` | |
+| `/demo/control` | `DemoControlPanel` | |
+| `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId` | `DemoXero` (same element x3) | tab and detail derived from pathname/param |
+| `/demo/integrations` | `DemoIntegrations` | |
+| `/demo/data` | `DemoData` | |
 
-Conventions: path segments = navigation, query params = view prefs (`?week=`, `?sort=`, `?invoice=`); overlays are local state, not URL. `src/shell/RequireEntity.tsx`: `exists ? children : <Navigate to=".."/>` (route-relative) so stale bookmarked IDs bounce to the collection. `src/shell/routeParams.ts` `isISODate()` validates `:dateISO` / `?week=`.
+PWA routes (`pwa/main.tsx:67-85`): `/mobile` layout (`MobileApp host={MobileViewport} moreExtra={<PwaDemoPanel/>}`) with the same `lists/*`, `availability`, `balances`, `more` children; `/` and everything else redirect to `/mobile/lists`. URLs stay `/mobile/*` (hard-coded prefixes in shared mobile code).
 
-`src/main.tsx` (framed prototype entry) wires four store jobs once for the singleton store: `wireBillingRun`, `wireReconciliationPoll`, `wireArchiveJob`, `wireIntegrationRetry` (order matters: billing run consumes `listAuthorised`; poll runs before archive on `dayAdvanced`). It does NOT wire `wireOfficeSimulation`.
+Helpers: `src/shell/RequireEntity.tsx` (redirect `..` when an id from the URL no longer exists, e.g. after `PERSIST_VERSION` bump); `src/shell/routeParams.ts:8` `isISODate` (validates `:dateISO`/`?week=`).
 
-## 2. AppShell / harness bar (`src/shell/AppShell.tsx`, 137 lines)
+## 3. Harness bar and app switcher (framed build only)
 
-- `useLocation` + `appIdForPath(pathname)` (`appConfig.ts:104`) give `routeApp`; effect at `:26-28` calls `store.setCurrentApp(routeApp)` when it differs (persisted in the store `shell` slice).
-- Persona chip: `APP_CONFIG[activeApp].persona` (initials avatar, name, role). Display only, not a login.
-- Layout: outer `div` `height:100dvh`, flex column; `<header>` height 48, `neutral.ink` bg; `<main>` flex:1, `overflow:auto`, holds `<Outlet/>`.
-- Header left group (`:59-101`): "AA Booking & Billing" text, "Prototype" pill, and a "Requirements ↗" link shown only when `import.meta.env.DEV && VITE_REQUIREMENTS_URL` (set by root `npm run dev`; never in a build).
-- Header right group (`:103-131`), in this order: persona chip, `<AppSwitcher/>`, `<DemoClockMenu/>`, `<DemoResetButton/>`. Each is a 34px-high pill button (`border 1px rgba(255,255,255,.22)`, `bg rgba(255,255,255,.08)`, white text 13px/600) with a dropdown/popover anchored `top: calc(100% + 8px); right:0; zIndex 120`.
-- `handleSelect(id)`: `setCurrentApp(id); navigate(APP_CONFIG[id].path)`.
-- The bar receives NO props from the routed app and reads NO screen context other than `location.pathname`. There is no slot, context, portal or registry through which a screen can add controls.
+`src/shell/AppShell.tsx` (139 lines). Layout: full-height `100dvh` flex column, `overflow:hidden`; `<header>` 48px, `neutral.ink` background (:219-303); `<main>` scrolls, hosts `<Outlet/>` (:306).
 
-## 3. App switcher and registry
+Header left (:233-271): "AA Booking & Billing" + "Prototype" pill; a dev-only "Requirements ↗" link shown only when `import.meta.env.DEV && VITE_REQUIREMENTS_URL` (opens the Requirements Board).
+Header right (:273-302), in DOM order: persona avatar+name+role (from `APP_CONFIG[activeApp].persona`) -> `<AppSwitcher/>` -> `<DemoActionsMenu/>` -> `<DemoClockMenu/>` -> `<DemoResetButton/>`. Each is a self-contained button+popover (`position:absolute; top:calc(100%+8px); right:0; zIndex 100-120`), outside-click/Escape closes (except the switcher: backdrop click only). Any new bar control should follow this pattern; the bar is `justify-content:space-between` with `gap:14` and fixed 48px height (hence the label-collapse rule below).
 
-`src/shell/appConfig.ts`: `AppId = mobile | web | admin | demo-xero | demo-integrations | demo-control | demo-data`. `PERSONAS`: `souter` (Dr Melanie Souter, MS, Anaesthetist, anaesthetistId `34821`), `kirsty` (Kirsty W., KW, Office). `APP_CONFIG[id] = {id,label,path,persona,group:'apps'|'demo'}`: mobile/web -> Souter; admin and all four demo surfaces -> Kirsty. Labels: "Anaesthetist Mobile App", "Anaesthetist Web App", "Admin Web App", "Demo: Billing Monitor & Xero", "Demo: Integrations", "Demo: Control Panel", "Demo: Data Inspector". `APP_ORDER` is the iteration order; `appIdForPath` matches `path` or `path + '/'` prefix.
+- Persona: `src/shell/appConfig.ts:25-28` `PERSONAS` souter (Dr Melanie Souter, MS, Anaesthetist, id 34821) and kirsty (Kirsty W., KW, Office). Mobile/Web -> souter; Admin and all four demo surfaces -> kirsty. No persona picker, persona follows the active app. `AppShell` calls `setCurrentApp` on route change; switcher selection calls `setCurrentApp` + `navigate(path)` (:207-210).
+- `src/shell/appConfig.ts`: `AppId` = mobile | web | admin | demo-xero | demo-integrations | demo-control | demo-data; `APP_CONFIG` (label, path, persona, group 'apps'|'demo'); `APP_ORDER`; `appIdForPath` (prefix match; `/demo/...` each maps to its own id).
+- `src/shell/AppSwitcher.tsx`: dropdown (300px) with "Apps" group (Anaesthetist Mobile App, Anaesthetist Web App, Admin Web App), divider, "Demo surfaces" group (Demo: Billing Monitor & Xero, Demo: Integrations, Demo: Control Panel, Demo: Data Inspector). lucide icons per id (:17-25). Pure navigation, no store domain calls.
+- `src/shell/DemoActionsMenu.tsx` (204 lines): the contextual trigger menu, see section 5. Not rendered when 0 rows (so the bar never grows). Pill label collapses to icon+count below 1280px (`theme/global.css:711-716`, class `aa-demo-actions-label`). `data-shot="demo-actions"`; rows `data-shot="demo-action-<id>"`.
+- Responsive: bar has no mobile layout; the framed build is a desktop harness (shell uses `100dvh` so it is not broken on a phone browser).
 
-`src/shell/AppSwitcher.tsx`: trigger button shows active label + chevron; menu (`role=menu`, 300px, click-away backdrop) lists group "Apps" (3), divider, "Demo surfaces" (4, amber heading), each row with a lucide icon (Smartphone, Monitor, Building2, Receipt, Cable, SlidersHorizontal, Database) and a check on the active one. `choose(id)` closes and calls `onSelect` only if different. Adding a new top-level surface = add to `AppId`, `APP_CONFIG`, `APP_ORDER`, `ICONS` (AppSwitcher), and a router entry.
+## 4. Demo clock, Reset, shared clock shortcuts
 
-## 4. Global demo controls in the bar
+- `src/shared/demoClockShortcuts.ts:27-71` is the single definition used by `DemoClockMenu` (bar), `DemoControlPanel` and `PwaDemoPanel`. Shortcuts: `plus-15-minutes` (`advanceClockMinutes(api,15)`), `plus-1-hour` (60), `next-day` (`advanceClockDays(api,1)`), `next-morning` (`advanceClockToNextMorning`), `plus-7-days`, `procedure-day` "Procedure day · 28 Jul" (`advanceClockToDate(api, S1_PROCEDURE_DAY='2026-07-28')`, disabled when `todayISO >= 2026-07-28`). Clock is forward-only.
+- `src/store/clockActions.ts`: `applyClock` (:65) writes `clock` directly, and on a day change calls `rollCanvasForward` (:29; generates far-edge Lists from Permanent Lists via `generateListsForDates`, one audit entry per rolled day, actor `Demo control`, source 'demo', action `canvas.rollForward`) then `emitAppEvent({type:'dayAdvanced'})` (which triggers poll + archive jobs). `advanceClockToNextMorning` = 08:00 next day (:91). `resetDemo` (:110) = `resetDomainState(api)` (clock included; `shell` slice preserved).
+- `src/shell/DemoClockMenu.tsx`: pill shows `useClockTimeLabel()` (mono) with aria "Demo clock, <date> at <time>"; popover shows long date + time and a 2-col grid of the six shortcuts; note "Updates apply immediately and keep this screen open." Does not navigate.
+- `src/shell/DemoResetButton.tsx`: "Reset" pill -> confirm popover ("Reset all demo data?... returns the demo clock to Tuesday 21 July 2026, 8:00. Your current app and display choices are preserved.") -> `resetDemo(useAppStore)` (:42). Note the framed Reset does NOT clear localStorage first (the PWA Reset does, section 7).
+- Reset also exists on: Control Panel (confirm), Integrations sim ("Reset demo data", also resets feed selection), PWA More, and every S1 to S5 scenario jump.
 
-**Demo clock menu** (`src/shell/DemoClockMenu.tsx`): trigger shows clock icon + mono time label (`useClockTimeLabel()`); popover (344px) shows `EEEE d MMMM yyyy · time` (`useToday()`), a 2-col grid of shortcut buttons from `demoClockShortcuts(useAppStore, todayISO)`, and the note "Updates apply immediately and keep this screen open." Esc/outside-click close. Route and screen state are untouched.
+## 5. Demo-trigger registry (screen-contextual demo actions)
 
-**Shortcut definitions** (single source, `src/shared/demoClockShortcuts.ts`; also used by the Control Panel and the PWA panel): `+15 min` -> `advanceClockMinutes(api,15)`; `+1 hour` -> `advanceClockMinutes(60)`; `Next day` -> `advanceClockDays(1)`; `Next morning` -> `advanceClockToNextMorning`; `+7 days` -> `advanceClockDays(7)`; `Procedure day · 28 Jul` -> `advanceClockToDate('2026-07-28')` (const `S1_PROCEDURE_DAY`), disabled when `todayISO >= 2026-07-28` (clock is forward-only). All from `src/store/clockActions.ts`; `applyClock` (`:66-71`) sets `clock`, and on a date change calls `rollCanvasForward` (generates Lists for new far-edge days from Permanent Lists via `generateListsForDates`, audited as `canvas.rollForward`) and `emitAppEvent({type:'dayAdvanced'})` which triggers the reconciliation poll then the archive job (wired in `main.tsx`).
+Location: `src/shared/demoTriggers/` (index.ts barrel; deliberately NOT re-exported from `src/shared/index.ts`). Built in catch-up Phase 14.
 
-**Reset button** (`src/shell/DemoResetButton.tsx`): "Reset" pill opens a confirm dialog ("Reset all demo data?", restores pristine seed and clock to Tue 21 July 2026 08:00, "current app and display choices are preserved"). Confirm -> `resetDemo(useAppStore)` (`clockActions.ts:110` -> `resetDomainState`, `src/store/mutate.ts:218`, which rebuilds seed and replaces `clock, masters, schedule, audit, settings, dayNotes, counters, billing, xero, integrations`; `shell` is kept). Persisted key `aa-demo`, `PERSIST_VERSION = 13` (`src/store/appStore.ts:95,130`).
+**Contract** (`types.ts`): `DemoTrigger { id (kebab, also data-shot suffix), label, description (stated before firing), screen (Control Panel index heading), routes[] (react-router `matchPath` patterns, `end:true`, on full pathname), surfaces: ('bar'|'pwa')[], badge?: 'future-scope'|'office-stand-in', when?(state,ctx), choices?(state,ctx), defaultChoice?, disabledReason(state,ctx,choiceId)->string|null, run(api,ctx,choiceId)->{ok,message}, indexPath(state)->string|null, indexEmptyReason?, indexHint? }`. `DemoTriggerCtx { pathname, params (from the matched route pattern), published (screen state the URL cannot carry) }`.
 
-## 5. Demo surfaces (`src/apps/demo`)
+**Matching** (`match.ts`): `demoTriggersFor(state, pathname, surface, published)` is pure; filters by surface, route pattern, then `when`. `initialChoice` = `defaultChoice` if offered else first choice.
 
-All wrap content in `DemoSurface` (`DemoSurface.tsx`): `DemoBadge` ("demo simulation", from `src/shared/DemoBadge.tsx`), h1 title, subtitle, max-width 1080 (Xero 1440). All are Kirsty-persona pages in the shell; none is product UI.
+**Hooks** (`useDemoTriggers.ts`): `useDemoTriggers(surface)` subscribes to the whole store (`useAppStore()`), route, published context, memory. `useDemoTriggerRows(surface)` adds per-row choice state, last-result state (keyed `pathname|id`, cleared on route change), `reason = disabledReason(...)`, and `run()` = `trigger.run(useAppStore, ctx, chosen)` with the result shown inline. Both renderers only render these rows.
 
-### 5.1 Control Panel `/demo/control` (`DemoControlPanel.tsx`, 830 lines) - the presenter cockpit
+**Published screen state** (`context.ts`): small zustand store (UI-only, not persisted, no PERSIST_VERSION effect). Typed keys in `DemoContextValues`: `'integrations.tab'` ('messages'|'feeds'|'pdfs'|'quality'|'validators'), `'integrationsSim.selectedMessageId'`. A screen calls `useDemoTriggerContext(key, value)` (publishes while mounted, withdraws on unmount). Current publishers: `apps/admin/screens/IntegrationMonitorScreen.tsx:48` (tab) and `apps/demo/DemoIntegrations.tsx:54` (effective selected message). Only these two screens publish anything today.
 
-Constants: `OFFICE` actor `{who:'Kirsty W.',role:'office',source:'office'}`; `SOUTER` actor `{Dr Melanie Souter, anaesthetist, anaesthetistId ANAE.souter}` (`:38-39`). Helper components `ControlCard`, `SectionHeading`, `actionButtonStyle`/`primaryButtonStyle`. Every trigger card shows a `DemoBadge` ("Demo trigger" or "Resets data") and an inline result message state. Sections and triggers, in render order:
+**Memory** (`memory.ts`): zustand store of `lastMessageId`, `lastWebhook {accRecId,key,amount}`, `webhookCounter`, so Replay triggers work across screens. Not persisted; replays refuse after a reset (`replayDisabledReason` registry.ts:139, `messageReplayDisabledReason` :175).
 
-| Section / card | Control(s) | What it does (store call) |
-|---|---|---|
-| Clock & reset: Demo clock | same 6 buttons as the bar (`demoClockShortcuts`) | clock actions above |
-| Clock & reset: Seed data | "Reset demo data" -> "Confirm reset"/Cancel | `resetDemo` |
-| Scenario jumps S1-S5 (`SCENARIOS` `:360`, `ScenarioJumps` `:458`) | per-scenario "Jump" -> "Confirm jump"/Cancel; after run: message + `nav` buttons (`navigate(path)`) | each `run()` starts with `resetDemo` (see below) |
-| Booking & integration events: `IntegrationTriggerCard` `:633` | select from `CANNED_MESSAGES` (`domain/integrations`), "Fire message", "Replay last (dedupe)" | `processMessage(useAppStore, id)`; outcome text (`res.value.outcome`, `duplicate`) |
-| `PdfArrivalCard` `:693` | "Ingest PDF row" | takes `SURGEON_PDFS[0]` row `R2`, `ingestPdfRow(useAppStore, OFFICE, listIdForSlot(target anaesthetist,date,session), row)` -> creates/updates a Card on Souter Mon 27 Jul AM |
-| Billing: "Trigger billing failure" `:155` | "Trigger failure" | `editContract(OFFICE, CONTRACT.cosAcc, {effectiveToISO:'2026-07-15'})`, `submitList` if DRAFT, `authoriseList(SEED_LIST_IDS.billingFailure)`; the wired billing run fails the COS card, its sibling invoices; guarded by `list.billedAtISO` ("Already triggered") |
-| "Stage post-op scenario" `:179` | "Stage scenario" | Sharma Tue 14 Jul AM (`listIdForSlot(ANAE.sharma,'2026-07-14','AM')`): `submitList` if DRAFT then `authoriseList`, so the locked original can take "Add post-op event" (lands on her free Tue 21 PM session) |
-| `PaymentReceivedCard` `:538` | select from `openAccRecs(state)`, toggle Full / Half (partial), "Record payment", "Replay last event" | `receivePayment(useAppStore,{accRecId,amount,idempotencyKey:'WEBHOOK-<id>-<n>',source:'webhook'})`; half = `roundToCents(remaining/2)`; replay reuses the key to show idempotency |
-| `HandoffFaultCard` `:734` | "Arm handoff failure" (shows "Armed" from `settings.failNextHandoff`) | `armHandoffFault(useAppStore, OFFICE)`: next Xero handoff faults once |
-| `AutomatedJobsCard` `:767` | "Run reconciliation poll", "Run archive job", "Run payables" | `runReconciliationPoll`, `runArchiveJob`, `runPayables(OFFICE)` |
-| Static note | "Billing assumption" callout (partial intervals round up per started 15 min first 2h, then 10 min) | text only |
+**Where triggers render**
+- Bar: `DemoActionsMenu` (`useDemoTriggerRows('bar')`): "Demo actions" pill with a count chip, popover (360px) titled with `DemoBadge "Demo trigger"` and "On this screen"; each row: label, optional badge (`DemoTriggerBadge`), Run button (disabled with the reason shown under it), description, `<select>` if `choices`, result line (`role=status`). Popover stays open after a run; closes on navigation (`useEffect` on pathname :59), Escape, outside click.
+- PWA: `src/pwa/PwaDemoActions.tsx` (`useDemoTriggerRows('pwa')`): amber "Demo" chip (`data-shot="pwa-demo-actions"`) pinned bottom-right above the tab bar/dock, opens a `BottomSheet` with the same rows (choices as a radiogroup, 44px+ rows). "Office auto" marker while the office simulation toggle is on. Chip absent on More and Availability (test demoTriggers.test.ts:292). Mounted by `MobileViewport` (:168-171), so framed build never shows it.
+- Index: `DemoControlPanel > DemoActionsIndex` lists every trigger grouped by `screen`, with surfaces and an "Open screen" link (`indexPath(state)`; PWA-only entries show "Shown in the installed PWA"). Nothing is fired from the Control Panel.
 
-Scenario jump contents (`:360-455`), all `resetDemo` first:
-- S1 Booking to theatre: reset only; nav buttons Mobile, Integrations. Message tells presenter to fire `MSG-STG-1001` (Sarah Mitchell arrives as 4th Card on Souter Tue 28 Jul).
-- S2 Office day: reset only; nav Admin. Beats are narrated (phone-book Sharma Tue 21 PM Free List; reassign Rutherford's conflicted Wed 22 AM List to Sharma; authorise).
-- S3 Money end-to-end: reset; checks `SEED_LIST_IDS.souterMon20Am` and `souterMon20Pm` are `SUBMITTED` (else `ok:false`); nav Admin.
-- S4 Exceptions: reset only; nav Mobile. Message walks Souter Fri 24 AM Annette Riley pre-payment gate, stage post-op, billing failure, dead-letter, partial payment.
-- S5 Compliance tour: reset; via `SEED_MARKERS.overriddenTimeUnitsCard` finds David Chen's card; stages 3 audited edits (`editProcedure` asaClass AS2 then AS1 as SOUTER, `editCard` notes as OFFICE); `authoriseList(SEED_LIST_IDS.whitakerFri17)` to raise invoices under the agreed-rate contract snapshot; nav Admin, Xero sim.
+**Registered triggers (registry.ts:194-525, in order)**
 
-There are NO fields for choosing a specific screen/entity to act on: triggers act on hardcoded seeded IDs.
+| id | Label | Routes | Surfaces | Gate / disabled reason | Store call (actor) |
+|---|---|---|---|---|---|
+| `billing-failure` | Trigger billing failure | `/admin/billing` | bar | `when` seed list `SEED_LIST_IDS.billingFailure` exists; disabled "Already triggered" if `billedAtISO` set | `editContract(cosAcc, {effectiveToISO:'2026-07-15'})`, `submitList` if DRAFT, `authoriseList` (OFFICE_ACTOR) :210-226 |
+| `arm-handoff-fault` | Arm handoff failure | `/admin/billing` | bar | disabled "Armed" when `settings.failNextHandoff` | `armHandoffFault(api, OFFICE_ACTOR)` (store/demoSettingsActions.ts:42) |
+| `run-reconciliation-poll` | Run reconciliation poll | `/admin/billing` + 3 `/demo/xero*` | bar | always | `runReconciliationPoll(api)` returns count |
+| `run-archive-job` | Run archive job | same | bar | always | `runArchiveJob(api)` |
+| `simulate-sign-in` | Simulate sign-in attempts | `/admin/audit` | bar | always | `simulateSignInAttempts(api)` adds 5 audit rows (store/authDemoActions.ts:24) |
+| `stage-post-op` | Stage post-op scenario | `/admin/review/:listId`, `/admin/day/:dateISO/bookings/:bookingId` | bar | `when` the list/booking's list is `POST_OP_ORIGINAL_LIST_ID` (Sharma Tue 14 Jul AM); disabled when already AUTHORISED | `submitList` + `authoriseList` (OFFICE_ACTOR) |
+| `ingest-pdf-row` | Ingest PDF row | `/admin/integrations` | bar | `when` `published['integrations.tab']==='pdfs'` | `ingestPdfRow(api, OFFICE_ACTOR, listId, row R2 of SURGEON_PDFS[0])` |
+| `payment-full` / `payment-half` | Payment received full / half | `/admin/invoices/:invoiceId`, `/demo/xero/invoices/:accRecId` | bar | `paymentDisabledReason`: "Not handed off to Xero", "Fully paid", "Seeded history invoice" (must be an `openAccRecs` row) | `sendPaymentWebhook` -> `receivePayment(api,{accRecId,amount,idempotencyKey:'WEBHOOK-<accRecId>-<n>',source:'webhook'})`; ACCREC resolved from URL |
+| `payment-replay` | Replay last payment event | same | bar | memory + receipts check | `receivePayment` same key (expects `applied:false`) |
+| `office-authorises-list` | Office authorises this List | `/mobile/lists/:listId` (+ booking layer) | pwa (badge office-stand-in) | `officeStandInRefusal` (store/officeStandIn.ts:20): not in data / DRAFT "Submit the List first" / "Already authorised" | `authoriseAsSimulatedOffice` (actor OFFICE_SIMULATION_ACTOR "AA office (simulated)") authorises + billing run + Xero handoff |
+| `fire-hospital-message` | Fire hospital message | 3 mobile Lists layers + `/admin/integrations` + `/demo/integrations` | bar + pwa (badge future-scope) | `choices` = `CANNED_MESSAGES`; default = published sim selection | `processMessage(api, cannedId)` (store/integrationActions.ts:309); remembers id |
+| `replay-hospital-message` | Replay last message (dedupe) | same routes | bar + pwa | needs last message still in integration log | `processMessage(api, last)` -> outcome 'duplicate' |
+| `pwa-payment-full` / `pwa-payment-half` | Payment received full / half | `/mobile/balances` | pwa | `choices` = Dr Souter's open invoices (`souterOpenAccRecs`); reasons "No open invoices yet", "Choose an invoice" | `sendPaymentWebhook(api, choiceId, mode)` |
 
-### 5.2 Xero simulation `/demo/xero[/invoices[/:accRecId]]` (`DemoXero.tsx` 761 lines, `xeroPairView.ts`)
+Rules visible here: payment webhooks are idempotent by key; half = `roundToCents(remaining/2)`; the next webhook `n` skips keys already in `billing.receipts`; paired ACCPAY is authorised pro-rata; Run payables is deliberately NOT a demo trigger (it is product UI in the Billing monitor; test at demoTriggers.test.ts:54).
 
-Reads `xero, billing, schedule, masters, settings` slices. Two tabs via `TabLink`: Contacts (table, sorted by `contactNumber`, archived flag, type chip) and Invoices (table of ACCREC/ACCPAY pairs from `xeroInvoicePairViews`, click row -> `/demo/xero/invoices/:accRecId`; unknown id redirects to `/demo/xero/invoices`). Callouts: "NHI never resides in Xero" (App. 2 vs App. 1 unresolved), "Duplicate-invoice-number-prevention" (open item), "Contact archiving & volume" (uses `settings.volumeStory`: softLimit, invoicesPerYear, oneTimePct, activeContacts; narrated counters, not simulated records). `PairDetail` (`:222`): ACCREC card (invoice no., lines, subtotal/GST/total, amount received/balance), ACCPAY card (bill number `<invoice>-P`, gross, service fee rate/amount, total payable, authorised/disbursed/remaining), `MoneyFlowCard`, "Linked Billing Engine case" callout (case reference; NHI not stored on contact), incomplete-pair warning. **Demo action**: "Simulate payment and payout" / "Pay <anaesthetist> now" (`settleInvoice` `:236`): `receivePayment(... amount: balance, idempotencyKey 'DEMO-INVOICE-SETTLEMENT-<id>', source 'webhook')` then `disbursePayable(useAppStore, OFFICE, accPay.id)`; disabled when fully settled. Link "View in Dr Souter's account" -> `/web/accounts/payments?invoice=<no>` shown when received > 0 and anaesthetist is Souter. `xeroPairView.ts` is pure (joins xero+billing+schedule+masters; tested by `xeroPairView.test.ts`, `DemoXero.test.tsx`).
+**Screen-contextual? Yes.** Every trigger is route-scoped; only 2 are state-scoped (`ingest-pdf-row` via published tab; `stage-post-op` via seed list id). Screens with registered triggers today: Admin Billing monitor, Admin Audit, Admin Review (one list) and Booking detail (one list), Admin Integrations, Admin Invoice detail, Xero sim (3 routes), Integrations sim, Mobile Lists (3 layers, PWA+bar), Mobile Balances (PWA). NO triggers on: Admin Day view, Admin Masters, Admin Review queue, all `/web/*` screens, Mobile Availability/More, Control Panel, Data Inspector.
 
-### 5.3 Integration simulator `/demo/integrations` (`DemoIntegrations.tsx`, 582 lines)
+**Extension points for new screen-contextual buttons**
+1. Add a `DemoTrigger` object to `DEMO_TRIGGERS` (registry.ts:194). Set `routes` to the pattern(s) (params arrive in `ctx.params`), `surfaces` ['bar'] and/or ['pwa'], `screen` heading, `indexPath`. It then appears in the bar menu, PWA sheet (if 'pwa') and Control Panel index with no UI change. Test conventions to satisfy (demoTriggers.test.ts:40-80): unique kebab ids, no en/em dashes in label/description/screen/hint, every bar entry's `indexPath` must land on a route where it is visible, pwa-only entries must not appear in the bar.
+2. Need screen state the URL lacks (tab, selected row, draft)? Add a key to `DemoContextValues` (context.ts:10) and call `useDemoTriggerContext(key,value)` from the screen; read it in `when`/`choices`/`run` via `ctx.published`.
+3. Cross-screen replay/last-fired state: extend `DemoTriggerMemory` (memory.ts).
+4. Actor for domain writes: `OFFICE_ACTOR`, `SOUTER_ACTOR`, `OFFICE_SIMULATION_ACTOR` (store/demoActors.ts); always go through store actions (`mutate()`), never set state directly (clock writes are the one exception).
+5. A visible always-on bar control (not per-screen) would be a new sibling component in `AppShell.tsx:298-301` following the `DemoClockMenu` pill style (`triggerStyle`), height 34, `zIndex 120` popover; PWA equivalents go into `PwaDemoPanel` (More) or `PwaDemoActions`.
+6. Limits: one bar menu only (no grouping inside it; rows ordered by registry order); no per-trigger confirm step; run results are transient strings; `when` and `disabledReason` are re-evaluated on each store change (whole-store subscription). Registry must stay free of `apps/*` and `shell/*` imports (PWA purity).
 
-State: `feeds`, `messages` (integrations slice), cards, lists, patients, anaesthetists. Feed picker over `[FEED.stg, FEED.cph, FEED.sx]` (St George's HL7, Christchurch Public HL7, Southern Cross FHIR-native; `FEED_META`). Message library filtered by feed (`CANNED_MESSAGES`); per-row status pill from the message log (`processed | retrying | deadLetter | manualIntervention | duplicate`, `statusSentence` `:552`). Panes: HL7 feeds show 1 raw HL7 (segment-highlighted) -> 2 translated FHIR R4 bundle (`toFhirBundle(parsed, practitioner)` using the LIVE feed `fieldMapping`, so a mapping fix in Admin changes it) -> 3 schedule change (result Card, list, anaesthetist, from message-log `resultCardId`); FHIR feed shows 2 panes. Field-mapping chips (`k ← v`). Controls: "Replay" (selected) -> `processMessage(useAppStore, id)`; per-row replay; "Live drip" toggle (`setInterval` 1000ms processes the feed's messages in order then stops, `:57-74`); "Reset" (confirm) -> `resetDemo` + local state reset. Callout: FHIR-first, Digital Services Hub, NHI FHIR lookup, Keycloak "referenced, not implemented".
+## 6. Demo surfaces (`src/apps/demo`)
 
-### 5.4 Data inspector `/demo/data` (`DemoData.tsx`, 641 lines)
+All use `DemoSurface.tsx` (title, subtitle, optional `futureScope` second badge+line; always a `DemoBadge`). Persona on all four: Kirsty.
 
-Subscribes to the whole store. Panels: demo clock + entity counts (`entityCounts`) + persisted payload size/limit (`persistedBytes`, `persistStatus`, `STORAGE_BUDGET_BYTES`); "Today's Lists" table (click row -> audit); "Seeded scenario finder" (`SEED_MARKERS` select, loads audit trail); "Audit trail" (pick a Card, append-only history: At, Action, Who); "Lifecycle states" (filter DRAFT/SUBMITTED/AUTHORISED with counts); **Guard console** (`:170-186`): choose persona (souter / kirsty / integration feed), action (`completeCard`, `cancelCard` [reason "Guard console test cancellation"], `editCard` notes, `submitList`, `authoriseList`), a card or list, "Run" -> calls the real store action and prints the `Outcome` (refusal messages from lifecycle guards). This is the only place a guard failure can be provoked by hand.
+**DemoControlPanel.tsx** (`/demo/control`, 510 lines). Sections: (a) Clock & reset: live date/time, the six `demoClockShortcuts` buttons, "Reset demo data" with confirm (`resetDemo`). (b) Scenario jumps S1 to S5 (:250-348; `ScenarioJumps` :351): each "Jump" confirms, calls `resetDemo(useAppStore)` then stages, shows message + nav buttons:
+ - S1 booking to theatre: reset only; message directs to Fire hospital message MSG-STG-1001 then Procedure day 28 Jul (HL7 flagged Future scope). nav Mobile, Integrations.
+ - S2 office day: reset only; nav Admin.
+ - S3 money: reset; verifies seed lists `souterMon20Am`/`souterMon20Pm` are SUBMITTED; nav Admin.
+ - S4 exceptions: reset only; text walks prepayment warning, Stage post-op, billing failure, MSG-CPH-2001 + feed fix, half payment. nav Mobile, `/admin/billing`.
+ - S5 compliance tour: reset, then `editProcedure` x2 (SOUTER_ACTOR asaClass AS2 then AS1), `editBooking` (OFFICE_ACTOR note) on seed marker `overriddenTimeUnitsBooking`, `authoriseList(whitakerFri17)`; nav Admin, Xero sim.
+ (c) Demo actions index by screen (`DemoActionsIndex` :448): lists `DEMO_TRIGGERS` grouped by `screen`; "Open screen" button -> `navigate(indexPath)`; note under Billing monitor that Run payables is product UI. (d) Static callout: billing rounding assumption (partial intervals round up per started interval; 15 min then 10 min after 2h; "to confirm with AA").
 
-## 6. Phone frame and Gradient Lab
+**DemoXero.tsx** (`/demo/xero[/invoices[/:accRecId]]`, 759 lines + `xeroPairView.ts`). Simulated Xero org, read-only except the settle button. Two callouts: NHI never resides in Xero (Appendix 2 vs Appendix 1 contradiction, flagged unresolved) and duplicate-invoice-number prevention org setting (open item). Tabs: Contacts (ContactID, ContactNumber, Name, Type chip, Archived; empty note if none) and Invoices (pairs table; row click -> detail). Pair detail: ACCREC card (amounts, balance, status, lines) and ACCPAY card (gross, service fee rate/amount, total payable, authorised, disbursed, remaining), engine-link callout (case ref, booking id, billing invoice id; patient NAME only, no NHI), money-flow cards ("ACCREC money into AA", "ACCPAY money out of AA"), incomplete-pair warning. Button "Simulate payment and payout" / "Pay <anaesthetist> now" (`settleInvoice` :230-258): `receivePayment(useAppStore,{accRecId, amount: balance, idempotencyKey:'DEMO-INVOICE-SETTLEMENT-<accRecId>', source:'webhook'})` then `disbursePayable(useAppStore, OFFICE_ACTOR, accPayId)`; this is a demo action NOT in the registry (a second payment path next to the `payment-*` triggers). "View in Dr Souter's account" link to `/web/accounts/payments?invoice=<number>` only when payment received and anaesthetist is Souter. Volume callout: `settings.volumeStory` (soft limit, invoices/year, one-time %, active contacts, nightly archive; "scale is narrated with counters, not simulated"). `xeroPairView.ts:74` `xeroInvoicePairViews` joins xero.accRecs/accPays/contacts + billing invoices/cases + schedule/masters; marks `incomplete`; ACCPAY bill number = `<invoiceNumber>-P`.
 
-`src/shell/PhoneFrame.tsx` (320 lines): the `host` for `MobileApp` in the framed prototype. 390x844 device (bezel, dynamic island, fake status bar showing `useClockTimeLabel()`, home indicator) centred on grey backdrop. Presenter zoom toolbar (`ZoomControl`: -, %, +, Fit; scale 0.5-1.3, persisted in `localStorage['aa-phone-scale']`). Sets CSS vars `--aa-inset-*` (fake 54/34), atmosphere vars from `useMobileGradient()`; renders `<GradientLab/>` when the controller is non-null. This is the only mobile emulation; content scrolls inside.
+**DemoIntegrations.tsx** (`/demo/integrations`, 587 lines; badged Future scope, `futureScope` text: HL7 v2, FHIR R4, near real time are Future scope; in scope is the St George's / Southern Cross download into a matching screen). Feed tabs STG / CPH / SX (`FEED_ORDER`), message library from `CANNED_MESSAGES` per feed, three panes for the selected message: raw HL7 (`Hl7View`) or FHIR native, translated FHIR R4 (`extractViaMapping`/`extractFromFhir`/`toFhirBundle` using the LIVE feed mapping + Souter HPI), schedule-change effect from the integration-log row (status sentence, failure reason, resulting booking). Actions calling the store: per-row Replay and header Replay -> `processMessage(useAppStore, id)`; "Start live feed" drips one canned message per second via `setInterval` (:62-77); "Reset demo data" (confirm) -> `resetDemo` + local state reset. Feed mapping reference list; callout "Target state: FHIR-first via the Digital Services Hub" (Keycloak, NHI FHIR API referenced, not implemented). Publishes `integrationsSim.selectedMessageId`. Fire/replay via the bar menu also work here (routes include `/demo/integrations`).
 
-`src/shell/gradientLab/` (`GradientLab.tsx` 497, `useGradientLab.ts`, `AtmosphereLayer.tsx`, `index.ts`): temporary tuning panel for the mobile atmosphere gradient, docked in the grey gutter left of the phone (300px, narrow viewports collapse to a toggle), persisted under its own localStorage key; gated by `GRADIENT_LAB_ENABLED = true` (`src/theme/gradientLabGate.ts`). Purely decorative (`--aa-atmos-*` vars). `gradientLabPurity.test.ts` keeps it isolated. Not domain-relevant.
+**DemoData.tsx** (`/demo/data`, 643 lines). Data inspector: entity counts, persisted payload size vs `STORAGE_BUDGET_BYTES`, `persistStatus()` (latched-off writes), "Today's Lists" with "two Lists per anaesthetist per day" check (`twoPerDayOk` :163), seeded scenario finder (`SEED_MARKERS` select, shows entity), audit trail by entity id (`audit` filter), lifecycle states table (DRAFT/SUBMITTED/AUTHORISED filter), and a Guard console: choose persona (souter / kirsty / integration feed), action (complete/cancel/edit booking, submit/authorise list), target; `runGuard` (:244-270) calls `completeBooking`, `cancelBooking`, `editBooking`, `submitList`, `authoriseList` and renders the Outcome (ok + audited, or refusal message). Audit/diagnostic tool; not contextual.
 
-## 7. PWA target
+Tests: `DemoXero.test.tsx`, `xeroPairView.test.ts`.
 
-Build: `vite.pwa.config.ts` -> `dist-pwa/`, entry `pwa/index.html` + `pwa/main.tsx`. Manifest `display: standalone`, `start_url: /mobile/lists`, `scope: /`, `registerType: 'prompt'`. URLs stay `/mobile/*`.
+## 7. PWA (`src/pwa`, `pwa/`)
 
-`pwa/main.tsx` (94 lines): `StrictMode` > `BrowserRouter` > routes `/mobile` (`MobileApp host={MobileViewport} moreExtra={<PwaDemoPanel/>}`) with the same four child routes as section 1 (lists/*, availability, balances, more), `*` -> `/mobile/lists`. Wires `wireBillingRun`, `wireReconciliationPoll`, `wireArchiveJob`, `wireIntegrationRetry` AND `wireOfficeSimulation`. Imports `installPrompt` for its side effect (early `beforeinstallprompt` capture), calls `markBootStart()`, renders `<BootMark/>` last. No `AppShell`: no harness bar, no web/admin/demo surfaces (enforced by `src/pwa/pwaPurity.test.ts`, which walks the import graph from `pwa/main.tsx`).
+- **Host** `MobileViewport.tsx`: replaces PhoneFrame. Full-size box, `position:relative`, `overflow:hidden`, real `env(safe-area-inset-*)` via `aa-inset-device`, `--aa-viewport-shortfall` correction (`viewportMetrics.ts`, iOS standalone height bug), atmosphere via `useMobileGradient` + `AtmosphereLayer` (imports Gradient Lab hook files directly, not the lab), mounts `UpdatePrompt` + `PwaDemoActions` as host chrome.
+- **Demo panel** `PwaDemoPanel.tsx` (574 lines), injected through `MobileApp`'s `moreExtra` slot (`apps/mobile/routes.tsx:177`, `outlet.ts:20`, `MoreScreen.tsx:72`), so it shows only under More. Order (:563-573): `InstallCoach`, `DemoClockCard` (big clock + same six `demoClockShortcuts`; "Start now and Finish now stamp from this clock"), `OfficeSimulationCard` ("Play the office" switch; copy `OFFICE_SIM_COPY`; `DemoBadge "Simulated office"` while on), `ResetCard` (bottom-sheet confirm; first `resilientLocalStorage.removeItem(PERSIST_KEY)`, then `resetDemo(useAppStore)`, then `clearInstallCoachDismissal()`), `BuildCard` (build id, release date, cold launch ms, offline-ready via service worker, saved data MB / "paused after a storage error", "Check for updates"), `ViewportCard` (iOS viewport diagnostics, shortfall probe band, copy diagnostics; marked deletable). MoreScreen itself shows `DemoBadge "Demo prototype"` and copy (`MoreScreen.tsx:62-68`; without `extra` it says "Use the demo control panel").
+- **Demo sheet** `PwaDemoActions.tsx`: section 5.
+- **Office simulation** `officeSimulation.ts` (216 lines): PWA-only; localStorage flag `aa-office-simulation` (default OFF; only 'on' reads as on). `wireOfficeSimulation(api)` subscribes to the store, detects DRAFT -> SUBMITTED transitions on a List (so the seeded SUBMITTED review queue is untouched), after `OFFICE_SIM_DELAY_MS = 4000` calls `authoriseAsSimulatedOffice` (store/officeStandIn.ts), re-arming while the toggle is off. Documented as explicitly NOT the RFP flow (real flow: submit goes to the office review queue). Per-List "Office authorises this List" trigger is the preferred handset story (stage: submit on phone, then Demo chip, then Next morning on More to move Balances).
+- **Install / update** `installPrompt.ts` (module-level `beforeinstallprompt` capture, dismissal key), `InstallCoach.tsx` (iOS/Android Add-to-Home-Screen coaching, hidden when standalone), `UpdatePrompt.tsx` (`useRegisterSW`, 60s poll, "reload" pill, never auto-reloads), `swRegistration.ts`, `bootMetrics.ts`, `BootMark.tsx`. Platform plumbing, no domain logic.
+- Tests: `officeSimulation.test.ts`, `installPrompt.test.ts`, `viewportMetrics.test.ts`, `pwaPurity.test.ts`.
 
-Files in `src/pwa`:
-- `MobileViewport.tsx`: host replacing PhoneFrame; safe-area vars from `env(safe-area-inset-*)`, atmosphere via `useMobileGradient`, publishes `--aa-viewport-shortfall` (iOS standalone height correction) in `useLayoutEffect`; mounts `UpdatePrompt`.
-- `PwaDemoPanel.tsx` (568 lines): rendered at the bottom of the More tab via `MobileApp`'s `moreExtra` -> `MoreScreen extra` (`src/apps/mobile/screens/MoreScreen.tsx:66-72`, which also shows a "Demo prototype" badge). Cards in order: `InstallCoach` (install instructions/Android prompt replay; iOS Add-to-Home-Screen text; hidden when standalone/installed/dismissed), **Demo clock** (big time + date, "Start now and Finish now stamp from this clock", same 6 `demoClockShortcuts` buttons), **Office simulation** (toggle "Play the office"), **Demo data** (Reset demo data -> `BottomSheet` confirm; confirm does `resilientLocalStorage.removeItem(PERSIST_KEY)` then `resetDemo`, then `clearInstallCoachDismissal()`), **Build** (`__BUILD_ID__`, `__BUILD_DATE__`, cold launch ms from `bootMetrics`, offline-ready via `serviceWorkerReady()`, saved-data size/paused state from `persistStatus`/`persistedBytes`, "Check for updates" -> `checkForUpdate()`), **Viewport** (diagnostics rows from `readViewportMetrics`, "Show shortfall band" probe toggle, "Copy diagnostics" to clipboard; documented as deletable). The PWA panel therefore has clock + reset + office sim only: NO scenario jumps, NO integration/payment/failure triggers.
-- `officeSimulation.ts`: `wireOfficeSimulation(api)` subscribes to the store; on a live DRAFT -> SUBMITTED transition it arms a 4000 ms (`OFFICE_SIM_DELAY_MS`) timer, then (if enabled) calls `authoriseList` as actor `{who:'AA office (simulated)', role:'office', source:'office'}`; the wired billing run then invoices and hands off to Xero (fallback: `runBillingForList` + `handoffListCases`, guarded by `isListBilled`). Toggle in `localStorage['aa-office-simulation']`, default ON; when OFF the timer re-arms so switching ON later picks the List up. Seeded SUBMITTED Lists are untouched. PWA only; explicitly not the RFP flow (real flow = office reviews in the Admin Review queue). Tested by `officeSimulation.test.ts`.
-- `UpdatePrompt.tsx` (`useRegisterSW`, 60 s poll, teal "reload" pill), `swRegistration.ts` (`rememberRegistration`, `serviceWorkerReady`, `checkForUpdate`), `installPrompt.ts` (captured install event, `promptInstall`, coach dismissal key), `InstallCoach.tsx`, `bootMetrics.ts`, `BootMark.tsx`, `viewportMetrics.ts` (+ tests). All device/plumbing; no domain behaviour.
+## 8. PhoneFrame and Gradient Lab (framed build)
 
-## 8. Demo affordances outside this area (for completeness)
+- `src/shell/PhoneFrame.tsx` (320 lines): simulated iOS device, fixed 390x844 logical, bezel, dynamic island, fake status bar showing the DEMO clock (`useClockTimeLabel`), home indicator; presenter zoom control (50-130%, +/-/Fit; scale in localStorage `aa-phone-scale`; auto-fit on resize until user zooms). Supplies the `--aa-inset-*` vars (54/34 fake). Renders `<GradientLab/>` when `labController !== null`. Passed to `MobileApp` as `host` in router.tsx:146.
+- `src/shell/gradientLab/` (GradientLab.tsx 497 lines, `useGradientLab.ts`, `AtmosphereLayer.tsx`): presenter tool tuning the mobile background gradient; behind `GRADIENT_LAB_ENABLED = true` (`src/theme/gradientLabGate.ts`); tested by `gradientLabPurity.test.ts`. Visual only, no domain data.
 
-- `DemoBadge` (`src/shared/DemoBadge.tsx`) is used in: `apps/mobile/screens/MoreScreen.tsx:62` ("Demo prototype"), `shared/flows/ManualCardForm.tsx:152` ("NHI FHIR lookup · Digital Services Hub"), `shared/flows/PhotoCaptureFlow.tsx:35,77,85` ("Simulated capture · sample cards", "Simulated OCR · no real processing"), `apps/admin/screens/InvoiceDocument.tsx:264,271` ("Simulated portal handoff", "Simulated send"). These are in-screen simulated features, not harness triggers.
-- Admin app hosts product homes of some jobs (payables run, archive job, billing monitor Resolve & retry) - see the admin map.
-- Mobile "Start now"/"Finish now" stamp from the demo clock, so the clock menu affects capture timestamps.
+## 9. Stubbed, hardcoded, visual-only
 
-## 9. Extension points for screen-contextual demo triggers
+- Personas hardcoded (2); no sign-in/role switching UI. Sign-in/MFA/reset only exist as the "Simulate sign-in attempts" trigger adding audit rows.
+- Seed-scoped triggers hardcoded to seed ids: billing failure (`SEED_LIST_IDS.billingFailure`, COS ACC contract end-dated `2026-07-15`), post-op (Sharma 14 Jul AM), ingest-PDF (PDF row R2 -> Souter Mon 27 Jul AM), PWA payments limited to Souter's invoices, S1 procedure day `2026-07-28`, scenario text refers to specific seeded patients (Sarah Mitchell, Losa Tuilagi, Hemi Walker, David Chen). Any seed change needs `PERSIST_VERSION` bump and these checked.
+- Scenario jumps S1, S2, S4 only reset and print instructions; they stage nothing (S3 only verifies, S5 stages edits).
+- HL7/FHIR simulator: canned messages (`domain/integrations`), "live feed" is a 1 msg/sec timer; FHIR translation is local; Keycloak/Hub/NHI API are text only.
+- Xero sim: entirely in-store mirror; `settleInvoice` demo path bypasses the trigger registry; NHI-in-Xero policy shown as an unresolved callout, billing rounding assumption is a static note.
+- Office simulation and "Office authorises this List" are stand-ins (audit actor "AA office (simulated)"), explicitly not RFP behaviour.
+- PhoneFrame chrome (status bar, island, battery) and Gradient Lab are visual only. Demo clock label is shown but real time is never used.
+- Trigger memory and published context are in-memory only; a reload forgets "Replay" targets.
+- Requirements Board link is dev-only.
 
-What exists to build on:
-1. **Bar slot.** `AppShell.tsx:103-131` right-hand flex group (`gap:14`). New controls should be inserted between `<AppSwitcher/>` and `<DemoClockMenu/>` (or before the clock) as a new `DemoContextMenu`/button component. Styling template: copy `DemoResetButton`/`DemoClockMenu` (34px pill, popover with outside-click + Esc, `role=dialog`, `aria-expanded/controls`). Bar is `height:48`, `flex:none`; with several buttons on narrow widths it will overflow (no responsive handling today).
-2. **Context source.** `AppShell` already has `useLocation()`; route matching can use `matchPath` against the patterns in section 1 (`/admin/day/:dateISO`, `/admin/review/:listId`, `/admin/invoices/:invoiceId`, `/web/accounts/:subTab`, `/mobile/lists/*`, etc.). Entity params (`listId`, `cardId`, `invoiceId`, `dateISO`) are in the URL, so a trigger can be scoped to the entity on screen without new plumbing. Mobile list/card routes are one splat; `listsStackLocation` (`src/apps/mobile`, uses `matchPath('/mobile/lists/:listId/cards/:cardId')`) already parses it. Screen state that is NOT in the URL (open sheets, drawers, selected tab in local state) is invisible to the shell; exposing it would need a small context/store slice (`shell` slice in `src/store/appStore.ts:72-84` currently holds only `currentApp`).
-3. **Trigger implementation pattern.** Store actions are imported from `src/store` and called with `useAppStore` (the api) plus an `Actor` (`OFFICE`/`SOUTER` consts defined locally in `DemoControlPanel.tsx:38-39`; not exported - a shared actor module would avoid a third copy). Available demo-grade actions: `processMessage`, `ingestPdfRow`, `receivePayment`, `disbursePayable`, `armHandoffFault`, `runReconciliationPoll`, `runArchiveJob`, `runPayables`, `editContract`, `submitList`, `authoriseList`, `completeCard`, `cancelCard`, `editCard`, `editProcedure`, clock actions, `resetDemo`. Audit is automatic through `mutate()`. Any new trigger that changes seed shape needs `PERSIST_VERSION` bump (13 today).
-4. **Registry idea consistent with existing code.** Model on `demoClockShortcuts` (`src/shared/demoClockShortcuts.ts`): a pure module returning `{id,label,icon,run,disabled}` given `(api, context)`, consumed by the bar menu, the Control Panel (for discoverability) and the PWA panel. That is the established shared-definition pattern and keeps the three surfaces in step.
-5. **PWA equivalent.** The PWA has no bar; its slot is `PwaDemoPanel` (More tab). Contextual triggers there would need a card inside More or a per-screen affordance in the mobile app (the panel is bundled only into `dist-pwa` via `moreExtra`, and `pwaPurity.test.ts` forbids importing `shell` harness/demo/web/admin code into the closure, so any shared trigger module must live in `src/shared` or `src/store`, not `src/apps/demo` or `src/shell`).
-6. **Badging rule.** Every demo-only control is badged via `DemoBadge` (convention 13) and demo surfaces never look like product UI; new bar buttons should be visually harness chrome (white-on-ink), not product styling. Crimson identity-only; teal is the only action colour in popovers.
-7. **Tests.** Only `DemoResetButton.test.tsx`, `DemoXero.test.tsx`, `xeroPairView.test.ts` exist for this area; there are no tests for `DemoControlPanel` scenarios (Playwright specs under `aa-prototype/visual`/e2e may cover them via `data-shot` hooks such as `scenario-s1`, `scenario-confirm`, `control-payment-webhook`, `control-integration-message`, `control-scheduled-jobs`).
+## 10. Where to look for...
 
-## 10. Stubbed / hardcoded / visual-only
-
-- All Control Panel triggers use hardcoded seed IDs/dates (`SEED_LIST_IDS.*`, `ANAE.sharma` Tue 14 Jul, `SURGEON_PDFS[0]` row `R2`, COS ACC contract end date `2026-07-15`, `S1_PROCEDURE_DAY 2026-07-28`); they do nothing sensible after a clock advance or on a non-pristine seed (guarded by "not present in this seed" / "Already triggered" messages).
-- S2 and S4 jumps only reset and narrate; no preparation beyond the seed. Scenario messages are hardcoded strings that mirror the run sheet (behaviour changes must be mirrored in `docs/demo-guide`).
-- Persona chip and persona switching: display only; persona is derived from the app, no auth. Guard console personas are the only way to act as someone else.
-- Requirements link in the bar: DEV-only.
-- Xero sim, Integrations sim and Data Inspector are demo-only fakes; Xero "volume story" (soft limit, invoices per year, active contacts) is narrated counters, not real records; Keycloak, Digital Services Hub NHI lookup are referenced text only.
-- Office simulation (PWA only) is a deliberate non-RFP shortcut (auto-authorise 4 s after submit).
-- PhoneFrame status bar signal/wifi/battery icons and notch are decorative; safe-area insets are hardcoded 54/34 in the frame.
-- `PwaDemoPanel` Viewport card is a temporary diagnostic ("safe to delete").
-- Gradient Lab is a temporary flagged tool.
-- Billing rounding "assumption" callout is static text (rule lives in `src/domain/billing/`).
+- Add a demo button on a screen: `src/shared/demoTriggers/registry.ts` (+ `context.ts` for screen state).
+- Bar layout/controls: `src/shell/AppShell.tsx:219-303`; persona/app list: `src/shell/appConfig.ts`.
+- Clock behaviour: `src/store/clockActions.ts`, `src/domain/clock.ts`, `src/shared/demoClockShortcuts.ts`.
+- Reset: `resetDemo` (`clockActions.ts:110`) -> `resetDomainState` (`store/mutate.ts`); PWA also clears `PERSIST_KEY`.
+- Payment/billing demo flow: `sendPaymentWebhook` (registry.ts:112), `store/paymentActions.ts:78`, `store/payablesActions.ts:160`, `store/billingRun.ts`, `store/xeroHandoff.ts`.
+- Office stand-in: `src/store/officeStandIn.ts`, `src/store/demoActors.ts`.
+- Scenario scripts: `DemoControlPanel.tsx:250-348` (docs mirror: `docs/demo-guide/`).
+- Existing tests for this area: `src/shell/*.test.tsx`, `src/shared/demoTriggers/demoTriggers.test.ts`, `src/pwa/*.test.ts`, `src/apps/demo/*.test.*`.
