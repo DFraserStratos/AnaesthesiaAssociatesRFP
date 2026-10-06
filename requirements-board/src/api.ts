@@ -1,6 +1,6 @@
 /** Thin client for the dev-server file API (server/cataloguePlugin.ts). */
 import type { TimelineEntry } from '../shared/history.ts'
-import type { CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
+import type { Artifact, ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
 
 export interface BatchChange {
   id: string
@@ -34,6 +34,10 @@ export const api = {
   putItem: (record: Item, baseRev?: string) => call<Rev<Item>>('PUT', `/api/items/${encodeURIComponent(record.id)}`, { record, baseRev }),
   /** The card's timeline, newest first: the dev server's change journal, backfilled from git. */
   itemHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/items/${encodeURIComponent(id)}/history`),
+  /** An artifact's timeline, newest first, from git: its sidecar's changes and its file's. */
+  artifactHistory: (id: string) => call<{ entries: TimelineEntry[] }>('GET', `/api/artifacts/${encodeURIComponent(id)}/history`),
+  /** An artifact's details (name, kind, status, date, author, area, sources, description); the server keeps the rest as on disk. */
+  putArtifact: (record: Artifact, baseRev?: string) => call<ArtifactRec>('PUT', `/api/artifacts/${encodeURIComponent(record.id)}`, { record, baseRev }),
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => call<Rev<Item>>('POST', '/api/items', partial),
   /**
    * Removes the item and everything under it (`ids`, as the user was shown them) and strips every reference to them.
@@ -54,6 +58,12 @@ export const api = {
 
 /** URL of one version of a screenshot (by git blob hash), for a card's history. */
 export const historyBlobUrl = (v: { src: string; sha: string }) => `/history-blob/${v.sha}?src=${encodeURIComponent(v.src)}`
+
+/** The file an artifact shows, versioned by its content so a change on disk reloads it. */
+export const artifactFileUrl = (id: string, fileRev: string | null) => `/artifact-file/${encodeURIComponent(id)}${fileRev ? `?v=${fileRev.slice(0, 12)}` : ''}`
+
+/** One version of an artifact's file (by git blob hash), for its history. */
+export const artifactBlobUrl = (id: string, sha: string) => `/history-blob/${sha}?artifact=${encodeURIComponent(id)}`
 
 /** URL the dev server serves a catalogue-relative asset path from. */
 export const assetUrl = (src: string) => `/catalogue/${src.split('/').map(encodeURIComponent).join('/')}`

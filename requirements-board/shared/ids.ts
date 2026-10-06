@@ -41,6 +41,10 @@ export function nextQuestionId(taken: Iterable<string>): string {
   return `OQ-${pad(maxUnder(taken, 'OQ-') + 1)}`
 }
 
+export function nextArtifactId(taken: Iterable<string>): string {
+  return `AR-${pad(maxUnder(taken, 'AR-') + 1)}`
+}
+
 /** Natural compare for catalogue IDs: FT-01.10 sorts after FT-01.9. */
 export function compareIds(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true })

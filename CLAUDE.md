@@ -35,7 +35,8 @@ findings.
 ## Requirements: where they live
 
 **The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/`**: one
-Markdown file per epic, feature and story (`requirements/`) and per outstanding item (`questions/`: open questions, missing sources), format in
+Markdown file per epic, feature and story (`requirements/`) and per outstanding item (`questions/`: open questions, missing sources), plus
+artifacts (`artifacts/AR-nn.md`: the diagrams, transcripts, notes and documents requirements link to, or to a spot in), format in
 `catalogue/SCHEMA.md`. To add, change, retire or answer a requirement, edit those files (or use the
 Requirements Board, which edits the same files), then run `npm run check` from the repo root.
 `domain-model.md` beside the catalogue holds the narrative model; update it when a change alters the
@@ -60,7 +61,14 @@ Not the place to edit requirements:
   prototype harness bar links to the board only when launched that way (it sets `VITE_REQUIREMENTS_URL`),
   so a presenter running `aa-prototype` on its own never sees the link.
   **Its design rules are in `requirements-board/DESIGN.md`** (names over IDs, fixed type colours, status
-  as pills): read it before any visual change to the board. **Finish green on board work:**
+  as pills): read it before any visual change to the board.
+  **Artifacts** (its Artifacts tab) are the diagrams, transcripts, notes and documents behind the
+  requirements: a sidecar `catalogue/artifacts/AR-nn.md` each, with named highlight regions that
+  items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link). The
+  board edits only their details (name, kind, status, date, author, area, sources, description) and
+  never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
+  (`npm --prefix requirements-board run artifact:new`), and the `aa-svg-diagram` skill saves new
+  diagrams as artifacts. A new transcript or note filed by `update-requirements` is registered as one. **Finish green on board work:**
   `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check) passes before handing back.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built

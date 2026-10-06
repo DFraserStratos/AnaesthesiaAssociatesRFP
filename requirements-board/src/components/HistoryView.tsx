@@ -7,13 +7,14 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { TEXT_FIELDS, lineCounts, lineDiff, type DiffLine, type FieldChange, type ScreenshotVersion, type TimelineEntry } from '../../shared/history.ts'
-import { firstLaneName, type ImageRef, type Item } from '../../shared/types.ts'
+import { firstLaneName, parseArtifactRef, type ImageRef, type Item } from '../../shared/types.ts'
+import { spotName } from '../artifactIndex.ts'
 import { api, historyBlobUrl } from '../api.ts'
 import { useCatalogue, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
-import { ItemName, StatusLabel } from './bits.tsx'
+import { ArtifactName, ItemName, StatusLabel } from './bits.tsx'
 
-const TEXT_LABEL: Record<string, string> = { description: 'Description', acceptance: 'Acceptance criteria', technical: 'Technical discussion', notes: 'Notes' }
+export const TEXT_LABEL: Record<string, string> = { description: 'Description', acceptance: 'Acceptance criteria', technical: 'Technical discussion', notes: 'Notes', source: 'Diagram source' }
 
 export function HistoryView({ item, index }: { item: Item; index: Index }) {
   const rev = useCatalogue((s) => s.items[item.id]?.rev)
@@ -55,6 +56,35 @@ export function HistoryView({ item, index }: { item: Item; index: Index }) {
 
 function Timeline({ entries, index, images }: { entries: TimelineEntry[]; index: Index; images: ImageRef[] }) {
   const lanes = useCatalogue((s) => s.layout)
+  return (
+    <HistoryTimeline entries={entries}>
+      {(e) => (
+        <ul className="hist-changes">
+          {e.changes
+            .filter((c) => c.field !== 'screenshot')
+            .map((c) => (
+              <li key={c.field}>
+                <ChangeRow change={c} index={index} firstLane={firstLaneName(lanes)} />
+              </li>
+            ))}
+          {e.changes.some((c) => c.field === 'screenshot') && (
+            <li>
+              <ScreenshotsRow changes={e.changes.filter((c) => c.field === 'screenshot')} images={images} />
+            </li>
+          )}
+        </ul>
+      )}
+    </HistoryTimeline>
+  )
+}
+
+export type ChangeEntry = Extract<TimelineEntry, { type: 'change' }>
+
+/**
+ * The chart's time column, for any record: day headings, a mark per change on the trace, commits
+ * ruled across, the uncommitted run in amber. `children` draws an entry's changes.
+ */
+export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[]; children: (e: ChangeEntry) => ReactNode }) {
   const firstUncommitted = entries.findIndex((e) => e.type === 'change' && e.uncommitted)
   let day = ''
   return (
@@ -88,24 +118,7 @@ function Timeline({ entries, index, images }: { entries: TimelineEntry[]; index:
                 <div className="hist-src" title={e.commit ? `${e.commit.sha.slice(0, 7)} by ${e.commit.author}` : undefined}>
                   {sourceLabel(e)}
                 </div>
-                {e.kind === 'created' ? (
-                  <p className="hist-row">{e.source === 'git' ? 'Added to the catalogue' : 'Created'}</p>
-                ) : (
-                  <ul className="hist-changes">
-                    {e.changes
-                      .filter((c) => c.field !== 'screenshot')
-                      .map((c) => (
-                        <li key={c.field}>
-                          <ChangeRow change={c} index={index} firstLane={firstLaneName(lanes)} />
-                        </li>
-                      ))}
-                    {e.changes.some((c) => c.field === 'screenshot') && (
-                      <li>
-                        <ScreenshotsRow changes={e.changes.filter((c) => c.field === 'screenshot')} images={images} />
-                      </li>
-                    )}
-                  </ul>
-                )}
+                {e.kind === 'created' ? <p className="hist-row">{e.source === 'git' ? 'Added to the catalogue' : 'Created'}</p> : children(e)}
               </div>
             </li>
           </Fragment>
@@ -115,13 +128,13 @@ function Timeline({ entries, index, images }: { entries: TimelineEntry[]; index:
   )
 }
 
-function sourceLabel(e: Extract<TimelineEntry, { type: 'change' }>): ReactNode {
+export function sourceLabel(e: Extract<TimelineEntry, { type: 'change' }>): ReactNode {
   if (e.source === 'git') return <>In git, <q>{e.commit?.subject}</q></>
   if (e.source === 'board') return 'On the board'
   return e.offline ? 'On disk, while the board was off' : 'On disk'
 }
 
-function ChangeRow({ change: c, index, firstLane }: { change: FieldChange; index: Index; firstLane: string }) {
+export function ChangeRow({ change: c, index, firstLane }: { change: FieldChange; index: Index; firstLane: string }) {
   const [open, setOpen] = useState(false)
   if (TEXT_FIELDS.has(c.field)) {
     const diff = lineDiff(String(c.from ?? ''), String(c.to ?? ''))
@@ -187,6 +200,27 @@ function ChangeRow({ change: c, index, firstLane }: { change: FieldChange; index
             {removed.map((s) => (
               <li key={`-${s}`} className="del">
                 {s}
+              </li>
+            ))}
+            {!added.length && !removed.length && <li className="quiet">Reordered</li>}
+          </ul>
+        </div>
+      )
+    }
+    case 'artifacts': {
+      const { added, removed } = setDiff((c.from as string[] | undefined) ?? [], (c.to as string[] | undefined) ?? [])
+      return (
+        <div className="hist-row">
+          <span className="hist-field">Artifacts</span>
+          <ul className="hist-lines">
+            {added.map((ref) => (
+              <li key={`+${ref}`} className="add">
+                <ArtifactRefName refText={ref} />
+              </li>
+            ))}
+            {removed.map((ref) => (
+              <li key={`-${ref}`} className="del">
+                <ArtifactRefName refText={ref} />
               </li>
             ))}
             {!added.length && !removed.length && <li className="quiet">Reordered</li>}
@@ -291,7 +325,19 @@ function Named({ id, index }: { id: string | null; index: Index }) {
   )
 }
 
-function Counts({ add, del, unit }: { add: number; del: number; unit?: string }) {
+/** An artifact link named as everywhere else: its mark, its title and the spot; the bare ref once it is gone. */
+function ArtifactRefName({ refText }: { refText: string }) {
+  const { id, region } = parseArtifactRef(refText)
+  const rec = useCatalogue((s) => s.artifacts[id])
+  if (!rec) return <span className="mono">{refText}</span>
+  return (
+    <span className="chip item hist-name">
+      <ArtifactName artifact={rec.data} spot={region ? (spotName(rec, region) ?? region) : null} />
+    </span>
+  )
+}
+
+export function Counts({ add, del, unit }: { add: number; del: number; unit?: string }) {
   return (
     <span className="hist-counts" aria-label={`${add} added, ${del} removed${unit ? ` ${unit}s` : ''}`}>
       {add > 0 && <span className="add">+{add}</span>}
@@ -302,7 +348,7 @@ function Counts({ add, del, unit }: { add: number; del: number; unit?: string })
 }
 
 /** Changed lines with one line of context; longer unchanged runs fold to a count. */
-function Diff({ lines }: { lines: DiffLine[] }) {
+export function Diff({ lines }: { lines: DiffLine[] }) {
   const rows = useMemo(() => {
     const near = (i: number) => lines[i - 1]?.op !== 'same' || lines[i + 1]?.op !== 'same'
     const out: (DiffLine | { fold: number })[] = []
@@ -336,7 +382,7 @@ function Diff({ lines }: { lines: DiffLine[] }) {
   )
 }
 
-function setDiff(from: string[], to: string[]) {
+export function setDiff(from: string[], to: string[]) {
   return { added: to.filter((s) => !from.includes(s)), removed: from.filter((s) => !to.includes(s)) }
 }
 

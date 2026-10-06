@@ -12,6 +12,9 @@
  *   DELETE /api/questions/:id   { baseRev }  removes the file; 409 if it changed on disk since baseRev
  *   POST /api/questions          { title, ... }
  *   GET  /api/items/:id/history  the card's timeline: the change journal, backfilled from git
+ *   GET  /api/artifacts/:id/history  an artifact's timeline from git: its sidecar and its file
+ *   PUT  /api/artifacts/:id      { record, baseRev }  its details only (title, kind, status, date, author,
+ *                                area, sources, description); its file, regions and source stay as on disk
  *   PUT  /api/layout             { positions?: { id: {x,y} | null }, lanes?: string[], firstLane?: string | null }
  *                                positions are a patch (null restores the story-map place); lanes replace the
  *                                list; firstLane renames the implicit first lane (null: back to Unassigned)
@@ -22,14 +25,17 @@
  */
 import { join } from 'node:path'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
-import { itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion } from '../shared/files.ts'
+import { artifactRoundTripProblems, itemRoundTripProblems, normaliseItem, normaliseQuestion, parseItem, parseQuestion, questionRoundTripProblems, serialiseItem, serialiseQuestion, withArtifactDetails } from '../shared/files.ts'
 import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
-import { buildTimeline } from '../shared/history.ts'
+import { buildArtifactTimeline, buildTimeline } from '../shared/history.ts'
+import { parseArtifact } from '../shared/files.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
-import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
+import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
 import {
   FileExistsError,
+  artifactCheck,
+  artifactSidecarPath,
   deleteItemAssets,
   deleteItemFile,
   deleteQuestionFile,
@@ -41,17 +47,20 @@ import {
   loadCatalogue,
   questionPath,
   questionsDir,
+  readArtifactFile,
   readItemFile,
   readLayout,
   readQuestionFile,
   takenIds,
+  writeArtifact,
   writeItem,
   writeLayout,
   writeQuestion,
   type LoadResult,
   type LoadedFile,
 } from './catalogueFs.ts'
-import { gitDirty, gitFileHistory, gitScreenshots } from './gitHistory.ts'
+import { artifactInfo, artifactPath } from './artifactFiles.ts'
+import { gitAssetHistory, gitDirty, gitFileHistory, gitScreenshots } from './gitHistory.ts'
 import { NO_JOURNAL, type Journal } from './historyJournal.ts'
 
 export class HttpError extends Error {
@@ -81,6 +90,8 @@ export interface ApiOptions {
   gitHistory?: typeof gitFileHistory
   /** A card's screenshot rewrites in git (injectable for tests). */
   gitScreenshots?: typeof gitScreenshots
+  /** An artifact file's versions in git (injectable for tests). */
+  gitAssetHistory?: typeof gitAssetHistory
 }
 
 export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => void = () => {}, opts: ApiOptions = {}) {
@@ -88,19 +99,20 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const journal = opts.journal ?? NO_JOURNAL
   const gitHistory = opts.gitHistory ?? gitFileHistory
   const gitShots = opts.gitScreenshots ?? gitScreenshots
+  const gitAsset = opts.gitAssetHistory ?? gitAssetHistory
   journal.baseline(state.items)
   journal.screenshots(join(root, 'assets'), { offline: true })
 
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const questionList = () => Object.values(state.questions).map((r) => r.data)
   const refreshIssues = () => {
-    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes)
+    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts)
   }
 
   /** Refuse a change that would introduce an integrity error not already present. */
-  function guard(items: Item[], questions: Question[]) {
+  function guard(items: Item[], questions: Question[], artifacts: Record<string, Rev<Artifact>> = state.artifacts) {
     const before = new Set(state.issues.map(issueKey))
-    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes })
+    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes, ...artifactCheck(artifacts, root) })
     const added = after.filter((i) => i.severity === 'error' && !before.has(issueKey(i)))
     if (added.length) throw new HttpError(422, added.map((i) => `${i.id}: ${i.message}`).join('\n'))
   }
@@ -150,6 +162,17 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       emit({ kind: 'issues', issues: state.issues })
     }
     return rec
+  }
+
+  function artifactOnDisk(id: string): ArtifactRec {
+    const rec = checked(id, readArtifactFile(artifactSidecarPath(id, root)))
+    if (state.artifacts[id]?.rev !== rec.rev) {
+      state.artifacts[id] = { ...rec, meta: artifactInfo(rec.data, root).meta }
+      refreshIssues()
+      emit({ kind: 'artifact', id, record: state.artifacts[id]! })
+      emit({ kind: 'issues', issues: state.issues })
+    }
+    return state.artifacts[id]!
   }
 
   function checkBase<T>(current: Rev<T>, id: string, baseRev: unknown) {
@@ -206,7 +229,39 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     refuseCrossSite(req)
 
     if (path === '/api/catalogue' && method === 'GET') {
-      return { items: state.items, questions: state.questions, layout: state.layout, issues: state.issues }
+      return { items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, issues: state.issues }
+    }
+
+    const a = /^\/api\/artifacts\/([^/]+)\/history$/.exec(path)
+    if (a && method === 'GET') {
+      const id = decodeURIComponent(a[1]!)
+      const rec = state.artifacts[id]
+      if (!rec) throw new HttpError(404, `${id} does not exist`)
+      const file = rec.data.file ? artifactPath(rec.data.file, root) : null
+      return Promise.all([
+        gitHistory(artifactSidecarPath(id, root), parseArtifact).catch(() => ({ versions: [], dirty: false, working: null })),
+        file ? gitAsset(file).catch(() => null) : Promise.resolve(null),
+      ]).then(([git, asset]) => ({ entries: buildArtifactTimeline(git, asset) }))
+    }
+
+    const ap = /^\/api\/artifacts\/([^/]+)$/.exec(path)
+    if (ap && method === 'PUT') {
+      // Only an artifact's details: whatever else the record carries, its file, regions and source stay as on disk.
+      const id = decodeURIComponent(ap[1]!)
+      const current = artifactOnDisk(id)
+      checkBase(current, id, body.baseRev)
+      const sent = (body.record ?? {}) as Record<string, unknown>
+      if (sent.id !== undefined && sent.id !== id) throw new HttpError(400, 'the record id does not match the URL')
+      const next = withArtifactDetails(current.data, sent)
+      const problems = artifactRoundTripProblems(next)
+      if (problems.length) throw new HttpError(422, `${id}: ${problems.join('; ')}`)
+      guard(itemList(), questionList(), { ...state.artifacts, [id]: { data: next, rev: '' } })
+      const rec = writeArtifact(next, root)
+      state.artifacts[id] = rec
+      refreshIssues()
+      emit({ kind: 'artifact', id, record: rec })
+      emit({ kind: 'issues', issues: state.issues })
+      return rec
     }
 
     let m = /^\/api\/items\/([^/]+)\/history$/.exec(path)
@@ -425,6 +480,11 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     }
     for (const id of new Set([...Object.keys(prev.questions), ...Object.keys(next.questions)])) {
       if (prev.questions[id]?.rev !== next.questions[id]?.rev) events.push({ kind: 'question', id, record: next.questions[id] ?? null })
+    }
+    for (const id of new Set([...Object.keys(prev.artifacts), ...Object.keys(next.artifacts)])) {
+      const was = prev.artifacts[id]
+      const now = next.artifacts[id]
+      if (was?.rev !== now?.rev || JSON.stringify(was?.meta) !== JSON.stringify(now?.meta)) events.push({ kind: 'artifact', id, record: now ?? null })
     }
     if (JSON.stringify(prev.layout) !== JSON.stringify(next.layout)) {
       events.push({ kind: 'layout', layout: next.layout })

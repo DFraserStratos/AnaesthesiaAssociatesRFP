@@ -11,7 +11,7 @@ import {
   type Viewport,
 } from '@xyflow/react'
 import { Filter, LayoutGrid, Sparkles, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
 import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
 import { BoardMinimap } from '../board/BoardMinimap.tsx'
@@ -27,6 +27,7 @@ import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, typ
 import { dropTarget, LANE_HEAD, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
 import { boundsOf, clampViewport, panExtent, type Bounds } from '../board/panLimits.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
+import { PanelResizer, readPanel, writePanel } from '../components/PanelResizer.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
 import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
@@ -45,12 +46,8 @@ const MAX_ZOOM = 1.8
 const SETTLE_MS = 240
 /** The item panel's share of the width, in percent: a third by default, the board keeps two thirds. */
 const PANEL_KEY = 'requirements-board:panel-width'
-const PANEL_DEFAULT = 100 / 3
-const PANEL_MIN = 25
-const PANEL_MAX = 70
 /** The panel never gets narrower than this (styles.css `.dock` min-width). */
 const DOCK_MIN = 380
-const clampPanel = (w: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, w))
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
 /** How much of a wide card (an epic) must be on screen to count as in view. */
@@ -62,14 +59,6 @@ function readViewport(mode: BoardMode): Viewport | undefined {
     return raw ? (JSON.parse(raw) as Viewport) : undefined
   } catch {
     return undefined
-  }
-}
-function readPanel(): number {
-  try {
-    const w = Number(localStorage.getItem(PANEL_KEY))
-    return w ? clampPanel(w) : PANEL_DEFAULT
-  } catch {
-    return PANEL_DEFAULT
   }
 }
 /** Semantic zoom bands: overview (epic names, status blocks), far (titles only), mid, near (excerpt). */
@@ -114,7 +103,7 @@ function Board({ mode }: { mode: BoardMode }) {
   const mapped = mode === 'mapped'
   // The open card is the URL's `?item=`: clicking a card opens it in the side panel and lights its lineage.
   const selected = open.params.get('item')
-  const [panelW, setPanelW] = useState(readPanel)
+  const [panelW, setPanelW] = useState(() => readPanel(PANEL_KEY))
   const [initialViewport] = useState(() => readViewport(mode))
   const [zoomClass, setZoomClass] = useState(() => zoomBand(initialViewport?.zoom ?? 0.4))
   const [showFilters, setShowFilters] = useState(false)
@@ -177,13 +166,7 @@ function Board({ mode }: { mode: BoardMode }) {
     })
   }, [rf, limit])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(PANEL_KEY, String(panelW))
-    } catch {
-      /* not persisted */
-    }
-  }, [panelW])
+  useEffect(() => writePanel(PANEL_KEY, panelW), [panelW])
 
   // Mapped: the drop slot under the pointer while dragging, previewed live so the other cards make room.
   const [target, setTarget] = useState<Move | null>(null)
@@ -676,47 +659,6 @@ function mappedExtras(map: MappedLayout, index: Index, named: boolean, target: M
     out.push({ id: 'drop-marker', type: 'marker', position: { x: box.x, y: box.y }, data: { w: box.w, h: box.h }, zIndex: 5, ...fixed })
   }
   return out
-}
-
-/** The divider between the item panel and the board: drag, arrow keys, or double-click to reset to a third. */
-function PanelResizer({ width, onChange }: { width: number; onChange: (w: number) => void }) {
-  const start = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const el = e.currentTarget
-    const split = el.parentElement!.getBoundingClientRect()
-    el.setPointerCapture(e.pointerId)
-    el.classList.add('dragging')
-    const move = (ev: PointerEvent) => onChange(clampPanel(((ev.clientX - split.left) / split.width) * 100))
-    const up = () => {
-      el.classList.remove('dragging')
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
-  }
-  return (
-    <div
-      className="dock-resizer"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize the item panel"
-      aria-valuenow={Math.round(width)}
-      aria-valuemin={PANEL_MIN}
-      aria-valuemax={PANEL_MAX}
-      tabIndex={0}
-      title="Drag to resize · double-click to reset"
-      onPointerDown={start}
-      onDoubleClick={() => onChange(PANEL_DEFAULT)}
-      onKeyDown={(e) => {
-        const step = e.key === 'ArrowLeft' ? -5 : e.key === 'ArrowRight' ? 5 : 0
-        if (!step) return
-        e.preventDefault()
-        onChange(clampPanel(width + step))
-      }}
-    />
-  )
 }
 
 /** The board asks in its own frame too: a popover under the button, not a browser dialog. */

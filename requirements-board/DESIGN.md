@@ -27,9 +27,11 @@ design rules in `docs/design/` govern `aa-prototype/`, not this tool.)
 | Epic | orange `#E06C00` | card top rule (thickest), type icon, lineage pill, minimap |
 | Feature | purple `#773B93` | card top rule, type icon, lineage pill, minimap |
 | Story | blue `#009CCC` | card top rule (thinnest), type icon, lineage pill, minimap |
+| Artifact | indigo `#4B56B0` | kind icon (plates, list rows, the artifact page, item sheets, links) |
 
-Tokens live in `src/styles.css` (`--ty-*`, set per element by the `ty-epic|feature|story`
-classes). Always pair an item's title with its `TypeIcon` (or use `ItemName`) outside its own sheet.
+Tokens live in `src/styles.css` (`--ty-*`, set per element by the `ty-epic|feature|story|artifact`
+classes). Artifacts took indigo because it is clear of every type, every status, the action teal,
+and above all the red highlight box, which must stay the one red mark on an artifact. Always pair an item's title with its `TypeIcon` (or use `ItemName`) outside its own sheet.
 
 **Status is always a labelled pill, never an item's main colour.** The type owns the card's colour;
 status is a small tinted pill (`StatusLabel`). No status colour may share a hue with a type:
@@ -63,14 +65,18 @@ scrolls) and as the modal elsewhere.
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
 - Then the title, description, acceptance criteria, technical discussion, notes, open questions,
-  children, screenshots, related. Empty sections are not shown. Cards never show acceptance criteria or
+  children, screenshots, artifacts, related. Empty sections are not shown. Cards never show acceptance criteria or
   technical discussion; their excerpt is the description only.
 - **Links in the text** to another card keep the author's words in ink with a teal underline
   (teal is the action colour) and open that card in place. A bare ID in the text reads as the
   card's type icon and title, never the code; a question's shows the question mark in Open amber.
   A link to a retired card is muted with a dotted underline; one to nothing is grey with a dotted
   red underline and says so in its tooltip.
-- **Related** sits under the screenshots: the relations either card stores, as the same rows as
+- **Artifacts** sits under the screenshots, before Related: one row per artifact the card points at,
+  its kind icon and name, then the spot's name after a middot when the link is to a spot in it
+  (status pill only when not Current). A row opens the artifact at that spot, in the red box.
+  Missing artifacts or spots show as their ref, muted, "Not found".
+- **Related** sits under the artifacts: the relations either card stores, as the same rows as
   the children list (name, then status pill), then a quiet "Mentioned in" subhead over the cards
   whose text mentions this one. Outgoing text links are not repeated there, since the text already
   shows them.
@@ -123,8 +129,8 @@ scrolls) and as the modal elsewhere.
   withdraws the question either way.
 - Navigating the canvas: two fingers on a trackpad pan it, a pinch zooms; a mouse wheel zooms (the
   board tells them apart itself: `src/board/trackpad.ts`); dragging empty canvas pans. A pinch
-  never zooms the page itself, wherever it lands (masthead, panel, list views): only the board
-  zooms. Keyboard zoom (Cmd plus, Cmd minus) is left to the browser.
+  never zooms the page itself, wherever it lands (masthead, panel, list views): only the board and
+  the artifact viewers zoom. Keyboard zoom (Cmd plus, Cmd minus) is left to the browser.
 - **The board is bounded, not an infinite whiteboard.** However it is panned, a map edge comes in no
   further than the middle of the visible board (right of the docked panel), at every zoom, so the map
   can never be scrolled off screen (`src/board/panLimits.ts`).
@@ -178,7 +184,79 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
   untitled story right there and opens it in Edit. The round teal plus still makes a story in
   Unassigned.
 
+## Artifacts
+
+The diagrams, transcripts, notes and documents behind the requirements, on their own tab between
+Board and Outstanding items (the count leaves out Superseded ones). Agents write them; the board
+edits only their details (below), never the file, its highlights or the links to it.
+
+- **Two layouts, one switch** (Grid · List, kept per browser), both grouped by kind with a count,
+  and in both one click opens the artifact's own page: the list and the grid are only ways to find
+  one, never a place to read it. **Grid** is a light table: each artifact a white plate showing the
+  thing itself, never cropped (a drawing whole, a PDF's first page, a Markdown document's opening
+  set as a little page), its name under it, then the kind icon, a link count and a highlight
+  count, its date on the right ("1 Oct 2026", "July 2026", "2021": as much as is known), and a
+  status pill only when it is not Current. **List** is one row per artifact: the same picture
+  small on the left, the name and up to two lines of its description, then its date, kind, the
+  counts and the status pill in a fixed column on the right. Within each kind, newest first. The
+  date is when the artifact was made (the meeting, the publication, the drawing), not when it was
+  filed. No row expands and nothing opens beside the list.
+- **The artifact page** docks a panel on the left like the item sheet (resizable, width kept per
+  browser): Artifacts crumb, the name, kind and status, then tabs: **Highlights** (the named
+  spots, each marked with a tiny red box; a document's own pages or sections below, long lists
+  folded; a row's link button copies a link to that spot, to paste over words in any Markdown
+  field), **Linked** (cards that list it, with the spot each links to, then "Mentioned in" and
+  outstanding items), **Details** (description, author, area, sources, file path and size, and the
+  ID bottom right, which copies a link), **History**. The artifact fills the rest.
+- **Edit details**, in the panel's footer as on an item sheet, swaps the tabs for a form: name,
+  kind, status (and Replaced by, when Superseded), date (as written, `2026-10-01`, `2026-10` or
+  `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and
+  Esc, the restored draft, the on-disk conflict and the discard veil all work as they do on a
+  card. The file, its highlights and its ID are not in the form.
+- **The red box** is the same mark the screenshots carry (`shared/highlight.ts`): 3px `#E0243A`
+  outside the padded spot, 12px radius, soft red glow. It is the only red on an artifact; hovering
+  a highlight in the panel previews it as a dashed outline. Asked for (from a card, a link, a
+  highlight row), the view eases onto the spot and the box closes in once; reduced motion skips
+  both.
+- **Drawings** (SVG, image, mermaid) sit on the chart paper as a white sheet and pan and zoom like
+  the board, but a plain drag never pans one: it selects text, which copies like any text. Two
+  fingers pan, a pinch or the wheel zooms, Space or the middle button and a drag pans (an image,
+  having no text, also pans with a plain drag). Unlike the board they have zoom out, zoom in and fit
+  buttons, plus + - 0 on the keyboard, beside the minimap button in the same view bar, and a back
+  to the highlight button when there is one. The minimap is the drawing itself, the spot outlined
+  in red.
+- **Documents** (Markdown, PDF) scroll as pages on the chart paper: Markdown typeset like a sheet's
+  prose (links to cards work), PDFs as their pages with pdf.js's text layer over them, so their text
+  selects too. A PDF's view bar has the page counter, zoom out and zoom in, the two fits, and the
+  thumbnails button. **The fits** act on the page in focus (the one filling most of the view, however
+  far in): fit width fills the width with it, holding the middle of the view still; fit page shows
+  it whole, centred (keys 0 and 9). The fit in use is pressed and follows the frame as it resizes. A
+  pinch or a zoom step leaves the fits and zooms about the pointer (or the middle), holding that
+  point still; one that comes to rest within a few percent of a fit settles on it. A zoom stretches
+  the pages at once and draws them sharp when it holds still. **Page thumbnails** run down the right
+  of a PDF of more than one page, on the soft card ground: each page in small with its number, the
+  page in focus ringed teal and kept in sight as the pages scroll, a page with find matches carrying
+  their count in the find yellow. Press one (or walk them with the arrow keys) to go to that page;
+  the thumbnails button hides or shows them, kept per browser. **The arrow keys** go page by page
+  wherever the focus is (not while typing, in the thumbnails or under a sheet): down brings the next
+  page's top to the top of the view, up the page above (or this one's top, part way down it); left
+  and right do too unless the page in focus is wider than the view, when they pan.
+- **Find**, top right of every artifact with text (not an image), in the board search's quiet
+  box: "Find in this diagram", "in this transcript" and so on, by kind. Matches are tinted the
+  board search's yellow (never red, which is the highlight box); the current one is stronger,
+  outlined, and brought into view (a drawing pans to it, close enough to read; a document scrolls;
+  a PDF goes to its page). "3 of 26" counts them across the whole artifact, a PDF's undrawn pages
+  included. The down and up arrows step through the matches, as they walk the board's search
+  results (Enter and Shift Enter do too); Ctrl F, Cmd F or / jumps to the box; Esc clears the
+  search and leaves the box. Case and
+  line breaks don't matter.
+- **History** is the card's time column; a new version of the file is a "File updated" disclosure
+  over a before and after, side by side or swiped (a teal handle over the two), or as a source diff
+  for a text file.
+
 ## Before shipping a visual change
 
-Take Playwright screenshots of the board (near, mid and fit zoom), an item sheet, Outline and
-Outstanding items (`shots/` holds local scratch scripts), and check them against this page.
+Take Playwright screenshots of the board (near, mid and fit zoom), an item sheet, Outline,
+Outstanding items and Artifacts (grid, list, a drawing at a highlight with the minimap open, a
+transcript and a PDF at a spot; `shots/artifacts.mjs`) (`shots/` holds local scratch scripts), and
+check them against this page.

@@ -20,6 +20,7 @@ const item = (over: Partial<Item>): Item => ({
   order: 1,
   swimlane: null,
   related: [],
+  artifacts: [],
   images: [],
   description: '',
   acceptance: '',

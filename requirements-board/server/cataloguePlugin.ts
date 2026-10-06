@@ -10,7 +10,8 @@ import { tmpdir } from 'node:os'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
-import type { CatalogueEvent } from '../shared/types.ts'
+import type { ArtifactRec, CatalogueEvent } from '../shared/types.ts'
+import { ARTIFACT_MIME, artifactPath } from './artifactFiles.ts'
 import { HttpError, createCatalogueApi } from './catalogueApi.ts'
 import { CATALOGUE_DIR } from './catalogueFs.ts'
 import { gitBlob } from './gitHistory.ts'
@@ -79,8 +80,20 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
       let timer: ReturnType<typeof setTimeout> | undefined
       let firstPending: number | undefined
       dev.watcher.add(rootAbs)
+      // Artifacts can show documents that live elsewhere in the repository: watch those files too.
+      const outside = new Set<string>()
+      const watchArtifactFiles = () => {
+        for (const rec of Object.values(api.getState().artifacts)) {
+          const abs = rec.data.file ? artifactPath(rec.data.file, root) : null
+          if (abs && !abs.startsWith(rootAbs + sep) && !outside.has(abs)) {
+            outside.add(abs)
+            dev.watcher.add(abs)
+          }
+        }
+      }
+      watchArtifactFiles()
       dev.watcher.on('all', (_event, file) => {
-        if (!resolve(file).startsWith(rootAbs + sep) || file.endsWith('.tmp')) return
+        if ((!resolve(file).startsWith(rootAbs + sep) && !outside.has(resolve(file))) || file.endsWith('.tmp')) return
         const now = performance.now()
         firstPending ??= now
         clearTimeout(timer)
@@ -88,6 +101,7 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
         timer = setTimeout(() => {
           firstPending = undefined
           sync()
+          watchArtifactFiles()
         }, wait)
       })
 
@@ -97,8 +111,12 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
           if (!serveAsset(root, url, res)) next()
           return
         }
+        if (url.pathname.startsWith('/artifact-file/')) {
+          if (!serveArtifactFile(root, api.getState().artifacts, url, res)) next()
+          return
+        }
         if (url.pathname.startsWith('/history-blob/')) {
-          void serveHistoryBlob(root, url, res).then((ok) => ok || next())
+          void serveHistoryBlob(root, url, res, api.getState().artifacts).then((ok) => ok || next())
           return
         }
         if (!url.pathname.startsWith('/api/')) return next()
@@ -122,16 +140,44 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
 }
 
 /**
- * An earlier version of a screenshot, for a card's history: `/history-blob/<git blob sha>?src=assets/<ID>/<file>`.
- * Read from git, or from the file on disk while it still has that content (a version not yet
- * committed). Only ever served as the image type of a file under `assets/`. Returns false to fall through.
+ * An SVG can carry script. The board never runs it (it sanitises before showing one), and this
+ * stops it running if an artifact's SVG is opened in a tab of its own.
  */
-export async function serveHistoryBlob(root: string, url: URL, res: ServerResponse): Promise<boolean> {
+const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:"
+
+/** The file an artifact shows: `/artifact-file/<ID>`, resolved through its sidecar only, so no other path is ever served. */
+export function serveArtifactFile(root: string, artifacts: Record<string, ArtifactRec>, url: URL, res: ServerResponse): boolean {
+  const id = decodeURIComponent(url.pathname.slice('/artifact-file/'.length))
+  const file = artifacts[id]?.data.file
+  const abs = file ? artifactPath(file, root) : null
+  const type = abs ? ARTIFACT_MIME[extname(abs).toLowerCase()] : undefined
+  if (!abs || !type || !existsSync(abs) || !statSync(abs).isFile()) return false
+  res.setHeader('Content-Type', type)
+  res.setHeader('Cache-Control', 'no-cache')
+  if (type === 'image/svg+xml') res.setHeader('Content-Security-Policy', SVG_CSP)
+  createReadStream(abs)
+    .on('error', () => {
+      if (!res.headersSent) res.statusCode = 404
+      res.end()
+    })
+    .pipe(res)
+  return true
+}
+
+/**
+ * An earlier version of a screenshot or an artifact's file, for a history: `/history-blob/<git blob sha>?src=assets/<ID>/<file>`
+ * or `?artifact=<ID>`. Read from git, or from the file on disk while it still has that content (a
+ * version not yet committed). Only ever served as the type of that screenshot or artifact file. Returns false to fall through.
+ */
+export async function serveHistoryBlob(root: string, url: URL, res: ServerResponse, artifacts: Record<string, ArtifactRec> = {}): Promise<boolean> {
   const sha = url.pathname.slice('/history-blob/'.length)
+  const artifactId = url.searchParams.get('artifact')
+  const artifactFile = artifactId ? artifacts[artifactId]?.data.file : null
   const src = url.searchParams.get('src') ?? ''
-  const abs = resolve(root, src)
-  const type = MIME[extname(abs).toLowerCase()]
-  if (!/^[0-9a-f]{40}$/.test(sha) || !type || !abs.startsWith(resolve(root, 'assets') + sep)) return false
+  const abs = artifactFile ? artifactPath(artifactFile, root) : artifactId ? null : resolve(root, src)
+  if (!abs) return false
+  const type = artifactFile ? ARTIFACT_MIME[extname(abs).toLowerCase()] : MIME[extname(abs).toLowerCase()]
+  if (!/^[0-9a-f]{40}$/.test(sha) || !type || (!artifactFile && !abs.startsWith(resolve(root, 'assets') + sep))) return false
   let buf = await gitBlob(root, sha)
   if (!buf && existsSync(abs) && statSync(abs).isFile()) {
     const onDisk = readFileSync(abs)
@@ -139,6 +185,7 @@ export async function serveHistoryBlob(root: string, url: URL, res: ServerRespon
   }
   if (!buf) return false
   res.setHeader('Content-Type', type)
+  if (type === 'image/svg+xml') res.setHeader('Content-Security-Policy', SVG_CSP)
   // A blob never changes: its name is its content.
   res.setHeader('Cache-Control', 'private, max-age=31536000, immutable')
   res.end(buf)
@@ -151,6 +198,7 @@ export function serveAsset(root: string, url: URL, res: ServerResponse): boolean
   const abs = resolve(root, rel)
   if (!abs.startsWith(resolve(root, 'assets') + sep) || !existsSync(abs) || !statSync(abs).isFile()) return false
   res.setHeader('Content-Type', MIME[extname(abs).toLowerCase()] ?? 'application/octet-stream')
+  if (extname(abs).toLowerCase() === '.svg') res.setHeader('Content-Security-Policy', SVG_CSP)
   res.setHeader('Cache-Control', 'no-cache')
   createReadStream(abs)
     .on('error', () => {

@@ -3,12 +3,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, parseArtifactRef, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
-import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
+import { spotName } from '../artifactIndex.ts'
+import { guarded, setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
-import { statusClass } from '../vocab.ts'
-import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
+import { BASELINE_ARTIFACT_STATUS, statusClass } from '../vocab.ts'
+import { ArtifactName, CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
 import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
@@ -203,7 +204,11 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
 
 /** Still as the board made it: no title of its own and nothing written. */
 const isBlank = (it: Item) =>
-  (!it.title.trim() || it.title.trim() === 'Untitled') && ![it.description, it.acceptance, it.technical, it.notes].some((t) => t.trim()) && !it.images.length && !it.related.length
+  (!it.title.trim() || it.title.trim() === 'Untitled') &&
+  ![it.description, it.acceptance, it.technical, it.notes].some((t) => t.trim()) &&
+  !it.images.length &&
+  !it.related.length &&
+  !it.artifacts?.length
 
 const count = (n: number, one: string) => `${n} ${n === 1 ? one : one === 'story' ? 'stories' : `${one}s`}`
 
@@ -338,6 +343,8 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
       <div className="read-anchor">
         <Gallery item={item} />
 
+        <ArtifactsSection item={item} />
+
         <Related item={item} index={index} />
 
         {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
@@ -456,6 +463,45 @@ function Related({ item, index }: { item: Item; index: Index }) {
           <div className="link-list">{mentionedIn.map(row)}</div>
         </>
       )}
+    </section>
+  )
+}
+
+/**
+ * The artifacts the card points at (its `artifacts` field), each named with its kind mark, and the
+ * spot in it when the link has one. A row opens the artifact at that spot, in the red box.
+ */
+function ArtifactsSection({ item }: { item: Item }) {
+  const open = useOpen()
+  const artifacts = useCatalogue((s) => s.artifacts)
+  const refs = item.artifacts ?? []
+  if (!refs.length) return null
+  return (
+    <section className="section artifacts-section">
+      <h3 className="section-head">
+        Artifacts <span className="count">{refs.length}</span>
+      </h3>
+      <div className="link-list">
+        {refs.map((ref) => {
+          const { id, region } = parseArtifactRef(ref)
+          const rec = artifacts[id]
+          const spot = rec && region ? spotName(rec, region) : null
+          if (!rec || (region && !spot)) {
+            return (
+              <div key={ref} className="link-row missing" title={rec ? `${rec.data.title} has no spot "${region}"` : `${id} is not in the catalogue`}>
+                <span className="mono">{ref}</span>
+                <span className="quiet">Not found</span>
+              </div>
+            )
+          }
+          return (
+            <button key={ref} className="link-row artifact-link-row" onClick={() => guarded(() => open.artifact(id, region))} title={`${rec.data.id}${region ? `#${region}` : ''}`}>
+              <ArtifactName artifact={rec.data} spot={spot} />
+              {rec.data.status !== BASELINE_ARTIFACT_STATUS ? <StatusLabel status={rec.data.status} /> : <span />}
+            </button>
+          )
+        })}
+      </div>
     </section>
   )
 }
@@ -636,6 +682,12 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
         <ItemsPicker value={draft.related} index={index} exclude={selfOnly(draft.id)} onChange={(related) => set({ related })} />
         <RelatedFrom id={draft.id} index={index} />
       </div>
+      {draft.artifacts?.length > 0 && (
+        <div className="field">
+          <span>Artifacts</span>
+          <p className="field-note">Linked in the card's file ({draft.artifacts.join(', ')}). Agents add and change these; saving here keeps them.</p>
+        </div>
+      )}
       <ImagesEditor draft={draft} set={set} />
     </>
   )

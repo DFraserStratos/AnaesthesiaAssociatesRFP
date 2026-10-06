@@ -15,9 +15,9 @@ export default defineConfig({
   reporter: 'list',
   use: { viewport: { width: 1600, height: 1000 } },
   projects: [
-    { name: 'real', testMatch: 'board-edges.spec.ts', use: { baseURL: 'http://localhost:5181' } },
+    { name: 'real', testMatch: ['board-edges.spec.ts', 'artifacts-real.spec.ts'], use: { baseURL: 'http://localhost:5181' } },
     // One worker: every fixture spec resets the same folder, so two at once would race.
-    { name: 'fixture', testMatch: ['board-mapped.spec.ts', 'status-picker.spec.ts', 'question-delete.spec.ts', 'question-answer.spec.ts', 'question-step.spec.ts', 'board-search.spec.ts', 'item-links.spec.ts', 'item-delete.spec.ts'], workers: 1, use: { baseURL: 'http://localhost:5182' } },
+    { name: 'fixture', testMatch: ['board-mapped.spec.ts', 'status-picker.spec.ts', 'question-delete.spec.ts', 'question-answer.spec.ts', 'question-step.spec.ts', 'board-search.spec.ts', 'item-links.spec.ts', 'item-delete.spec.ts', 'artifacts.spec.ts'], workers: 1, use: { baseURL: 'http://localhost:5182' } },
   ],
   webServer: [
     // Its own change journal, so a test run never writes into the one beside the board on 5180.

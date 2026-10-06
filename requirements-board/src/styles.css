@@ -44,6 +44,13 @@
   --ty-story: #009ccc;
   --ty-story-ink: #00698b;
   --ty-story-tint: #e0f3fa;
+  /* Artifacts (diagrams, transcripts, notes, documents): indigo, clear of every type, status, the
+     action teal and the red highlight box, which must stay the one red mark on an artifact. */
+  --ty-artifact: #4b56b0;
+  --ty-artifact-ink: #3a438c;
+  --ty-artifact-tint: #e9ebf7;
+  /* The red box that marks a spot (shared/highlight.ts), for the small marks that stand for it. */
+  --highlight: #e0243a;
 
   --font: 'Hanken Grotesk', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -464,6 +471,27 @@ button.chip:hover {
   --ty: var(--ty-story);
   --ty-ink: var(--ty-story-ink);
   --ty-tint: var(--ty-story-tint);
+}
+.ty-artifact {
+  --ty: var(--ty-artifact);
+  --ty-ink: var(--ty-artifact-ink);
+  --ty-tint: var(--ty-artifact-tint);
+}
+/* Artifact statuses: Current is the baseline and goes unmarked; Draft is still moving; Superseded is kept, struck through like Retired. */
+.st-draft {
+  --sc: var(--st-open);
+  --sbg: #fbefd9;
+  --sink: #7d530a;
+}
+.st-current {
+  --sc: var(--st-confirmed);
+  --sbg: #e5f2ea;
+  --sink: #22613b;
+}
+.st-superseded {
+  --sc: var(--st-retired);
+  --sbg: repeating-linear-gradient(135deg, #eef1f2 0 3px, #f8f9f9 3px 6px);
+  --sink: #5f6e74;
 }
 .type-icon {
   flex: none;
@@ -2950,4 +2978,1014 @@ mark {
     opacity: 0;
     transform: translateY(4px) scale(0.98);
   }
+}
+
+/* ============================================================== artifacts */
+
+.artifact-icon {
+  flex: none;
+  color: var(--ty, var(--ty-artifact));
+}
+.artifact-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.artifact-name-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.artifact-name-spot {
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artifact-name-spot::before {
+  content: '·';
+  margin-right: 7px;
+}
+.prose a.record-link.ty-artifact.bare .artifact-icon,
+.record-link.bare .artifact-icon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.artifact-link-row {
+  width: 100%;
+}
+.link-row.missing {
+  color: var(--ink-3);
+}
+
+/* The mark that stands for a red box wherever a spot is named: a tiny one. */
+.spot-mark {
+  flex: none;
+  width: 11px;
+  height: 9px;
+  margin-top: 1px;
+  border: 2px solid var(--highlight);
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------- the light table */
+
+.page-inner.wide {
+  max-width: 1280px;
+}
+.artifact-tools .mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.kind-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.kind-toggle .kind-count {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.plate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 18px;
+}
+.plate {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 10px 12px;
+  text-align: left;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow-tag);
+}
+.plate:hover {
+  border-color: var(--rule-strong);
+  box-shadow: var(--shadow-lift);
+}
+.plate-title {
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  /* Two lines at most, then an ellipsis, so every plate's foot sits in the same place. */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.plate-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  min-height: 20px;
+  /* Always on the bottom edge, however long the title is. */
+  margin-top: auto;
+}
+/* The date and the status pill sit at the right; the pill follows the date when there is one. */
+.plate-foot .artifact-date,
+.plate-foot .status {
+  margin-left: auto;
+}
+.plate-foot .artifact-date + .status {
+  margin-left: 0;
+}
+.artifact-date {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.plate.is-superseded .thumb > * {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* A thumbnail: the artifact whole, never cropped, on the chart paper. */
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 5px;
+  background: var(--paper);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thumb > img {
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+  object-fit: contain;
+  box-shadow: var(--shadow-tag);
+  background: #fff;
+}
+/* Documents read as pages: a sheet from the top, cut off by the frame. */
+.thumb-pdf,
+.thumb-markdown {
+  align-items: flex-start;
+}
+.thumb-pdf > img.thumb-page {
+  max-height: none;
+  width: 62%;
+  margin-top: 14px;
+}
+.thumb-doc {
+  width: 66%;
+  height: calc(100% - 14px);
+  margin-top: 14px;
+  padding: 12px 12px 0;
+  background: #fff;
+  box-shadow: var(--shadow-tag);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 70%, transparent);
+  mask-image: linear-gradient(#000 70%, transparent);
+}
+.thumb-doc p {
+  margin: 0 0 3px;
+  font-size: 7px;
+  line-height: 1.35;
+  color: var(--ink-2);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.thumb-doc p.lead {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+/* ---------------------------------------------------------------- list view */
+
+/* One row per artifact: the same picture as the grid, small, then its name and a line of its description. */
+.artifact-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: var(--shadow-tag);
+}
+.artifact-row {
+  display: grid;
+  /* A fixed right-hand column, so kinds, counts and pills line up down the list. */
+  grid-template-columns: 128px minmax(0, 1fr) 340px;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 10px 16px 10px 10px;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  background: none;
+  text-align: left;
+}
+.artifact-row:first-child {
+  border-top: 0;
+}
+.artifact-row:hover {
+  background: var(--card-soft);
+}
+.artifact-row .thumb {
+  width: 128px;
+}
+.artifact-row .thumb > img {
+  max-width: calc(100% - 12px);
+  max-height: calc(100% - 12px);
+}
+.artifact-row .thumb-pdf > img.thumb-page {
+  margin-top: 8px;
+}
+.artifact-row .thumb-doc {
+  margin-top: 8px;
+  height: calc(100% - 8px);
+  padding: 7px 7px 0;
+}
+.artifact-row .thumb-doc p {
+  font-size: 4.5px;
+  margin-bottom: 2px;
+}
+.artifact-row .thumb-doc p.lead {
+  font-size: 5.5px;
+  margin-bottom: 3px;
+}
+.artifact-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.artifact-row-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.artifact-row-desc {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.artifact-row-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.artifact-row-date {
+  width: 84px;
+  text-align: right;
+}
+.artifact-row-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 104px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.artifact-row.is-superseded .thumb > * {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* ------------------------------------------------------------ artifact page */
+
+.artifact-stage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--dock-w);
+}
+.artifact-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.artifact-panel .banner {
+  margin: 12px 24px 0 22px;
+}
+.artifact-panel-foot {
+  padding: 10px 24px 10px 22px;
+}
+.panel-tabs .tab.is-static {
+  color: var(--ink);
+  border-bottom-color: var(--teal);
+  cursor: default;
+}
+.field-note.bad {
+  color: var(--danger);
+}
+.artifact-panel-head {
+  padding: 14px 24px 0 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.artifact-panel-head .crumb {
+  margin-left: -6px;
+  align-items: center;
+}
+.artifact-panel-head h2 {
+  margin: 8px 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.artifact-panel-meta .artifact-date::before {
+  content: '·';
+  margin-right: 8px;
+}
+.artifact-panel-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.superseded-by {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--teal) 50%, transparent);
+  text-underline-offset: 3px;
+}
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 14px 0 0 -12px;
+}
+.panel-tabs .tab {
+  height: 38px;
+  font-size: 13.5px;
+}
+.panel-tabs .tab[aria-selected='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--teal);
+}
+.artifact-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px 32px 22px;
+}
+.empty-note {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.empty-note code {
+  font: 12px var(--mono);
+  background: var(--paper);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.spot-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--card);
+}
+.spot-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  border-top: 1px solid var(--rule);
+}
+.spot-row:first-child {
+  border-top: 0;
+}
+.spot-go {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 4px 9px 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.spot-row:hover {
+  background: var(--card-soft);
+}
+.spot-row.is-active {
+  background: color-mix(in srgb, var(--highlight) 6%, var(--card));
+  box-shadow: inset 3px 0 0 var(--highlight);
+}
+.spot-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.spot-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.spot-row.is-active .spot-name {
+  font-weight: 600;
+}
+.spot-note {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+.spot-go .badge {
+  margin-top: 1px;
+}
+.spot-list.auto .spot-go {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.spot-list.auto .spot-name {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.spot-copy {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--ink-4);
+}
+.spot-row:not(:hover):not(.is-active) .spot-copy:not(:focus-visible) {
+  opacity: 0;
+}
+.spot-copy .copied {
+  font-size: 11px;
+  color: var(--teal);
+}
+.show-all {
+  margin-top: 6px;
+}
+.linked-row {
+  grid-template-columns: 1fr auto auto;
+}
+.linked-item {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  overflow: hidden;
+}
+.spot-chip {
+  cursor: pointer;
+  max-width: 190px;
+}
+.spot-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spot-chip .spot-mark {
+  width: 9px;
+  height: 7px;
+  margin: 0;
+  border-width: 1.5px;
+  border-radius: 2px;
+}
+.file-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: 12px;
+  word-break: break-all;
+}
+.file-fact .quiet {
+  color: var(--ink-3);
+  word-break: normal;
+}
+.artifact-history .hist-list {
+  margin-top: 4px;
+}
+
+/* ----------------------------------------------------------------- viewers */
+
+.artifact-viewer {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+}
+.viewer-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.viewer-note.bad {
+  color: var(--danger);
+}
+.viewer-flag {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--warn-tint);
+  border: 1px solid color-mix(in srgb, var(--st-open) 35%, transparent);
+  color: #7d530a;
+  font-size: 13px;
+  box-shadow: var(--shadow-tag);
+}
+
+/* A drawing on the chart paper: a white sheet under it, pannable, its text selectable. */
+.canvas-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  outline: none;
+  touch-action: none;
+}
+.canvas-frame:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--teal) 50%, transparent);
+}
+.canvas-frame.can-pan {
+  cursor: grab;
+}
+.canvas-frame.panning {
+  cursor: grabbing;
+  user-select: none;
+}
+.canvas-sheet {
+  position: absolute;
+  background: #fff;
+  box-shadow: var(--shadow-lift);
+  pointer-events: none;
+}
+.canvas-host {
+  position: absolute;
+  inset: 0;
+}
+.region-box {
+  position: absolute;
+  box-sizing: border-box;
+  border-style: solid;
+  pointer-events: none;
+  z-index: 2;
+  animation: close-in 460ms var(--ease) both;
+}
+/* The red box closes in on the spot when it arrives, as the board's teal ring does on a found card. */
+@keyframes close-in {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .region-box {
+    animation: none;
+  }
+}
+.region-preview {
+  position: absolute;
+  border: 2px dashed color-mix(in srgb, var(--highlight) 70%, transparent);
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 1;
+}
+.canvas-dock,
+.doc-dock {
+  position: absolute;
+  right: 78px;
+  bottom: 23px;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+}
+.minimap-region {
+  fill: none;
+  stroke: var(--highlight);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+.region-go {
+  color: var(--highlight);
+}
+
+/* Documents: pages on the chart paper, scrolled. */
+.doc-frame {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 36px 24px 140px;
+  outline: none;
+}
+.doc-frame:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--teal) 50%, transparent);
+}
+.doc-sheet {
+  position: relative;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 52px 64px 64px;
+  background: #fff;
+  box-shadow: var(--shadow-lift);
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+.doc-sheet h1 {
+  margin: 0 0 18px;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+.doc-sheet h2 {
+  margin: 36px 0 10px;
+  font-size: 19px;
+  line-height: 1.3;
+}
+.doc-sheet h3 {
+  margin: 26px 0 8px;
+  font-size: 16px;
+}
+.doc-sheet h4,
+.doc-sheet h5,
+.doc-sheet h6 {
+  margin: 20px 0 6px;
+  font-size: 15px;
+}
+.doc-sheet p,
+.doc-sheet ul,
+.doc-sheet ol {
+  margin-bottom: 12px;
+}
+.doc-sheet blockquote {
+  margin: 0 0 12px;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--rule-strong);
+  color: var(--ink-2);
+}
+.doc-sheet table {
+  border-collapse: collapse;
+  margin: 0 0 14px;
+  font-size: 14px;
+}
+.doc-sheet th,
+.doc-sheet td {
+  border: 1px solid var(--rule);
+  padding: 5px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+.doc-sheet th {
+  background: var(--card-soft);
+}
+.doc-sheet hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 24px 0;
+}
+.doc-sheet pre {
+  font: 13px/1.5 var(--mono);
+  background: var(--card-soft);
+  padding: 10px 12px;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+.pdf-shell {
+  position: absolute;
+  inset: 0;
+}
+.pdf-frame {
+  padding: 28px 32px 140px;
+}
+.pdf-page {
+  position: relative;
+  margin: 0 auto 22px;
+  background: #fff;
+  box-shadow: var(--shadow-lift);
+}
+.pdf-layers,
+.pdf-layers canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* The page thumbnails, down the right of a PDF: the pages, the find box and the view bar make room for them. */
+.artifact-viewer {
+  --pdf-rail-w: 132px;
+}
+.pdf-shell.has-rail .pdf-frame {
+  right: var(--pdf-rail-w);
+}
+.pdf-shell.has-rail .doc-dock {
+  right: calc(var(--pdf-rail-w) + 24px);
+}
+.artifact-viewer:has(.pdf-shell.has-rail) .find-bar {
+  right: calc(var(--pdf-rail-w) + 16px);
+}
+.pdf-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--pdf-rail-w);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0 96px; /* the last page scrolls clear of the new-card plus */
+  background: var(--card-soft);
+  border-left: 1px solid var(--rule);
+}
+.pdf-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.pdf-thumb-page {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--rule), var(--shadow-tag);
+  transition: box-shadow 120ms var(--ease);
+}
+.pdf-thumb-page img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pdf-thumb:hover .pdf-thumb-page {
+  box-shadow: 0 0 0 1px var(--rule-strong), var(--shadow-lift);
+}
+.pdf-thumb[aria-current] .pdf-thumb-page {
+  box-shadow: 0 0 0 2px var(--teal), var(--shadow-tag);
+}
+.pdf-thumb:focus-visible {
+  outline: none;
+}
+.pdf-thumb:focus-visible .pdf-thumb-page {
+  box-shadow: 0 0 0 2px var(--card-soft), 0 0 0 4px color-mix(in srgb, var(--teal) 55%, transparent);
+}
+.pdf-thumb-n {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ink-3);
+}
+.pdf-thumb[aria-current] .pdf-thumb-n {
+  color: var(--teal);
+  font-weight: 600;
+}
+/* Find matches on a page: their count, in the find yellow (never red, which is the highlight box). */
+.pdf-thumb-hits {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #f8cf6a;
+  box-shadow: 0 0 0 1px #c0851b;
+  color: #5c3d00;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdf-thumb-page {
+    transition: none;
+  }
+}
+.page-count {
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* pdf.js measures text on a canvas it adds to the body; left in the flow, its line box made the
+   whole page scroll a little (from its pdf_viewer.css). */
+.hiddenCanvasElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: none;
+}
+/* pdf.js's text layer (from its pdf_viewer.css): transparent text laid over the page picture, so it selects. */
+.pdf-page .textLayer {
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.pdf-page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.pdf-page .textLayer .markedContent {
+  display: contents;
+}
+.pdf-page .textLayer ::selection {
+  background: color-mix(in srgb, var(--teal) 28%, transparent);
+}
+.pdf-page .textLayer br::selection {
+  background: transparent;
+}
+.pdf-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+.pdf-page .textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+/* ----------------------------------------------------------------- compare */
+
+.compare {
+  margin: 8px 0 4px;
+}
+.compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.compare-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.compare-page .input {
+  width: 64px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.compare-pair img {
+  object-fit: contain;
+  background: #fff;
+}
+.swipe-stage {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+.swipe-stage img {
+  display: block;
+  width: 100%;
+  user-select: none;
+}
+.swipe-stage .swipe-after {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: contain;
+}
+.swipe-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--teal);
+  pointer-events: none;
+}
+.swipe-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px #fff;
+}
+.swipe-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.swipe-range:focus-visible + .swipe-handle,
+.swipe-stage:focus-within .swipe-handle {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal) 35%, transparent);
+}
+.swipe-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* --------------------------------------------------------- find in artifact */
+
+/* Top right of the artifact, like the board's search: a quiet box that grows while in use. */
+.find-bar {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 7;
+}
+.find-bar .search .input {
+  width: 200px;
+  border-color: transparent;
+  background: var(--paper);
+  transition: width 180ms var(--ease), background 120ms;
+}
+.find-bar .search .input:focus,
+.find-bar .search .input:not(:placeholder-shown) {
+  width: 260px;
+  background: var(--card);
+}
+@media (prefers-reduced-motion: reduce) {
+  .find-bar .search .input {
+    transition: none;
+  }
+}
+/* A match is tinted as the board's search marks words; the current one is stronger and outlined. Never red: red is the highlight box. */
+.find-hit {
+  position: absolute;
+  border-radius: 3px;
+  background: #fdeab8;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+.find-hit.is-current {
+  background: #f8cf6a;
+  box-shadow: 0 0 0 2px #c0851b;
 }

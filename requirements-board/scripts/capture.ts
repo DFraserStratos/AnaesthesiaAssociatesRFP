@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url'
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import { CATALOGUE_DIR, itemPath, loadCatalogue, readItemFile, writeItem } from '../server/catalogueFs.ts'
 import { serialiseItem } from '../shared/files.ts'
+import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
 import { IMAGE_APPS, type ImageApp, type ImageRef, type Item } from '../shared/types.ts'
 import { fileFor, isGenerated, pruneGenerated } from './captureFiles.ts'
@@ -46,7 +47,6 @@ const ACTION_TIMEOUT = 6000
 const SETTLE_MS = 500
 const WORKERS = 4
 
-const HIGHLIGHT = { pad: 8, colour: '#E0243A', width: 3, radius: 12 }
 
 // ── Recipe types ─────────────────────────────────────────────────────────────
 
@@ -379,7 +379,7 @@ async function highlightBox(page: Page, selectors: string[]): Promise<Box | null
 /** Draw the red box into the page itself, so the shot needs no editing afterwards. */
 async function drawHighlight(page: Page, box: Box) {
   const vp = page.viewportSize()!
-  const { pad, colour, width, radius } = HIGHLIGHT
+  const { pad, colour, width, radius, glow } = HIGHLIGHT
   const inset = width + 1
   const x1 = Math.max(inset, box.x - pad)
   const y1 = Math.max(inset, box.y - pad)
@@ -387,7 +387,7 @@ async function drawHighlight(page: Page, box: Box) {
   const y2 = Math.min(vp.height - inset, box.y + box.height + pad)
   if (x2 - x1 < 8 || y2 - y1 < 8) throw new Error('highlight: the element is outside the visible screen')
   await page.evaluate(
-    ({ x1, y1, x2, y2, colour, width, radius }) => {
+    ({ x1, y1, x2, y2, colour, width, radius, glow }) => {
       const d = (globalThis as any).document
       const el = d.createElement('div')
       el.setAttribute('data-capture-highlight', '')
@@ -400,13 +400,13 @@ async function drawHighlight(page: Page, box: Box) {
         boxSizing: 'border-box',
         border: `${width}px solid ${colour}`,
         borderRadius: `${radius}px`,
-        boxShadow: `0 0 0 3px rgba(224,36,58,0.18), 0 0 18px 2px rgba(224,36,58,0.35)`,
+        boxShadow: glow,
         pointerEvents: 'none',
         zIndex: '2147483647',
       })
       d.body.appendChild(el)
     },
-    { x1, y1, x2, y2, colour, width, radius },
+    { x1, y1, x2, y2, colour, width, radius, glow },
   )
 }
 

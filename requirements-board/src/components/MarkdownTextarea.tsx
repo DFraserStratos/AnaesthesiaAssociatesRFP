@@ -1,9 +1,11 @@
 import { forwardRef, useId, useImperativeHandle, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type TextareaHTMLAttributes } from 'react'
-import { isQuestionId, pastedTarget } from '../../shared/links.ts'
+import { isArtifactId, isQuestionId, pastedTarget } from '../../shared/links.ts'
+import { parseArtifactRef } from '../../shared/types.ts'
+import { spotName } from '../artifactIndex.ts'
 import { toggleEmphasis, type Emphasis, type TextEdit } from '../emphasis.ts'
 import { lineageTitles, searchItems } from '../itemSearch.ts'
 import { linkSelection } from '../linkEdit.ts'
-import { useIndex } from '../store.ts'
+import { useCatalogue, useIndex } from '../store.ts'
 import { ItemName } from './bits.tsx'
 
 const SHORTCUTS: Record<string, Emphasis> = { b: 'bold', i: 'italic' }
@@ -32,12 +34,18 @@ export const MarkdownTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttr
   ref,
 ) {
   const index = useIndex()
+  const artifacts = useCatalogue((s) => s.artifacts)
   const inner = useRef<HTMLTextAreaElement>(null)
   useImperativeHandle(ref, () => inner.current!)
   /** The selection Cmd+K was pressed on, while its picker is open. */
   const [picking, setPicking] = useState<{ start: number; end: number } | null>(null)
 
-  const titleOf = (id: string) => (isQuestionId(id) ? index.questions.find((q) => q.id === id)?.title : index.byId.get(id)?.title) ?? id
+  const artifactTitle = (ref: string) => {
+    const { id, region } = parseArtifactRef(ref)
+    const rec = artifacts[id]
+    return rec && (region ? (spotName(rec, region) ?? rec.data.title) : rec.data.title)
+  }
+  const titleOf = (id: string) => (isArtifactId(id) ? artifactTitle(id) : isQuestionId(id) ? index.questions.find((q) => q.id === id)?.title : index.byId.get(id)?.title) ?? id
   const link = (el: HTMLTextAreaElement, start: number, end: number, id: string) => {
     const edit = linkSelection(el.value, start, end, id, titleOf(id))
     if (!edit) return false

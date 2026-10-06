@@ -9,19 +9,22 @@ import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import { parseItem } from '../shared/files.ts'
-import type { CommitInfo, GitFileHistory, GitVersion, ScreenshotCommit } from '../shared/history.ts'
 import type { Item } from '../shared/types.ts'
+import type { AssetCommit, AssetHistory, CommitInfo, GitFileHistory, GitVersion, ScreenshotCommit } from '../shared/history.ts'
+import { gitBlobSha } from './historyJournal.ts'
 
 const run = promisify(execFile)
 const git = async (cwd: string, args: string[]) => (await run('git', args, { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })).stdout
 
-const parse = (text: string): Item | null => {
-  try {
-    return parseItem(text)
-  } catch {
-    return null
+const tryParse =
+  <T>(parse: (text: string) => T) =>
+  (text: string): T | null => {
+    try {
+      return parse(text)
+    } catch {
+      return null
+    }
   }
-}
 
 /** Every `sha:path` blob in one `git cat-file --batch` process; null where the file was absent. */
 function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
@@ -54,7 +57,7 @@ function readBlobs(top: string, specs: string[]): Promise<(string | null)[]> {
 }
 
 /** Commit history per file, keyed by path and HEAD, so a new commit (or a checkout) reads afresh. */
-const cache = new Map<string, GitVersion[]>()
+const cache = new Map<string, GitVersion<unknown>[]>()
 
 /** Does `file` differ from HEAD? False outside a repository. */
 export async function gitDirty(file: string): Promise<boolean> {
@@ -65,10 +68,11 @@ export async function gitDirty(file: string): Promise<boolean> {
   }
 }
 
-export async function gitFileHistory(file: string): Promise<GitFileHistory> {
+export async function gitFileHistory<T = Item>(file: string, parseRecord: (text: string) => T = parseItem as unknown as (text: string) => T): Promise<GitFileHistory<T>> {
+  const parse = tryParse(parseRecord)
   const working = existsSync(file) ? parse(readFileSync(file, 'utf8')) : null
   const mtime = existsSync(file) ? statSync(file).mtime.toISOString() : undefined
-  const none: GitFileHistory = { versions: [], dirty: false, working, mtime }
+  const none: GitFileHistory<T> = { versions: [], dirty: false, working, mtime }
   const cwd = dirname(file)
   if (!existsSync(cwd)) return none
   try {
@@ -77,7 +81,7 @@ export async function gitFileHistory(file: string): Promise<GitFileHistory> {
     const rel = relative(top, join(realpathSync(cwd), basename(file))).split('\\').join('/')
     const key = `${top}:${rel}@${head}`
     const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
-    let versions = cache.get(key)
+    let versions = cache.get(key) as GitVersion<T>[] | undefined
     if (!versions) {
       const log = await git(top, ['log', '--format=%H%x1f%an%x1f%aI%x1f%s', '--', rel])
       const commits: CommitInfo[] = log
@@ -142,5 +146,44 @@ export async function gitBlob(cwd: string, sha: string): Promise<Buffer | null> 
     return (await run('git', ['cat-file', 'blob', sha], { cwd, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 })).stdout
   } catch {
     return null
+  }
+}
+
+const assetCache = new Map<string, AssetCommit[]>()
+
+/**
+ * Every commit that added, rewrote or removed one file (an artifact's), from `git log --raw`, and
+ * how the file on disk stands against HEAD. Outside a repository: no commits, nothing dirty.
+ */
+export async function gitAssetHistory(file: string): Promise<AssetHistory> {
+  const working = existsSync(file) ? gitBlobSha(readFileSync(file)) : null
+  const mtime = existsSync(file) ? statSync(file).mtime.toISOString() : undefined
+  const none: AssetHistory = { commits: [], dirty: false, head: null, working, mtime }
+  const cwd = dirname(file)
+  if (!existsSync(cwd)) return none
+  try {
+    const [top = '', head = ''] = (await git(cwd, ['rev-parse', '--show-toplevel', 'HEAD'])).trim().split('\n')
+    const rel = relative(top, join(realpathSync(cwd), basename(file))).split('\\').join('/')
+    const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
+    const atHead = git(top, ['rev-parse', `HEAD:${rel}`]).then((s) => s.trim(), () => null)
+    const key = `${top}:${rel}@${head}`
+    let commits = assetCache.get(key)
+    if (!commits) {
+      commits = []
+      const out = await git(top, ['log', '--no-abbrev', '--raw', '--no-renames', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', rel])
+      const zero = /^0+$/
+      for (const block of out.split('\x1e').slice(1)) {
+        const [meta = '', ...lines] = block.split('\n')
+        const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
+        for (const line of lines) {
+          const m = /^:\d+ \d+ ([0-9a-f]{40}) ([0-9a-f]{40}) [AMDT]\t/.exec(line)
+          if (m) commits.push({ commit: { sha, author, at, subject }, from: zero.test(m[1]!) ? null : m[1]!, to: zero.test(m[2]!) ? null : m[2]! })
+        }
+      }
+      assetCache.set(key, commits)
+    }
+    return { commits, dirty: (await status).trim() !== '', head: await atHead, working, mtime }
+  } catch {
+    return none
   }
 }

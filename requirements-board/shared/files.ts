@@ -6,10 +6,10 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Viewport } from './types.ts'
+import type { Artifact, ArtifactKind, ArtifactStatus, Box, ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
 
 const FENCE = '---'
-export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'images']
+export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'artifacts', 'images']
 export const QUESTION_KEYS = ['id', 'kind', 'title', 'status', 'owner', 'affects', 'sources']
 export const ACCEPTANCE_HEADING = '## Acceptance criteria'
 export const TECHNICAL_HEADING = '## Technical discussion'
@@ -131,6 +131,7 @@ export function toItem(
     order: Number.isFinite(order) ? order : 0,
     swimlane: meta.swimlane === null || meta.swimlane === undefined || str(meta.swimlane).trim() === '' ? null : str(meta.swimlane).trim(),
     related: strList(meta.related).map((r) => r.trim()),
+    artifacts: strList(meta.artifacts).map((r) => r.trim()),
     images: images(meta.images),
     description: str(description),
     acceptance: str(acceptance),
@@ -275,6 +276,7 @@ export function serialiseItem(item: Item): string {
   meta.order = item.order
   if (item.swimlane) meta.swimlane = item.swimlane
   if (item.related.length) meta.related = item.related
+  if (item.artifacts?.length) meta.artifacts = item.artifacts
   meta.images = item.images.map((i) => {
     const img: Record<string, unknown> = { src: i.src, viewport: i.viewport }
     if (i.app) img.app = i.app
@@ -335,4 +337,157 @@ export function revOf(text: string): string {
     h = Math.imul(h, 0x01000193)
   }
   return (h >>> 0).toString(16).padStart(8, '0') + '-' + text.length.toString(36)
+}
+
+/* -------------------------------------------------------------- artifacts */
+
+export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'file', 'regions']
+export const REGION_KEYS = ['id', 'name', 'around', 'box', 'page', 'pad', 'note']
+export const SOURCE_HEADING = '## Source'
+
+const numOrNull = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : NaN
+}
+
+/** A box keeps whatever it was given as four numbers (NaN where unreadable), so `check` can say what is wrong. */
+function toBox(v: unknown): Box | null {
+  if (v === null || v === undefined || v === '') return null
+  const list = Array.isArray(v) ? v : String(v).split(/[\s,]+/)
+  const nums = list.map((x) => Number(x))
+  return [nums[0] ?? NaN, nums[1] ?? NaN, nums[2] ?? NaN, nums[3] ?? NaN]
+}
+
+export function toRegion(raw: unknown): Region {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return {
+    id: str(o.id).trim(),
+    name: str(o.name).trim(),
+    around: strList(o.around),
+    box: toBox(o.box),
+    page: numOrNull(o.page),
+    pad: numOrNull(o.pad),
+    note: str(o.note).trim(),
+  }
+}
+
+/** The first fenced block in the Source section: the mermaid diagram. */
+function mermaidOf(section: string): string {
+  const m = /^(```|~~~)\s*mermaid[^\n]*\n([\s\S]*?)^\1\s*$/m.exec(section)
+  return m ? m[2]!.replace(/\n$/, '') : ''
+}
+
+/** A date as written: YAML may read `2026-10-01` as a Date and `2021` as a number, so both come back to the text. */
+const dateString = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : str(v).trim())
+
+export function toArtifact(meta: Record<string, unknown>, description: unknown = '', source: unknown = ''): Artifact {
+  return {
+    id: str(meta.id),
+    title: str(meta.title),
+    kind: str(meta.kind) as ArtifactKind,
+    status: (str(meta.status) || 'Current') as ArtifactStatus,
+    supersededBy: meta.superseded_by ? str(meta.superseded_by).trim() : null,
+    date: meta.date === null || meta.date === undefined || str(meta.date).trim() === '' ? null : dateString(meta.date),
+    author: str(meta.author),
+    components: strList(meta.components),
+    sources: strList(meta.sources),
+    file: meta.file ? str(meta.file).trim() : null,
+    regions: (Array.isArray(meta.regions) ? meta.regions : []).map(toRegion),
+    description: str(description),
+    source: str(source),
+    extra: pickExtra((meta.extra as Record<string, unknown>) ?? {}, ARTIFACT_KEYS),
+  }
+}
+
+export function parseArtifact(text: string): Artifact {
+  const { meta, body } = splitFrontmatter(text)
+  const [description, sourceSection] = splitSection(body, SOURCE_HEADING)
+  return toArtifact({ ...meta, extra: pickExtra(meta, ARTIFACT_KEYS) }, description, mermaidOf(sourceSection))
+}
+
+export function serialiseArtifact(a: Artifact): string {
+  const meta: Record<string, unknown> = { id: a.id, title: a.title, kind: a.kind, status: a.status }
+  if (a.supersededBy) meta.superseded_by = a.supersededBy
+  if (a.date) meta.date = a.date
+  if (a.author) meta.author = a.author
+  meta.components = a.components
+  meta.sources = a.sources
+  if (a.file) meta.file = a.file
+  if (a.regions.length) {
+    meta.regions = a.regions.map((r) => {
+      const o: Record<string, unknown> = { id: r.id, name: r.name }
+      if (r.around.length) o.around = r.around
+      if (r.box) o.box = r.box
+      if (r.page !== null) o.page = r.page
+      if (r.pad !== null) o.pad = r.pad
+      if (r.note) o.note = r.note
+      return o
+    })
+  }
+  withExtra(meta, a.extra, ARTIFACT_KEYS)
+  return assemble(meta, [
+    [null, a.description],
+    [SOURCE_HEADING, a.source ? '```mermaid\n' + a.source + '\n```' : ''],
+  ])
+}
+
+/**
+ * The facts about an artifact the board may change: its name, kind, status, date, author, area,
+ * sources and description. Never its file, its regions, its mermaid source or its ID: agents
+ * write those, and the board never makes or edits the artifact itself.
+ */
+export const ARTIFACT_EDITABLE = ['title', 'kind', 'status', 'supersededBy', 'date', 'author', 'components', 'sources', 'description'] as const
+export type ArtifactDetails = Pick<Artifact, (typeof ARTIFACT_EDITABLE)[number]>
+
+/**
+ * The artifact on disk with an untrusted edit's details laid over it: only the editable fields
+ * are taken, everything else stays as the file has it. Values are tidied as a file read would
+ * (trimmed, an empty date unset), and `superseded_by` only stays on a Superseded artifact.
+ */
+export function withArtifactDetails(current: Artifact, raw: unknown): Artifact {
+  const o = (raw ?? {}) as Record<string, unknown>
+  const has = (k: string) => Object.prototype.hasOwnProperty.call(o, k)
+  const next: Artifact = { ...current }
+  if (has('title')) next.title = str(o.title).trim()
+  if (has('kind')) next.kind = str(o.kind).trim() as ArtifactKind
+  if (has('status')) next.status = (str(o.status).trim() || 'Current') as ArtifactStatus
+  if (has('supersededBy')) next.supersededBy = str(o.supersededBy).trim() || null
+  if (has('date')) next.date = str(o.date).trim() || null
+  if (has('author')) next.author = str(o.author).trim()
+  if (has('components')) next.components = strList(o.components)
+  if (has('sources')) next.sources = strList(o.sources).map((s) => s.trim()).filter(Boolean)
+  if (has('description')) next.description = tidyText(str(o.description))
+  if (next.status !== 'Superseded') next.supersededBy = null
+  return next
+}
+
+/** Why an artifact would not survive being written and read back, or [] if it would. */
+export function artifactRoundTripProblems(a: Artifact): string[] {
+  return a.description.split('\n').some((l) => isHeading(l, SOURCE_HEADING))
+    ? [`the description cannot contain a "${SOURCE_HEADING}" line; that heading starts the diagram source`]
+    : []
+}
+
+/** Sidecar pitfalls that parse but read wrongly: region keys the board ignores, a Source section with no diagram. */
+export function lintArtifact(text: string, a: Artifact): string[] {
+  let parts
+  try {
+    parts = splitFrontmatter(text)
+  } catch {
+    return []
+  }
+  const out: string[] = []
+  const regions = parts.meta.regions
+  if (regions !== undefined && !Array.isArray(regions)) out.push('regions is not a list, so it is ignored')
+  for (const raw of Array.isArray(regions) ? regions : []) {
+    if (!raw || typeof raw !== 'object') {
+      out.push('a region is not a mapping (id, name, around or box), so it is ignored')
+      continue
+    }
+    const unknown = Object.keys(raw).filter((k) => !REGION_KEYS.includes(k))
+    if (unknown.length) out.push(`region ${str((raw as Record<string, unknown>).id)} has keys the board ignores (${unknown.join(', ')})`)
+  }
+  if (parts.body.split('\n').some((l) => isHeading(l, SOURCE_HEADING)) && !a.source) out.push(`the "${SOURCE_HEADING}" section has no \`\`\`mermaid block`)
+  return out
 }

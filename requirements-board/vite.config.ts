@@ -6,6 +6,8 @@ import { cataloguePlugin } from './server/cataloguePlugin.ts'
 export default defineConfig({
   plugins: [react(), cataloguePlugin()],
   server: { port: 5180, strictPort: true },
+  // Loaded only when an artifact needs them; pre-bundled up front, so the first one shown never reloads the page.
+  optimizeDeps: { include: ['mermaid', 'pdfjs-dist'] },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],

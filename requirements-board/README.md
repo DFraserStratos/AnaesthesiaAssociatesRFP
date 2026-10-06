@@ -19,6 +19,7 @@ npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
 npm run links:index  # compact catalogue index for the linking agents (.links/index.md)
 npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
+npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
 ```
 
 From the repo root, `npm run dev` starts this, the prototype and the mobile PWA together.
@@ -29,7 +30,8 @@ pills, card and sheet anatomy). Read it before changing the UI.
 ## Stack
 
 Vite 8, React 18, TypeScript (strict), Zustand, React Router (hash), `@xyflow/react` for the
-canvas, `yaml` for frontmatter, `react-markdown`, lucide icons, Hanken Grotesk + JetBrains Mono
+canvas, `yaml` for frontmatter, `react-markdown` (+ `remark-gfm` for documents), `mermaid` and
+`pdfjs-dist` (both loaded only when an artifact needs them), lucide icons, Hanken Grotesk + JetBrains Mono
 via `@fontsource` (offline). Scripts run on Node's built-in TypeScript support (Node 22.18+).
 
 ## Layout
@@ -41,21 +43,29 @@ shared/        code shared by server, scripts and browser
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
   move.ts        Mapped board moves (pure): planMove / applyMove / invertChanges, lane-name rules
-  history.ts     card history (pure): field and line diffs, the journal + git timeline merge
+  history.ts     card and artifact history (pure): field and line diffs, the journal + git timeline merge
+  artifacts.ts   reading artifacts without a DOM: anchors, SVG text, mermaid node IDs, image sizes, Markdown headings
+  highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
 server/
   catalogueFs.ts     load the folder, atomic / exclusive writes, layout file
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
   historyJournal.ts  the per-card change journal (.history/, gitignored)
   gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
-  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets, folder watcher → HMR events
+  cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files, folder watcher → HMR events
+  artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
+  pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, testable),
-               link-index, apply-links (+ linkProposals: the applier, testable)
+               link-index, apply-links (+ linkProposals: the applier, testable), new-artifact
 src/
   store.ts       catalogue mirror + derived index + view prefs
+  artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard
   useDismiss.ts  Esc / outside-press close for popovers
-  views/         BoardView, QuestionsView, OutlineView
+  views/         BoardView, ArtifactsView (grid or list; a click opens ArtifactPage), ArtifactPage, QuestionsView, OutlineView
+  artifacts/     the viewers: CanvasViewer (SVG, image, mermaid: viewBox pan and zoom, minimap, red box),
+                 MarkdownReader, PdfReader, sanitise, camera (pure), regionsDom, ArtifactPanel, ArtifactHistory,
+                 VisualCompare, Thumb
   board/         autoLayout (Freeform, pure), mappedLayout (Mapped + drop hit-test, pure), graph (nodes + edges
                  from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
@@ -129,6 +139,22 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - Semantic zoom bands: overview (epic names, stories as status blocks), far (titles only), mid, near
   (description excerpt).
 
+- **Artifacts** (the Artifacts tab): diagrams, transcripts, notes and documents. The board edits
+  only their details (`PUT /api/artifacts/:id` takes the title, kind, status, superseded_by, date,
+  author, components, sources and description, and keeps the file, regions and source as on disk). Each
+  has a sidecar `catalogue/artifacts/AR-nn.md` (format under Artifact file in `catalogue/SCHEMA.md`);
+  items point at one, or at a spot in one, through their `artifacts` field or a text link, and both
+  sides show the link. Drawings render inline (sanitised, in a shadow root), so their text selects
+  and anchors find their elements; the camera sets the SVG's `viewBox`, so it stays sharp at any
+  zoom. A plain drag never pans a drawing (it selects text): Space or the middle button drags, a
+  trackpad scroll pans, a pinch or the wheel zooms. Documents scroll as pages (Markdown through the
+  same renderer as the sheets, PDFs through pdf.js with its text layer). The server serves a file
+  only through its sidecar (`/artifact-file/<ID>`), SVGs with a no-script CSP, and the check reads
+  every file (PDFs in a child process) to hold every region's anchors to account. History comes
+  from git: the sidecar's commits as field changes, the file's as before and after (side by side,
+  swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):
+  matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
+
 Screenshots: put files under `catalogue/assets/<ID>/` and list them in the item's `images`, each
 with a `viewport` and optionally an `app` (`admin`, `web`, `mobile`, `simulator`). The item sheet's
 gallery has one tab per app present, in that order; untagged images fall back to Desktop / Mobile.
@@ -151,6 +177,14 @@ gallery has one tab per app present, in that order; untagged images fall back to
 - Every prototype catch-up phase ends by updating the recipes for the items it covers (and any it
   broke) and running a full capture, so the stories' screenshots match the app ("Catalogue
   screenshots" in `docs/prototype-build/catch-up/ROADMAP.md`).
+
+### Adding artifacts
+
+`npm run artifact:new -- <file> --title "Name" --kind diagram` (or `--mermaid <file.mmd>`) takes the
+next `AR-nn`, copies a drawing into `catalogue/artifacts/` (a document elsewhere is pointed at, not
+copied) and writes the sidecar for you to fill in: regions, sources, description. Then link items
+to it (`artifacts: [AR-nn#spot]`) and run `npm run check`. The `add-artifact` skill walks an agent
+through it; the `aa-svg-diagram` skill saves new diagrams this way.
 
 ### Linking requirements
 

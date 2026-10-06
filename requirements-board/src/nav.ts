@@ -43,6 +43,9 @@ export function useOpen() {
     /** Closes the top sheet: a question over the board's item panel leaves the panel open. */
     close: () => withParams(params.has('question') ? { question: null, edit: null } : { item: null, edit: null }),
     showOnBoard: (id: string) => withParams({ item: id, question: null, edit: null, focus: id }, '/board'),
+    /** An artifact's own page, fitted to a region when one is given. Leaves any open sheet behind. */
+    artifact: (id: string, region?: string | null, opts?: { replace?: boolean }) =>
+      navigate({ pathname: `/artifacts/${encodeURIComponent(id)}`, search: region ? `?region=${encodeURIComponent(region)}` : '' }, { replace: opts?.replace }),
     clearFocus: () => withParams({ focus: null }, location.pathname, true),
     clearEdit: () => withParams({ edit: null }, location.pathname, true),
     params,
@@ -55,6 +58,11 @@ export function useOpen() {
  */
 export function recordUrl(id: string): string {
   return `${location.origin}${location.pathname}#/board?${isQuestionId(id) ? 'question' : 'item'}=${encodeURIComponent(id)}`
+}
+
+/** A link to an artifact (and a spot in it), for pasting: over a selection in a Markdown field it becomes `[selection](AR-01#region)`. */
+export function artifactUrl(id: string, region?: string | null): string {
+  return `${location.origin}${location.pathname}#/artifacts/${encodeURIComponent(id)}${region ? `?region=${encodeURIComponent(region)}` : ''}`
 }
 
 /**

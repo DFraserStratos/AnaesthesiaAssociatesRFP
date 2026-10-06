@@ -17,17 +17,21 @@
     "export:csv": "node scripts/export-csv.ts",
     "capture": "node scripts/capture.ts",
     "links:index": "node scripts/link-index.ts",
-    "links:apply": "node scripts/apply-links.ts"
+    "links:apply": "node scripts/apply-links.ts",
+    "artifact:new": "node scripts/new-artifact.ts"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@xyflow/react": "^12.11.6",
     "lucide-react": "^1.47.0",
+    "mermaid": "^11.17.2",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.30.6",
+    "remark-gfm": "^4.0.1",
     "yaml": "^2.9.1",
     "zustand": "^5.0.15"
   },

@@ -27,13 +27,13 @@ export function classifyWheel(e: WheelLike): WheelKind {
 }
 
 /** A pause this long ends a gesture. */
-const GESTURE_GAP_MS = 250
-const LINE_PX = 16
+export const GESTURE_GAP_MS = 250
+export const LINE_PX = 16
 /** Things over the board that take the wheel themselves. */
 const OWN_SCROLL = '.toolbar, .popover, .lane-menu, .selection-bar, input, textarea, select'
 
 /** How much one pixel of pinch zooms: d3-zoom's own rate (0.002 per pixel, x10 for a pinch), so both feel the same. */
-const PINCH_RATE = 0.02
+export const PINCH_RATE = 0.02
 
 /**
  * Pan the board on a trackpad scroll, before React Flow's own wheel handler (which would zoom)
@@ -72,7 +72,8 @@ export function wheelGestures(
 }
 
 /**
- * Never let a pinch zoom the page itself. Chrome turns an uncancelled ctrl+wheel (a trackpad
+ * Never let a pinch zoom the page itself (the board and the artifact viewer zoom their own content
+ * and cancel the event first, so this stands aside for them). Chrome turns an uncancelled ctrl+wheel (a trackpad
  * pinch) into a visual-viewport zoom: the whole page magnifies inside the window and a pan slides
  * it sideways, so everything pinned to the board's edge (the lane headers) ends up off screen,
  * and the toolbar with it. The board's own handlers cancel pinches over the board; this cancels

@@ -3,13 +3,14 @@
  * (`diffItems`), a line diff for its Markdown fields (`lineDiff`), and the timeline the sheet
  * shows (`buildTimeline`), merged from the dev server's journal and the file's git commits.
  */
-import type { Item } from './types.ts'
+import type { Artifact, Item } from './types.ts'
 
 /**
- * Record fields a history row can name, plus `position` (a Freeform drag, from board-layout.json)
- * and `screenshot` (an image file under `assets/<ID>/` rewritten in place, e.g. by `npm run capture`).
+ * Record fields a history row can name, plus `position` (a Freeform drag, from board-layout.json),
+ * `screenshot` (an image file under `assets/<ID>/` rewritten in place, e.g. by `npm run capture`)
+ * and `content` (an artifact's file changed).
  */
-export type HistoryField = Exclude<keyof Item, 'id'> | 'position' | 'screenshot'
+export type HistoryField = Exclude<keyof Item, 'id'> | Exclude<keyof Artifact, 'id'> | 'position' | 'screenshot' | 'content'
 
 /**
  * One version of a screenshot file: its catalogue-relative path and git blob hash, so any version
@@ -48,18 +49,18 @@ export interface CommitInfo {
   subject: string
 }
 
-/** One version of a card's file in git (newest first). `item` is null where the file did not parse. */
-export interface GitVersion {
+/** One version of a record's file in git (newest first). `item` is null where the file did not parse. */
+export interface GitVersion<T = Item> {
   commit: CommitInfo
-  item: Item | null
+  item: T | null
 }
 
-export interface GitFileHistory {
-  versions: GitVersion[]
+export interface GitFileHistory<T = Item> {
+  versions: GitVersion<T>[]
   /** The working file differs from HEAD. */
   dirty: boolean
   /** The working file's record, for a "not committed yet" entry the journal did not see. */
-  working: Item | null
+  working: T | null
   /** When the working file was last written. */
   mtime?: string
   /** board-layout.json (where Freeform drags live) differs from HEAD. */
@@ -90,17 +91,41 @@ export type TimelineEntry =
   | { type: 'commit'; at: string; commit: CommitInfo }
 
 /** Fields in the order a history row lists them. `id` never changes; `extra` is agent-only frontmatter. */
-const FIELDS: Exclude<HistoryField, 'position' | 'screenshot'>[] = ['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'related', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra']
+const FIELDS: Exclude<keyof Item, 'id'>[] = ['title', 'status', 'type', 'parent', 'swimlane', 'order', 'components', 'sources', 'related', 'artifacts', 'images', 'description', 'acceptance', 'technical', 'notes', 'extra']
 
 /** A field's value, reading a snapshot saved before the field existed as its empty value. */
-const valueOf = (it: Item, f: (typeof FIELDS)[number]) => (f === 'related' ? (it.related ?? []) : it[f])
+const valueOf = (it: Item, f: (typeof FIELDS)[number]) => (f === 'related' || f === 'artifacts' ? (it[f] ?? []) : it[f])
 
 export function diffItems(a: Item, b: Item): FieldChange[] {
   return FIELDS.filter((f) => JSON.stringify(valueOf(a, f)) !== JSON.stringify(valueOf(b, f))).map((field) => ({ field, from: valueOf(a, field), to: valueOf(b, field) }))
 }
 
-/** The Markdown fields: shown as a line diff behind a disclosure, not inline. */
-export const TEXT_FIELDS: ReadonlySet<HistoryField> = new Set(['description', 'acceptance', 'technical', 'notes'])
+/** The Markdown fields (and a mermaid source): shown as a line diff behind a disclosure, not inline. */
+export const TEXT_FIELDS: ReadonlySet<HistoryField> = new Set(['description', 'acceptance', 'technical', 'notes', 'source'])
+
+/** An artifact's fields in the order a history row lists them. */
+const ARTIFACT_FIELDS: Exclude<keyof Artifact, 'id'>[] = ['title', 'status', 'supersededBy', 'kind', 'date', 'author', 'components', 'sources', 'file', 'regions', 'description', 'source', 'extra']
+
+export function diffArtifacts(a: Artifact, b: Artifact): FieldChange[] {
+  return ARTIFACT_FIELDS.filter((f) => JSON.stringify(a[f]) !== JSON.stringify(b[f])).map((field) => ({ field, from: a[field], to: b[field] }))
+}
+
+/** What happened to an artifact's regions between two versions, by region ID. */
+export function regionChanges(from: Artifact['regions'], to: Artifact['regions']) {
+  const before = new Map(from.map((r) => [r.id, r]))
+  const after = new Map(to.map((r) => [r.id, r]))
+  const changed: { id: string; name: string; what: string[] }[] = []
+  for (const [id, r] of after) {
+    const was = before.get(id)
+    if (!was) continue
+    const what: string[] = []
+    if (was.name !== r.name) what.push('renamed')
+    if (JSON.stringify(was.around) !== JSON.stringify(r.around) || JSON.stringify(was.box) !== JSON.stringify(r.box) || was.page !== r.page || was.pad !== r.pad) what.push('moved')
+    if (was.note !== r.note) what.push('note changed')
+    if (what.length) changed.push({ id, name: r.name, what })
+  }
+  return { added: to.filter((r) => !before.has(r.id)), removed: from.filter((r) => !after.has(r.id)), changed }
+}
 
 export interface DiffLine {
   op: 'same' | 'add' | 'del'
@@ -110,11 +135,11 @@ export interface DiffLine {
 /** Longer than this (lines, either side) and the diff is shown as everything removed, then everything added. */
 const MAX_DIFF_LINES = 400
 
-/** A line diff of two texts (LCS). Empty text has no lines. */
-export function lineDiff(a: string, b: string): DiffLine[] {
+/** A line diff of two texts (LCS). Empty text has no lines. Past `max` lines a side, everything removed then added. */
+export function lineDiff(a: string, b: string, max = MAX_DIFF_LINES): DiffLine[] {
   const x = a ? a.split('\n') : []
   const y = b ? b.split('\n') : []
-  if (x.length > MAX_DIFF_LINES || y.length > MAX_DIFF_LINES) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
+  if (x.length > max || y.length > max) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
   // lcs[i][j]: the longest common run of x[i..] and y[j..].
   const lcs = Array.from({ length: x.length + 1 }, () => new Array<number>(y.length + 1).fill(0))
   for (let i = x.length - 1; i >= 0; i--) for (let j = y.length - 1; j >= 0; j--) lcs[i]![j] = x[i] === y[j] ? lcs[i + 1]![j + 1]! + 1 : Math.max(lcs[i + 1]![j]!, lcs[i]![j + 1]!)
@@ -186,18 +211,22 @@ export function collapse(entries: JournalEntry[]): JournalEntry[] {
  * show only as dividers (the journal already has their detail). An edit git sees as uncommitted
  * but the journal never saw (made before it started) becomes a "not committed yet" entry.
  */
-export function buildTimeline(journal: JournalEntry[], git: GitFileHistory): TimelineEntry[] {
+export function buildTimeline<T = Item>(
+  journal: JournalEntry[],
+  git: GitFileHistory<T>,
+  diff: (a: T, b: T) => FieldChange[] = diffItems as unknown as (a: T, b: T) => FieldChange[],
+): TimelineEntry[] {
   const collapsed = collapse(journal)
   const start = collapsed.length ? Date.parse(collapsed[0]!.at) : Infinity
   const out: TimelineEntry[] = []
 
-  let prev: Item | null = null
+  let prev: T | null = null
   for (const v of [...git.versions].reverse()) {
     if (Date.parse(v.commit.at) >= start) out.push({ type: 'commit', at: v.commit.at, commit: v.commit })
     else if (v.item) {
       if (!prev) out.push({ type: 'change', at: v.commit.at, source: 'git', kind: 'created', changes: [], commit: v.commit })
       else {
-        const changes = diffItems(prev, v.item)
+        const changes = diff(prev, v.item)
         if (changes.length) out.push({ type: 'change', at: v.commit.at, source: 'git', kind: 'changed', changes, commit: v.commit })
       }
     }
@@ -226,9 +255,68 @@ export function buildTimeline(journal: JournalEntry[], git: GitFileHistory): Tim
     out.push({ type: 'change', at: e.at, source: e.source, kind: e.kind, changes: e.changes, ...(e.offline ? { offline: true } : {}), ...(uncommitted ? { uncommitted: true } : {}) })
   }
   if (unseen && head?.item && git.working) {
-    const changes = diffItems(head.item, git.working)
+    const changes = diff(head.item, git.working)
     if (changes.length) out.push({ type: 'change', at: git.mtime ?? head.commit.at, source: 'disk', kind: 'changed', changes, uncommitted: true })
   }
 
+  return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+}
+
+/* -------------------------------------------------------------- artifacts */
+
+/** One version of an artifact's file, by git blob hash: read back through `/history-blob/<sha>?artifact=<ID>`. */
+export interface ContentVersion {
+  sha: string
+}
+
+/** A commit that added, rewrote or removed an artifact's file. */
+export interface AssetCommit {
+  commit: CommitInfo
+  /** Null where the commit added the file. */
+  from: string | null
+  /** Null where the commit removed it. */
+  to: string | null
+}
+
+/** An artifact file's history in git (newest first), and how the file on disk stands against HEAD. */
+export interface AssetHistory {
+  commits: AssetCommit[]
+  dirty: boolean
+  /** The file's blob at HEAD, and on disk now. */
+  head: string | null
+  working: string | null
+  mtime?: string
+}
+
+const version = (sha: string | null): ContentVersion | null => (sha ? { sha } : null)
+
+/**
+ * An artifact's timeline, newest first: its sidecar's commits as field changes (`buildTimeline`
+ * with no journal), and its file's commits as `content` changes, folded into the same commit's
+ * entry where both changed together. A file or sidecar changed and not yet committed shows as a
+ * "not committed yet" entry.
+ */
+export function buildArtifactTimeline(git: GitFileHistory<Artifact>, asset: AssetHistory | null): TimelineEntry[] {
+  const out = buildTimeline<Artifact>([], git, diffArtifacts)
+  if (!git.versions.length && git.working) out.push({ type: 'change', at: git.mtime ?? new Date(0).toISOString(), source: 'disk', kind: 'created', changes: [], uncommitted: true })
+  for (const c of asset?.commits ?? []) {
+    const change: FieldChange = { field: 'content', from: version(c.from), to: version(c.to) }
+    const same = out.find((e) => e.type === 'change' && e.commit?.sha === c.commit.sha)
+    if (same?.type === 'change') {
+      // The commit that brought the artifact in brings its file too: "Added" says it all.
+      if (same.kind === 'created' && !c.from) continue
+      same.changes = [...same.changes, change]
+    } else {
+      const divider = out.findIndex((e) => e.type === 'commit' && e.commit.sha === c.commit.sha)
+      if (divider >= 0) out.splice(divider, 1)
+      out.push({ type: 'change', at: c.commit.at, source: 'git', kind: 'changed', changes: [change], commit: c.commit })
+    }
+  }
+  if (asset?.dirty && asset.working && asset.working !== asset.head) {
+    const change: FieldChange = { field: 'content', from: version(asset.head), to: version(asset.working) }
+    const pending = out.find((e) => e.type === 'change' && e.uncommitted)
+    if (pending?.type === 'change' && pending.kind !== 'created') pending.changes = [...pending.changes, change]
+    else if (!pending) out.push({ type: 'change', at: asset.mtime ?? new Date(0).toISOString(), source: 'disk', kind: 'changed', changes: [change], uncommitted: true })
+  }
   return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
 }

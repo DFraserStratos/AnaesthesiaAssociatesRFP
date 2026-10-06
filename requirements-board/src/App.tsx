@@ -9,6 +9,9 @@ import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
 import { useCatalogue, useIndex, useShownIndex } from './store.ts'
 import { useDismiss } from './useDismiss.ts'
+import { useArtifactIndex } from './artifactIndex.ts'
+import { ArtifactPage } from './views/ArtifactPage.tsx'
+import { ArtifactsView } from './views/ArtifactsView.tsx'
 import { BoardView } from './views/BoardView.tsx'
 import { OutlineView } from './views/OutlineView.tsx'
 import { QuestionsView } from './views/QuestionsView.tsx'
@@ -72,6 +75,8 @@ export function App() {
         {status === 'ready' && (
           <Routes>
             <Route path="/board" element={<BoardView />} />
+            <Route path="/artifacts" element={<ArtifactsView />} />
+            <Route path="/artifacts/:id" element={<ArtifactPage />} />
             <Route path="/questions" element={<QuestionsView />} />
             <Route path="/outline" element={<OutlineView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
@@ -89,6 +94,8 @@ export function App() {
 function Masthead({ connected }: { connected: boolean }) {
   const index = useIndex()
   const shown = useShownIndex()
+  const artifacts = useArtifactIndex()
+  const liveArtifacts = artifacts.list.filter((r) => r.data.status !== 'Superseded').length
   const issues = useCatalogue((s) => s.issues)
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
@@ -110,6 +117,9 @@ function Masthead({ connected }: { connected: boolean }) {
       <nav className="tabs" aria-label="Views">
         <NavLink className="tab" to="/board">
           Board
+        </NavLink>
+        <NavLink className="tab" to="/artifacts">
+          Artifacts <span className="count">{liveArtifacts}</span>
         </NavLink>
         <NavLink className="tab" to="/questions">
           Outstanding items <span className="count">{openCount}</span>

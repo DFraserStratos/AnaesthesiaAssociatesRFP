@@ -6,8 +6,8 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
-import { itemLinkTargets } from '../shared/links.ts'
-import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
+import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
+import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
 import { ApiError, api } from './api.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -28,6 +28,8 @@ interface CatalogueState {
   error?: string
   items: Record<string, Rev<Item>>
   questions: Record<string, Rev<Question>>
+  /** Agents write artifacts; the board shows them and edits only their details (`saveArtifact`). */
+  artifacts: Record<string, ArtifactRec>
   layout: Layout
   issues: Issue[]
   /** Set when card moves could not be saved; they are retried on the next move, layout change on disk, or reconnect. */
@@ -44,6 +46,9 @@ interface CatalogueState {
   /** Take the server's current copy (e.g. from a 409) into the store. */
   adoptItem: (rec: Rev<Item>) => void
   adoptQuestion: (rec: Rev<Question>) => void
+  /** Save an artifact's details; its file, regions and source are kept as they are on disk. */
+  saveArtifact: (a: Artifact, baseRev?: string) => Promise<ArtifactRec>
+  adoptArtifact: (rec: ArtifactRec) => void
   /** Set when a Mapped board move or lane edit was refused or failed; the move is rolled back. */
   moveError?: string
   clearMoveError: () => void
@@ -82,6 +87,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   status: 'loading',
   items: {},
   questions: {},
+  artifacts: {},
   layout: { positions: {}, lanes: [] },
   issues: [],
   past: [],
@@ -97,7 +103,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         if (p) positions[id] = p
         else delete positions[id]
       }
-      set({ status: 'ready', error: undefined, ...snap, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
+      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
     } catch (e) {
       set({ status: 'error', error: (e as Error).message })
     }
@@ -117,6 +123,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       if (e.record) questions[e.id] = e.record
       else delete questions[e.id]
       set({ questions })
+    } else if (e.kind === 'artifact') {
+      const artifacts = { ...s.artifacts }
+      if (e.record) artifacts[e.id] = e.record
+      else delete artifacts[e.id]
+      set({ artifacts })
     } else if (e.kind === 'layout') {
       const pending = Object.keys(pendingLayout).length > 0
       // Moves left over from a failed save: the file just changed (perhaps fixed), so try them again now.
@@ -143,6 +154,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   async saveQuestion(q, baseRev) {
     const rec = await api.putQuestion(q, baseRev)
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
+    return rec
+  },
+  async saveArtifact(a, baseRev) {
+    const rec = await api.putArtifact(a, baseRev)
+    set({ artifacts: { ...get().artifacts, [rec.data.id]: rec } })
     return rec
   },
   async createQuestion(partial) {
@@ -178,6 +194,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   },
   adoptQuestion(rec) {
     set({ questions: { ...get().questions, [rec.data.id]: rec } })
+  },
+  adoptArtifact(rec) {
+    // A 409 carries the sidecar as it is now; keep what the file holds if it came without it.
+    const meta = rec.meta ?? get().artifacts[rec.data.id]?.meta
+    set({ artifacts: { ...get().artifacts, [rec.data.id]: { ...rec, meta } } })
   },
 
   clearMoveError() {
@@ -436,7 +457,7 @@ export function buildIndex(itemRecs: Record<string, Rev<Item>>, questionRecs: Re
   }
   for (const it of [...items].sort((a, b) => compareIds(a.id, b.id))) {
     for (const r of it.related) if (r !== it.id) push(relatedFrom, r, it.id)
-    for (const t of itemLinkTargets(it)) if (t !== it.id) push(mentionedBy, t, it.id)
+    for (const t of itemLinkTargets(it)) if (t !== it.id && !isArtifactId(t)) push(mentionedBy, t, it.id)
   }
   return { items, byId, children, epics, questionsFor, questions, relatedFrom, mentionedBy }
 }

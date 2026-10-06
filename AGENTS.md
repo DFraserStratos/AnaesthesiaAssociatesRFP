@@ -9,7 +9,12 @@ concision.
 
 The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/` (one
 Markdown file per epic, feature, story and open question; format in `catalogue/SCHEMA.md`). Edit those
-files to change requirements, then run `npm run check` from the repo root. `requirements-board/` is only
+files to change requirements, then run `npm run check` from the repo root. The catalogue also holds
+artifacts (`catalogue/artifacts/AR-nn.md`: the diagrams, transcripts, notes and documents requirements
+link to, or to a highlighted spot in; format under Artifact file in `SCHEMA.md`). The board edits only an
+artifact's details (name, kind, status, date, author, area, sources, description), never its file,
+regions or links: add one, or change those, as files, with `npm --prefix requirements-board run artifact:new` and the
+`add-artifact` skill in `.claude/skills/`. `requirements-board/` is only
 the editing app; `docs/rfp-reference/RFP.md` is the historical RFP; `docs/prototype-build/REQUIREMENTS.md`
 is the prototype's build checklist, not the system's requirements.
 

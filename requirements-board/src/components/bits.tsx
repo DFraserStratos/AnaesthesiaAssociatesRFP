@@ -1,7 +1,8 @@
+import { Camera, FileText, MessagesSquare, Monitor, NotebookPen, PanelsTopLeft, Workflow } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { TYPE_LABEL, type Component, type Item, type ItemType } from '../../shared/types.ts'
+import { TYPE_LABEL, type Artifact, type ArtifactKind, type Component, type Item, type ItemType } from '../../shared/types.ts'
 import { recordUrl } from '../nav.ts'
-import { COMPONENT_CODE, statusClass, statusLabel, typeClass } from '../vocab.ts'
+import { ARTIFACT_KIND_LABEL, COMPONENT_CODE, statusClass, statusLabel, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
@@ -94,4 +95,35 @@ export function Highlight({ text, query }: { text: string; query: string }): Rea
   if (!words.length) return text
   const re = new RegExp(`(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
   return text.split(re).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part))
+}
+
+const ARTIFACT_ICON: Record<ArtifactKind, typeof Workflow> = {
+  diagram: Workflow,
+  mockup: PanelsTopLeft,
+  screenshot: Monitor,
+  photo: Camera,
+  transcript: MessagesSquare,
+  note: NotebookPen,
+  document: FileText,
+}
+
+/** An artifact's kind mark, in the artifact colour (set `ty-artifact` on an ancestor, or it inherits). Decorative: the kind is said in words nearby. */
+export function ArtifactIcon({ kind, size = 14 }: { kind: ArtifactKind; size?: number }) {
+  const Icon = ARTIFACT_ICON[kind] ?? FileText
+  return (
+    <Icon className="artifact-icon" size={size} aria-hidden strokeWidth={1.8}>
+      <title>{ARTIFACT_KIND_LABEL[kind] ?? kind}</title>
+    </Icon>
+  )
+}
+
+/** An artifact named as everywhere outside its own page: its kind mark and title, then the spot in it. */
+export function ArtifactName({ artifact, spot }: { artifact: Artifact; spot?: string | null }) {
+  return (
+    <span className="ty-artifact artifact-name" title={artifact.id}>
+      <ArtifactIcon kind={artifact.kind} />
+      <span className="artifact-name-title">{artifact.title}</span>
+      {spot && <span className="artifact-name-spot">{spot}</span>}
+    </span>
+  )
 }

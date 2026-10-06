@@ -14,20 +14,17 @@
  */
 import { Panel, useReactFlow, useStore, type Node, type Viewport } from '@xyflow/react'
 import { Map as MapIcon, ZoomIn, ZoomOut } from 'lucide-react'
-import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { CardData } from './cardData.ts'
 import type { LaneBand } from './mappedLayout.ts'
 import type { Bounds } from './panLimits.ts'
+import { useHoverPin } from './useHoverPin.ts'
 
 /** The frame's largest size and the smallest, in pixels. */
 const MAX_W = 360
 const MAX_H = 180
 const MIN_W = 200
 const MIN_H = 64
-/** How long the pointer rests on the map button before the minimap opens, so sweeping past it doesn't flash it. */
-const OPEN_MS = 90
-/** How long the pointer may stray off the hover zone before the minimap closes, so a slip doesn't snap it shut. */
-const CLOSE_MS = 280
 /** A little paper round the map inside the frame, as a share of it. */
 const INSET = 0.04
 /** Blocks by type. SVG fills, not CSS, so these mirror the --ty-* tokens in styles.css. */
@@ -62,18 +59,7 @@ export function BoardMinimap({ bounds, nodes, lanes, selected, dock, minZoom, ma
   const aim = useRef({ x: 0, y: 0, zoom: 1, until: 0 })
   // Open while the pointer is in the hover zone (the map button and the minimap), or while pinned.
   // A drag on the minimap holds the pointer captured, so it stays open until let go.
-  const [hover, setHover] = useState(false)
-  const [pinned, setPinned] = useState(false)
-  const timer = useRef<number>(undefined)
-  const later = (fn: () => void, ms: number) => {
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(fn, ms)
-  }
-  const enterButton = () => (hover ? window.clearTimeout(timer.current) : later(() => setHover(true), OPEN_MS))
-  const enterMap = () => window.clearTimeout(timer.current)
-  const leaveZone = () => later(() => setHover(false), CLOSE_MS)
-  useEffect(() => () => window.clearTimeout(timer.current), [])
-  const open = hover || pinned
+  const { open, pinned, togglePin, enterButton, enterMap, leaveZone } = useHoverPin()
   // After a fit: the view it left and the view it fitted to. Pressing again while still on the fitted view zooms back.
   const [back, setBack] = useState<{ from: Viewport; fitted: Viewport } | null>(null)
 
@@ -171,7 +157,7 @@ export function BoardMinimap({ bounds, nodes, lanes, selected, dock, minZoom, ma
           className="btn icon ghost sm"
           aria-pressed={pinned}
           aria-expanded={open}
-          onClick={() => setPinned((p) => !p)}
+          onClick={togglePin}
           onPointerEnter={enterButton}
           onPointerLeave={leaveZone}
           aria-label="Minimap"
