@@ -28,6 +28,7 @@ const artifact = (over: Partial<Artifact> & Pick<Artifact, 'id'>): Artifact => (
   kind: 'diagram',
   status: 'Current',
   supersededBy: null,
+  citedAs: [],
   date: '2026-10-01',
   author: '',
   components: [],
@@ -279,11 +280,11 @@ describe('the artifact index', () => {
   const rec = (a: Artifact, meta: Partial<ArtifactRec['meta']> = {}): ArtifactRec => ({
     data: a,
     rev: 'r',
-    meta: { format: artifactFormat(a), fileRev: null, bounds: null, pages: null, headings: null, lines: null, bytes: null, path: null, ...meta },
+    meta: { format: artifactFormat(a), fileRev: null, bounds: null, pages: null, headings: null, lines: null, points: null, bytes: null, path: null, ...meta },
   })
   it('lists the cards that point at each artifact, by field and by text, and names their spots', () => {
     const a = rec(artifact({ id: 'AR-01', regions: [region({ id: 'rates', name: 'Rates' })] }))
-    const doc = rec(artifact({ id: 'AR-02', kind: 'transcript', file: 'notes/t.md' }), { headings: [{ depth: 2, text: 'Who pays', slug: 'who-pays' }], lines: 40 })
+    const doc = rec(artifact({ id: 'AR-02', kind: 'transcript', file: 'notes/t.md' }), { headings: [{ depth: 2, text: 'Who pays', slug: 'who-pays', line: 3 }], lines: 40 })
     const pdf = rec(artifact({ id: 'AR-03', kind: 'document', file: 'x.pdf' }), { pages: [{ w: 1, h: 1 }, { w: 1, h: 1 }] })
     const index = buildIndex(
       {

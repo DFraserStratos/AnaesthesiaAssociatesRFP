@@ -65,18 +65,30 @@ scrolls) and as the modal elsewhere.
 - Top: the lineage as arrow pills that slot into each other (epic, then feature), in type colours,
   titles only, clickable. The current item is not in the chain; its title is the heading.
 - Then the title, description, acceptance criteria, technical discussion, notes, open questions,
-  children, screenshots, artifacts, related. Empty sections are not shown. Cards never show acceptance criteria or
+  children, screenshots, diagrams, sources, related. Empty sections are not shown. Cards never show acceptance criteria or
   technical discussion; their excerpt is the description only.
 - **Links in the text** to another card keep the author's words in ink with a teal underline
   (teal is the action colour) and open that card in place. A bare ID in the text reads as the
   card's type icon and title, never the code; a question's shows the question mark in Open amber.
   A link to a retired card is muted with a dotted underline; one to nothing is grey with a dotted
   red underline and says so in its tooltip.
-- **Artifacts** sits under the screenshots, before Related: one row per artifact the card points at,
-  its kind icon and name, then the spot's name after a middot when the link is to a spot in it
-  (status pill only when not Current). A row opens the artifact at that spot, in the red box.
-  Missing artifacts or spots show as their ref, muted, "Not found".
-- **Related** sits under the artifacts: the relations either card stores, as the same rows as
+- **Every artifact behind the card is grouped by what it is for**, from both its `artifacts` links and
+  its `sources` (each source resolved to the spot it cites), in three sections under the text:
+  **Screenshots** (the gallery), then **Diagrams** (pictures: diagrams, mockups, screenshot and photo
+  artifacts; where the card sits in the wider workflow), then **Sources** (the evidence: RFP pages,
+  note points, transcript lines, documents). Diagrams lists the card's `artifacts` pictures, then
+  pictures its sources cite. Sources lists the source lines in the order written (oldest origin
+  first), then its `artifacts` links to documents, notes and transcripts. The same spot shows once,
+  and a whole artifact gives way to a spot in it already shown.
+- **Rows, never chips.** Each is the artifact's kind icon and name, then the spot's name after a
+  middot ("Page 27" as printed, "Point 16", a heading or region), status pill only when not Current;
+  the words the card cites it by are its tooltip. A row opens the artifact at that spot, in the red
+  box. A source citing several points is one row whose name opens the first and each "Point n" after
+  it is its own link (teal underline). A bare `OQ-nn` is the question's row (amber question mark,
+  title, status). A source that cites nothing the catalogue holds (a typed decision, an audit) is its
+  words as plain text, not pressable. One that should open an artifact but finds none, or a missing
+  artifact or spot, is muted with "Not found".
+- **Related** sits under the sources: the relations either card stores, as the same rows as
   the children list (name, then status pill), then a quiet "Mentioned in" subhead over the cards
   whose text mentions this one. Outgoing text links are not repeated there, since the text already
   shows them.
@@ -91,10 +103,13 @@ scrolls) and as the modal elsewhere.
   Markdown fields are a "+2 −1 lines" disclosure over a line diff; a re-captured screenshot is a
   "Screenshot updated" disclosure over its before and after, side by side, each opening full size.
   The footer then holds only Back to card.
+- The question sheet lists its sources the same way, under **Sources**, in the order written (no
+  Diagrams split).
 - Bottom: **Status** (the pill alone, pressable without Edit: a quiet chevron in the pill, and a
   small menu opens upward listing each status pill beside a line on what it means; picking one
   saves at once, and Retired still asks first, as the Retire button does), **Swimlane** (stories in a named lane only; Unassigned is the
-  baseline and stays hidden), **Area** (component), **Sources**, and the ID quietly in the bottom right. Clicking the ID copies
+  baseline and stays hidden), **Area** (component), and the ID quietly in the bottom right (Sources
+  moved up into its own section). Clicking the ID copies
   a link to the card ("Link copied" for a moment); pasted over selected words in any Markdown field
   it makes them a link to that card, and Cmd+K over a selection picks the card by title. The
   question sheet's ID does the same.
@@ -206,8 +221,9 @@ edits only their details (below), never the file, its highlights or the links to
   spots, each marked with a tiny red box; a document's own pages or sections below, long lists
   folded; a row's link button copies a link to that spot, to paste over words in any Markdown
   field), **Linked** (cards that list it, with the spot each links to, then "Mentioned in" and
-  outstanding items), **Details** (description, author, area, sources, file path and size, and the
-  ID bottom right, which copies a link), **History**. The artifact fills the rest.
+  outstanding items), **Details** (description, its **Sources** as rows like a card's, an artifact's own
+  origin naming itself shown plain, then author, area, **Cited as** (the words sources cite it by), file
+  path and size, and the ID bottom right, which copies a link), **History**. The artifact fills the rest.
 - **Edit details**, in the panel's footer as on an item sheet, swaps the tabs for a form: name,
   kind, status (and Replaced by, when Superseded), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and

@@ -73,7 +73,7 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `title` | Short name, sentence case. |
 | `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Verify`, `Retired` (meanings in `README.md`). Where a requirement came from is not a status: that is `sources`. |
 | `components` | Should list one or more of (an empty list is a warning): Scheduling Engine, Billing/Invoice Engine, Anaesthetist App (mobile + web), Admin App, Xero Integration, Health Integration, Master Data, Cross-cutting. |
-| `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop"` (a file in `notes/`), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. |
+| `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop #3"` (a file in `notes/`, at a numbered point), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. Each source opens the artifact spot it cites (see Sources below); one that looks like a citation but resolves to nothing is a `check` warning. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `related` | Optional: items this one is related to, by ID (epics, features, stories; never an `OQ-nn`). A relation is **stored on one side only** and the board shows it on both cards, so list it on whichever card you are editing and never on both (`check` warns). Omitted when empty. For couplings the text doesn't name (a setting and the rule that reads it, a UI story and its engine story, the step before or after); a card the text already links to needs no entry. See Links below. |
@@ -134,6 +134,40 @@ When adding links (by hand or by an agent):
 - In the board, copy a card's link by clicking its ID (bottom right of its sheet), then select
   words in any Markdown field and paste. Cmd+K over a selection picks the card by title instead.
 
+## Sources
+
+The board opens each source, on an item, a question or an artifact, at the artifact spot it cites,
+worked out live from the string (`shared/sources.ts`); nothing extra is written in the item. A source
+is a **prefix** that names an artifact, then optionally a **spot**, then optionally **words for the
+reader** after ` · ` or in brackets:
+
+| Source | Opens |
+| --- | --- |
+| `"RFP p.27 · Billing Engine › Contract holders"` | AR-15 at PDF page 28 (the RFP's `cited_as` adds `page_offset: 1`: its printed page runs one behind) |
+| `"RFP response p.13 · Detailed Solution Design › ..."` | AR-36, page 13 |
+| `"Notes 2026-10-01 · AA meeting with Greg #16"` | the note `notes/2026-10-01-aa-meeting-with-greg.md` (its artifact) at point 16 |
+| `"Q&A 2026-09-24 #2 #3"` | AR-09, points 2 and 3 of its Q&A section (several points: one row, a link per point) |
+| `"Transcript 2026-10-01 · AA meeting with Greg (A) L27-33"` | that transcript, lines 27 to 33 |
+| `"Diagram: Billing route"` | the current drawing of it, AR-24 |
+| `OQ-62` | the question |
+| `"Typed decision 2026-10-05 · Donald (product owner)"` | nothing: plain text, as is `Audit ...`, a sketch, a decision |
+
+- **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
+  (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
+  its `cited_as` (Artifact file below); the longest prefix that fits wins. A superseded artifact hands
+  on to its `superseded_by`. A source on an artifact that names that same artifact (a transcript's own
+  `Recording ...`) shows plain.
+- **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or `#2 #16`: numbered
+  points. `L27-33`: lines. Nothing: the entry's `spot`, else its `within` section, else the whole artifact.
+- **A note's points** are its numbered list items at the very start of a line (`16. **Title.** ...`,
+  continuation lines indented), numbered once across the note; each runs to the next point, heading or
+  paragraph at the margin. A point written as a heading or a bold `**16.**` is not one.
+- **Check.** A source whose first word is one citations use (`Notes`, or the first word of any
+  `cited_as`) but that matches no artifact, or names a point, page or line the file lacks, is a
+  warning; so is a bare `OQ-nn` that names no question. They never block a save.
+- `npm --prefix requirements-board run source -- "<source>"` (or `-- --item <ID> --text`) prints what
+  a source resolves to and the cited passage; `-- --report` lists every source in the catalogue.
+
 ## Outstanding item file
 
 ```md
@@ -185,6 +219,9 @@ components:
   - Billing/Invoice Engine
 sources:
   - "Q&A 2026-09-24 #2"
+cited_as:
+  - as: "Diagram: Pricing"
+    spot: price-rules
 file: artifacts/files/AR-01.svg
 regions:
   - id: price-rules
@@ -214,6 +251,7 @@ The four steps from a Procedure's inputs to a priced, invoiced line ...
 | `author` | Optional: who made it. |
 | `components` | Optional: the same vocabulary as an item's. |
 | `sources` | Where it came from, as for an item (`check` warns when empty). |
+| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the region a source with no spot of its own opens). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already). See Sources above. |
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-aa-meeting-with-greg.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 
@@ -275,7 +313,8 @@ a text link to an epic, feature or story names one that exists, image files exis
 every artifact's sidecar is well formed, its file exists and reads as its format, every region's
 anchors match (a text, a simple selector, a node, a quote, a heading) and its box and page lie inside the
 artifact, an item's `artifacts` and any `AR-` link name an artifact and spot that exist,
-and (as warnings) a `swimlane` sits only on a story and names a lane in `board-layout.json`; a
+every `cited_as` entry is well formed and claimed once, and (as warnings) a source that looks like a
+citation resolves to an artifact spot that exists (Sources above), a `swimlane` sits only on a story and names a lane in `board-layout.json`; a
 relation listed on both cards or twice; a link or relation to a Retired item; a bare ID, or a link
 to a question, that names nothing (questions can be deleted, so this never blocks a delete). The board refuses a save that would add
 an error. A file that fails to parse, or whose `id:` differs from its file name, is left out of the board and

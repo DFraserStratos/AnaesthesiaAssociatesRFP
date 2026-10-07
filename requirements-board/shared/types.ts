@@ -203,6 +203,11 @@ export interface Artifact {
   components: string[]
   sources: string[]
   /**
+   * How sources cite this artifact (`cited_as`): each entry a prefix a source string starts with,
+   * so `"RFP p.27 · ..."` opens this artifact at a page. See `shared/sources.ts`.
+   */
+  citedAs: Citation[]
+  /**
    * The file it shows. Relative to the requirements folder (`artifacts/files/AR-01.svg`, `notes/x.md`), or
    * to the repository root with a leading slash (`/docs/rfp-reference/RFP.pdf`). Null for a
    * mermaid diagram, whose source sits in the sidecar.
@@ -221,6 +226,30 @@ export interface Heading {
   text: string
   /** The automatic region ID: GitHub-style slug, made unique within the document. */
   slug: string
+  /** The line it is on (from 1). */
+  line: number
+}
+
+/**
+ * One `cited_as` entry: sources starting with `as` resolve to this artifact. After the prefix a
+ * source may give a page (`p.27`, plus `pageOffset` for a printed page that runs behind the PDF's),
+ * numbered points (`#2 #3`, looked for under the `within` heading when set) or lines (`L27-33`);
+ * with none of those it opens `spot`, else the `within` section, else the whole artifact.
+ */
+export interface Citation {
+  as: string
+  pageOffset: number | null
+  within: string | null
+  spot: string | null
+}
+
+/** A numbered point in a note: a top-level `n.` list item, from its line to its last. */
+export interface NotePoint {
+  n: number
+  from: number
+  to: number
+  /** Its bold lead (or opening words), plain. */
+  title: string
 }
 
 /** What the server worked out from an artifact's file, for the board (format, size, pages, headings). */
@@ -236,6 +265,8 @@ export interface ArtifactMeta {
   headings: Heading[] | null
   /** A Markdown document's line count. */
   lines: number | null
+  /** A Markdown document's numbered points (top-level `n.` items), which sources cite as `#n`. */
+  points: NotePoint[] | null
   bytes: number | null
   /** Repository-relative path of the file, for display and history. */
   path: string | null

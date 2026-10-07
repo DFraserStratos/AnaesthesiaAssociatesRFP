@@ -45,7 +45,7 @@ export interface ArtifactInfo {
 
 const cache = new Map<string, { key: string; info: ArtifactInfo }>()
 
-const empty = (format: ArtifactFormat | null): ArtifactMeta => ({ format, fileRev: null, bounds: null, pages: null, headings: null, lines: null, bytes: null, path: null })
+const empty = (format: ArtifactFormat | null): ArtifactMeta => ({ format, fileRev: null, bounds: null, pages: null, headings: null, lines: null, points: null, bytes: null, path: null })
 
 function fail(format: ArtifactFormat | null, error: string, meta: ArtifactMeta = empty(format)): ArtifactInfo {
   return { facts: { format, ok: false, error, bounds: null }, meta }
@@ -98,6 +98,7 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
     const f = markdownFacts(buf.toString('utf8'))
     meta.headings = f.headings
     meta.lines = f.lines
+    meta.points = f.points
     info = { facts: { format, ok: true, bounds: null, markdown: f }, meta }
   } else if (format === 'pdf') {
     const r = readPdf(abs)

@@ -19,7 +19,7 @@ artifact files themselves in `REQ/artifacts/files/` (notes stay in `REQ/notes/`)
 From the repo root:
 
 ```
-npm --prefix requirements-board run artifact:new -- <file> --title "<name>" --kind <kind> --date <YYYY-MM-DD> [--author "..."] [--source "..."]
+npm --prefix requirements-board run artifact:new -- <file> --title "<name>" --kind <kind> --date <YYYY-MM-DD> [--author "..."] [--source "..."] [--cited-as "..." [--page-offset n] [--within <heading-slug>]]
 npm --prefix requirements-board run artifact:new -- --mermaid <file.mmd> --title "<name>" --date <YYYY-MM-DD>
 ```
 
@@ -31,6 +31,21 @@ npm --prefix requirements-board run artifact:new -- --mermaid <file.mmd> --title
   not the file name).
 - `--source`, repeatable: where it came from, in the requirements' sources convention
   (`"Notes 2026-10-02 · AA meeting with Greg #11"`, `"Q&A 2026-09-24 #2"`, `"Recording 2026-10-01 · ..."`).
+- `--cited-as`, repeatable: how requirements' `sources:` cite it, so each source opens it at the spot
+  it names (SCHEMA's `cited_as`). A source that starts with these words resolves here; after them it
+  may give `p.27` (a page), `#2 #3` (numbered points) or `L27-33` (lines). Which artifacts need it:
+  - a **note** in `REQ/notes/` needs none: `Notes <date> · <title words>` resolves by its file name;
+  - a **transcript**: `--cited-as "Transcript <date> · <name>" --cited-as "Recording <date> · <name>"`,
+    the names its note and the requirements use;
+  - a **document** sources cite by page: its short name (`--cited-as "RFP"`), plus `--page-offset 1`
+    when sources cite the printed page and it runs one behind the PDF's (the RFP's printed p.27 is
+    PDF p.28; measure it on the document, don't assume);
+  - a **diagram** that is the latest drawing of something sources already cite by name
+    (`"Diagram: Billing route"`): that name. When a diagram is superseded, sources citing the old
+    one follow `superseded_by` to the new one by themselves.
+  `--within <heading-slug>` makes points count only under that heading (for a note that numbers each
+  section from 1). For a cited name that should open one spot, add `spot: <region-id>` to the entry in
+  the sidecar by hand. Then check a few with `npm --prefix requirements-board run source -- "<source>"`.
 - The file comes into `REQ/artifacts/files/`: an SVG or image is copied in as `AR-nn.<ext>`; a
   transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (`git mv` when
   tracked; fix any links to its old place). A file already in the requirements folder stays put.
@@ -77,7 +92,9 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
 ## 4. Check and look
 
 - `npm run check` from the repo root: every anchor must match (it says which don't), every link
-  must name an artifact and spot that exist. Fix until there are no errors and no new warnings.
+  must name an artifact and spot that exist, and every `cited_as` entry be well formed and claimed by
+  this artifact alone. Sources that now resolve to nothing, or to a point or page that isn't there,
+  are warnings. Fix until there are no errors and no new warnings.
 - Optionally open `http://localhost:5180/#/artifacts/AR-nn?region=<spot>` to see the red box land
   (the dev server must be running: `npm run dev`). For many regions, the read-only spec
   `requirements-board/e2e/artifacts-real.spec.ts` opens every one.

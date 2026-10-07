@@ -5,10 +5,14 @@
  * sidecar with what is known. Prints what the file holds, to choose anchors from.
  *
  *   npm run artifact:new -- <file> --title "Name" --kind diagram --date 2026-10-06 [--author "..."] [--source "..."] [--keep]
+ *     [--cited-as "Prefix"] [--page-offset 1] [--within <heading-slug>]
  *   npm run artifact:new -- --mermaid <file.mmd> --title "Name" [--kind diagram]
  *
  * --date is when the artifact itself was made (the meeting, the publication, the drawing), YYYY-MM-DD,
- * YYYY-MM or YYYY. --keep leaves the file where it is (a path from the repository root) instead of bringing it in. Then add regions and a description
+ * YYYY-MM or YYYY. --cited-as (repeatable) is how sources cite it, when not by the notes convention: a
+ * transcript's "Transcript <date> · <name>", a document's "RFP" (sources then add "p.27"); --page-offset
+ * adds to a cited page (a printed page that runs behind the PDF's), --within looks for cited points
+ * under that heading. Both apply to every --cited-as. --keep leaves the file where it is (a path from the repository root) instead of bringing it in. Then add regions and a description
  * to the sidecar, link items to it (`artifacts: [AR-nn#spot]`), and run `npm run check`.
  */
 import { execFileSync } from 'node:child_process'
@@ -40,7 +44,7 @@ if (flag('--help') || !argv.length) {
 }
 
 const mermaid = opt('--mermaid')
-const valued = new Set(['--title', '--kind', '--date', '--author', '--source', '--mermaid'])
+const valued = new Set(['--title', '--kind', '--date', '--author', '--source', '--mermaid', '--cited-as', '--page-offset', '--within'])
 const positional = argv.filter((a, i) => !a.startsWith('--') && !valued.has(argv[i - 1] ?? ''))
 const given = mermaid ? null : positional[0]
 const title = opt('--title') ?? fail('--title is required: the artifact\'s name, in sentence case')
@@ -48,6 +52,9 @@ const kind = (opt('--kind') ?? 'diagram') as ArtifactKind
 if (!ARTIFACT_KINDS.includes(kind)) fail(`--kind must be one of ${ARTIFACT_KINDS.join(', ')}`)
 const date = opt('--date') ?? null
 if (date !== null && !isArtifactDate(date)) fail('--date must be YYYY-MM-DD, YYYY-MM or YYYY')
+const pageOffset = opt('--page-offset') === undefined ? null : Number(opt('--page-offset'))
+if (pageOffset !== null && !Number.isInteger(pageOffset)) fail('--page-offset must be a whole number')
+const citedAs = opts('--cited-as').map((as) => ({ as, pageOffset, within: opt('--within') ?? null, spot: null }))
 
 const loaded = loadCatalogue()
 const id = nextArtifactId(new Set([...takenIds(artifactsDir()), ...Object.keys(loaded.artifacts)]))
@@ -104,6 +111,7 @@ const a: Artifact = {
   author: opt('--author') ?? '',
   components: [],
   sources: opts('--source'),
+  citedAs,
   file,
   regions: [],
   description: '',

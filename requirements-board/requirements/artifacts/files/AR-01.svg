@@ -94,8 +94,8 @@
 <text x="478" y="590" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Blank means inherit; 0 is a value that stops the look.</text>
 <text x="478" y="607" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Units are only starting values: the anaesthetist</text>
 <text x="478" y="624" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">can change them on the card.</text>
-<text x="478" y="641" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A fixed price only ever comes from a contract line.</text>
-<text x="478" y="658" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Dormant for now: contract unit rate, discount %.</text>
+<text x="478" y="641" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A fixed price, fixed rate or fixed discount only</text>
+<text x="478" y="658" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">ever comes from the contract line for the procedure.</text>
 <rect x="900" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
 <circle cx="934" cy="114" r="16" fill="#3B8FD6"/>
 <text x="934" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
@@ -121,19 +121,20 @@
 <text x="964" y="419" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">That price. The recorded BTM is kept for</text>
 <text x="964" y="435" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">reference only.</text>
 <text x="1270" y="397" font-size="13.5" font-weight="700" fill="#1D6B3B" text-anchor="end">Merivale</text>
-<rect x="916" y="458" width="368" height="82" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<rect x="916" y="458" width="368" height="98" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
 <circle cx="942" cy="484" r="12" fill="#8A95A2"/>
 <text x="942" y="489" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
 <text x="964" y="489" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Otherwise, calculate</text>
-<text x="964" y="511" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">(Base + Time + Modifier) × the anaesthetist's</text>
-<text x="964" y="527" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">own unit rate, less any discount % entered.</text>
-<rect id="rejected" x="916" y="564" width="368" height="112" rx="0" fill="none"/>
-<path d="M926 564 H916 V676 H926" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="932" y="586" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Rejected, never guessed</text>
-<text x="932" y="604" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The booking is rejected for correction when:</text>
-<text x="932" y="622" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• a price is typed on a locked contract</text>
-<text x="932" y="640" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• BTM is missing and no fixed price applies</text>
-<text x="932" y="658" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• the contract is not valid on the procedure date</text>
+<text x="964" y="511" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">(Base + Time + Modifier) × the contract's fixed</text>
+<text x="964" y="527" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">rate, else the anaesthetist's own unit rate, less</text>
+<text x="964" y="543" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">any fixed discount or discount % entered.</text>
+<rect id="rejected" x="916" y="572" width="368" height="112" rx="0" fill="none"/>
+<path d="M926 572 H916 V684 H926" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="932" y="594" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Rejected, never guessed</text>
+<text x="932" y="612" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The booking is rejected for correction when:</text>
+<text x="932" y="630" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• a price or discount is typed on a locked contract</text>
+<text x="932" y="648" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• BTM is missing and no fixed price applies</text>
+<text x="932" y="666" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• the contract is not valid on the procedure date</text>
 <rect x="1340" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
 <circle cx="1374" cy="114" r="16" fill="#3B8FD6"/>
 <text x="1374" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">4</text>

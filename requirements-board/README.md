@@ -29,6 +29,7 @@ npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhe
 npm run links:index  # compact catalogue index for the linking agents (.links/index.md)
 npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
+npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
 ```
 
 From the repo root, `npm run dev` starts this, the prototype and the mobile PWA together.
@@ -201,6 +202,16 @@ next `AR-nn`, brings the file into `requirements/artifacts/files/` (a drawing co
 leaves it where it is) and writes the sidecar for you to fill in: regions, sources, description. Then
 link items to it (`artifacts: [AR-nn#spot]`) and run `npm run check`. The `add-artifact` skill walks
 an agent through it; the `svg-diagram` skill saves new diagrams this way.
+
+### Sources open their spot
+
+Each `sources:` string opens the artifact spot it cites, resolved live (`shared/sources.ts`; SCHEMA's
+Sources section): a note by its file name and numbered points (`Notes 2026-10-01 · ... #16`), anything
+else by the `cited_as` prefixes in its sidecar (`artifact:new --cited-as "RFP" --page-offset 1`). Item
+files never change for it. `npm run check` warns on a source that looks like a citation but resolves to
+nothing. `npm run source -- --item US-04.2.3 --text` prints each source's file, page or lines and the
+cited passage, for an agent that needs the reasoning behind a requirement without reading a whole
+transcript; `-- --report` covers the whole catalogue.
 
 ### Linking requirements
 

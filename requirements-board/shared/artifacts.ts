@@ -3,7 +3,7 @@
  * account and the board can name a document's automatic regions. Pure: the server reads the
  * bytes and the browser reuses the same rules (anchor grammar, slugs, loose text matching).
  */
-import type { ArtifactFormat, Box, Heading, Rect } from './types.ts'
+import type { ArtifactFormat, Box, Heading, NotePoint, Rect } from './types.ts'
 
 /* ----------------------------------------------------------------- anchors */
 
@@ -237,6 +237,8 @@ export interface MarkdownFacts {
   /** The whole document as `looseText`, for `quote=` anchors. */
   loose: string
   lines: number
+  /** Its numbered points, which sources cite as `#n`. */
+  points: NotePoint[]
 }
 
 /** Fenced code blocks blanked out, line count kept. */
@@ -268,8 +270,43 @@ export function markdownHeadings(md: string): Heading[] {
     const base = slugify(text) || 'section'
     const n = seen.get(base) ?? 0
     seen.set(base, n + 1)
-    out.push({ depth: atx ? atx[1]!.length : setext!.depth, text, slug: n ? `${base}-${n}` : base })
+    out.push({ depth: atx ? atx[1]!.length : setext!.depth, text, slug: n ? `${base}-${n}` : base, line: i + 1 })
   })
+  return out
+}
+
+const POINT = /^(\d+)\.\s+(.*)$/
+const HEADING_LINE = /^ {0,3}#{1,6}\s/
+
+/**
+ * A note's numbered points: each top-level `n.` list item (at the start of the line, outside code;
+ * an indented list inside a point is part of it). A point runs to the line before the next point,
+ * the next heading, or the next paragraph that starts at the margin after a blank line, trailing
+ * blank lines left out. Numbers are as written: a note may repeat them in different sections.
+ */
+export function markdownPoints(md: string): NotePoint[] {
+  const lines = withoutFences(md.replace(/\r\n/g, '\n').split('\n'))
+  const out: NotePoint[] = []
+  let open: NotePoint | null = null
+  const close = (i: number) => {
+    if (!open) return
+    let to = i
+    while (to > open.from && !lines[to - 1]!.trim()) to--
+    open.to = to
+    out.push(open)
+    open = null
+  }
+  lines.forEach((line, i) => {
+    const m = POINT.exec(line)
+    const ends = m || HEADING_LINE.test(line) || (line.trim() && !/^\s/.test(line) && i > 0 && !lines[i - 1]!.trim())
+    if (ends) close(i)
+    if (m) {
+      const bold = /^\*\*(.+?)\*\*/.exec(m[2]!)
+      const title = inlinePlain(bold ? bold[1]! : m[2]!).replace(/[.:]$/, '')
+      open = { n: Number(m[1]), from: i + 1, to: i + 1, title: title.length > 90 ? `${title.slice(0, 88).trimEnd()}…` : title }
+    }
+  })
+  close(lines.length)
   return out
 }
 
@@ -292,7 +329,12 @@ export function markdownReadable(md: string): string {
 }
 
 export function markdownFacts(md: string): MarkdownFacts {
-  return { headings: markdownHeadings(md), loose: looseText(decodeEntities(markdownReadable(md))), lines: md.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n').length }
+  return {
+    headings: markdownHeadings(md),
+    loose: looseText(decodeEntities(markdownReadable(md))),
+    lines: md.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n').length,
+    points: markdownPoints(md),
+  }
 }
 
 /* ------------------------------------------------------------------- boxes */

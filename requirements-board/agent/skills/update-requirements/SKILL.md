@@ -29,6 +29,11 @@ folder: the catalogue, its notes, artifacts and change logs all live there).
   prototype or its build plan (in this repo `aa-prototype/` and `docs/prototype-build/`).
 - Never invent a requirement. Every change traces to a note point (`"Notes <date> · <slug> #n"`) or a
   question answer. Anything the evidence leaves unresolved becomes a new question (OQ), not a guess.
+- Every source you write must resolve: the board opens it at the spot it cites, and `npm run check`
+  warns on one that resolves to nothing (SCHEMA's `sources` row lists the forms). Use
+  `"RFP p.<printed page> · <Section> › <subheading>"`, `"Notes <date> · <the note's title words> #n"`
+  (several points as `#2 #16`), `"Transcript <date> · <name> L27-33"` for transcript lines, a bare
+  `OQ-nn`. Check one with `npm --prefix requirements-board run source -- "<source>"`.
 - Notes are append only: never edit an existing note, except the one this run creates.
 - Keep the user's own wording when quoting their answers and notes (fix spelling, drop filler).
 - Do not commit or push.
@@ -62,11 +67,17 @@ folder: the catalogue, its notes, artifacts and change logs all live there).
   transcripts of the same recording separately.
 - The note is `REQ/notes/YYYY-MM-DD-<slug>.md`: one per session, dated when the input happened, not
   when it was filed. If that session's note already exists, append new points at its end, continuing the
-  numbering.
+  numbering. Its sources cite it as `Notes <date> · <slug in words>` (the slug's words, any case), which
+  resolves by the file name alone, and each `#n` to its point: a numbered list item at the very start of
+  a line (`16. **Title.** ...`, continuation lines indented), numbered once across the whole note.
+  Keep that shape: a point written as a heading, a bold `**16.**`, or numbering that restarts per
+  section does not resolve.
 - Register each new transcript and each new note as an artifact, so the board can show it and items
   can link to a spot in it (a heading, or a line range such as `#L27-33`): follow the `add-artifact`
   skill (kind `transcript` or `note`; the file is already in `REQ/artifacts/files/` or `REQ/notes/`). Diagrams supplied as evidence are
-  artifacts too.
+  artifacts too. A note needs nothing more to be citable. A transcript does: register it with
+  `--cited-as "Transcript <date> · <name>" --cited-as "Recording <date> · <name>"`, the names its
+  note uses, so `"Transcript <date> · <name> L27-33"` opens those lines.
 
 ## Stage 2: extract (parallel, Sonnet)
 
@@ -108,6 +119,7 @@ folder: the catalogue, its notes, artifacts and change logs all live there).
      notes), in plain language and the SCHEMA house style;
    - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
      (`- "Notes 2026-10-01 · AA meeting with Greg #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
+   - writes each source in a form that resolves (Ground rules), so it opens its spot;
    - moves status per the answering convention (Confirmed where settled, Verify where it still needs
      checking with AA);
    - sets `components`;

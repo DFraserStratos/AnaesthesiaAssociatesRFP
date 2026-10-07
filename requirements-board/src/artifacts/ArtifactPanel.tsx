@@ -6,18 +6,20 @@
  * area, sources, description) and nothing else: agents write the file, its highlights and links.
  */
 import { ChevronLeft, Link2, Pencil } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isArtifactDate } from '../../shared/check.ts'
 import { tidyText } from '../../shared/files.ts'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, COMPONENTS, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item } from '../../shared/types.ts'
 import { autoSpots, linkCount, namedSpots, spotName, useArtifactIndex, type ArtifactLink, type Spot } from '../artifactIndex.ts'
+import { ArtifactRowsSection } from '../components/ArtifactRows.tsx'
 import { ArtifactIcon, Glyph, ItemName, StatusLabel } from '../components/bits.tsx'
 import { EditActions, EditBanners, discardConfirm } from '../components/EditChrome.tsx'
 import { MarkdownTextarea } from '../components/MarkdownTextarea.tsx'
 import { Prose } from '../components/Prose.tsx'
 import { useEditableRecord } from '../components/useEditableRecord.ts'
 import { artifactUrl, useOpen } from '../nav.ts'
+import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useCatalogue, useView } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate, statusClass } from '../vocab.ts'
 import { ArtifactHistory } from './ArtifactHistory.tsx'
@@ -409,6 +411,8 @@ const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} M
 function Details({ rec }: { rec: ArtifactRec }) {
   const a = rec.data
   const m = rec.meta
+  const index = useSourceIndex()
+  const sources = useMemo(() => a.sources.map((s) => sourceRow(index, s, a.id)), [a.sources, a.id, index])
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
@@ -424,6 +428,7 @@ function Details({ rec }: { rec: ArtifactRec }) {
   return (
     <>
       {a.description ? <Prose text={a.description} /> : <p className="prose small">No description yet.</p>}
+      <ArtifactRowsSection title="Sources" rows={sources} className="sources-section" />
       <section className="section sheet-tail">
         <div className="facts">
           {a.date && (
@@ -450,13 +455,13 @@ function Details({ rec }: { rec: ArtifactRec }) {
               </div>
             </div>
           )}
-          {a.sources.length > 0 && (
+          {a.citedAs.length > 0 && (
             <div>
-              <h3 className="section-head">Sources</h3>
-              <div className="sources">
-                {a.sources.map((s) => (
-                  <span key={s} className="chip">
-                    {s}
+              <h3 className="section-head">Cited as</h3>
+              <div className="sources" title="Sources that start with these words open this artifact">
+                {a.citedAs.map((c) => (
+                  <span key={c.as} className="chip">
+                    {c.as}
                   </span>
                 ))}
               </div>

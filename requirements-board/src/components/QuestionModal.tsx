@@ -5,9 +5,11 @@ import { tidyText } from '../../shared/files.ts'
 import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type QuestionStatus, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { questionWalk, useQuestionFilters } from '../questionWalk.ts'
+import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
 import { useCatalogue, useIndex, type Index } from '../store.ts'
 import { ITEM_STATUS_HELP, KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
+import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CopyLink, ItemName, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { ItemsPicker } from './ItemPicker.tsx'
@@ -231,20 +233,16 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
           })}
         </div>
       </section>
-      {q.sources.length > 0 && (
-        <section className="section">
-          <h3 className="section-head">Sources</h3>
-          <div className="sources">
-            {q.sources.map((s) => (
-              <span key={s} className="chip">
-                {s}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+      <QuestionSources sources={q.sources} />
     </>
   )
+}
+
+/** The question's sources, each opening the artifact spot it cites. */
+function QuestionSources({ sources }: { sources: string[] }) {
+  const index = useSourceIndex()
+  const rows = useMemo(() => sources.map((s) => sourceRow(index, s)), [sources, index])
+  return <ArtifactRowsSection title="Sources" rows={rows} className="sources-section" />
 }
 
 /** Where an answer can take an item: answered but still to verify, or settled outright. The item's own status is the third choice. */

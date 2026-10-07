@@ -24,10 +24,12 @@ import {
   type Heading,
   type Issue,
   type Item,
+  type NotePoint,
   type Question,
   type Rect,
 } from './types.ts'
 import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
+import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -51,7 +53,7 @@ export interface ArtifactFacts {
   svg?: { texts: string[]; elements: SvgElement[] }
   /** Mermaid flowchart node IDs; null for diagram types whose IDs are not read. */
   nodeIds?: Set<string> | null
-  markdown?: { headings: Heading[]; loose: string; lines: number }
+  markdown?: { headings: Heading[]; loose: string; lines: number; points?: NotePoint[] }
   pdf?: { pages: { w: number; h: number; loose: string }[] }
 }
 
@@ -307,7 +309,31 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (q.status === 'Answered' && !q.answer.trim()) warn(q.id, 'answered but the answer is empty')
   }
 
+  // Sources open the artifact spot they cite (shared/sources.ts). Only warnings: a source line never blocks a save.
+  if (artifacts.length) {
+    const sources = buildSourceIndex(artifacts, (id) => spotFactsOf(factsOf.get(id) ?? null))
+    for (const a of artifacts) for (const p of citationProblems(a, spotFactsOf(factsOf.get(a.id) ?? null), artifactFormat(a) === 'pdf')) err(a.id, p)
+    for (const c of sources.clashes) for (const id of c.ids) err(id, `cited_as "${c.prefix}" is also claimed by ${c.ids.filter((x) => x !== id).join(', ')}`)
+    const sourcesOf = (id: string, list: string[], self?: string) => {
+      for (const s of list) {
+        const r = resolveSource(sources, s, self)
+        if (r.kind === 'unresolved') warn(id, `source "${s}" ${r.reason}`)
+        else if (r.kind === 'question' && !qIds.has(r.id)) warn(id, `source ${r.id} names a question that does not exist`)
+        else if (r.kind === 'artifact') for (const spot of r.spots) if (spot.problem) warn(id, `source "${s}": ${spot.problem}`)
+      }
+    }
+    for (const it of items) sourcesOf(it.id, it.sources)
+    for (const q of questions) sourcesOf(q.id, q.sources)
+    for (const a of artifacts) sourcesOf(a.id, a.sources, a.id)
+  }
+
   return issues
+}
+
+/** What the check knows of a file, as the source resolver reads it. */
+function spotFactsOf(f: ArtifactFacts | null): SpotFacts | null {
+  if (!f) return null
+  return { pages: f.pdf?.pages.length ?? null, headings: f.markdown?.headings ?? null, points: f.markdown?.points ?? null, lines: f.markdown?.lines ?? null }
 }
 
 /** `YYYY-MM-DD`, `YYYY-MM` or `YYYY`, and a real day. */

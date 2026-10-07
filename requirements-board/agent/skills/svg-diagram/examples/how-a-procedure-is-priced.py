@@ -163,26 +163,28 @@ for (label, cx), v in zip(cols, ["6", "0", "$3,565"]):
 lines(ix + 2, 590, ["Blank means inherit; 0 is a value that stops the look.",
                     "Units are only starting values: the anaesthetist",
                     "can change them on the card.",
-                    "A fixed price only ever comes from a contract line.",
-                    "Dormant for now: contract unit rate, discount %."], size=12.5, lh=17, fill=MUTED)
+                    "A fixed price, fixed rate or fixed discount only",
+                    "ever comes from the contract line for the procedure."], size=12.5, lh=17, fill=MUTED)
 
 # ---------- 3 Work out the price ----------
 ix = card(2, "Work out the price", ["Top to bottom, the first rule that applies sets", "the price. Merivale stops at rule 2."])
 rules = [("0", "Office override at review", ["The office's price, with a reason. Works even", "on a locked contract."], False),
          ("1", "Anaesthetist typed a price", ["Adjustable contracts only: No contract (RVG)", "or an anaesthetist's own price list."], False),
          ("2", "Contract has a fixed price", ["That price. The recorded BTM is kept for", "reference only."], True),
-         ("3", "Otherwise, calculate", ["(Base + Time + Modifier) × the anaesthetist's", "own unit rate, less any discount % entered."], False)]
+         ("3", "Otherwise, calculate", ["(Base + Time + Modifier) × the contract's fixed",
+                                        "rate, else the anaesthetist's own unit rate, less",
+                                        "any fixed discount or discount % entered."], False)]
 for i, (n, title, body, hit) in enumerate(rules):
     ry = 182 + 92 * i
-    rect(ix, ry, IW, 82, "#F4FBF6" if hit else "#FFFFFF", WIN if hit else CARD_S, r=9, sw=2 if hit else 1.2)
+    rect(ix, ry, IW, 50 + 16 * len(body), "#F4FBF6" if hit else "#FFFFFF", WIN if hit else CARD_S, r=9, sw=2 if hit else 1.2)
     a(f'<circle cx="{ix + PAD + 12}" cy="{ry + 26}" r="12" fill="{WIN if hit else "#8A95A2"}"/>')
     text(ix + PAD + 12, ry + 31, n, size=13, weight=800, fill="#FFFFFF", anchor="middle")
     text(ix + PAD + 34, ry + 31, title, size=15, weight=700)
     lines(ix + PAD + 34, ry + 53, body, size=12.5, lh=16, fill=MUTED)
     if hit:
         text(ix + IW - PAD, ry + 31, "Merivale", size=13.5, weight=700, fill=GRN_T, anchor="end")
-aside(ix, 564, ["The booking is rejected for correction when:",
-                "• a price is typed on a locked contract",
+aside(ix, 572, ["The booking is rejected for correction when:",
+                "• a price or discount is typed on a locked contract",
                 "• BTM is missing and no fixed price applies",
                 "• the contract is not valid on the procedure date"],
       w=IW, title="Rejected, never guessed", id="rejected")

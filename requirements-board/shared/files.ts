@@ -6,7 +6,7 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { Artifact, ArtifactKind, ArtifactStatus, Box, ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
+import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
 
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'artifacts', 'images']
@@ -341,7 +341,8 @@ export function revOf(text: string): string {
 
 /* -------------------------------------------------------------- artifacts */
 
-export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'file', 'regions']
+export const ARTIFACT_KEYS = ['id', 'title', 'kind', 'status', 'superseded_by', 'date', 'author', 'components', 'sources', 'cited_as', 'file', 'regions']
+export const CITATION_KEYS = ['as', 'page_offset', 'within', 'spot']
 export const REGION_KEYS = ['id', 'name', 'around', 'box', 'page', 'pad', 'note']
 export const SOURCE_HEADING = '## Source'
 
@@ -372,6 +373,14 @@ export function toRegion(raw: unknown): Region {
   }
 }
 
+/** A `cited_as` entry: a mapping, or a bare string for just the prefix. */
+export function toCitation(raw: unknown): Citation {
+  if (typeof raw === 'string') return { as: raw.trim(), pageOffset: null, within: null, spot: null }
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const opt = (v: unknown) => (v === null || v === undefined || str(v).trim() === '' ? null : str(v).trim())
+  return { as: str(o.as).trim(), pageOffset: numOrNull(o.page_offset), within: opt(o.within), spot: opt(o.spot) }
+}
+
 /** The first fenced block in the Source section: the mermaid diagram. */
 function mermaidOf(section: string): string {
   const m = /^(```|~~~)\s*mermaid[^\n]*\n([\s\S]*?)^\1\s*$/m.exec(section)
@@ -392,6 +401,7 @@ export function toArtifact(meta: Record<string, unknown>, description: unknown =
     author: str(meta.author),
     components: strList(meta.components),
     sources: strList(meta.sources),
+    citedAs: (Array.isArray(meta.cited_as) ? meta.cited_as : []).map(toCitation),
     file: meta.file ? str(meta.file).trim() : null,
     regions: (Array.isArray(meta.regions) ? meta.regions : []).map(toRegion),
     description: str(description),
@@ -413,6 +423,15 @@ export function serialiseArtifact(a: Artifact): string {
   if (a.author) meta.author = a.author
   meta.components = a.components
   meta.sources = a.sources
+  if (a.citedAs.length) {
+    meta.cited_as = a.citedAs.map((c) => {
+      const o: Record<string, unknown> = { as: c.as }
+      if (c.pageOffset !== null) o.page_offset = c.pageOffset
+      if (c.within) o.within = c.within
+      if (c.spot) o.spot = c.spot
+      return o
+    })
+  }
   if (a.file) meta.file = a.file
   if (a.regions.length) {
     meta.regions = a.regions.map((r) => {

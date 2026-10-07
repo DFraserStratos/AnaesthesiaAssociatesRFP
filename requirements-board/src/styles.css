@@ -3019,6 +3019,59 @@ mark {
 .link-row.missing {
   color: var(--ink-3);
 }
+/* Sources: a citation of nothing the catalogue holds reads as plain text, not a row to press. */
+.link-row.source-plain {
+  color: var(--ink-2);
+}
+.link-row.source-plain:hover {
+  background: var(--card);
+}
+.source-question .record-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+/* Several points cited at once: the name opens the first, each point opens itself. */
+.multi-spot-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 7px;
+  min-width: 0;
+}
+.multi-spot-name {
+  display: inline-flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.multi-spot-point {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--teal) 50%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.multi-spot-point::before {
+  content: '·';
+  margin-right: 7px;
+  display: inline-block;
+  text-decoration: none;
+}
+.multi-spot-point:hover {
+  color: var(--teal);
+}
+.multi-spot-point.missing {
+  text-decoration-style: dotted;
+  text-decoration-color: var(--highlight);
+}
 
 /* The mark that stands for a red box wherever a spot is named: a tiny one. */
 .spot-mark {

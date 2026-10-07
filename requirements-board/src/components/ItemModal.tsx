@@ -3,13 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, parseArtifactRef, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
-import { spotName } from '../artifactIndex.ts'
-import { guarded, setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
+import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
 import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
-import { BASELINE_ARTIFACT_STATUS, statusClass } from '../vocab.ts'
-import { ArtifactName, CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
+import { sheetArtifacts, useSourceIndex } from '../sourceRows.ts'
+import { statusClass } from '../vocab.ts'
+import { ArtifactRowsSection } from './ArtifactRows.tsx'
+import { CopyLink, Glyph, ItemName, Lineage, StatusLabel, TypeIcon } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
 import { HistoryView } from './HistoryView.tsx'
 import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
@@ -343,11 +344,11 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
       <div className="read-anchor">
         <Gallery item={item} />
 
-        <ArtifactsSection item={item} />
+        <ArtifactLinks item={item} />
 
         <Related item={item} index={index} />
 
-        {/* Sources on the left, the item's ID quietly on the right: there when you need to cite it. */}
+        {/* The facts on the left, the item's ID quietly on the right: there when you need to cite it. */}
         <section className="section sheet-tail">
           <div className="facts">
             <div>
@@ -370,18 +371,6 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
                   {item.components.map((c) => (
                     <span key={c} className="chip">
                       {c}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {item.sources.length > 0 && (
-              <div>
-                <h3 className="section-head">Sources</h3>
-                <div className="sources">
-                  {item.sources.map((s) => (
-                    <span key={s} className="chip">
-                      {s}
                     </span>
                   ))}
                 </div>
@@ -468,41 +457,19 @@ function Related({ item, index }: { item: Item; index: Index }) {
 }
 
 /**
- * The artifacts the card points at (its `artifacts` field), each named with its kind mark, and the
- * spot in it when the link has one. A row opens the artifact at that spot, in the red box.
+ * The artifacts behind the card, by what they are for: Diagrams (where it sits in the wider
+ * workflow), then Sources (its evidence, in the order it cites it). Both draw on its `artifacts`
+ * links and its `sources`, each source resolved to the artifact spot it cites.
  */
-function ArtifactsSection({ item }: { item: Item }) {
-  const open = useOpen()
+function ArtifactLinks({ item }: { item: Item }) {
   const artifacts = useCatalogue((s) => s.artifacts)
-  const refs = item.artifacts ?? []
-  if (!refs.length) return null
+  const sources = useSourceIndex()
+  const rows = useMemo(() => sheetArtifacts(item, sources, artifacts), [item, sources, artifacts])
   return (
-    <section className="section artifacts-section">
-      <h3 className="section-head">
-        Artifacts <span className="count">{refs.length}</span>
-      </h3>
-      <div className="link-list">
-        {refs.map((ref) => {
-          const { id, region } = parseArtifactRef(ref)
-          const rec = artifacts[id]
-          const spot = rec && region ? spotName(rec, region) : null
-          if (!rec || (region && !spot)) {
-            return (
-              <div key={ref} className="link-row missing" title={rec ? `${rec.data.title} has no spot "${region}"` : `${id} is not in the catalogue`}>
-                <span className="mono">{ref}</span>
-                <span className="quiet">Not found</span>
-              </div>
-            )
-          }
-          return (
-            <button key={ref} className="link-row artifact-link-row" onClick={() => guarded(() => open.artifact(id, region))} title={`${rec.data.id}${region ? `#${region}` : ''}`}>
-              <ArtifactName artifact={rec.data} spot={spot} />
-              {rec.data.status !== BASELINE_ARTIFACT_STATUS ? <StatusLabel status={rec.data.status} /> : <span />}
-            </button>
-          )
-        })}
-      </div>
-    </section>
+    <>
+      <ArtifactRowsSection title="Diagrams" rows={rows.diagrams} />
+      <ArtifactRowsSection title="Sources" rows={rows.sources} className="sources-section" />
+    </>
   )
 }
 

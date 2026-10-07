@@ -70,6 +70,13 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    document): artifacts are evidence the Requirements Board shows, not requirements, and the
    prototype has nothing to build for them. Changes under `requirements-board/requirements/artifacts/`
    and `requirements-board/requirements/notes/` alone never call for re-grading either.
+   When a grading (yours, or an agent's) turns on why a requirement says what it says, follow its
+   `sources:` into the cited spots rather than reading whole notes or transcripts:
+   `npm --prefix requirements-board run source -- --item <ID> --text` prints, for each source, the
+   artifact, its file and the cited page or lines, then the passage itself (a note's point, an RFP
+   page's text). `-- "<source string>"` resolves one. It needs Node 22.18 or newer (agent shells
+   often default older: put one first on `PATH`, e.g. from `~/.nvm/versions/node/`). The workflow
+   prompts already tell the grading agents this.
 2. Build the epics argument: `node CU/tools/build-args.mjs <IDs...>`.
 3. Run `Workflow({ scriptPath: "<repo>/CU/tools/workflow-gap-analysis.js", args })` with these args:
    - `root`: the repo root;

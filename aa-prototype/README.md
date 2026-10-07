@@ -518,5 +518,6 @@ To learn, present or reason about the prototype, the hub is
 **[`../docs/demo-guide/`](../docs/demo-guide/)** — start with `master-demo-guide.html` (a single
 self-contained page) or the S1 to S5 run-sheet in `03-demo-script.md`.
 
-The RFP itself and our reading of the data model live in
-[`../docs/rfp-reference/`](../docs/rfp-reference/).
+The RFP itself (`RFP.md`, and its PDF as artifact AR-15) and our Stratos response (AR-36) live in the
+requirements catalogue: [`../requirements-board/requirements/`](../requirements-board/requirements/)
+(`reference/RFP.md`, `artifacts/files/`).

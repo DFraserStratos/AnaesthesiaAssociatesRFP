@@ -32,7 +32,8 @@ const CTX = `You are one agent in a gap analysis between the Anaesthesia Associa
 - Repo root: ${ROOT} (use absolute paths; note the spaces in folder names).
 - Prototype: aa-prototype/ (React demo over a fake in-browser backend: store in src/store, domain types/rules in src/domain, seed in src/domain/seed, three apps in src/apps/{mobile,web,admin}, demo simulators in src/apps/demo, shell/harness in src/shell, PWA build in src/pwa).
 - Requirements catalogue (THE source of truth, supersedes the RFP and the prototype's build docs wherever they differ): "${CAT}/stories/<ID>.md" (one file per epic EP-nn / feature FT-nn.m / story US-nn.m.k), outstanding questions in "${CAT}/questions/OQ-nn.md" (field "affects" lists item IDs). Format: "${CAT}/SCHEMA.md". Narrative model: "requirements-board/requirements/domain-model.md". Evidence notes: "${CAT}/notes/".
-- The prototype was built against the ORIGINAL RFP (docs/rfp-reference/RFP.md) in July 2026. Since then the catalogue has changed a lot. Old build docs (docs/prototype-build/PROGRESS.md, REQUIREMENTS.md, prototype-review/) describe what was intended at the time: use them only as leads to find code, never as proof something exists. THE CODE IS THE TRUTH about the prototype.
+- Each item's "sources:" cites its evidence ("RFP p.27 · ...", "Notes 2026-10-01 · AA meeting with Greg #16", "Q&A 2026-09-24 #2"). When you need the reasoning behind a requirement (why it says what it says, what a vague phrase means), run \`npm --prefix "${ROOT}/requirements-board" run source -- --item <ID> --text\` and read only the cited passages it prints (a note's numbered point, an RFP page), never whole notes or transcripts. It needs Node 22.18 or newer: if it fails with ERR_UNKNOWN_FILE_EXTENSION, put one first on PATH (e.g. from ~/.nvm/versions/node/).
+- The prototype was built against the ORIGINAL RFP (requirements-board/requirements/reference/RFP.md) in July 2026. Since then the catalogue has changed a lot. Old build docs (docs/prototype-build/PROGRESS.md, REQUIREMENTS.md, prototype-review/) describe what was intended at the time: use them only as leads to find code, never as proof something exists. THE CODE IS THE TRUTH about the prototype.
 - This is a READ-ONLY analysis. Do not modify any file except an output file you are explicitly told to write. No git writes, no builds, no dev servers.
 - Be concise and factual. Cite code as aa-prototype/src/...:line.`
 
@@ -203,7 +204,7 @@ ${READ_MAPS}
 Then read each of these catalogue files in full ("${CAT}/stories/<ID>.md"), plus the question files for any unresolved questions listed, plus the parts of domain-model.md that concern this epic:
 ${items.map(itemLine).join('\n')}
 
-For EACH item: read the requirement (description, acceptance criteria, technical discussion, notes), then find the prototype code that would implement it (use the maps, then grep/read the code; try synonyms and older RFP vocabulary, since the prototype may use different names). Decide a verdict with evidence.
+For EACH item: read the requirement (description, acceptance criteria, technical discussion, notes; where its intent is unclear, its cited sources as above), then find the prototype code that would implement it (use the maps, then grep/read the code; try synonyms and older RFP vocabulary, since the prototype may use different names). Decide a verdict with evidence.
 
 ${VERDICTS}
 
@@ -224,7 +225,7 @@ ${VERDICTS}
 
 How to attack each verdict:
 - Missing: search hard for an implementation the reviewer missed (other names, older RFP vocabulary, store actions, seed data, demo panel, shared components). If found, correct to Matches/Partial/Contradicts.
-- Partial / Contradicts: check every missing_or_wrong point against both the requirement text and the code. Drop points that are not real; add points the reviewer missed. Decide whether Contradicts is really Partial (nothing wrong, only missing) or vice versa.
+- Partial / Contradicts: check every missing_or_wrong point against both the requirement text and the code (and, where the text is ambiguous, the passages its sources cite). Drop points that are not real; add points the reviewer missed. Decide whether Contradicts is really Partial (nothing wrong, only missing) or vice versa.
 - Matches: re-check EVERY Matches item whose status is Confirmed, and at least half of the rest. Look for acceptance criteria not satisfied or behaviour that has quietly changed. A false Matches hides work; treat it as seriously as a false gap.
 - OutOfScope: challenge it: could a demo-trigger button represent it? If so, re-grade and propose the trigger.
 - Grouping: confirm the body states no rule of its own.

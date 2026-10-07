@@ -96,7 +96,8 @@ Not the place to edit requirements:
   that affect a scripted beat must be mirrored here.
 - **RFP** — `REQ/reference/RFP.md` (the original RFP the prototype was built against, superseded by
   the catalogue for the real system's requirements); its PDF is `REQ/artifacts/files/` (artifact
-  AR-15). `docs/rfp-reference/` keeps only the Stratos full-document PDF. Other evidence not cited by
+  AR-15). Our Stratos response PDF is artifact AR-36, also in `REQ/artifacts/files/` (sources cite it as
+  `RFP response p.N`). Other evidence not cited by
   the catalogue (contract fee schedules) is in `docs/discovery-reference/Data files/`.
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
 - **Assets** — `docs/assets/` (the AA logo).

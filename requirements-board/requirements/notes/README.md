@@ -21,7 +21,8 @@ sources:
 ```
 
 `Notes <date> · <slug in words>` resolves to `notes/<date>-<slug>.md`. Add `#n` to point at a
-numbered point inside the note (`"Notes 2026-10-02 · stakeholder workshop #3"`).
+numbered point inside the note (`"Notes 2026-10-02 · stakeholder workshop #3"`), and the board opens
+the note at that point.
 
 ## Notes and transcripts are artifacts
 
@@ -30,20 +31,28 @@ artifact (`../artifacts/AR-nn.md`, kind `note` or `transcript`), so the Requirem
 on its Artifacts tab and an item can link straight to a spot in it: a heading
 (`AR-11#questions-answered`), a line range as the notes cite transcripts (`AR-04#L27-33`), or a
 named highlight. When you file a new note or transcript, register it the same way (the
-`add-artifact` skill; `--date` is the day of the session). The note stays where it is: the
+`add-artifact` skill; `--date` is the day of the session). A transcript also takes `--cited-as` with
+the names sources use for it (`Transcript <date> · <name>`, `Recording <date> · <name>`), so
+`"Transcript <date> · <name> L27-33"` opens those lines. The note stays where it is: the
 artifact only points at it.
 
-## Older citations
+## How a citation opens its spot
 
-`2026-09-24-source-notes.md` predates this convention. These existing citation shapes all resolve
-to it:
+The board opens each source at the spot it cites (SCHEMA.md, Sources). `Notes <date> · <words> #n`
+needs nothing set up: the words find the file, `#n` the point. For that, **points are numbered list
+items at the very start of a line** (`16. **Title.** ...`, continuation lines indented), numbered once
+across the whole note, never restarting per section, never written as headings or a bold `**16.**`.
+Several at once: `#2 #16`.
 
-| Citation | Section of `2026-09-24-source-notes.md` |
+`2026-09-24-source-notes.md` (AR-09) predates the convention; its `cited_as` maps the older shapes:
+
+| Citation | Opens |
 | --- | --- |
-| `Meeting notes 2026-09 (AA lead administrator)` | Meeting notes (AA lead administrator) |
-| `Diagram ...` | Future-state diagrams supplied |
-| `Q&A 2026-09-24 #n` | Q&A with Donald, 2026-09-24, point n |
-| `Data files (...)` | `../../../docs/discovery-reference/Data files/` (fee schedules); NZSA RVG 2021 is in `../artifacts/files/` |
+| `Q&A 2026-09-24 #n` | point n of its "Q&A with Donald, 2026-09-24" section (its numbering restarts there) |
+| `Meeting notes 2026-09 (AA lead administrator)` | its "Meeting notes (AA lead administrator)" section |
+| `Diagram: <name>` | the current drawing of that diagram (AR-17 to AR-24), not the description here |
+| `Data files (...)` | the NZSA RVG 2021 (AR-16); the fee schedules are in `../../../docs/discovery-reference/Data files/` |
+| `Audit 2026-09-24 #n` | nothing (no audit file exists): plain text |
 
 ## No known source
 
