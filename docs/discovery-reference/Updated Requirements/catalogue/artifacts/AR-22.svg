@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5458 374" width="5458" height="374" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Booking and List lifecycle</title>
+<rect x="0" y="0" width="5458" height="374" rx="0" fill="#F3F6FA"/>
+<rect id="draft" x="20" y="20" width="1106" height="334" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="38" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">DRAFT · no anaesthetist yet</text>
+<rect id="active" x="1174" y="20" width="2072" height="334" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="1192" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">ACTIVE · anaesthetist assigned</text>
+<rect id="submitted" x="3294" y="20" width="1196" height="334" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="3312" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">SUBMITTED</text>
+<rect id="authorised" x="4538" y="20" width="900" height="334" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="4556" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">AUTHORISED</text>
+<path d="M366 125.0 H422" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M622 125.0 H678" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M846 125.0 H942" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1110 125.0 H1190" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1358 125.0 H1414" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1582 125.0 H1638" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1806 125.0 H1862" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2030 125.0 H2086" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2254 125.0 H2310" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2478 125.0 H2574" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2742 125.0 H2798" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2966 125.0 H3062" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3230 125.0 H3310" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3478 125.0 H3534" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3702 125.0 H3758" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3986 125.0 H4042" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4210 125.0 H4306" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4474 125.0 H4554" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4722 125.0 H4778" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4974 125.0 H5030" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5198 125.0 H5254" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2394.0 180 V214 Q2394.0 224 2384.0 224 H2068.0 Q2058.0 224 2058.0 214 V125.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2882.0 180 V252" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2794.0 294.0 H2780.0 Q2770.0 294.0 2770.0 284.0 V125.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4126.0 180 V284.0 Q4126.0 294.0 4136.0 294.0 H4306.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4390.0 252 V180" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M762.0 180 V252" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1274.0 252 V180" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="draft-arises" x="36" y="70" width="330" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="90.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Draft List arises</text>
+<text x="50" y="114.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Office takes a request from a surgeon's room</text>
+<text x="50" y="131.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Anaesthetist moves a List to the office</text>
+<text x="50" y="148.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Recurring booking lands on an unavailable Slot</text>
+<text x="50" y="165.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Reschedule from a hospital feed hits a clash</text>
+<rect id="draft-flagged" x="422" y="70" width="200" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="436" y="98.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Shown as unassigned</text>
+<text x="436" y="117.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">in the Admin App</text>
+<text x="436" y="141.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Bookings can still be</text>
+<text x="436" y="158.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">added while it waits</text>
+<rect id="anaesthetist-found" x="678" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="762.0" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">Anaesthetist</text>
+<text x="762.0" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">found?</text>
+<rect id="draft-assigned" x="942" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="956" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Admin assigns</text>
+<text x="956" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">an anaesthetist</text>
+<rect id="active-list" x="1190" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1204" y="99.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Active List</text>
+<text x="1204" y="123.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Anaesthetist, surgeon,</text>
+<text x="1204" y="140.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">hospital, day and</text>
+<text x="1204" y="157.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">session all set</text>
+<rect id="booking-created" x="1414" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1428" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Booking created</text>
+<rect id="booking-editable" x="1638" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1652" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Booking remains</text>
+<text x="1652" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">editable</text>
+<rect id="procedure-done" x="1862" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1876" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure takes</text>
+<text x="1876" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">place</text>
+<rect id="finalise-procedure" x="2086" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2100" y="99.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
+<text x="2100" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">finalises the</text>
+<text x="2100" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure and</text>
+<text x="2100" y="156.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">billing details</text>
+<rect id="billing-data-check" x="2310" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="2394.0" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">Minimum billing</text>
+<text x="2394.0" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">data present?</text>
+<rect id="booking-complete" x="2574" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2588" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
+<text x="2588" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">marks the</text>
+<text x="2588" y="146.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Booking complete</text>
+<rect id="all-complete-check" x="2798" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="2882.0" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">All Bookings on</text>
+<text x="2882.0" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">the List</text>
+<text x="2882.0" y="146.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">complete?</text>
+<rect id="submit-list" x="3062" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3076" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
+<text x="3076" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">submits the List</text>
+<rect id="edit-access-removed" x="3310" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3324" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist loses</text>
+<text x="3324" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">edit access</text>
+<rect id="still-visible" x="3534" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3548" y="107.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">List stays visible</text>
+<text x="3548" y="131.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Marked 'completed,</text>
+<text x="3548" y="148.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">unbilled' in the app</text>
+<rect id="office-review" x="3758" y="70" width="228" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3772" y="89.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Office reviews</text>
+<text x="3772" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">the Bookings</text>
+<text x="3772" y="132.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Approves each Procedure's</text>
+<text x="3772" y="149.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Contract, checks insurer</text>
+<text x="3772" y="166.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">details and references</text>
+<rect id="corrections-check" x="4042" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="4126.0" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">Corrections</text>
+<text x="4126.0" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">needed?</text>
+<rect id="authorise-list" x="4306" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="4320" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Office authorises</text>
+<text x="4320" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">the List</text>
+<rect id="bookings-locked" x="4554" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="4568" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Bookings,</text>
+<text x="4568" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedures and</text>
+<text x="4568" y="146.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Contracts locked</text>
+<rect id="list-to-engine" x="4778" y="70" width="196" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="4792" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Whole List passed to</text>
+<text x="4792" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">the Billing/Invoice</text>
+<text x="4792" y="146.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Engine</text>
+<rect id="engine-processes" x="5030" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="5044" y="108.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Engine processes</text>
+<text x="5044" y="127.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">each Booking and</text>
+<text x="5044" y="146.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">its Procedures</text>
+<rect id="invoices-generated" x="5254" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="5268" y="99.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Invoices generated:</text>
+<text x="5268" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">one per billable</text>
+<text x="5268" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">party in each</text>
+<text x="5268" y="156.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Booking</text>
+<rect id="complete-remaining" x="2794.0" y="252" width="176" height="84" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2808.0" y="277.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Complete or</text>
+<text x="2808.0" y="296.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">correct the other</text>
+<text x="2808.0" y="315.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Bookings</text>
+<rect id="draft-removed" x="664.0" y="252" width="196" height="84" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="678.0" y="276.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Removed or re-dated</text>
+<text x="678.0" y="300.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Request cancelled, or</text>
+<text x="678.0" y="317.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">no one can be found</text>
+<rect id="created-assigned" x="1190.0" y="252" width="168" height="84" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1204.0" y="268.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Or set up assigned</text>
+<text x="1204.0" y="292.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">From a recurring</text>
+<text x="1204.0" y="309.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">booking, the office</text>
+<text x="1204.0" y="326.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">or the anaesthetist</text>
+<rect id="office-corrects" x="4306.0" y="252" width="168" height="84" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="4320.0" y="277.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Office corrects</text>
+<text x="4320.0" y="296.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">the Booking</text>
+<text x="4320.0" y="315.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">directly</text>
+<path d="M1662 180 V294.0 H1684" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="amend-or-move" x="1684" y="256" width="170" height="76" rx="0" fill="none"/>
+<path d="M1694 256 H1684 V332 H1694" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1700" y="278" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Booking may be amended</text>
+<text x="1700" y="296" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">or moved until the List</text>
+<text x="1700" y="314" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">is submitted</text>
+<circle cx="394.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M390.0 118.0 L398.0 125.0 L390.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="650.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M646.0 118.0 L654.0 125.0 L646.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="914" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M910 118.0 L918 125.0 L910 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1162.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M1158.0 118.0 L1166.0 125.0 L1158.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1386.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M1382.0 118.0 L1390.0 125.0 L1382.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1610.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M1606.0 118.0 L1614.0 125.0 L1606.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1834.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M1830.0 118.0 L1838.0 125.0 L1830.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2058.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M2054.0 118.0 L2062.0 125.0 L2054.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2282.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M2278.0 118.0 L2286.0 125.0 L2278.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2546" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M2542 118.0 L2550 125.0 L2542 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2770.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M2766.0 118.0 L2774.0 125.0 L2766.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3034" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M3030 118.0 L3038 125.0 L3030 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3282.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M3278.0 118.0 L3286.0 125.0 L3278.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3506.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M3502.0 118.0 L3510.0 125.0 L3502.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3730.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M3726.0 118.0 L3734.0 125.0 L3726.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4014.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M4010.0 118.0 L4018.0 125.0 L4010.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4278" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M4274 118.0 L4282 125.0 L4274 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4526.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M4522.0 118.0 L4530.0 125.0 L4522.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4750.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M4746.0 118.0 L4754.0 125.0 L4746.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="5002.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M4998.0 118.0 L5006.0 125.0 L4998.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="5226.0" cy="125.0" r="15" fill="#3B8FD6"/>
+<path d="M5222.0 118.0 L5230.0 125.0 L5222.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4236.0" cy="294.0" r="15" fill="#3B8FD6"/>
+<path d="M4232.0 287.0 L4240.0 294.0 L4232.0 301.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4390.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M4383.0 220.0 L4390.0 212.0 L4397.0 220.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1274.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M1267.0 220.0 L1274.0 212.0 L1281.0 220.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="854.0" y="114.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="876" y="129.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect x="2486.0" y="114.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2508" y="129.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect x="2974.0" y="114.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2996" y="129.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect x="4218.0" y="114.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="4240" y="129.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+<rect x="2204.0" y="213" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2226.0" y="228.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+<rect x="2860.0" y="205.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2882.0" y="220.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+<rect x="4104.0" y="226.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="4126.0" y="241.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect x="740.0" y="205.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="762.0" y="220.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+</svg>

@@ -23,6 +23,16 @@ sources:
 `Notes <date> · <slug in words>` resolves to `notes/<date>-<slug>.md`. Add `#n` to point at a
 numbered point inside the note (`"Notes 2026-10-02 · stakeholder workshop #3"`).
 
+## Notes and transcripts are artifacts
+
+Every note here, and every transcript in `../../../Meeting Recordings/`, is also registered as an
+artifact (`../artifacts/AR-nn.md`, kind `note` or `transcript`), so the Requirements Board shows it
+on its Artifacts tab and an item can link straight to a spot in it: a heading
+(`AR-11#questions-answered`), a line range as the notes cite transcripts (`AR-04#L27-33`), or a
+named highlight. When you file a new note or transcript, register it the same way (the
+`add-artifact` skill; `--date` is the day of the session). The note stays where it is: the
+artifact only points at it.
+
 ## Older citations
 
 `2026-09-24-source-notes.md` predates this convention. These existing citation shapes all resolve

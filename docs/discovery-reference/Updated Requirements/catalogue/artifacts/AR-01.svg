@@ -1,0 +1,249 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 1760 1090" width="1760" height="1090" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<title>How the system works out a price</title>
+<rect x="0" y="0" width="1760" height="1148" rx="0" fill="#F3F6FA"/>
+<circle cx="440.0" cy="389.0" r="15" fill="#3B8FD6"/>
+<path d="M436.0 382.0 L444.0 389.0 L436.0 396.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="880.0" cy="389.0" r="15" fill="#3B8FD6"/>
+<path d="M876.0 382.0 L884.0 389.0 L876.0 396.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1320.0" cy="389.0" r="15" fill="#3B8FD6"/>
+<path d="M1316.0 382.0 L1324.0 389.0 L1316.0 396.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="20" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="54" cy="114" r="16" fill="#3B8FD6"/>
+<text x="54" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="80" y="122" font-size="21" font-weight="800" fill="#1B1B1F" text-anchor="start">What goes in</text>
+<text x="38" y="152" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Each procedure on a booking is priced on its own,</text>
+<text x="38" y="169" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">from these inputs.</text>
+<rect x="36" y="182" width="368" height="62" rx="9" fill="#E9F5EC" stroke="#9FD0AE" stroke-width="1.2"/>
+<text x="50" y="207" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">RVG group · H3 Moderate</text>
+<text x="50" y="229" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">6 base units · 0 modifier units, as published</text>
+<path d="M70 248 V269" stroke="#55555E" stroke-width="1.8"/><path d="M64 268 L76 268 L70 276 z" fill="#55555E"/>
+<text x="86" y="266" font-size="12" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the procedure inherits from its group</text>
+<rect x="36" y="280" width="368" height="62" rx="9" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.2"/>
+<text x="50" y="305" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure · Face-lift</text>
+<text x="50" y="327" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Its own units are blank, so it inherits 6 and 0</text>
+<rect x="36" y="358" width="368" height="134" rx="9" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="50" y="383" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Contract · Merivale Plastics</text>
+<rect x="50.0" y="395" width="104.0" height="22" rx="11.0" fill="#DDD4FA" stroke="#B9AAEE" stroke-width="1.2"/>
+<text x="102.0" y="410.14" font-size="11.5" font-weight="600" fill="#4B3A8C" text-anchor="middle">Third party</text>
+<rect x="168.0" y="395" width="104.0" height="22" rx="11.0" fill="#D9D9E0"/>
+<text x="220.0" y="410.14" font-size="11.5" font-weight="600" fill="#3C3C46" text-anchor="middle">No, locked</text>
+<rect x="286.0" y="395" width="104.0" height="22" rx="11.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="338.0" y="410.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<text x="50" y="438" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Chosen on the booking. Its holder decides who is</text>
+<text x="50" y="454" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">billed and whether the price can change. If none</text>
+<text x="50" y="470" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">applies: No contract (RVG), offered for every procedure.</text>
+<rect x="36" y="508" width="368" height="62" rx="9" fill="#FFFFFF" stroke="#9C9CA8" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="50" y="533" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure date</text>
+<text x="50" y="555" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Picks the contract version valid on that day</text>
+<rect x="36" y="586" width="368" height="98" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<text x="50" y="611" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Recorded on the card</text>
+<text x="50" y="633" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Base, time and modifier units (BTM), plus a note</text>
+<text x="50" y="649" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">when modifiers are claimed. A typed price or</text>
+<text x="50" y="665" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">discount, with a reason, on adjustable contracts.</text>
+<rect x="460" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="494" cy="114" r="16" fill="#3B8FD6"/>
+<text x="494" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="520" y="122" font-size="21" font-weight="800" fill="#1B1B1F" text-anchor="start">Find starting values</text>
+<text x="478" y="152" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Look down the layers. For each field, the first</text>
+<text x="478" y="169" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">layer with a value wins.</text>
+<text x="664.0" y="192" font-size="11.5" font-weight="700" fill="#8A8A96" text-anchor="middle">Base</text>
+<text x="732.0" y="192" font-size="11.5" font-weight="700" fill="#8A8A96" text-anchor="middle">Modifier</text>
+<text x="800.0" y="192" font-size="11.5" font-weight="700" fill="#8A8A96" text-anchor="middle">Fixed price</text>
+<rect x="476" y="202" width="368" height="58" rx="9" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="490" y="227" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">1  Contract line</text>
+<text x="507" y="246" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">for Face-lift</text>
+<rect x="634.0" y="215" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="664.0" y="236" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="702.0" y="215" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="732.0" y="236" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="770.0" y="215" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#2E9E5B" stroke-width="2"/>
+<text x="800.0" y="236" font-size="13.5" font-weight="800" fill="#1D6B3B" text-anchor="middle">$3,565</text>
+<rect x="476" y="268" width="368" height="58" rx="9" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="490" y="293" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">2  Contract line</text>
+<text x="507" y="312" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">for group H3</text>
+<rect x="634.0" y="281" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="664.0" y="302" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="702.0" y="281" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="732.0" y="302" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="770.0" y="281" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="800.0" y="302" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="476" y="334" width="368" height="58" rx="9" fill="#FFE9C2" stroke="#E9AE45" stroke-width="1.2"/>
+<text x="490" y="359" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">3  Procedure</text>
+<text x="507" y="378" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">Face-lift</text>
+<rect x="634.0" y="347" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="664.0" y="368" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="702.0" y="347" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="732.0" y="368" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">–</text>
+<rect x="770.0" y="347" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="800.0" y="368" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">n/a</text>
+<rect x="476" y="400" width="368" height="58" rx="9" fill="#E9F5EC" stroke="#9FD0AE" stroke-width="1.2"/>
+<text x="490" y="425" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">4  RVG group</text>
+<text x="507" y="444" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">H3, always set</text>
+<rect x="634.0" y="413" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#2E9E5B" stroke-width="2"/>
+<text x="664.0" y="434" font-size="13.5" font-weight="800" fill="#1D6B3B" text-anchor="middle">6</text>
+<rect x="702.0" y="413" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#2E9E5B" stroke-width="2"/>
+<text x="732.0" y="434" font-size="13.5" font-weight="800" fill="#1D6B3B" text-anchor="middle">0</text>
+<rect x="770.0" y="413" width="60" height="32" rx="7" fill="#FFFFFF" stroke="#E2E2EA" stroke-width="1.2"/>
+<text x="800.0" y="434" font-size="12.5" font-weight="400" fill="#A8A8B2" text-anchor="middle">n/a</text>
+<path d="M660.0 470 V487" stroke="#55555E" stroke-width="1.8"/><path d="M654.0 486 L666.0 486 L660.0 494 z" fill="#55555E"/>
+<rect x="476" y="500" width="368" height="60" rx="9" fill="#FFFFFF" stroke="#2E9E5B" stroke-width="2"/>
+<text x="490" y="535" font-size="14.5" font-weight="800" fill="#1B1B1F" text-anchor="start">Starting values</text>
+<text x="664.0" y="535" font-size="15" font-weight="800" fill="#1D6B3B" text-anchor="middle">6</text>
+<text x="732.0" y="535" font-size="15" font-weight="800" fill="#1D6B3B" text-anchor="middle">0</text>
+<text x="800.0" y="535" font-size="15" font-weight="800" fill="#1D6B3B" text-anchor="middle">$3,565</text>
+<text x="478" y="590" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Blank means inherit; 0 is a value that stops the look.</text>
+<text x="478" y="607" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Units are only starting values: the anaesthetist</text>
+<text x="478" y="624" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">can change them on the card.</text>
+<text x="478" y="641" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">A fixed price only ever comes from a contract line.</text>
+<text x="478" y="658" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Dormant for now: contract unit rate, discount %.</text>
+<rect x="900" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="934" cy="114" r="16" fill="#3B8FD6"/>
+<text x="934" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="960" y="122" font-size="21" font-weight="800" fill="#1B1B1F" text-anchor="start">Work out the price</text>
+<text x="918" y="152" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Top to bottom, the first rule that applies sets</text>
+<text x="918" y="169" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">the price. Merivale stops at rule 2.</text>
+<rect x="916" y="182" width="368" height="82" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="942" cy="208" r="12" fill="#8A95A2"/>
+<text x="942" y="213" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">0</text>
+<text x="964" y="213" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Office override at review</text>
+<text x="964" y="235" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The office's price, with a reason. Works even</text>
+<text x="964" y="251" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">on a locked contract.</text>
+<rect x="916" y="274" width="368" height="82" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="942" cy="300" r="12" fill="#8A95A2"/>
+<text x="942" y="305" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="964" y="305" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist typed a price</text>
+<text x="964" y="327" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Adjustable contracts only: No contract (RVG)</text>
+<text x="964" y="343" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">or an anaesthetist's own price list.</text>
+<rect x="916" y="366" width="368" height="82" rx="9" fill="#F4FBF6" stroke="#2E9E5B" stroke-width="2"/>
+<circle cx="942" cy="392" r="12" fill="#2E9E5B"/>
+<text x="942" y="397" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="964" y="397" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Contract has a fixed price</text>
+<text x="964" y="419" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">That price. The recorded BTM is kept for</text>
+<text x="964" y="435" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">reference only.</text>
+<text x="1270" y="397" font-size="13.5" font-weight="700" fill="#1D6B3B" text-anchor="end">Merivale</text>
+<rect x="916" y="458" width="368" height="82" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="942" cy="484" r="12" fill="#8A95A2"/>
+<text x="942" y="489" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="964" y="489" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Otherwise, calculate</text>
+<text x="964" y="511" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">(Base + Time + Modifier) × the anaesthetist's</text>
+<text x="964" y="527" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">own unit rate, less any discount % entered.</text>
+<rect id="rejected" x="916" y="564" width="368" height="112" rx="0" fill="none"/>
+<path d="M926 564 H916 V676 H926" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="932" y="586" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Rejected, never guessed</text>
+<text x="932" y="604" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The booking is rejected for correction when:</text>
+<text x="932" y="622" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• a price is typed on a locked contract</text>
+<text x="932" y="640" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• BTM is missing and no fixed price applies</text>
+<text x="932" y="658" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">• the contract is not valid on the procedure date</text>
+<rect x="1340" y="78" width="400" height="622" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<circle cx="1374" cy="114" r="16" fill="#3B8FD6"/>
+<text x="1374" y="120" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="1400" y="122" font-size="21" font-weight="800" fill="#1B1B1F" text-anchor="start">Bill it, keep a record</text>
+<text x="1358" y="152" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The contract decides who gets the invoice.</text>
+<rect x="1356" y="166" width="368" height="58" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<text x="1370" y="191" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">No contract (RVG)</text>
+<text x="1370" y="210" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">the default contract</text>
+<rect x="1626.0" y="184" width="84" height="22" rx="11.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1668" y="199.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="1356" y="234" width="368" height="58" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<text x="1370" y="259" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Holder pays AA</text>
+<text x="1370" y="278" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">insurers, hospitals</text>
+<rect x="1626.0" y="252" width="84" height="22" rx="11.0" fill="#D3EFEC" stroke="#7CC6BE" stroke-width="1.2"/>
+<text x="1668" y="267.32" font-size="12" font-weight="600" fill="#0D5F57" text-anchor="middle">Hospital</text>
+<rect x="1534.0" y="252" width="84" height="22" rx="11.0" fill="#DDE3F4" stroke="#9AA9D6" stroke-width="1.2"/>
+<text x="1576" y="267.32" font-size="12" font-weight="600" fill="#2E3F7A" text-anchor="middle">Insurer</text>
+<rect x="1356" y="302" width="368" height="58" rx="9" fill="#F4FBF6" stroke="#2E9E5B" stroke-width="2"/>
+<text x="1370" y="327" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Holder sets the price</text>
+<text x="1370" y="346" font-size="12" font-weight="400" fill="#55555E" text-anchor="start">surgeon rooms, own price lists</text>
+<rect x="1626.0" y="320" width="84" height="22" rx="11.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1668" y="335.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect id="patient-payer" x="1356" y="376" width="368" height="76" rx="0" fill="none"/>
+<path d="M1366 376 H1356 V452 H1366" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1372" y="398" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Patient: the payer on the booking</text>
+<text x="1372" y="416" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Name and email, prefilled from the patient and</text>
+<text x="1372" y="434" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">editable to a parent or guardian.</text>
+<rect x="1356" y="468" width="368" height="216" rx="9" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
+<text x="1370" y="494" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="start">Snapshot when the List is authorised</text>
+<text x="1370" y="520" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">•</text>
+<text x="1382" y="520" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Procedure and contract version</text>
+<text x="1370" y="539" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">•</text>
+<text x="1382" y="539" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Values used, and the layer each came from</text>
+<text x="1370" y="558" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">•</text>
+<text x="1382" y="558" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Recorded BTM, rate and any discount</text>
+<text x="1370" y="577" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">•</text>
+<text x="1382" y="577" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Price, and the rule that set it</text>
+<text x="1370" y="596" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">•</text>
+<text x="1382" y="596" font-size="12.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Who was billed</text>
+<text x="1370" y="638" font-size="12.5" font-weight="600" fill="#55555E" text-anchor="start">Later changes to the RVG or a contract never</text>
+<text x="1370" y="655" font-size="12.5" font-weight="600" fill="#55555E" text-anchor="start">change an invoice that has been issued.</text>
+<rect x="20" y="716" width="1720" height="364" rx="14" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.2"/>
+<text x="40" y="752" font-size="21" font-weight="800" fill="#1B1B1F" text-anchor="start">Same procedure, different outcomes</text>
+<text x="436" y="752" font-size="14" font-weight="400" fill="#55555E" text-anchor="start">Five Face-lifts (H3) through the same four steps</text>
+<text x="48" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Situation</text>
+<text x="470" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Contract</text>
+<text x="870" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Starting units</text>
+<text x="1100" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Price rule</text>
+<text x="1350" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Price</text>
+<text x="1592" y="784" font-size="12" font-weight="700" fill="#8A8A96" text-anchor="start">Invoice to</text>
+<rect x="36" y="796" width="1688" height="46" rx="8" fill="#F7F9FC" stroke="#E3E8EF" stroke-width="1.2"/>
+<text x="52" y="825" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Surgeon has no arrangement</text>
+<text x="470" y="825" font-size="14.5" font-weight="400" fill="#1B1B1F" text-anchor="start">No contract (RVG)</text>
+<rect x="744.0" y="808" width="96" height="22" rx="11.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="792" y="823.14" font-size="11.5" font-weight="600" fill="#1D6B3B" text-anchor="middle">RVG-style</text>
+<text x="870" y="825" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">6 base, from RVG group H3</text>
+<circle cx="1112" cy="819" r="11" fill="#8A95A2"/>
+<text x="1112" y="824" font-size="12.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="1132" y="825" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Calculated</text>
+<text x="1350" y="825" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">(6 + T + M) × own rate</text>
+<rect x="1582.0" y="807" width="96" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1630" y="823.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="36" y="850" width="1688" height="46" rx="8" fill="#FFFFFF" stroke="#E3E8EF" stroke-width="1.2"/>
+<text x="52" y="879" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Surgeon's fixed-fee schedule</text>
+<text x="470" y="879" font-size="14.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Merivale Plastics</text>
+<rect x="744.0" y="862" width="96" height="22" rx="11.0" fill="#DDD4FA" stroke="#B9AAEE" stroke-width="1.2"/>
+<text x="792" y="877.14" font-size="11.5" font-weight="600" fill="#4B3A8C" text-anchor="middle">Third party</text>
+<text x="870" y="879" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">6 base, reference only</text>
+<circle cx="1112" cy="873" r="11" fill="#2E9E5B"/>
+<text x="1112" y="878" font-size="12.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="1132" y="879" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Contract fixed price</text>
+<text x="1350" y="879" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">$3,565</text>
+<rect x="1582.0" y="861" width="96" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1630" y="877.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="36" y="904" width="1688" height="46" rx="8" fill="#F7F9FC" stroke="#E3E8EF" stroke-width="1.2"/>
+<text x="52" y="933" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Insurer pays AA directly</text>
+<text x="470" y="933" font-size="14.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Southern Cross Health Society</text>
+<rect x="744.0" y="916" width="96" height="22" rx="11.0" fill="#DDD4FA" stroke="#B9AAEE" stroke-width="1.2"/>
+<text x="792" y="931.14" font-size="11.5" font-weight="600" fill="#4B3A8C" text-anchor="middle">Third party</text>
+<text x="870" y="933" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">6 base, reference only</text>
+<circle cx="1112" cy="927" r="11" fill="#2E9E5B"/>
+<text x="1112" y="932" font-size="12.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="1132" y="933" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Contract fixed price</text>
+<text x="1350" y="933" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Agreed price</text>
+<rect x="1582.0" y="915" width="96" height="24" rx="12.0" fill="#DDE3F4" stroke="#9AA9D6" stroke-width="1.2"/>
+<text x="1630" y="931.32" font-size="12" font-weight="600" fill="#2E3F7A" text-anchor="middle">Insurer</text>
+<rect x="36" y="958" width="1688" height="46" rx="8" fill="#FFFFFF" stroke="#E3E8EF" stroke-width="1.2"/>
+<text x="52" y="987" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Colleague's family, no charge</text>
+<text x="470" y="987" font-size="14.5" font-weight="400" fill="#1B1B1F" text-anchor="start">No contract (RVG)</text>
+<rect x="744.0" y="970" width="96" height="22" rx="11.0" fill="#C4EDD2" stroke="#8FCBA2" stroke-width="1.2"/>
+<text x="792" y="985.14" font-size="11.5" font-weight="600" fill="#1D6B3B" text-anchor="middle">RVG-style</text>
+<text x="870" y="987" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">6 base, from RVG group H3</text>
+<circle cx="1112" cy="981" r="11" fill="#8A95A2"/>
+<text x="1112" y="986" font-size="12.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="1132" y="987" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Anaesthetist's price</text>
+<text x="1350" y="987" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">$0, no-charge invoice</text>
+<rect x="1582.0" y="969" width="96" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1630" y="985.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="36" y="1012" width="1688" height="46" rx="8" fill="#F7F9FC" stroke="#E3E8EF" stroke-width="1.2"/>
+<text x="52" y="1041" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Prepaid cosmetic list (proposed)</text>
+<text x="470" y="1041" font-size="14.5" font-weight="400" fill="#1B1B1F" text-anchor="start">Dr B. Smith prepaid list</text>
+<rect x="744.0" y="1024" width="96" height="22" rx="11.0" fill="#F8D4E6" stroke="#E2A3C4" stroke-width="1.2"/>
+<text x="792" y="1039.14" font-size="11.5" font-weight="600" fill="#93305F" text-anchor="middle">First party</text>
+<text x="870" y="1041" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">6 base, reference only</text>
+<circle cx="1112" cy="1035" r="11" fill="#2E9E5B"/>
+<text x="1112" y="1040" font-size="12.5" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="1132" y="1041" font-size="14" font-weight="400" fill="#1B1B1F" text-anchor="start">Contract fixed price</text>
+<text x="1350" y="1041" font-size="14.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Prepaid amount, unless raised</text>
+<rect x="1582.0" y="1023" width="96" height="24" rx="12.0" fill="#FFE1C4" stroke="#F0A868" stroke-width="1.2"/>
+<text x="1630" y="1039.32" font-size="12" font-weight="600" fill="#9A4A0B" text-anchor="middle">Patient</text>
+<rect x="20" y="1094" width="1720" height="40" rx="10" fill="#FFF5C4" stroke="#EFD46A" stroke-width="1.2"/>
+<text x="880.0" y="1121" font-size="19" fill="#1B1B1F" text-anchor="middle"><tspan font-weight="800">Flow:</tspan> Procedure + contract + date → starting values → price → invoice and snapshot<tspan dx="14">·</tspan><tspan dx="14" font-weight="800">Still open:</tspan> multi-procedure rule, prepaid amounts, modifiers</text>
+</svg>

@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4392 392" width="4392" height="392" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Billing to Xero to Payment lifecycle</title>
+<rect x="0" y="0" width="4392" height="392" rx="0" fill="#F3F6FA"/>
+<rect id="engine" x="20" y="20" width="1592" height="352" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="38" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">1. Billing/Invoice Engine</text>
+<rect id="xero" x="1668" y="20" width="576" height="352" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="1686" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">2. Xero records</text>
+<rect id="payment" x="2300" y="20" width="1566" height="352" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="2318" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">3. Payment detection</text>
+<rect id="payout" x="3922" y="20" width="450" height="352" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="3940" y="49" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">4. Anaesthetist payment</text>
+<path d="M204 130.0 H260" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M428 130.0 H484" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M652 130.0 H708" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M888 130.0 H944" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1120 130.0 H1176" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1356 130.0 H1412" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1596 130.0 H1764" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1960 130.0 H2052" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2228 130.0 H2316" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2500 130.0 H2556" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2712 130.0 H2840" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3016 130.0 H3072" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3258 130.0 H3314" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3470 130.0 H3598" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3802 130.0 H3938" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4114 130.0 H4170" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1700 130.0 V284.0 Q1700 294.0 1710 294.0 H1764" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1960 294.0 H2052" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1978 130.0 V284.0 Q1978 294.0 1988 294.0 H2052" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2634.0 190 V284.0 Q2634.0 294.0 2644.0 294.0 H2840" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3016 294.0 H3034.0 Q3044.0 294.0 3044.0 284.0 V130.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3392.0 190 V284.0 Q3392.0 294.0 3402.0 294.0 H3598" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3802 294.0 H3824 Q3834 294.0 3834 284.0 V130.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="list-authorised" x="36" y="70" width="168" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">List AUTHORISED</text>
+<rect id="engine-receives" x="260" y="70" width="168" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="274" y="123.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Engine receives</text>
+<text x="274" y="142.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">the whole List</text>
+<rect id="each-booking" x="484" y="70" width="168" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="498" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Works through</text>
+<text x="498" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">each Booking and</text>
+<text x="498" y="151.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">its Procedures</text>
+<rect id="billable-party" x="708" y="70" width="180" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="722" y="104.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Takes each</text>
+<text x="722" y="123.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Procedure's billable</text>
+<text x="722" y="142.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">party from its</text>
+<text x="722" y="161.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Contract</text>
+<rect id="one-invoice-per-party" x="944" y="70" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="958" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">One invoice per</text>
+<text x="958" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">billable party per</text>
+<text x="958" y="151.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Booking</text>
+<rect id="ledger-pair" x="1176" y="70" width="180" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1190" y="102.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Creates a linked</text>
+<text x="1190" y="121.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">receivable and</text>
+<text x="1190" y="140.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">payable</text>
+<text x="1190" y="164.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">In the internal ledger</text>
+<rect id="generate-send" x="1412" y="70" width="184" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1426" y="94.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Generates and</text>
+<text x="1426" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">sends the invoices</text>
+<text x="1426" y="137.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Emailed to the invoice</text>
+<text x="1426" y="154.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">email, or queued for</text>
+<text x="1426" y="171.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">portal upload</text>
+<rect id="create-accrec" x="1764" y="70" width="196" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1778" y="103.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Create ACCREC</text>
+<text x="1778" y="122.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">to the billable party</text>
+<text x="1778" y="146.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Engine's invoice</text>
+<text x="1778" y="163.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">number in InvoiceNumber</text>
+<rect id="accrec-outstanding" x="2052" y="70" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2066" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">ACCREC</text>
+<text x="2066" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">outstanding,</text>
+<text x="2066" y="151.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">awaiting payment</text>
+<rect id="payment-recorded" x="2316" y="70" width="184" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2330" y="102.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Payment recorded</text>
+<text x="2330" y="121.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">against the ACCREC</text>
+<text x="2330" y="140.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">in Xero</text>
+<text x="2330" y="164.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Paid into AA's account</text>
+<rect id="detection-check" x="2556" y="70" width="156" height="120" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="2634.0" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">How is</text>
+<text x="2634.0" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">payment</text>
+<text x="2634.0" y="151.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">detected?</text>
+<rect id="webhook" x="2840" y="70" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2854" y="103.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Xero INVOICE</text>
+<text x="2854" y="122.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">webhook</text>
+<text x="2854" y="146.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Engine fetches the</text>
+<text x="2854" y="163.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">invoice and checks it</text>
+<rect id="payment-handler" x="3072" y="70" width="186" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3086" y="94.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Common idempotent</text>
+<text x="3086" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">payment handler</text>
+<text x="3086" y="137.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Keyed by InvoiceID;</text>
+<text x="3086" y="154.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">reconciles the receipt</text>
+<text x="3086" y="171.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">to the internal ledger</text>
+<rect id="amount-check" x="3314" y="70" width="156" height="120" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="3392.0" y="123.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">Payment</text>
+<text x="3392.0" y="142.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="middle">amount?</text>
+<rect id="authorise-full" x="3598" y="70" width="204" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3612" y="102.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Set the linked</text>
+<text x="3612" y="121.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">ACCPAY to</text>
+<text x="3612" y="140.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">AUTHORISED</text>
+<text x="3612" y="164.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">For the whole amount</text>
+<rect id="payables-run" x="3938" y="70" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3952" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">ACCPAY included</text>
+<text x="3952" y="132.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">in the next</text>
+<text x="3952" y="151.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">payables run</text>
+<rect id="disbursed" x="4170" y="70" width="186" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="4184" y="94.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Payment disbursed</text>
+<text x="4184" y="113.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">to the anaesthetist</text>
+<text x="4184" y="137.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Paid from Xero; the</text>
+<text x="4184" y="154.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">engine records it on</text>
+<text x="4184" y="171.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">the internal ledger</text>
+<rect id="create-accpay" x="1764" y="234" width="196" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1778" y="267.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Create linked ACCPAY</text>
+<text x="1778" y="286.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">to the anaesthetist</text>
+<text x="1778" y="310.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">DRAFT · buyer-created</text>
+<text x="1778" y="327.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">tax invoice</text>
+<rect id="store-ids" x="2052" y="234" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2066" y="267.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Store both Xero IDs</text>
+<text x="2066" y="286.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">on the ledger record</text>
+<text x="2066" y="310.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Xero doesn't link the</text>
+<text x="2066" y="327.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">pair; the engine does</text>
+<rect id="poll" x="2840" y="234" width="176" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2854" y="267.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Daily reconciliation</text>
+<text x="2854" y="286.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">poll</text>
+<text x="2854" y="310.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Safety net if a</text>
+<text x="2854" y="327.4" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">webhook is missed</text>
+<rect id="authorise-part" x="3598" y="234" width="204" height="120" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3612" y="257.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Authorise a payable</text>
+<text x="3612" y="276.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">for exactly the</text>
+<text x="3612" y="295.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">amount received</text>
+<text x="3612" y="319.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The rest stays</text>
+<text x="3612" y="336.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">outstanding on the ACCREC</text>
+<path d="M1202 190 V294.0 H1224" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="ledger-views-note" x="1224" y="249.0" width="250" height="90" rx="0" fill="none"/>
+<path d="M1234 249.0 H1224 V339.0 H1234" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1240" y="271.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">The internal ledger is the source for</text>
+<text x="1240" y="289.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the office's monitoring and the</text>
+<text x="1240" y="307.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">anaesthetist's balance views.</text>
+<text x="1240" y="325.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Payments update it.</text>
+<path d="M2342 190 V294.0 H2364" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="remittance-note" x="2364" y="258.0" width="220" height="72" rx="0" fill="none"/>
+<path d="M2374 258.0 H2364 V330.0 H2374" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="2380" y="280.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Bulk hospital remittances are</text>
+<text x="2380" y="298.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">matched in Xero's bank</text>
+<text x="2380" y="316.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">reconciliation, by InvoiceNumber</text>
+<rect id="payables-approval-undecided" x="3938" y="252" width="418" height="81" rx="9" fill="#FFF5C4" stroke="#EFD46A" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="3952" y="274" font-size="13" font-weight="800" fill="#1B1B1F" text-anchor="start">Not yet decided</text>
+<text x="3952" y="293" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Whether payables need a separate approval</text>
+<text x="3952" y="310" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">before the run, and the payment day and</text>
+<text x="3952" y="327" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">cycle (OQ-47)</text>
+<circle cx="232.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M228.0 123.0 L236.0 130.0 L228.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="456.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M452.0 123.0 L460.0 130.0 L452.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="680.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M676.0 123.0 L684.0 130.0 L676.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="916.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M912.0 123.0 L920.0 130.0 L912.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1148.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M1144.0 123.0 L1152.0 130.0 L1144.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1384.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M1380.0 123.0 L1388.0 130.0 L1380.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1640.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M1636.0 123.0 L1644.0 130.0 L1636.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2024.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M2020.0 123.0 L2028.0 130.0 L2020.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2272.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M2268.0 123.0 L2276.0 130.0 L2268.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2528.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M2524.0 123.0 L2532.0 130.0 L2524.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2812" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M2808 123.0 L2816 130.0 L2808 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3044.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M3040.0 123.0 L3048.0 130.0 L3040.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3286.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M3282.0 123.0 L3290.0 130.0 L3282.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3570" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M3566 123.0 L3574 130.0 L3566 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3894.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M3890.0 123.0 L3898.0 130.0 L3890.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="4142.0" cy="130.0" r="15" fill="#3B8FD6"/>
+<path d="M4138.0 123.0 L4146.0 130.0 L4138.0 137.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1736" cy="294.0" r="15" fill="#3B8FD6"/>
+<path d="M1732 287.0 L1740 294.0 L1732 301.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2022" cy="294.0" r="15" fill="#3B8FD6"/>
+<path d="M2018 287.0 L2026 294.0 L2018 301.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2745.0" cy="294.0" r="15" fill="#3B8FD6"/>
+<path d="M2741.0 287.0 L2749.0 294.0 L2741.0 301.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3503.0" cy="294.0" r="15" fill="#3B8FD6"/>
+<path d="M3499.0 287.0 L3507.0 294.0 L3499.0 301.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="2717.5" y="119.0" width="85" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2760" y="134.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Primary</text>
+<rect x="3489.0" y="119.0" width="58" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="3518" y="134.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Full</text>
+<rect x="2578.0" y="231.0" width="112" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2634.0" y="246.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Safety net</text>
+<rect x="3349.5" y="231.0" width="85" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="3392.0" y="246.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Partial</text>
+</svg>

@@ -1,0 +1,21 @@
+rvg_code,group_name,base_units,included_modifier,included_units,note,page
+H7A,Neurosurgery,10,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+H7b,Neurosurgery,12,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+H8a,Neurosurgery,12,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+H8b,Neurosurgery,14,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+H9a,Neurosurgery,20,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+H9b,Neurosurgery,22,P1,2,*These Base Units include Loading for Prone Positioning if needed* (+2),7
+S1,SPINE,8,P1,2,These Base Units include loading for prone positioning if needed,9
+S2,SPINE,8,P1,2,These Base Units include loading for prone positioning if needed,9
+S3a,SPINE,10,P1,2,These Base Units include loading for prone positioning if needed,9
+S3b,SPINE,12,P1,2,These Base Units include loading for prone positioning if needed,9
+S4,SPINE,16,P1,2,These Base Units include loading for prone positioning if needed,9
+S5,SPINE,20,P1,2,These Base Units include loading for prone positioning if needed,9
+S6,SPINE,8,P1,2,These Base Units include loading for prone positioning if needed,9
+S7,SPINE,8,P1,2,These Base Units include loading for prone positioning if needed,9
+S8a,SPINE,8,P1,2,These Base Units include loading for prone positioning if needed,9
+S8b,SPINE,10,P1,2,These Base Units include loading for prone positioning if needed,9
+S9a,SPINE,10,P1,2,These Base Units include loading for prone positioning if needed,9
+S9b,SPINE,12,P1,2,These Base Units include loading for prone positioning if needed,9
+S9c,SPINE,14,P1,2,These Base Units include loading for prone positioning if needed,9
+S10,SPINE,18,P1,2,These Base Units include loading for prone positioning if needed,9

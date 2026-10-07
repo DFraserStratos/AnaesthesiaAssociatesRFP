@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3436 691" width="3436" height="691" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>Booking and List update process</title>
+<rect x="0" y="0" width="3436" height="691" rx="0" fill="#F3F6FA"/>
+<rect id="booking-sources" x="20" y="60" width="300" height="565" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="38" y="89" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">Booking sources</text>
+<rect id="matching-screen" x="396" y="60" width="1402" height="565" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="414" y="89" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">Matching screen · Admin App</text>
+<rect id="scheduling-engine" x="1882" y="60" width="1534" height="565" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
+<text x="1900" y="89" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">Scheduling Engine</text>
+<rect id="hospital-systems" x="36" y="106.0" width="268" height="80" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="132.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Current hospital integrations</text>
+<text x="50" y="154.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">St George's and Southern Cross send</text>
+<text x="50" y="171.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">new and changed Lists and Bookings.</text>
+<rect id="other-hospitals" x="36" y="202.66666666666669" width="268" height="63" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="228.66666666666669" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Other hospitals</text>
+<rect x="198.0" y="212.66666666666669" width="92" height="22" rx="11.0" fill="#D9D9E0"/>
+<text x="244.0" y="227.80666666666667" font-size="11.5" font-weight="600" fill="#3C3C46" text-anchor="middle">Future work</text>
+<text x="50" y="250.66666666666669" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Join the same screen later.</text>
+<rect id="surgeons-rooms" x="36" y="282.33333333333337" width="268" height="80" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="308.33333333333337" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Surgeons' rooms</text>
+<rect x="198.0" y="292.33333333333337" width="92" height="22" rx="11.0" fill="#D9D9E0"/>
+<text x="244.0" y="307.47333333333336" font-size="11.5" font-weight="600" fill="#3C3C46" text-anchor="middle">Future work</text>
+<text x="50" y="330.33333333333337" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Emailed PDF Lists, read and</text>
+<text x="50" y="347.33333333333337" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">checked beside the PDF.</text>
+<rect id="aa-office" x="36" y="421.0" width="268" height="80" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="447.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">AA office</text>
+<text x="50" y="469.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Phone and email bookings,</text>
+<text x="50" y="486.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">entered or amended directly.</text>
+<rect id="anaesthetist-entry" x="36" y="515.0" width="268" height="80" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="50" y="541.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
+<text x="50" y="563.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Adds a missing Booking in the</text>
+<text x="50" y="580.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">app; photo capture is future work.</text>
+<path d="M304 146.0 H336 Q346 146.0 346 156.0 V393" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M304 234.16666666666669 H336 Q346 234.16666666666669 346 244.16666666666669 V393" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6"/>
+<path d="M304 322.33333333333337 H336 Q346 322.33333333333337 346 332.33333333333337 V393" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6"/>
+<path d="M346 393 H412" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="379.0" cy="393" r="15" fill="#3B8FD6"/>
+<path d="M375.0 386 L383.0 393 L375.0 400" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M304 461.0 H336 Q346 461.0 346 471.0 V645 Q346 655 356 655 H366" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M304 555.0 H336 Q346 555.0 346 565.0 V645 Q346 655 356 655 H366" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="rows-wait" x="412" y="336.0" width="236" height="114" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="426" y="362.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Rows wait on the screen</text>
+<text x="426" y="384.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">New and changed Lists and</text>
+<text x="426" y="401.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Bookings from each hospital.</text>
+<text x="426" y="418.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Nothing applies until an</text>
+<text x="426" y="435.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">admin decides.</text>
+<rect id="look-for-match" x="700" y="292.5" width="262" height="201" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="714" y="318.5" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Look for a match</text>
+<text x="714" y="340.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The admin opens a row and the</text>
+<text x="714" y="357.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">system proposes a Booking or</text>
+<text x="714" y="374.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">List with the same:</text>
+<rect x="714.0" y="381.5" width="113.0" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="770.5" y="397.82" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Surgeon</text>
+<rect x="835.0" y="381.5" width="113.0" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="891.5" y="397.82" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Hospital</text>
+<rect x="714.0" y="411.5" width="113.0" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="770.5" y="427.82" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Day and session</text>
+<rect x="835.0" y="411.5" width="113.0" height="24" rx="12.0" fill="#E6E5EC"/>
+<text x="891.5" y="427.82" font-size="12" font-weight="600" fill="#3C3C46" text-anchor="middle">Patient NHI</text>
+<text x="714" y="459.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Or the admin searches for</text>
+<text x="714" y="476.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">one by hand.</text>
+<path d="M648 393 H700" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="674.0" cy="393" r="15" fill="#3B8FD6"/>
+<path d="M670.0 386 L678.0 393 L670.0 400" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M962 393 H1014" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="988.0" cy="393" r="15" fill="#3B8FD6"/>
+<path d="M984.0 386 L992.0 393 L984.0 400" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="match-found" x="1014" y="349.5" width="176" height="87" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="1102.0" y="379.4" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">Existing</text>
+<text x="1102.0" y="398.4" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">Booking or List</text>
+<text x="1102.0" y="417.4" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">found?</text>
+<path d="M1190 393 H1220" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1219 393 H1210 Q1220 393 1220 383 V188.0 Q1220 178.0 1230 178.0 H1296" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1219 393 H1210 Q1220 393 1220 403 V449.0 Q1220 459.0 1230 459.0 H1296" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1262.0" cy="178.0" r="15" fill="#3B8FD6"/>
+<path d="M1258.0 171.0 L1266.0 178.0 L1258.0 185.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1262.0" cy="459.0" r="15" fill="#3B8FD6"/>
+<path d="M1258.0 452.0 L1266.0 459.0 L1258.0 466.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="1198.0" y="274.5" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="1220" y="289.82" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+<rect x="1198.0" y="415.0" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="1220" y="430.32" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect id="create-booking" x="1296" y="106" width="486" height="144" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1310" y="133" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Create the Booking</text>
+<text x="1310" y="153" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The admin chooses where it goes:</text>
+<rect x="1310.0" y="164" width="224.0" height="30" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1322.0" y="184" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">On an existing List</text>
+<rect x="1544.0" y="164" width="224.0" height="30" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1556.0" y="184" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">New List in a free Slot</text>
+<rect x="1310.0" y="202" width="224.0" height="30" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1322.0" y="222" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Draft List, no anaesthetist</text>
+<rect x="1544.0" y="202" width="224.0" height="30" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1556.0" y="222" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Reject the row</text>
+<rect id="review-differences" x="1296" y="326" width="486" height="266" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1310" y="353" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Review the differences</text>
+<text x="1310" y="373" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Changed fields are highlighted for the admin to approve.</text>
+<clipPath id="diff-clip"><rect x="1310" y="384" width="458" height="152" rx="8"/></clipPath>
+<g clip-path="url(#diff-clip)">
+<rect x="1310" y="384" width="458" height="152" rx="0" fill="#FFFFFF"/>
+<rect x="1310" y="384" width="458" height="32" rx="0" fill="#3D3D42"/>
+<rect x="1310" y="476" width="458" height="30" rx="0" fill="#FFE9C2"/>
+<rect x="1310" y="506" width="458" height="30" rx="0" fill="#FFE9C2"/>
+</g>
+<path d="M1310 446 H1768" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1310 476 H1768" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1310 506 H1768" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1436 391 V409" stroke="#66666E" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1436 416 V536" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1586 391 V409" stroke="#66666E" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1586 416 V536" stroke="#E3E0EC" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="1310" y="384" width="458" height="152" rx="8" fill="none" stroke="#D3DCE6" stroke-width="1.2"/>
+<text x="1320" y="405" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Field</text>
+<text x="1454" y="405" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">On the Booking</text>
+<text x="1604" y="405" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">From St George's</text>
+<text x="1320" y="436" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">Patient NHI</text>
+<text x="1454" y="436" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">ZAA0024</text>
+<text x="1604" y="436" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">ZAA0024</text>
+<text x="1320" y="466" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">Day and session</text>
+<text x="1454" y="466" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">Thu 15 Oct · AM</text>
+<text x="1604" y="466" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">Thu 15 Oct · AM</text>
+<text x="1320" y="496" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Start time</text>
+<text x="1454" y="496" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">08:30</text>
+<text x="1604" y="496" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">09:15</text>
+<text x="1320" y="526" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">Procedure</text>
+<text x="1454" y="526" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start">Knee arthroscopy</text>
+<text x="1604" y="526" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Total knee replacement</text>
+<rect x="1379.0" y="550" width="230" height="26" rx="13.0" fill="#CDE8FA"/>
+<text x="1494.0" y="567.5" font-size="12.5" font-weight="600" fill="#1B5C8A" text-anchor="middle">Approve: the Booking is updated</text>
+<rect x="1619.0" y="550" width="80" height="26" rx="13.0" fill="#D9D9E0"/>
+<text x="1659.0" y="567.5" font-size="12.5" font-weight="600" fill="#3C3C46" text-anchor="middle">Reject</text>
+<rect id="matching-notes" x="412" y="517.5" width="550" height="76" rx="0" fill="none"/>
+<path d="M422 517.5 H412 V593.5 H422" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="428" y="539.5" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Good to know</text>
+<text x="428" y="557.5" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Rows that can't be placed stay in the queue: nothing is dropped.</text>
+<text x="428" y="575.5" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Later: routine updates applied automatically; odd ones still go to an admin.</text>
+<rect id="new-booking" x="1898" y="129.5" width="330" height="97" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1912" y="155.5" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">New Booking</text>
+<text x="1912" y="177.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Added to the List the admin chose:</text>
+<text x="1912" y="194.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">an existing List, a new List in a</text>
+<text x="1912" y="211.5" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">free Slot, or a Draft List.</text>
+<rect id="apply-change" x="1898" y="359.0" width="330" height="200" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1912" y="386.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Apply the matched change</text>
+<rect x="1912" y="401.0" width="302" height="34" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1922" y="421.0" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Modification</text>
+<text x="2024" y="421.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The Booking is updated</text>
+<rect x="1912" y="439.0" width="302" height="50" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1922" y="459.0" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Reschedule</text>
+<text x="2024" y="459.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Booking or List moves; a clash</text>
+<text x="2024" y="475.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">makes a Draft List</text>
+<rect x="1912" y="493.0" width="302" height="50" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
+<text x="1922" y="513.0" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Cancellation</text>
+<text x="2024" y="513.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Marked cancelled, stays</text>
+<text x="2024" y="529.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">visible on the List</text>
+<path d="M1782 178.0 H1898" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1861.0" cy="178.0" r="15" fill="#3B8FD6"/>
+<path d="M1857.0 171.0 L1865.0 178.0 L1857.0 185.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1782 459.0 H1898" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1861.0" cy="459.0" r="15" fill="#3B8FD6"/>
+<path d="M1857.0 452.0 L1865.0 459.0 L1857.0 466.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M366 655 H1814 Q1824 655 1824 645 V178.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1824" cy="178.0" r="4.5" fill="#3B8FD6"/>
+<circle cx="1824" cy="459.0" r="4.5" fill="#3B8FD6"/>
+<rect x="935.0" y="644" width="300" height="22" rx="0" fill="#F3F6FA"/>
+<text x="1085.0" y="659.5" font-size="13" font-weight="600" fill="#55555E" text-anchor="middle">Entered directly · no matching screen</text>
+<path d="M2228 178.0 H2246 Q2256 178.0 2256 188.0 V318.5" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2228 459.0 H2246 Q2256 459.0 2256 449.0 V318.5" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2256 318.5 H2302" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2281.0" cy="318.5" r="15" fill="#3B8FD6"/>
+<path d="M2277.0 311.5 L2285.0 318.5 L2277.0 325.5" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="record-change" x="2302" y="270.0" width="230" height="97" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2316" y="296.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Record the change</text>
+<text x="2316" y="318.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Append-only history: who or</text>
+<text x="2316" y="335.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">which integration, when, and</text>
+<text x="2316" y="352.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">what changed.</text>
+<rect id="latest-booking" x="2584" y="270.0" width="236" height="97" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2598" y="296.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Latest Booking shown</text>
+<text x="2598" y="318.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The anaesthetist sees it in</text>
+<text x="2598" y="335.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">the app; any prepayment is</text>
+<text x="2598" y="352.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">re-checked.</text>
+<path d="M2532 318.5 H2584" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2558.0" cy="318.5" r="15" fill="#3B8FD6"/>
+<path d="M2554.0 311.5 L2562.0 318.5 L2554.0 325.5" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="another-change" x="2872" y="275.0" width="196" height="87" rx="10" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.8"/>
+<text x="2970.0" y="304.9" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">Another change</text>
+<text x="2970.0" y="323.9" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">before the List</text>
+<text x="2970.0" y="342.9" font-size="15" font-weight="700" fill="#1B1B1F" text-anchor="middle">is submitted?</text>
+<path d="M2820 318.5 H2872" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="2846.0" cy="318.5" r="15" fill="#3B8FD6"/>
+<path d="M2842.0 311.5 L2850.0 318.5 L2842.0 325.5" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="list-submitted" x="3152" y="253.0" width="248" height="131" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="3166" y="279.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Ready for the procedure</text>
+<text x="3166" y="301.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The latest Booking details are</text>
+<text x="3166" y="318.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">available. Later changes still</text>
+<text x="3166" y="335.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">go through the matching screen,</text>
+<text x="3166" y="352.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">but none are allowed once the</text>
+<text x="3166" y="369.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">anaesthetist submits the List.</text>
+<path d="M3068 318.5 H3152" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3128" cy="318.5" r="15" fill="#3B8FD6"/>
+<path d="M3124 311.5 L3132 318.5 L3124 325.5" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="3076.0" y="307.5" width="36" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="3094" y="322.82" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">No</text>
+<path d="M3172 384.0 V471.0 H3190" stroke="#55555E" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4"/>
+<rect id="open-after-submit" x="3190" y="424.0" width="210" height="94" rx="0" fill="none"/>
+<path d="M3200 424.0 H3190 V518.0 H3200" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="3206" y="446.0" font-size="13.5" font-weight="700" fill="#55555E" text-anchor="start" font-style="italic">Not yet decided</text>
+<text x="3206" y="464.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">What happens to an inbound</text>
+<text x="3206" y="482.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">change that arrives after</text>
+<text x="3206" y="500.0" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">the List is submitted.</text>
+<path d="M2970.0 275.0 V36 Q2970.0 28 2962.0 28 H178.0 Q170.0 28 170.0 36 V51" stroke="#55555E" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 5"/>
+<path d="M164.0 50 170.0 59 176.0 50 z" fill="#55555E"/>
+<rect x="2948.0" y="176.5" width="44" height="22" rx="11.0" fill="#FFFFFF" stroke="#3B8FD6" stroke-width="1.2"/>
+<text x="2970.0" y="191.82" font-size="12" font-weight="700" fill="#1B1B1F" text-anchor="middle">Yes</text>
+<rect x="1460.0" y="17" width="220" height="22" rx="0" fill="#F3F6FA"/>
+<text x="1570.0" y="32.5" font-size="13" font-weight="600" fill="#55555E" text-anchor="middle">The next change comes in</text>
+</svg>

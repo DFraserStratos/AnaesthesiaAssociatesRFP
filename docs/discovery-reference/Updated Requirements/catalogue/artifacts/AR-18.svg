@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2140 292" width="2140" height="292" font-family="'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif"><title>High level AA process</title>
+<rect x="0" y="0" width="2140" height="292" rx="0" fill="#F3F6FA"/>
+<rect id="schedule" x="20" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="112.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Scheduling Engine</text>
+<text x="112.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">creates rolling Slots</text>
+<rect id="booking-in" x="256" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="348.0" y="200.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Booking</text>
+<text x="348.0" y="221.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">information</text>
+<text x="348.0" y="242.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">inbound</text>
+<path d="M204 216.0 H256" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="230.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M226.0 209.0 L234.0 216.0 L226.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="ingest" x="492" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="584.0" y="200.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Scheduling Engine</text>
+<text x="584.0" y="221.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">ingests Lists</text>
+<text x="584.0" y="242.76" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">and Bookings</text>
+<path d="M440 216.0 H492" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="466.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M462.0 209.0 L470.0 216.0 L462.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="perform" x="728" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="820.0" y="190.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Anaesthetist</text>
+<text x="820.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">performs work and</text>
+<text x="820.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">completes</text>
+<text x="820.0" y="253.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Procedure details</text>
+<path d="M676 216.0 H728" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="702.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M698.0 209.0 L706.0 216.0 L698.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="authorise" x="964" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1056.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Office reviews and</text>
+<text x="1056.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">authorises the List</text>
+<path d="M912 216.0 H964" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="938.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M934.0 209.0 L942.0 216.0 L934.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="billing" x="1200" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1292.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Billing/Invoice</text>
+<text x="1292.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Engine</text>
+<path d="M1148 216.0 H1200" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1174.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M1170.0 209.0 L1178.0 216.0 L1170.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1384 216.0 H1402 V86.0 Q1402 76.0 1412 76.0 H1464" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1402 216.0 H1464" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1433.0" cy="76.0" r="15" fill="#3B8FD6"/>
+<path d="M1429.0 69.0 L1437.0 76.0 L1429.0 83.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1433.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M1429.0 209.0 L1437.0 216.0 L1429.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="invoice" x="1464" y="20" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1556.0" y="71.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Invoice sent to</text>
+<text x="1556.0" y="92.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">billable party</text>
+<rect id="xero" x="1464" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1556.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Financial records</text>
+<text x="1556.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">sent to Xero</text>
+<rect id="payment" x="1700" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="1792.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Payment collected</text>
+<text x="1792.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">into AA</text>
+<path d="M1648 216.0 H1700" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1674.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M1670.0 209.0 L1678.0 216.0 L1670.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="paid" x="1936" y="160" width="184" height="112" rx="12" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
+<text x="2028.0" y="211.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">Anaesthetist</text>
+<text x="2028.0" y="232.26" font-size="16" font-weight="600" fill="#1B1B1F" text-anchor="middle">paid</text>
+<path d="M1884 216.0 H1936" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1910.0" cy="216.0" r="15" fill="#3B8FD6"/>
+<path d="M1906.0 209.0 L1914.0 216.0 L1906.0 223.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
