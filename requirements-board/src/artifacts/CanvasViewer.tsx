@@ -19,6 +19,7 @@ import { REGION_MAX_ZOOM, centredAt, fitRect, lerpCamera, limit, minZoom, viewOf
 import type { CanvasContent } from './content.ts'
 import { findRanges, lineRects } from './find.ts'
 import { canvasRegionRect } from './regionsDom.ts'
+import { linkFromEvent, linkRecordIds, type ResolveLink } from './svgLinks.ts'
 
 /** What to find in an artifact, which match is the current one, and where to report how many there are. */
 export interface FindProps {
@@ -33,6 +34,18 @@ const SHADOW_CSS = `
 svg { display: block; width: 100%; height: 100%; user-select: text; -webkit-user-select: text; }
 text, tspan { cursor: text; }
 image { -webkit-user-drag: none; user-select: none; }
+a.record-id {
+  cursor: pointer;
+  -webkit-user-drag: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--teal) 50%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+a.record-id:hover, a.record-id:focus-visible { fill: var(--teal); text-decoration-color: var(--teal); }
+a.record-id:focus { outline: none; }
+a.record-id:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+a.record-id.retired { text-decoration-style: dotted; }
 `
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -55,9 +68,16 @@ export interface CanvasViewerProps {
   /** Told whether the region's anchors were found. */
   onRegionFound?: (found: boolean) => void
   find?: FindProps
+  /** Record IDs drawn in the text become links: the record each names (null leaves it plain). */
+  resolveLink?: ResolveLink
+  /** A linked ID was clicked (or Enter pressed on it). */
+  onLink?: (id: string) => void
 }
 
-export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find }: CanvasViewerProps) {
+/** A press that moves further than this is a text selection, not a click on a link. */
+const CLICK_SLOP_PX = 4
+
+export function CanvasViewer({ content, region, focusKey, preview = null, dragPans = false, controls = true, label, onRegionFound, find, resolveLink, onLink }: CanvasViewerProps) {
   const frameRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -75,6 +95,8 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
   const [spaceDown, setSpaceDown] = useState(false)
   const spaceRef = useRef(false)
   const hoverRef = useRef(false)
+  const onLinkRef = useRef(onLink)
+  onLinkRef.current = onLink
 
   const apply = useCallback((c: Camera) => {
     camRef.current = c
@@ -116,14 +138,53 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     svg.setAttribute('width', '100%')
     svg.setAttribute('height', '100%')
     svg.setAttribute('preserveAspectRatio', 'xMinYMin meet')
+    // Record IDs in the text become links here, on the copy shown: the file itself stays plain.
+    if (resolveLink) linkRecordIds(svg, resolveLink)
+    let down: { x: number; y: number } | null = null
+    const onDown = (e: PointerEvent) => {
+      down = { x: e.clientX, y: e.clientY }
+    }
+    const onClick = (e: MouseEvent) => {
+      const a = linkFromEvent(e)
+      if (!a) return
+      // A modified click opens the link in a new tab, as any link would.
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+      e.preventDefault()
+      // A drag that started on the ID selected text: not a click on the link.
+      const moved = down && e.detail > 0 && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_SLOP_PX
+      down = null
+      if (!moved) onLinkRef.current?.(a.getAttribute('data-record')!)
+    }
+    // The tooltip: SVG shows only a <title> child, which would add to the text, so the host carries it.
+    const onOver = (e: PointerEvent) => {
+      const tip = linkFromEvent(e)?.getAttribute('data-tip') ?? ''
+      if (host.title !== tip) host.title = tip
+    }
+    const onLeave = () => (host.title = '')
+    // A link reached with Tab is brought into view, as find brings a match.
+    const onFocus = (e: FocusEvent) => {
+      const a = linkFromEvent(e)
+      if (a) revealRef.current(a)
+    }
+    svg.addEventListener('pointerdown', onDown)
+    svg.addEventListener('click', onClick)
+    svg.addEventListener('pointerover', onOver)
+    svg.addEventListener('pointerleave', onLeave)
+    svg.addEventListener('focusin', onFocus)
     root.replaceChildren(style, svg)
     svgRef.current = svg
     setMounted((n) => n + 1)
     return () => {
+      svg.removeEventListener('pointerdown', onDown)
+      svg.removeEventListener('click', onClick)
+      svg.removeEventListener('pointerover', onOver)
+      svg.removeEventListener('pointerleave', onLeave)
+      svg.removeEventListener('focusin', onFocus)
+      host.title = ''
       root.replaceChildren()
       svgRef.current = null
     }
-  }, [content])
+  }, [content, resolveLink])
 
   // The frame's size: the viewBox is the frame at the camera's zoom.
   useLayoutEffect(() => {
@@ -344,6 +405,24 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
     ease(bounded(centredAt({ x: r.x + r.w / 2, y: r.y + r.h / 2 }, zoom, p)))
   }, [hits, active])
 
+  // A focused link outside the view: pan to it, close enough in to read.
+  const revealRef = useRef<(el: Element) => void>(() => {})
+  revealRef.current = (el) => {
+    const p = paneRef.current
+    const c = camRef.current
+    const f = frameRef.current
+    if (!p || !c || !f) return
+    // Focus scrolls the clipped frame to the link; the camera does the moving here, so undo that first.
+    f.scrollLeft = 0
+    f.scrollTop = 0
+    const frame = f.getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    const inView = r.left >= frame.left && r.right <= frame.right && r.top >= frame.top && r.bottom <= frame.bottom
+    if (inView) return
+    const mid = { x: (r.left + r.width / 2 - frame.left - c.x) / c.zoom, y: (r.top + r.height / 2 - frame.top - c.y) / c.zoom }
+    ease(bounded(centredAt(mid, Math.min(Math.max(c.zoom, 1), REGION_MAX_ZOOM), p)))
+  }
+
   const onKeyDown = (e: ReactKeyboardEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return
     if (e.key === '+' || e.key === '=') zoomBy(1.25)
@@ -370,6 +449,11 @@ export function CanvasViewer({ content, region, focusKey, preview = null, dragPa
       onPointerDown={onPointerDown}
       onPointerEnter={() => (hoverRef.current = true)}
       onPointerLeave={() => (hoverRef.current = false)}
+      // The frame clips the drawing and never scrolls (focus would scroll it to a link): the camera pans.
+      onScroll={(e) => {
+        e.currentTarget.scrollLeft = 0
+        e.currentTarget.scrollTop = 0
+      }}
     >
       {sSheet && <div className="canvas-sheet" style={rectStyle(sSheet)} aria-hidden />}
       <div ref={hostRef} className="canvas-host" />

@@ -59,6 +59,10 @@ Paths below are relative to the repo root. `CAT` = `docs/discovery-reference/Upd
 - The note is `CAT/notes/YYYY-MM-DD-<slug>.md`: one per session, dated when the input happened, not
   when it was filed. If that session's note already exists, append new points at its end, continuing the
   numbering.
+- Register each new transcript and each new note as an artifact, so the board can show it and items
+  can link to a spot in it (a heading, or a line range such as `#L27-33`): follow the `add-artifact`
+  skill (kind `transcript` or `note`; the file stays where it is). Diagrams supplied as evidence are
+  artifacts too.
 
 ## Stage 2: extract (parallel, Sonnet)
 
@@ -96,7 +100,8 @@ Paths below are relative to the repo root. `CAT` = `docs/discovery-reference/Upd
    new IDs only under its own epic. Moves between epics are done afterwards, one at a time. Each editor:
    - puts the decision in the requirement itself (description, acceptance criteria, technical discussion,
      notes), in plain language and the SCHEMA house style;
-   - adds the note or question to `sources` in date order;
+   - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
+     (`- "Notes 2026-10-01 · AA meeting with Greg #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - moves status per the answering convention (Confirmed where settled, Verify where it still needs
      checking with AA);
    - sets `components`;

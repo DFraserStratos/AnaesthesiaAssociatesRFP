@@ -5,10 +5,11 @@ W, H = 1890, 1241
 out = []
 def a(s): out.append(s)
 
-def rect(x, y, w, h, fill, stroke=None, r=10, sw=1.2, dash=None):
+def rect(x, y, w, h, fill, stroke=None, r=10, sw=1.2, dash=None, id=None):
     st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
     d = f' stroke-dasharray="{dash}"' if dash else ""
-    a(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}/>')
+    i = f' id="{id}"' if id else ""
+    a(f'<rect{i} x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}/>')
 
 def text(x, y, s, size=14, weight=400, fill="#1B1B1F", anchor="start", style=""):
     fs = f' font-style="{style}"' if style else ""
@@ -22,8 +23,35 @@ def pill(cx, y, w, label, fill, color, size=12, dash=None, stroke=None, h=24, we
     rect(cx - w / 2, y, w, h, fill, stroke, r=h / 2, dash=dash)
     text(cx, y + h / 2 + size * 0.36, label, size=size, weight=weight, fill=color, anchor="middle")
 
-def path(d, color="#2E2E31", w=2.5):
-    a(f'<path d="{d}" stroke="{color}" stroke-width="{w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+def path(d, color="#2E2E31", w=2.5, dash=None):
+    ds = f' stroke-dasharray="{dash}"' if dash else ""
+    a(f'<path d="{d}" stroke="{color}" stroke-width="{w}" fill="none" stroke-linecap="round" stroke-linejoin="round"{ds}/>')
+
+def aside(x, y, rows_, w=200, title=None, lead=None, id=None, size=13.5, lh=18, bullets=()):
+    """A note, as svgkit's aside: an open square bracket with muted italic text beside it, no box
+    or fill. lead = (x, y) on the thing annotated: a dotted leader runs vertical then horizontal
+    into the middle of the bracket's side. `id` names an invisible box round the note for an
+    artifact region. bullets = indexes of rows that start with a hanging "•". Returns bottom y."""
+    rows = ([title] if title else []) + list(rows_)
+    h = len(rows) * lh + 22
+    m = y + h / 2
+    if lead:
+        lx, ly = lead
+        path(f"M{lx} {ly} V{m} H{x}", color=MUTED, w=1.4, dash="2 4")
+    if id:
+        rect(x, y, w, h, "none", id=id, r=0)
+    path(f"M{x + 10} {y} H{x} V{y + h} H{x + 10}", color=MUTED, w=1.6)
+    off = 1 if title else 0
+    indent = 12 if bullets else 0
+    for i, s in enumerate(rows):
+        ty = y + 22 + i * lh
+        if title and i == 0:
+            text(x + 16, ty, s, size=size, weight=700, fill=MUTED, style="italic")
+            continue
+        if (i - off) in bullets:
+            text(x + 16, ty, "•", size=size, fill=MUTED)
+        text(x + 16 + indent, ty, s, size=size, fill=MUTED, style="italic")
+    return y + h
 
 INK, MUTED, LIGHT = "#1B1B1F", "#55555E", "#D7D7DE"
 PEACH, PEACH_S = "#FFE9C2", "#E9AE45"
@@ -263,19 +291,13 @@ y = step(y, 6, "Price", ["Locked on third-party contracts. On RVG-style",
                          "and first-party contracts the anaesthetist can",
                          "set a price or discount, with a reason."], h=96)
 
-rect(RX0 + 16, y + 6, RWID - 32, 164, YEL, YEL_S, r=9)
-text(RX0 + 32, y + 32, "Good to know", size=15.5, weight=700)
 notes = ["Changing the contract never changes the procedure.",
          "Either can change until the List is submitted;",
          "the office sees the change at review.",
          "Pre-approval fell through on the day? Switch to",
          "No contract (RVG) and the patient is billed.",
          "A $0 price gives a no-charge invoice."]
-bullets = {0, 1, 3, 5}
-for i, s_ in enumerate(notes):
-    if i in bullets:
-        text(RX0 + 32, y + 56 + 19 * i, "•", size=13)
-    text(RX0 + 44, y + 56 + 19 * i, s_, size=13)
+aside(RX0 + 16, y + 6, notes, w=RWID - 32, title="Good to know", id="good-to-know", bullets={0, 1, 3, 5})
 
 # ================= Bottom bar =================
 rect(20, 1191, W - 40, 40, YEL, YEL_S, r=10)

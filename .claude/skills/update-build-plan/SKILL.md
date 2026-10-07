@@ -63,6 +63,10 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    - every item listed in `affects` of a changed question;
    - the parent epic and feature of a changed story only when their own text changed.
    Retired and Future items need no grading: they drop out of the plan on assembly.
+   Leave out items whose only change is their `artifacts:` field (a link to a diagram, transcript or
+   document): artifacts are evidence the Requirements Board shows, not requirements, and the
+   prototype has nothing to build for them. Changes under `catalogue/artifacts/` and `catalogue/notes/`
+   alone never call for re-grading either.
 2. Build the epics argument: `node CU/tools/build-args.mjs <IDs...>`.
 3. Run `Workflow({ scriptPath: "<repo>/CU/tools/workflow-gap-analysis.js", args })` with these args:
    - `root`: the repo root;

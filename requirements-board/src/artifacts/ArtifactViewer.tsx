@@ -4,15 +4,19 @@
  * it brings that into view inside the red box, and says so when the spot can't be found.
  */
 import { AlertTriangle, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
-import { useDeferredValue, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { isArtifactId, isQuestionId } from '../../shared/links.ts'
 import { isCanvasFormat, type ArtifactRec, type Region } from '../../shared/types.ts'
 import { artifactFileUrl } from '../api.ts'
 import { spotName } from '../artifactIndex.ts'
+import { guarded, useOpen } from '../nav.ts'
+import { useCatalogue, useIndex } from '../store.ts'
 import { ARTIFACT_KIND_LABEL } from '../vocab.ts'
 import { CanvasViewer, type FindProps } from './CanvasViewer.tsx'
 import { loadCanvas, useLoaded } from './content.ts'
 import { MarkdownReader } from './MarkdownReader.tsx'
 import { PdfReader } from './PdfReader.tsx'
+import { catalogueResolver } from './svgLinks.ts'
 
 export interface ArtifactViewerProps {
   rec: ArtifactRec
@@ -145,10 +149,18 @@ function CanvasBody({ rec, url, region, focusKey, preview, onRegionFound, find }
   const format = rec.meta.format!
   const key = `${a.id}|${rec.meta.fileRev ?? ''}|${format === 'mermaid' ? a.source : ''}`
   const loaded = useLoaded(key, () => loadCanvas({ format, url, source: a.source, seed: a.id, bounds: rec.meta.bounds }))
+  // Record IDs drawn in the text open their record, as a bare ID in Markdown does.
+  const index = useIndex()
+  const artifacts = useCatalogue((s) => s.artifacts)
+  const resolveLink = useMemo(() => (format === 'raster' ? undefined : catalogueResolver(index, artifacts, a.id)), [format, index, artifacts, a.id])
+  const open = useOpen()
+  const openRef = useRef(open)
+  openRef.current = open
+  const onLink = useCallback((id: string) => guarded(() => (isQuestionId(id) ? openRef.current.question(id) : isArtifactId(id) ? openRef.current.artifact(id) : openRef.current.item(id))), [])
   if (loaded.status === 'loading') return <div className="viewer-note">Drawing</div>
   if (loaded.status === 'error') return <div className="viewer-note bad">{format === 'mermaid' ? 'The diagram could not be drawn' : 'The file could not be shown'}: {loaded.error}</div>
   const previewRegion = preview ? (a.regions.find((r) => r.id === preview) ?? null) : null
-  return <CanvasViewer content={loaded.value} region={region} focusKey={focusKey} preview={previewRegion} dragPans={format === 'raster'} label={a.title} onRegionFound={onRegionFound} find={find} />
+  return <CanvasViewer content={loaded.value} region={region} focusKey={focusKey} preview={previewRegion} dragPans={format === 'raster'} label={a.title} onRegionFound={onRegionFound} find={find} resolveLink={resolveLink} onLink={onLink} />
 }
 
 function MarkdownBody({ url, rec, region, auto, focusKey, onRegionFound, find }: { url: string; rec: ArtifactRec; region: Region | null; auto: string | null; focusKey?: string; onRegionFound: (f: boolean) => void; find: FindProps }) {

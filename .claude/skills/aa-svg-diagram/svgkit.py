@@ -163,8 +163,30 @@ class Diagram:
             self.lines(x + 46, y + 50, body, size=12.5, lh=17, fill=MUTED)
         return y + h + 10
 
+    def aside(self, x, y, lines, w=200, title=None, lead=None, id=None, size=13.5, lh=18):
+        """A note: an open square bracket with muted italic text beside it, no box or fill. Use it
+        for every note (a caveat, a "may happen", a "good to know"), so a note never reads as a
+        step. lead = (x, y), the point on the thing it annotates (usually a card's bottom or side
+        edge): a dotted leader runs from there straight to the middle of the bracket's side,
+        vertical then horizontal, never into a corner. Keep lead x at least 16px left of x so the
+        turn shows. `id` names an invisible box round the note for an artifact region.
+        Returns the bottom y."""
+        rows = ([title] if title else []) + list(lines)
+        h = len(rows) * lh + 22
+        mid = y + h / 2
+        if lead:
+            lx, ly = lead
+            self.path(f"M{lx} {ly} V{mid} H{x}", color=MUTED, w=1.4, dash="2 4")
+        if id:
+            self.rect(x, y, w, h, "none", id=id, r=0)
+        self.path(f"M{x + 10} {y} H{x} V{y + h} H{x + 10}", color=MUTED, w=1.6)
+        for i, s in enumerate(rows):
+            bold = 700 if (title and i == 0) else 400
+            self.text(x + 16, y + 22 + i * lh, s, size=size, weight=bold, fill=MUTED, style="italic")
+        return y + h
+
     def note(self, x, y, w, h, title, body, bullets=False, id=None):
-        """Yellow callout."""
+        """Yellow callout. Legacy (the reference diagrams use it): for new notes use `aside`."""
         self.rect(x, y, w, h, YEL, YEL_S, r=9, id=id)
         self.text(x + PAD, y + 26, title, size=15, weight=700)
         for i, s in enumerate(body):

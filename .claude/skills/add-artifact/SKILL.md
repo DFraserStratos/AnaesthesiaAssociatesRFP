@@ -7,8 +7,9 @@ argument-hint: "<the file or mermaid source> [what it is, who made it, which req
 # Add an artifact
 
 An artifact is anything requirements point at: a diagram, a mockup, a screenshot, a photo, a
-transcript, a note, a document. The Requirements Board shows it on its Artifacts tab (read only:
-artifacts are written as files, by agents) and draws a red box round any spot a requirement links
+transcript, a note, a document. The Requirements Board shows it on its Artifacts tab (agents write
+artifacts as files; the board's Edit details changes only the sidecar's title, kind, status, date,
+author, components, sources and description, never the file or its regions) and draws a red box round any spot a requirement links
 to. The format is under **Artifact file** in `CAT/SCHEMA.md`; read it first. `CAT` =
 `docs/discovery-reference/Updated Requirements/catalogue`.
 
@@ -66,7 +67,9 @@ artifacts:
 Link the most specific item (a story over its feature over its epic), and the spot that shows what
 the item says (or the whole artifact when the item is about all of it). Don't link Retired items.
 A text link works too, inside a description or answer: `[the pricing steps](AR-01#price-rules)`.
-Insert the lines as text; don't re-save other people's files through a formatter.
+Insert the lines as text; don't re-save other people's files through a formatter. Always use this
+block form, one link per line, never the inline `artifacts: [AR-07#rate-lookup]`: the board writes
+the block form, so an inline list fails its byte-for-byte round-trip test.
 
 ## 4. Check and look
 

@@ -225,6 +225,12 @@ edits only their details (below), never the file, its highlights or the links to
   buttons, plus + - 0 on the keyboard, beside the minimap button in the same view bar, and a back
   to the highlight button when there is one. The minimap is the drawing itself, the spot outlined
   in red.
+- **Record IDs drawn in a diagram** (`OQ-47`, `US-06.1.1`, `AR-01`) are links, added by the board
+  as it shows the drawing (the file stays plain). The ID keeps its drawn text, size and place, with
+  an underline in its own ink, turning teal on hover or focus; the tooltip names the record and its
+  status. A click (or Tab then Enter, which pans to it) opens the record as a bare ID in Markdown
+  does: a card or question as its sheet over the page, an artifact as its page. An ID the catalogue
+  doesn't have stays plain text.
 - **Documents** (Markdown, PDF) scroll as pages on the chart paper: Markdown typeset like a sheet's
   prose (links to cards work), PDFs as their pages with pdf.js's text layer over them, so their text
   selects too. A PDF's view bar has the page counter, zoom out and zoom in, the two fits, and the

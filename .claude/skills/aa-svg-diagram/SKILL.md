@@ -1,6 +1,6 @@
 ---
 name: aa-svg-diagram
-description: Make an explainer diagram as a hand-built SVG, saved as a catalogue artifact with highlighted regions, in the house style of the Procedure & Contract diagrams - soft rounded panels, pastel kind colours, a charcoal hero panel, nested trees, stacked contract cards with table columns, numbered steps, yellow notes and a summary bar. Use when the user asks for a new diagram, infographic, explainer image or SVG "in the same look", or to revise one of the existing diagrams.
+description: Make an explainer diagram as a hand-built SVG, saved as a catalogue artifact with highlighted regions, in the house style of the Procedure & Contract diagrams - soft rounded panels, pastel kind colours, a charcoal hero panel, nested trees, stacked contract cards with table columns, numbered steps, bracketed italic notes and a summary bar. Use when the user asks for a new diagram, infographic, explainer image or SVG "in the same look", or to revise one of the existing diagrams.
 argument-hint: "<what the diagram should explain, who it is for, where to save it>"
 ---
 
@@ -24,8 +24,9 @@ Files in this skill:
 
 - `svgkit.py`: palette, primitives and components (`Diagram`, `panel`, `heading`, `tree_section`,
   `tree_collapsed`, `tree_trunk`, `stacked_group`, `table_header`, `table_row`, `step`, `card`,
-  `chevron`, `down_arrow`, `pill`, `note`, `bottom_bar`). Start new diagrams from this. `rect`,
-  `panel`, `card`, `stacked_group`, `step` and `note` take an optional `id=`: give every part a
+  `chevron`, `down_arrow`, `pill`, `aside`, `bottom_bar`; `note` is the legacy yellow callout).
+  Start new diagrams from this. `rect`, `panel`, `card`, `stacked_group`, `step`, `aside` and `note`
+  take an optional `id=`: give every part a
   requirement might point at one (`id="stage-3"`), so its region's anchor is `#stage-3`.
 - `render.mjs`: SVG to PNG at the SVG's own size. `node .claude/skills/aa-svg-diagram/render.mjs <in.svg> [out.png]`
 - `examples/`: the two generators above. They predate the kit and carry their own copies of the
@@ -41,6 +42,10 @@ Files in this skill:
 2. **Gather real content first.** Use real names, codes and figures from the repo (catalogue,
    `docs/discovery-reference/Data files/`, the NZSA RVG PDF) where they exist. Invented figures are
    fine for illustration; keep them plausible and consistent across rows.
+   **Recreating a supplied image:** keep its content and structure as drawn, but fix terms and copy
+   to match the catalogue and `domain-model.md` (a stale name, a typo, a hierarchy the model has
+   since settled). Add nothing the image doesn't have (no extra notes, pills or panels) unless the
+   user agrees first. Report every change you made to their content.
 3. **Write a generator script** in the scratchpad (not the repo) that imports the kit:
    ```python
    import sys; sys.path.insert(0, "<repo>/.claude/skills/aa-svg-diagram")
@@ -50,7 +55,9 @@ Files in this skill:
    d.save(sys.argv[1])
    ```
    Lay out with explicit coordinates and keep layout numbers as named constants (column x
-   positions, row pitch) so later edits are one-line changes.
+   positions, row pitch) so later edits are one-line changes. Derive the canvas width from the
+   content widths (`W = HX + HW + 20`), not the other way round, so tightening a column shrinks
+   the whole image.
 4. **Render and look**: `node .claude/skills/aa-svg-diagram/render.mjs out.svg`, then Read the PNG.
    SVG cannot measure text, so the PNG is the only proof that nothing overlaps or overflows. Fix,
    re-render, repeat until the checklist below passes.
@@ -63,17 +70,34 @@ Files in this skill:
    panel, group, note): `around: ["#stage-3"]` where you gave the part an `id`, else
    `text=<its exact heading text>` or a `rect[x="..."][y="..."]` selector; the box goes round
    every anchor's match together. Add a one-line description of the diagram.
-7. **Link requirements** to it: `artifacts: [AR-nn#stage-3]` on each item it illustrates (just
-   before `images:` in the item's frontmatter), the most specific item, a spot where one fits.
-   Read each item first. Then `npm run check` (it fails when an anchor matches nothing) and report
-   what changed, briefly.
+7. **Link requirements** to it, unless the user has named the items. Hand the search to a
+   **Sonnet subagent** (Agent tool, `model: "sonnet"`) once the sidecar is written. Give it the
+   artifact ID, the sidecar path and its region IDs, and tell it to:
+   - search `catalogue/requirements/` for the items the diagram illustrates;
+   - read each item in full before linking it, never link on a keyword match alone;
+   - pick the most specific item per region (story over feature over epic), and link the epic to
+     the whole diagram (`AR-nn`, no region);
+   - add the link as a block list just before `images:` in the item's frontmatter (`artifacts:`
+     on its own line, then `  - AR-nn#region`, one link per line), or append a line to an existing
+     `artifacts:` list; never the inline `[...]` form, which the board rewrites, so the file fails
+     its round-trip test;
+   - report each link with a one-line reason, and not run `npm run check` (agent shells often have
+     a Node too old for the board's `.ts` scripts).
+
+   Then **review its links yourself**: drop any that only share a word with the diagram, and add
+   any obvious one it missed. Run `npm run check` (it fails when an anchor matches nothing; if it
+   fails with `ERR_UNKNOWN_FILE_EXTENSION ".ts"`, put a Node 22.18 or newer first on `PATH`, e.g.
+   from `~/.nvm/versions/node/`). Report briefly: the artifact, the links, and anything you
+   corrected or left out.
 
 ## Visual language
 
 **Canvas.** Page background `#F3F6FA`. No title text on the image: content starts 20px from the
-top, with the same 20px outer margin on every side (use `top_crop` or simply start at y=20). Make
-the canvas as wide and tall as the content needs (the references are 1760 to 1890 wide); widen
-rather than squeeze.
+top, with the same 20px outer margin on every side (use `top_crop` or simply start at y=20). Size
+the canvas to the content: as compact as it can be without crowding. No wasted space: cards no
+wider than their longest line plus padding, arrow gaps just wide enough for their labels, side
+columns no wider than their notes need (rewrap a note rather than widen its column). Only widen
+when the spacing checklist fails.
 
 **Type.** Font stack `'Schibsted Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif`.
 Panel headings 27 to 29 / 800. Card and group titles 18 to 21 / 700 to 800. Body 15 (row names),
@@ -93,7 +117,7 @@ pills fully rounded. Strokes 1.2 to 1.6px. Tree connectors are the one heavy lin
 | Section box | `GRN` / `GRN_S` | a top-level group inside a list |
 | Sub-box | `SUB` / `SUB_S` | a nested group |
 | Leaf item | `PEACH` / `PEACH_S` | the specific thing (a procedure) |
-| Notes, summary bar | `YEL` / `YEL_S` | "Good to know", warnings, the bottom bar |
+| Summary bar | `YEL` / `YEL_S` | the bottom bar only (notes are asides, see below) |
 | Kinds | `KIND["green" / "lavender" / "rose"]` | one colour per category of thing; never two similar hues for different kinds |
 | State pills | `GOOD_F/GOOD_T` yes, `LOCK_F/LOCK_T` no or locked | a yes/no attribute |
 | Pricing pills | `UNITS_*` green for units × rate, `CHIP`/`CHIP_T` grey for a fixed price | how a row is priced |
@@ -121,6 +145,14 @@ Keep each colour to one meaning within a diagram. When things come in kinds, add
 - *Flow*: equal stage cards left to right with `chevron`s in the gaps, a running example carried
   through every stage, then a full-width worked-examples table.
 - *Bottom bar*: one sentence that sums the diagram up, `Label:` bold, parts joined by `·`.
+- *Note (aside)*: **every note uses `aside`**: an open square bracket with muted italic text
+  beside it, no box and no fill (a "good to know", a caveat, something that may happen). Never a
+  yellow box, and never a card in a flow: a note is not a step, so flow lines and chevrons never
+  run through it. Hang it off the thing it is about with a dotted leader that goes straight down
+  (or across) and turns into the middle of the bracket's side, never its top corner; a free-standing
+  note (about the whole panel) has no leader. An optional first line in bold italic titles it.
+  The example generators show it (a local `aside` helper in each); AR-01, AR-02, AR-17, AR-21 and
+  AR-22 all use it.
 
 **Copy.** Short, plain sentences. Use `·` as a separator and "to" for ranges; avoid en and em
 dashes. `→` is fine for sequences. Names over codes, but show the code where users see it
@@ -132,6 +164,7 @@ dashes. `→` is fine for sequences. Names over codes, but show the code where u
   at the right-hand end of a row.
 - No text touching or crossing another box, line or arrow; arrows visible in their own gap.
 - Captions clear of the card below; footnotes clear of the panel bottom.
+- A note's dotted leader enters the middle of its bracket's side and crosses no text.
 - Columns line up from header to last row.
 - Pills fit their label (widen the pill, not shrink the text).
 - Panels in a row share top and bottom edges; leftover space is spread, not dumped at one end.

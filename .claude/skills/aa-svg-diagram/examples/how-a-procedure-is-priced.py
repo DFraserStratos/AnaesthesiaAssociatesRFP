@@ -6,10 +6,11 @@ PAD = 14                     # minimum inner padding for every box
 out = []
 def a(s): out.append(s)
 
-def rect(x, y, w, h, fill, stroke=None, r=10, sw=1.2, dash=None):
+def rect(x, y, w, h, fill, stroke=None, r=10, sw=1.2, dash=None, id=None):
     st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
     d = f' stroke-dasharray="{dash}"' if dash else ""
-    a(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}/>')
+    i = f' id="{id}"' if id else ""
+    a(f'<rect{i} x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{st}{d}/>')
 
 def text(x, y, s, size=14, weight=400, fill="#1B1B1F", anchor="start", style=""):
     fs = f' font-style="{style}"' if style else ""
@@ -22,6 +23,28 @@ def lines(x, y, rows, size=12.5, lh=16, **kw):
 def pill(cx, y, w, label, fill, color, size=12, dash=None, stroke=None, h=24, weight=600):
     rect(cx - w / 2, y, w, h, fill, stroke, r=h / 2, dash=dash)
     text(cx, y + h / 2 + size * 0.36, label, size=size, weight=weight, fill=color, anchor="middle")
+
+def path(d, color="#55555E", w=1.6, dash=None):
+    ds = f' stroke-dasharray="{dash}"' if dash else ""
+    a(f'<path d="{d}" stroke="{color}" stroke-width="{w}" fill="none" stroke-linecap="round" stroke-linejoin="round"{ds}/>')
+
+def aside(x, y, rows, w=200, title=None, lead=None, id=None, size=13.5, lh=18):
+    """A note (as svgkit's aside): an open square bracket with muted italic text, no box or fill.
+    lead = (x, y) on the thing annotated: a dotted leader runs vertical then horizontal into the
+    middle of the bracket's side. `id` names an invisible box round the note. Returns the bottom y."""
+    rows = ([title] if title else []) + list(rows)
+    h = len(rows) * lh + 22
+    mid = y + h / 2
+    if lead:
+        lx, ly = lead
+        path(f"M{lx} {ly} V{mid} H{x}", w=1.4, dash="2 4")
+    if id:
+        rect(x, y, w, h, "none", r=0, id=id)
+    path(f"M{x + 10} {y} H{x} V{y + h} H{x + 10}")
+    for i, s in enumerate(rows):
+        text(x + 16, y + 22 + i * lh, s, size=size, weight=700 if (title and i == 0) else 400,
+             fill="#55555E", style="italic")
+    return y + h
 
 def down_arrow(x, y0, y1, color):
     a(f'<path d="M{x} {y0} V{y1 - 7}" stroke="{color}" stroke-width="1.8"/>'
@@ -158,12 +181,11 @@ for i, (n, title, body, hit) in enumerate(rules):
     lines(ix + PAD + 34, ry + 53, body, size=12.5, lh=16, fill=MUTED)
     if hit:
         text(ix + IW - PAD, ry + 31, "Merivale", size=13.5, weight=700, fill=GRN_T, anchor="end")
-rect(ix, 556, IW, 128, YEL, YEL_S, r=9)
-text(ix + PAD, 581, "Rejected, never guessed", size=15, weight=700)
-lines(ix + PAD, 603, ["The booking is rejected for correction when:",
-                      "• a price is typed on a locked contract",
-                      "• BTM is missing and no fixed price applies",
-                      "• the contract is not valid on the procedure date"], size=12.5, lh=17)
+aside(ix, 564, ["The booking is rejected for correction when:",
+                "• a price is typed on a locked contract",
+                "• BTM is missing and no fixed price applies",
+                "• the contract is not valid on the procedure date"],
+      w=IW, title="Rejected, never guessed", id="rejected")
 
 # ---------- 4 Bill it and keep a record ----------
 ix = card(3, "Bill it, keep a record", ["The contract decides who gets the invoice."])
@@ -177,10 +199,8 @@ for i, (t1, t2, to, hit) in enumerate(bills):
     text(ix + PAD, by + 44, t2, size=12, fill=MUTED)
     for k, label in enumerate(reversed(to)):
         payer_pill(ix + IW - PAD - 42 - k * 92, by + 18, label)
-rect(ix, 376, IW, 76, YEL, YEL_S, r=9)
-text(ix + PAD, 401, "Patient: the payer on the booking", size=15, weight=700)
-lines(ix + PAD, 423, ["Name and email, prefilled from the patient and", "editable to a parent or guardian."],
-      size=12.5, lh=16)
+aside(ix, 376, ["Name and email, prefilled from the patient and", "editable to a parent or guardian."],
+      w=IW, title="Patient: the payer on the booking", id="patient-payer")
 rect(ix, 468, IW, 216, LAV, LAV_S, r=9)
 text(ix + PAD, 494, "Snapshot when the List is authorised", size=15, weight=700)
 snap = ["Procedure and contract version", "Values used, and the layer each came from",
