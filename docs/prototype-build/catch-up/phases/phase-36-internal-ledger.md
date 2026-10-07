@@ -1,12 +1,12 @@
 # Phase 36 · Internal ledger and balance views
 
 **Requirements covered:**
-[EP-08](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-08.md) (the ledger half: linked pairs as the system of record, the parallel-run constraint as an optional narrated panel; the lock, invoices and credit are Phases 25, 22 and 39),
-[FT-08.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-08.3.md) (including history that survives Xero contact archiving),
-[US-08.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.2.md),
-[US-08.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.4.md),
-[US-08.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.5.md) (Proposed),
-[US-13.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.2.1.md)
+[EP-08](../../../../requirements-board/requirements/stories/EP-08.md) (the ledger half: linked pairs as the system of record, the parallel-run constraint as an optional narrated panel; the lock, invoices and credit are Phases 25, 22 and 39),
+[FT-08.3](../../../../requirements-board/requirements/stories/FT-08.3.md) (including history that survives Xero contact archiving),
+[US-08.3.2](../../../../requirements-board/requirements/stories/US-08.3.2.md),
+[US-08.3.4](../../../../requirements-board/requirements/stories/US-08.3.4.md),
+[US-08.3.5](../../../../requirements-board/requirements/stories/US-08.3.5.md) (Proposed),
+[US-13.2.1](../../../../requirements-board/requirements/stories/US-13.2.1.md)
 (two scopes, the whole ledger and one anaesthetist; 2026-10-02: the office sees which anaesthetists'
 ledgers are out of balance as a list, Greg: "It's just a list". Its one acceptance criterion, "Per
 anaesthetist", asks for what is owing to them and what they owe in the same balance view scoped to one
@@ -19,7 +19,7 @@ scopes, the whole ledger and one anaesthetist; the patient balance is a separate
 US-11.3.1, whose screen is Phase 40. This phase gives the receivable a link to its patient whoever
 pays, so Phase 40's patient-centric balance can read it, and supplies the patient position as a
 selector only. The flat outstanding list with no ageing is Phase 38).
-**Kept, not rebuilt:** [US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md)
+**Kept, not rebuilt:** [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md)
 is graded **Matches** (at `3d3a18c`, unchanged at `3d3a18c`): the handoff already creates the ACCREC
 and ACCPAY together, links them, and a fault creates neither. This phase keeps that pairing and makes
 the pair the engine's own record, the source the admin views and the payables run read. It adds no
@@ -29,47 +29,47 @@ and Xero-sim copy calling the engine a copy of Xero) is removed as part of the w
 notes, not receipts, payments or disbursements) is Phase 39's policy call, with credit-note audit. This
 phase's ledger writes still go through `mutate()` with an audit entry, as every write must.
 **Answered and built:**
-[OQ-02](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-02.md) (D1: AA's fee is
+[OQ-02](../../../../requirements-board/requirements/questions/OQ-02.md) (D1: AA's fee is
 a monthly invoice to each anaesthetist from settings, built by Phase 16; here it becomes an `aaFee` pair
 with a receivable and no payable),
-[OQ-03](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-03.md) (a prepayment
+[OQ-03](../../../../requirements-board/requirements/questions/OQ-03.md) (a prepayment
 above the final fee is kept, not refunded or credited: 27's excess is an informational figure outside
 the imbalance),
-[OQ-05](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-05.md) (a List never
+[OQ-05](../../../../requirements-board/requirements/questions/OQ-05.md) (a List never
 fails; a Booking with any failed billable party fails whole, so a billing exception holds back every
 pair of that Booking),
-[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (no personal
+[OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (no personal
 information in Xero, only a unique id: the pair id is the Xero reference),
-[OQ-40](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-40.md) (prepaid money is
+[OQ-40](../../../../requirements-board/requirements/questions/OQ-40.md) (prepaid money is
 held in trust until the procedure and refunded in full on cancellation: Phase 41's trust account and
 hold, so "receipts held" here says only that it includes prepayments received) and
-[OQ-42](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-42.md) (a refund after
+[OQ-42](../../../../requirements-board/requirements/questions/OQ-42.md) (a refund after
 payout is a credit note plus a negative invoice netted in the next run: Phases 39 and 39a; the leg
 entries here accept a signed amount),
-[OQ-70](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-70.md) (D20: a prepaid
+[OQ-70](../../../../requirements-board/requirements/questions/OQ-70.md) (D20: a prepaid
 Booking moved to another anaesthetist keeps the agreed amount, and **only the payable half** of the
 prepayment's pair is updated to the new anaesthetist; the receivable from the patient is unchanged,
 US-06.5.4. This phase keeps the payee on the payable leg and adds the pure helper that changes it
 alone; Phase 41 calls it on a move),
-[OQ-71](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-71.md) (D21: a negative
+[OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (D21: a negative
 invoice with no later payment to net against is settled with the anaesthetist outside the system,
 US-10.2.5: nothing is built for it, here or in Phase 39a) and
-[OQ-73](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-73.md) (D23: a
+[OQ-73](../../../../requirements-board/requirements/questions/OQ-73.md) (D23: a
 prepayment is raised only where the billable party is a person paying for the patient, as Phase 27
 built it, so every prepayment receivable's counterparty is a person).
 **Still open, built as noted:**
-[OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md) (BCTI
+[OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md) (BCTI
 granularity and wording: **one payable leg per receivable invoice**, the same value as its
 receivable, as Phases 16 and 22 built it; the one-place note stays beside 16's `bctisFor`),
-[OQ-47](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-47.md) (payment day and
+[OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md) (payment day and
 cycle, and whether period BCTI approval is the release: the payables run stays an on-demand office
 action; Phase 39a adds the run record and approval),
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (what the
+[OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (what the
 per-BCTI charge counts and how the fee is paid: 16 built Greg's 2026-10-02 view for the accountant,
 paid BCTIs only behind its one `paidOnly` switch, and the fee never netted against payables but paid
 into a separate account; this phase only re-feeds the count, and AA fee receipts stay outside the money
 held for anaesthetists) and
-[OQ-80](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-80.md) (when a
+[OQ-80](../../../../requirements-board/requirements/questions/OQ-80.md) (when a
 prepayment's pair is created and amended; built as its recommendation, provisional, in Phase 27's one
 place: the pair is created when the prepayment invoice is generated, and only the payable is amended
 on a move before the procedure).
@@ -167,7 +167,7 @@ read the same after the change, and a parity test proves it.
 1. Run:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-08,FT-08.3,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-08.3.1,US-08.3.3,US-08.4.3,US-09.1.1,US-09.1.4,US-09.2.1,US-10.1.2,US-10.2.1,US-10.2.5,US-10.2.6,FT-10.3,US-10.3.1,US-10.3.2,US-10.3.3,FT-13.2,US-13.2.2,US-11.3.1,US-11.3.2,US-05.3.5,FT-06.3,US-06.2.3,US-06.3.1,US-06.4.2,US-06.5.4,US-13.5.2,US-13.2.3,OQ-70,OQ-73,OQ-60,OQ-71,OQ-76,OQ-02,OQ-03,OQ-05,OQ-30,OQ-40,OQ-42,OQ-29,OQ-47,OQ-80
    ```
 
    Look for changes to EP-08, FT-08.3, US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1, and to the items
@@ -267,11 +267,11 @@ read the same after the change, and a parity test proves it.
   US-09.2.1, US-10.1.2, US-10.2.1, US-10.2.5, US-10.2.6, FT-10.3, US-10.3.1, US-10.3.2, US-10.3.3,
   FT-13.2, US-13.2.2, US-11.3.1, US-11.3.2, US-05.3.5, US-06.2.3, US-06.3.1, US-06.4.2, US-06.5.4;
   OQ-02, OQ-03, OQ-05, OQ-29, OQ-30, OQ-40, OQ-42, OQ-47, OQ-60, OQ-70, OQ-71, OQ-73 and OQ-80; the
-  2026-10-01 note (`catalogue/notes/2026-10-01-aa-meeting-with-greg.md`, points #1, #18 and #41 on the
+  2026-10-01 note (`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md`, points #1, #18 and #41 on the
   fee and the BCTI); the 2026-10-02 notes (the requirements review with Greg, #38 and #70 on the
   ledger views, #5 and #85 on the patient-centric balance; the meeting with Greg, #1 and #36 on the
   fee, #11 and #47 on the moved prepayment's payable, #12 on the negative invoice); the change logs in
-  `docs/discovery-reference/Updated Requirements/changes/2026-10-02-*.md`; and `domain-model.md`
+  `requirements-board/requirements/changes/2026-10-02-*.md`; and `domain-model.md`
   ("Internal ledger" and the glossary rows "Internal ledger", "ACCREC / ACCPAY", "AA fee", "Trust
   account" and "Negative invoice").
 - **Gap analysis:**
@@ -1219,29 +1219,29 @@ because the ledger changes what the monitor, invoice rail and balance screens re
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) Authorise a List for billing | captured · admin-authorise-list[confirm,authorised], admin-billing-run | unchanged here (Phase 25 owns it). `billing-run` stays: the monitor now reads the ledger and shows an Open the ledger link, so re-shoot and check the `billing-pipeline-<listId>` highlight still lands. Keep the shot `name`s |
-| [US-08.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.1.md) Invoice by billable party | captured · admin-invoices-by-party, admin-grouped-invoice | unchanged here. Re-shoot only if the invoice document's money chips or rail changed what the highlight shows (the Xero card becomes a Ledger card); check `invoice-lines` still lands |
-| [US-08.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.2.md) Deposit and balance invoices | captured · admin-deposit-invoice, admin-balance-invoice | unchanged here. Check only (as US-08.2.1) |
-| [US-08.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | stays partial; Phase 22 owns the split basis. This phase adds two pairs for a split in the ledger but changes nothing the shots show. Check only |
-| [US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md) Linked receivable and payable | captured · simulator-xero-pair, admin-invoice-handoff | captured, re-shot. `xero-pair` (`/demo/xero/invoices/XRB0`): the callout is now "Ledger pair (the system of record)" with the "Matches the ledger" chip; highlight `xero-ledger-pair` beside `xero-engine-link`. `invoice-handoff`: the rail's "Xero handoff" section is now the Ledger card; re-point the highlight to it (add a `data-shot="invoice-ledger-card"` rather than the `h2:text-is("Xero handoff")` selector). Caption: "Receivable and payable created together and linked in the ledger" |
-| [US-08.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.2.md) Ledger is the system of record | captured · web-web-accounts, mobile-mobile-balances | captured, re-shot with highlights (both have none today): web `web-accounts` on `/web/accounts/overdue` with `web-accounts-position` boxed; mobile `mobile-balances` with the "Collected $X · Paid out $Y" line boxed (add a `data-shot` for it). Add an admin shot `ledger-system-of-record` (`/admin/ledger` header and `ledger-pairs`). Caption: "Balances come from the ledger, not from Xero" |
-| [US-08.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.3.md) Patient-linked history survives Xero archiving | partial · simulator-archived-contacts, web-history-kept | stays partial. Add admin `ledger-archived-contact` (`/admin/ledger`, All filter: a pair whose payer's Xero contact is archived keeps its row, with the neutral "Contact archived in Xero" note). `absentReason` keeps only: "Purging a contact is not shown." Keep the two existing shots |
-| [US-08.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.4.md) Money in and money out | partial · admin-money-in-out | captured for AA overall and per anaesthetist (admin): `ledger-balance` and `ledger-tiles` on `/admin/ledger` (In balance, receivables outstanding, receipts held, payables due, disbursed), `ledger-out-of-balance` (after Inject unmatched receipt, "Names Dr Souter", from the matching `/demo/control` entry: "Out of balance by $120.00" with `ledger-unmatched`) and `ledger-allocated` (back in balance after Allocate to invoice). Keep `money-in-out`. The per-patient position is Phase 40's patient screen (US-13.2.2): if the story's per-patient drill-down is still judged missing, leave `partial` with "Per-patient position arrives with the patient screen (Phase 40)" |
-| [US-08.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.5.md) Per-anaesthetist ledger position | partial · web-web-overdue, web-web-payments, mobile-mobile-balances | captured. Admin `anaesthetist-ledger` (`/admin/ledger/anaesthetists/<id>`: the "AA owes Dr Souter" and "Dr Souter owes AA" groups, collected, paid out, scoped balance indicator); web `web-overdue` and `web-payments` with the "Your position" strip boxed (`web-accounts-position`); mobile `mobile-balances` with the Collected and Paid out line. Drop the partial reason |
-| [US-08.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.1.md) Invoice layout by party | captured · admin-patient-layout, admin-contract-holder-layout | unchanged here (Phase 22). Re-shoot only: the invoice rail's Xero card becomes a Ledger card. Check only |
-| [US-08.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice[ready,emailed], admin-portal-upload | stays as it is; Phase 22 owns the invoice email address. The `Delivery` rail section is not touched. Check only |
-| [US-08.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.3.md) Xero invoice numbers | captured · simulator-xero-numbers | unchanged. Check only: the Xero numbers are still the ledger legs' numbers |
-| [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | unchanged here (Phase 25). Check only |
-| [US-08.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | unchanged here (Phase 22). Check only |
-| [US-08.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.1.md) Billing processing status | captured · admin-processing-status, admin-failure-reason | captured, re-shot: the monitor reads `pairStatusLabel` and the exceptions, adds the Open the ledger link and the intro line "Money in and out is recorded in the ledger first; Xero mirrors it." Keep the `billing-pipeline-<listId>` highlights |
-| [US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md) Retry a failed billing | captured · admin-card-failure[failed,retried] | captured, re-shot: the Resolve & retry button now calls `retryBillingException` then `handoffPair`. Check the `retried` state still clears the exception |
-| [US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) Post-op charge after invoicing | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | unchanged here (Phase 38b replaces the addendum with an additional invoice recorded as an event; 39b adds the post-op event). Check only |
-| [US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md) Credit and re-issue | absent | stays absent with its reason as it is (Phase 38b updates its addendum wording; Phase 39 builds it). Nothing visible here |
-| [US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md) Create an additional invoice on a Procedure | absent ("Not built yet: catch-up Phase 39 builds this.") | stays absent, with the reason corrected to "Not built yet: catch-up Phase 38b builds this." No shots |
-| [US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md) Split a combined Procedure into additional invoices | absent ("Not built yet: catch-up Phase 39 builds this.") | stays absent as it is. No shots |
-| [US-08.6.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.5.md) Credit note option on additional invoices | none (create it) | create it as absent: "Not built yet: catch-up Phase 39 builds this." No shots |
-| [US-08.6.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | create it as absent: "Not built yet: catch-up Phase 39 builds this." No shots |
-| [US-13.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.2.1.md) Ledger balance views | absent | captured (admin). Shots: `whole-ledger` (`/admin/ledger`, `ledger-balance` and `ledger-tiles` in balance, `ledger-pairs` open), `anaesthetist-scope` (`/admin/ledger/anaesthetists/<id>`, the same balance view scoped, with the "AA owes" and "owes AA" groups), `imbalance` (after Inject unmatched receipt, "Names Dr Souter", `ledger-unmatched` held) and `out-of-balance-list` (the same state, `ledger-anaesthetists-out-of-balance` boxed with Dr Souter listed: Greg's "It's just a list"). Caption: "The ledger's position at the whole-ledger and single-anaesthetist scopes, with the anaesthetists out of balance". Remove the absent reason |
+| [US-08.1.1](../../../../requirements-board/requirements/stories/US-08.1.1.md) Authorise a List for billing | captured · admin-authorise-list[confirm,authorised], admin-billing-run | unchanged here (Phase 25 owns it). `billing-run` stays: the monitor now reads the ledger and shows an Open the ledger link, so re-shoot and check the `billing-pipeline-<listId>` highlight still lands. Keep the shot `name`s |
+| [US-08.2.1](../../../../requirements-board/requirements/stories/US-08.2.1.md) Invoice by billable party | captured · admin-invoices-by-party, admin-grouped-invoice | unchanged here. Re-shoot only if the invoice document's money chips or rail changed what the highlight shows (the Xero card becomes a Ledger card); check `invoice-lines` still lands |
+| [US-08.2.2](../../../../requirements-board/requirements/stories/US-08.2.2.md) Deposit and balance invoices | captured · admin-deposit-invoice, admin-balance-invoice | unchanged here. Check only (as US-08.2.1) |
+| [US-08.2.3](../../../../requirements-board/requirements/stories/US-08.2.3.md) Split one Procedure's fee between two payers | partial · admin-split-invoices, admin-insured-portion, admin-remaining-portion | stays partial; Phase 22 owns the split basis. This phase adds two pairs for a split in the ledger but changes nothing the shots show. Check only |
+| [US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md) Linked receivable and payable | captured · simulator-xero-pair, admin-invoice-handoff | captured, re-shot. `xero-pair` (`/demo/xero/invoices/XRB0`): the callout is now "Ledger pair (the system of record)" with the "Matches the ledger" chip; highlight `xero-ledger-pair` beside `xero-engine-link`. `invoice-handoff`: the rail's "Xero handoff" section is now the Ledger card; re-point the highlight to it (add a `data-shot="invoice-ledger-card"` rather than the `h2:text-is("Xero handoff")` selector). Caption: "Receivable and payable created together and linked in the ledger" |
+| [US-08.3.2](../../../../requirements-board/requirements/stories/US-08.3.2.md) Ledger is the system of record | captured · web-web-accounts, mobile-mobile-balances | captured, re-shot with highlights (both have none today): web `web-accounts` on `/web/accounts/overdue` with `web-accounts-position` boxed; mobile `mobile-balances` with the "Collected $X · Paid out $Y" line boxed (add a `data-shot` for it). Add an admin shot `ledger-system-of-record` (`/admin/ledger` header and `ledger-pairs`). Caption: "Balances come from the ledger, not from Xero" |
+| [US-08.3.3](../../../../requirements-board/requirements/stories/US-08.3.3.md) Patient-linked history survives Xero archiving | partial · simulator-archived-contacts, web-history-kept | stays partial. Add admin `ledger-archived-contact` (`/admin/ledger`, All filter: a pair whose payer's Xero contact is archived keeps its row, with the neutral "Contact archived in Xero" note). `absentReason` keeps only: "Purging a contact is not shown." Keep the two existing shots |
+| [US-08.3.4](../../../../requirements-board/requirements/stories/US-08.3.4.md) Money in and money out | partial · admin-money-in-out | captured for AA overall and per anaesthetist (admin): `ledger-balance` and `ledger-tiles` on `/admin/ledger` (In balance, receivables outstanding, receipts held, payables due, disbursed), `ledger-out-of-balance` (after Inject unmatched receipt, "Names Dr Souter", from the matching `/demo/control` entry: "Out of balance by $120.00" with `ledger-unmatched`) and `ledger-allocated` (back in balance after Allocate to invoice). Keep `money-in-out`. The per-patient position is Phase 40's patient screen (US-13.2.2): if the story's per-patient drill-down is still judged missing, leave `partial` with "Per-patient position arrives with the patient screen (Phase 40)" |
+| [US-08.3.5](../../../../requirements-board/requirements/stories/US-08.3.5.md) Per-anaesthetist ledger position | partial · web-web-overdue, web-web-payments, mobile-mobile-balances | captured. Admin `anaesthetist-ledger` (`/admin/ledger/anaesthetists/<id>`: the "AA owes Dr Souter" and "Dr Souter owes AA" groups, collected, paid out, scoped balance indicator); web `web-overdue` and `web-payments` with the "Your position" strip boxed (`web-accounts-position`); mobile `mobile-balances` with the Collected and Paid out line. Drop the partial reason |
+| [US-08.4.1](../../../../requirements-board/requirements/stories/US-08.4.1.md) Invoice layout by party | captured · admin-patient-layout, admin-contract-holder-layout | unchanged here (Phase 22). Re-shoot only: the invoice rail's Xero card becomes a Ledger card. Check only |
+| [US-08.4.2](../../../../requirements-board/requirements/stories/US-08.4.2.md) Send to the invoice email | partial · admin-email-invoice[ready,emailed], admin-portal-upload | stays as it is; Phase 22 owns the invoice email address. The `Delivery` rail section is not touched. Check only |
+| [US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md) Xero invoice numbers | captured · simulator-xero-numbers | unchanged. Check only: the Xero numbers are still the ledger legs' numbers |
+| [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | unchanged here (Phase 25). Check only |
+| [US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent | partial · admin-agent-line | unchanged here (Phase 22). Check only |
+| [US-08.5.1](../../../../requirements-board/requirements/stories/US-08.5.1.md) Billing processing status | captured · admin-processing-status, admin-failure-reason | captured, re-shot: the monitor reads `pairStatusLabel` and the exceptions, adds the Open the ledger link and the intro line "Money in and out is recorded in the ledger first; Xero mirrors it." Keep the `billing-pipeline-<listId>` highlights |
+| [US-08.5.2](../../../../requirements-board/requirements/stories/US-08.5.2.md) Retry a failed billing | captured · admin-card-failure[failed,retried] | captured, re-shot: the Resolve & retry button now calls `retryBillingException` then `handoffPair`. Check the `retried` state still clears the exception |
+| [US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) Post-op charge after invoicing | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] | unchanged here (Phase 38b replaces the addendum with an additional invoice recorded as an event; 39b adds the post-op event). Check only |
+| [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit and re-issue | absent | stays absent with its reason as it is (Phase 38b updates its addendum wording; Phase 39 builds it). Nothing visible here |
+| [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) Create an additional invoice on a Procedure | absent ("Not built yet: catch-up Phase 39 builds this.") | stays absent, with the reason corrected to "Not built yet: catch-up Phase 38b builds this." No shots |
+| [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent ("Not built yet: catch-up Phase 39 builds this.") | stays absent as it is. No shots |
+| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | create it as absent: "Not built yet: catch-up Phase 39 builds this." No shots |
+| [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | create it as absent: "Not built yet: catch-up Phase 39 builds this." No shots |
+| [US-13.2.1](../../../../requirements-board/requirements/stories/US-13.2.1.md) Ledger balance views | absent | captured (admin). Shots: `whole-ledger` (`/admin/ledger`, `ledger-balance` and `ledger-tiles` in balance, `ledger-pairs` open), `anaesthetist-scope` (`/admin/ledger/anaesthetists/<id>`, the same balance view scoped, with the "AA owes" and "owes AA" groups), `imbalance` (after Inject unmatched receipt, "Names Dr Souter", `ledger-unmatched` held) and `out-of-balance-list` (the same state, `ledger-anaesthetists-out-of-balance` boxed with Dr Souter listed: Greg's "It's just a list"). Caption: "The ledger's position at the whole-ledger and single-anaesthetist scopes, with the anaesthetists out of balance". Remove the absent reason |
 
 **Recipes this phase breaks.** Found at plan time:
 - `US-08.3.1` `invoice-handoff` and `US-13.3.1` (both select the invoice rail's `h2` "Xero handoff"): the rail card is now the Ledger card. Re-point both to a `data-shot` hook on it.

@@ -1,35 +1,35 @@
 # Phase 37 · Xero mirror resilience and the processing monitor
 
 **Requirements covered:**
-[EP-09](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-09.md)
+[EP-09](../../../../requirements-board/requirements/stories/EP-09.md)
 (the epic's resilience and divergence discussion: durable queue, retry with exponential backoff,
 idempotency, alerting, a void made directly in Xero),
-[US-09.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.4.md)
+[US-09.2.4](../../../../requirements-board/requirements/stories/US-09.2.4.md)
 (detect disbursement),
-[US-10.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.4.md)
+[US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md)
 (bulk remittance stays in Xero),
-[US-13.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.1.md)
+[US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md)
 (processing monitor; **Confirmed** at `3d3a18c`, graded Partial: "This list will get quite large", so
 the monitor is restyled with standard sorting and filtering; its Notes say the view is grouped by
 anaesthetist and "is where authorised Lists are approved", and Greg asked for a problems-only filter and
 an all-or-one-anaesthetist filter, "Neither is settled; both come with the prototype's restyle").
 Context only, must stay green:
-[FT-09.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-09.2.md),
-[US-09.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.1.md),
-[US-09.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.2.md)
+[FT-09.2](../../../../requirements-board/requirements/stories/FT-09.2.md),
+[US-09.2.1](../../../../requirements-board/requirements/stories/US-09.2.1.md),
+[US-09.2.2](../../../../requirements-board/requirements/stories/US-09.2.2.md)
 (its technical discussion is where the void and amendment check lives),
-[US-09.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.3.md),
-[US-10.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.1.2.md),
-[US-10.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.1.md),
-[US-10.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.3.md),
-[US-08.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.2.md),
-[FT-13.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.3.md)
+[US-09.2.3](../../../../requirements-board/requirements/stories/US-09.2.3.md),
+[US-10.1.2](../../../../requirements-board/requirements/stories/US-10.1.2.md),
+[US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md),
+[US-10.2.3](../../../../requirements-board/requirements/stories/US-10.2.3.md),
+[US-08.3.2](../../../../requirements-board/requirements/stories/US-08.3.2.md),
+[FT-13.3](../../../../requirements-board/requirements/stories/FT-13.3.md)
 (billing flow monitoring, now **Confirmed** in the Admin App; Matches, so the monitor's "RFP leaves open
 where this surface sits" copy goes),
-[US-13.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.2.md)
+[US-13.3.2](../../../../requirements-board/requirements/stories/US-13.3.2.md)
 (manual intervention, now **Confirmed**; Matches: Resolve & retry stays for billing exceptions through
 the restyle) and
-[US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md)
+[US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md)
 (audit trail; since `3d3a18c` its list names invoices and credit notes, not payments or disbursements,
 "It's done in Xero". The prototype still audits every write through `mutate()` (convention), so the
 detection and queue rows stay; no copy claims the audit trail is required to cover payments).
@@ -38,7 +38,7 @@ No DM or RV item is owned here. The phase builds on
 [reverse-check](../analysis/reverse-check.md) finding covers Xero resilience. The FT-13.3 placement
 caveat is part of RV-17 (Phase 44's sweep); this phase removes it from the monitor because it rewrites
 that copy anyway.
-Open question for context: [OQ-47](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-47.md)
+Open question for context: [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md)
 (payment day and cycle). No owner decision (D1 to D25) gates this phase, and none of the questions
 answered on 2026-10-02 (OQ-62 to OQ-75) or opened then (OQ-76 to OQ-89) touches the Xero mirror or the
 monitor.
@@ -114,7 +114,7 @@ record.
 1. Run:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-09,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,OQ-47,US-09.1.1,US-09.3.1
    ```
 
    Read the hunks for EP-09, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
@@ -914,20 +914,20 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-09.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.1.md) Create the receivable and payable together | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | captured, re-shot. `invoice-xero-ids` (admin invoice rail): the Xero handoff card now also shows Waiting for Xero with attempt count while queued; keep the three `xero-*` testid highlights on the paired state. Add `pair-after-outage` (admin `/admin/billing`, `billing-xero-queue` after Restore Xero: every queued item Sent, exactly one pair per invoice; staged in `setup` with the `xero-outage-start` trigger on `/admin/billing`, an authorise on Review, then the `xero-outage-restore` trigger). Check `pair-detail` (the ACCPAY card layout changes) |
-| [US-09.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.3.md) Prepayment receivable and payable | captured · simulator-prepayment-pair | unchanged. Re-shoot and check the `xero-money-flow-grid` highlight still lands after the ACCPAY card change |
-| [US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md) ACCPAY to the anaesthetist | partial · simulator-accpay-record | stays partial; the buyer-created tax invoice wording is Phase 22 and OQ-29. Re-shoot: `xero-accpay-card` now separates "Paid in Xero" from "Billing Engine: disbursement recorded". Keep the partial reason |
-| [US-09.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.1.md) Payment webhook | captured · simulator-payment-webhook[ready,applied] | captured, re-shot, plus `during-outage` (simulator, `/demo/xero/invoices/<pair>`: with the outage banner on, a payment lands in Xero and the engine shows a queued "Sync payment"). Keep the `ready` and `applied` states and the shot `name` |
-| [US-09.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.2.md) Reconciliation poll | captured · simulator-reconciliation-poll | captured, re-shot, plus `poll-flags-void` (admin `/admin/billing`: after Void this invoice in Xero and Run reconciliation poll, the `billing-xero-divergence` panel flags "Voided in Xero" against "Receivable open") and `poll-flags-amended` (the $20.00 lower total). Caption in the catalogue's words: the poll catches what a webhook missed, and what was changed directly in Xero |
-| [US-09.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.3.md) Idempotent webhook replay | captured · simulator-webhook-replay[first,replayed] | captured, re-shot. Check the replay still records one receipt. Add `restore-no-duplicate` (the queue after Restore Xero: a payment synced once, one receipt) |
-| [US-09.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.2.4.md) Detect disbursement | captured · simulator-accpay-disbursed[awaiting,disbursed], admin-payables-run[due,run] | captured, re-shot. `accpay-disbursed`: `awaiting` shows "Paid in Xero" with the Billing Engine not yet detecting it; `disbursed` shows "disbursement recorded by webhook"; add `detected-by-poll` (Pay anaesthetist in Xero with Webhook missed, then Run reconciliation poll: the disbursement recorded once, dated at the bill payment). `payables-run` (admin `/admin/billing`): the button reads "Run payables in Xero" with its Simulated Xero badge; states `due` and `run`. Replaces the old engine-side payout shots |
-| [US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md) Xero contacts | captured · simulator-contacts, simulator-pair-contact-ids | unchanged. Check only (the payer contact still exists once after an outage restore) |
-| [US-09.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.3.md) Archive contacts | captured · admin-archive-settings, simulator-archived-contact | unchanged. Check only |
-| [US-09.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.4.md) Reuse and unarchive contacts | captured · simulator-archived-contact-reused, simulator-contact-unarchived | unchanged. Check only |
-| [US-09.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.4.1.md) Xero organisation | partial · simulator-xero-organisation | stays partial: no organisation setup or separation from general accounting is built. The new outage banner appears on this tab, so re-shoot with Xero connected and check |
-| [US-09.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.4.2.md) Duplicate invoice number setting | partial · simulator-duplicate-number-setting | stays partial (OQ-11). The Phase 10 duplicate-number callout now points to the Bank reconciliation tab; re-shoot and check the `xero-duplicate-number-policy` highlight |
-| [US-10.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after the `xero-bulk-remittance` trigger, run in `setup` after a `goto` to `/demo/xero/invoices`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
-| [US-13.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `3d3a18c`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
+| [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) Create the receivable and payable together | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | captured, re-shot. `invoice-xero-ids` (admin invoice rail): the Xero handoff card now also shows Waiting for Xero with attempt count while queued; keep the three `xero-*` testid highlights on the paired state. Add `pair-after-outage` (admin `/admin/billing`, `billing-xero-queue` after Restore Xero: every queued item Sent, exactly one pair per invoice; staged in `setup` with the `xero-outage-start` trigger on `/admin/billing`, an authorise on Review, then the `xero-outage-restore` trigger). Check `pair-detail` (the ACCPAY card layout changes) |
+| [US-09.1.3](../../../../requirements-board/requirements/stories/US-09.1.3.md) Prepayment receivable and payable | captured · simulator-prepayment-pair | unchanged. Re-shoot and check the `xero-money-flow-grid` highlight still lands after the ACCPAY card change |
+| [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md) ACCPAY to the anaesthetist | partial · simulator-accpay-record | stays partial; the buyer-created tax invoice wording is Phase 22 and OQ-29. Re-shoot: `xero-accpay-card` now separates "Paid in Xero" from "Billing Engine: disbursement recorded". Keep the partial reason |
+| [US-09.2.1](../../../../requirements-board/requirements/stories/US-09.2.1.md) Payment webhook | captured · simulator-payment-webhook[ready,applied] | captured, re-shot, plus `during-outage` (simulator, `/demo/xero/invoices/<pair>`: with the outage banner on, a payment lands in Xero and the engine shows a queued "Sync payment"). Keep the `ready` and `applied` states and the shot `name` |
+| [US-09.2.2](../../../../requirements-board/requirements/stories/US-09.2.2.md) Reconciliation poll | captured · simulator-reconciliation-poll | captured, re-shot, plus `poll-flags-void` (admin `/admin/billing`: after Void this invoice in Xero and Run reconciliation poll, the `billing-xero-divergence` panel flags "Voided in Xero" against "Receivable open") and `poll-flags-amended` (the $20.00 lower total). Caption in the catalogue's words: the poll catches what a webhook missed, and what was changed directly in Xero |
+| [US-09.2.3](../../../../requirements-board/requirements/stories/US-09.2.3.md) Idempotent webhook replay | captured · simulator-webhook-replay[first,replayed] | captured, re-shot. Check the replay still records one receipt. Add `restore-no-duplicate` (the queue after Restore Xero: a payment synced once, one receipt) |
+| [US-09.2.4](../../../../requirements-board/requirements/stories/US-09.2.4.md) Detect disbursement | captured · simulator-accpay-disbursed[awaiting,disbursed], admin-payables-run[due,run] | captured, re-shot. `accpay-disbursed`: `awaiting` shows "Paid in Xero" with the Billing Engine not yet detecting it; `disbursed` shows "disbursement recorded by webhook"; add `detected-by-poll` (Pay anaesthetist in Xero with Webhook missed, then Run reconciliation poll: the disbursement recorded once, dated at the bill payment). `payables-run` (admin `/admin/billing`): the button reads "Run payables in Xero" with its Simulated Xero badge; states `due` and `run`. Replaces the old engine-side payout shots |
+| [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md) Xero contacts | captured · simulator-contacts, simulator-pair-contact-ids | unchanged. Check only (the payer contact still exists once after an outage restore) |
+| [US-09.3.3](../../../../requirements-board/requirements/stories/US-09.3.3.md) Archive contacts | captured · admin-archive-settings, simulator-archived-contact | unchanged. Check only |
+| [US-09.3.4](../../../../requirements-board/requirements/stories/US-09.3.4.md) Reuse and unarchive contacts | captured · simulator-archived-contact-reused, simulator-contact-unarchived | unchanged. Check only |
+| [US-09.4.1](../../../../requirements-board/requirements/stories/US-09.4.1.md) Xero organisation | partial · simulator-xero-organisation | stays partial: no organisation setup or separation from general accounting is built. The new outage banner appears on this tab, so re-shoot with Xero connected and check |
+| [US-09.4.2](../../../../requirements-board/requirements/stories/US-09.4.2.md) Duplicate invoice number setting | partial · simulator-duplicate-number-setting | stays partial (OQ-11). The Phase 10 duplicate-number callout now points to the Bank reconciliation tab; re-shoot and check the `xero-duplicate-number-policy` highlight |
+| [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after the `xero-bulk-remittance` trigger, run in `setup` after a `goto` to `/demo/xero/invoices`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
+| [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `3d3a18c`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
 
 **Recipes this phase breaks.** Found at plan time:
 - `US-09.2.4` (`payables-run`, `accpay-disbursed`): the engine-side payout is gone. The Billing monitor button is now "Run payables in Xero" and the pair detail pays through Xero. Rebuilt above.

@@ -1,7 +1,7 @@
 /**
  * The dev server's per-card change journal: every change it sees to a card (its own saves and
  * edits made on disk by anyone else) appended to `<dir>/<ID>.jsonl`, with the last version it saw
- * in `<ID>.last.json` to diff the next one against. Kept outside the catalogue folder and out of
+ * in `<ID>.last.json` to diff the next one against. Kept outside the requirements folder and out of
  * git, so it is per machine and never shows up in the catalogue's diffs. Writing it never fails a
  * save: a journal that cannot be written just logs and moves on.
  *

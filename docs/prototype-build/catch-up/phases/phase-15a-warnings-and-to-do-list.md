@@ -5,24 +5,24 @@
 9 to 15) is not built and is planned below against catalogue commit `3d3a18c`.
 
 **Requirements covered:**
-[FT-13.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.7.md) Warnings and the to-do list (Verify: accepted in the room on 2026-10-02, not yet moved; its open point, OQ-79 part 4, is how the notification pool sits beside the to-do list, which Phase 32 owns),
-[US-13.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.1.md) Warning routine (Confirmed),
-[US-13.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.2.md) Warnings on the dashboard to-do list (Confirmed),
-[US-13.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.3.md) Warning flag on a Booking (Confirmed 2026-10-02: no confirm step at submit, no tap-to-read, the warning visually clear on opening the Booking);
+[FT-13.7](../../../../requirements-board/requirements/stories/FT-13.7.md) Warnings and the to-do list (Verify: accepted in the room on 2026-10-02, not yet moved; its open point, OQ-79 part 4, is how the notification pool sits beside the to-do list, which Phase 32 owns),
+[US-13.7.1](../../../../requirements-board/requirements/stories/US-13.7.1.md) Warning routine (Confirmed),
+[US-13.7.2](../../../../requirements-board/requirements/stories/US-13.7.2.md) Warnings on the dashboard to-do list (Confirmed),
+[US-13.7.3](../../../../requirements-board/requirements/stories/US-13.7.3.md) Warning flag on a Booking (Confirmed 2026-10-02: no confirm step at submit, no tap-to-read, the warning visually clear on opening the Booking);
 [DM-31](../analysis/domain-model-delta.md#dm-31) one warning routine and a Warning record on the Booking (partly built in session 1).
 Treated here without closing it: [RV-09](../analysis/reverse-check.md) (the completion-gate part
 only, done in session 1; Phase 27 closes the rest of the prepayment reading).
-Read alongside (rules that later phases register): [US-06.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.3.2.md)
+Read alongside (rules that later phases register): [US-06.3.2](../../../../requirements-board/requirements/stories/US-06.3.2.md)
 (unpaid prepayment, Confirmed, "no block"; the date escalation is Phase 27's),
-[US-03.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.1.md) (19),
-[US-11.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.4.md) (21),
-[US-11.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.3.2.md) (40; per OQ-74, days count from the invoice date and a credit balance is mild).
-Read alongside (the neighbour on the dashboard): [FT-13.8](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.8.md)
-shared notification pool and [OQ-79](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-79.md)
+[US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) (19),
+[US-11.2.4](../../../../requirements-board/requirements/stories/US-11.2.4.md) (21),
+[US-11.3.2](../../../../requirements-board/requirements/stories/US-11.3.2.md) (40; per OQ-74, days count from the invoice date and a credit balance is mild).
+Read alongside (the neighbour on the dashboard): [FT-13.8](../../../../requirements-board/requirements/stories/FT-13.8.md)
+shared notification pool and [OQ-79](../../../../requirements-board/requirements/questions/OQ-79.md)
 (Phase 32 builds it; FT-13.7's note sends notices that need no action there, not to the to-do list).
-Out of scope by status: [US-13.7.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.4.md)
+Out of scope by status: [US-13.7.4](../../../../requirements-board/requirements/stories/US-13.7.4.md)
 (the settings page, Future; Greg 2026-10-02: "set it up as a constant, worry about it later").
-Owner decision: **D5** ([OQ-57](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-57.md),
+Owner decision: **D5** ([OQ-57](../../../../requirements-board/requirements/questions/OQ-57.md),
 answered 2026-10-01: no prepayment block, a clear warning in both apps; built in session 1).
 **Depends on:** Phase 14 (the trigger registry in `src/shared/demoTriggers/`, `useDemoTriggerContext`,
 the PWA demo-actions sheet and the shared actors in `src/store/demoActors.ts`) and Phase 15 (Card
@@ -70,7 +70,7 @@ Future.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-13.7,US-13.7.1,US-13.7.4,FT-13.8,US-06.3.2,US-06.2.1,US-13.1.1,OQ-57,OQ-74,OQ-79,US-13.7.2,US-13.7.3,US-08.2.2
    ```
 
    Read the hunks for FT-13.7, US-13.7.1 to US-13.7.4, FT-13.8, US-06.3.2, US-06.2.1, US-13.1.1 (the
@@ -161,7 +161,7 @@ invent a new visual language.
   List drawer, Review), [prototype-map-shared.md](../analysis/prototype-map-shared.md) (the Booking
   detail body, the submit sheet, the surface seam).
 - The 2026-10-02 requirements review note
-  (`catalogue/notes/2026-10-02-aa-requirements-review-with-greg.md`) points 14 to 16, 45 to 47 and 73:
+  (`requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md`) points 14 to 16, 45 to 47 and 73:
   the triangle "much like the prototype does today", no pop-up at submit ("Do we want to get in their
   way?"; the office sees the warning as a second check), warnings "flag the thing you're on... they
   don't come up", and thresholds as constants.
@@ -545,9 +545,9 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-13.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.1.md) Warning routine | absent placeholder ("Not built yet: catch-up Phase 15a builds this") | create. Status partial: only the unpaid prepayment rule exists; the base-units rule (Phase 19), child billable party (21) and patient balance (40) add theirs, and say so in the reason. Admin shot `warning-text` at `/admin/day/2026-07-24/bookings/BK0038` (Annette Riley), highlight `[data-shot=booking-warnings]`, caption "One routine raises each warning, with its text, kind and strength". No mobile tap shot (the triangle has no tap-to-read) |
-| [US-13.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.2.md) Warnings on the dashboard to-do list | absent placeholder (as above) | create. Status captured. Admin shot `todo-list` at `/admin/day/2026-07-24`, highlight `[data-shot=admin-warnings-todo]`, states `open` ("Open warnings on the to-do list") and `cleared` (click the row's Clear: "A cleared warning leaves the to-do list"), and `samples` (at `/admin/day/2026-07-21`, step `{ "trigger": "raise-sample-warnings" }`, so the list shows several rows) |
-| [US-13.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.3.md) Warning flag on a Booking | absent placeholder (as above) | create. Status captured. Shot `warning-triangle` on mobile (`/mobile/lists/L-34821-2026-07-24-AM`, Riley's row) and web (`/web/lists/L-34821-2026-07-24-AM`, Riley's table row), one state each, highlight `[data-shot=booking-warning]`, caption "A small warning triangle on the Booking, much like the day grid's marker"; mobile shot `warning-on-open` (click "Annette Riley", wait for `[data-testid=slide-booking] [data-shot=booking-warnings]`, highlight it: "Opening the Booking shows its warning at the top"); admin shot `outline-down` at `/admin/day/2026-07-24` with the Souter AM List drawer open (click `[data-shot=daygrid-block-warnings] >> nth=0`), highlight `[data-shot=drawer-booking-warning]` ("The Day view outline extends down to the Booking"). No submit or confirm shot: "No confirm step" is proven by the component test and `visual/warnings.spec.ts` |
+| [US-13.7.1](../../../../requirements-board/requirements/stories/US-13.7.1.md) Warning routine | absent placeholder ("Not built yet: catch-up Phase 15a builds this") | create. Status partial: only the unpaid prepayment rule exists; the base-units rule (Phase 19), child billable party (21) and patient balance (40) add theirs, and say so in the reason. Admin shot `warning-text` at `/admin/day/2026-07-24/bookings/BK0038` (Annette Riley), highlight `[data-shot=booking-warnings]`, caption "One routine raises each warning, with its text, kind and strength". No mobile tap shot (the triangle has no tap-to-read) |
+| [US-13.7.2](../../../../requirements-board/requirements/stories/US-13.7.2.md) Warnings on the dashboard to-do list | absent placeholder (as above) | create. Status captured. Admin shot `todo-list` at `/admin/day/2026-07-24`, highlight `[data-shot=admin-warnings-todo]`, states `open` ("Open warnings on the to-do list") and `cleared` (click the row's Clear: "A cleared warning leaves the to-do list"), and `samples` (at `/admin/day/2026-07-21`, step `{ "trigger": "raise-sample-warnings" }`, so the list shows several rows) |
+| [US-13.7.3](../../../../requirements-board/requirements/stories/US-13.7.3.md) Warning flag on a Booking | absent placeholder (as above) | create. Status captured. Shot `warning-triangle` on mobile (`/mobile/lists/L-34821-2026-07-24-AM`, Riley's row) and web (`/web/lists/L-34821-2026-07-24-AM`, Riley's table row), one state each, highlight `[data-shot=booking-warning]`, caption "A small warning triangle on the Booking, much like the day grid's marker"; mobile shot `warning-on-open` (click "Annette Riley", wait for `[data-testid=slide-booking] [data-shot=booking-warnings]`, highlight it: "Opening the Booking shows its warning at the top"); admin shot `outline-down` at `/admin/day/2026-07-24` with the Souter AM List drawer open (click `[data-shot=daygrid-block-warnings] >> nth=0`), highlight `[data-shot=drawer-booking-warning]` ("The Day view outline extends down to the Booking"). No submit or confirm shot: "No confirm step" is proven by the component test and `visual/warnings.spec.ts` |
 
 **Recipes this phase breaks.** Work item 15 re-points them; this section is the list. The day
 grid's `daygrid-block-prepayment` becomes `daygrid-block-warnings` (the "Pre-payment flagged"

@@ -35,8 +35,8 @@ export function Gallery({ item }: { item: Item }) {
       </h3>
       {item.images.length === 0 ? (
         <div className="empty-shots">
-          No screenshots yet. Save them to <code>catalogue/assets/{item.id}/</code> and list each under <code>images</code> in{' '}
-          <code>requirements/{item.id}.md</code> with its <code>viewport</code> (desktop or mobile) and <code>app</code>, or add them here in Edit.
+          No screenshots yet. Save them to <code>requirements/assets/{item.id}/</code> and list each under <code>images</code> in{' '}
+          <code>requirements/stories/{item.id}.md</code> with its <code>viewport</code> (desktop or mobile) and <code>app</code>, or add them here in Edit.
         </div>
       ) : (
         <>
@@ -102,7 +102,7 @@ export function ImagesEditor({ draft, set }: { draft: Item; set: (p: Partial<Ite
   const update = (i: number, patch: Partial<ImageRef>) => set({ images: draft.images.map((img, n) => (n === i ? { ...img, ...patch } : img)) })
   return (
     <div className="field">
-      <span>Screenshots · paths relative to the catalogue folder</span>
+      <span>Screenshots · paths relative to the requirements folder</span>
       {draft.images.map((img, i) => (
         <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 110px 1fr 32px', gap: 8 }}>
           <input className="input mono" style={{ fontSize: 12 }} value={img.src} placeholder={`assets/${draft.id}/screen.png`} onChange={(e) => update(i, { src: e.target.value })} />

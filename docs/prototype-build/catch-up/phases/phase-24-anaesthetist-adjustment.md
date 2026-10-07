@@ -1,23 +1,23 @@
 # Phase 24 · Contract defined rate and anaesthetist adjustment
 
 **Requirements covered:**
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules (Verify, [OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md)). Rewritten on 2026-10-02: base units come from the procedure's default RVG Contract ([US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md), built by 19a), and the fourth pricing basis is a **Contract defined unit rate**, not rate x time. This phase closes its last two missing parts, the defined rate and the allows-adjustment rule ·
-[FT-05.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-05.2.md) Unit and fee calculation (now Confirmed), which closes here ·
-[US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md) Contract defined rate (renamed from "Rate x time pricing", now Confirmed) ·
-[FT-03.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.5.md) Anaesthetist adjustment ·
-[US-03.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason (Proposed) ·
-[FT-05.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-05.4.md) Adjustments and overrides ·
-[US-05.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.1.md) Apply anaesthetist adjustment ·
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing and adjustment rules (Verify, [OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md)). Rewritten on 2026-10-02: base units come from the procedure's default RVG Contract ([US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md), built by 19a), and the fourth pricing basis is a **Contract defined unit rate**, not rate x time. This phase closes its last two missing parts, the defined rate and the allows-adjustment rule ·
+[FT-05.2](../../../../requirements-board/requirements/stories/FT-05.2.md) Unit and fee calculation (now Confirmed), which closes here ·
+[US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) Contract defined rate (renamed from "Rate x time pricing", now Confirmed) ·
+[FT-03.5](../../../../requirements-board/requirements/stories/FT-03.5.md) Anaesthetist adjustment ·
+[US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason (Proposed) ·
+[FT-05.4](../../../../requirements-board/requirements/stories/FT-05.4.md) Adjustments and overrides ·
+[US-05.4.1](../../../../requirements-board/requirements/stories/US-05.4.1.md) Apply anaesthetist adjustment ·
 [DM-46](../analysis/domain-model-delta.md#dm-46) the hourly rate x time billing line and its "individually arranged" gate are replaced by a Contract defined unit rate ·
 [DM-14](../analysis/domain-model-delta.md#dm-14) the anaesthetist adjustment is its own Contract-gated record, and the office override stays the existing `priceOverride` ·
 [RV-24](../analysis/reverse-check.md#rv-24-rate-x-time-billing-line-hours-x-hourly-rate-gated-by-a-method-3-contract-flag) the hours x rate line, its Method 3 flag and the hourly seed Contract go ·
 [RV-11](../analysis/reverse-check.md#rv-11-anaesthetist-adjustment-is-dollar-or-fixed-price-and-always-offered-percentage-is-office-only) the dollar-or-fixed, always-offered, ungated anaesthetist adjustment is reworked.
 Kept as they are and re-tested, not reopened:
-[US-05.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.1.md) Per-unit pricing rate (now Confirmed; its rate now comes through this phase's rate function),
-[US-05.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.2.md) Office price override (Matches; the office can always override, [OQ-16](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-16.md) Answered) and
-[US-03.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.2.md) BTM still recorded in full (Matches; must survive a 100% discount).
+[US-05.2.1](../../../../requirements-board/requirements/stories/US-05.2.1.md) Per-unit pricing rate (now Confirmed; its rate now comes through this phase's rate function),
+[US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office price override (Matches; the office can always override, [OQ-16](../../../../requirements-board/requirements/questions/OQ-16.md) Answered) and
+[US-03.5.2](../../../../requirements-board/requirements/stories/US-03.5.2.md) BTM still recorded in full (Matches; must survive a 100% discount).
 Not this phase's: the dated UNIT x RATE billing line outside BTM
-([US-03.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.6.md),
+([US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md),
 Proposed) is Phase 39b's, priced through this phase's rate function.
 **Depends on:** Phase 23 (the Booking-level pricing engine, the 3/2/2 modifier split and the
 per-Contract multi-procedure rule). Also relies on 15 (Booking vocabulary), 15a (the warning
@@ -82,7 +82,7 @@ report or Contract setting for repeated overrides.
 1. Diff the catalogue against the snapshot (catalogue commit 3d3a18c):
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-04.2.2,US-05.2.6,FT-05.2,US-05.2.1,US-03.3.6,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,OQ-89,OQ-62,OQ-16
    ```
 
    - **What to read.** Read the diff for US-04.2.2, US-05.2.6, FT-05.2, US-05.2.1, US-03.3.6,
@@ -214,19 +214,19 @@ report or Contract setting for repeated overrides.
   patterns, and Phase 18's Contract detail panel sections, rather than inventing a new panel.
 
 **Catalogue.** The covered items above, plus
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md)
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md)
 (default RVG Contracts hold base units; 19a),
-[US-03.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.6.md)
+[US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md)
 (the UNIT x RATE line; 39b),
-[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md)
 (fixed fee, the other whole-Procedure basis),
-[US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md)
+[US-04.3.5](../../../../requirements-board/requirements/stories/US-04.3.5.md)
 (the locked Contract that US-05.4.1 names; Phase 25 builds the lock) and
-[FT-07.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-07.2.md)
+[FT-07.2](../../../../requirements-board/requirements/stories/FT-07.2.md)
 (SUBMITTED review, where the office overrides), and
-[OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md) (the defined
+[OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (the defined
 rate's shape) and
-[OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md) (answered:
+[OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md) (answered:
 base units in the default RVG Contracts). The evidence is
 `notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` points #17, #19, #20 and #55. In
 `domain-model.md`, see section 3's pipeline: "then apply anaesthetist adjustment (if allowed), then
@@ -992,16 +992,16 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason | partial · web-adjustment, mobile-adjustment (none, adjustment) | Captured. The existing recipes start on BK0009, a St George's default Booking whose Contract does not allow an adjustment, so move both to `SEED_MARKERS.adjustmentCaptureBooking` (Dr Souter's pinned Mon 27 Jul List, RVG Default Post-paid; take the id from the built seed). Re-shoot web and mobile, highlight `adjustment-card`: state `none` is the "Price adjustment" section with the None, Discount %, Final price control; `adjustment` is a discount typed with its required reason. Add a `not-offered` state (or shot) on the Aria defined-rate Booking beside it on the same List: no adjustment section where the Contract does not allow it. Add a `before-btm` state with the caption "once base, time and modifier units are recorded". Caption in the catalogue's words. Drop the partial reason. |
-| [US-03.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.5.2.md) BTM still recorded in full at a 100% discount | captured · web-full-discount, mobile-full-discount | Stays captured. Same move off BK0009 to the adjustment Booking; keep the highlight on `units-row-b` and `units-row-m` and the 100% state, with the caption "Base, time and modifier units stay recorded. Nothing is charged." Keep the shot `name`s. |
-| [US-05.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.1.md) Per-unit pricing rate | captured · admin-unit-values, admin-card-fee | Stays captured. The fee now comes through `unitRateFor` and the office total gains the rate caption ("at Dr Souter's unit value $x"): re-shoot `admin-card-fee` with `fee-rate-source` in the highlight. Keep the shot `name`s. |
-| [US-05.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | Stays as 19a left it. This phase does not touch the time tiers; the `--dry` run is the check. |
-| [US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | Stays as Phase 18 left it (its partial reason, time bands and add-ons, is 18's and OQ-89 question 3's). `unitRateFor` returns no rate for a fixed schedule, so the shot should not change; the `--dry` run is the check. |
-| [US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md) Contract defined rate | captured · web-rate-time, mobile-rate-time (entry, added) | Captured, rebuilt. The existing shots add an hourly line on BK0037 through "Rate × time (hourly)", which this phase removes, so both shots fail. Replace them with `admin-defined-rate`: state `contract` on the Aria Contract's detail panel in Master data, highlight `contract-pricing-basis` ("Contract defined rate", $26.50 per unit); state `booking` on Fitzgerald's Wed 15 Jul Booking (`SEED_MARKERS.definedRateBooking`) in Admin, highlight `fee-rate-source` ("at the Contract defined rate $26.50") with the fee. Caption in the catalogue's words: "the procedure priced at the Contract's specified unit rate". No anaesthetist shot (the anaesthetist sees no rate). |
-| [US-05.2.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.7.md) GST | captured · admin-invoice-gst | Stays captured. INV0001 is not an Aria invoice; the `--dry` run is the check. |
-| [US-05.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.1.md) Apply anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (entry, applied) | Captured. Same move off BK0009. `entry` shows the reason required; `applied` shows the adjustment applied with no money on the anaesthetist screen (the 2026-09-28 ruling). The old caption "the Booking total shows the fee before it" goes. Add the office side: `admin-adjustment-layers` on the seeded `SEED_MARKERS.adjustedBooking` (Dr Morrison, Mon 20 Jul List `SEED_LIST_IDS.morrisonMon20`) with `booking-total-layers` ("Calculated $360.00 · anaesthetist discount 10% · $324.00") and `review-adjustment-flag` on `/admin/review/<that List>`. Drop the partial reason. |
-| [US-05.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.4.2.md) Office price override | captured · admin-price-override (entry, applied) | Stays captured. The sheet is renamed "Office price override" and shows "Calculated" and "After the anaesthetist's discount" context lines; the "Price override" button keeps its name. Re-shoot both states (`office-override-sheet`), moved off BK0009 to the seeded `SEED_MARKERS.adjustedBooking` (Dr Morrison, Mon 20 Jul) so the "After the anaesthetist's 10% discount" context line shows. |
-| [US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) Contract pricing and adjustment rules | captured · admin-pricing-basis (type-1, type-2, type-3, rate-time) | Stays captured. Re-shoot the basis states (Phase 18 rebuilt the sheet): the anaesthetist's unit value, the Contract defined rate ($ per unit on Aria, and % discount on a discount Contract) and the fee schedule. The `rate-time` state goes; rename it `defined-rate`. Add `adjustment-rule` highlighting `contract-adjustment-rule` ("Anaesthetist may adjust the price") for RVG Default Post-paid, with a second state on a Contract where it is off. |
+| [US-03.5.1](../../../../requirements-board/requirements/stories/US-03.5.1.md) Apply an anaesthetist adjustment, with required reason | partial · web-adjustment, mobile-adjustment (none, adjustment) | Captured. The existing recipes start on BK0009, a St George's default Booking whose Contract does not allow an adjustment, so move both to `SEED_MARKERS.adjustmentCaptureBooking` (Dr Souter's pinned Mon 27 Jul List, RVG Default Post-paid; take the id from the built seed). Re-shoot web and mobile, highlight `adjustment-card`: state `none` is the "Price adjustment" section with the None, Discount %, Final price control; `adjustment` is a discount typed with its required reason. Add a `not-offered` state (or shot) on the Aria defined-rate Booking beside it on the same List: no adjustment section where the Contract does not allow it. Add a `before-btm` state with the caption "once base, time and modifier units are recorded". Caption in the catalogue's words. Drop the partial reason. |
+| [US-03.5.2](../../../../requirements-board/requirements/stories/US-03.5.2.md) BTM still recorded in full at a 100% discount | captured · web-full-discount, mobile-full-discount | Stays captured. Same move off BK0009 to the adjustment Booking; keep the highlight on `units-row-b` and `units-row-m` and the 100% state, with the caption "Base, time and modifier units stay recorded. Nothing is charged." Keep the shot `name`s. |
+| [US-05.2.1](../../../../requirements-board/requirements/stories/US-05.2.1.md) Per-unit pricing rate | captured · admin-unit-values, admin-card-fee | Stays captured. The fee now comes through `unitRateFor` and the office total gains the rate caption ("at Dr Souter's unit value $x"): re-shoot `admin-card-fee` with `fee-rate-source` in the highlight. Keep the shot `name`s. |
+| [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | Stays as 19a left it. This phase does not touch the time tiers; the `--dry` run is the check. |
+| [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md) Fixed fee schedule pricing | partial · admin-fixed-price | Stays as Phase 18 left it (its partial reason, time bands and add-ons, is 18's and OQ-89 question 3's). `unitRateFor` returns no rate for a fixed schedule, so the shot should not change; the `--dry` run is the check. |
+| [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md) Contract defined rate | captured · web-rate-time, mobile-rate-time (entry, added) | Captured, rebuilt. The existing shots add an hourly line on BK0037 through "Rate × time (hourly)", which this phase removes, so both shots fail. Replace them with `admin-defined-rate`: state `contract` on the Aria Contract's detail panel in Master data, highlight `contract-pricing-basis` ("Contract defined rate", $26.50 per unit); state `booking` on Fitzgerald's Wed 15 Jul Booking (`SEED_MARKERS.definedRateBooking`) in Admin, highlight `fee-rate-source` ("at the Contract defined rate $26.50") with the fee. Caption in the catalogue's words: "the procedure priced at the Contract's specified unit rate". No anaesthetist shot (the anaesthetist sees no rate). |
+| [US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md) GST | captured · admin-invoice-gst | Stays captured. INV0001 is not an Aria invoice; the `--dry` run is the check. |
+| [US-05.4.1](../../../../requirements-board/requirements/stories/US-05.4.1.md) Apply anaesthetist adjustment | partial · web-adjustment, mobile-adjustment (entry, applied) | Captured. Same move off BK0009. `entry` shows the reason required; `applied` shows the adjustment applied with no money on the anaesthetist screen (the 2026-09-28 ruling). The old caption "the Booking total shows the fee before it" goes. Add the office side: `admin-adjustment-layers` on the seeded `SEED_MARKERS.adjustedBooking` (Dr Morrison, Mon 20 Jul List `SEED_LIST_IDS.morrisonMon20`) with `booking-total-layers` ("Calculated $360.00 · anaesthetist discount 10% · $324.00") and `review-adjustment-flag` on `/admin/review/<that List>`. Drop the partial reason. |
+| [US-05.4.2](../../../../requirements-board/requirements/stories/US-05.4.2.md) Office price override | captured · admin-price-override (entry, applied) | Stays captured. The sheet is renamed "Office price override" and shows "Calculated" and "After the anaesthetist's discount" context lines; the "Price override" button keeps its name. Re-shoot both states (`office-override-sheet`), moved off BK0009 to the seeded `SEED_MARKERS.adjustedBooking` (Dr Morrison, Mon 20 Jul) so the "After the anaesthetist's 10% discount" context line shows. |
+| [US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) Contract pricing and adjustment rules | captured · admin-pricing-basis (type-1, type-2, type-3, rate-time) | Stays captured. Re-shoot the basis states (Phase 18 rebuilt the sheet): the anaesthetist's unit value, the Contract defined rate ($ per unit on Aria, and % discount on a discount Contract) and the fee schedule. The `rate-time` state goes; rename it `defined-rate`. Add `adjustment-rule` highlighting `contract-adjustment-rule` ("Anaesthetist may adjust the price") for RVG Default Post-paid, with a second state on a Contract where it is off. |
 
 **Recipes this phase breaks.**
 - **Retired recipes still run.** `npm run capture` runs every recipe whose item exists, Retired

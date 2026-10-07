@@ -7,7 +7,7 @@ import { depthFirst, parseCsv, questionsCsv, requirementsCsv } from '../shared/c
 import { itemRoundTripProblems, parseItem, parseQuestion, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { nextItemId, nextQuestionId } from '../shared/ids.ts'
 import type { Item, Question } from '../shared/types.ts'
-import { itemsDir, loadCatalogue, questionsDir, serialiseLayout, writeItem } from '../server/catalogueFs.ts'
+import { storiesDir, loadCatalogue, questionsDir, serialiseLayout, writeItem } from '../server/catalogueFs.ts'
 
 const item = (over: Partial<Item>): Item => ({
   id: 'US-01.1.1',
@@ -45,8 +45,8 @@ describe('catalogue files', () => {
   })
 
   it('round-trips every item file byte for byte', () => {
-    for (const f of readdirSync(itemsDir())) {
-      const text = readFileSync(join(itemsDir(), f), 'utf8')
+    for (const f of readdirSync(storiesDir())) {
+      const text = readFileSync(join(storiesDir(), f), 'utf8')
       expect(serialiseItem(parseItem(text)), f).toBe(text)
     }
   })
@@ -280,6 +280,6 @@ describe('writing', () => {
     const rec = writeItem(item({ title: 'Written' }), dir)
     const loaded = loadCatalogue(dir)
     expect(loaded.items['US-01.1.1']).toEqual(rec)
-    expect(readdirSync(itemsDir(dir))).toEqual(['EP-01.md', 'FT-01.1.md', 'US-01.1.1.md'])
+    expect(readdirSync(storiesDir(dir))).toEqual(['EP-01.md', 'FT-01.1.md', 'US-01.1.1.md'])
   })
 })

@@ -6,7 +6,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the Prepayment track, the sequencing rule "26 and 27 run back to back, after 25", the PWA parity section, and the "Confirm before building" row for 26.
 2. docs/prototype-build/catch-up/phases/phase-26-prepaid-settings-and-profile.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the FT-06.1, US-06.1.1 and US-06.1.2 rows of the "EP-06 · Prepayment" section and the US-12.1.1 to US-12.1.4 rows of the "EP-12 · Anaesthetist profile and reporting" section. Then docs/prototype-build/catch-up/epics/EP-06.md and EP-12.md (the same items), docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-19 and DM-33; DM-13 for RVG groups, DM-27 for the GST number on invoices, DM-32 for the HPI CPN) and reverse-check.md (RV-09, for context only).
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/FT-06.1.md, US-06.1.1.md, US-06.1.2.md, US-12.1.1.md, US-12.1.3.md and US-12.1.4.md;
    - for context, requirements/FT-12.1.md, US-12.1.2.md, US-08.4.5.md (the GST number, Phase 22), US-01.1.3.md (the start date, Phase 28), US-06.2.1.md and US-05.1.3.md;
    - questions/OQ-14.md, OQ-25.md and OQ-52.md (all answered; OQ-52 at the 2026-10-01 meeting: the HPI number and the CPN are one identifier, called the HPI CPN), and OQ-73.md (open, Phase 27's; it shapes only the seed coherence test);
@@ -20,7 +20,7 @@ Before doing anything else, read these in order:
    - the PROGRESS entries for catch-up Phases 17, 19, 20, 21, 22 and 25: the HPI CPN helpers, label and duplicate refusal (17), the RVG group shapes (19), the interim Booking prepayment flag (20), the effective billable party selector billablePartyForProcedure and isPersonParty (21), Anaesthetist.gstNumber with its validator, format and invoice supplier snapshot (22), and the AUTHORISED lock (25), as actually built.
 
 Then do the drift check in the phase doc:
-- Run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - Confirm US-12.1.4 (Verify) still puts bank details in the system and names one HPI CPN (OQ-52), and that US-12.1.1, US-12.1.2, US-08.4.5 and US-06.1.2 still let the anaesthetist, and the office on their behalf, edit these settings. If any reading changed, apply the "If it has changed" column of the phase doc's table.
 - Confirm Phase 25's lock has landed. If it has not, use the fallback rate note and the it.todo lock test the phase doc describes.
 - Confirm where Phase 14 put the PWA demo-actions chip (planned in src/pwa/MobileViewport.tsx, not on the More tab) so the new More cards do not collide with it or with PwaDemoPanel.

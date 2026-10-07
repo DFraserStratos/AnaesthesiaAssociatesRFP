@@ -2802,7 +2802,7 @@
     "aa-prototype/src/shared/capture/UnitsCard.tsx:59-80",
     "aa-prototype/src/shared/capture/BtmCaptureBlock.tsx:209-217",
     "aa-prototype/src/domain/types.ts:484",
-    "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-05.3.1.md"
+    "requirements-board/requirements/stories/US-05.3.1.md"
    ],
    "demo_trigger": "",
    "surfaces": [
@@ -4648,7 +4648,7 @@
     "aa-prototype/src/domain/billing/modifierCodes.ts:19-48,53",
     "aa-prototype/src/apps/admin/screens/MasterData.tsx:432-451",
     "aa-prototype/src/domain/billing/modifierUnits.ts:43",
-    "docs/discovery-reference/Updated Requirements/domain-model.md:300-301"
+    "requirements-board/requirements/domain-model.md:300-301"
    ],
    "demo_trigger": "",
    "surfaces": [
@@ -7775,7 +7775,7 @@
     "aa-prototype/src/apps/demo/DemoXero.tsx:56-62 (stale callout), :101 (help text), :117,189,373,407 (name display)",
     "aa-prototype/src/domain/seed/history.ts:140-175 (seeded contacts named)",
     "aa-prototype/src/apps/demo/xeroPairView.ts:59-69,103-140 (contactView passes name through; patientName kept under engine)",
-    "docs/discovery-reference/Updated Requirements/catalogue/questions/OQ-30.md answer: 'No PII in Xero'"
+    "requirements-board/requirements/questions/OQ-30.md answer: 'No PII in Xero'"
    ],
    "demo_trigger": "",
    "surfaces": [
@@ -9061,7 +9061,7 @@
    "prototype_does": "Nothing at epic level; children graded separately.",
    "missing_or_wrong": [],
    "evidence": [
-    "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-12.md: two intro paragraphs, no AC section"
+    "requirements-board/requirements/stories/EP-12.md: two intro paragraphs, no AC section"
    ],
    "demo_trigger": "",
    "surfaces": [],
@@ -9085,7 +9085,7 @@
    "prototype_does": "Nothing at feature level; children graded separately (bank account absent, see US-12.1.4).",
    "missing_or_wrong": [],
    "evidence": [
-    "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-12.1.md: one-sentence body, no AC"
+    "requirements-board/requirements/stories/FT-12.1.md: one-sentence body, no AC"
    ],
    "demo_trigger": "",
    "surfaces": [],

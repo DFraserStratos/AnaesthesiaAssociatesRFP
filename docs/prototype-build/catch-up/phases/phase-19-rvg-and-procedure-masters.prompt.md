@@ -4,7 +4,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D3 and D12, answered, apply to this phase), the Contracts track sequencing rules, the "Catalogue screenshots" rule, the placement notes for the 2026-10-03 update (19a is split from 19), and the open-questions row for 19 (OQ-88).
 2. docs/prototype-build/catch-up/phases/phase-19-rvg-and-procedure-masters.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the "EP-05 · RVG master data and fee calculation rules" section and the US-03.3.1 row of the EP-03 section. Then docs/prototype-build/catch-up/epics/EP-05.md (US-05.1.1, 05.1.3, 05.1.4, 05.1.5, 05.1.6), docs/prototype-build/catch-up/epics/EP-03.md (US-03.3.1), docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-13, DM-44, DM-43 for 19a's slot, DM-31) and reverse-check.md (RV-04, RV-23).
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/US-05.1.1.md, US-05.1.3.md, US-05.1.4.md, US-05.1.5.md, US-05.1.6.md and US-03.3.1.md;
    - for context, requirements/US-05.2.3.md (Retired: why absorption goes), US-04.4.2.md and US-04.2.2.md (19a's default RVG Contracts and override), US-04.3.2.md, US-06.1.1.md and US-13.7.1.md;
    - questions/OQ-56.md, OQ-62.md (answered), OQ-88.md (open), OQ-32.md and OQ-53.md;
@@ -20,7 +20,7 @@ Before doing anything else, read these in order:
 9. docs/prototype-build/catch-up/phases/phase-19a-default-rvg-contracts.md (what it takes from you: the resolver's contractBaseUnits slot, RvgGroupRef and codesInGroup, the procedure master), and docs/prototype-build/catch-up/phases/phase-15a-warnings-and-to-do-list.md work items 1, 2, 5 and 14 (rule shape, facts, samples).
 
 Then do the drift check in the phase doc:
-- Run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - D3 (OQ-56) and D12 (OQ-62) are answered: build them as the answers, with no provisional label. The procedure master holds no base units; the RVG master is editable reference data; base units are still read from the RVG reference value through the one resolver until 19a moves them onto each procedure's default RVG Contracts.
 - Check OQ-88. If still open, build its recommendation (one procedure master, each line with its own system code and an RVG code reference; RVG codes as reference data) with one provisional note on the Procedure master tab. If it has been answered another way, stop and ask me before starting the change the gate table describes.
 - Check docs/discovery-reference/Data files for Vanessa's standard procedure list and AA's fuller modifier list.

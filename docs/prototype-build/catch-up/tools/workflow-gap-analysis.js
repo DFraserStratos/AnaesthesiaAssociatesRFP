@@ -24,14 +24,14 @@ const EPICS = args.epics.map(e => ({
   items: e.items.map(s => { const [id, status, oq] = s.split('|'); return { id, status, type: id.startsWith('EP') ? 'epic' : id.startsWith('FT') ? 'feature' : 'story', title: '', oqs: oq ? oq.split(',') : [] } }),
   excluded: e.excluded.map(s => { const [id, status, swimlane] = s.split('|'); return { id, status, swimlane, title: '' } }),
 }))
-const CAT = 'docs/discovery-reference/Updated Requirements/catalogue'
+const CAT = 'requirements-board/requirements'
 const AN = 'docs/prototype-build/catch-up/analysis'
 const M = 'sonnet'
 
 const CTX = `You are one agent in a gap analysis between the Anaesthesia Associates (AA) prototype and the current requirements catalogue.
 - Repo root: ${ROOT} (use absolute paths; note the spaces in folder names).
 - Prototype: aa-prototype/ (React demo over a fake in-browser backend: store in src/store, domain types/rules in src/domain, seed in src/domain/seed, three apps in src/apps/{mobile,web,admin}, demo simulators in src/apps/demo, shell/harness in src/shell, PWA build in src/pwa).
-- Requirements catalogue (THE source of truth, supersedes the RFP and the prototype's build docs wherever they differ): "${CAT}/requirements/<ID>.md" (one file per epic EP-nn / feature FT-nn.m / story US-nn.m.k), outstanding questions in "${CAT}/questions/OQ-nn.md" (field "affects" lists item IDs). Format: "${CAT}/SCHEMA.md". Narrative model: "docs/discovery-reference/Updated Requirements/domain-model.md". Evidence notes: "${CAT}/notes/".
+- Requirements catalogue (THE source of truth, supersedes the RFP and the prototype's build docs wherever they differ): "${CAT}/stories/<ID>.md" (one file per epic EP-nn / feature FT-nn.m / story US-nn.m.k), outstanding questions in "${CAT}/questions/OQ-nn.md" (field "affects" lists item IDs). Format: "${CAT}/SCHEMA.md". Narrative model: "requirements-board/requirements/domain-model.md". Evidence notes: "${CAT}/notes/".
 - The prototype was built against the ORIGINAL RFP (docs/rfp-reference/RFP.md) in July 2026. Since then the catalogue has changed a lot. Old build docs (docs/prototype-build/PROGRESS.md, REQUIREMENTS.md, prototype-review/) describe what was intended at the time: use them only as leads to find code, never as proof something exists. THE CODE IS THE TRUTH about the prototype.
 - This is a READ-ONLY analysis. Do not modify any file except an output file you are explicitly told to write. No git writes, no builds, no dev servers.
 - Be concise and factual. Cite code as aa-prototype/src/...:line.`
@@ -176,11 +176,11 @@ const deltaJob = () => agent(
   `${CTX}
 
 TASK: data-model delta. Compare the entity/relationship/lifecycle model the requirements now describe with the model the prototype implements.
-1. Read "docs/discovery-reference/Updated Requirements/domain-model.md" fully, then skim every epic and feature file in "${CAT}/requirements/" (EP-*.md, FT-*.md) and the stories that define entities, statuses or lifecycles. Ignore items with status Retired or Future.
+1. Read "requirements-board/requirements/domain-model.md" fully, then skim every epic and feature file in "${CAT}/stories/" (EP-*.md, FT-*.md) and the stories that define entities, statuses or lifecycles. Ignore items with status Retired or Future.
 2. Read the prototype's types and lifecycles: aa-prototype/src/domain (types, lifecycle, billing, integrations), the store shape in aa-prototype/src/store/appStore.ts and related slices, and the seed's shape in aa-prototype/src/domain/seed.
 3. List every structural difference: new entities, changed entities (fields, identity, cardinality), removed/renamed entities, relationships, lifecycle/status machines, and model-level rules (who owns what, what is derived vs stored). Skip cosmetic naming unless it changes meaning.
 These deltas decide the order of the rebuild (model changes ripple into store, seed and every screen), so be precise about impact and whether a delta must precede other work.
-Also write a readable version to "${ROOT}/${AN}/domain-model-delta.md" (a short intro, then one section per delta with catalogue links as relative paths from that file, e.g. ../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.1.md).
+Also write a readable version to "${ROOT}/${AN}/domain-model-delta.md" (a short intro, then one section per delta with catalogue links as relative paths from that file, e.g. ../../../../requirements-board/requirements/stories/US-01.1.1.md).
 Return the structured deltas (verify_outcome and verify_note as "").`,
   { label: 'delta:domain-model', phase: 'Map', model: M, effort: 'high', schema: DELTA },
 )
@@ -200,7 +200,7 @@ TASK: grade how well the prototype matches each in-scope requirement of epic ${e
 
 ${READ_MAPS}
 
-Then read each of these catalogue files in full ("${CAT}/requirements/<ID>.md"), plus the question files for any unresolved questions listed, plus the parts of domain-model.md that concern this epic:
+Then read each of these catalogue files in full ("${CAT}/stories/<ID>.md"), plus the question files for any unresolved questions listed, plus the parts of domain-model.md that concern this epic:
 ${items.map(itemLine).join('\n')}
 
 For EACH item: read the requirement (description, acceptance criteria, technical discussion, notes), then find the prototype code that would implement it (use the maps, then grep/read the code; try synonyms and older RFP vocabulary, since the prototype may use different names). Decide a verdict with evidence.
@@ -217,7 +217,7 @@ TASK: you are an ADVERSARIAL VERIFIER. Another agent graded how well the prototy
 
 ${READ_MAPS}
 
-Requirement files: "${CAT}/requirements/<ID>.md" for:
+Requirement files: "${CAT}/stories/<ID>.md" for:
 ${items.map(itemLine).join('\n')}
 
 ${VERDICTS}
@@ -249,7 +249,7 @@ ${EPICS.flatMap(e => e.excluded).filter(x => x.status !== 'Retired').map(x => `-
 3. DecisionSuperseded: read the Decisions log in docs/prototype-build/PROGRESS.md (the "## Decisions log" section, roughly lines 54 to 186) and the "Discovered for later" handoff list. For each ruling that the current catalogue now contradicts, record it: the prototype follows a reading that has since changed. Cite the catalogue item that supersedes it.
 4. UnbackedBehaviour: prototype business behaviour (rules, statuses, screens) that no in-scope catalogue item supports AND that conflicts with or would mislead against the catalogue. Demo-only simulators and presenter tooling are fine; do not list them unless they model an external system in a way the catalogue now contradicts.
 
-Catalogue files: "${CAT}/requirements/<ID>.md". Also write a readable report to "${ROOT}/${AN}/reverse-check.md" (short intro, then findings grouped by kind; link catalogue items with relative paths from that file, e.g. ../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.1.md).
+Catalogue files: "${CAT}/stories/<ID>.md". Also write a readable report to "${ROOT}/${AN}/reverse-check.md" (short intro, then findings grouped by kind; link catalogue items with relative paths from that file, e.g. ../../../../requirements-board/requirements/stories/US-01.1.1.md).
 Return the structured findings (verify_outcome and verify_note as "").`
 
 const verifyReversePrompt = draft => `${CTX}
@@ -265,7 +265,7 @@ Return the final list. verify_outcome per finding: upheld | corrected | added (d
 
 const verifyDeltaPrompt = draft => `${CTX}
 
-TASK: ADVERSARIAL VERIFIER for a data-model delta (structural differences between the model the requirements describe and the prototype's model). For each delta, re-read the catalogue refs and the prototype refs and try to refute it: does the catalogue really say that (and is it in scope: not Retired/Future)? Does the prototype really lack/differ? Is the impact right? Correct or drop deltas that do not survive; ADD structural deltas the author missed (read "docs/discovery-reference/Updated Requirements/domain-model.md" and aa-prototype/src/domain types yourself).
+TASK: ADVERSARIAL VERIFIER for a data-model delta (structural differences between the model the requirements describe and the prototype's model). For each delta, re-read the catalogue refs and the prototype refs and try to refute it: does the catalogue really say that (and is it in scope: not Retired/Future)? Does the prototype really lack/differ? Is the impact right? Correct or drop deltas that do not survive; ADD structural deltas the author missed (read "requirements-board/requirements/domain-model.md" and aa-prototype/src/domain types yourself).
 
 Draft deltas (JSON):
 ${JSON.stringify(draft)}

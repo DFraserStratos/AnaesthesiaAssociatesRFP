@@ -6,7 +6,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const CAT = path.join(process.cwd(), 'docs/discovery-reference/Updated Requirements/catalogue')
+const CAT = path.join(process.cwd(), 'requirements-board/requirements')
 const only = new Set(process.argv.slice(2))
 const fm = file => {
   const head = fs.readFileSync(file, 'utf8').split('---')[1]
@@ -14,8 +14,8 @@ const fm = file => {
   return { head, g }
 }
 const items = {}
-for (const f of fs.readdirSync(path.join(CAT, 'requirements')).filter(f => f.endsWith('.md'))) {
-  const { g } = fm(path.join(CAT, 'requirements', f))
+for (const f of fs.readdirSync(path.join(CAT, 'stories')).filter(f => f.endsWith('.md'))) {
+  const { g } = fm(path.join(CAT, 'stories', f))
   items[g('id')] = { id: g('id'), parent: g('parent'), title: g('title'), status: g('status'), swimlane: g('swimlane') }
 }
 const open = {}

@@ -1,46 +1,46 @@
 # Phase 43a · Sign-in and ease of use: simple anaesthetist screens and point-of-need help
 
 **Requirements covered:**
-[US-15.0.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.1.md)
+[US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md)
 Ease of use (Proposed, unchanged at 3d3a18c: intuitive for people who are not comfortable with
 modern systems, most of all on the operational screens; guidance embedded at the point of need so
 standalone documentation stays short; and, from the 2026-10-01 Notes, "anaesthetists see none of the
 Contract complexity, which the office handles, and the new system should not add it") ·
-[US-13.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.3.md)
+[US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md)
 Sign in to the anaesthetist app (Verify, new 2026-10-02, one acceptance criterion: "Given an
 anaesthetist with an account, when they open the PWA, then they sign in with their account login";
 graded **Missing**: the PWA and mobile app open straight into the persona's data, and the only
 sign-in anywhere is Phase 14's "Simulate sign-in attempts", which writes audit rows).
 US-15.0.1's two catalogue images are the layout targets for the help:
-[mobile Booking capture](../../../discovery-reference/Updated%20Requirements/catalogue/assets/US-15.0.1/mobile-card-capture.png)
-and [the Admin Day view](../../../discovery-reference/Updated%20Requirements/catalogue/assets/US-15.0.1/admin-day-view.png).
+[mobile Booking capture](../../../../requirements-board/requirements/assets/US-15.0.1/mobile-card-capture.png)
+and [the Admin Day view](../../../../requirements-board/requirements/assets/US-15.0.1/admin-day-view.png).
 US-13.5.3 has no image.
 Read alongside (not closed here, must stay green):
-[FT-13.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.5.md) (Proposed, Matches: roles and audit; its Technical discussion is the RFP response's identity proposal, Auth0 or Entra, MFA for admins, self-service reset, logged sign-ins, social login on mobile, none confirmed; Phase 14's "Simulate sign-in attempts" on `/admin/audit` stays as it is),
-[US-15.0.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.2.md) (mobile-first; web a full alternative),
-[FT-03.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.4.md) and
-[US-03.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.4.1.md) (the anaesthetist can change the Contract; Phase 20's plain Contract row and "Change" are the one Contract control they keep),
-[US-11.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.2.md) (Verify, retitled "Guardian or other payer set through the Contract": the Contract always defines the billable party, D17 and OQ-67, and the admin or anaesthetist enters the payer's name and email when a default Contract is picked; Phase 21 built it and removed the per-Booking override),
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md) (Contract pricing and adjustment rules; Phase 24's defined rate and Contract-gated adjustment),
-[FT-13.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.7.md) (the to-do list is for warnings that need action; notices go to the notification pool),
-[US-13.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.2.md) and
-[US-13.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.3.md) (both Confirmed 2026-10-02: the to-do list, and the triangle with the warning visually clear on opening the Booking and **no confirm step at submit**; Phase 15a),
-[FT-13.8](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.8.md) and
-[US-13.8.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.8.1.md) (the shared notification pool, Phase 32's Notifications card on the Admin Day rail),
-[US-13.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.1.1.md) (the one-day dashboard, Phase 31's Draft Lists band and rail card),
-[FT-01.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.6.md) (Draft Lists, reworded at 3d3a18c) and
-[US-07.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.2.2.md) (office review of Contracts, Phase 21's Review column and approval).
+[FT-13.5](../../../../requirements-board/requirements/stories/FT-13.5.md) (Proposed, Matches: roles and audit; its Technical discussion is the RFP response's identity proposal, Auth0 or Entra, MFA for admins, self-service reset, logged sign-ins, social login on mobile, none confirmed; Phase 14's "Simulate sign-in attempts" on `/admin/audit` stays as it is),
+[US-15.0.2](../../../../requirements-board/requirements/stories/US-15.0.2.md) (mobile-first; web a full alternative),
+[FT-03.4](../../../../requirements-board/requirements/stories/FT-03.4.md) and
+[US-03.4.1](../../../../requirements-board/requirements/stories/US-03.4.1.md) (the anaesthetist can change the Contract; Phase 20's plain Contract row and "Change" are the one Contract control they keep),
+[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (Verify, retitled "Guardian or other payer set through the Contract": the Contract always defines the billable party, D17 and OQ-67, and the admin or anaesthetist enters the payer's name and email when a default Contract is picked; Phase 21 built it and removed the per-Booking override),
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md) (Contract pricing and adjustment rules; Phase 24's defined rate and Contract-gated adjustment),
+[FT-13.7](../../../../requirements-board/requirements/stories/FT-13.7.md) (the to-do list is for warnings that need action; notices go to the notification pool),
+[US-13.7.2](../../../../requirements-board/requirements/stories/US-13.7.2.md) and
+[US-13.7.3](../../../../requirements-board/requirements/stories/US-13.7.3.md) (both Confirmed 2026-10-02: the to-do list, and the triangle with the warning visually clear on opening the Booking and **no confirm step at submit**; Phase 15a),
+[FT-13.8](../../../../requirements-board/requirements/stories/FT-13.8.md) and
+[US-13.8.1](../../../../requirements-board/requirements/stories/US-13.8.1.md) (the shared notification pool, Phase 32's Notifications card on the Admin Day rail),
+[US-13.1.1](../../../../requirements-board/requirements/stories/US-13.1.1.md) (the one-day dashboard, Phase 31's Draft Lists band and rail card),
+[FT-01.6](../../../../requirements-board/requirements/stories/FT-01.6.md) (Draft Lists, reworded at 3d3a18c) and
+[US-07.2.2](../../../../requirements-board/requirements/stories/US-07.2.2.md) (office review of Contracts, Phase 21's Review column and approval).
 Evidence: points 51 ("keep the anaesthetist's world simple") and 52 (the working rule that an
 unanswered question is built as its recommendation) of
-[the 2026-10-01 meeting note](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md),
+[the 2026-10-01 meeting note](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md),
 and points 2, 41, 68 and 84 of
-[the 2026-10-02 requirements review](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-02-aa-requirements-review-with-greg.md)
+[the 2026-10-02 requirements review](../../../../requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md)
 (Greg: "what's the experience going to be when the anaesthetist brings up the app on the phone?";
 only an account login for the PWA is assumed).
 No DM or RV item is owned here. The phase builds on
 [DM-37](../analysis/domain-model-delta.md#dm-37) (the anaesthetist Contract change flagged for office
 approval, Phase 20); no [reverse-check](../analysis/reverse-check.md) finding is closed here.
-**Open question:** [OQ-83](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-83.md)
+**Open question:** [OQ-83](../../../../requirements-board/requirements/questions/OQ-83.md)
 (the anaesthetist's sign-in experience: platforms, biometrics, MFA, single sign-on, identity
 provider; Open, and its recommendation is a process step, "define the deployable platforms first,
 then the experience"). The phase builds the one thing assumed, an account login on the PWA, as a
@@ -118,7 +118,7 @@ documentation and a web-app sign-in stay presenter-narrated.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,FT-13.5,OQ-83,US-15.0.2,FT-03.4,US-03.4.1,US-11.2.2,US-04.2.2,FT-13.7,US-13.7.1,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,US-13.7.2,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86
    ```
 
    Read the hunks for US-15.0.1, US-13.5.3, FT-13.5, OQ-83, US-15.0.2, FT-03.4, US-03.4.1, US-11.2.2,
@@ -795,8 +795,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-15.0.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.1.md) Ease of use | partial · mobile-card-capture and admin-day-view (reason: "Ease of use is a quality that screenshots can only suggest ... needs usability testing, which the prototype has not had") | partial, with a rewritten reason: the shots show the calm, plain screens, the Contract by name only and the point-of-need help, but whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had (no later phase builds it). Keep both shot names (`card-capture`, app mobile, and `day-view`, app admin; their images are `mobile-card-capture.png` and `admin-day-view.png`) and re-shoot: `card-capture` (mobile on :5174, signed in by the runner's preset, keep the recipe's start `/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009`, Margaret Ellison) with states `plain-contract` (the Contract line shows only its plain name and "Change", highlight it; no route, insurer, holder or rate) and `tip-open` (tap `[data-shot=info-tip-capture-units]`: the bottom sheet with the Units copy and "Got it"); `day-view` (admin, `/admin/day/2026-07-21`) with states `day` (highlight the grid and the to-do list) and `tip-open` (open `info-tip-day-statuses`: the popover beside the legend). Add shots `first-run-hint` for mobile Lists, web Dashboard and Admin Day (`first-run-hint-mobile`, `-web`, `-admin`: the welcome card, reached with the "Show first-run hints again" entry because the capture preset hides it) and `review-tip` (admin `/admin/review/:listId`, the Contract popover whole inside the viewport, `info-tip-review-contracts`). Add a web Booking shot with the same tip as a popover. Captions: "Plain Booking capture", "Help at the point of need", "Welcome card shown on first visit" |
-| [US-13.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.3.md) Sign in to the anaesthetist app | none (create it) | create, status captured. Mobile on :5174. Shot `pwa-sign-in`: open `/mobile/more`, tap `[data-shot=more-sign-out]` (the runner's preset starts signed in), state `sign-in` highlighting `[data-shot=sign-in-screen]`'s card (the pre-filled account, Sign in and the OQ-83 Provisional caption); then tap `[data-shot=sign-in-submit]`, state `signed-in` on `/mobile/lists`. Shot `more-account`: `/mobile/more`, highlight the "Signed in as" row and Sign out only (crop above the PWA build panel, which changes every run). Caption: "The anaesthetist signs in to the PWA with their account (simulated sign-in; the identity service is still to be decided)" |
+| [US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md) Ease of use | partial · mobile-card-capture and admin-day-view (reason: "Ease of use is a quality that screenshots can only suggest ... needs usability testing, which the prototype has not had") | partial, with a rewritten reason: the shots show the calm, plain screens, the Contract by name only and the point-of-need help, but whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had (no later phase builds it). Keep both shot names (`card-capture`, app mobile, and `day-view`, app admin; their images are `mobile-card-capture.png` and `admin-day-view.png`) and re-shoot: `card-capture` (mobile on :5174, signed in by the runner's preset, keep the recipe's start `/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009`, Margaret Ellison) with states `plain-contract` (the Contract line shows only its plain name and "Change", highlight it; no route, insurer, holder or rate) and `tip-open` (tap `[data-shot=info-tip-capture-units]`: the bottom sheet with the Units copy and "Got it"); `day-view` (admin, `/admin/day/2026-07-21`) with states `day` (highlight the grid and the to-do list) and `tip-open` (open `info-tip-day-statuses`: the popover beside the legend). Add shots `first-run-hint` for mobile Lists, web Dashboard and Admin Day (`first-run-hint-mobile`, `-web`, `-admin`: the welcome card, reached with the "Show first-run hints again" entry because the capture preset hides it) and `review-tip` (admin `/admin/review/:listId`, the Contract popover whole inside the viewport, `info-tip-review-contracts`). Add a web Booking shot with the same tip as a popover. Captions: "Plain Booking capture", "Help at the point of need", "Welcome card shown on first visit" |
+| [US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md) Sign in to the anaesthetist app | none (create it) | create, status captured. Mobile on :5174. Shot `pwa-sign-in`: open `/mobile/more`, tap `[data-shot=more-sign-out]` (the runner's preset starts signed in), state `sign-in` highlighting `[data-shot=sign-in-screen]`'s card (the pre-filled account, Sign in and the OQ-83 Provisional caption); then tap `[data-shot=sign-in-submit]`, state `signed-in` on `/mobile/lists`. Shot `more-account`: `/mobile/more`, highlight the "Signed in as" row and Sign out only (crop above the PWA build panel, which changes every run). Caption: "The anaesthetist signs in to the PWA with their account (simulated sign-in; the identity service is still to be decided)" |
 
 **Recipes this phase breaks.**
 

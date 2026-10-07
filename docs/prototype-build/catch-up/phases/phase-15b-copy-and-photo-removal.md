@@ -9,24 +9,24 @@ Copy a Booking is Retired but Phase 15 rebuilt it, and
 [DM-39](../analysis/domain-model-delta.md#dm-39) remove the copy action and its fields, photo capture is
 Future Work.
 Retired or Future, so removed or hidden here, not built:
-[US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md)
+[US-02.4.3](../../../../requirements-board/requirements/stories/US-02.4.3.md)
 Copy a Booking (Retired 2026-10-02, "to be removed from the prototype"),
-[US-02.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.4.md)
+[US-02.4.4](../../../../requirements-board/requirements/stories/US-02.4.4.md)
 Add a Booking from a photo of the booking card (Proposed, Future Work) and
-[US-02.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.2.md)
+[US-02.4.2](../../../../requirements-board/requirements/stories/US-02.4.2.md)
 Photo capture of the physical card (Retired).
 Read alongside (unchanged by this phase):
-[US-02.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.1.md)
+[US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md)
 Add a Booking manually,
-[FT-02.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-02.4.md)
+[FT-02.4](../../../../requirements-board/requirements/stories/FT-02.4.md)
 Anaesthetist ad hoc booking,
-[US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md)
+[US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md)
 Add additional Procedures (the path that replaces Copy),
-[FT-03.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.2.md)
+[FT-03.2](../../../../requirements-board/requirements/stories/FT-03.2.md)
 Booking structure, and
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md) section 2,
+[domain-model.md](../../../../requirements-board/requirements/domain-model.md) section 2,
 "Booking > Sources" (still stale: see the drift check).
-Evidence: [the 2026-10-02 booking and pricing review with Greg](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md)
+Evidence: [the 2026-10-02 booking and pricing review with Greg](../../../../requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md)
 points #2, #3, #26 and #27.
 **Depends on:** Phase 15a, both sessions. 15a's session 2 reshapes the banner area of the shared
 `BookingDetailBody` (the warnings panel), which is where the copied-from banner sits, so this phase
@@ -68,7 +68,7 @@ figure are untouched.
 1. Run the catalogue diff since this plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-02.4.1,US-02.4.2,US-02.4.3,US-02.4.4,FT-02.4,US-03.2.3,FT-03.2
    ```
 
    Read the hunks for US-02.4.1, US-02.4.2, US-02.4.3, US-02.4.4, FT-02.4, US-03.2.3, FT-03.2 and the
@@ -409,13 +409,13 @@ is a recipe it breaks:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-02.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.1.md) Add a Booking manually | captured · add-card[choose,manual] on web and mobile (`/…/lists/L-34821-2026-07-21-PM`); `choose` captions "Add a Booking, enter manually or from a photo" | captured. Keep the shot name `add-card`; drop the `choose` state (the fork is gone); the `manual` state clicks "Add a booking" only (no "Enter manually"), highlight the sheet or dialog as now, caption "Add a Booking: enter the patient and operation" |
-| [US-02.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.2.md) Photo capture of the physical card (Retired) | captured · photo-capture[scan,prefilled], clicks "Photo of paper list" | absent, no shots, `absentReason` "Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b" |
-| [US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md) Copy a Booking (Retired) | captured · copy-card[button,copied] on web (`BK0006`) and mobile (`BK0009`) | absent, no shots, `absentReason` "Retired: removed in Phase 15b" |
-| [US-02.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.4.md) Add a Booking from a photo of the booking card (Future Work) | none (its `images` hand-link four files under `assets/US-02.4.2/`) | create, absent, no shots, `absentReason` "Future: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List" (under the fallback: "…and removed the simulation") |
-| [US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md) Add additional Procedures | partial · add-procedure[before,copy,added] on web, [before,added] on mobile | partial, same `absentReason`. Drop the web `copy` state (it highlights "Copy booking"); `before` and `added` stay |
-| [US-11.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.3.md) | captured · dedupe-nhi[lookup,linked] on web and mobile, each clicks "Enter manually" | captured; remove the "Enter manually" click and its wait from every state |
-| [US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) | partial · nhi-lookup on web and mobile, clicks "Enter manually" | partial, same reason; remove the "Enter manually" click and its wait |
+| [US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) Add a Booking manually | captured · add-card[choose,manual] on web and mobile (`/…/lists/L-34821-2026-07-21-PM`); `choose` captions "Add a Booking, enter manually or from a photo" | captured. Keep the shot name `add-card`; drop the `choose` state (the fork is gone); the `manual` state clicks "Add a booking" only (no "Enter manually"), highlight the sheet or dialog as now, caption "Add a Booking: enter the patient and operation" |
+| [US-02.4.2](../../../../requirements-board/requirements/stories/US-02.4.2.md) Photo capture of the physical card (Retired) | captured · photo-capture[scan,prefilled], clicks "Photo of paper list" | absent, no shots, `absentReason` "Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b" |
+| [US-02.4.3](../../../../requirements-board/requirements/stories/US-02.4.3.md) Copy a Booking (Retired) | captured · copy-card[button,copied] on web (`BK0006`) and mobile (`BK0009`) | absent, no shots, `absentReason` "Retired: removed in Phase 15b" |
+| [US-02.4.4](../../../../requirements-board/requirements/stories/US-02.4.4.md) Add a Booking from a photo of the booking card (Future Work) | none (its `images` hand-link four files under `assets/US-02.4.2/`) | create, absent, no shots, `absentReason` "Future: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List" (under the fallback: "…and removed the simulation") |
+| [US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md) Add additional Procedures | partial · add-procedure[before,copy,added] on web, [before,added] on mobile | partial, same `absentReason`. Drop the web `copy` state (it highlights "Copy booking"); `before` and `added` stay |
+| [US-11.1.3](../../../../requirements-board/requirements/stories/US-11.1.3.md) | captured · dedupe-nhi[lookup,linked] on web and mobile, each clicks "Enter manually" | captured; remove the "Enter manually" click and its wait from every state |
+| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) | partial · nhi-lookup on web and mobile, clicks "Enter manually" | partial, same reason; remove the "Enter manually" click and its wait |
 
 Keep every other shot `name`. Run `node scripts/capture.ts --dry` to find any recipe this list misses
 (any step that clicks "Enter manually", "Photo of paper list" or "Copy booking").

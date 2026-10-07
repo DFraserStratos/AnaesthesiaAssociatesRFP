@@ -10,7 +10,7 @@ export const meta = {
 
 const ROOT = args.root
 const CU = 'docs/prototype-build/catch-up'
-const CAT = 'docs/discovery-reference/Updated Requirements/catalogue'
+const CAT = 'requirements-board/requirements'
 const O = 'opus'
 const UNITS = args.units // every gap id, DM- id and RV- id that must be planned or parked
 const COMMIT = args.commit
@@ -18,7 +18,7 @@ const COMMIT = args.commit
 const CTX = `You are one agent planning the "requirements catch-up" of the Anaesthesia Associates (AA) prototype.
 - Repo root: ${ROOT} (use absolute paths; folder names contain spaces).
 - The prototype (aa-prototype/) is a finished React demo over a fake in-browser backend, built in July 2026 against the original RFP in 14 phases (docs/prototype-build/ROADMAP.md, phases/phase-00..13, index.html, PROGRESS.md). It is used in live vendor workshops.
-- The requirements catalogue ("${CAT}/requirements/<ID>.md", questions in "${CAT}/questions/OQ-nn.md", narrative model "docs/discovery-reference/Updated Requirements/domain-model.md") is now the source of truth and has moved a long way from the RFP. Catalogue snapshot for this plan: commit ${COMMIT.slice(0, 7)}. It will keep changing over the coming weeks.
+- The requirements catalogue ("${CAT}/stories/<ID>.md", questions in "${CAT}/questions/OQ-nn.md", narrative model "requirements-board/requirements/domain-model.md") is now the source of truth and has moved a long way from the RFP. Catalogue snapshot for this plan: commit ${COMMIT.slice(0, 7)}. It will keep changing over the coming weeks.
 - A verified gap analysis has been done (Sonnet reviewers + adversarial verifiers). Its outputs, all under "${CU}/":
   - GAP-ANALYSIS.md: narrative summary and themes, at-a-glance counts, the Missing list, data-model and reverse-check tables (everything before "## By epic" is the part to read in full), then per-epic gap tables. epics/EP-nn.md: full per-gap detail for each epic (requirement, prototype today, missing or wrong, demo trigger, evidence).
   - gaps.json: every in-scope item with verdict (Matches / Partial / Contradicts / Missing / OutOfScope / Grouping), what is missing or wrong, evidence (file:line), proposed demo trigger, surfaces, size, and linked open questions. Also "dataModelDeltas" (DM-nn) and "reverseFindings" (RV-nn: retired or superseded behaviour the prototype still has).
@@ -190,15 +190,15 @@ Sequencing rules: ${outline.sequencing_rules}
 This phase (JSON): ${JSON.stringify(p)}
 
 Research before writing:
-- For every unit this phase covers, read its entry in ${CU}/gaps.json (items, dataModelDeltas, reverseFindings) and its catalogue file ("${CAT}/requirements/<ID>.md", plus any OQ files listed).
+- For every unit this phase covers, read its entry in ${CU}/gaps.json (items, dataModelDeltas, reverseFindings) and its catalogue file ("${CAT}/stories/<ID>.md", plus any OQ files listed).
 - Read the prototype code you will be changing (start from the maps in ${CU}/analysis/), so the plan names real files, components, store actions and seed structures, not guesses.
 - Read two original phase docs (docs/prototype-build/phases/phase-05-anaesthetist-web-app.md and phase-08-billing-run-and-invoices.md) and the Phase 05 kick-off prompt in docs/prototype-build/index.html for the house style.
 - Check the design references in docs/design/ that apply to the screens you touch.
 
 1. Write "${ROOT}/${phaseFile(p)}" in the house style of the original phase docs, with these sections:
-   - Title "# Phase ${p.num} · ${p.title}", then **Requirements covered:** every covered catalogue ID as a Markdown link to its file (relative from the phase doc: ../../../discovery-reference/Updated%20Requirements/catalogue/requirements/<ID>.md), plus DM-/RV- ids linking to ../analysis/domain-model-delta.md and ../analysis/reverse-check.md; **Depends on:**; **Estimated:**.
+   - Title "# Phase ${p.num} · ${p.title}", then **Requirements covered:** every covered catalogue ID as a Markdown link to its file (relative from the phase doc: ../../../../requirements-board/requirements/stories/<ID>.md), plus DM-/RV- ids linking to ../analysis/domain-model-delta.md and ../analysis/reverse-check.md; **Depends on:**; **Estimated:**.
    - ## Goal
-   - ## Before you start: drift check (run git diff ${COMMIT.slice(0, 7)} -- "${CAT}" for the covered IDs; if an item changed, re-read it and adjust the work items; if an item is now Retired or Future, drop it and note that in PROGRESS.md). Name any unresolved OQs and what to do if still open (safe interim behaviour).
+   - ## Before you start: drift check (run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <the covered IDs and linked OQs, comma separated>; if an item changed, re-read it and adjust the work items; if an item is now Retired or Future, drop it and note that in PROGRESS.md). Name any unresolved OQs and what to do if still open (safe interim behaviour).
    - ## Reference: design files, catalogue items, analysis files, and code entry points.
    - ## Work items: numbered, concrete, in build order; each names the files/store actions/seed structures to change and which catalogue acceptance criteria it satisfies. Model/store/seed first, then UI. Include PERSIST_VERSION bumps, Vitest tests for any domain or billing rule, and removal/rework of retired behaviour where covered.
    - ## Demo triggers: each screen-contextual harness-bar button this phase adds (label, screen, effect), plus the PWA equivalent where the screen is mobile.
@@ -255,7 +255,7 @@ ${JSON.stringify(planData)}
    - "The phases at a glance": table like the original.
    - One article per phase like the original: number, title, badges (after phase X, est. sessions, plan doc link, count of items covered), goal_short, the covered items as small links (to the requirement file; plus a board link http://localhost:5180/#/board?item=<ID> for catalogue IDs), the "What to check" details, and the kick-off prompt from its prompt file with a Copy button.
    - Parked items with reasons; milestones.
-   Links to catalogue files are relative from ${CU}/index.html: ../../discovery-reference/Updated%20Requirements/catalogue/requirements/<ID>.md.
+   Links to catalogue files are relative from ${CU}/index.html: ../../../requirements-board/requirements/stories/<ID>.md.
 4. Run the generator and confirm index.html is written and every phase has its prompt. Open nothing in a browser.
 Return a short note: files written, page size, any data you could not find.`, { label: 'publish:html', phase: 'Publish', model: O, effort: 'high' })
 

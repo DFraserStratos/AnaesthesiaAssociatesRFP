@@ -13,7 +13,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..'); // docs/prototype-build/catch-up
 const OUT = join(ROOT, 'index.html');
 
-const CATALOGUE_REL = '../../discovery-reference/Updated%20Requirements/catalogue';
+const CATALOGUE_REL = '../../../requirements-board/requirements';
 const BOARD_URL = 'http://localhost:5180/#/board?item=';
 
 const warnings = [];
@@ -47,7 +47,7 @@ const inlineMd = (s) =>
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`);
 
 const isCatalogueId = (id) => /^(EP|FT|US)-/.test(id);
-const reqHref = (id) => `${CATALOGUE_REL}/requirements/${encodeURIComponent(id)}.md`;
+const reqHref = (id) => `${CATALOGUE_REL}/stories/${encodeURIComponent(id)}.md`;
 const oqHref = (id) => `${CATALOGUE_REL}/questions/${encodeURIComponent(id)}.md`;
 const boardHref = (id) => BOARD_URL + encodeURIComponent(id);
 

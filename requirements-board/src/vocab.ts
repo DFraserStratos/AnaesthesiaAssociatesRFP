@@ -38,7 +38,7 @@ export const QUESTION_GROUP_LABEL: Record<QuestionStatus, string> = {
 export const KIND_LABEL: Record<QuestionKind, string> = { question: 'Question', 'missing-source': 'Missing source' }
 export const KIND_HELP: Record<QuestionKind, string> = {
   question: 'A decision or fact that blocks or shapes requirements',
-  'missing-source': 'A requirement with no known origin: add its source (RFP page, a note in catalogue/notes, or Q&A) to the item',
+  'missing-source': 'A requirement with no known origin: add its source (RFP page, a note in notes/, or Q&A) to the item',
 }
 
 export function excerpt(text: string, max = 160): string {

@@ -1,27 +1,27 @@
 # Phase 26 · Prepaid settings and anaesthetist profile
 
 **Requirements covered:**
-[FT-06.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-06.1.md) Prepaid procedure settings on the anaesthetist profile (Confirmed) ·
-[US-06.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.1.md) Tick codes or groups (Confirmed) ·
-[US-06.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.2.md) Admin can maintain on behalf (Proposed) ·
-[US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md) Dollar value per unit (Proposed; the anaesthetist-facing half, the lock half is Phase 25's) ·
-[US-12.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.3.md) Prepaid procedures (Confirmed; the stored list, the derivation is Phase 27's) ·
-[US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) Anaesthetist identity, contact and bank details (Verify; changed at `3d3a18c`: the identifier is one **HPI CPN**, OQ-52) ·
+[FT-06.1](../../../../requirements-board/requirements/stories/FT-06.1.md) Prepaid procedure settings on the anaesthetist profile (Confirmed) ·
+[US-06.1.1](../../../../requirements-board/requirements/stories/US-06.1.1.md) Tick codes or groups (Confirmed) ·
+[US-06.1.2](../../../../requirements-board/requirements/stories/US-06.1.2.md) Admin can maintain on behalf (Proposed) ·
+[US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md) Dollar value per unit (Proposed; the anaesthetist-facing half, the lock half is Phase 25's) ·
+[US-12.1.3](../../../../requirements-board/requirements/stories/US-12.1.3.md) Prepaid procedures (Confirmed; the stored list, the derivation is Phase 27's) ·
+[US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Anaesthetist identity, contact and bank details (Verify; changed at `3d3a18c`: the identifier is one **HPI CPN**, OQ-52) ·
 [DM-19](../analysis/domain-model-delta.md#dm-19) prepaid settings on the anaesthetist profile (RVG codes and groups) ·
 [DM-33](../analysis/domain-model-delta.md#dm-33) anaesthetist profile: bank details, prepaid settings, HPI CPN, GST number, admin-editable (its start date is Phase 28's).
 No RV finding is closed here. RV-09 (prepayment as a patient category and a completion gate) is
 Phase 27's; Phase 20 already removed the payment category.
 Context only, closed elsewhere:
-[FT-12.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-12.1.md) Profile settings (grouping) ·
-[US-12.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.2.md) GST period (this phase lets the anaesthetist set it; the aligned GST schedule is Phase 38's) ·
-[US-08.4.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.5.md) Anaesthetist as supplier, AA as agent (Phase 22 added `gstNumber` and prints it; this phase lets the anaesthetist see and edit it) ·
-[US-01.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.1.3.md) New anaesthetist gets a populated canvas (the start date on the same record, Phase 28) ·
-[US-06.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.1.md) Detect prepayment requirement (Phase 27; now Verify and limited to a patient billable party, OQ-73) ·
-[US-05.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.3.md) Group codes (built in Phase 19).
-Open questions: [OQ-14](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-14.md) (Answered: bank details live in the system),
-[OQ-25](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-25.md) (Answered: no Pre-paid Contract category),
-[OQ-52](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-52.md) (Answered 2026-10-01: the HPI number and the CPN are one identifier, called the HPI CPN). None open here.
-[OQ-73](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-73.md) (Open: who counts as the patient for the prepayment limit) is Phase 27's; it only shapes this
+[FT-12.1](../../../../requirements-board/requirements/stories/FT-12.1.md) Profile settings (grouping) ·
+[US-12.1.2](../../../../requirements-board/requirements/stories/US-12.1.2.md) GST period (this phase lets the anaesthetist set it; the aligned GST schedule is Phase 38's) ·
+[US-08.4.5](../../../../requirements-board/requirements/stories/US-08.4.5.md) Anaesthetist as supplier, AA as agent (Phase 22 added `gstNumber` and prints it; this phase lets the anaesthetist see and edit it) ·
+[US-01.1.3](../../../../requirements-board/requirements/stories/US-01.1.3.md) New anaesthetist gets a populated canvas (the start date on the same record, Phase 28) ·
+[US-06.2.1](../../../../requirements-board/requirements/stories/US-06.2.1.md) Detect prepayment requirement (Phase 27; now Verify and limited to a patient billable party, OQ-73) ·
+[US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Group codes (built in Phase 19).
+Open questions: [OQ-14](../../../../requirements-board/requirements/questions/OQ-14.md) (Answered: bank details live in the system),
+[OQ-25](../../../../requirements-board/requirements/questions/OQ-25.md) (Answered: no Pre-paid Contract category),
+[OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (Answered 2026-10-01: the HPI number and the CPN are one identifier, called the HPI CPN). None open here.
+[OQ-73](../../../../requirements-board/requirements/questions/OQ-73.md) (Open: who counts as the patient for the prepayment limit) is Phase 27's; it only shapes this
 phase's seed coherence test.
 **Depends on:** Phase 19 (RVG groups, `RvgGroupRef`, `codesInGroup`, `searchRvgCodes`) and Phase 20
 (payment category removed; the office-set Booking `prepayment` flag is the interim). By the sequencing
@@ -61,7 +61,7 @@ The record's start date (US-01.1.3) is Phase 28's and is not added here.
 
 ## Before you start: drift check
 
-1. Run `git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
+1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>`
    and read the hunks for FT-06.1, US-06.1.1, US-06.1.2, FT-12.1, US-12.1.1, US-12.1.2, US-12.1.3,
    US-12.1.4, US-08.4.5, US-01.1.3, US-06.2.1, US-05.1.3, OQ-14, OQ-25, OQ-52 and OQ-73, plus the
    domain model's entity diagram (`PREPAID_SETTING`, `PROFILE`), the HPI CPN glossary row and the
@@ -133,7 +133,7 @@ patterns:
 **Catalogue.** The files linked above; `domain-model.md` section 2 (entity diagram: `PREPAID_SETTING`,
 `PROFILE`), the HPI CPN glossary row, and section 3's Prepayment rule (the estimate uses "the
 anaesthetist's own unit value", which is this field; Phase 27). Evidence for OQ-52:
-`catalogue/notes/2026-10-01-aa-meeting-with-greg.md` #26 and #63.
+`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` #26 and #63.
 
 **Analysis.** `../GAP-ANALYSIS.md`: everything before "## By epic", then the "EP-06 · Prepayment" rows for
 FT-06.1, US-06.1.1 and US-06.1.2 and the "EP-12 · Anaesthetist profile and reporting" rows for
@@ -562,11 +562,11 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-06.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.1.md) Tick codes or groups | absent | captured. Create the recipe. Shots: mobile `mobile-prepaid-sheet` (More, Change, the sheet with Cosmetic ticked, members showing "via Cosmetic"; states `summary` on the Prepaid procedures card, `sheet` open), and web `web-prepaid-panel` at `/web/profile` (highlight the tick list panel). Caption: "Anaesthetist ticks the RVG codes or groups that need prepayment". Drop the absent reason. |
-| [US-06.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.2.md) Admin can maintain on behalf | absent | captured. Create the recipe. Admin shot from `/admin/masters`: states `table` (highlight the Prepaid column), `editor` (Edit Dr Souter, Prepaid procedures tab, highlight the tick list) and `on-behalf` (header "Changes are recorded as the office acting for Dr Melanie Souter"). Caption: "Office maintains an anaesthetist's prepaid procedures on their behalf". |
-| [US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md) Dollar value per unit | partial · admin-unit-value | captured. Keep `admin-unit-value` (`list`, `edit`). Add a mobile `mobile-profile` shot at `/mobile/more` (states `profile` with the Rate per unit row highlighted, `rate-sheet` after tapping it) and a web `web-profile` shot at `/web/profile` (Billing panel highlighted). Caption: "Anaesthetist sets their own dollar value per RVG unit". Drop the partial reason. |
-| [US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) Anaesthetist identity, contact and bank details | captured · admin-anaesthetist-record | captured. Keep `admin-anaesthetist-record` (`edit`, `add`) and add state `details` showing the HPI CPN, bank account and GST number fields on the Details tab, plus the mobile `mobile-profile` identity and bank rows (read-only, lock glyph, bank masked). Caption wording: "Anaesthetist identity, contact and bank details; one HPI CPN". |
-| [US-12.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.3.md) Prepaid procedures | absent | captured. Create the recipe. Reuse the admin `table` and `editor` states from US-06.1.2 and the mobile `mobile-prepaid-sheet` shot, highlighting the stored list. Caption: "Prepaid procedures stored on the anaesthetist profile". Phase 27 derives from it and keeps the shots. |
+| [US-06.1.1](../../../../requirements-board/requirements/stories/US-06.1.1.md) Tick codes or groups | absent | captured. Create the recipe. Shots: mobile `mobile-prepaid-sheet` (More, Change, the sheet with Cosmetic ticked, members showing "via Cosmetic"; states `summary` on the Prepaid procedures card, `sheet` open), and web `web-prepaid-panel` at `/web/profile` (highlight the tick list panel). Caption: "Anaesthetist ticks the RVG codes or groups that need prepayment". Drop the absent reason. |
+| [US-06.1.2](../../../../requirements-board/requirements/stories/US-06.1.2.md) Admin can maintain on behalf | absent | captured. Create the recipe. Admin shot from `/admin/masters`: states `table` (highlight the Prepaid column), `editor` (Edit Dr Souter, Prepaid procedures tab, highlight the tick list) and `on-behalf` (header "Changes are recorded as the office acting for Dr Melanie Souter"). Caption: "Office maintains an anaesthetist's prepaid procedures on their behalf". |
+| [US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md) Dollar value per unit | partial · admin-unit-value | captured. Keep `admin-unit-value` (`list`, `edit`). Add a mobile `mobile-profile` shot at `/mobile/more` (states `profile` with the Rate per unit row highlighted, `rate-sheet` after tapping it) and a web `web-profile` shot at `/web/profile` (Billing panel highlighted). Caption: "Anaesthetist sets their own dollar value per RVG unit". Drop the partial reason. |
+| [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) Anaesthetist identity, contact and bank details | captured · admin-anaesthetist-record | captured. Keep `admin-anaesthetist-record` (`edit`, `add`) and add state `details` showing the HPI CPN, bank account and GST number fields on the Details tab, plus the mobile `mobile-profile` identity and bank rows (read-only, lock glyph, bank masked). Caption wording: "Anaesthetist identity, contact and bank details; one HPI CPN". |
+| [US-12.1.3](../../../../requirements-board/requirements/stories/US-12.1.3.md) Prepaid procedures | absent | captured. Create the recipe. Reuse the admin `table` and `editor` states from US-06.1.2 and the mobile `mobile-prepaid-sheet` shot, highlighting the stored list. Caption: "Prepaid procedures stored on the anaesthetist profile". Phase 27 derives from it and keeps the shots. |
 
 **Recipes this phase breaks.**
 - `US-12.1.2` (`gst-period-setting`, `gst-period-view`): the Edit dialog becomes two tabs and the

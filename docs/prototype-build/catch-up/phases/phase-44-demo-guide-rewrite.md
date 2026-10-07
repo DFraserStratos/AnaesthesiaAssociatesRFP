@@ -7,39 +7,39 @@
 no gap items: every gap, DM and RV item except this one closed in Phases 14 to 43a, and nothing is
 parked (see [ROADMAP](../ROADMAP.md#parked)).
 Read alongside, because RV-17 cites them as the readings the copy must now state (statuses at `3d3a18c`):
-[US-05.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.2.md) (tiered time units, "or part thereof"; **Confirmed** on 2026-10-02: a part interval is always rounded up, always under the RVG tiers, and the tiers are data) ·
-[OQ-50](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-50.md) (**Answered** 2026-10-01: time units come only from the RVG rules, never from office tables) ·
-[OQ-75](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-75.md) (**Answered** 2026-10-02, D25: time is always rounded up and always uses the RVG tiered rules; **the last time-rule caveat goes**) ·
-[OQ-08](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-08.md) (List reassignment mechanism, Answered) ·
-[FT-13.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.3.md) (billing flow monitoring in the Admin App, **Confirmed** on 2026-10-02; stated plainly, no "proposed") ·
-[OQ-74](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-74.md) (**Answered** 2026-10-02, D24: the unpaid-balance threshold counts from the invoice date; a credit balance is a mild warning) ·
-[US-07.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.2.md) (immutable after AUTHORISED; Proposed: the design, never "the RFP immutability answer") ·
-[FT-08.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-08.2.md) (one invoice per billable party within a Booking; **Proposed**, so it keeps a "proposed" label, never "discovery question") ·
-[US-05.2.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.7.md) (prices held GST exclusive; Proposed: the GST wording is the design, labelled proposed, never "demo assumption") ·
-[OQ-84](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-84.md) (Open, new: the status a session takes after its List is moved away; built by 32 as its recommendation and **keeps its label**) ·
-[US-06.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.1.md) (balance invoiced after AUTHORISED; Verify, because whether every positive balance is invoiced is [OQ-61](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-61.md), Open, built as its recommendation: always).
+[US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) (tiered time units, "or part thereof"; **Confirmed** on 2026-10-02: a part interval is always rounded up, always under the RVG tiers, and the tiers are data) ·
+[OQ-50](../../../../requirements-board/requirements/questions/OQ-50.md) (**Answered** 2026-10-01: time units come only from the RVG rules, never from office tables) ·
+[OQ-75](../../../../requirements-board/requirements/questions/OQ-75.md) (**Answered** 2026-10-02, D25: time is always rounded up and always uses the RVG tiered rules; **the last time-rule caveat goes**) ·
+[OQ-08](../../../../requirements-board/requirements/questions/OQ-08.md) (List reassignment mechanism, Answered) ·
+[FT-13.3](../../../../requirements-board/requirements/stories/FT-13.3.md) (billing flow monitoring in the Admin App, **Confirmed** on 2026-10-02; stated plainly, no "proposed") ·
+[OQ-74](../../../../requirements-board/requirements/questions/OQ-74.md) (**Answered** 2026-10-02, D24: the unpaid-balance threshold counts from the invoice date; a credit balance is a mild warning) ·
+[US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md) (immutable after AUTHORISED; Proposed: the design, never "the RFP immutability answer") ·
+[FT-08.2](../../../../requirements-board/requirements/stories/FT-08.2.md) (one invoice per billable party within a Booking; **Proposed**, so it keeps a "proposed" label, never "discovery question") ·
+[US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md) (prices held GST exclusive; Proposed: the GST wording is the design, labelled proposed, never "demo assumption") ·
+[OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (Open, new: the status a session takes after its List is moved away; built by 32 as its recommendation and **keeps its label**) ·
+[US-06.4.1](../../../../requirements-board/requirements/stories/US-06.4.1.md) (balance invoiced after AUTHORISED; Verify, because whether every positive balance is invoiced is [OQ-61](../../../../requirements-board/requirements/questions/OQ-61.md), Open, built as its recommendation: always).
 Also read, for the S5 beats:
-[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (**Answered**: no PII in Xero, only a unique ID that links transactions back to our invoices; S5 states it as the rule, no caveat) and
-[US-11.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.2.md) (Proposed, unchanged, still says "modulus 24"; the mod-11 label stays flagged).
+[OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (**Answered**: no PII in Xero, only a unique ID that links transactions back to our invoices; S5 states it as the rule, no caveat) and
+[US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (Proposed, unchanged, still says "modulus 24"; the mod-11 label stays flagged).
 For the new beats (scripted, not closed here; statuses at `3d3a18c`):
-[FT-13.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.7.md) (warnings and the to-do list, Verify) and [US-13.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.3.md) (warning flag, **Confirmed**: visible on opening the Booking, **no confirm step at submit**, no tap-to-read; 15a) ·
-[US-10.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.3.md) (AA fee settings and the monthly run, Verify, 16) ·
-[US-01.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.3.md) (an anaesthetist moves their own List, **Confirmed**, 32) and [US-01.5.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.5.5.md) (mark unavailable while holding a List: return to the office or assign to a colleague, Confirmed, 32) ·
-[FT-13.8](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.8.md), [US-13.8.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.8.1.md) (Confirmed) and [US-13.8.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.8.2.md) (Verify) (the shared notification pool, 32) ·
-[US-01.4.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.7.md) and [US-01.4.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.6.md) (an anaesthetist moves a single Booking; the doer rule; Verify, 32a) ·
-[US-01.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.3.2.md) (a recurring booking on an unavailable session becomes a Draft List, OQ-81 part 2 settled; Verify while OQ-81 part 3 is open; 31) ·
-[US-02.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.3.4.md) (update email templates per kind of change, Confirmed, 35) ·
-[US-06.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.3.md) (prepayment is an estimate, Confirmed; the prepaid excess billed cleanly, 27) and [US-06.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.4.md) (a moved prepaid Booking, Verify, 41) ·
-[FT-03.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.7.md) and [US-03.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.3.md) (events on a Procedure and the events list, Verify, 38b and 39b) ·
-[US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) (additional invoice, Verify, 38b), [US-08.6.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.5.md) (credit note option, Verify) and [US-08.6.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.6.md) (rebill from a copy of the original lines, Proposed) (39) ·
-[US-03.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.6.md) and [US-03.1.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.7.md) (find past work, Proposed, 38a) ·
-[US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) (negative invoices netted, Confirmed) and [US-10.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.6.md) (period BCTI approval, Verify) (39a) ·
-[US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) (NHI lookup, Proposed, 40a) ·
-[US-13.5.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.3.md) (anaesthetist sign-in, PWA first, Verify, new; 43a) and [US-15.0.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.1.md) (ease of use and point-of-need help, Proposed, 43a).
+[FT-13.7](../../../../requirements-board/requirements/stories/FT-13.7.md) (warnings and the to-do list, Verify) and [US-13.7.3](../../../../requirements-board/requirements/stories/US-13.7.3.md) (warning flag, **Confirmed**: visible on opening the Booking, **no confirm step at submit**, no tap-to-read; 15a) ·
+[US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) (AA fee settings and the monthly run, Verify, 16) ·
+[US-01.4.3](../../../../requirements-board/requirements/stories/US-01.4.3.md) (an anaesthetist moves their own List, **Confirmed**, 32) and [US-01.5.5](../../../../requirements-board/requirements/stories/US-01.5.5.md) (mark unavailable while holding a List: return to the office or assign to a colleague, Confirmed, 32) ·
+[FT-13.8](../../../../requirements-board/requirements/stories/FT-13.8.md), [US-13.8.1](../../../../requirements-board/requirements/stories/US-13.8.1.md) (Confirmed) and [US-13.8.2](../../../../requirements-board/requirements/stories/US-13.8.2.md) (Verify) (the shared notification pool, 32) ·
+[US-01.4.7](../../../../requirements-board/requirements/stories/US-01.4.7.md) and [US-01.4.6](../../../../requirements-board/requirements/stories/US-01.4.6.md) (an anaesthetist moves a single Booking; the doer rule; Verify, 32a) ·
+[US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) (a recurring booking on an unavailable session becomes a Draft List, OQ-81 part 2 settled; Verify while OQ-81 part 3 is open; 31) ·
+[US-02.3.4](../../../../requirements-board/requirements/stories/US-02.3.4.md) (update email templates per kind of change, Confirmed, 35) ·
+[US-06.2.3](../../../../requirements-board/requirements/stories/US-06.2.3.md) (prepayment is an estimate, Confirmed; the prepaid excess billed cleanly, 27) and [US-06.5.4](../../../../requirements-board/requirements/stories/US-06.5.4.md) (a moved prepaid Booking, Verify, 41) ·
+[FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) and [US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md) (events on a Procedure and the events list, Verify, 38b and 39b) ·
+[US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) (additional invoice, Verify, 38b), [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) (credit note option, Verify) and [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) (rebill from a copy of the original lines, Proposed) (39) ·
+[US-03.1.6](../../../../requirements-board/requirements/stories/US-03.1.6.md) and [US-03.1.7](../../../../requirements-board/requirements/stories/US-03.1.7.md) (find past work, Proposed, 38a) ·
+[US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) (negative invoices netted, Confirmed) and [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) (period BCTI approval, Verify) (39a) ·
+[US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) (NHI lookup, Proposed, 40a) ·
+[US-13.5.3](../../../../requirements-board/requirements/stories/US-13.5.3.md) (anaesthetist sign-in, PWA first, Verify, new; 43a) and [US-15.0.1](../../../../requirements-board/requirements/stories/US-15.0.1.md) (ease of use and point-of-need help, Proposed, 43a).
 **Left the script at `3d3a18c`** (each beat is dropped, or moved to "What to narrate rather than
-click" as Future scope): [US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md)
-Copy a Booking (Retired; removed by 15b), [US-02.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.4.md)
-booking from a photo and [US-02.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.2.1.md)
+click" as Future scope): [US-02.4.3](../../../../requirements-board/requirements/stories/US-02.4.3.md)
+Copy a Booking (Retired; removed by 15b), [US-02.4.4](../../../../requirements-board/requirements/stories/US-02.4.4.md)
+booking from a photo and [US-02.2.1](../../../../requirements-board/requirements/stories/US-02.2.1.md)
 surgeon PDF upload (Future Work; badged by 15b and 34), US-02.5.1 to US-02.5.4 automated change
 application and reschedule rules and US-02.5.6 concurrent edits (Future Work), US-13.7.4 warning
 settings (Future), US-05.2.3 the conditional positioning modifier (Retired; removed by 19), and the
@@ -115,7 +115,7 @@ This phase:
    read the whole diff, not only RV-17's references:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff OQ-62,OQ-75,US-05.2.2,FT-13.3,US-01.4.3,US-13.7.3,OQ-50,OQ-08,OQ-74,US-07.3.2,FT-08.2,US-05.2.7,OQ-84,OQ-12,OQ-11,OQ-37,OQ-51,OQ-13,OQ-15,OQ-29,OQ-31,OQ-38,OQ-43,OQ-47,OQ-48,OQ-49,OQ-60,OQ-61,OQ-76,OQ-77,OQ-78,OQ-79,OQ-80,OQ-81,OQ-82,OQ-83,OQ-85,OQ-86,OQ-88,OQ-89,US-01.5.5,FT-13.8,US-13.8.1,US-02.3.4,US-06.2.3,US-10.2.5,US-08.6.6,US-03.1.6,US-03.1.7,US-14.4.1,US-15.0.1,FT-13.7,US-10.3.3,US-01.4.6,US-01.4.7,US-13.8.2,FT-03.7,US-03.7.3,US-08.6.1,US-08.6.5,US-10.2.6,US-06.5.4,US-13.5.3,OQ-30,US-09.3.1
    ```
 
    At plan time (2026-10-03, after the three 2026-10-02 meetings with Greg) there was no diff. The
@@ -131,7 +131,7 @@ This phase:
    - if an item is now Retired or Future, drop its beat (or move it to "What to narrate rather than
      click" as Future scope) and record that in the PROGRESS entry.
 2. **Every open question the guide will name.** Re-read the status of each OQ at HEAD
-   (`catalogue/questions/OQ-*.md`). The guide's "Open questions" list and every discovery point are
+   (`requirements-board/requirements/questions/OQ-*.md`). The guide's "Open questions" list and every discovery point are
    built from HEAD statuses, not from this doc. At `3d3a18c` the Open ones were OQ-12, 13, 15, 29,
    31, 38, 43, 47, 48, 49, 60, 61 and 76 to 89; OQ-62 to OQ-75 are Answered; none was Confirm or
    Proposed, and OQ-11, OQ-37 and OQ-51 do not exist. Anything Answered is stated as the rule, with
@@ -224,7 +224,7 @@ This phase:
 **Catalogue:** the RV-17 references above, OQ-30, OQ-61 and US-11.1.2, the new-beat items listed
 under Requirements covered, and every OQ file the guide names (step 2). The change logs explain the
 vocabulary and the 2026-10-02 answers:
-`docs/discovery-reference/Updated Requirements/changes/2026-10-01-requirements-update.md`,
+`requirements-board/requirements/changes/2026-10-01-requirements-update.md`,
 `2026-10-02-requirements-update.md`, `2026-10-02-aa-requirements-review-with-greg.md` and
 `2026-10-02-aa-booking-and-pricing-review-with-greg.md`.
 

@@ -12,7 +12,7 @@ import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
-const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'requirements', `${id}.md`), 'utf8'))
+const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'stories', `${id}.md`), 'utf8'))
 
 test.beforeEach(async ({ page, request }) => {
   writeFixture()

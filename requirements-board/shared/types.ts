@@ -42,7 +42,7 @@ export const IMAGE_APPS = ['admin', 'web', 'mobile', 'simulator'] as const
 export type ImageApp = (typeof IMAGE_APPS)[number]
 
 export interface ImageRef {
-  /** Path relative to the catalogue folder, e.g. `assets/US-01.1.1/dashboard.png`. */
+  /** Path relative to the requirements folder, e.g. `assets/US-01.1.1/dashboard.png`. */
   src: string
   viewport: Viewport
   app?: ImageApp
@@ -203,7 +203,7 @@ export interface Artifact {
   components: string[]
   sources: string[]
   /**
-   * The file it shows. Relative to the catalogue folder (`artifacts/AR-01.svg`, `notes/x.md`), or
+   * The file it shows. Relative to the requirements folder (`artifacts/files/AR-01.svg`, `notes/x.md`), or
    * to the repository root with a leading slash (`/docs/rfp-reference/RFP.pdf`). Null for a
    * mermaid diagram, whose source sits in the sidecar.
    */

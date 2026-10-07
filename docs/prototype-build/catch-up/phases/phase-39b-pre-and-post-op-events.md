@@ -1,59 +1,59 @@
 # Phase 39b · Pre-op and post-op events
 
 **Requirements covered:**
-[FT-03.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.7.md) Events on a Procedure (Verify; this phase builds its pre-op and post-op kinds, the admin entry, the invoice tick, the "same as" billable party and the before-or-after invoicing rule) ·
-[US-03.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Verify) ·
-[US-03.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.2.md) Bill an event (Confirmed) ·
-[US-05.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.5.2.md) ACC pre-op flat fee codes (Open: the codes are OQ-12; the model is settled as a pre-op event) ·
-[US-03.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.6.md) Other billing lines (including UNIT X RATE) (Proposed).
+[FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) Events on a Procedure (Verify; this phase builds its pre-op and post-op kinds, the admin entry, the invoice tick, the "same as" billable party and the before-or-after invoicing rule) ·
+[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Verify) ·
+[US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event (Confirmed) ·
+[US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes (Open: the codes are OQ-12; the model is settled as a pre-op event) ·
+[US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md) Other billing lines (including UNIT X RATE) (Proposed).
 Read alongside (not closed here):
-[US-03.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.3.md)
+[US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md)
 (see a Procedure's events; Phase 38b built the events list, and this phase's kinds appear in it),
 [DM-17](../analysis/domain-model-delta.md#dm-17) (the event element; Phase 38b built it, this phase
 adds kinds to it),
-[US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) and
-[US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md)
+[US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) and
+[US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md)
 (the admin's free-form additional invoice, an event kind Phase 38b built; it stays the office's path
 for a free-form late charge),
-[US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md)
+[US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md)
 (the Contract defined rate, Confirmed; Phase 24 prices whole Procedures at it through `unitRateFor`,
 which this phase's UNIT x RATE line calls),
-[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md)
 (fixed fee pricing) and
-[US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md)
+[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md)
 (fixed fee schedule lines with the add-on flag and quantity rule; Phase 18 built them),
-[FT-11.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-11.2.md)
+[FT-11.2](../../../../requirements-board/requirements/stories/FT-11.2.md)
 (the billable party, defined by the Contract; Phase 21),
-[US-07.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.2.md)
+[US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md)
 (the Booking is immutable after AUTHORISED: an event never edits it),
-[US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md) and
-[US-10.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.1.md)
+[US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md) and
+[US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md)
 (an event's own invoice is its own receivable, so its ACCPAY is one more BCTI in Phase 16's count; an
 event line on the Procedure's invoice adds none),
-[OQ-63](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-63.md) (Answered,
+[OQ-63](../../../../requirements-board/requirements/questions/OQ-63.md) (Answered,
 owner decision D13: its own element, a line item, "event" for everything, one review step, bundled
 with the Procedure's invoice if possible or else the next run, an invoice tick),
-[OQ-12](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-12.md) (Open: the ACC
+[OQ-12](../../../../requirements-board/requirements/questions/OQ-12.md) (Open: the ACC
 codes CS250, CS260 and CS70 and the fixed-fee Contract, with AA's accountant),
-[OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md) (Open:
+[OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (Open:
 whether the Contract defined rate is a whole-Procedure basis or a separate billing line, and whether
 schedule lines keep add-ons; built as its recommendation),
-[OQ-50](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-50.md) (Answered:
+[OQ-50](../../../../requirements-board/requirements/questions/OQ-50.md) (Answered:
 time units come from the RVG rules only) and
-[OQ-75](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-75.md) (Answered,
+[OQ-75](../../../../requirements-board/requirements/questions/OQ-75.md) (Answered,
 D25: a part interval is always rounded up, 15 minutes for the first two hours, then 10; Phase 19a
 holds the tiers as data),
-[OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md) (Open: which
+[OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (Open: which
 date decides the price in force; the procedure date, built as its recommendation and extended to each
 event's own date),
-[OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md) and
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (BCTI
+[OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md) and
+[OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (BCTI
 granularity and what the AA fee counts; open, kept in Phase 16's count function), the meeting notes
-`catalogue/notes/2026-10-01-aa-meeting-with-greg.md` (#6, #34, #46, #54, #61),
-`catalogue/notes/2026-10-02-aa-meeting-with-greg.md` (#4, #24, #25, #26, #35, #44) and
-`catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` (#21, #55) (see Reference),
+`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` (#6, #34, #46, #54, #61),
+`requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` (#4, #24, #25, #26, #35, #44) and
+`requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` (#21, #55) (see Reference),
 and the Booking section and glossary of
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
+[domain-model.md](../../../../requirements-board/requirements/domain-model.md).
 **Depends on:** 24 (`unitRateFor`, the one pure rate function; `ChargeBasis` reduced to `'rvg' |
 'fixed'` with `BillingLine.rate` as "$ per unit"; the agreed rate per unit as the Contract defined
 rate; the Aria defined-rate Contract and Dr Souter's Mon 27 Jul capture Booking,
@@ -144,7 +144,7 @@ an event line on the invoice, and two seeded Contracts' extra lines and one new 
 1. Run the drift check against the plan's catalogue snapshot:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-05.2.6,US-05.2.5,US-04.2.4,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-89,OQ-50,OQ-75,OQ-48,OQ-29,OQ-60
    ```
 
    Read the hunks (if any) for FT-03.7, US-03.7.1, US-03.7.2, US-05.5.2, US-03.3.6, the context items
@@ -898,11 +898,11 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.1.md) Add a pre-op or post-op event to a Procedure | absent · stub, no shots | captured. Replace the stub. Run the `stage-post-op` bar action, then reach the Booking from the search (`?q=Bennett`, Phase 38a), since its ids are staged at runtime. Mobile and web: shot `add-event` highlighting `[data-shot=add-event-sheet]` (Post-op, a time stepper, the invoice tick and the "same as" tick), states `sheet`, `added` (the post-op event with its own date in 38b's events list), `not-invoiced` (tick cleared) and `other-party` ("same as" cleared, a party entered). Admin: shot `admin-add-event` on the Admin Booking detail with the office's sheet. Captions in the catalogue's words: "A post-op event is saved against the Procedure with its own date", "No modifiers can be added to an event", "Recorded but not invoiced", "The event carries the billable party entered", "An admin can add an event" |
-| [US-03.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.2.md) Bill an event | absent · stub, no shots | captured. Replace the stub. After staging and adding a ward review: Admin `review-list-events` on the List review (highlight `[data-shot=review-list-events]`, the calculation); `on-invoice` after **Authorise**, the Procedure's invoice highlighting `[data-shot=invoice-event-lines]` (the event as its own dated line); `fixed-fee` for the pain consult in 38b's review step ("Contract fixed fee STGACC-PAIN replaces 40 min"); `separate-invoice` after the next run, the event invoice with its relates-to line. Captions: "Recorded before approval, it is a line on the Procedure's invoice", "Recorded after, a separate invoice in the next run, traceable to the Procedure", "The Contract's fixed fee is charged instead of the time". The PWA stand-in is not shot |
-| [US-03.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.3.md) See a Procedure's events | none at plan time (Phase 38b creates it) | stays whatever 38b left it; add a `pre-post-op` state on the staged Bennett Booking (mobile, web and Admin) showing a pre-op and a post-op event beside an additional invoice in the events list, keeping 38b's shot names. If 38b left no recipe, create one with that state and record it |
-| [US-05.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.5.2.md) ACC pre-op flat fee codes | partial · web-acc-preop, mobile-acc-preop | stays `partial` unless AA supplies the code rates: reshoot as a pre-op event. Web and mobile (`acc-preop`): on the staged Bennett Booking, Add pre-op or post-op event, Pre-op, type "ACC pre-op assessment", highlight the code rows ("CS250 · ACC pre-op assessment") in `[data-shot=add-event-sheet]` with the OQ-12 caption; add an `on-invoice` state on the Admin invoice showing CS250 as its own line. The old recipe fills the retired "What this line charges" description with the code; replace those steps. New reason: "CS250, CS260 and CS70 are in the picker with demo prices; AA's real ACC codes and rates are not confirmed (OQ-12)." Caption: "ACC pre-op assessment is a fixed-fee pre-op event, code picked from a list, its own invoice line" |
-| [US-03.3.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.6.md) Other billing lines (including UNIT X RATE) | partial · web-billing-line[card,sheet], mobile-billing-line[card,sheet] | captured. Keep the shot names and the `card` and `sheet` states; the sheet now has the Type row and a Date field, so highlight `[data-shot=add-billing-line-sheet]`; add a `typed-dated` state (an HDU review dated the day after the List), a `late-line` state on a submitted List showing the banner, and a `unit-rate` shot on the Aria capture Booking (`SEED_MARKERS.definedRateCaptureBooking`) with the UNIT x RATE units stepper and the OQ-89 caption, which replaces the retired US-03.3.7 rate x time images the item still lists. Captions in the catalogue's words ("Billing lines outside the base, time and modifier calculation", "A billing line can carry its own later date", "A unit x rate billing line where the Contract defines its own rate"). Drop the partial reason |
+| [US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure | absent · stub, no shots | captured. Replace the stub. Run the `stage-post-op` bar action, then reach the Booking from the search (`?q=Bennett`, Phase 38a), since its ids are staged at runtime. Mobile and web: shot `add-event` highlighting `[data-shot=add-event-sheet]` (Post-op, a time stepper, the invoice tick and the "same as" tick), states `sheet`, `added` (the post-op event with its own date in 38b's events list), `not-invoiced` (tick cleared) and `other-party` ("same as" cleared, a party entered). Admin: shot `admin-add-event` on the Admin Booking detail with the office's sheet. Captions in the catalogue's words: "A post-op event is saved against the Procedure with its own date", "No modifiers can be added to an event", "Recorded but not invoiced", "The event carries the billable party entered", "An admin can add an event" |
+| [US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event | absent · stub, no shots | captured. Replace the stub. After staging and adding a ward review: Admin `review-list-events` on the List review (highlight `[data-shot=review-list-events]`, the calculation); `on-invoice` after **Authorise**, the Procedure's invoice highlighting `[data-shot=invoice-event-lines]` (the event as its own dated line); `fixed-fee` for the pain consult in 38b's review step ("Contract fixed fee STGACC-PAIN replaces 40 min"); `separate-invoice` after the next run, the event invoice with its relates-to line. Captions: "Recorded before approval, it is a line on the Procedure's invoice", "Recorded after, a separate invoice in the next run, traceable to the Procedure", "The Contract's fixed fee is charged instead of the time". The PWA stand-in is not shot |
+| [US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md) See a Procedure's events | none at plan time (Phase 38b creates it) | stays whatever 38b left it; add a `pre-post-op` state on the staged Bennett Booking (mobile, web and Admin) showing a pre-op and a post-op event beside an additional invoice in the events list, keeping 38b's shot names. If 38b left no recipe, create one with that state and record it |
+| [US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes | partial · web-acc-preop, mobile-acc-preop | stays `partial` unless AA supplies the code rates: reshoot as a pre-op event. Web and mobile (`acc-preop`): on the staged Bennett Booking, Add pre-op or post-op event, Pre-op, type "ACC pre-op assessment", highlight the code rows ("CS250 · ACC pre-op assessment") in `[data-shot=add-event-sheet]` with the OQ-12 caption; add an `on-invoice` state on the Admin invoice showing CS250 as its own line. The old recipe fills the retired "What this line charges" description with the code; replace those steps. New reason: "CS250, CS260 and CS70 are in the picker with demo prices; AA's real ACC codes and rates are not confirmed (OQ-12)." Caption: "ACC pre-op assessment is a fixed-fee pre-op event, code picked from a list, its own invoice line" |
+| [US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md) Other billing lines (including UNIT X RATE) | partial · web-billing-line[card,sheet], mobile-billing-line[card,sheet] | captured. Keep the shot names and the `card` and `sheet` states; the sheet now has the Type row and a Date field, so highlight `[data-shot=add-billing-line-sheet]`; add a `typed-dated` state (an HDU review dated the day after the List), a `late-line` state on a submitted List showing the banner, and a `unit-rate` shot on the Aria capture Booking (`SEED_MARKERS.definedRateCaptureBooking`) with the UNIT x RATE units stepper and the OQ-89 caption, which replaces the retired US-03.3.7 rate x time images the item still lists. Captions in the catalogue's words ("Billing lines outside the base, time and modifier calculation", "A billing line can carry its own later date", "A unit x rate billing line where the Contract defines its own rate"). Drop the partial reason |
 
 **Recipes this phase breaks.** Work item 14 already asks for `US-03.3.6.json` and `US-05.5.2.json` to
 be re-pointed; reconcile with it as follows. Found at plan time:

@@ -1,5 +1,5 @@
 /**
- * Node-side access to the catalogue folder: load everything, write one record
+ * Node-side access to the requirements folder: load everything, write one record
  * atomically. Used by the dev-server API and the npm scripts.
  */
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
@@ -12,17 +12,17 @@ import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Que
 import { artifactInfo } from './artifactFiles.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
-export const REQUIREMENTS_DIR = resolve(here, '../../docs/discovery-reference/Updated Requirements')
-export const CATALOGUE_DIR = process.env.CATALOGUE_DIR ? resolve(process.env.CATALOGUE_DIR) : join(REQUIREMENTS_DIR, 'catalogue')
+/** The requirements folder, `requirements-board/requirements/`, or `REQUIREMENTS_DIR` from the environment (a fixture). */
+export const REQUIREMENTS_DIR = process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements')
 
-export const itemsDir = (root = CATALOGUE_DIR) => join(root, 'requirements')
-export const questionsDir = (root = CATALOGUE_DIR) => join(root, 'questions')
-export const layoutPath = (root = CATALOGUE_DIR) => join(root, 'board-layout.json')
-export const itemPath = (id: string, root = CATALOGUE_DIR) => join(itemsDir(root), `${id}.md`)
-export const questionPath = (id: string, root = CATALOGUE_DIR) => join(questionsDir(root), `${id}.md`)
-/** Artifact sidecars (`AR-nn.md`), and the files of artifacts drawn for the catalogue. */
-export const artifactsDir = (root = CATALOGUE_DIR) => join(root, 'artifacts')
-export const artifactSidecarPath = (id: string, root = CATALOGUE_DIR) => join(artifactsDir(root), `${id}.md`)
+export const storiesDir = (root = REQUIREMENTS_DIR) => join(root, 'stories')
+export const questionsDir = (root = REQUIREMENTS_DIR) => join(root, 'questions')
+export const layoutPath = (root = REQUIREMENTS_DIR) => join(root, 'board-layout.json')
+export const itemPath = (id: string, root = REQUIREMENTS_DIR) => join(storiesDir(root), `${id}.md`)
+export const questionPath = (id: string, root = REQUIREMENTS_DIR) => join(questionsDir(root), `${id}.md`)
+/** Artifact sidecars (`AR-nn.md`); the artifact files themselves are in its `files/`. */
+export const artifactsDir = (root = REQUIREMENTS_DIR) => join(root, 'artifacts')
+export const artifactSidecarPath = (id: string, root = REQUIREMENTS_DIR) => join(artifactsDir(root), `${id}.md`)
 
 const ID_FILE = /^[A-Z]{2}-[\d.]+$/
 
@@ -57,7 +57,7 @@ export const readQuestionFile = (file: string) => readRecord<Question>(file, par
 export const readArtifactFile = (file: string) => readRecord<Artifact>(file, parseArtifact, lintArtifact)
 
 /** Sidecar records with what their files hold (format, size, pages, headings). */
-export function withMeta(records: Record<string, Rev<Artifact>>, root = CATALOGUE_DIR): Record<string, ArtifactRec> {
+export function withMeta(records: Record<string, Rev<Artifact>>, root = REQUIREMENTS_DIR): Record<string, ArtifactRec> {
   const out: Record<string, ArtifactRec> = {}
   for (const [id, r] of Object.entries(records)) out[id] = { ...r, meta: artifactInfo(r.data, root).meta }
   return out
@@ -81,7 +81,7 @@ const baseId = (file: string) => file.slice(file.lastIndexOf(sep) + 1).replace(/
 /** Every ID a file already claims, by file name, whether or not the file parses. */
 export const takenIds = (dir: string) => listMd(dir).map(baseId)
 
-export function readLayout(root = CATALOGUE_DIR): { layout: Layout; error?: string } {
+export function readLayout(root = REQUIREMENTS_DIR): { layout: Layout; error?: string } {
   let text: string
   try {
     text = readFileSync(layoutPath(root), 'utf8')
@@ -111,7 +111,7 @@ export function issuesFor(
   items: Record<string, Rev<Item>>,
   questions: Record<string, Rev<Question>>,
   parseIssues: Issue[],
-  root = CATALOGUE_DIR,
+  root = REQUIREMENTS_DIR,
   lanes?: string[],
   artifacts: Record<string, Rev<Artifact>> = {},
 ): Issue[] {
@@ -128,7 +128,7 @@ export function issuesFor(
 }
 
 /** The artifact part of a check's input: the sidecars, and what their files hold. */
-export const artifactCheck = (artifacts: Record<string, Rev<Artifact>>, root = CATALOGUE_DIR) => ({
+export const artifactCheck = (artifacts: Record<string, Rev<Artifact>>, root = REQUIREMENTS_DIR) => ({
   artifacts: Object.values(artifacts).map((r) => r.data),
   artifactFacts: (a: Artifact) => artifactInfo(a, root).facts,
 })
@@ -164,9 +164,9 @@ function collect<T extends { id: string }>(files: string[], read: (f: string) =>
   return out
 }
 
-export function loadCatalogue(root = CATALOGUE_DIR): LoadResult {
+export function loadCatalogue(root = REQUIREMENTS_DIR): LoadResult {
   const parseIssues: Issue[] = []
-  const items = collect(listMd(itemsDir(root)), readItemFile, parseIssues)
+  const items = collect(listMd(storiesDir(root)), readItemFile, parseIssues)
   const questions = collect(listMd(questionsDir(root)), readQuestionFile, parseIssues)
   const artifacts = withMeta(collect(listMd(artifactsDir(root)), readArtifactFile, parseIssues), root)
   const { layout, error } = readLayout(root)
@@ -197,20 +197,20 @@ export function createAtomic(file: string, text: string) {
   }
 }
 
-export function writeItem(item: Item, root = CATALOGUE_DIR, opts: { create?: boolean } = {}): Rev<Item> {
+export function writeItem(item: Item, root = REQUIREMENTS_DIR, opts: { create?: boolean } = {}): Rev<Item> {
   const text = serialiseItem(item)
   ;(opts.create ? createAtomic : writeAtomic)(itemPath(item.id, root), text)
   return { data: parseItem(text), rev: revOf(text) }
 }
 
-export function writeQuestion(q: Question, root = CATALOGUE_DIR, opts: { create?: boolean } = {}): Rev<Question> {
+export function writeQuestion(q: Question, root = REQUIREMENTS_DIR, opts: { create?: boolean } = {}): Rev<Question> {
   const text = serialiseQuestion(q)
   ;(opts.create ? createAtomic : writeAtomic)(questionPath(q.id, root), text)
   return { data: parseQuestion(text), rev: revOf(text) }
 }
 
 /** Rewrite an artifact's sidecar (its details, from the board). Its file is never touched. */
-export function writeArtifact(a: Artifact, root = CATALOGUE_DIR): ArtifactRec {
+export function writeArtifact(a: Artifact, root = REQUIREMENTS_DIR): ArtifactRec {
   const text = serialiseArtifact(a)
   writeAtomic(artifactSidecarPath(a.id, root), text)
   const data = parseArtifact(text)
@@ -218,17 +218,17 @@ export function writeArtifact(a: Artifact, root = CATALOGUE_DIR): ArtifactRec {
 }
 
 /** Remove a question's file. Items never point at questions, so nothing else needs rewriting. */
-export function deleteQuestionFile(id: string, root = CATALOGUE_DIR) {
+export function deleteQuestionFile(id: string, root = REQUIREMENTS_DIR) {
   unlinkSync(questionPath(id, root))
 }
 
 /** Remove an item's file. The caller has already rewritten everything that pointed at it. */
-export function deleteItemFile(id: string, root = CATALOGUE_DIR) {
+export function deleteItemFile(id: string, root = REQUIREMENTS_DIR) {
   unlinkSync(itemPath(id, root))
 }
 
 /** Remove an item's screenshot folder, `assets/<ID>/`, if it has one. */
-export function deleteItemAssets(id: string, root = CATALOGUE_DIR) {
+export function deleteItemAssets(id: string, root = REQUIREMENTS_DIR) {
   if (!ID_FILE.test(id)) return
   rmSync(join(root, 'assets', id), { recursive: true, force: true })
 }
@@ -248,6 +248,6 @@ export function serialiseLayout(layout: Layout): string {
   return `{\n  "positions": {${ids.length ? `\n${body}\n  ` : ''}}${first}${lanes}\n}\n`
 }
 
-export function writeLayout(layout: Layout, root = CATALOGUE_DIR) {
+export function writeLayout(layout: Layout, root = REQUIREMENTS_DIR) {
   writeAtomic(layoutPath(root), serialiseLayout(layout))
 }

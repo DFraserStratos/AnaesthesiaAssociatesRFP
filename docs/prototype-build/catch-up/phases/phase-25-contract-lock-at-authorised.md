@@ -1,44 +1,44 @@
 # Phase 25 · Contract versions and the AUTHORISED lock
 
 **Requirements covered:**
-[US-04.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.3.md) (Contract audit and versioning),
-[US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md) (Contract locked at AUTHORISED; Confirmed),
-[US-07.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.1.md) (authorise the List: the lock and snapshot half),
-[US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) (process an AUTHORISED List using each Procedure's locked Contract; merges the retired US-08.1.2),
-[US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) (invoice reproducibility: keep the invoice's "recipe", clarified 2026-10-02),
-[US-15.0.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.3.md) (enter once: the billing exception half);
+[US-04.1.3](../../../../requirements-board/requirements/stories/US-04.1.3.md) (Contract audit and versioning),
+[US-04.3.5](../../../../requirements-board/requirements/stories/US-04.3.5.md) (Contract locked at AUTHORISED; Confirmed),
+[US-07.3.1](../../../../requirements-board/requirements/stories/US-07.3.1.md) (authorise the List: the lock and snapshot half),
+[US-08.1.1](../../../../requirements-board/requirements/stories/US-08.1.1.md) (process an AUTHORISED List using each Procedure's locked Contract; merges the retired US-08.1.2),
+[US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) (invoice reproducibility: keep the invoice's "recipe", clarified 2026-10-02),
+[US-15.0.3](../../../../requirements-board/requirements/stories/US-15.0.3.md) (enter once: the billing exception half);
 [DM-08](../analysis/domain-model-delta.md#dm-08) (Contract versions and the AUTHORISED snapshot);
 [RV-01](../analysis/reverse-check.md#rv-01-billing-engine-re-resolves-contract-and-payer-at-billing-time-no-contract-lock-at-authorised) (the engine re-resolves the Contract at billing time).
 Touches, without closing:
 [DM-06](../analysis/domain-model-delta.md#dm-06) (the payee anaesthetist is stamped on the locked
 record here; the move to the doer is Phase 32a's single-Booking move, and the payable half of a moved
 prepaid Booking's draft pair is updated in Phase 41, D20);
-[US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md)
+[US-04.2.12](../../../../requirements-board/requirements/stories/US-04.2.12.md)
 (Phase 22 builds the full or split payment setting with each share a typed $ or %, set on the Booking
 and defaulting from the Contract, D18; this phase locks the setting, the typed shares and the amounts
 they gave);
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md)
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md)
 and [DM-43](../analysis/domain-model-delta.md#dm-43) (Phase 19a puts base units in each procedure's
 default RVG Contracts with Contract overrides, D12; this phase locks which Contract and version
 supplied them);
-[US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md)
+[US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md)
 and [DM-46](../analysis/domain-model-delta.md#dm-46) (Phase 24's Contract defined unit rate; this
 phase locks the rate it priced at);
-[US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md)
-(Matches; [OQ-05](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-05.md) is
+[US-08.5.2](../../../../requirements-board/requirements/stories/US-08.5.2.md)
+(Matches; [OQ-05](../../../../requirements-board/requirements/questions/OQ-05.md) is
 answered: failure is per Booking and a List never fails as a whole, which the re-based failure beat
 shows) and
-[US-13.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.2.md)
+[US-13.3.2](../../../../requirements-board/requirements/stories/US-13.3.2.md)
 (manual intervention, Confirmed on 2026-10-02; the office's supply-and-retry is its billing case).
 Nearby, not blocking (all still Open at `3d3a18c`):
-[OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md) (which date
+[OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (which date
 decides the price in force; built as its recommendation, the procedure date, by Phase 18),
-[OQ-78](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-78.md) (Greg's
+[OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (Greg's
 no-default-Contract model; the plan builds the catalogue's model and the lock copies whichever Contract
 priced the Procedure),
-[OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md) (whether the
+[OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (whether the
 Contract defined rate is the agreed contract rate; the lock copies whichever basis 24 built) and
-[OQ-80](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-80.md) (when a
+[OQ-80](../../../../requirements-board/requirements/questions/OQ-80.md) (when a
 prepayment's pair is created and amended; pre-payment is not locked here).
 **Depends on:** Phases 19a, 22, 23 and 24, and through them the whole Contracts track: 18's Contract
 shape (category, holder, scope, pricing basis, rate steps, fee schedule lines with dated prices, the
@@ -131,7 +131,7 @@ retries, once.
 1. Run the drift diff and read it for this phase's items:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-04.1.3,US-04.3.5,US-07.3.1,US-08.1.1,US-08.4.4,US-15.0.3,US-08.1.2,US-12.1.1,US-04.2.10,US-04.2.12,US-04.4.2,US-05.2.2,US-05.2.6,US-01.4.6,US-06.5.4,US-08.5.1,US-08.5.2,US-13.3.2,OQ-48,OQ-62,OQ-67,OQ-68,OQ-70,OQ-75,OQ-78,OQ-89,OQ-05
    ```
 
    - Check `US-04.1.3`, `US-04.3.5`, `US-07.3.1`, `US-08.1.1`, `US-08.4.4` and `US-15.0.3`.
@@ -257,25 +257,25 @@ taken at AUTHORISED."), "Contract (recommended structure)" (`id, aaCode, name, v
 are kept so old invoices reproduce"; the `baseUnits / baseUnitOverrides` row; the `paymentSetting`
 row) and its "Procedure billing context" table (`contractId + contractVersion`: "Locked at
 AUTHORISED");
-[US-08.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.2.md)
+[US-08.1.2](../../../../requirements-board/requirements/stories/US-08.1.2.md)
 (Retired, but its text is the confirmed departure quoted in US-08.1.1's acceptance criterion);
-[US-08.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.1.md),
-[US-08.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.5.2.md)
-and [US-13.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.2.md)
+[US-08.5.1](../../../../requirements-board/requirements/stories/US-08.5.1.md),
+[US-08.5.2](../../../../requirements-board/requirements/stories/US-08.5.2.md)
+and [US-13.3.2](../../../../requirements-board/requirements/stories/US-13.3.2.md)
 (failure reporting, per-Booking isolation and the manual fix, which the re-based trigger
 demonstrates);
-[US-04.2.12](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.12.md)
+[US-04.2.12](../../../../requirements-board/requirements/stories/US-04.2.12.md)
 (the payment setting and typed shares the lock copies);
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md),
-[US-05.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.2.md)
-and [US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md)
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md),
+[US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md)
+and [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md)
 (the base-unit source, the time tiers and the defined rate the lock copies);
-[US-01.4.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-01.4.6.md)
-and [US-06.5.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.5.4.md)
+[US-01.4.6](../../../../requirements-board/requirements/stories/US-01.4.6.md)
+and [US-06.5.4](../../../../requirements-board/requirements/stories/US-06.5.4.md)
 (the payee follows the Booking to whoever did it; the prepaid payable half is Phase 41's);
-[US-12.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.1.md)
+[US-12.1.1](../../../../requirements-board/requirements/stories/US-12.1.1.md)
 (its technical note: the unit value is copied to the billing record at AUTHORISED);
-`catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` item #36 (the recipe).
+`requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` item #36 (the recipe).
 
 **Analysis:**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 3 "Contract replaces the billing route" (versions, the
@@ -945,12 +945,12 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-04.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.3.md) Contract audit and versioning | absent | Captured. Create a recipe: `admin-contract-versions` on `/admin/masters`, the Contract sheet's "Version history" (`contract-versions`, newest first with "Current" and "N invoices"), with states for an edit that adds v2 (end-date Health NZ to 16 Jul) and `view` opening an earlier version read-only. Caption in the catalogue's words: edits are audited and an earlier version can be viewed. Drop the absent reason. |
-| [US-04.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.5.md) Contract locked at AUTHORISED | captured · admin-contract-before, admin-locked-contract | Stays captured. Both start on BK0012 (`/admin/day/2026-07-20/bookings/BK0012`) and highlight `office-billing-setup-1`. Re-shoot: `contract-before` on the Booking before authorise (no badge, re-prices live), `locked-contract` after authorise with the `booking-lock-badge` "Contract vN locked at authorise" highlighted and the read-only setup showing the Contract, version and base-unit source. Re-check the start id after 19a to 24 seed more Bookings. |
-| [US-07.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.1.md) Authorise the List | captured · admin-authorise (confirm, authorised) | Stays captured. Re-shoot both states on `/admin/review/L-25490-2026-07-20-AM`: `confirm` notes the lock, and `authorised` shows the banner plus the lock glyph and version in the Contract column. Add an `authorise-lock-blocked` state: with Health NZ end-dated, a CPH List's Review shows the `contractNotInForce` blocker instead of the button. Keep the shot `name`s. |
-| [US-08.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract | captured · admin-authorise-list (confirm, authorised), admin-billing-run | Stays captured. Re-shoot `admin-authorise-list` on `/admin/review/L-34821-2026-07-20-AM` and `admin-billing-run` on `/admin/billing` (the pipeline row now prices from the locked record). Add `admin-billing-supply-input`: the Tuilagi row with "Held back: none of this Booking's invoices was issued", the inline claim reference field and "Add and retry" (`billing-supply-input`), staged by the re-pointed `billing-failure` trigger. Keep the image order the catalogue file now lists (the US-08.1.2 `admin-review-contracts` image first). |
-| [US-08.4.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Captured. Re-shoot `admin-snapshot-invoice` on `/admin/invoices` and add `admin-locked-record` (`invoice-locked-record`: Contract, AA code, version, base-unit source, payee, payment setting, rate) with a `regenerated` state after the "Regenerate from locked data" trigger ("Regenerated from locked data: identical"), shot after a patient address or unit-value edit so the caption can say the invoice is produced again from its recipe, unchanged. Drop the partial reason. |
-| [US-15.0.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.3.md) Enter once | captured · web-entered-by-anaesthetist, admin-seen-by-office | Stays captured. Verify both still resolve on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009` and `/admin/day/2026-07-21/bookings/BK0009`, `time-capture-track`). Add `admin-billing-exception`: the office supplies the missing input on the held-back Booking in the Billing monitor and the Booking bills, with no re-keying of anything else. |
+| [US-04.1.3](../../../../requirements-board/requirements/stories/US-04.1.3.md) Contract audit and versioning | absent | Captured. Create a recipe: `admin-contract-versions` on `/admin/masters`, the Contract sheet's "Version history" (`contract-versions`, newest first with "Current" and "N invoices"), with states for an edit that adds v2 (end-date Health NZ to 16 Jul) and `view` opening an earlier version read-only. Caption in the catalogue's words: edits are audited and an earlier version can be viewed. Drop the absent reason. |
+| [US-04.3.5](../../../../requirements-board/requirements/stories/US-04.3.5.md) Contract locked at AUTHORISED | captured · admin-contract-before, admin-locked-contract | Stays captured. Both start on BK0012 (`/admin/day/2026-07-20/bookings/BK0012`) and highlight `office-billing-setup-1`. Re-shoot: `contract-before` on the Booking before authorise (no badge, re-prices live), `locked-contract` after authorise with the `booking-lock-badge` "Contract vN locked at authorise" highlighted and the read-only setup showing the Contract, version and base-unit source. Re-check the start id after 19a to 24 seed more Bookings. |
+| [US-07.3.1](../../../../requirements-board/requirements/stories/US-07.3.1.md) Authorise the List | captured · admin-authorise (confirm, authorised) | Stays captured. Re-shoot both states on `/admin/review/L-25490-2026-07-20-AM`: `confirm` notes the lock, and `authorised` shows the banner plus the lock glyph and version in the Contract column. Add an `authorise-lock-blocked` state: with Health NZ end-dated, a CPH List's Review shows the `contractNotInForce` blocker instead of the button. Keep the shot `name`s. |
+| [US-08.1.1](../../../../requirements-board/requirements/stories/US-08.1.1.md) Process an AUTHORISED List using each Procedure's locked Contract | captured · admin-authorise-list (confirm, authorised), admin-billing-run | Stays captured. Re-shoot `admin-authorise-list` on `/admin/review/L-34821-2026-07-20-AM` and `admin-billing-run` on `/admin/billing` (the pipeline row now prices from the locked record). Add `admin-billing-supply-input`: the Tuilagi row with "Held back: none of this Booking's invoices was issued", the inline claim reference field and "Add and retry" (`billing-supply-input`), staged by the re-pointed `billing-failure` trigger. Keep the image order the catalogue file now lists (the US-08.1.2 `admin-review-contracts` image first). |
+| [US-08.4.4](../../../../requirements-board/requirements/stories/US-08.4.4.md) Invoice reproducibility | partial · admin-snapshot-invoice | Captured. Re-shoot `admin-snapshot-invoice` on `/admin/invoices` and add `admin-locked-record` (`invoice-locked-record`: Contract, AA code, version, base-unit source, payee, payment setting, rate) with a `regenerated` state after the "Regenerate from locked data" trigger ("Regenerated from locked data: identical"), shot after a patient address or unit-value edit so the caption can say the invoice is produced again from its recipe, unchanged. Drop the partial reason. |
+| [US-15.0.3](../../../../requirements-board/requirements/stories/US-15.0.3.md) Enter once | captured · web-entered-by-anaesthetist, admin-seen-by-office | Stays captured. Verify both still resolve on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009` and `/admin/day/2026-07-21/bookings/BK0009`, `time-capture-track`). Add `admin-billing-exception`: the office supplies the missing input on the held-back Booking in the Billing monitor and the Booking bills, with no re-keying of anything else. |
 
 **Recipes this phase breaks.**
 - `US-08.5.1` (shot `failure-reason`), `US-08.5.2` (`card-failure`, states `failed` and `retried`) and `US-13.3.2` (`resolve-retry`, highlight `tr:has(button:has-text("Resolve & retry"))`) stage the failure through a `{ "trigger": "billing-failure" }` setup step, which now stages the missing claim reference by itself, and then click "Resolve & retry". Replace those clicks and highlights with filling the inline claim reference field (`billing-supply-input`) and clicking "Add and retry". `US-08.5.2`'s captions change to a failed Booking being held back whole while the List bills (OQ-05), with "Booking" for "card". `US-13.3.2` is now Confirmed; its caption names the office's manual fix.

@@ -1,28 +1,28 @@
 # Phase 19a · Default RVG Contracts hold the base units
 
 **Requirements covered:**
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md) Default RVG Contract for every procedure (Verify) ·
-[FT-04.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-04.4.md) Default Contracts for hospitals, insurers and procedures (Proposed) ·
-[US-05.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.2.md) Tiered time units (Confirmed) ·
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md) Default RVG Contract for every procedure (Verify) ·
+[FT-04.4](../../../../requirements-board/requirements/stories/FT-04.4.md) Default Contracts for hospitals, insurers and procedures (Proposed) ·
+[US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units (Confirmed) ·
 [DM-43](../analysis/domain-model-delta.md#dm-43) base units live in each procedure's default RVG Contracts; any other Contract may override them.
 Also builds, without closing: the base-unit half of
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md)
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md)
 (the Contract base-unit override for a procedure, RVG code or group, moved here from Phase 23; the
 story closes in Phase 24 with the defined rate and the adjustment rule), US-05.1.6 AC1 and AC2 ("at
 least one default RVG Contract"; "the override is used"), and the procedures and RVG groups
 dimensions of
-[US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md)
+[US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md)
 scope (the `procedureTypeIds` retype, `scope.rvgGroups` and `scopeCoversProcedure`, which Phase 19
 left to this phase), with the procedure scope seeded on every Contract, so Phase 20's procedure
 filter (D16) returns real Contracts.
 Answered and built as answered: owner decision D12
-([OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md)), D25
-([OQ-75](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-75.md)) and the
-procedure half of D16 ([OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md)).
+([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md)), D25
+([OQ-75](../../../../requirements-board/requirements/questions/OQ-75.md)) and the
+procedure half of D16 ([OQ-66](../../../../requirements-board/requirements/questions/OQ-66.md)).
 Open, built as their recommendation and labelled provisional in one place:
-[OQ-78](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-78.md) (default
+[OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (default
 Contracts, or the hospital holding every Contract) and
-[OQ-88](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-88.md) (RVG code
+[OQ-88](../../../../requirements-board/requirements/questions/OQ-88.md) (RVG code
 master and procedure master, one list or two).
 **Depends on:** Phase 19 (the editable RVG reference master, the master procedure list with no base
 units, `ProcedureTypeId`, `RvgGroupRef`, `groupsOfCode` and `codesInGroup`, the one base-unit
@@ -90,7 +90,7 @@ own Booking (item 8e), listed in the parity test and PROGRESS.
 
 ## Before you start: drift check
 
-1. Run `git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
+1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>`
    and read the hunks for US-04.4.2, FT-04.4, US-04.4.1, US-05.2.2, US-04.2.2, US-04.2.1, US-04.3.2
    (the picker that reads the procedure scope), US-04.3.3 (the hospital default), US-05.1.6, US-05.1.1,
    US-03.3.1, US-06.2.4 (the estimator that reads base and time units), OQ-62, OQ-66, OQ-75, OQ-78 and
@@ -146,20 +146,20 @@ provisional badge style come from `Design Language.dc.html`. Teal is the only ac
 kind and "Provisional" markers are neutral pills, never crimson.
 
 **Catalogue.** The files linked above, plus
-[US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md)
+[US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md)
 (the procedure master; "one default Contract with a range, or one per kind"),
-[US-05.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.1.md)
+[US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md)
 (the RVG master as reference data),
-[US-04.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.3.md)
+[US-04.3.3](../../../../requirements-board/requirements/stories/US-04.3.3.md)
 (the hospital default),
-[US-04.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.1.md)
+[US-04.4.1](../../../../requirements-board/requirements/stories/US-04.4.1.md)
 (mandatory default Contract, already met),
-[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md)
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md)
 (the picker filtered by procedure then hospital, built in 20),
-[US-06.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.2.4.md)
+[US-06.2.4](../../../../requirements-board/requirements/stories/US-06.2.4.md)
 (the estimator, built in 27) and
-[US-13.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.3.md)
-(spreadsheet loads, built in 42). The evidence is `catalogue/notes/2026-10-02-aa-meeting-with-greg.md`
+[US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md)
+(spreadsheet loads, built in 42). The evidence is `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md`
 items 3, 16, 22 and 40, and `notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` items 40
 and 53.
 
@@ -699,9 +699,9 @@ recipe in `requirements-board/capture/recipes/` matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md) Default RVG Contract for every procedure | none | Create it, `captured`. Admin shots: `default-rvg-contracts` (Contracts → Default RVG Contracts, `contracts-default-rvg`: a ranged and a single procedure and the per-kind pair, the OQ-78 badge; highlight the Contracts column) with a `search` state ("hip"), and `edit` with `DefaultRvgContractsSheet` open on 20950 (`default-rvg-sheet`, "RVG reference: 5" beside the value). Add a web and a mobile `base-source` shot on a DRAFT Booking with 20950 (B row "From the default RVG Contract", `units-row-b`). Captions in the catalogue's words: "Each procedure's default RVG Contract holds its base units" |
-| [US-04.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.1.md) Mandatory default Contract | captured · admin-add-hospital[added, contracts] | Stays `captured`. Re-run: the `contracts` state's highlight `tr:has-text("Ashburton Surgical")` must still find the new hospital default in the main list (default RVG Contracts are no longer there, which only shortens it). Re-caption with 18's category name if 18 did not |
-| [US-05.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | Stays `captured`. Re-shoot both on `BK0001` with the new T caption ("From start and finish stamps · RVG time tiers"). Add an admin `time-rule` shot on the RVG codes tab (`masters-rvg-time-rule`), caption "Time tiers held as data: a part interval always rounds up" |
+| [US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md) Default RVG Contract for every procedure | none | Create it, `captured`. Admin shots: `default-rvg-contracts` (Contracts → Default RVG Contracts, `contracts-default-rvg`: a ranged and a single procedure and the per-kind pair, the OQ-78 badge; highlight the Contracts column) with a `search` state ("hip"), and `edit` with `DefaultRvgContractsSheet` open on 20950 (`default-rvg-sheet`, "RVG reference: 5" beside the value). Add a web and a mobile `base-source` shot on a DRAFT Booking with 20950 (B row "From the default RVG Contract", `units-row-b`). Captions in the catalogue's words: "Each procedure's default RVG Contract holds its base units" |
+| [US-04.4.1](../../../../requirements-board/requirements/stories/US-04.4.1.md) Mandatory default Contract | captured · admin-add-hospital[added, contracts] | Stays `captured`. Re-run: the `contracts` state's highlight `tr:has-text("Ashburton Surgical")` must still find the new hospital default in the main list (default RVG Contracts are no longer there, which only shortens it). Re-caption with 18's category name if 18 did not |
+| [US-05.2.2](../../../../requirements-board/requirements/stories/US-05.2.2.md) Tiered time units | captured · web-time-units, mobile-time-units | Stays `captured`. Re-shoot both on `BK0001` with the new T caption ("From start and finish stamps · RVG time tiers"). Add an admin `time-rule` shot on the RVG codes tab (`masters-rvg-time-rule`), caption "Time tiers held as data: a part interval always rounds up" |
 
 **Recipes this phase breaks.**
 - `US-05.1.6` (19 left it `partial`, its reason naming the default RVG Contracts or the override):

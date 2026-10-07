@@ -1,6 +1,6 @@
 # Phase 14 · Screen-contextual demo triggers
 
-**Requirements covered:** [FT-13.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.5.md) (Roles, permissions and audit: the "Simulate sign-in attempts" beat), with its children [US-13.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.1.md) and [US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md) (already Matches; must stay green). Also treated here, without closing them: [RV-22](../analysis/reverse-check.md) (PWA "Play the office": kept as a signposted scaffold, default OFF, badged, plus a per-List stand-in), and interim Future-scope badges for [RV-05](../analysis/reverse-check.md) and [RV-06](../analysis/reverse-check.md) (closed in Phase 34). No DM items.
+**Requirements covered:** [FT-13.5](../../../../requirements-board/requirements/stories/FT-13.5.md) (Roles, permissions and audit: the "Simulate sign-in attempts" beat), with its children [US-13.5.1](../../../../requirements-board/requirements/stories/US-13.5.1.md) and [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) (already Matches; must stay green). Also treated here, without closing them: [RV-22](../analysis/reverse-check.md) (PWA "Play the office": kept as a signposted scaffold, default OFF, badged, plus a per-List stand-in), and interim Future-scope badges for [RV-05](../analysis/reverse-check.md) and [RV-06](../analysis/reverse-check.md) (closed in Phase 34). No DM items.
 **Depends on:** none. Runs first alongside Phase 15, in either order. If 15 has not run yet, 15's Card to Booking rename also covers this phase's registry labels, route patterns and result messages.
 **Estimated:** 2 sessions, and full ones. Session 1 re-homes every existing trigger and re-greens (three existing Playwright specs plus a new one, 18 capture recipes and ATLAS); session 2 adds the new pieces (sign-in trigger, PWA sheet, office stand-in, Future-scope badges, demo guide, review pass). If session 1 runs long, move the capture-recipe and ATLAS edits to the start of session 2 rather than cutting tests.
 
@@ -28,7 +28,7 @@ contract right; do not build their triggers here.
 1. Run:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-13.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-13.5.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.2.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-07.3.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.5.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-14.6.md"
+   git diff 501b0b8 -- "requirements-board/requirements/stories/FT-13.5.md" "requirements-board/requirements/stories/US-13.5.1.md" "requirements-board/requirements/stories/US-13.5.2.md" "requirements-board/requirements/stories/US-07.2.2.md" "requirements-board/requirements/stories/US-07.3.1.md" "requirements-board/requirements/stories/FT-14.1.md" "requirements-board/requirements/stories/FT-14.2.md" "requirements-board/requirements/stories/FT-14.3.md" "requirements-board/requirements/stories/FT-14.5.md" "requirements-board/requirements/stories/FT-14.6.md"
    ```
 
    (At plan time, 2026-09-30, the whole catalogue had no diff against `501b0b8`.)
@@ -462,8 +462,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-13.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.1.md) Role-based access | captured · admin-roles, simulator-role-refused | stays captured. Neither shot touches a trigger, so only confirm they still render; no new shot |
-| [US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md) Audit trail of all actions | captured · admin-audit-viewer | stays captured. Add an admin shot `sign-in-attempts` on `/admin/audit`: open Demo actions, run "Simulate sign-in attempts", highlight the new `account` rows (signed in, sign-in failed, password reset by user). Caption: "Every sign-in attempt is an audit row, with who, role, source and what changed". Keep `audit-viewer` as it is |
+| [US-13.5.1](../../../../requirements-board/requirements/stories/US-13.5.1.md) Role-based access | captured · admin-roles, simulator-role-refused | stays captured. Neither shot touches a trigger, so only confirm they still render; no new shot |
+| [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of all actions | captured · admin-audit-viewer | stays captured. Add an admin shot `sign-in-attempts` on `/admin/audit`: open Demo actions, run "Simulate sign-in attempts", highlight the new `account` rows (signed in, sign-in failed, password reset by user). Caption: "Every sign-in attempt is an audit row, with who, role, source and what changed". Keep `audit-viewer` as it is |
 
 **Baseline sweep (Phase 14 only).** This is the first catch-up phase, so it also brings the whole
 capture set to a clean baseline, whatever the stories it covers:

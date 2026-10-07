@@ -24,7 +24,7 @@ export default defineConfig({
     { command: 'npx vite --port 5181 --strictPort', env: { HISTORY_DIR: join(tmpdir(), 'requirements-board-e2e-history') }, url: 'http://localhost:5181', reuseExistingServer: false },
     {
       command: `node e2e/fixtureCatalogue.ts "${FIXTURE_DIR}" && npx vite --port 5182 --strictPort`,
-      env: { CATALOGUE_DIR: FIXTURE_DIR },
+      env: { REQUIREMENTS_DIR: FIXTURE_DIR },
       url: 'http://localhost:5182',
       reuseExistingServer: false,
     },

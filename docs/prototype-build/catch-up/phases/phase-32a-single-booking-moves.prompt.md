@@ -9,7 +9,7 @@ Before doing anything else, read these in order:
    - the "Confirm before building" row for 32 and 32a (OQ-43, OQ-84, OQ-79, OQ-85, OQ-80).
 2. docs/prototype-build/catch-up/phases/phase-32a-single-booking-moves.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (theme 1, the OQ-85 line, the US-01.6.3 against US-01.4.7 contradiction, the DM-06 and DM-42 rows), then the EP-01 table rows for FT-01.4, US-01.4.6 and US-01.4.7. Then docs/prototype-build/catch-up/epics/EP-01.md (#ft-01.4, #us-01.4.6, #us-01.4.7), EP-06.md (US-06.3.5, US-06.5.4), and DM-42, DM-06 and DM-41 in analysis/domain-model-delta.md.
-4. The catalogue files, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files, in requirements-board/requirements/:
    - requirements/US-01.4.7.md (new, two acceptance criteria), US-01.4.6.md (three) and FT-01.4.md;
    - for context, requirements/US-01.4.3.md, US-01.4.5.md, US-13.8.1.md, US-13.8.2.md, US-01.4.1.md, US-01.4.2.md, US-01.2.1.md, US-01.3.1.md, US-06.3.5.md, US-06.5.4.md and US-02.3.3.md;
    - questions/OQ-85.md, OQ-80.md, OQ-43.md and OQ-79.md (open, each with a recommendation), OQ-70.md (answered: D20) and OQ-84.md;
@@ -24,7 +24,7 @@ Before doing anything else, read these in order:
 8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids, overlays and hooks) and the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md", re-read any covered item, OQ or domain-model passage that changed, adjust the work items, and drop and log anything now Retired or Future (if US-01.4.7 itself went, stop and tell me);
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>, re-read any covered item, OQ or domain-model passage that changed, adjust the work items, and drop and log anything now Retired or Future (if US-01.4.7 itself went, stop and tell me);
 - OQ-85, OQ-80 and OQ-43: build each recommendation as the doc describes, OQ-85 behind SINGLE_BOOKING_MOVE_RULE with one provisional caption on the sheet, or its answer as the doc maps it. If OQ-85 now asks for Greg's favour List, or OQ-70 came back "credit and re-prepay", stop and tell me;
 - confirm Phases 14 to 32 (with 15a, 15b and 19a) are DONE, run the doc's grep for notOwnList, reassignBooking and moveBookingToDoer, and note the current PERSIST_VERSION.
 

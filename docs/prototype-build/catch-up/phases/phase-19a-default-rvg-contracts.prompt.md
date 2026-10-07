@@ -4,7 +4,7 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D12, D16 and D25, answered, apply to this phase), the Contracts track sequencing rules, the "Catalogue screenshots" rule, the placement notes for the 2026-10-03 update (19a is split from 19), and the open-questions row for 19a (OQ-78, OQ-88).
 2. docs/prototype-build/catch-up/phases/phase-19a-default-rvg-contracts.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the FT-04.4 and US-04.4.2 rows of the "EP-04 · Contracts" section and the US-05.2.2 row of the "EP-05 · RVG master data and fee calculation rules" section. Then docs/prototype-build/catch-up/epics/EP-04.md (FT-04.4, US-04.4.2), docs/prototype-build/catch-up/epics/EP-05.md (US-05.2.2) and docs/prototype-build/catch-up/analysis/domain-model-delta.md (DM-43, with DM-07, DM-10 and DM-13 for context).
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/US-04.4.2.md, FT-04.4.md, US-04.4.1.md and US-05.2.2.md;
    - for context, requirements/US-04.2.2.md (the override), US-04.2.1.md (scope), US-04.3.2.md (the picker, Phase 20), US-04.3.3.md (the hospital default), US-05.1.6.md, US-05.1.1.md, US-03.3.1.md and US-06.2.4.md (the estimator, Phase 27);
    - questions/OQ-62.md, OQ-66.md, OQ-75.md, OQ-78.md and OQ-88.md;
@@ -20,7 +20,7 @@ Before doing anything else, read these in order:
 9. docs/prototype-build/catch-up/phases/phase-19-rvg-and-procedure-masters.md and phase-20-one-contract-per-procedure.md, their handoff lists: 19 hands this phase the resolver's Contract slot, the Contract scope model it did not build and 45030's two lines (one default each, 4 and 6); 20 calls scopeCoversProcedure over the seeded scopes (its doc calls the matcher and scope.rvgGroups 19's: they are built here) and offers the default RVG Contract.
 
 Then do the drift check in the phase doc:
-- Run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> for the covered IDs and OQs, re-read anything changed, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - D12 (OQ-62) and D25 (OQ-75) are answered: build them as the answer, with no provisional label. If the drift check shows Greg's "Contracts as children of a master code" adopted, stop and ask me.
 - OQ-78 and OQ-88 are open: build their recommendations (both defaults kept, the procedure's default RVG Contract as the base-unit source behind the hospital's; defaults keyed by the procedure master line), with one provisional note on the Default RVG Contracts view header.
 - Check docs/discovery-reference/Data files for Vanessa's standard procedure list; if it has landed, note it for Phase 42 and keep today's figures.

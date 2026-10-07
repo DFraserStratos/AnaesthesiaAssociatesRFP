@@ -18,7 +18,7 @@ test.describe.configure({ mode: 'serial' })
 const STARTING = { 'FT-01.2': 'Open', 'FT-01.3': 'Open', 'FT-01.4': 'Confirmed' } as const
 const AFFECTS = Object.keys(STARTING) as (keyof typeof STARTING)[]
 const question: Question = { id: 'OQ-01', kind: 'question', title: 'Still open', status: 'Open', owner: '', question: 'Is this settled?', answer: '', affects: AFFECTS, sources: [], extra: {} }
-const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'requirements', `${id}.md`), 'utf8'))
+const onDisk = (id: string) => parseItem(readFileSync(join(FIXTURE_DIR, 'stories', `${id}.md`), 'utf8'))
 
 test.beforeEach(async ({ page, request }) => {
   writeFixture()

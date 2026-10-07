@@ -1,21 +1,21 @@
 # Phase 19 · RVG, modifier and procedure masters
 
 **Requirements covered:**
-[US-05.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.1.md) RVG code master data (Confirmed) ·
-[US-05.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.3.md) Group codes (Confirmed) ·
-[US-05.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.4.md) Default modifiers (Confirmed; graded Contradicts) ·
-[US-05.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.5.md) Modifier code master (Confirmed) ·
-[US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md) Procedure master mapped to RVG codes (Confirmed; graded Missing) ·
-[US-03.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.1.md) Select an RVG code, with ranged override (Verify; graded Contradicts) ·
+[US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG code master data (Confirmed) ·
+[US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Group codes (Confirmed) ·
+[US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Default modifiers (Confirmed; graded Contradicts) ·
+[US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier code master (Confirmed) ·
+[US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) Procedure master mapped to RVG codes (Confirmed; graded Missing) ·
+[US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) Select an RVG code, with ranged override (Verify; graded Contradicts) ·
 [DM-13](../analysis/domain-model-delta.md#dm-13) master procedure list and RVG groups ·
 [DM-44](../analysis/domain-model-delta.md#dm-44) default modifiers in place of absorbed modifiers ·
 [RV-04](../analysis/reverse-check.md#rv-04-ranged-base-code-is-bounded-to-the-published-range) ranged base code bounded to the published range ·
 [RV-23](../analysis/reverse-check.md#rv-23-base-codes-absorb-modifiers-p1-positioning-the-retired-conditional-positioning-behaviour) base codes absorb modifiers (the retired conditional positioning behaviour).
-Answered: owner decision D3 ([OQ-56](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-56.md), with
-[OQ-32](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-32.md)) and D12
-([OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md): base units live in each
+Answered: owner decision D3 ([OQ-56](../../../../requirements-board/requirements/questions/OQ-56.md), with
+[OQ-32](../../../../requirements-board/requirements/questions/OQ-32.md)) and D12
+([OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md): base units live in each
 procedure's default RVG Contracts; the procedure list holds none; the RVG master is reference data).
-Open: [OQ-88](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-88.md) (one list or two, and
+Open: [OQ-88](../../../../requirements-board/requirements/questions/OQ-88.md) (one list or two, and
 which carries the system code).
 **Left this phase:** the Contract base-unit override (US-04.2.2) and Contract scope by procedure and
 RVG group (the `procedureTypeIds` retype, `rvgGroups`, `scopeCoversProcedure` and the Contract editor's
@@ -23,7 +23,7 @@ scope chips) moved to Phase 19a, with the default RVG Contracts that now hold th
 (US-04.4.2, DM-43). 19a's, 20's and 23's docs still call `scope.rvgGroups` and
 `scopeCoversProcedure(scope, procedure, masters)` "19's": do not build them here; 19a adds them with
 the rest of Contract scope, and this phase's handoff says so. The AA-sourced marker is gone (US-05.1.1 dropped it on 2026-10-02).
-[US-05.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.3.md) (conditional
+[US-05.2.3](../../../../requirements-board/requirements/stories/US-05.2.3.md) (conditional
 positioning) is Retired: this phase removes it (RV-23) and builds nothing for it. US-05.5.2 (ACC
 pre-op codes) and OQ-12 stay with Phase 39b. The base-units-on-the-list reading of the old OQ-62
 recommendation (procedure base units, "two entries under one code keep their own units") is withdrawn:
@@ -86,7 +86,7 @@ No figure in the S1 to S5 run sheet moves.
 
 ## Before you start: drift check
 
-1. Run `git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
+1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>`
    and read the hunks for US-05.1.1, US-05.1.3, US-05.1.4, US-05.1.5, US-05.1.6, US-03.3.1, US-04.4.2
    and US-04.2.2 (19a's default RVG Contracts and override, which this phase leaves a slot for),
    US-04.3.2 (the Contract pick 20 adds after the procedure), US-06.1.1 (the consumer of groups),
@@ -139,25 +139,25 @@ provisional badge style come from `Design Language.dc.html`. Teal is the only ac
 default and "Provisional" markers are neutral pills, never crimson.
 
 **Catalogue.** The files linked above, plus
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md)
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md)
 (default RVG Contracts, built in 19a),
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md)
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md)
 (Contract base-unit override, built in 19a),
-[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md)
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md)
 (the filtered Contract pick after the procedure, built in 20),
-[US-05.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.3.md)
+[US-05.2.3](../../../../requirements-board/requirements/stories/US-05.2.3.md)
 (Retired: why absorption goes),
-[US-03.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.4.md)
+[US-03.3.4](../../../../requirements-board/requirements/stories/US-03.3.4.md)
 (the modifier capture, "non-standard positioning"),
-[US-03.7.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.2.md)
+[US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md)
 (post-op work is a post-op event, built in 39b, which is why PO1 and PO2 go),
-[US-06.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.1.1.md)
+[US-06.1.1](../../../../requirements-board/requirements/stories/US-06.1.1.md)
 (prepaid by group, built in 26),
-[US-13.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.7.1.md)
+[US-13.7.1](../../../../requirements-board/requirements/stories/US-13.7.1.md)
 (the warning routine and its out-of-range warning, built in 15a), and
-[US-13.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.4.3.md)
+[US-13.4.3](../../../../requirements-board/requirements/stories/US-13.4.3.md)
 (spreadsheet loads, built in 42). OQ-53's answer (combinations are Contracts, the list is grouped and
-filtered by body headings). The evidence is `catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md`
+filtered by body headings). The evidence is `requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md`
 items 13 to 16, 18, 39 to 46 and 48 to 51 (system code, the procedure list, parent or flat, no
 AA-sourced marker, typed text stays on the Procedure, default modifiers, AA's own modifier list, how the
 procedure master and default Contracts fit, and the name "procedure master"),
@@ -770,12 +770,12 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-05.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.1.md) RVG code master data | captured · admin-rvg-codes | Stays `captured`. Re-shoot `admin-rvg-codes` with the System code, Groups, Body heading and Reference base units columns and no Absorbs column, and add an `add-code` state with `RvgCodeSheet` open (for example AA205, "Also add to the procedure master" on). Highlight the System code column, then the sheet. Caption "Each RVG code has a unique system code; AA can add codes the guide does not cover" |
-| [US-05.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.3.md) Group codes | partial · admin-rvg-sites, web-code-picker, mobile-code-picker | `captured`. Re-shoot `admin-rvg-sites` (Groups pills plus the group filter) and add an `rvg-groups` state on the new RVG groups tab (`masters-rvg-groups`). Re-shoot `code-picker` on web and mobile as the procedure picker with the body-heading chips and grouped rows (keep the shot name; caption "Procedure picker grouped by body heading"). Drop the partial reason. Selecting a group as a set is by the group filter; the prepaid tick list is Phase 26, so if the review judges that gap material keep `partial` and say so |
-| [US-05.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.4.md) Default modifiers | captured · rvg-absorbs, web-absorbed-positioning, mobile-absorbed-positioning (the retired reading) | Stays `captured`, re-pointed. Drop `rvg-absorbs` and `absorbed-positioning`. Add an admin `procedure-defaults` shot (`masters-procedure-list`, highlight the Default modifiers column on the spine lines; caption "Spine procedures specify the prone positioning modifier") and `default-modifier` on web and mobile (Booking `BK0009`: open the procedure picker, pick "Lumbar fusion, posterior"): state `prefilled` (highlight Positioning with its Default marker; caption "The procedure's default modifier is pre-filled") and state `unticked` (after tapping it; caption "Unticked, so it is not charged") |
-| [US-05.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.5.md) Modifier code master | partial · admin-modifier-codes | `captured`. Re-shoot `admin-modifier-codes` showing the full set (VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3, NC1 to NC2 present, PO1 and PO2 gone) with the Selection column and the "Add modifier code" action, plus an `edit` state with `ModifierCodeSheet` open on TTE1 (units, description, Selection). Highlight the table, then the sheet. Caption "AA's own modifier list, with each code's unit value". Admin only. Drop the partial reason |
-| [US-05.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.6.md) Procedure master mapped to RVG codes | absent · placeholder, no shots | Add the shots, `partial`. `absentReason`: "Each procedure's default RVG Contracts, which hold its base units, and the Contract base unit override are built in Phase 19a." Admin shots: `procedure-list` (`masters-procedure-list`: system code, group and subgroup, RVG code, the two 45030 lines beside the reference "4 to 6", default modifiers, the OQ-88 provisional badge; highlight the Group, Subgroup and RVG code columns) and an `edit` state with `ProcedureTypeSheet` open ("RVG reference: N" beside the code select). Caption "Each procedure has a group, a subgroup and its RVG code, and no base units". Phase 19a turns it `captured` |
-| [US-03.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.1.md) Select an RVG code (with ranged override) | captured · web-rvg-picker[closed,open,search], mobile-rvg-picker[closed,open,search] | `partial`. `absentReason`: "The procedure is picked from the procedure master, but picking a Contract after it, which seeds the base units, is built in Phases 19a and 20." Re-shoot `rvg-picker` on web and mobile (Booking `BK0009`): `closed` (the "Procedure" card with name, mono codes and "Base N units"), `open` (body-heading chips, rows grouped under headings), `search` ("skin"). Add `ranged` and `outside-guide` states on both apps with a typed value outside the range and the warn caption "Outside the guide range. The office will see a warning after the procedure." (the existing US-03.3.2 ranged images the item lists can be re-shot here). Captions in the catalogue's words (Procedure, Booking). Phase 20 turns it `captured` |
+| [US-05.1.1](../../../../requirements-board/requirements/stories/US-05.1.1.md) RVG code master data | captured · admin-rvg-codes | Stays `captured`. Re-shoot `admin-rvg-codes` with the System code, Groups, Body heading and Reference base units columns and no Absorbs column, and add an `add-code` state with `RvgCodeSheet` open (for example AA205, "Also add to the procedure master" on). Highlight the System code column, then the sheet. Caption "Each RVG code has a unique system code; AA can add codes the guide does not cover" |
+| [US-05.1.3](../../../../requirements-board/requirements/stories/US-05.1.3.md) Group codes | partial · admin-rvg-sites, web-code-picker, mobile-code-picker | `captured`. Re-shoot `admin-rvg-sites` (Groups pills plus the group filter) and add an `rvg-groups` state on the new RVG groups tab (`masters-rvg-groups`). Re-shoot `code-picker` on web and mobile as the procedure picker with the body-heading chips and grouped rows (keep the shot name; caption "Procedure picker grouped by body heading"). Drop the partial reason. Selecting a group as a set is by the group filter; the prepaid tick list is Phase 26, so if the review judges that gap material keep `partial` and say so |
+| [US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md) Default modifiers | captured · rvg-absorbs, web-absorbed-positioning, mobile-absorbed-positioning (the retired reading) | Stays `captured`, re-pointed. Drop `rvg-absorbs` and `absorbed-positioning`. Add an admin `procedure-defaults` shot (`masters-procedure-list`, highlight the Default modifiers column on the spine lines; caption "Spine procedures specify the prone positioning modifier") and `default-modifier` on web and mobile (Booking `BK0009`: open the procedure picker, pick "Lumbar fusion, posterior"): state `prefilled` (highlight Positioning with its Default marker; caption "The procedure's default modifier is pre-filled") and state `unticked` (after tapping it; caption "Unticked, so it is not charged") |
+| [US-05.1.5](../../../../requirements-board/requirements/stories/US-05.1.5.md) Modifier code master | partial · admin-modifier-codes | `captured`. Re-shoot `admin-modifier-codes` showing the full set (VM1, TTE1 to TTE2, PACU1, EAA1, POC1 to POC3, NC1 to NC2 present, PO1 and PO2 gone) with the Selection column and the "Add modifier code" action, plus an `edit` state with `ModifierCodeSheet` open on TTE1 (units, description, Selection). Highlight the table, then the sheet. Caption "AA's own modifier list, with each code's unit value". Admin only. Drop the partial reason |
+| [US-05.1.6](../../../../requirements-board/requirements/stories/US-05.1.6.md) Procedure master mapped to RVG codes | absent · placeholder, no shots | Add the shots, `partial`. `absentReason`: "Each procedure's default RVG Contracts, which hold its base units, and the Contract base unit override are built in Phase 19a." Admin shots: `procedure-list` (`masters-procedure-list`: system code, group and subgroup, RVG code, the two 45030 lines beside the reference "4 to 6", default modifiers, the OQ-88 provisional badge; highlight the Group, Subgroup and RVG code columns) and an `edit` state with `ProcedureTypeSheet` open ("RVG reference: N" beside the code select). Caption "Each procedure has a group, a subgroup and its RVG code, and no base units". Phase 19a turns it `captured` |
+| [US-03.3.1](../../../../requirements-board/requirements/stories/US-03.3.1.md) Select an RVG code (with ranged override) | captured · web-rvg-picker[closed,open,search], mobile-rvg-picker[closed,open,search] | `partial`. `absentReason`: "The procedure is picked from the procedure master, but picking a Contract after it, which seeds the base units, is built in Phases 19a and 20." Re-shoot `rvg-picker` on web and mobile (Booking `BK0009`): `closed` (the "Procedure" card with name, mono codes and "Base N units"), `open` (body-heading chips, rows grouped under headings), `search` ("skin"). Add `ranged` and `outside-guide` states on both apps with a typed value outside the range and the warn caption "Outside the guide range. The office will see a warning after the procedure." (the existing US-03.3.2 ranged images the item lists can be re-shot here). Captions in the catalogue's words (Procedure, Booking). Phase 20 turns it `captured` |
 
 **Recipes this phase breaks.**
 - `US-05.2.3` (Retired 2026-10-02, still `captured`): its `absorbed-positioning` shots highlight

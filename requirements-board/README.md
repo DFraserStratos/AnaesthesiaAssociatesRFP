@@ -1,11 +1,20 @@
 # Requirements Board
 
-A local dev tool for reading, editing and arranging the future-state requirements catalogue
-(`docs/discovery-reference/Updated Requirements/catalogue/`). Not part of the prototype and never
-deployed: its dev server is its file API.
+A local dev tool for reading, editing and arranging a requirements catalogue. Not part of the
+prototype and never deployed: its dev server is its file API.
 
-**No requirements live in this folder.** They are the Markdown files in the catalogue folder above;
-this app and any agent edit those same files.
+This folder is a **portable kit**, three parts:
+
+- **the app** (everything below except `requirements/` and `agent/`): generic apart from a few
+  labels listed under "Bring the board to another repo";
+- **`requirements/`**: this project's requirements catalogue, the only project data. Stories,
+  questions, notes, change logs, artifacts and their files, screenshots, the domain model. Its
+  `README.md` is the folder guide and conventions, its `SCHEMA.md` the file format. The app and any
+  agent edit those same files;
+- **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
+  `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`) and the
+  `workflows/link-requirements.js` workflow. Claude Code finds them through relative symlinks in the
+  repo's `.claude/skills/` and `.claude/workflows/`; edit the files here, not through the links.
 
 ```
 npm install
@@ -48,10 +57,11 @@ shared/        code shared by server, scripts and browser
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
 server/
-  catalogueFs.ts     load the folder, atomic / exclusive writes, layout file
+  catalogueFs.ts     load the folder, atomic / exclusive writes, layout file; REQUIREMENTS_DIR (env override for fixtures)
   catalogueApi.ts    the /api routes as a plain function (no Vite), so tests drive it directly
   historyJournal.ts  the per-card change journal (.history/, gitignored)
   gitHistory.ts      a card file's commits and dirty state, read-only and asynchronous
+  gitRenames.ts      a file's earlier paths from git's renames, so history reaches back past folder moves
   cataloguePlugin.ts Vite dev-server plugin: wires the API, serves assets and artifact files, folder watcher → HMR events
   artifactFiles.ts   an artifact's file: where it is, what it holds (cached per version), for the check and the board
   pdfFacts.ts        a PDF's page sizes and text, in a child process (pdf.js is async; the catalogue loads sync)
@@ -71,6 +81,8 @@ src/
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus one test that the real catalogue is valid)
+requirements/  the project's requirements catalogue (see its README.md and SCHEMA.md)
+agent/         the agent skills and workflow that maintain it (symlinked from the repo's .claude/)
 shots/         local-only Playwright scratch scripts (gitignored; some mutate the real catalogue)
 ```
 
@@ -86,7 +98,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   file, even one that fails to parse.
 - Writes must be `application/json` from the board's own origin, so another web page cannot write
   to the catalogue while the board is running.
-- The server watches the catalogue folder (debounced, at most 600ms behind) and pushes
+- The server watches the requirements folder (debounced, at most 600ms behind) and pushes
   `catalogue:changed` events over Vite's HMR socket, so agent edits appear live.
 - On the board, `?item=ID` docks the item sheet as a left-hand panel beside the map (one click on
   a card opens it); elsewhere it is a modal. The board switches cards through the panel's
@@ -121,7 +133,9 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   disk, to `requirements-board/.history/<ID>.jsonl` (gitignored, per machine; `HISTORY_DIR`
   overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
   changed while it was off. Commits older than a card's first journal entry fill in its past from
-  git (`git log` + `cat-file`); newer ones show as dividers. Changes newer than the last commit
+  git (`git log` + `cat-file`, over the file's current path and every earlier one git recorded a
+  rename for, so a moved folder keeps its history; a commit that only moved the file is left out);
+  newer ones show as dividers. Changes newer than the last commit
   are marked not committed yet. View only.
   Screenshots count too: a file under `assets/<ID>/` rewritten in place (a `npm run capture` run)
   logs a "Screenshot updated" entry with a before and after. The journal keeps each image's git
@@ -142,7 +156,8 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
 - **Artifacts** (the Artifacts tab): diagrams, transcripts, notes and documents. The board edits
   only their details (`PUT /api/artifacts/:id` takes the title, kind, status, superseded_by, date,
   author, components, sources and description, and keeps the file, regions and source as on disk). Each
-  has a sidecar `catalogue/artifacts/AR-nn.md` (format under Artifact file in `catalogue/SCHEMA.md`);
+  has a sidecar `requirements/artifacts/AR-nn.md` (format under Artifact file in `requirements/SCHEMA.md`),
+  and its file in `requirements/artifacts/files/`;
   items point at one, or at a spot in one, through their `artifacts` field or a text link, and both
   sides show the link. Drawings render inline (sanitised, in a shadow root), so their text selects
   and anchors find their elements; the camera sets the SVG's `viewBox`, so it stays sharp at any
@@ -155,7 +170,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   swipe, or a source diff). Every artifact with text has a find box (`src/artifacts/find.ts`):
   matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
 
-Screenshots: put files under `catalogue/assets/<ID>/` and list them in the item's `images`, each
+Screenshots: put files under `requirements/assets/<ID>/` and list them in the item's `images`, each
 with a `viewport` and optionally an `app` (`admin`, `web`, `mobile`, `simulator`). The item sheet's
 gallery has one tab per app present, in that order; untagged images fall back to Desktop / Mobile.
 
@@ -170,7 +185,7 @@ gallery has one tab per app present, in that order; untagged images fall back to
   `npm run dev` starts both. The runner stops if either is down. VS Code task: **Screenshot Update**.
 - `node scripts/capture.ts --only US-03.2.4,EP-03` limits the run (an epic or feature ID takes its
   descendants); `--dry` checks recipes and selectors without writing anything.
-- Output: `catalogue/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
+- Output: `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
   (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.
   A file counts as generated when its name starts with an app and a dash (`scripts/captureFiles.ts`),
   so give hand-added screenshots another prefix (`hand-dashboard.png`, not `web-dashboard.png`).
@@ -181,15 +196,16 @@ gallery has one tab per app present, in that order; untagged images fall back to
 ### Adding artifacts
 
 `npm run artifact:new -- <file> --title "Name" --kind diagram` (or `--mermaid <file.mmd>`) takes the
-next `AR-nn`, copies a drawing into `catalogue/artifacts/` (a document elsewhere is pointed at, not
-copied) and writes the sidecar for you to fill in: regions, sources, description. Then link items
-to it (`artifacts: [AR-nn#spot]`) and run `npm run check`. The `add-artifact` skill walks an agent
-through it; the `aa-svg-diagram` skill saves new diagrams this way.
+next `AR-nn`, brings the file into `requirements/artifacts/files/` (a drawing copied in as
+`AR-nn.<ext>`, a transcript or document moved in under its own name, `git mv` when tracked; `--keep`
+leaves it where it is) and writes the sidecar for you to fill in: regions, sources, description. Then
+link items to it (`artifacts: [AR-nn#spot]`) and run `npm run check`. The `add-artifact` skill walks
+an agent through it; the `svg-diagram` skill saves new diagrams this way.
 
 ### Linking requirements
 
 Text links (`[words](US-06.1.1)`), bare IDs and the `related` field are described under Links in
-`catalogue/SCHEMA.md`; `shared/links.ts` is the one parser the check, the board and the scripts share.
+`requirements/SCHEMA.md`; `shared/links.ts` is the one parser the check, the board and the scripts share.
 To link the whole catalogue with agents, from the repo root:
 
 1. `npm --prefix requirements-board run links:index` writes `requirements-board/.links/index.md`
@@ -204,3 +220,26 @@ To link the whole catalogue with agents, from the repo root:
    what is already applied.
 4. `npm run check`, then review the diff.
 
+## Bring the board to another repo
+
+1. Copy `requirements-board/` into the new repo, without `node_modules/`, `.history/`, `.links/`,
+   `test-results/` and `shots/`.
+2. Empty `requirements/` down to a skeleton: keep `SCHEMA.md`, `notes/README.md` and
+   `changes/README.md`; rewrite `README.md`'s **This project** section (and its Component list under
+   Conventions); delete everything else (stories, questions, notes, changes, artifacts and their files,
+   assets, `domain-model.md`, `reference/`, `board-layout.json`). Start `domain-model.md` afresh when
+   there is a model to describe.
+3. Link the skills from the new repo's root:
+   `mkdir -p .claude/skills .claude/workflows`, then for each skill
+   `ln -s ../../requirements-board/agent/skills/<name> .claude/skills/<name>`, and
+   `ln -s ../../requirements-board/agent/workflows/link-requirements.js .claude/workflows/link-requirements.js`.
+4. Give the root `package.json` the scripts this repo's has (`dev:board`, `check`, `verify:board`,
+   `export:csv`), then `npm --prefix requirements-board install` and `npm run check`.
+5. Project-specific bits still in the kit, to change by hand for now:
+   - the app: the brand mark in `src/App.tsx`, the Component vocabulary (`COMPONENTS` in `shared/types.ts`, its
+     short codes in `src/vocab.ts`), the "with AA" status hints in
+     `src/vocab.ts` and `src/components/QuestionModal.tsx`;
+   - `scripts/capture.ts` and `capture/`: screenshots of this repo's prototype (ports 5173 and 5174);
+     drop them, or point them at the new project's app;
+   - the skills: the examples in `agent/skills/svg-diagram/examples/` and the reference diagrams its
+     SKILL.md names, and `update-requirements`' note on which folders are out of bounds.

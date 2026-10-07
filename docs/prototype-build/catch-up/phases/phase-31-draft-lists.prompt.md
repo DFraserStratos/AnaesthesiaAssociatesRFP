@@ -18,12 +18,12 @@ Before doing anything else, read these in order:
    - docs/prototype-build/catch-up/epics/EP-01.md: the header note, and the FT-01.6, US-01.6.1 to US-01.6.4, US-01.3.1, FT-01.3, US-01.3.2, US-01.5.2, US-01.5.4, US-01.5.5 and EP-01 sections;
    - the US-13.1.1 section of epics/EP-13.md;
    - DM-02, DM-03 and DM-04 in docs/prototype-build/catch-up/analysis/domain-model-delta.md.
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/FT-01.6.md, US-01.6.1.md, US-01.6.2.md, US-01.6.3.md, US-01.6.4.md, US-13.1.1.md, US-01.3.1.md, FT-01.3.md and EP-01.md;
    - the recurring-clash criteria closed here: requirements/US-01.3.2.md (AC2), US-01.5.2.md (AC3), US-01.5.4.md (AC3) and US-01.1.1.md (its last paragraph);
    - for context: requirements/US-01.5.5.md and US-01.4.3.md (Phase 32's return-or-assign and move to the office, which land here as Draft Lists), US-01.4.7.md (its "the office does not assign work to someone marked unavailable without them knowing"), US-01.5.3.md, US-01.3.5.md (its "Both paths" criterion is checked here), US-01.3.3.md, US-01.4.2.md and US-02.1.2.md (a matching row can now create a Draft List);
    - questions/OQ-44.md and OQ-64.md (Answered), OQ-27.md and OQ-17.md (Answered), OQ-81.md (Open: parts 1 and 2 settled in the room, part 3 open), OQ-86.md (Open, with a recommendation), OQ-84.md and OQ-43.md (Open).
-   Also read the "Slot, List and Draft List" section of docs/discovery-reference/Updated Requirements/domain-model.md.
+   Also read the "Slot, List and Draft List" section of requirements-board/requirements/domain-model.md.
 5. The code index for the files you will change, in docs/prototype-build/catch-up/analysis/:
    - prototype-map-admin.md (routes and nav, shell derivations, Day view and right rail, List flows);
    - prototype-map-store-seed.md;
@@ -43,7 +43,7 @@ Before doing anything else, read these in order:
 8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on; line ~310 still describes the Fitzgerald "surgeon TBC" block) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c over the covered and context catalogue files, OQ-44, OQ-64, OQ-81, OQ-86, OQ-84, OQ-27, OQ-17, OQ-43 and domain-model.md;
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> over the covered and context catalogue files, OQ-44, OQ-64, OQ-81, OQ-86, OQ-84, OQ-27, OQ-17, OQ-43 and domain-model.md;
 - adjust the work items if anything changed, and drop and log anything now Retired or Future;
 - build the answers, with no provisional labels:
   - OQ-44: a Draft List is a List with no anaesthetist and no Slot; hospital, surgeon, day and session are all required; it may hold Bookings; only the office assigns it; it is removed or re-dated (US-01.6.4);

@@ -1,28 +1,28 @@
 # Phase 18 · Contract model
 
 **Requirements covered:**
-[US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) (Contract categories; Verify, Greg is reviewing the model, OQ-78),
-[US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) (create, edit, retire Contracts),
-[US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) (a unique short AA code on every Contract, searchable; Verify),
-[US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) (holder, the billable party the Contract always defines, scope including master-list procedures, and organisational reach; Verify, OQ-78),
-[US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) (fixed fee schedule lines, with holder codes kept as searchable references; OQ-89),
-[US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) (pricing effective from a date);
+[US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) (Contract categories; Verify, Greg is reviewing the model, OQ-78),
+[US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) (create, edit, retire Contracts),
+[US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) (a unique short AA code on every Contract, searchable; Verify),
+[US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) (holder, the billable party the Contract always defines, scope including master-list procedures, and organisational reach; Verify, OQ-78),
+[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) (fixed fee schedule lines, with holder codes kept as searchable references; OQ-89),
+[US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) (pricing effective from a date);
 [DM-07](../analysis/domain-model-delta.md#dm-07) (Contract reshaped to category, holder, scope, pricing basis and `aaCode`),
 [DM-09](../analysis/domain-model-delta.md#dm-09) (ContractPrice becomes FeeScheduleLine);
 [RV-20](../analysis/reverse-check.md#rv-20-acc-treated-as-a-visible-special-case) (ACC treated as a visible special case).
-[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md)
 (fixed fee pricing) left this phase: it was simplified on 2026-10-02 to "the fixed fee is the total
 price" and now Matches. Its fixed path is kept through the reshape (work items 4 and 11) and its
 recipe is re-pointed (Catalogue screenshots).
 Open questions (still open, built as their recommendation and labelled provisional in one place):
-[OQ-48](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-48.md) (which date picks the price),
-[OQ-78](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-78.md) (default Contracts, or the hospital holding every Contract: keep the catalogue's model),
-[OQ-89](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-89.md) (fixed fee after the rewording: the matched line's fee is the price, and lines keep time bands and add-ons).
+[OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (which date picks the price),
+[OQ-78](../../../../requirements-board/requirements/questions/OQ-78.md) (default Contracts, or the hospital holding every Contract: keep the catalogue's model),
+[OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (fixed fee after the rewording: the matched line's fee is the price, and lines keep time bands and add-ons).
 Answered and built as answered:
-[OQ-18](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-18.md) (holder codes are kept for reference and are searchable; a Procedure and Contract pair can carry both an RVG code and a holder code),
-[OQ-55](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-55.md) (owner decision D2: insurer and funding source sit on neither the Booking nor the Patient),
-[OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md) (owner decision D16: a short structured AA code per Contract, searchable; the format is still to be designed, so it is ours, made in one function),
-[OQ-67](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-67.md) (owner decision D17: the Contract always defines the billable party, with as many Contracts as AA needs; Phase 21 builds the payer capture and removes the per-Booking override).
+[OQ-18](../../../../requirements-board/requirements/questions/OQ-18.md) (holder codes are kept for reference and are searchable; a Procedure and Contract pair can carry both an RVG code and a holder code),
+[OQ-55](../../../../requirements-board/requirements/questions/OQ-55.md) (owner decision D2: insurer and funding source sit on neither the Booking nor the Patient),
+[OQ-66](../../../../requirements-board/requirements/questions/OQ-66.md) (owner decision D16: a short structured AA code per Contract, searchable; the format is still to be designed, so it is ours, made in one function),
+[OQ-67](../../../../requirements-board/requirements/questions/OQ-67.md) (owner decision D17: the Contract always defines the billable party, with as many Contracts as AA needs; Phase 21 builds the payer capture and removes the per-Booking override).
 **Depends on:** Phase 17 (the Surgeon Group record that the Surgeon Group holder points at). Phases 14
 and 15 are built (Card is now Booking, and triggers live in the screen-contextual registry), and the
 plan runs 15a, 15b and 16 before this phase, so take the Booking names, the warning routine and the
@@ -84,7 +84,7 @@ changes the shape and keeps the numbers.
 1. Run the drift diff and read it for this phase's items:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-04.1.1,US-04.1.2,US-04.1.4,US-04.2.1,US-04.2.4,US-04.2.10,OQ-18,OQ-48,OQ-55,OQ-66,OQ-67,OQ-78,OQ-89,US-04.2.2,US-04.2.11,US-04.3.2,US-04.4.1,US-04.4.2,US-05.2.5,US-05.2.6,US-05.5.1,US-11.2.2,OQ-25
    ```
 
    Check `US-04.1.1`, `US-04.1.2`, `US-04.1.4`, `US-04.2.1`, `US-04.2.4`, `US-04.2.10`, `OQ-18`,
@@ -179,26 +179,26 @@ bottom sheet.
 
 **Catalogue:** the six covered files above; `domain-model.md` §2 "Contract (recommended
 structure)" (its `holder / billableParty` row), "Fee schedule line" and "Selection";
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md)
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md)
 (the four pricing bases, Verify);
-[US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md)
+[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md)
 (a combination Contract sits under each parent procedure, so procedure scope is a list);
-[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md)
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md)
 (the picker's filters and its AA-code and holder-code search, which wrap this phase's per-Contract
 matcher);
-[US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md)
+[US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md)
 (default RVG Contracts per procedure, built by Phase 19a);
-[US-05.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.5.md)
+[US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md)
 (the fixed fee is the total price);
-[US-05.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.2.6.md)
+[US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md)
 (the Contract defined rate, built by Phase 24);
-[US-05.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.5.1.md)
+[US-05.5.1](../../../../requirements-board/requirements/stories/US-05.5.1.md)
 (ACC through the holder's Contract);
-[US-11.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.2.2.md)
+[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md)
 (the payer set through the Contract, built by Phase 21); OQ-18, OQ-48, OQ-55, OQ-66, OQ-67, OQ-78,
-OQ-89; the evidence notes `catalogue/notes/2026-10-01-aa-meeting-with-greg.md` #10, #27, #29, #49
-and #64, `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` #7, #8, #37 and #41, and
-`catalogue/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` #12, #19, #38, #54 and #64.
+OQ-89; the evidence notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` #10, #27, #29, #49
+and #64, `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #7, #8, #37 and #41, and
+`requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` #12, #19, #38, #54 and #64.
 
 **Analysis:**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Theme 3 ("Contract replaces the billing route"), the
@@ -960,12 +960,12 @@ new screen from this phase:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-04.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.1.md) Contract categories | partial · admin-contract-types | `captured` (Verify does not hold the shot back). Re-shoot `admin-contract-types`: the catalogue with the Category column and category chips, and a `new-contract` state with the category control (no Pre-paid, and no RVG Default Hospital on a new Contract) and the holder list filtered to the category. Highlight the category control. Drop the partial reason. Caption "New contract, choosing the category and holder". The catalogue's Category column and chips show all six; the new-contract control offers five, because RVG Default Hospital is minted only with a new hospital (US-04.4.1), which the `admin-add-hospital` shot of US-04.4.1 shows |
-| [US-04.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.2.md) Create, edit, retire Contracts | partial · admin-contracts, admin-edit-contract | `partial`. Re-shoot both: the catalogue with From, To, Review and Status ("Review due" on Health NZ), and the detail panel dates. Add a `retire` state (Retire contract confirm). Rewrite the reason to the one gap left: "Editing still changes a Contract in place; versioning is built in Phase 25." |
-| [US-04.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.1.4.md) AA identifier for every Contract | absent · placeholder, no shots | Add the shots, `captured`. Shots: `aa-code` (catalogue with the mono short AA code column, highlight the column), a `search` state typing a seeded AA code (`SSO-0001` finds the Doyle Contract) and one typing "HNZVIT" with the matched line "Line HNZVIT60 · Vitrectomy up to 60 min", and the detail header showing "Assigned on save" on a new Contract. Caption "Every Contract has AA's own short code, searchable; holder codes are references beside it" |
-| [US-04.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder (plus the organisational and individual scope shots the catalogue now lists first) | `partial`. Re-shoot: the detail panel Definition and Scope sections (the "Holder (invoiced)" picker filtered to the category, "Payer named on the Booking" for RVG Default Post-paid, chips for hospitals, surgeons, RVG codes and anaesthetists, "Whole organisation" when empty, and the "Describes" group). Caption "The holder is who the Contract invoices; scope says where it applies". Rewrite the reason: "The procedures filter is filled by Phase 19a and narrows the picker in Phase 20." Phases 19a and 20 move it on. Its `images` still list two hand-added `assets/US-04.2.9/admin-contract-scope-*.png` shots from the retired US-04.2.9 (the old Organisational or Individual sheet); the capture keeps hand-added images, so add `scope-organisational` (catalogue Scope column reading "Organisation" and "2 anaesthetists") and `scope-individual` (a new Contract narrowed to one anaesthetist) states to this recipe, and delete those two stale entries from US-04.2.1's frontmatter, then `npm run check` |
-| [US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | `captured` (OQ-89 is built as its recommendation, so it does not hold the shot back). Re-shoot as `admin-price-rows` (keep the name) on `[data-shot=fee-schedule-lines]` for the CES HNZ schedule: holder code, description, RVG mapping, time band, add-on, quantity rule, ex GST and inc GST. Drop the partial reason. Caption "Each line keeps the holder's own code and description" |
-| [US-04.2.10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.10.md) Pricing effective from a date | absent · placeholder, no shots | Add the shots, `captured`. Shot `upcoming-price`: the Doyle Contract (`BAR-BYP`) line showing "$2,800.00 current" and "Upcoming from 28 Jul 2026 · $2,950.00", highlight that price cell. A second state after the existing clock "+7 days" press (or "Procedure day · 28 Jul") if the recipe can press it, showing $2,950.00 current. Caption "Current and upcoming prices are both visible" |
+| [US-04.1.1](../../../../requirements-board/requirements/stories/US-04.1.1.md) Contract categories | partial · admin-contract-types | `captured` (Verify does not hold the shot back). Re-shoot `admin-contract-types`: the catalogue with the Category column and category chips, and a `new-contract` state with the category control (no Pre-paid, and no RVG Default Hospital on a new Contract) and the holder list filtered to the category. Highlight the category control. Drop the partial reason. Caption "New contract, choosing the category and holder". The catalogue's Category column and chips show all six; the new-contract control offers five, because RVG Default Hospital is minted only with a new hospital (US-04.4.1), which the `admin-add-hospital` shot of US-04.4.1 shows |
+| [US-04.1.2](../../../../requirements-board/requirements/stories/US-04.1.2.md) Create, edit, retire Contracts | partial · admin-contracts, admin-edit-contract | `partial`. Re-shoot both: the catalogue with From, To, Review and Status ("Review due" on Health NZ), and the detail panel dates. Add a `retire` state (Retire contract confirm). Rewrite the reason to the one gap left: "Editing still changes a Contract in place; versioning is built in Phase 25." |
+| [US-04.1.4](../../../../requirements-board/requirements/stories/US-04.1.4.md) AA identifier for every Contract | absent · placeholder, no shots | Add the shots, `captured`. Shots: `aa-code` (catalogue with the mono short AA code column, highlight the column), a `search` state typing a seeded AA code (`SSO-0001` finds the Doyle Contract) and one typing "HNZVIT" with the matched line "Line HNZVIT60 · Vitrectomy up to 60 min", and the detail header showing "Assigned on save" on a new Contract. Caption "Every Contract has AA's own short code, searchable; holder codes are references beside it" |
+| [US-04.2.1](../../../../requirements-board/requirements/stories/US-04.2.1.md) Holder, scope and organisational reach | partial · admin-contract-holder (plus the organisational and individual scope shots the catalogue now lists first) | `partial`. Re-shoot: the detail panel Definition and Scope sections (the "Holder (invoiced)" picker filtered to the category, "Payer named on the Booking" for RVG Default Post-paid, chips for hospitals, surgeons, RVG codes and anaesthetists, "Whole organisation" when empty, and the "Describes" group). Caption "The holder is who the Contract invoices; scope says where it applies". Rewrite the reason: "The procedures filter is filled by Phase 19a and narrows the picker in Phase 20." Phases 19a and 20 move it on. Its `images` still list two hand-added `assets/US-04.2.9/admin-contract-scope-*.png` shots from the retired US-04.2.9 (the old Organisational or Individual sheet); the capture keeps hand-added images, so add `scope-organisational` (catalogue Scope column reading "Organisation" and "2 anaesthetists") and `scope-individual` (a new Contract narrowed to one anaesthetist) states to this recipe, and delete those two stale entries from US-04.2.1's frontmatter, then `npm run check` |
+| [US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) Fixed fee schedule lines | partial · admin-price-rows | `captured` (OQ-89 is built as its recommendation, so it does not hold the shot back). Re-shoot as `admin-price-rows` (keep the name) on `[data-shot=fee-schedule-lines]` for the CES HNZ schedule: holder code, description, RVG mapping, time band, add-on, quantity rule, ex GST and inc GST. Drop the partial reason. Caption "Each line keeps the holder's own code and description" |
+| [US-04.2.10](../../../../requirements-board/requirements/stories/US-04.2.10.md) Pricing effective from a date | absent · placeholder, no shots | Add the shots, `captured`. Shot `upcoming-price`: the Doyle Contract (`BAR-BYP`) line showing "$2,800.00 current" and "Upcoming from 28 Jul 2026 · $2,950.00", highlight that price cell. A second state after the existing clock "+7 days" press (or "Procedure day · 28 Jul") if the recipe can press it, showing $2,950.00 current. Caption "Current and upcoming prices are both visible" |
 
 **Recipes this phase breaks.**
 - `US-04.2.2` (pricing basis, covered by Phase 24), `US-04.2.4`, `US-04.2.5` (Phase 23): they select

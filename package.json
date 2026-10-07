@@ -10,6 +10,7 @@
     "check": "npm --prefix requirements-board run check",
     "verify:board": "npm --prefix requirements-board run verify",
     "export:csv": "npm --prefix requirements-board run export:csv",
+    "test:plan-state": "node --test docs/prototype-build/catch-up/tools/req-changes.test.mjs",
     "setup": "npm install && npm --prefix aa-prototype install && npm --prefix requirements-board install"
   },
   "devDependencies": {

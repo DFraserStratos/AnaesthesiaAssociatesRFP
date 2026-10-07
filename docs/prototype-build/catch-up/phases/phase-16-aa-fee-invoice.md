@@ -1,33 +1,33 @@
 # Phase 16 · AA fee as its own monthly invoice
 
 **Requirements covered:**
-[EP-10](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/EP-10.md),
-[FT-10.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-10.3.md) (Verify; notes now carry Greg's 2026-10-02 view),
-[US-10.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.1.md),
-[US-10.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.1.md) (Verify; notes now carry Greg's view),
-[US-10.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.2.md),
-[US-10.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.3.md) (Verify; the fixed schedule is for AA's accountant),
-[US-09.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.1.md),
-[US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md)
+[EP-10](../../../../requirements-board/requirements/stories/EP-10.md),
+[FT-10.3](../../../../requirements-board/requirements/stories/FT-10.3.md) (Verify; notes now carry Greg's 2026-10-02 view),
+[US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md),
+[US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md) (Verify; notes now carry Greg's view),
+[US-10.3.2](../../../../requirements-board/requirements/stories/US-10.3.2.md),
+[US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) (Verify; the fixed schedule is for AA's accountant),
+[US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md),
+[US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md)
 (Confirmed; re-graded **Contradicts** at 3d3a18c: the Xero contact Name holds the patient's or
 individual payer's real name, against "rather than by name" and OQ-30's "no personal information in
 Xero");
 [DM-26](../analysis/domain-model-delta.md#dm-26);
 [RV-07](../analysis/reverse-check.md) (AA service fee netted from the payable).
-Answered and built: [OQ-02](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-02.md)
+Answered and built: [OQ-02](../../../../requirements-board/requirements/questions/OQ-02.md)
 (owner decision **D1**: a monthly fee invoice per anaesthetist, fixed charges plus $ per BCTI) and
-[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (no personal
+[OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (no personal
 information in Xero: built in full here, contact names included).
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) is still
+[OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) is still
 Open on the board (owner: AA's accountant), but its 2026-10-02 meeting update gives Greg's view, which
 this phase builds: **part 3, never netted** ("Under trust law it mustn't. So it's always a separate
 invoice and it's paid into a separate bank account") is built as a rule with no switch; **part 2, only
 paid invoices count** (so a Booking moved between anaesthetists is not charged twice) is built as the
 count's rule, switchable in one place until the accountant confirms; **part 1, the fixed schedule**,
 is still unknown (Greg does not know it), so a labelled sample is seeded.
-Still open, built as noted: [OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md)
+Still open, built as noted: [OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md)
 (BCTI granularity: one per receivable invoice, the plan's one provisional point, kept beside OQ-60 for
-the accountant) and [OQ-47](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-47.md)
+the accountant) and [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md)
 (payment day and cycle: not modelled).
 Left this phase: US-09.2.1 (re-graded Matches; the webhook amounts still change with step 1, but no
 work is planned against it) and OQ-19 (answered: an AA-side error is credited and reissued, which is
@@ -99,14 +99,14 @@ This is the corrected payables story for the "After 16" milestone.
 1. Run the catalogue diff for this phase's items and open questions against the plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-10,FT-10.3,FT-10.2,US-10.2.1,US-10.3.1,US-10.3.2,US-10.3.3,US-09.1.1,US-09.1.4,US-09.3.1,US-15.0.6,US-08.4.3,US-08.3.1,US-10.2.6,OQ-02,OQ-60,OQ-29,OQ-30,OQ-47
    ```
 
    Read the hunks (if any) for EP-10, FT-10.3, FT-10.2, US-10.2.1, US-10.3.1, US-10.3.2, US-10.3.3,
    US-09.1.1, US-09.1.4 (the BCTI note), US-09.3.1, US-15.0.6 (NHI never sent), US-08.4.3 (the `-P`
    suffix rule this phase relies on), US-08.3.1 (ledger pair), US-10.2.6 (period BCTI approval, Phase
    39a), OQ-02, OQ-60 (and its "Meeting update"), OQ-29, OQ-30, OQ-47, the meeting note
-   `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` #1 and #36, and the domain-model lines on the
+   `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #1 and #36, and the domain-model lines on the
    AA fee (the "Payment to anaesthetist implied a fee deducted" row, "AA fee invoices ... are separate
    ledger items, raised by a monthly fee invoice run", the BCTI line above it, the "NHI and other PII
    never go to Xero" line, and the glossary entry).
@@ -158,15 +158,15 @@ patterns (the Billing monitor's panels and `tableChrome.ts`, Master data's "Xero
 settings card), do not invent a new visual language.
 
 **Catalogue and analysis.**
-- Catalogue items above, plus [US-08.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.3.md)
+- Catalogue items above, plus [US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md)
   (unique numbers; the payable carries the receivable's number with `-P`),
-  [US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md)
-  (the BCTI note), [US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md)
-  (NHI never sent), the meeting notes `catalogue/notes/2026-10-01-aa-meeting-with-greg.md` (#1, #14,
-  #41, #54) and `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` (#1: OQ-60 discussed, Greg's
+  [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md)
+  (the BCTI note), [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md)
+  (NHI never sent), the meeting notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` (#1, #14,
+  #41, #54) and `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` (#1: OQ-60 discussed, Greg's
   view on parts 2 and 3; #34: the working rule that the prototype chooses where nothing is said;
   #36: for AA's accountant), and
-  [domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md) (AA fee rows,
+  [domain-model.md](../../../../requirements-board/requirements/domain-model.md) (AA fee rows,
   the "NHI and other PII never go to Xero" line).
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Summary theme 7 ("Money model: fee, payables, ledger,
   GST"), the "Structural first" bullet naming US-09.3.1 Xero contact names as a cheap early fix, the
@@ -809,18 +809,18 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-10.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.1.1.md) All payments into AA | captured · simulator-money-path | stays captured. Re-shoot `money-path` (the money-flow card now has no fee line: the payable equals the receivable). Caption unchanged |
-| [US-10.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.1.2.md) Two payment states | captured · admin-two-states[paid-in,disbursed], admin-invoice-states | stays captured. Re-shoot both shots: the disbursed amount now equals the amount received. Captions unchanged |
-| [US-10.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.1.md) Payable released to match the amount received | captured · simulator-full-payment[unpaid,paid], admin-payables-run | stays captured. Re-shoot `full-payment` and `payables-run` at the gross amount (the payable released equals what was received). The catalogue now shows the merged US-10.2.2's `part-payment` image first on this story, so do not add a second part-payment shot here: re-shoot that one through the US-10.2.2 recipe (see "Recipes this phase breaks") |
-| [US-10.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.3.md) Reconcile back to the ledger | captured · web-receipt-in-ledger, simulator-engine-link | stays captured. Re-shoot `receipt-in-ledger` at `/web/accounts/payments?invoice=AA-2026-0002`: received, released and paid to you, with no AA fee or Net to you column. `engine-link` re-shot as is |
-| [US-10.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.4.md) Bulk remittance stays in Xero | absent | stays absent (by design; Phase 37 may revisit). Nothing to do beyond the capture run |
-| [US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it. This phase builds nothing visible for it, and the fee is never netted, so no netting shot belongs here |
-| [US-10.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it |
-| [US-10.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.1.md) Generate AA fee invoices | partial · simulator-service-fee | captured; drop the partial reason. Replace `service-fee` (the fee box is gone) with admin shot `fee-run` at `/admin/billing/aa-fees`: states `preview` and `run` (Demo actions, "Seed a month of BCTIs", then the teal "Run monthly fee invoices"), highlight `[data-shot=admin-aa-fee-invoices]`, caption "One run raises every anaesthetist's fee invoice for the month: Dr Rutherford, 40 paid BCTIs, $700.00". Add simulator shot `fee-pair` on the fee ACCREC (`[data-shot=xero-aa-fee-pair]`, "AA fee invoice to the anaesthetist, paid into AA's own account, with no payable") |
-| [US-10.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.2.md) AA fee visible to the anaesthetist | partial · web-fee-in-payments | stays partial. The web AA fees tab is built; the mobile app has no fee view (open owner item, no phase plans it), so the reason reads "Web shows AA fee invoices and their status; the mobile app does not show them". Replace `fee-in-payments` with web shot `aa-fees` at `/web/accounts/fees` (highlight `[data-shot=web-accounts-aa-fees]`, caption "AA's monthly fee invoices and whether each is paid", H01 paid and H02 unpaid in one state) |
-| [US-10.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.3.md) AA fee settings | absent ("Not built yet: catch-up Phase 16 builds this") | captured, with the reason cleared. Admin shot `fee-settings` at `/admin/billing/aa-fees/settings`, highlight `[data-shot=admin-aa-fee-settings]`, states `schedule` (two fixed items, $5.00 per BCTI, the worked example $700.00 for 40 BCTIs) and `edited` (add an item, the example updates). Caption "Fixed items plus a charge per BCTI, kept in settings and not in code" |
-| [US-09.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.1.md) Invoice pair creation and identification | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | stays captured. Re-shoot `invoice-pairs` (the Payer column now shows the neutral label for patient-billed pairs) and `pair-detail` highlighting the new InvoiceNumber and Reference items (caption "One pair: both records carry InvoiceNumber and Reference"); `invoice-xero-ids` re-shot as is. The catalogue now shows the merged US-09.1.2's `invoice-number-reference` image first on this story: re-point that recipe (see "Recipes this phase breaks") rather than adding a duplicate shot here |
-| [US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md) Contact identification without NHI | captured · simulator-contacts, simulator-pair-contact-ids | stays captured; the shots must now show no patient name. `contacts`: highlight the table with a patient and a billable-party row showing "Patient PT…" and "Billable party BP…" in the Name column; caption "Xero contacts carry only the hidden internal ID: no name, no NHI". `pair-contact-ids` on `XRH12`: the ACCREC card's Payer shows the label beside ContactID and ContactNumber; caption unchanged unless it names the patient. The catalogue now shows the merged US-09.3.2's `no-nhi` image (the policy callout) first on this story, so do not add a `no-personal-info` shot here: re-caption that recipe instead (see "Recipes this phase breaks") |
+| [US-10.1.1](../../../../requirements-board/requirements/stories/US-10.1.1.md) All payments into AA | captured · simulator-money-path | stays captured. Re-shoot `money-path` (the money-flow card now has no fee line: the payable equals the receivable). Caption unchanged |
+| [US-10.1.2](../../../../requirements-board/requirements/stories/US-10.1.2.md) Two payment states | captured · admin-two-states[paid-in,disbursed], admin-invoice-states | stays captured. Re-shoot both shots: the disbursed amount now equals the amount received. Captions unchanged |
+| [US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md) Payable released to match the amount received | captured · simulator-full-payment[unpaid,paid], admin-payables-run | stays captured. Re-shoot `full-payment` and `payables-run` at the gross amount (the payable released equals what was received). The catalogue now shows the merged US-10.2.2's `part-payment` image first on this story, so do not add a second part-payment shot here: re-shoot that one through the US-10.2.2 recipe (see "Recipes this phase breaks") |
+| [US-10.2.3](../../../../requirements-board/requirements/stories/US-10.2.3.md) Reconcile back to the ledger | captured · web-receipt-in-ledger, simulator-engine-link | stays captured. Re-shoot `receipt-in-ledger` at `/web/accounts/payments?invoice=AA-2026-0002`: received, released and paid to you, with no AA fee or Net to you column. `engine-link` re-shot as is |
+| [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | stays absent (by design; Phase 37 may revisit). Nothing to do beyond the capture run |
+| [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it. This phase builds nothing visible for it, and the fee is never netted, so no netting shot belongs here |
+| [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it |
+| [US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md) Generate AA fee invoices | partial · simulator-service-fee | captured; drop the partial reason. Replace `service-fee` (the fee box is gone) with admin shot `fee-run` at `/admin/billing/aa-fees`: states `preview` and `run` (Demo actions, "Seed a month of BCTIs", then the teal "Run monthly fee invoices"), highlight `[data-shot=admin-aa-fee-invoices]`, caption "One run raises every anaesthetist's fee invoice for the month: Dr Rutherford, 40 paid BCTIs, $700.00". Add simulator shot `fee-pair` on the fee ACCREC (`[data-shot=xero-aa-fee-pair]`, "AA fee invoice to the anaesthetist, paid into AA's own account, with no payable") |
+| [US-10.3.2](../../../../requirements-board/requirements/stories/US-10.3.2.md) AA fee visible to the anaesthetist | partial · web-fee-in-payments | stays partial. The web AA fees tab is built; the mobile app has no fee view (open owner item, no phase plans it), so the reason reads "Web shows AA fee invoices and their status; the mobile app does not show them". Replace `fee-in-payments` with web shot `aa-fees` at `/web/accounts/fees` (highlight `[data-shot=web-accounts-aa-fees]`, caption "AA's monthly fee invoices and whether each is paid", H01 paid and H02 unpaid in one state) |
+| [US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) AA fee settings | absent ("Not built yet: catch-up Phase 16 builds this") | captured, with the reason cleared. Admin shot `fee-settings` at `/admin/billing/aa-fees/settings`, highlight `[data-shot=admin-aa-fee-settings]`, states `schedule` (two fixed items, $5.00 per BCTI, the worked example $700.00 for 40 BCTIs) and `edited` (add an item, the example updates). Caption "Fixed items plus a charge per BCTI, kept in settings and not in code" |
+| [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) Invoice pair creation and identification | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | stays captured. Re-shoot `invoice-pairs` (the Payer column now shows the neutral label for patient-billed pairs) and `pair-detail` highlighting the new InvoiceNumber and Reference items (caption "One pair: both records carry InvoiceNumber and Reference"); `invoice-xero-ids` re-shot as is. The catalogue now shows the merged US-09.1.2's `invoice-number-reference` image first on this story: re-point that recipe (see "Recipes this phase breaks") rather than adding a duplicate shot here |
+| [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md) Contact identification without NHI | captured · simulator-contacts, simulator-pair-contact-ids | stays captured; the shots must now show no patient name. `contacts`: highlight the table with a patient and a billable-party row showing "Patient PT…" and "Billable party BP…" in the Name column; caption "Xero contacts carry only the hidden internal ID: no name, no NHI". `pair-contact-ids` on `XRH12`: the ACCREC card's Payer shows the label beside ContactID and ContactNumber; caption unchanged unless it names the patient. The catalogue now shows the merged US-09.3.2's `no-nhi` image (the policy callout) first on this story, so do not add a `no-personal-info` shot here: re-caption that recipe instead (see "Recipes this phase breaks") |
 
 **Recipes this phase breaks.** The AA fee box, the Net to you and AA fee columns and the fee wording
 go; the Xero NHI callout, the contact names and the pair cards change; the payment webhook entries

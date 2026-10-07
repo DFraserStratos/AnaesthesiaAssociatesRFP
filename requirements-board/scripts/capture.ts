@@ -9,7 +9,7 @@
  * gets a fresh browser context, so the seed and demo clock are identical each time. Web, admin
  * and simulator shots come from the framed prototype on :5173 with its harness bar hidden;
  * mobile shots come from the PWA dev server on :5174 at phone size. Files are written to
- * catalogue/assets/<ID>/<app>-<name>[-<state>].png and listed in the item's `images`; images
+ * requirements/assets/<ID>/<app>-<name>[-<state>].png and listed in the item's `images`; images
  * the runner did not generate are kept. A step or highlight selector that matches nothing
  * fails the recipe: it never writes a silently wrong shot.
  */
@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test'
-import { CATALOGUE_DIR, itemPath, loadCatalogue, readItemFile, writeItem } from '../server/catalogueFs.ts'
+import { REQUIREMENTS_DIR, itemPath, loadCatalogue, readItemFile, writeItem } from '../server/catalogueFs.ts'
 import { serialiseItem } from '../shared/files.ts'
 import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
@@ -474,7 +474,7 @@ function linkItem(recipe: Recipe): boolean {
 /** Delete generated files for this item that the recipe no longer produces. */
 function pruneAssets(recipe: Recipe): string[] {
   const wanted = new Set(imagesFor(recipe).map((i) => i.src.split('/').pop()!))
-  return pruneGenerated(join(CATALOGUE_DIR, 'assets', recipe.id), wanted)
+  return pruneGenerated(join(REQUIREMENTS_DIR, 'assets', recipe.id), wanted)
 }
 
 // ── Report ───────────────────────────────────────────────────────────────────
@@ -603,7 +603,7 @@ async function main() {
     if (failed.has(recipe.id)) continue
     if (!DRY) {
       for (const img of imagesFor(recipe)) {
-        const abs = join(CATALOGUE_DIR, img.src)
+        const abs = join(REQUIREMENTS_DIR, img.src)
         const buf = shots.get(img.src)!
         mkdirSync(dirname(abs), { recursive: true })
         if (!existsSync(abs) || !readFileSync(abs).equals(buf)) {

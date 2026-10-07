@@ -288,7 +288,7 @@ test('a highlight row fits the view to it; its copy button copies a link that pa
 
 test("Edit details renames and re-dates an artifact, and leaves its file and highlights alone", async ({ page }) => {
   const sidecar = join(FIXTURE_DIR, 'artifacts', 'AR-01.md')
-  const svgBefore = readFileSync(join(FIXTURE_DIR, 'artifacts', 'AR-01.svg'), 'utf8')
+  const svgBefore = readFileSync(join(FIXTURE_DIR, 'artifacts', 'files', 'AR-01.svg'), 'utf8')
   await page.goto('/#/artifacts/AR-01')
   await page.getByRole('button', { name: 'Edit details' }).click()
   await expect(page.getByRole('tab')).toHaveCount(0)
@@ -310,8 +310,8 @@ test("Edit details renames and re-dates an artifact, and leaves its file and hig
   expect(text).toContain('title: Renamed drawing')
   expect(text).toContain('date: 2026-09')
   expect(text).toContain('id: totals')
-  expect(text).toContain('file: artifacts/AR-01.svg')
-  expect(readFileSync(join(FIXTURE_DIR, 'artifacts', 'AR-01.svg'), 'utf8')).toBe(svgBefore)
+  expect(text).toContain('file: artifacts/files/AR-01.svg')
+  expect(readFileSync(join(FIXTURE_DIR, 'artifacts', 'files', 'AR-01.svg'), 'utf8')).toBe(svgBefore)
   await page.locator('.artifact-panel-head .crumb').click()
   await expect(page.getByText('Renamed drawing')).toBeVisible()
 })
@@ -374,7 +374,7 @@ test.describe('history', () => {
     git('init -q')
     git('add -A')
     git('commit -qm "Fixture catalogue"')
-    const svg = join(FIXTURE_DIR, 'artifacts', 'AR-01.svg')
+    const svg = join(FIXTURE_DIR, 'artifacts', 'files', 'AR-01.svg')
     writeFileSync(svg, readFileSync(svg, 'utf8').replace('Other panel', 'Changed panel'))
     git('commit -qam "Rename the other panel"')
 

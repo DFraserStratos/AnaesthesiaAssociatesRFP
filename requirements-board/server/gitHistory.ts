@@ -2,7 +2,8 @@
  * A card file's history in git, read-only: every commit that touched it, the record at each, and
  * whether the working file differs from HEAD. No git, or a folder outside a repository, reads as
  * no history. Asynchronous, so a slow repository never stalls the dev server's other requests.
- * (Card IDs never change, so a file is never renamed: no `--follow`, which is several times slower.)
+ * Card IDs never change, but folders move: history reads a file's earlier paths too (`gitRenames.ts`),
+ * which is faster than `--follow` and also covers a screenshot folder.
  */
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
@@ -12,6 +13,7 @@ import { parseItem } from '../shared/files.ts'
 import type { Item } from '../shared/types.ts'
 import type { AssetCommit, AssetHistory, CommitInfo, GitFileHistory, GitVersion, ScreenshotCommit } from '../shared/history.ts'
 import { gitBlobSha } from './historyJournal.ts'
+import { priorDirs, priorPaths } from './gitRenames.ts'
 
 const run = promisify(execFile)
 const git = async (cwd: string, args: string[]) => (await run('git', args, { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 })).stdout
@@ -83,16 +85,26 @@ export async function gitFileHistory<T = Item>(file: string, parseRecord: (text:
     const status = git(top, ['status', '--porcelain', '--', rel]).catch(() => '')
     let versions = cache.get(key) as GitVersion<T>[] | undefined
     if (!versions) {
-      const log = await git(top, ['log', '--format=%H%x1f%an%x1f%aI%x1f%s', '--', rel])
-      const commits: CommitInfo[] = log
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => {
-          const [sha = '', author = '', at = '', subject = ''] = line.split('\x1f')
-          return { sha, author, at, subject }
+      const paths = [rel, ...(await priorPaths(top, head, rel))]
+      const log = await git(top, ['log', '--no-renames', '--name-status', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...paths])
+      const commits = log
+        .split('\x1e')
+        .slice(1)
+        .map((block) => {
+          const [meta = '', ...lines] = block.split('\n')
+          const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
+          const touched = lines.flatMap((line) => {
+            const m = /^([AMDT])\t(.+)$/.exec(line)
+            return m && paths.includes(m[2]!) ? [{ status: m[1]!, path: m[2]! }] : []
+          })
+          // The path the file had once this commit was made; a commit that only deleted it reads as missing.
+          const live = touched.find((f) => f.status !== 'D')
+          return { commit: { sha, author, at, subject } as CommitInfo, path: (live ?? touched[0])?.path ?? rel, moved: !!live && touched.some((f) => f.status === 'D') }
         })
-      const blobs = commits.length ? await readBlobs(top, commits.map((c) => `${c.sha}:${rel}`)) : []
-      versions = commits.map((commit, i) => ({ commit, item: blobs[i] == null ? null : parse(blobs[i]!) }))
+      const blobs = commits.length ? await readBlobs(top, commits.map((c) => `${c.commit.sha}:${c.path}`)) : []
+      // A commit that only moved the file (same content, new path) is not a change to it.
+      const kept = commits.flatMap((c, i) => (c.moved && blobs[i] != null && blobs[i] === blobs[i + 1] ? [] : [{ c, blob: blobs[i] }]))
+      versions = kept.map(({ c, blob }) => ({ commit: c.commit, item: blob == null ? null : parse(blob) }))
       cache.set(key, versions)
     }
     return { versions, dirty: (await status).trim() !== '', working, mtime }
@@ -118,7 +130,8 @@ export async function gitScreenshots(root: string, id: string): Promise<{ commit
     let commits = shotCache.get(key)
     if (!commits) {
       commits = []
-      const out = await git(top, ['log', '--no-abbrev', '--raw', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', `${rel}/`])
+      const dirs = [rel, ...(await priorDirs(top, head, rel))]
+      const out = await git(top, ['log', '--no-abbrev', '--raw', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...dirs.map((d) => `${d}/`)])
       for (const block of out.split('\x1e').slice(1)) {
         const [meta = '', ...lines] = block.split('\n')
         const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
@@ -170,15 +183,24 @@ export async function gitAssetHistory(file: string): Promise<AssetHistory> {
     let commits = assetCache.get(key)
     if (!commits) {
       commits = []
-      const out = await git(top, ['log', '--no-abbrev', '--raw', '--no-renames', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', rel])
+      const paths = [rel, ...(await priorPaths(top, head, rel))]
+      const out = await git(top, ['log', '--no-abbrev', '--raw', '--no-renames', '--format=%x1e%H%x1f%an%x1f%aI%x1f%s', '--', ...paths])
       const zero = /^0+$/
       for (const block of out.split('\x1e').slice(1)) {
         const [meta = '', ...lines] = block.split('\n')
         const [sha = '', author = '', at = '', subject = ''] = meta.split('\x1f')
+        // A move shows as the old path deleted and the new one added: one change from the old blob to the new.
+        let from: string | null = null
+        let to: string | null = null
+        let seen = false
         for (const line of lines) {
-          const m = /^:\d+ \d+ ([0-9a-f]{40}) ([0-9a-f]{40}) [AMDT]\t/.exec(line)
-          if (m) commits.push({ commit: { sha, author, at, subject }, from: zero.test(m[1]!) ? null : m[1]!, to: zero.test(m[2]!) ? null : m[2]! })
+          const m = /^:\d+ \d+ ([0-9a-f]{40}) ([0-9a-f]{40}) [AMDT]\t(.+)$/.exec(line)
+          if (!m || !paths.includes(m[3]!)) continue
+          seen = true
+          if (!zero.test(m[1]!)) from ??= m[1]!
+          if (!zero.test(m[2]!)) to ??= m[2]!
         }
+        if (seen && from !== to) commits.push({ commit: { sha, author, at, subject }, from, to })
       }
       assetCache.set(key, commits)
     }

@@ -42,7 +42,7 @@ import {
   fileExistsIn,
   issuesFor,
   itemPath,
-  itemsDir,
+  storiesDir,
   layoutPath,
   loadCatalogue,
   questionPath,
@@ -210,7 +210,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         claimed.add(rec.id)
       }
     }
-    throw new HttpError(503, 'could not find a free ID; the catalogue folder is changing too fast, try again')
+    throw new HttpError(503, 'could not find a free ID; the requirements folder is changing too fast, try again')
   }
 
   function refuseCrossSite(req: ApiRequest) {
@@ -362,7 +362,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
       if (parentId && !parent) throw new HttpError(422, `parent ${parentId} does not exist`)
       const siblings = itemList().filter((i) => i.parent === (parent?.id ?? null)).sort(compareSiblings)
       return create<Item>(
-        () => new Set([...takenIds(itemsDir(root)), ...Object.keys(state.items)]),
+        () => new Set([...takenIds(storiesDir(root)), ...Object.keys(state.items)]),
         (taken) => {
           let id: string
           try {

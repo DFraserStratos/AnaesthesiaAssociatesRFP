@@ -367,7 +367,7 @@ describe('serveAsset', () => {
   const res = () => ({ setHeader: () => {}, end: () => {} }) as unknown as ServerResponse
   it('serves nothing outside the assets folder', () => {
     writeFileSync(join(root, 'secret.txt'), 'x')
-    for (const p of ['/catalogue/secret.txt', '/catalogue/assets/../secret.txt', '/catalogue/assets/%2e%2e/secret.txt', '/catalogue/requirements/EP-01.md']) {
+    for (const p of ['/requirements/secret.txt', '/requirements/assets/../secret.txt', '/requirements/assets/%2e%2e/secret.txt', '/requirements/stories/EP-01.md']) {
       expect(serveAsset(root, new URL(p, 'http://local'), res())).toBe(false)
     }
   })

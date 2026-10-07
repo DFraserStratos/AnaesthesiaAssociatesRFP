@@ -66,4 +66,4 @@ export const artifactFileUrl = (id: string, fileRev: string | null) => `/artifac
 export const artifactBlobUrl = (id: string, sha: string) => `/history-blob/${sha}?artifact=${encodeURIComponent(id)}`
 
 /** URL the dev server serves a catalogue-relative asset path from. */
-export const assetUrl = (src: string) => `/catalogue/${src.split('/').map(encodeURIComponent).join('/')}`
+export const assetUrl = (src: string) => `/requirements/${src.split('/').map(encodeURIComponent).join('/')}`

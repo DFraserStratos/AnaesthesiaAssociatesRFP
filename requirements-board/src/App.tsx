@@ -140,7 +140,7 @@ function Masthead({ connected }: { connected: boolean }) {
             <AlertTriangle size={14} /> {moveError.split(':')[0]}
           </button>
         )}
-        <span className="live" title={connected ? 'Watching the catalogue folder for changes' : 'Dev server not reachable'}>
+        <span className="live" title={connected ? 'Watching the requirements folder for changes' : 'Dev server not reachable'}>
           <span className={`live-dot${connected ? '' : ' off'}`} />
           {connected ? 'Live' : 'Offline'}
         </span>

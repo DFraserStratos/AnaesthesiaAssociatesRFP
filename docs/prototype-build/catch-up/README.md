@@ -1,7 +1,7 @@
 # Requirements catch-up
 
 The prototype was built in July 2026 against the original RFP (phases 00 to 13 in `../phases/`).
-Since then the requirements catalogue (`docs/discovery-reference/Updated Requirements/catalogue/`)
+Since then the requirements catalogue (`requirements-board/requirements/`)
 has moved a long way. This folder holds the gap analysis between the two and the build plan to close
 it: catch-up phases numbered from 14.
 
@@ -48,19 +48,20 @@ Two project skills (in `.claude/skills/`) run the whole loop:
 
 1. **`/update-requirements`** after a meeting or a round of board answers: files transcripts and notes as
    a catalogue note, completes answers that point at the evidence, updates the requirements, and writes a
-   change log in `docs/discovery-reference/Updated Requirements/changes/`. Then commit and push.
+   change log in `requirements-board/requirements/changes/`. Then commit and push.
 2. **`/update-build-plan <commit or link>`** then re-grades the changed items against the prototype,
    re-plans the affected phases, updates their docs and prompts, moves the drift-check baseline and
    regenerates `index.html`.
 
-Every phase also starts with its own drift check against the plan's baseline commit, so small changes are
+Every phase also starts with its own drift check against the plan's baseline commit
+(`tools/plan-state.mjs --diff <IDs>`, rename-aware across the catalogue's move), so small changes are
 caught at build time.
 
 The tools the second skill drives, all run from the repo root:
 
 | Tool | What it does |
 |---|---|
-| `tools/plan-state.mjs [--to <ref>] [--coverage]` | Baseline, what changed since, built phases, coverage check. |
+| `tools/plan-state.mjs [--to <ref>] [--coverage] [--diff [IDs]]` | Baseline, what changed since (items, questions, notes and change logs added, domain model; rename-aware via `tools/req-changes.mjs`, tested by `npm run test:plan-state`), built phases, coverage check; `--diff` is the phase drift check. |
 | `tools/build-args.mjs [ID ...]` | The `epics` args for the gap-analysis workflow (all in-scope items, or just those IDs). |
 | `tools/workflow-gap-analysis.js` | Sonnet reviewers + adversarial verifiers; `reuseMaps`, `runDelta`, `runReverse`, `runThemes` switches for partial re-runs. |
 | `tools/assemble-gaps.mjs <journal> <commit> <date> [--merge]` | Builds `gaps.json`, `GAP-ANALYSIS.md`, `epics/`, `tools/units.json` from a run; `--merge` keeps earlier gradings for items not re-run. |

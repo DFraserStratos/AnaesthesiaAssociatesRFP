@@ -34,17 +34,21 @@ findings.
 
 ## Requirements: where they live
 
-**The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/`**: one
-Markdown file per epic, feature and story (`requirements/`) and per outstanding item (`questions/`: open questions, missing sources), plus
-artifacts (`artifacts/AR-nn.md`: the diagrams, transcripts, notes and documents requirements link to, or to a spot in), format in
-`catalogue/SCHEMA.md`. To add, change, retire or answer a requirement, edit those files (or use the
+**The system's requirements live in `requirements-board/requirements/`** (the requirements
+catalogue; `REQ` below): one Markdown file per epic, feature and story (`REQ/stories/`) and per
+outstanding item (`REQ/questions/`: open questions, missing sources), plus artifacts
+(`REQ/artifacts/AR-nn.md` sidecars: the diagrams, transcripts, notes and documents requirements link
+to, or to a spot in; the files themselves in `REQ/artifacts/files/`), meeting notes (`REQ/notes/`)
+and change logs (`REQ/changes/`). Format in `REQ/SCHEMA.md`; folder guide and conventions in
+`REQ/README.md`. To add, change, retire or answer a requirement, edit those files (or use the
 Requirements Board, which edits the same files), then run `npm run check` from the repo root.
-`domain-model.md` beside the catalogue holds the narrative model; update it when a change alters the
-model. This catalogue supersedes the RFP wherever they differ.
+`REQ/domain-model.md` holds the narrative model; update it when a change alters the model. This
+catalogue supersedes the RFP wherever they differ. Every file the catalogue cites (transcripts,
+pricing documents, the RVG, the RFP PDF) lives in `REQ/artifacts/files/`, not elsewhere in `docs/`.
 
 Not the place to edit requirements:
-- `requirements-board/` is the app that edits the catalogue; it holds no requirements itself.
-- `docs/rfp-reference/RFP.md` is the original RFP: historical input, read-only.
+- `requirements-board/` outside `requirements/` is the app, its scripts and its agent skills.
+- `REQ/reference/RFP.md` is the original RFP: historical input, read-only.
 - `docs/prototype-build/REQUIREMENTS.md` is the prototype's build checklist against the RFP, used only
   for prototype work.
 
@@ -54,7 +58,11 @@ Not the place to edit requirements:
   `README.md` is the developer entry point: scripts, stack versions and a `src/` folder map.
 - **Requirements Board** — `requirements-board/`: a separate local dev tool (Vite + React, port
   5180) for reading, editing and arranging the future-state requirements catalogue in
-  `docs/discovery-reference/Updated Requirements/catalogue/` (format: `catalogue/SCHEMA.md`). Not
+  `requirements-board/requirements/` (format: `REQ/SCHEMA.md`). It is a **portable kit**: the app,
+  its data folder `requirements/` and its agent skills in `agent/` (`update-requirements`,
+  `add-artifact`, `svg-diagram`, `transcript-reconciler`, and the `link-requirements` workflow),
+  exposed to Claude Code by symlinks in `.claude/skills/` and `.claude/workflows/`; edit the files in
+  `requirements-board/agent/`. Its README's "Bring the board to another repo" says what to copy. Not
   part of the prototype, never deployed; its dev server is the file API. The prototype conventions
   below (mock backend, determinism, `PERSIST_VERSION`) do not apply to it. Root `npm run dev` starts
   the prototype, its mobile PWA (5174) and the board (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The
@@ -63,11 +71,11 @@ Not the place to edit requirements:
   **Its design rules are in `requirements-board/DESIGN.md`** (names over IDs, fixed type colours, status
   as pills): read it before any visual change to the board.
   **Artifacts** (its Artifacts tab) are the diagrams, transcripts, notes and documents behind the
-  requirements: a sidecar `catalogue/artifacts/AR-nn.md` each, with named highlight regions that
+  requirements: a sidecar `REQ/artifacts/AR-nn.md` each (its file in `REQ/artifacts/files/`), with named highlight regions that
   items link to (`artifacts: [AR-01#price-rules]`, or a `[words](AR-01#price-rules)` text link). The
   board edits only their details (name, kind, status, date, author, area, sources, description) and
   never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
-  (`npm --prefix requirements-board run artifact:new`), and the `aa-svg-diagram` skill saves new
+  (`npm --prefix requirements-board run artifact:new`), and the `svg-diagram` skill saves new
   diagrams as artifacts. A new transcript or note filed by `update-requirements` is registered as one. **Finish green on board work:**
   `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check) passes before handing back.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
@@ -86,9 +94,10 @@ Not the place to edit requirements:
 - **Demo guide** — `docs/demo-guide/`: personas, workflows, the S1 to S5 run sheet and the presenter
   cheat sheet; `master-demo-guide.html` is the self-contained single-page version. Behaviour changes
   that affect a scripted beat must be mirrored here.
-- **RFP & data model** — `docs/rfp-reference/`: `RFP.md` (the original RFP the prototype was built
-  against, PDF alongside; superseded by the catalogue for the real system's requirements) and `Data-Model-and-Flow.md` / `.html` (our reading of the data model, the List/Card
-  lifecycle, and the booking → billing → payment flow).
+- **RFP** — `REQ/reference/RFP.md` (the original RFP the prototype was built against, superseded by
+  the catalogue for the real system's requirements); its PDF is `REQ/artifacts/files/` (artifact
+  AR-15). `docs/rfp-reference/` keeps only the Stratos full-document PDF. Other evidence not cited by
+  the catalogue (contract fee schedules) is in `docs/discovery-reference/Data files/`.
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
 - **Assets** — `docs/assets/` (the AA logo).
 

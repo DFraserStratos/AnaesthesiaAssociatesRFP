@@ -1,15 +1,15 @@
 # Phase 15 · Card becomes Booking
 
-**Requirements covered:** [US-03.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.3.md) Attachments;
+**Requirements covered:** [US-03.1.3](../../../../requirements-board/requirements/stories/US-03.1.3.md) Attachments;
 [DM-01](../analysis/domain-model-delta.md#dm-01) Card becomes Booking (the rename only; the booking-level state DM-01 also names lands later: warnings in 15a, billable party and invoice email in 21, prepayment in 27);
 [DM-39](../analysis/domain-model-delta.md#dm-39) List-level attachments, Copy a Booking as a skeleton, and an optional stored Booking source;
 [RV-12](../analysis/reverse-check.md#rv-12-vocabulary-card-for-a-booking) "Card" used for a Booking throughout the UI;
 [RV-03](../analysis/reverse-check.md#rv-03-card-copy-is-used-as-the-additional-procedure-mechanism) Card Copy used as the additional-procedure mechanism.
-Read alongside (not closed here): [US-02.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.3.md) Copy a Booking,
-[US-02.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.4.1.md) Add a Booking manually or from a photo,
-[FT-03.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.2.md) Booking structure,
-[US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md) Add additional Procedures, and
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md) section 2 "Booking" and section 4, the glossary (Booking, Card, Recurring booking, Timesheet).
+Read alongside (not closed here): [US-02.4.3](../../../../requirements-board/requirements/stories/US-02.4.3.md) Copy a Booking,
+[US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) Add a Booking manually or from a photo,
+[FT-03.2](../../../../requirements-board/requirements/stories/FT-03.2.md) Booking structure,
+[US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md) Add additional Procedures, and
+[domain-model.md](../../../../requirements-board/requirements/domain-model.md) section 2 "Booking" and section 4, the glossary (Booking, Card, Recurring booking, Timesheet).
 **Depends on:** none. Runs first with Phase 14, in either order. It must run before any phase that edits booking code (15a onward). If 14 ran first, this rename also covers the demo-trigger registry's route patterns, labels and context keys.
 **Estimated:** 2 sessions. Session 1 is the mechanical rename (work items 1 to 9), re-greened and demoable. Session 2 adds the fields and reworks Copy (work items 10 to 17).
 
@@ -56,7 +56,7 @@ booking" is Phase 30's, so leave it alone here, and never let the Booking rename
 1. Diff the covered and read-alongside items against the plan's catalogue snapshot, `501b0b8`:
 
    ```
-   git diff 501b0b8 -- "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.1.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-02.4.1.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-02.4.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/FT-03.2.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/US-03.2.3.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-02.md" "docs/discovery-reference/Updated Requirements/catalogue/requirements/EP-03.md" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   git diff 501b0b8 -- "requirements-board/requirements/stories/US-03.1.3.md" "requirements-board/requirements/stories/US-02.4.3.md" "requirements-board/requirements/stories/US-02.4.1.md" "requirements-board/requirements/stories/FT-02.4.md" "requirements-board/requirements/stories/FT-03.2.md" "requirements-board/requirements/stories/US-03.2.3.md" "requirements-board/requirements/stories/EP-02.md" "requirements-board/requirements/stories/EP-03.md" "requirements-board/requirements/domain-model.md"
    ```
 
    Also run the whole-catalogue diff from ROADMAP.md "When the catalogue changes" and scan it for
@@ -88,9 +88,9 @@ booking" is Phase 30's, so leave it alone here, and never let the Booking rename
    `registry.ts` and the `useDemoTriggerContext` hook, and for a Phase 14 PROGRESS entry). If it has,
    work item 7 includes the registry.
 5. **Open questions.** None block this phase, and nothing here is provisional:
-   - [OQ-34](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-34.md) is
+   - [OQ-34](../../../../requirements-board/requirements/questions/OQ-34.md) is
      answered: the hospital download carries most bookings today. It changes nothing built here.
-   - [OQ-53](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-53.md) is
+   - [OQ-53](../../../../requirements-board/requirements/questions/OQ-53.md) is
      answered: a combination is a Contract set against each parent procedure (US-04.2.11), built in
      23. Leave the Procedure structure alone here.
    - **Reading of "references" in Copy** (US-02.4.3 leaves the word undefined, and the gap
@@ -711,7 +711,7 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.1.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.3.md) Attachments | partial · web-attachments[empty,added], mobile-attachments[empty,added] | captured (a Booking and a List both take attachments, other file types included, as a badged simulation); drop the partial reason. Keep the `attachments` shots on web and mobile with states `empty` and `added`, now on `/bookings/BK0009`, highlight `[data-shot=booking-attachments]`, click "Add attachment" and pick a sample in the sheet; captions "Attachments section with Add attachment" and "A photo attached to the Booking". Add a state `sheet` showing the "Simulated file picker" badge. Add a new shot `list-attachments` on web and mobile at the Tue 28 Jul AM List (the seeded "Theatre list · St George's" PDF), highlight `[data-shot=list-attachments]`, caption "Attachments on the whole List" |
+| [US-03.1.3](../../../../requirements-board/requirements/stories/US-03.1.3.md) Attachments | partial · web-attachments[empty,added], mobile-attachments[empty,added] | captured (a Booking and a List both take attachments, other file types included, as a badged simulation); drop the partial reason. Keep the `attachments` shots on web and mobile with states `empty` and `added`, now on `/bookings/BK0009`, highlight `[data-shot=booking-attachments]`, click "Add attachment" and pick a sample in the sheet; captions "Attachments section with Add attachment" and "A photo attached to the Booking". Add a state `sheet` showing the "Simulated file picker" badge. Add a new shot `list-attachments` on web and mobile at the Tue 28 Jul AM List (the seeded "Theatre list · St George's" PDF), highlight `[data-shot=list-attachments]`, caption "Attachments on the whole List" |
 
 **Recipes this phase breaks.** Nearly all of them: about 96 recipes name "card" in a route, id, button
 text or hook, and 57 use a `/cards/` start route. Work item 16 is the scripted, reviewed replace

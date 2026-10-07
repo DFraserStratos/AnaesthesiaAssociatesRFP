@@ -5,11 +5,11 @@ The prototype was built in July 2026 against the original RFP (phases 00 to 13, 
 a long way from the RFP. This catch-up brings the prototype up to the catalogue as at commit
 **`3d3a18c`**. Future and Retired items are out; retired behaviour the prototype still has is removed
 or reworked. The plan was updated on 2026-10-01 for the AA meeting with Greg
-([change log](../../discovery-reference/Updated%20Requirements/changes/2026-10-01-requirements-update.md)),
+([change log](../../../requirements-board/requirements/changes/2026-10-01-requirements-update.md)),
 and again on 2026-10-03 for the three 2026-10-02 meetings with Greg (change logs:
-[morning](../../discovery-reference/Updated%20Requirements/changes/2026-10-02-requirements-update.md),
-[requirements review](../../discovery-reference/Updated%20Requirements/changes/2026-10-02-aa-requirements-review-with-greg.md),
-[booking and pricing review](../../discovery-reference/Updated%20Requirements/changes/2026-10-02-aa-booking-and-pricing-review-with-greg.md)):
+[morning](../../../requirements-board/requirements/changes/2026-10-02-requirements-update.md),
+[requirements review](../../../requirements-board/requirements/changes/2026-10-02-aa-requirements-review-with-greg.md),
+[booking and pricing review](../../../requirements-board/requirements/changes/2026-10-02-aa-booking-and-pricing-review-with-greg.md)):
 fourteen more questions answered (D12 to D25), a shared notification pool, single-Booking moves,
 events as one element on the Procedure, base units on default RVG Contracts, the Contract defined
 rate, Copy a Booking retired, and the whole gap analysis re-graded (new deltas DM-41 to DM-47 and
@@ -463,7 +463,7 @@ PROGRESS.md entry:
 6. `npm run verify:board` from the repo root is green.
 
 The runner, not the agent, writes the catalogue items' `images` and the files under
-`catalogue/assets/`; the phase still never edits a requirement's text or status. This step replaces
+`requirements-board/requirements/assets/`; the phase still never edits a requirement's text or status. This step replaces
 any older advice in a phase doc to leave screenshots stale or for the owner to re-shoot them.
 
 ### Confirm before building
@@ -578,8 +578,12 @@ The catalogue keeps changing, and this plan is pinned to commit `3d3a18c`.
    been answered:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <covered IDs and OQs, comma separated>
    ```
+
+   It diffs each of those IDs that changed since the snapshot (`plan.json` "commit"), and
+   `domain-model.md`, with rename detection: the catalogue moved to `requirements-board/requirements/`
+   after the snapshot, so a plain `git diff` would show every file as deleted and added.
 
    Record the result in the phase's PROGRESS entry.
 2. **For each changed item, re-run the gap analysis for that item only**, following

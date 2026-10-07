@@ -7,22 +7,25 @@ concision.
 
 ## Requirements
 
-The system's requirements live in `docs/discovery-reference/Updated Requirements/catalogue/` (one
-Markdown file per epic, feature, story and open question; format in `catalogue/SCHEMA.md`). Edit those
-files to change requirements, then run `npm run check` from the repo root. The catalogue also holds
-artifacts (`catalogue/artifacts/AR-nn.md`: the diagrams, transcripts, notes and documents requirements
-link to, or to a highlighted spot in; format under Artifact file in `SCHEMA.md`). The board edits only an
-artifact's details (name, kind, status, date, author, area, sources, description), never its file,
-regions or links: add one, or change those, as files, with `npm --prefix requirements-board run artifact:new` and the
-`add-artifact` skill in `.claude/skills/`. `requirements-board/` is only
-the editing app; `docs/rfp-reference/RFP.md` is the historical RFP; `docs/prototype-build/REQUIREMENTS.md`
-is the prototype's build checklist, not the system's requirements.
+The system's requirements live in `requirements-board/requirements/` (one Markdown file per epic,
+feature and story in `stories/`, per open question in `questions/`; format in its `SCHEMA.md`, folder
+guide in its `README.md`). Edit those files to change requirements, then run `npm run check` from the
+repo root. The same folder holds the domain model (`domain-model.md`), meeting notes (`notes/`),
+change logs (`changes/`) and artifacts (`artifacts/AR-nn.md` sidecars: the diagrams, transcripts,
+notes and documents requirements link to, or to a highlighted spot in; the files themselves in
+`artifacts/files/`). The board edits only an artifact's details (name, kind, status, date, author,
+area, sources, description), never its file, regions or links: add one, or change those, as files,
+with `npm --prefix requirements-board run artifact:new` and the `add-artifact` skill
+(`requirements-board/agent/skills/`, symlinked into `.claude/skills/`). The rest of
+`requirements-board/` is the editing app; `requirements-board/requirements/reference/RFP.md` is the
+historical RFP; `docs/prototype-build/REQUIREMENTS.md` is the prototype's build checklist, not the
+system's requirements.
 
 ## Project Structure & Module Organization
 
 The app lives in `aa-prototype/`; run npm commands there. `requirements-board/` is a separate
 local dev tool over the future-state requirements catalogue
-(`docs/discovery-reference/Updated Requirements/catalogue/`, format in its `SCHEMA.md`); root
+(`requirements-board/requirements/`, format in its `SCHEMA.md`); root
 `npm run dev` starts both, root `npm run check` validates the catalogue. Board design rules:
 `requirements-board/DESIGN.md`. Under `src/`, `domain/` contains pure
 business rules, `store/` owns the Zustand-backed mock backend,

@@ -32,7 +32,7 @@ const lines = [
   '',
   `${live.length} live items (retired ones left out), then the open questions. Each line: ID, type, status, title: first sentence.`,
   '`related:` lists relations stored on that card; `links:` the records its text already links to or mentions.',
-  'Files: docs/discovery-reference/Updated Requirements/catalogue/requirements/<ID>.md and questions/<ID>.md.',
+  'Files: requirements-board/requirements/stories/<ID>.md and questions/<ID>.md.',
   '',
 ]
 for (const it of live) {

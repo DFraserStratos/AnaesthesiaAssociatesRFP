@@ -14,12 +14,12 @@ Before doing anything else, read these in order:
    Then read these entries in docs/prototype-build/catch-up/:
    - epics/EP-03.md (FT-03.5, US-03.5.1), epics/EP-04.md (US-04.2.2) and epics/EP-05.md (FT-05.2, US-05.2.6, FT-05.4, US-05.4.1);
    - DM-14 and DM-46 in analysis/domain-model-delta.md, and RV-11 and RV-24 in analysis/reverse-check.md.
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/US-04.2.2.md (rewritten 2026-10-02, now Verify), US-05.2.6.md (renamed "Contract defined rate"), FT-05.2.md, FT-03.5.md, US-03.5.1.md, FT-05.4.md and US-05.4.1.md;
    - for context, requirements/US-05.2.1.md, US-05.2.5.md, US-03.3.6.md (the UNIT x RATE line, Phase 39b's), US-04.4.2.md, US-03.5.2.md, US-05.4.2.md, US-04.3.5.md and FT-07.2.md;
    - questions/OQ-89.md (open: is the Contract defined rate the agreed contract rate, and does it price the whole Procedure), OQ-62.md (answered: base units in each procedure's default RVG Contracts) and OQ-16.md;
    - notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md points #17, #19, #20 and #55.
-   Also read these parts of docs/discovery-reference/Updated Requirements/domain-model.md:
+   Also read these parts of requirements-board/requirements/domain-model.md:
    - the Contract table's pricingBasis (it still lists RATE_TIME), baseUnits / baseUnitOverrides and allowsAnaesthetistAdjustment rows;
    - the "Procedure billing context" rows anaesthetistAdjustment and officeOverride;
    - section 3, "Calculation rules".
@@ -39,7 +39,7 @@ Before doing anything else, read these in order:
 8. requirements-board/capture/ATLAS.md: the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on.
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md" and read it for the covered IDs, US-05.2.1, US-03.3.6, US-03.5.2, US-05.4.2, OQ-89, OQ-62 and OQ-16;
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> and read it for the covered IDs, US-05.2.1, US-03.3.6, US-03.5.2, US-05.4.2, OQ-89, OQ-62 and OQ-16;
 - adjust the work items if anything changed, and drop and log anything now Retired or Future;
 - OQ-89: if still open, build its recommendation (the Contract defined rate is the agreed contract rate per unit, one pricing basis that prices the whole Procedure) with the provisional label in one place; if answered, follow the doc's branch for the answer and drop the label;
 - OQ-62 is answered (D12): base units come from 19a's default RVG Contracts through its resolver; build no base-unit work here;

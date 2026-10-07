@@ -11,7 +11,7 @@ import path from 'node:path'
 
 const ROOT = process.cwd()
 const CU = path.join(ROOT, 'docs/prototype-build/catch-up')
-const REQ = path.join(ROOT, 'docs/discovery-reference/Updated Requirements/catalogue/requirements')
+const REQ = path.join(ROOT, 'requirements-board/requirements/stories')
 const RECIPES = path.join(ROOT, 'requirements-board/capture/recipes')
 const SECTION = '## Catalogue screenshots'
 const argv = process.argv.slice(2)

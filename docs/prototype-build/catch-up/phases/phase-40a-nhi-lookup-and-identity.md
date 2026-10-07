@@ -1,21 +1,21 @@
 # Phase 40a · NHI lookup and identity standards
 
 **Requirements covered:**
-[FT-14.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-14.4.md) NZ identity standards (Proposed; the NHI and HPI CPN parts, changed at `3d3a18c`: "HPI number" became **HPI CPN**) ·
-[US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed; changed at `3d3a18c`: the HPI CPN wording, and a new note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day).
+[FT-14.4](../../../../requirements-board/requirements/stories/FT-14.4.md) NZ identity standards (Proposed; the NHI and HPI CPN parts, changed at `3d3a18c`: "HPI number" became **HPI CPN**) ·
+[US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed; changed at `3d3a18c`: the HPI CPN wording, and a new note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day).
 Treated here without closing it: [DM-30](../analysis/domain-model-delta.md#dm-30) (its sentence "The
 NHI can be refreshed from the central register" only; the rest of DM-30 is Phase 40's).
 Read alongside (not closed here):
-[US-11.1.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.2.md) (dual-format NHI validation; its testing note puts "NHI lookups via the Hub" in the dual-format regression set; the validators screen stays where Phase 34 put it),
-[US-11.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.1.md) (ethnicity coded to NZHIS Level 4: Phase 40's),
-[US-11.1.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.5.md) (the missing-NHI problem list, the reason a solid NHI matters),
-[US-12.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-12.1.4.md) (the anaesthetist's HPI CPN, Phase 26),
-[US-13.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17),
-[OQ-52](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-52.md) (Answered 2026-10-01: one identifier, called the HPI CPN),
-[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (Answered: no PII and no NHI in Xero, only a unique ID),
-[OQ-49](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-49.md) (Open, owner decision **D11**; context only, nothing here changes it),
+[US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (dual-format NHI validation; its testing note puts "NHI lookups via the Hub" in the dual-format regression set; the validators screen stays where Phase 34 put it),
+[US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) (ethnicity coded to NZHIS Level 4: Phase 40's),
+[US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) (the missing-NHI problem list, the reason a solid NHI matters),
+[US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) (the anaesthetist's HPI CPN, Phase 26),
+[US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17),
+[OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (Answered 2026-10-01: one identifier, called the HPI CPN),
+[OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (Answered: no PII and no NHI in Xero, only a unique ID),
+[OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (Open, owner decision **D11**; context only, nothing here changes it),
 and points 23 and 26 of
-[the 2026-10-01 meeting note](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md)
+[the 2026-10-01 meeting note](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md)
 (the register refresh and the twice-daily hospital cadence; the HPI CPN naming).
 No open question is linked to either covered item.
 **Depends on:** 26 (the anaesthetist profile: `hpiId` labelled "HPI CPN", office-edited with 17's
@@ -74,7 +74,7 @@ external system, so it is built from the seed by a pure function and never persi
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,OQ-52,OQ-30,OQ-49
    ```
 
    Read the hunks for FT-14.4, US-14.4.1, US-11.1.2, US-11.1.1, US-11.1.5, US-12.1.4, US-13.6.2,
@@ -582,7 +582,7 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-14.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · nhi-lookup (web), nhi-lookup (mobile): Add a card, Enter manually, NHI CQY9304, Look up | captured as a simulation (the Hub is a badged stand-in over a synthetic register; keep the real-Hub gap in the story's own words, not the recipe). Keep both `nhi-lookup` shots (web `/web/lists/L-34821-2026-07-21-PM`, mobile `/mobile/lists/L-34821-2026-07-21-PM`) and give each states: `invalid` (type ZAA0068: the check-digit reason shows, Look up disabled), `found` (ZBR4417, Look up: "Found Mereana Tipene" with the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient"; highlight the status line and note, not the whole dialog), `not-on-register` (ZBW6638) and `hub-unavailable` (run the `nhi-hub-mode` entry from `[data-shot=demo-actions]`, or the PWA Demo sheet on mobile, choose Unavailable, then Look up: warning line with Retry, amber "Hub simulated as Unavailable" badge). Add an admin shot `register-refresh` on `/admin/patients/PT0018` (Fiona Gray): the Refresh from NHI register panel with Name differs and Address "Will be added", then the "Last refreshed 21 Jul 2026, 08:00" state. Captions in the catalogue's words ("HPI CPN", "NHI register"). Drop the partial reason, or reduce it to "The Hub is simulated; no real NHI FHIR call" if the owner wants the gap kept |
+| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · nhi-lookup (web), nhi-lookup (mobile): Add a card, Enter manually, NHI CQY9304, Look up | captured as a simulation (the Hub is a badged stand-in over a synthetic register; keep the real-Hub gap in the story's own words, not the recipe). Keep both `nhi-lookup` shots (web `/web/lists/L-34821-2026-07-21-PM`, mobile `/mobile/lists/L-34821-2026-07-21-PM`) and give each states: `invalid` (type ZAA0068: the check-digit reason shows, Look up disabled), `found` (ZBR4417, Look up: "Found Mereana Tipene" with the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient"; highlight the status line and note, not the whole dialog), `not-on-register` (ZBW6638) and `hub-unavailable` (run the `nhi-hub-mode` entry from `[data-shot=demo-actions]`, or the PWA Demo sheet on mobile, choose Unavailable, then Look up: warning line with Retry, amber "Hub simulated as Unavailable" badge). Add an admin shot `register-refresh` on `/admin/patients/PT0018` (Fiona Gray): the Refresh from NHI register panel with Name differs and Address "Will be added", then the "Last refreshed 21 Jul 2026, 08:00" state. Captions in the catalogue's words ("HPI CPN", "NHI register"). Drop the partial reason, or reduce it to "The Hub is simulated; no real NHI FHIR call" if the owner wants the gap kept |
 
 **Recipes this phase breaks.**
 

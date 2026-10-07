@@ -6,12 +6,12 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the owner decisions table (D2, D4, D17 and D23 are answered and shape this phase), the "Confirm before building" row for 21 (OQ-78), the sequencing rules (20 leaves "payer is the Contract holder" and the billablePartyId guardian override as the interim this phase replaces; 15a's warning routine hosts the child rule), the Demo triggers and PWA parity sections, and the "Catalogue screenshots" rule.
 2. docs/prototype-build/catch-up/phases/phase-21-billable-party-and-required-inputs.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic", then the EP-03, EP-04, EP-07, EP-11 and EP-13 tables. For full evidence, see docs/prototype-build/catch-up/epics/EP-11.md, EP-04.md and EP-07.md, the DM-11, DM-12, DM-16, DM-28 and DM-37 sections of docs/prototype-build/catch-up/analysis/domain-model-delta.md, and RV-29 in docs/prototype-build/catch-up/analysis/reverse-check.md.
-4. The covered catalogue files in "docs/discovery-reference/Updated Requirements/catalogue/requirements/":
+4. The covered catalogue files in "requirements-board/requirements/stories/":
    - FT-11.2, US-11.2.1, US-11.2.2, US-11.4.2, US-04.2.7, US-04.3.7, FT-03.6, US-03.6.1, US-11.2.3, US-11.2.4 and US-07.2.2;
    - their context: US-04.2.1, US-04.3.3, US-04.4.2, US-03.4.1, US-11.4.1, US-08.2.1 (already Matches), US-08.4.2, FT-13.7 and US-13.7.2;
    - questions/OQ-54.md, OQ-55.md, OQ-67.md and OQ-73.md (answered) and OQ-78.md (open);
-   - notes/2026-10-02-aa-meeting-with-greg.md #4, #8 and #41, and changes/2026-10-02-requirements-update.md (one level up, in "docs/discovery-reference/Updated Requirements/changes/");
-   - the Booking, Contract, "Procedure billing context", "Selection", "Patient and billable party" and Warnings sections of "docs/discovery-reference/Updated Requirements/domain-model.md".
+   - notes/2026-10-02-aa-meeting-with-greg.md #4, #8 and #41, and changes/2026-10-02-requirements-update.md (one level up, in "requirements-board/requirements/changes/");
+   - the Booking, Contract, "Procedure billing context", "Selection", "Patient and billable party" and Warnings sections of "requirements-board/requirements/domain-model.md".
 5. docs/design/Admin Review.dc.html and docs/design/Mobile App.dc.html, which are the AUTHORITATIVE layout reference (convention 17). Use docs/design/Design Language.dc.html for tokens.
 6. requirements-board/capture/ATLAS.md: the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on; and the "Catalogue screenshots" rule in ROADMAP.md.
 7. docs/prototype-build/PROGRESS.md:
@@ -21,7 +21,7 @@ Before doing anything else, read these in order:
 8. docs/prototype-build/catch-up/analysis/prototype-map-domain.md, prototype-map-shared.md, prototype-map-admin.md, prototype-map-store-seed.md and prototype-map-shell-demo-pwa.md, for the code entry points. Phase 15 renamed Card to Booking, so use the renamed files.
 
 Then do the drift check in the phase doc:
-- git diff 3d3a18c against the catalogue and domain-model.md for the covered IDs, the context items, OQ-54, OQ-55, OQ-67, OQ-73 and OQ-78;
+- node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> against the catalogue and domain-model.md for the covered IDs, the context items, OQ-54, OQ-55, OQ-67, OQ-73 and OQ-78;
 - OQ-67 is answered (D17): build it. The Contract always defines the billable party, with no per-Booking or per-Procedure override, and a default or patient-direct Contract asks for the payer's name and email. Carry no "Provisional (OQ-67)" caption. D4 is answered, so the child case is a mild warning, never a block;
 - OQ-78 is open: build its recommendation (the catalogue's model, default Contracts that ask for the payer), add no second provisional caption (Phase 20 owns the one), and keep the payer capture one store action and one predicate. If OQ-78 has been answered, stop and record it before building;
 - note what 15a, 18, 19a and 20 actually left;

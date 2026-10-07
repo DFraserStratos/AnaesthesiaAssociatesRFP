@@ -1,43 +1,43 @@
 # Phase 39 · Credit notes, credit-and-rebill and the combined split
 
 **Requirements covered:**
-[FT-08.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-08.6.md) Billing after AUTHORISED (Verify; this phase closes it: the credit half, after 38b built the events and the additional invoice; the anaesthetist's post-op event route is FT-03.7, Phase 39b) ·
-[US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md) Credit note and re-issue (Verify) ·
-[US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md) Split a combined Procedure into additional invoices (Verify; rewritten 2026-10-02: a split after invoicing is a credit, then one additional invoice per component) ·
-[US-08.6.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.5.md) Credit note option on additional invoices (Verify; new 2026-10-02) ·
-[US-08.6.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.6.md) Start a rebill from a copy of the original lines (Proposed; new 2026-10-02) ·
-[US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md) Audit trail of all actions (Confirmed; Partial only because credit notes are not audited, as none exist) ·
+[FT-08.6](../../../../requirements-board/requirements/stories/FT-08.6.md) Billing after AUTHORISED (Verify; this phase closes it: the credit half, after 38b built the events and the additional invoice; the anaesthetist's post-op event route is FT-03.7, Phase 39b) ·
+[US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue (Verify) ·
+[US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices (Verify; rewritten 2026-10-02: a split after invoicing is a credit, then one additional invoice per component) ·
+[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices (Verify; new 2026-10-02) ·
+[US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines (Proposed; new 2026-10-02) ·
+[US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of all actions (Confirmed; Partial only because credit notes are not audited, as none exist) ·
 [DM-24](../analysis/domain-model-delta.md#dm-24) A wrong invoice is credited in full, then rebilled (credit note to any party, payable reversal, new invoice), recorded as events ·
 [DM-45](../analysis/domain-model-delta.md#dm-45) Audit covers invoices and credit notes, not disbursements, payments or receipts.
 **Moved to Phase 38b** (no longer built here): DM-17 (the event element and its review step), DM-18,
 RV-10, US-08.6.1 and US-08.6.3 (the free-form admin additional invoice and the removal of the post-op
 addendum Booking). This phase builds on all of them.
 Read alongside (not closed here):
-[US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md) and
-[US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) (the additional invoice: Phase 38b),
-[FT-03.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.7.md) and
-[US-03.7.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.3.md) (events on a Procedure and the Procedure's events list: 38b; a credit is an event kind),
-[US-07.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.3.2.md) (the Booking is immutable after AUTHORISED; nothing here may change it),
-[US-08.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.3.1.md) (the receivable and payable pair; Phase 36 made it the ledger's record),
-[US-08.4.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.4.3.md) (unique invoice numbers, the `-P` payable suffix),
-[US-09.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.1.md) (the Xero ACCREC and ACCPAY pair the credit reverses),
-[US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md) (combination Contracts; Phase 23 built them; its note now points at this phase's split),
-[US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) (negative invoices netted in the payment run, now Confirmed: Phase 39a nets what this phase raises),
+[US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) and
+[US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) (the additional invoice: Phase 38b),
+[FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) and
+[US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md) (events on a Procedure and the Procedure's events list: 38b; a credit is an event kind),
+[US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md) (the Booking is immutable after AUTHORISED; nothing here may change it),
+[US-08.3.1](../../../../requirements-board/requirements/stories/US-08.3.1.md) (the receivable and payable pair; Phase 36 made it the ledger's record),
+[US-08.4.3](../../../../requirements-board/requirements/stories/US-08.4.3.md) (unique invoice numbers, the `-P` payable suffix),
+[US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) (the Xero ACCREC and ACCPAY pair the credit reverses),
+[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) (combination Contracts; Phase 23 built them; its note now points at this phase's split),
+[US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) (negative invoices netted in the payment run, now Confirmed: Phase 39a nets what this phase raises),
 [DM-25](../analysis/domain-model-delta.md#dm-25) (negative invoice and remittance: 39a),
-[FT-13.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-13.5.md) (roles and audit; Matches, kept on built Phase 14),
-[US-06.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-06.4.1.md) (the balance invoice after a prepayment is NOT an additional invoice; Phase 41),
-[OQ-19](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-19.md) (Answered: an AA-side error is credited and reissued),
-[OQ-28](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-28.md) (Answered: the credit policy),
-[OQ-42](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-42.md) (Answered: credit note plus negative invoice),
-[OQ-45](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-45.md) (Answered, D10: free form),
-[OQ-53](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-53.md) (Answered: a combination is a Contract under each parent procedure),
-[OQ-63](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-63.md) (Answered, D13: additional invoices and credits are events, one review step),
-[OQ-71](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-71.md) (Answered, D21: a negative with no later payment is handled outside the system),
-[OQ-72](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-72.md) (Answered, D22: description, any billable party, a credit note option then new additional invoices),
-[OQ-77](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-77.md) (Open, with a recommendation: the rebill total, whether the credit reverses the payable, a split before the invoice is sent),
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (Open: what the AA fee's per-BCTI charge counts), and the
+[FT-13.5](../../../../requirements-board/requirements/stories/FT-13.5.md) (roles and audit; Matches, kept on built Phase 14),
+[US-06.4.1](../../../../requirements-board/requirements/stories/US-06.4.1.md) (the balance invoice after a prepayment is NOT an additional invoice; Phase 41),
+[OQ-19](../../../../requirements-board/requirements/questions/OQ-19.md) (Answered: an AA-side error is credited and reissued),
+[OQ-28](../../../../requirements-board/requirements/questions/OQ-28.md) (Answered: the credit policy),
+[OQ-42](../../../../requirements-board/requirements/questions/OQ-42.md) (Answered: credit note plus negative invoice),
+[OQ-45](../../../../requirements-board/requirements/questions/OQ-45.md) (Answered, D10: free form),
+[OQ-53](../../../../requirements-board/requirements/questions/OQ-53.md) (Answered: a combination is a Contract under each parent procedure),
+[OQ-63](../../../../requirements-board/requirements/questions/OQ-63.md) (Answered, D13: additional invoices and credits are events, one review step),
+[OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (Answered, D21: a negative with no later payment is handled outside the system),
+[OQ-72](../../../../requirements-board/requirements/questions/OQ-72.md) (Answered, D22: description, any billable party, a credit note option then new additional invoices),
+[OQ-77](../../../../requirements-board/requirements/questions/OQ-77.md) (Open, with a recommendation: the rebill total, whether the credit reverses the payable, a split before the invoice is sent),
+[OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (Open: what the AA fee's per-BCTI charge counts), and the
 "What changed since the RFP" rows, the Booking section and the "Internal ledger" section of
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
+[domain-model.md](../../../../requirements-board/requirements/domain-model.md).
 **Depends on:** 23 (combination Contracts: `Contract.isCombination`, `combinationParts`, and the
 seeded "Southern Cross cosmetic combination" Contract no Booking uses yet) and 38b (the event element
 on a Procedure, its one standard review step and next-run invoicing, the Procedure's events list in
@@ -109,7 +109,7 @@ No seeded figure moves. FT-08.6 closes here.
 1. Run the drift check against the plan's catalogue snapshot:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-63,OQ-71,OQ-72,OQ-77
    ```
 
    Read the diff for FT-08.6, US-08.6.2, US-08.6.4, US-08.6.5, US-08.6.6, US-13.5.2, the context
@@ -863,13 +863,13 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-08.6.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.1.md) Additional invoice for late billing lines | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] (the retired addendum) | Phase 38b's: it rebuilds these shots for the additional invoice. Check only: the recipe still passes with the new rail card and the Credit note option beside Create additional invoice; fix by text, not position |
-| [US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md) Credit note and re-issue | absent | captured. Replace the absent reason. Admin `/admin/invoices/<id>` for a live invoice: shot `credit-rebill`, `rail` state highlights `[data-shot=credit-rebill-button]`, `sheet` state fills `[data-shot=credit-sheet]` (reason chip "Wrong PO or reference", the copied lines, the trail preview), `credit-note` state (after Approve for billing in `/admin/review?tab=events` and the `run-next-billing-run` bar action) opens `/admin/credit-notes/<id>` highlighting `[data-shot=negative-invoice-card]`, `credited` state shows the original's `[data-shot=invoice-credited-banner]`. Use the `stage-refund-after-payout` bar action to show the paid-out variant with an amount to net. Simulator: `/demo/xero/invoices/<accRecId>` shot `xero-credit-note` highlighting `[data-shot=xero-credit-note]`. Captions in the catalogue's words: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist" |
-| [US-08.6.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub, no shots (38b captures it) | Phase 38b's. Check only: its shots still pass with the Credit note option added to the additional-invoice area |
-| [US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Replace the stub. Run the `stage-combined-procedure` bar action on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards and the note "Components need not add up to the bundle price"; `result` state (after review and the run) shows one component invoice linking back to the original and the Procedure. Caption "A split after invoicing credits the original, then raises one additional invoice per component". Every acceptance criterion is met on the post-paid combination, so the recipe is `captured`; the prepaid-combination split (handed to 41) is a PROGRESS known gap, not a caption or a reason |
-| [US-08.6.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe. Admin Booking detail for Sarah Mitchell (after 38b's `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside 38b's Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another billable party picked; `event` state highlights `[data-shot=procedure-credit-event]` in the Procedure's events list. Captions: "The additional invoice function has a credit note option", "The credit can go to any party", "The credit is recorded as an event on the Procedure" |
-| [US-08.6.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | captured. New recipe. Admin `/admin/invoices/<id>` for Sarah Mitchell's original: shot `rebill-from-copy`, one state that presses `[data-shot=credit-rebill-button]` and highlights the prefilled card in `[data-shot=credit-sheet]` holding the original's lines. Caption "After a credit note, the rebill starts from a copy of the original's lines" |
-| [US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md) Audit trail of all actions | captured · audit-viewer, sign-in-attempts | captured, one shot added. Keep `audit-viewer` and `sign-in-attempts` unchanged (re-check they pass). Add shot `credit-note-audit`: the recipe's own steps make one credit first (38b's `stage-post-op` trigger, Credit in full and rebill on Sarah Mitchell's original, Approve for billing in `/admin/review?tab=events` and the `run-next-billing-run` bar action), then open `/admin/audit`, select the entity filter `creditNote`, highlight the credit note rows. Caption "Credit notes are audited, every step with who, role, source and what changed" |
+| [US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) Additional invoice for late billing lines | partial · web-post-op-event, mobile-post-op-event, admin-post-op-addendum[locked,added] (the retired addendum) | Phase 38b's: it rebuilds these shots for the additional invoice. Check only: the recipe still passes with the new rail card and the Credit note option beside Create additional invoice; fix by text, not position |
+| [US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md) Credit note and re-issue | absent | captured. Replace the absent reason. Admin `/admin/invoices/<id>` for a live invoice: shot `credit-rebill`, `rail` state highlights `[data-shot=credit-rebill-button]`, `sheet` state fills `[data-shot=credit-sheet]` (reason chip "Wrong PO or reference", the copied lines, the trail preview), `credit-note` state (after Approve for billing in `/admin/review?tab=events` and the `run-next-billing-run` bar action) opens `/admin/credit-notes/<id>` highlighting `[data-shot=negative-invoice-card]`, `credited` state shows the original's `[data-shot=invoice-credited-banner]`. Use the `stage-refund-after-payout` bar action to show the paid-out variant with an amount to net. Simulator: `/demo/xero/invoices/<accRecId>` shot `xero-credit-note` highlighting `[data-shot=xero-credit-note]`. Captions in the catalogue's words: "Credit in full, then rebill", "The payable is reversed by a negative invoice to the anaesthetist" |
+| [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md) Create an additional invoice on a Procedure | absent · stub, no shots (38b captures it) | Phase 38b's. Check only: its shots still pass with the Credit note option added to the additional-invoice area |
+| [US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md) Split a combined Procedure into additional invoices | absent · stub, no shots | captured. Replace the stub. Run the `stage-combined-procedure` bar action on Admin · Invoices, open its invoice, shot `split-combined`: `sheet` state highlights `[data-shot=split-combined-sheet]` with three component cards and the note "Components need not add up to the bundle price"; `result` state (after review and the run) shows one component invoice linking back to the original and the Procedure. Caption "A split after invoicing credits the original, then raises one additional invoice per component". Every acceptance criterion is met on the post-paid combination, so the recipe is `captured`; the prepaid-combination split (handed to 41) is a PROGRESS known gap, not a caption or a reason |
+| [US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md) Credit note option on additional invoices | none (create it) | captured. New recipe. Admin Booking detail for Sarah Mitchell (after 38b's `stage-post-op`): shot `credit-note-option`, `option` state highlights `[data-shot=credit-note-button]` beside 38b's Create additional invoice; `party` state fills `[data-shot=credit-sheet]` with another billable party picked; `event` state highlights `[data-shot=procedure-credit-event]` in the Procedure's events list. Captions: "The additional invoice function has a credit note option", "The credit can go to any party", "The credit is recorded as an event on the Procedure" |
+| [US-08.6.6](../../../../requirements-board/requirements/stories/US-08.6.6.md) Start a rebill from a copy of the original lines | none (create it) | captured. New recipe. Admin `/admin/invoices/<id>` for Sarah Mitchell's original: shot `rebill-from-copy`, one state that presses `[data-shot=credit-rebill-button]` and highlights the prefilled card in `[data-shot=credit-sheet]` holding the original's lines. Caption "After a credit note, the rebill starts from a copy of the original's lines" |
+| [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md) Audit trail of all actions | captured · audit-viewer, sign-in-attempts | captured, one shot added. Keep `audit-viewer` and `sign-in-attempts` unchanged (re-check they pass). Add shot `credit-note-audit`: the recipe's own steps make one credit first (38b's `stage-post-op` trigger, Credit in full and rebill on Sarah Mitchell's original, Approve for billing in `/admin/review?tab=events` and the `run-next-billing-run` bar action), then open `/admin/audit`, select the entity filter `creditNote`, highlight the credit note rows. Caption "Credit notes are audited, every step with who, role, source and what changed" |
 
 **Recipes this phase breaks.** The capture recipes found at plan time:
 - Any recipe that opens the admin invoice document or the Invoices table by column position or rail

@@ -1,38 +1,38 @@
 # Phase 39a · Payment runs: BCTI approval, netting and remittance
 
 **Requirements covered:**
-[US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) Negative invoices netted in the payment run (Confirmed) ·
-[US-10.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.6.md) Approve the period's BCTIs for payment (Verify) ·
+[US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run (Confirmed) ·
+[US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment (Verify) ·
 [DM-25](../analysis/domain-model-delta.md#dm-25) Negative invoice to the anaesthetist, netted in the payment run and shown on a remittance advice; BCTIs approved per period.
 Read alongside (not closed here):
-[FT-10.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-10.2.md) and
-[US-10.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.1.md)
+[FT-10.2](../../../../requirements-board/requirements/stories/FT-10.2.md) and
+[US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md)
 (a payable is released when its receivable is paid; Phases 16 and 36 built it, and this phase's
 approval sits after it),
-[US-09.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.1.4.md)
+[US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md)
 (the BCTI is the ACCPAY; the catalogue says one per procedure, the plan builds one per receivable
 invoice, provisional, under the roadmap's "BCTI granularity" rule),
-[US-08.6.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.2.md)
+[US-08.6.2](../../../../requirements-board/requirements/stories/US-08.6.2.md)
 (credit in full and rebill; Phase 39 raises the negative invoice this phase nets),
-[US-10.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.3.1.md)
+[US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md)
 (the AA fee counts BCTIs; nothing here changes that count),
-[US-10.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.4.md)
+[US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md)
 (bulk hospital remittance stays in Xero: a different "remittance", Phase 37's),
-[OQ-47](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-47.md) (payment day,
+[OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md) (payment day,
 cycle and who approves: open),
-[OQ-71](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-71.md) (**answered**
+[OQ-71](../../../../requirements-board/requirements/questions/OQ-71.md) (**answered**
 2026-10-02, owner decision D21: a negative invoice with no later payment to net against is handled
 outside the system; AA settles it with the anaesthetist, so nothing is built for it),
-[OQ-42](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-42.md) (answered:
+[OQ-42](../../../../requirements-board/requirements/questions/OQ-42.md) (answered:
 the negative invoice is netted in the next payment run),
-[OQ-60](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-60.md) (still open on
+[OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (still open on
 the board; its 2026-10-02 meeting update gives Greg's view that the AA fee never nets against
 payables, "under trust law it mustn't", which is what is built),
-[OQ-29](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-29.md) (GST agency
+[OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md) (GST agency
 treatment and the BCTI's wording, which the roadmap ties to BCTI granularity), the 2026-10-02 meeting
-note `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` #12 (OQ-71's answer), and the "Internal
+note `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #12 (OQ-71's answer), and the "Internal
 ledger" section and the "Negative invoice" and "Remittance advice" glossary entries of
-[domain-model.md](../../../discovery-reference/Updated%20Requirements/domain-model.md).
+[domain-model.md](../../../../requirements-board/requirements/domain-model.md).
 **Depends on:** 37 (the payables run is paid in Xero and the engine records each disbursement when
 Xero reports the bill paid, through `recordDisbursement`, the webhook, the poll and the outage queue)
 and 39 (credit in full and rebill, which raises the **negative invoice** to an anaesthetist already
@@ -94,7 +94,7 @@ are grouped into backdrop runs, so `PERSIST_VERSION` is bumped. No seeded money 
 1. Run the drift check against the plan's catalogue snapshot:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-10.2.5,US-10.2.6,FT-10.2,US-10.2.1,US-09.1.4,US-08.6.2,US-10.3.1,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,FT-10.3
    ```
 
    Read the hunks (if any) for US-10.2.5, US-10.2.6, FT-10.2, US-10.2.1, US-09.1.4, US-08.6.2,
@@ -205,9 +205,9 @@ are grouped into backdrop runs, so `PERSIST_VERSION` is bumped. No seeded money 
 - `docs/design/Web Dashboard.dc.html`: the web panel and table anatomy for the new Accounts sub-tab.
 
 **Catalogue items:** the covered and context files listed above, the 2026-10-01 meeting note
-`catalogue/notes/2026-10-01-aa-meeting-with-greg.md` points #18 (refund as a credit note plus a
+`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` points #18 (refund as a credit note plus a
 negative invoice, netted, the remittance advice), #48 (the payment cycle), #63 (the no-later-payment
-recovery question, now OQ-71) and #66 (BCTIs approved for payment), and the 2026-10-02 note `catalogue/notes/2026-10-02-aa-meeting-with-greg.md`
+recovery question, now OQ-71) and #66 (BCTIs approved for payment), and the 2026-10-02 note `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md`
 #12 (OQ-71: "an extreme edge case... they just settle that up with the anaesthetist") and #1 (OQ-60:
 the fee never nets).
 
@@ -757,8 +757,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-10.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Stage it with the `stage-payment-period` bar action, choice "19 BCTIs and a credit after payout", on `/admin/billing`, then approve and run. Admin shot `remittance-advice` at `/admin/billing/payables-runs/<runId>/remittance/<anaesthetistId>`, highlight `[data-shot=remittance-advice]` (the 19 BCTIs, the negative invoice netted as "-$X.XX", the net paid). Admin shot `payables-run-detail`, highlight `[data-shot=payables-run-detail]`. Web shots at `/web/accounts/remittances`: `web-remittances` (the table with signed netted amounts) and `web-remittance-sheet` (open a row, highlight `[data-shot=web-remittance-sheet]`). No shot of the no-later-payment case (outside the system, OQ-71). Mobile Balances is unchanged (a built default, logged for the owner) and has no shot. Captions in the catalogue's words: "The payment to the anaesthetist is the net total", "The remittance advice shows the negative invoice netted against the positive ones" |
-| [US-10.2.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Admin `/admin/billing` after `stage-payment-period` ("19 BCTIs"): shot `approve-period` with `before` state highlighting `[data-shot=payables-run-draft]` and the disabled "Run payables in Xero" ("Nothing approved to pay"), `approved` state after clicking "Approve period's BCTIs" highlighting `[data-shot=payables-runs]` with the run's Approved pill, and `paid` state after the run. Caption: "BCTIs not yet approved are not in the payment run" |
+| [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Stage it with the `stage-payment-period` bar action, choice "19 BCTIs and a credit after payout", on `/admin/billing`, then approve and run. Admin shot `remittance-advice` at `/admin/billing/payables-runs/<runId>/remittance/<anaesthetistId>`, highlight `[data-shot=remittance-advice]` (the 19 BCTIs, the negative invoice netted as "-$X.XX", the net paid). Admin shot `payables-run-detail`, highlight `[data-shot=payables-run-detail]`. Web shots at `/web/accounts/remittances`: `web-remittances` (the table with signed netted amounts) and `web-remittance-sheet` (open a row, highlight `[data-shot=web-remittance-sheet]`). No shot of the no-later-payment case (outside the system, OQ-71). Mobile Balances is unchanged (a built default, logged for the owner) and has no shot. Captions in the catalogue's words: "The payment to the anaesthetist is the net total", "The remittance advice shows the negative invoice netted against the positive ones" |
+| [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this"), no shots | captured. Replace the stub. Admin `/admin/billing` after `stage-payment-period` ("19 BCTIs"): shot `approve-period` with `before` state highlighting `[data-shot=payables-run-draft]` and the disabled "Run payables in Xero" ("Nothing approved to pay"), `approved` state after clicking "Approve period's BCTIs" highlighting `[data-shot=payables-runs]` with the run's Approved pill, and `paid` state after the run. Caption: "BCTIs not yet approved are not in the payment run" |
 
 **Recipes this phase breaks.** Work item 7 replaces the Billing monitor's payables panel with the payment period panel (approve, then run). Found at plan time, all keyed on `[data-shot=billing-payables-run]` (kept on the run button's container) and the button name `Run payables`:
 - `US-10.2.1` shot `payables-run` (`/admin/billing`, highlight `[data-shot=billing-payables-run]`) and its `paid` state in the simulator; the caption "Authorised payables waiting for the payables run" becomes "Released payables wait for the period's approval" with the highlight on `[data-shot=payables-run-draft]`.

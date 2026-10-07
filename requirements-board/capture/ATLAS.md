@@ -74,7 +74,7 @@ Write one file per catalogue item, at `requirements-board/capture/recipes/<ID>.j
 
 **Files**
 
-- Images are written to `catalogue/assets/<ID>/<app>-<name>[-<state>].png`.
+- Images are written to `requirements/assets/<ID>/<app>-<name>[-<state>].png`.
 - The item's `images` frontmatter is rewritten with them, in recipe order.
 - Images added to the item by hand are kept.
 

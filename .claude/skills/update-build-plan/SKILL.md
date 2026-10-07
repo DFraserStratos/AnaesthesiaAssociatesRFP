@@ -42,11 +42,14 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    has uncommitted catalogue changes, say so and ask whether they should be committed first: the plan
    should match a real commit.
 2. Run `node CU/tools/plan-state.mjs --to <sha>`. It gives the baseline, changed items (with current
-   status), changed questions, notes added, `domainModelChanged`, `prototypeCodeChanged`, `builtPhases` and
-   the current coverage. If the baseline equals the target, or nothing in the catalogue changed, stop and
-   say so.
-3. Read the change logs added in that range (`git diff --name-only <baseline> <sha> --
-   "docs/discovery-reference/Updated Requirements/changes"`) and skim the diff. Write a `changeNotes`
+   status), changed questions, notes added, change logs added (`changeLogsAdded`), `domainModelChanged`,
+   `prototypeCodeChanged`, `builtPhases` and the current coverage. It reads the catalogue in every place
+   it has lived (`tools/req-changes.mjs`: `requirements-board/requirements/` now, `docs/discovery-reference/
+   Updated Requirements/` before 2026-10-08) with rename detection, so a moved file counts only if its
+   content changed: never diff the catalogue by hand with a plain `git diff`. If the baseline equals the
+   target, or nothing in the catalogue changed, stop and say so.
+3. Read the change logs in `changeLogsAdded` and skim the diff (`node CU/tools/plan-state.mjs --to <sha>
+   --diff <IDs>` for the items you need). Write a `changeNotes`
    summary of about 10 lines: the questions answered (with the gist of each), and items added, changed,
    retired or moved, with the change-log paths.
 4. Choose the mode:
@@ -65,8 +68,8 @@ Paths below are relative to the repo root (`git rev-parse --show-toplevel`); `CU
    Retired and Future items need no grading: they drop out of the plan on assembly.
    Leave out items whose only change is their `artifacts:` field (a link to a diagram, transcript or
    document): artifacts are evidence the Requirements Board shows, not requirements, and the
-   prototype has nothing to build for them. Changes under `catalogue/artifacts/` and `catalogue/notes/`
-   alone never call for re-grading either.
+   prototype has nothing to build for them. Changes under `requirements-board/requirements/artifacts/`
+   and `requirements-board/requirements/notes/` alone never call for re-grading either.
 2. Build the epics argument: `node CU/tools/build-args.mjs <IDs...>`.
 3. Run `Workflow({ scriptPath: "<repo>/CU/tools/workflow-gap-analysis.js", args })` with these args:
    - `root`: the repo root;
@@ -140,7 +143,7 @@ The screenshots on catalogue stories come from the Requirements Board's capture 
 (`requirements-board/scripts/capture.ts`). It works from one recipe per item
 (`requirements-board/capture/recipes/<ID>.json`; the format, routes, seed ids and hooks are in
 `requirements-board/capture/ATLAS.md`). `npm run capture` in `requirements-board/` drives the prototype
-(5173) and the PWA (5174) and writes `catalogue/assets/<ID>/<app>-<name>[-<state>].png`. It links the
+(5173) and the PWA (5174) and writes `requirements-board/requirements/assets/<ID>/<app>-<name>[-<state>].png`. It links the
 images into each item's `images`, rewrites only the images that changed, and writes `capture/REPORT.md`.
 
 The standing rule is "Catalogue screenshots" in `CU/ROADMAP.md` (PROGRESS convention 19). Keep it in

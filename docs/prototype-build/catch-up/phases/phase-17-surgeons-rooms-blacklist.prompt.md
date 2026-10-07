@@ -6,11 +6,11 @@ Before doing anything else, read these in order:
 1. docs/prototype-build/catch-up/ROADMAP.md: the owner-decisions table, the phase list, the sequencing rules (17 opens the Contracts track; 31, 32 and 32a reuse this phase's blacklist helper: 31 for Draft List assignment, 32 for the anaesthetist's own-List move, 32a for their single-Booking move), the demo-trigger and demo-guide rules, the "Catalogue screenshots" rule, and the "Confirm before building" row for 17 (OQ-43).
 2. docs/prototype-build/catch-up/phases/phase-17-surgeons-rooms-blacklist.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (especially theme 11, master data and profiles, and the DM-32 line under "Structural first"), then the EP-13 and EP-01 tables. Then docs/prototype-build/catch-up/epics/EP-13.md (FT-13.6, US-13.6.1, US-13.6.2, US-13.6.3, US-13.4.1) and epics/EP-01.md (US-01.3.5), and DM-32 in docs/prototype-build/catch-up/analysis/domain-model-delta.md (re-graded: "BlacklistEntry (allow both directions)").
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/FT-13.6.md, US-13.6.1.md, US-13.6.2.md and US-01.3.5.md (all Confirmed on 2026-10-02) and US-13.6.3.md (Proposed, accepted in the room, with Greg's design view of two lists);
    - for context, requirements/US-13.4.1.md, US-01.4.5.md (now Verify), US-01.4.7.md (new, Phase 32a), US-01.6.3.md (Confirmed, Phase 31) and US-13.4.3.md (spreadsheet loads, Phase 42);
    - questions/OQ-52.md (answered: one HPI CPN) and OQ-43.md (open, with Ben; its 2026-10-02 meeting update: design for two lists, a surgeon may refuse an anaesthetist as well as the reverse; who learns of the other side's entry deferred; a possible rename to "block list").
-   Also read the "Surgeon, surgeons' room and blacklist" section of docs/discovery-reference/Updated Requirements/domain-model.md, items #19 and #26 of catalogue/notes/2026-10-01-aa-meeting-with-greg.md, and items #13, #23, #25, #43, #44, #66 and #87 of catalogue/notes/2026-10-02-aa-requirements-review-with-greg.md.
+   Also read the "Surgeon, surgeons' room and blacklist" section of requirements-board/requirements/domain-model.md, items #19 and #26 of requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md, and items #13, #23, #25, #43, #44, #66 and #87 of requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md.
 5. docs/prototype-build/catch-up/analysis/prototype-map-admin.md, prototype-map-store-seed.md, prototype-map-domain.md and prototype-map-shared.md: the code index for the files you will change.
 6. docs/design/Design Language.dc.html (the warning tint and on-tint, pills, radii, mono identifiers) and docs/design/Admin Day.dc.html plus Admin Review.dc.html (the Admin chrome, tables, drawer and amber advisory treatment). These are the AUTHORITATIVE visual reference (convention 17). No mockup covers master data, so extend these patterns.
 7. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in docs/prototype-build/catch-up/ROADMAP.md.
@@ -21,7 +21,7 @@ Before doing anything else, read these in order:
    This phase supersedes no July ruling; it extends the advisory reading.
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c over the covered catalogue files, OQ-52, OQ-43 and domain-model.md;
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> over the covered catalogue files, OQ-52, OQ-43 and domain-model.md;
 - adjust the work items if anything changed, and drop and log anything now Retired or Future;
 - confirm OQ-52 is still answered as one HPI CPN (stop and tell me if it was reopened), and note OQ-43's status (a new name goes into the single BLACKLIST_TERM label; anything it now says about what an anaesthetist sees, or who learns of the other side's entry, goes to the PROGRESS handoff for 32 and 32a);
 - confirm Phases 14 and 15 are DONE (if either is not, stop and tell me), and use the post-15 names that landed (AddBookingFlow, onBookingCreated, stampBookingId, "Continue to add booking", the BK id prefix);

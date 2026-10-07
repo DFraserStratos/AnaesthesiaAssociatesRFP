@@ -10,7 +10,7 @@ import { FIXTURE_DIR, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
-const fileOf = (id: string) => join(FIXTURE_DIR, 'requirements', `${id}.md`)
+const fileOf = (id: string) => join(FIXTURE_DIR, 'stories', `${id}.md`)
 
 test.beforeEach(async ({ page }) => {
   writeFixture()

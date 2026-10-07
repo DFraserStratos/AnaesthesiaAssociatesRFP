@@ -72,7 +72,7 @@ workflow that is not in the source material.
 
 When documents differ, use this priority:
 
-1. [The RFP](../rfp-reference/RFP.md) is the source of truth for business needs.
+1. [The RFP](../../requirements-board/requirements/reference/RFP.md) is the source of truth for business needs.
 2. [Prototype requirements](../prototype-build/REQUIREMENTS.md) record the chosen demo readings of
    RFP ambiguities.
 3. [Prototype progress](../prototype-build/PROGRESS.md) records what is formally complete.

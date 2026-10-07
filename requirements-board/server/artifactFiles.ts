@@ -1,5 +1,5 @@
 /**
- * An artifact's file on disk: where it is (the catalogue folder, or the repository for a path
+ * An artifact's file on disk: where it is (the requirements folder, or the repository for a path
  * starting `/`), and what it holds, read once per version and cached. Feeds the catalogue check
  * (`ArtifactFacts`) and the board (`ArtifactMeta`).
  */
@@ -29,7 +29,7 @@ export const ARTIFACT_MIME: Record<string, string> = {
 
 /**
  * The absolute path of an artifact's `file`, or null when it would step outside its base: the
- * catalogue folder for a plain path, the repository for one starting `/`.
+ * requirements folder for a plain path, the repository for one starting `/`.
  */
 export function artifactPath(file: string, root: string): string | null {
   const repo = file.startsWith('/')
@@ -68,9 +68,9 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
     return { facts: { format, ok: true, bounds: null, nodeIds: mermaidNodeIds(a.source) }, meta: empty(format) }
   }
   const abs = artifactPath(a.file, root)
-  if (!abs) return fail(format, `file ${a.file} must stay inside the catalogue folder (or start with / for a path from the repository root)`)
-  if (format === 'markdown' && abs.startsWith(resolve(root, 'artifacts') + sep)) {
-    return fail(format, `file ${a.file}: a Markdown document can't live in artifacts/, where every .md is a sidecar; point at it where it lives`)
+  if (!abs) return fail(format, `file ${a.file} must stay inside the requirements folder (or start with / for a path from the repository root)`)
+  if (format === 'markdown' && dirname(abs) === resolve(root, 'artifacts')) {
+    return fail(format, `file ${a.file}: a Markdown document can't live directly in artifacts/, where every .md is a sidecar; put it in artifacts/files/`)
   }
   let stat
   try {

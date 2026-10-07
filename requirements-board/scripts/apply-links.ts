@@ -11,7 +11,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import type { Item } from '../shared/types.ts'
-import { CATALOGUE_DIR, fileExistsIn, loadCatalogue, readLayout, writeItem } from '../server/catalogueFs.ts'
+import { REQUIREMENTS_DIR, fileExistsIn, loadCatalogue, readLayout, writeItem } from '../server/catalogueFs.ts'
 import { applyProposals, type Outcome, type Proposal } from './linkProposals.ts'
 
 const dirArg = process.argv.slice(2).find((a) => !a.startsWith('--'))
@@ -28,7 +28,7 @@ const itemList = Object.values(items).map((r) => r.data)
 const questionList = Object.values(questions).map((r) => r.data)
 const { changed, outcomes } = applyProposals(itemList, questionList, proposals)
 
-const check = (list: Item[]) => checkCatalogue({ items: list, questions: questionList, fileExists: fileExistsIn(CATALOGUE_DIR), lanes: readLayout().layout.lanes })
+const check = (list: Item[]) => checkCatalogue({ items: list, questions: questionList, fileExists: fileExistsIn(REQUIREMENTS_DIR), lanes: readLayout().layout.lanes })
 const before = new Set(check(itemList).map(issueKey))
 const after = check(itemList.map((it) => changed.get(it.id) ?? it))
 const added = after.filter((i) => !before.has(issueKey(i)))

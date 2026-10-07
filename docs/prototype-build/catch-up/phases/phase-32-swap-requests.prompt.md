@@ -14,11 +14,11 @@ Before doing anything else, read these in order:
    - the "Confirm before building" row for 32 and 32a (OQ-43, OQ-84, OQ-79).
 2. docs/prototype-build/catch-up/phases/phase-32-swap-requests.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic". Pay most attention to theme 2 ("Anaesthetist moves own List, no request"), the CoverRequest and availability-reconciliation lines under "Remove or rework", the OQ-43, OQ-79 and OQ-84 lines, and the DM-05, DM-41, RV-15 and RV-30 rows. Then read the EP-01 and EP-13 tables, docs/prototype-build/catch-up/epics/EP-01.md (US-01.4.3, US-01.4.5, US-01.5.5) and EP-13.md (FT-13.8, US-13.8.1, US-13.8.2), DM-05 and DM-41 in analysis/domain-model-delta.md, and RV-15 and RV-30 in analysis/reverse-check.md.
-4. The catalogue files this phase covers, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files this phase covers, in requirements-board/requirements/:
    - requirements/US-01.4.3.md (two acceptance criteria), US-01.4.5.md, US-01.5.5.md (three), FT-13.8.md, US-13.8.1.md (three) and US-13.8.2.md (two);
    - for context, requirements/FT-01.4.md, US-01.4.1.md, US-01.4.2.md, US-01.4.7.md (Phase 32a's), US-01.5.2.md, US-01.3.5.md, US-13.6.3.md, FT-01.6.md, US-01.6.1.md, US-02.3.3.md, US-06.3.5.md, US-06.5.4.md, FT-13.7.md and US-13.7.2.md;
    - questions/OQ-39.md, OQ-08.md, OQ-64.md, OQ-65.md and OQ-70.md (answered), and OQ-43.md, OQ-79.md, OQ-84.md (open, each with a recommendation), OQ-81.md (part 3 open) and OQ-85.md (Phase 32a's).
-   Also read the "Slot, List and Draft List" and "Surgeon, surgeons' room and blacklist" sections, the notification-pool paragraph in the warnings section and the glossary, and the prepayment text on a moved Booking, in docs/discovery-reference/Updated Requirements/domain-model.md. Then read items #5, #6, #10, #18, #35, #43 and #45 of catalogue/notes/2026-10-02-aa-meeting-with-greg.md and items #3, #17, #18, #24, #25, #48, #56, #60, #74 and #76 of catalogue/notes/2026-10-02-aa-requirements-review-with-greg.md.
+   Also read the "Slot, List and Draft List" and "Surgeon, surgeons' room and blacklist" sections, the notification-pool paragraph in the warnings section and the glossary, and the prepayment text on a moved Booking, in requirements-board/requirements/domain-model.md. Then read items #5, #6, #10, #18, #35, #43 and #45 of requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md and items #3, #17, #18, #24, #25, #48, #56, #60, #74 and #76 of requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md.
 5. docs/prototype-build/catch-up/analysis/prototype-map-apps-mobile-web.md, prototype-map-admin.md, prototype-map-store-seed.md, prototype-map-shared.md and prototype-map-shell-demo-pwa.md: the code index for the files you will change.
 6. The design files, which are the AUTHORITATIVE visual reference (convention 17):
    - docs/design/Mobile Availability.dc.html: the sheet anatomy (tap a free session, the sheet slides up, a message field, a teal action, the completion tick);
@@ -40,7 +40,7 @@ Before doing anything else, read these in order:
 8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c over the covered catalogue files, the context files and questions it lists, and domain-model.md;
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> over the covered catalogue files, the context files and questions it lists, and domain-model.md;
 - adjust the work items if anything changed, map any new acceptance criteria to work items, and drop and log anything now Retired or Future;
 - confirm D7 / OQ-39, D15 / OQ-65, D14 / OQ-64 and D20 / OQ-70 are still answered as built (stop and tell me if one was reopened, or if OQ-70 came back "credit and re-prepay"). Note the status of OQ-43, OQ-79 and OQ-84: build each recommendation, labelled provisional in its one place, or its answer as the doc describes;
 - confirm Phases 14, 15, 15a, 15b, 17, 27, 28, 29, 30 and 31 are DONE, and read what they left: the names above, the cover marker, and every other place the doc's grep finds;

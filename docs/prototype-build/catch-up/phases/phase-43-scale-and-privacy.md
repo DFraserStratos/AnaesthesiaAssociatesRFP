@@ -1,42 +1,42 @@
 # Phase 43 · Scale and privacy
 
 **Requirements covered:**
-[US-15.0.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.4.md)
+[US-15.0.4](../../../../requirements-board/requirements/stories/US-15.0.4.md)
 Volumes (Proposed: about 85 anaesthetists, 20,000 Slot records in the four-month horizon and 28,000
 invoices a year, without any drop in performance) ·
-[US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md)
+[US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md)
 Privacy and data minimisation (Proposed: the NHI never reaches Xero, never leaks through logs, error
 messages, monitoring or non-production data; failed hospital data shows only what is needed, with the
 raw payload under restricted access; non-production holds synthetic data only).
 Both are unchanged at `3d3a18c`.
 Exercised at scale, owned by Phase 37:
-[US-13.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.3.1.md)
+[US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md)
 (processing monitor, **Confirmed** at `3d3a18c`: "This list will get quite large", so Phase 37 restyles
 the Billing monitor into groups per anaesthetist with sorting, filtering, Problems only and "Open in
 Review" on Lists awaiting approval). This phase loads that large list and makes the restyled monitor
 hold up at full scale (work item 6).
 Context only, must stay green:
-[FT-01.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-01.1.md)
+[FT-01.1](../../../../requirements-board/requirements/stories/FT-01.1.md)
 (the rolling canvas the Slot count is measured against: "four months in the current practice", but
 any number of months, Phase 28's horizon setting; very long horizons "we don't have to worry about for
 now"),
-[US-09.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.1.md)
+[US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md)
 (Xero contacts identified by the hidden internal ID, never the NHI; Phase 16 also took patient names
 and other personal information out of Xero),
-[US-09.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-09.3.3.md)
+[US-09.3.3](../../../../requirements-board/requirements/stories/US-09.3.3.md)
 (scheduled archiving, which cites the 28,000 invoices),
-[US-11.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-11.1.1.md)
+[US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md)
 (patient record keyed on NHI; Matches),
-[US-02.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-02.1.4.md)
+[US-02.1.4](../../../../requirements-board/requirements/stories/US-02.1.4.md)
 (the unmatched queue, Phase 33, where the restricted raw-row view lives),
-[US-13.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.1.md)
+[US-13.5.1](../../../../requirements-board/requirements/stories/US-13.5.1.md)
 (role-based access, **Confirmed**: "a very small number of roles"; signing in is US-13.5.3, Phase 43a)
 and
-[US-13.5.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-13.5.2.md)
+[US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md)
 (audit trail of all actions, **Confirmed**: its list now names invoices and credit notes, and payments
 and disbursements left it because "it's done in Xero"; how deep the audit goes is a developer
 discussion with storage cost in mind).
-[US-14.5.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-14.5.1.md)
+[US-14.5.1](../../../../requirements-board/requirements/stories/US-14.5.1.md)
 (integration failure visibility, the dead-lettered HL7 case) is **Future** and is not built: its
 "working view shows only what is needed, raw payload behind restricted access" rule is applied here to
 the in-scope failure surface, the unmatched hospital rows.
@@ -48,7 +48,7 @@ No DM or RV item is owned here. The phase builds on
 [reverse-check](../analysis/reverse-check.md) finding is closed here (RV-05 and RV-06, which note the raw
 PID shown on the HL7 tooling, were closed by Phase 34's Future-scope demotion).
 Answered question this phase builds:
-[OQ-30](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-30.md) (NHI in Xero,
+[OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (NHI in Xero,
 Appendix 1 vs Appendix 2, **Answered**: "No PII in Xero. So Xero doesn't have NHI details. Xero will have
 an unique ID which allows transactions to link back to invoices in our system."). The Appendix 2 reading
 is the answer, not a default: the leak scan's Xero area checks for the NHI **and** the other personal
@@ -109,7 +109,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
 1. Run:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-15.0.4,US-15.0.6,US-13.3.1,FT-01.1,US-09.3.1,US-09.3.3,US-11.1.1,US-02.1.4,US-13.5.1,US-13.5.2,US-14.5.1,OQ-30
    ```
 
    Read the hunks for US-15.0.4, US-15.0.6, US-13.3.1, FT-01.1, US-09.3.1, US-09.3.3, US-11.1.1,
@@ -830,8 +830,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-15.0.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.4.md) Volumes | absent (not demonstrated; scale only narrated in copy) | partial. Create real shots, then change the reason to: full-scale volumes are generated in memory and timed on screen; formal performance testing belongs to the Testing milestone and is not part of the prototype. Admin shots: `full-scale-day` (`/admin/day/2026-07-21`; setup runs the `load-full-scale` entry from `[data-shot=demo-actions]` and its confirm, then waits for the scale banner; states `banner` showing the 85 anaesthetists, 20,000+ sessions over the four-month horizon and 27,500 to 28,500 invoices with generation time and the Timings table (no "slot" anywhere in the shot), and `paged` showing "3 pages of 30"), `full-scale-invoices` (`/admin/invoices`, "Showing 1 to 50 of" about 28,000), `full-scale-audit` (pages of 100, newest entry "Full-scale data loaded") and `full-scale-billing-monitor` (`/admin/billing` at scale: "Anaesthetists 1 to 20 of 85", the summary tiles counting the whole practice, then a second state with Problems only on showing the generated handful). Highlight the banner and the pagers. Caption: "Demonstration at full practice volume with measured screen timings". Replaces the stale "scale is only narrated" reason |
-| [US-15.0.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts and xero-pair (simulator, Xero sim) | stays captured; the two Xero shots stay valid. Add admin shots `raw-row` (Matching, an unmatched row: row detail with only needed fields, then View raw row asks for a reason and shows the masked columns, NHI as "ZAA••••" style and DOB as a year, with the "Masking policy is for AA to agree" line; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found outside the core platform, the Xero row checking NHIs and personal details, core rows "Held by design"; second state with the planted test leak, one masked hit) and `synthetic-badge` (the "Synthetic data only" marker in the admin side nav, plus a mobile shot of the More card on `/mobile` showing it). Caption: "NHI stays inside the core platform and non-production holds synthetic data only" |
+| [US-15.0.4](../../../../requirements-board/requirements/stories/US-15.0.4.md) Volumes | absent (not demonstrated; scale only narrated in copy) | partial. Create real shots, then change the reason to: full-scale volumes are generated in memory and timed on screen; formal performance testing belongs to the Testing milestone and is not part of the prototype. Admin shots: `full-scale-day` (`/admin/day/2026-07-21`; setup runs the `load-full-scale` entry from `[data-shot=demo-actions]` and its confirm, then waits for the scale banner; states `banner` showing the 85 anaesthetists, 20,000+ sessions over the four-month horizon and 27,500 to 28,500 invoices with generation time and the Timings table (no "slot" anywhere in the shot), and `paged` showing "3 pages of 30"), `full-scale-invoices` (`/admin/invoices`, "Showing 1 to 50 of" about 28,000), `full-scale-audit` (pages of 100, newest entry "Full-scale data loaded") and `full-scale-billing-monitor` (`/admin/billing` at scale: "Anaesthetists 1 to 20 of 85", the summary tiles counting the whole practice, then a second state with Problems only on showing the generated handful). Highlight the banner and the pagers. Caption: "Demonstration at full practice volume with measured screen timings". Replaces the stale "scale is only narrated" reason |
+| [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md) Privacy and data minimisation | captured · xero-contacts and xero-pair (simulator, Xero sim) | stays captured; the two Xero shots stay valid. Add admin shots `raw-row` (Matching, an unmatched row: row detail with only needed fields, then View raw row asks for a reason and shows the masked columns, NHI as "ZAA••••" style and DOB as a year, with the "Masking policy is for AA to agree" line; highlight the sheet), `leak-scan` (Data Inspector `/demo/data`, Privacy checks after Scan now: 0 found outside the core platform, the Xero row checking NHIs and personal details, core rows "Held by design"; second state with the planted test leak, one masked hit) and `synthetic-badge` (the "Synthetic data only" marker in the admin side nav, plus a mobile shot of the More card on `/mobile` showing it). Caption: "NHI stays inside the core platform and non-production holds synthetic data only" |
 
 **Recipes this phase breaks.**
 

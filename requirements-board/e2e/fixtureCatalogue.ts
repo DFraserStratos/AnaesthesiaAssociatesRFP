@@ -35,7 +35,7 @@ export function fixtureItems(): Item[] {
 }
 
 export function writeFixture(dir = FIXTURE_DIR) {
-  rmSync(join(dir, 'requirements'), { recursive: true, force: true })
+  rmSync(join(dir, 'stories'), { recursive: true, force: true })
   rmSync(join(dir, 'questions'), { recursive: true, force: true })
   mkdirSync(join(dir, 'questions'), { recursive: true })
   for (const it of fixtureItems()) writeItem(it, dir)
@@ -137,23 +137,23 @@ const region = (id: string, name: string, around: string[], more: { page?: numbe
 
 export function fixtureArtifacts(): Artifact[] {
   return [
-    artifact({ id: 'AR-01', title: 'Fixture drawing', kind: 'diagram', date: '2026-10-06', file: 'artifacts/AR-01.svg', regions: [region('totals', 'Totals', ['text=Totals panel', 'text=Copy this sentence please']), region('panel-a', 'Panel A', ['#panel-a'])] }),
-    artifact({ id: 'AR-02', title: 'Fixture picture', kind: 'screenshot', date: '2026-09-30', file: 'artifacts/AR-02.png', regions: [region('corner', 'Corner', [], { box: [0, 0, 120, 80] })] }),
+    artifact({ id: 'AR-01', title: 'Fixture drawing', kind: 'diagram', date: '2026-10-06', file: 'artifacts/files/AR-01.svg', regions: [region('totals', 'Totals', ['text=Totals panel', 'text=Copy this sentence please']), region('panel-a', 'Panel A', ['#panel-a'])] }),
+    artifact({ id: 'AR-02', title: 'Fixture picture', kind: 'screenshot', date: '2026-09-30', file: 'artifacts/files/AR-02.png', regions: [region('corner', 'Corner', [], { box: [0, 0, 120, 80] })] }),
     artifact({ id: 'AR-03', title: 'Fixture flow', kind: 'diagram', date: '2026-10', source: 'flowchart LR\n  A[Booking] --> B[Contract]\n  B --> C[Invoice]', regions: [region('contract', 'The contract step', ['node=B'])] }),
     artifact({ id: 'AR-04', title: 'Fixture note', kind: 'note', date: '2026-10-01', file: 'notes/fixture-note.md', regions: [region('fox', 'The fox', ['quote=The quick brown fox jumps over the lazy dog.'])] }),
-    artifact({ id: 'AR-05', title: 'Fixture document', kind: 'document', date: '2021', file: 'artifacts/AR-05.pdf', regions: [region('time-table', 'Time table', ['quote=Time units table'], { page: 2 })] }),
+    artifact({ id: 'AR-05', title: 'Fixture document', kind: 'document', date: '2021', file: 'artifacts/files/AR-05.pdf', regions: [region('time-table', 'Time table', ['quote=Time units table'], { page: 2 })] }),
   ]
 }
 
 export function writeFixtureArtifacts(dir = FIXTURE_DIR) {
   rmSync(join(dir, 'artifacts'), { recursive: true, force: true })
   rmSync(join(dir, 'notes'), { recursive: true, force: true })
-  mkdirSync(join(dir, 'artifacts'), { recursive: true })
+  mkdirSync(join(dir, 'artifacts', 'files'), { recursive: true })
   mkdirSync(join(dir, 'notes'), { recursive: true })
-  writeFileSync(join(dir, 'artifacts', 'AR-01.svg'), FIXTURE_SVG)
-  writeFileSync(join(dir, 'artifacts', 'AR-02.png'), png(240, 160))
+  writeFileSync(join(dir, 'artifacts', 'files', 'AR-01.svg'), FIXTURE_SVG)
+  writeFileSync(join(dir, 'artifacts', 'files', 'AR-02.png'), png(240, 160))
   writeFileSync(join(dir, 'notes', 'fixture-note.md'), FIXTURE_NOTE)
-  writeFileSync(join(dir, 'artifacts', 'AR-05.pdf'), tinyPdf([['Fixture page one', 'Totals live here'], ['Second page heading', 'Time units table']]))
+  writeFileSync(join(dir, 'artifacts', 'files', 'AR-05.pdf'), tinyPdf([['Fixture page one', 'Totals live here'], ['Second page heading', 'Time units table']]))
   for (const a of fixtureArtifacts()) writeFileSync(join(dir, 'artifacts', `${a.id}.md`), serialiseArtifact(a))
 }
 

@@ -9,9 +9,9 @@ const [journalPath, commit, date] = process.argv.slice(2)
 const MERGE = process.argv.includes('--merge')
 const ROOT = process.cwd()
 const CU = path.join(ROOT, 'docs/prototype-build/catch-up')
-const CAT = path.join(ROOT, 'docs/discovery-reference/Updated Requirements/catalogue')
-const CAT_LINK = '../../discovery-reference/Updated%20Requirements/catalogue'
-const CAT_LINK_EPIC = '../../../discovery-reference/Updated%20Requirements/catalogue'
+const CAT = path.join(ROOT, 'requirements-board/requirements')
+const CAT_LINK = '../../../requirements-board/requirements'
+const CAT_LINK_EPIC = '../../../../requirements-board/requirements'
 
 // ---- journal -> results by label (last result wins) ----
 const lines = fs.readFileSync(journalPath, 'utf8').trim().split('\n').map(l => JSON.parse(l))
@@ -30,8 +30,8 @@ const readFm = file => {
   return { fm, g }
 }
 const items = {}
-for (const f of fs.readdirSync(path.join(CAT, 'requirements')).filter(f => f.endsWith('.md'))) {
-  const { g } = readFm(path.join(CAT, 'requirements', f))
+for (const f of fs.readdirSync(path.join(CAT, 'stories')).filter(f => f.endsWith('.md'))) {
+  const { g } = readFm(path.join(CAT, 'stories', f))
   items[g('id')] = { id: g('id'), type: g('type'), parent: g('parent'), title: g('title'), status: g('status'), swimlane: g('swimlane') }
 }
 const oqs = {}
@@ -61,7 +61,7 @@ for (const e of epicIds) {
     if (!x && reviewed.has(meta.id)) { x = { ...reviewed.get(meta.id), verify_outcome: 'unverified', original_verdict: reviewed.get(meta.id).verdict, verify_note: 'Verifier did not return this item.' }; problems.push(`${meta.id} unverified`) }
     if (!x && prevItem.has(meta.id)) x = prevItem.get(meta.id)
     if (!x) { problems.push(`${meta.id} not graded`); return null }
-    return { ...x, epic: e, title: meta.title, type: meta.type, status: meta.status, open_questions: openOqs(meta.id), file: `requirements/${meta.id}.md` }
+    return { ...x, epic: e, title: meta.title, type: meta.type, status: meta.status, open_questions: openOqs(meta.id), file: `stories/${meta.id}.md` }
   }).filter(Boolean)
   epics.push({ id: e, title: items[e].title, status: items[e].status, observations: v?.epic_observations || r?.epic_observations || prevEpic.get(e)?.observations || '', items: list })
 }
@@ -95,7 +95,7 @@ fs.writeFileSync(path.join(CU, 'gaps.json'), JSON.stringify(gaps, null, 1) + '\n
 // ---- markdown ----
 const esc = s => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n+/g, ' ')
 let CL = CAT_LINK
-const link = id => `[${id}](${CL}/requirements/${id}.md)`
+const link = id => `[${id}](${CL}/stories/${id}.md)`
 const oqLink = id => `[${id}](${CL}/questions/${id}.md)`
 const board = id => `[board](http://localhost:5180/#/board?item=${id})`
 const anchor = id => id.toLowerCase()

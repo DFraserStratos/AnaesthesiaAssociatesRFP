@@ -1,22 +1,22 @@
 # Phase 38a · Find past work: calendar and search
 
 **Requirements covered:**
-[US-03.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.6.md) Find past work from a calendar (Proposed) ·
-[US-03.1.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.7.md) Search Bookings by NHI or patient name (Proposed).
+[US-03.1.6](../../../../requirements-board/requirements/stories/US-03.1.6.md) Find past work from a calendar (Proposed) ·
+[US-03.1.7](../../../../requirements-board/requirements/stories/US-03.1.7.md) Search Bookings by NHI or patient name (Proposed).
 Treated here without closing it: [DM-39](../analysis/domain-model-delta.md#dm-39) (its last
 sentence only, "search and calendar navigation are selectors and UI only"; the attachments and
 skeleton-Copy parts are Phase 15's).
 Read alongside (not closed here):
-[FT-03.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.1.md) (the feature),
-[US-03.1.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.1.md) (the schedule to List to Booking to Procedure drill-down both entry points land on),
-[US-03.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.4.md) (web parity: the web gets the same capability, not a cut-down one),
-[US-15.0.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-15.0.2.md) (mobile-first),
-[US-03.7.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.7.1.md) (the post-op event that needs a past Procedure; Phase 39b),
-[FT-07.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-07.4.md) and
-[US-07.4.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-07.4.1.md) (Open: when a List leaves the to-do view; Phase 38 keeps billed Lists visible),
+[FT-03.1](../../../../requirements-board/requirements/stories/FT-03.1.md) (the feature),
+[US-03.1.1](../../../../requirements-board/requirements/stories/US-03.1.1.md) (the schedule to List to Booking to Procedure drill-down both entry points land on),
+[US-03.1.4](../../../../requirements-board/requirements/stories/US-03.1.4.md) (web parity: the web gets the same capability, not a cut-down one),
+[US-15.0.2](../../../../requirements-board/requirements/stories/US-15.0.2.md) (mobile-first),
+[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) (the post-op event that needs a past Procedure; Phase 39b),
+[FT-07.4](../../../../requirements-board/requirements/stories/FT-07.4.md) and
+[US-07.4.1](../../../../requirements-board/requirements/stories/US-07.4.1.md) (Open: when a List leaves the to-do view; Phase 38 keeps billed Lists visible),
 [DM-17](../analysis/domain-model-delta.md#dm-17) (the event record 39b adds, "reachable from past Procedures"),
 and the evidence, points 35 and 36 of
-[the 2026-10-01 meeting note](../../../discovery-reference/Updated%20Requirements/catalogue/notes/2026-10-01-aa-meeting-with-greg.md)
+[the 2026-10-01 meeting note](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md)
 ("a way back beyond the four-month rolling view without infinite scroll").
 No open question is linked to either story.
 **Depends on:** 38 (billed Lists stay visible and read only: `listBillingStatus`,
@@ -65,7 +65,7 @@ and post-op events use.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-03.1.6,US-03.1.7,FT-03.1,US-03.1.1,US-03.1.4,US-03.7.1,FT-07.4,US-07.4.1,OQ-31,EP-03
    ```
 
    Read the hunks for US-03.1.6, US-03.1.7, FT-03.1, US-03.1.1, US-03.1.4, US-03.7.1, FT-07.4,
@@ -521,8 +521,8 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.1.6](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.6.md) Find past work from a calendar | absent · stub, no shots | create the shots in `recipes/US-03.1.6.json` (replace the stub), status `captured` (Proposed in the catalogue, but fully built on both apps; the admin app is not in scope per the story's note). Mobile `/mobile/lists`: shot `lookback-calendar`, open the calendar sheet (`[aria-label="Go to a day"]`, or its text) and highlight `[data-shot=mobile-lookback-calendar]`; a second state taps the title, picks March 2026 and Fri 13 Mar, and shows the day chip with that day's `Done · billed` List. Web `/web/lists?view=calendar&month=2026-03&day=2026-03-13` (or click the Calendar segment): shot `lookback-calendar`, highlight `[data-shot=web-lookback-calendar]` with the day rail beside it. A `drill` state on each opens the history List, then a Booking and its Procedures. Captions: "Calendar jumps to any day back to January 2026" and "Pick a past day to see its Lists, then a Booking and its Procedures" |
-| [US-03.1.7](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.1.7.md) Search Bookings by NHI or patient name | absent · stub, no shots | create the shots in `recipes/US-03.1.7.json` (replace the stub), status `captured`. Mobile `/mobile/lists?q=mitchell` (or fill the search field, placeholder "Search patient name or NHI"): shot `lookback-search`, highlight `[data-shot=mobile-lookback-search]` with the Upcoming and Past headings and the "3 Bookings for Mitchell" line; a state typing the NHI `CQY9304` shows the same three. Web `/web/lists?q=mitchell`: shot `lookback-search`, highlight `[data-shot=web-lookback-search]`, the results table with the NHI and Progress columns. Captions: "Search finds a patient's Bookings by NHI or part of a name" |
+| [US-03.1.6](../../../../requirements-board/requirements/stories/US-03.1.6.md) Find past work from a calendar | absent · stub, no shots | create the shots in `recipes/US-03.1.6.json` (replace the stub), status `captured` (Proposed in the catalogue, but fully built on both apps; the admin app is not in scope per the story's note). Mobile `/mobile/lists`: shot `lookback-calendar`, open the calendar sheet (`[aria-label="Go to a day"]`, or its text) and highlight `[data-shot=mobile-lookback-calendar]`; a second state taps the title, picks March 2026 and Fri 13 Mar, and shows the day chip with that day's `Done · billed` List. Web `/web/lists?view=calendar&month=2026-03&day=2026-03-13` (or click the Calendar segment): shot `lookback-calendar`, highlight `[data-shot=web-lookback-calendar]` with the day rail beside it. A `drill` state on each opens the history List, then a Booking and its Procedures. Captions: "Calendar jumps to any day back to January 2026" and "Pick a past day to see its Lists, then a Booking and its Procedures" |
+| [US-03.1.7](../../../../requirements-board/requirements/stories/US-03.1.7.md) Search Bookings by NHI or patient name | absent · stub, no shots | create the shots in `recipes/US-03.1.7.json` (replace the stub), status `captured`. Mobile `/mobile/lists?q=mitchell` (or fill the search field, placeholder "Search patient name or NHI"): shot `lookback-search`, highlight `[data-shot=mobile-lookback-search]` with the Upcoming and Past headings and the "3 Bookings for Mitchell" line; a state typing the NHI `CQY9304` shows the same three. Web `/web/lists?q=mitchell`: shot `lookback-search`, highlight `[data-shot=web-lookback-search]`, the results table with the NHI and Progress columns. Captions: "Search finds a patient's Bookings by NHI or part of a name" |
 
 **Recipes this phase breaks.** None found at plan time; the `--dry` run is the check. The Lists page and the mobile Lists tab gain a search field, a calendar button and a Calendar segment, and the seed gains Jan to Mar 2026 backdrop Lists, but no recipe depends on text those change: `US-03.1.1` (`drill-down`, `/web/lists` and `/mobile/lists`), `US-07.4.1` and `US-07.2.1` click rows by hospital or surgeon text and fill the first date input, which stay. Their new shots will show the extra header controls on the next full capture; look at them once. If Phase 38's `?view=` change moved Upcoming and Completed to the URL, re-check any recipe that clicks those segments.
 

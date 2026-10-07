@@ -13,7 +13,7 @@ import type { Plugin } from 'vite'
 import type { ArtifactRec, CatalogueEvent } from '../shared/types.ts'
 import { ARTIFACT_MIME, artifactPath } from './artifactFiles.ts'
 import { HttpError, createCatalogueApi } from './catalogueApi.ts'
-import { CATALOGUE_DIR } from './catalogueFs.ts'
+import { REQUIREMENTS_DIR } from './catalogueFs.ts'
 import { gitBlob } from './gitHistory.ts'
 import { createJournal, gitBlobSha } from './historyJournal.ts'
 
@@ -27,11 +27,11 @@ const MIME: Record<string, string> = {
 }
 /**
  * Where the change journal lives: HISTORY_DIR, else `.history/` beside this app for the real
- * catalogue, else a temp folder per catalogue (a fixture never mixes into the real one's history).
+ * requirements folder, else a temp folder per folder (a fixture never mixes into the real one's history).
  */
 function historyDirFor(root: string): string {
   if (process.env.HISTORY_DIR) return resolve(process.env.HISTORY_DIR)
-  if (resolve(root) === resolve(CATALOGUE_DIR) && !process.env.CATALOGUE_DIR) return join(dirname(fileURLToPath(import.meta.url)), '..', '.history')
+  if (resolve(root) === resolve(REQUIREMENTS_DIR) && !process.env.REQUIREMENTS_DIR) return join(dirname(fileURLToPath(import.meta.url)), '..', '.history')
   return join(tmpdir(), 'requirements-board-history', resolve(root).replace(/[^A-Za-z0-9]+/g, '_').slice(-80))
 }
 
@@ -63,7 +63,7 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
-export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
+export function cataloguePlugin(root = REQUIREMENTS_DIR): Plugin {
   return {
     name: 'catalogue-api',
     configureServer(dev) {
@@ -107,8 +107,12 @@ export function cataloguePlugin(root = CATALOGUE_DIR): Plugin {
 
       dev.middlewares.use((req, res, next) => {
         const url = new URL(req.url ?? '/', 'http://local')
-        if (url.pathname.startsWith('/catalogue/')) {
-          if (!serveAsset(root, url, res)) next()
+        if (url.pathname.startsWith('/requirements/')) {
+          // Only screenshots: the folder sits inside Vite's root, so never fall through to its static files.
+          if (!serveAsset(root, url, res)) {
+            res.statusCode = 404
+            res.end()
+          }
           return
         }
         if (url.pathname.startsWith('/artifact-file/')) {
@@ -192,9 +196,9 @@ export async function serveHistoryBlob(root: string, url: URL, res: ServerRespon
   return true
 }
 
-/** Stream a file from the catalogue's `assets/` folder, and nothing outside it. Returns false to fall through. */
+/** Stream a file from the requirements folder's `assets/`, and nothing outside it. Returns false when it is not one. */
 export function serveAsset(root: string, url: URL, res: ServerResponse): boolean {
-  const rel = decodeURIComponent(url.pathname.slice('/catalogue/'.length))
+  const rel = decodeURIComponent(url.pathname.slice('/requirements/'.length))
   const abs = resolve(root, rel)
   if (!abs.startsWith(resolve(root, 'assets') + sep) || !existsSync(abs) || !statSync(abs).isFile()) return false
   res.setHeader('Content-Type', MIME[extname(abs).toLowerCase()] ?? 'application/octet-stream')

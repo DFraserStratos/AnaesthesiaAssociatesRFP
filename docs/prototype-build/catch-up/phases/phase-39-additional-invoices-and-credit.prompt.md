@@ -10,7 +10,7 @@ Before doing anything else, read these in order:
    - the "Confirm before building" row for 39 (OQ-77) and the placement note for the 2026-10-03 update ("38b is new, split from 39").
 2. docs/prototype-build/catch-up/phases/phase-39-additional-invoices-and-credit.md: your detailed plan.
 3. docs/prototype-build/catch-up/GAP-ANALYSIS.md: everything before "## By epic" (theme 5, the US-08.6.2, US-08.6.4, US-08.6.5 and US-08.6.6 entries, the DM-24, DM-25 and DM-45 rows, the S4 demo-impact line, the demo-trigger section), then the EP-08 table and its structural note and the EP-13 row for US-13.5.2. Then docs/prototype-build/catch-up/epics/EP-08.md (#ft-08.6, #us-08.6.2, #us-08.6.4, #us-08.6.5, #us-08.6.6), epics/EP-13.md (#us-13.5.2), and DM-24 and DM-45 (with DM-17, DM-18, DM-07, DM-22, DM-25, DM-27) in docs/prototype-build/catch-up/analysis/domain-model-delta.md.
-4. The catalogue files, in docs/discovery-reference/Updated Requirements/catalogue/:
+4. The catalogue files, in requirements-board/requirements/:
    - requirements/FT-08.6.md, US-08.6.2.md, US-08.6.4.md, US-08.6.5.md, US-08.6.6.md and US-13.5.2.md;
    - for context, requirements/US-08.6.1.md and US-08.6.3.md (the additional invoice, 38b), FT-03.7.md and US-03.7.3.md (events and the events list, 38b), US-07.3.2.md, US-08.3.1.md, US-08.4.3.md, US-09.1.1.md, US-04.2.11.md, US-10.2.5.md, FT-13.5.md and US-06.4.1.md;
    - questions/OQ-19.md, OQ-28.md, OQ-42.md, OQ-45.md, OQ-53.md, OQ-63.md, OQ-71.md, OQ-72.md (answered), OQ-77.md and OQ-60.md (open, each with a recommendation);
@@ -26,7 +26,7 @@ Before doing anything else, read these in order:
 8. requirements-board/capture/ATLAS.md (the recipe format, routes, ids, overlays and hooks) and the phase doc's "Catalogue screenshots" section; run node docs/prototype-build/catch-up/tools/recipe-status.mjs 39 to see the recipes this phase owns (FT-08.6 is covered, so 38b's US-08.6.1 and US-08.6.3 are listed too: check only).
 
 Then do the drift check in the phase doc:
-- run git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md", re-read any covered item, OQ or domain-model passage that changed, adjust the work items, and drop and log anything now Retired or Future;
+- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>, re-read any covered item, OQ or domain-model passage that changed, adjust the work items, and drop and log anything now Retired or Future;
 - build the answers with no provisional label: OQ-72 / D22 (credit note option to any party, then new additional invoices), OQ-63 / D13 (a credit is an event through 38b's one review step, issued in the next run), OQ-42 (credit note plus a negative invoice to the anaesthetist), OQ-19 (an AA-side error is credited and reissued), OQ-53 (23's combination Contract), OQ-71 / D21 (nothing built for a negative with no later payment) and OQ-45 / D10 (replacements are free form);
 - build OQ-77's recommendation (no forced total, the credit reverses the linked payable, one flow before and after the invoice is sent) in one constant, CREDIT_RULES, labelled provisional, with both branches tested; keep the OQ-60 reading (replacements are BCTIs; credit notes and negative invoices are not; a credited original keeps its count) beside 16's bctiRecords; if OQ-77 has been answered, build the answer instead and drop the chip;
 - confirm Phases 23, 36 and 38b (and 14 to 38) are DONE and note the names listed in step 7;

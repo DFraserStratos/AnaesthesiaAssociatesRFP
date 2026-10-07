@@ -1,39 +1,39 @@
 # Phase 23 · Primary Procedure, multi-procedure rule and combination Contracts
 
 **Requirements covered:**
-[FT-03.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-03.2.md) Booking structure: primary and additional procedures (Confirmed) ·
-[US-03.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.1.md) One primary Procedure (Confirmed) ·
-[US-03.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.2.md) Anyone with edit rights can set the primary (Confirmed) ·
-[US-04.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.5.md) Multi-procedure rule per Contract (Proposed) ·
-[US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md) Combination Contracts (Verify; found through the picker's procedure and hospital filters and AA code search, and a split after invoicing is a credit then rebill) ·
-[FT-05.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/FT-05.3.md) Multi-procedure rule, superseding the RFP split-billing rule (Verify) ·
-[US-05.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.1.md) Multi-procedure BTM rule (Open) ·
-[US-05.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.4.md) Contract-specific second-procedure rules (Proposed) ·
+[FT-03.2](../../../../requirements-board/requirements/stories/FT-03.2.md) Booking structure: primary and additional procedures (Confirmed) ·
+[US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure (Confirmed) ·
+[US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary (Confirmed) ·
+[US-04.2.5](../../../../requirements-board/requirements/stories/US-04.2.5.md) Multi-procedure rule per Contract (Proposed) ·
+[US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) Combination Contracts (Verify; found through the picker's procedure and hospital filters and AA code search, and a split after invoicing is a credit then rebill) ·
+[FT-05.3](../../../../requirements-board/requirements/stories/FT-05.3.md) Multi-procedure rule, superseding the RFP split-billing rule (Verify) ·
+[US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule (Open) ·
+[US-05.3.4](../../../../requirements-board/requirements/stories/US-05.3.4.md) Contract-specific second-procedure rules (Proposed) ·
 [DM-15](../analysis/domain-model-delta.md#dm-15) multi-procedure rule: one primary Procedure, time on every Procedure, modifier units split above four, per-Contract override ·
 [RV-02](../analysis/reverse-check.md#rv-02-modifier-units-never-split-across-procedures-the-above-4-total-rule-is-missing) modifier units never split across procedures.
 **Reads, without building:** Phase 19a's base units, which live in each procedure's default RVG
-Contracts ([US-04.4.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.4.2.md),
+Contracts ([US-04.4.2](../../../../requirements-board/requirements/stories/US-04.4.2.md),
 [DM-43](../analysis/domain-model-delta.md#dm-43), owner decision D12), and 19a's Contract base-unit
 override for a procedure, RVG code or group (the override half of
-[US-04.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.2.md),
+[US-04.2.2](../../../../requirements-board/requirements/stories/US-04.2.2.md),
 which closes in 24). This phase reads both through its Booking-level pass: base units count on the
 primary only, and on an additional Procedure only inside the percent rule's standalone price.
 Builds the combination Contract that Phase 39 credits and rebills per component
-([US-08.6.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-08.6.4.md),
-OQ-72). Re-checks [US-05.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.5.md)
+([US-08.6.4](../../../../requirements-board/requirements/stories/US-08.6.4.md),
+OQ-72). Re-checks [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md)
 (each Procedure's share recorded, Matches), which must still match afterwards.
-Open question: [OQ-15](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-15.md)
+Open question: [OQ-15](../../../../requirements-board/requirements/questions/OQ-15.md)
 (Open: the equal split, for Ben to validate). Answered and built as answered:
-[OQ-53](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-53.md) (a combination
+[OQ-53](../../../../requirements-board/requirements/questions/OQ-53.md) (a combination
 is a Contract set against each parent procedure),
-[OQ-66](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-66.md) (D16: a short
+[OQ-66](../../../../requirements-board/requirements/questions/OQ-66.md) (D16: a short
 structured AA code on every Contract, the picker filtered by procedure then hospital, with code search;
 a combination Contract is found the same way),
-[OQ-62](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-62.md) (D12: base units
+[OQ-62](../../../../requirements-board/requirements/questions/OQ-62.md) (D12: base units
 live in each procedure's default RVG Contracts, built in 19 and 19a),
-[OQ-06](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-06.md) (a Contract may
+[OQ-06](../../../../requirements-board/requirements/questions/OQ-06.md) (a Contract may
 override base units, built in 19a) and
-[OQ-72](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-72.md) (D22: splitting a
+[OQ-72](../../../../requirements-board/requirements/questions/OQ-72.md) (D22: splitting a
 combined invoice after it is sent is a credit note, then new additional invoices; Phase 39's).
 **Depends on:** Phase 19a (base units held by each procedure's default RVG Contracts, the Contract
 base-unit override, the resolver reading the Contract through `contractBaseUnitsFor` (19a's pure
@@ -102,7 +102,7 @@ Invoices still group by billable party, so the BCTI count (16's `bctisFor`) does
 
 ## Before you start: drift check
 
-1. Run `git diff 3d3a18c -- "docs/discovery-reference/Updated Requirements/catalogue" "docs/discovery-reference/Updated Requirements/domain-model.md"`
+1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>`
    and read the hunks for FT-03.2, US-03.2.1, US-03.2.2, US-03.2.3, US-04.2.2, US-04.2.5, US-04.2.11,
    US-04.3.2, US-04.4.2, FT-05.3, US-05.1.4, US-05.1.6, US-05.3.1, US-05.3.4, US-05.3.5, US-08.6.4,
    OQ-15, OQ-53, OQ-66, OQ-06, OQ-62, OQ-72 and OQ-77. Re-read the domain model's "Procedure" and
@@ -200,23 +200,23 @@ existing `ContractEditSheet` sections, 20's `ContractPickerSheet` rows and the A
 anatomy.
 
 **Catalogue.** The files linked above, plus
-[US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md)
+[US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md)
 (add additional Procedures, each with its own Contract; built in 20),
-[US-03.3.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.3.3.md)
+[US-03.3.3](../../../../requirements-board/requirements/stories/US-03.3.3.md)
 (recorded start and handover times),
-[US-04.2.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.4.md)
+[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md)
 (fixed fee schedule lines),
-[US-04.3.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.3.2.md)
+[US-04.3.2](../../../../requirements-board/requirements/stories/US-04.3.2.md)
 (the picker filtered by procedure then hospital, the default RVG Contract always offered, AA code
 search; built in 20),
-[US-05.1.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.1.4.md)
+[US-05.1.4](../../../../requirements-board/requirements/stories/US-05.1.4.md)
 (default modifiers, pre-filled and untickable; built in 19) and
-[OQ-77](../../../discovery-reference/Updated%20Requirements/catalogue/questions/OQ-77.md) (the rebill
+[OQ-77](../../../../requirements-board/requirements/questions/OQ-77.md) (the rebill
 total and a split before invoicing, Phase 39's). `domain-model.md` sections "Procedure", "Contract
 (recommended structure)" (the `scope`, `multiProcedureRule` and `baseUnits / baseUnitOverrides` rows),
 the Contract selection paragraph and "3. Calculation rules". The meeting notes
-`catalogue/notes/2026-10-01-aa-meeting-with-greg.md` points #8, #27 and #46 (the split, combinations and
-the primary) and `catalogue/notes/2026-10-02-aa-meeting-with-greg.md` points #3, #7 and #13 (base units
+`requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` points #8, #27 and #46 (the split, combinations and
+the primary) and `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` points #3, #7 and #13 (base units
 in default RVG Contracts, the AA code and the filtered picker, the credit-and-rebill split). The
 catalogue screenshots on US-03.2.1, US-04.2.5 and US-05.3.4 show the superseded "time units only"
 caption, ordinal rows or the ordinal-rule caption; they are not a spec, and the Catalogue screenshots
@@ -1056,14 +1056,14 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-03.2.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.1.md) One primary Procedure | captured · web-primary-and-additional, mobile-primary-and-additional | Stays captured. The old captions ("First procedure anchors base and modifier units"; "it bills time units only, base and modifiers stay on the first") are superseded. Re-shoot both on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`, and the mobile route) after adding a second procedure: highlight `procedure-primary-pill` on the first block and the additional note (`procedure-additional-note`) on the second ("Base units are on the primary procedure"). Keep the shot `name`s. Caption: one Procedure is the primary, shown first. |
-| [US-03.2.2](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.2.md) Anyone with edit rights can set the primary | absent | Captured. Create a recipe: `web-make-primary` and `mobile-make-primary`, starting on BK0009 (the US-03.2.1 routes, an editable Souter DRAFT Booking) after clicking "Add another procedure", with states `before` (the teal "Make primary" action, `make-primary`), `sheet` (the `MakePrimarySheet`, a bottom sheet on mobile and a dialog on web, naming what moves) and `moved` (the new primary on top with the Primary pill); `admin-make-primary` on the seeded three-procedure Booking (`SEED_MARKERS.multiProcedureBooking`, find its id from the built seed). Caption: anyone with edit rights can set the primary Procedure, and it is shown first. Drop the absent reason. |
-| [US-03.2.3](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-03.2.3.md) Add procedures to a Booking | partial · web-add-procedure (before, copy, added), mobile-add-procedure (before, added) | Not a covered item, but its shots show the additional block that changes. 15b drops the `copy` state with Copy (the catalogue caption is now "Add another procedure to the Booking"); 20 sets the status and the partial reason. Re-shoot both (the Primary pill, no ASA card on the additional Procedure, the added Procedure starting on the primary's Contract). Keep the status and reason as 20 left them; this phase does not change how a Contract is chosen per added Procedure. |
-| [US-04.2.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.5.md) Multi-procedure rule per Contract | partial · admin-ordinal-rows | Captured. The ordinal rows are gone (work item 12c). Replace `admin-ordinal-rows` with `admin-multi-procedure-rule` on `/admin/masters`: the Contract sheet's "Additional procedures" section (`contract-multi-procedure-rule`) with states for the four options (RVG default, % of own code, Add-on fee, Not billable) and the "Proposed" pills; drop the ordinal caption. Add `admin-contracts-table` for the new "Additional procedures" column. Drop the partial reason. |
-| [US-04.2.11](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-04.2.11.md) Combination Contracts | absent ("Not built yet: catch-up Phase 23 builds this.") | Create, captured. Admin: `admin-contract-combination` on the Contract sheet (`contract-combination`, the "Combination of procedures" switch and its caption) for "Southern Cross cosmetic combination". Picker shots on mobile, web and admin (`contract-picker-combination`): on an editable DRAFT Booking on a Southern Cross List (BK0009 on Souter Tue 21 PM, `L-34821-2026-07-21-PM`, is Southern Cross and DRAFT at `3d3a18c`; confirm in the built seed and name it in ATLAS.md), picking abdominoplasty, breast lift or liposuction offers the combination under "Combinations" with the neutral pill and "Covers {parts}"; one state with its AA code typed in the search, filtered to it. Caption in the catalogue's words: when any of the parent procedures is picked, the Contract is offered, and the picker's filters and AA code search find it. Drop the absent reason. |
-| [US-05.3.1](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base | Stays captured. Re-shoot both on BK0022 (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0022`, and the mobile route): the highlight `units-row-b` of the additional block now reads 0 with the caption that base units are on the primary; re-check the `nth=1` selector still lands, since the additional block loses its ASA card and chips and the blocks follow `inDisplayOrder`. Add `admin-modifier-split` on the seeded three-procedure Booking, highlight `booking-total-split` ("Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" twice, the 3/2/2 split). Caption in the catalogue's words. The anaesthetist shots show units and shares only, no fee. |
-| [US-05.3.4](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.4.md) Contract-specific second-procedure rules | captured · admin-second-procedure | Stays captured, retitled: the second Procedure is priced by the Contract's rule, not an ordinal row. Re-shoot `admin-second-procedure` (`/admin/day/2026-07-14/bookings/BK0028`, the bariatric Booking), replacing the caption "Second procedure priced by the contract's own ordinal rule" with "Additional procedure priced by the Contract's add-on fee" ($950 on the Doyle bariatric Contract). Highlight `booking-total-split` inside `booking-calculation`. |
-| [US-05.3.5](../../../discovery-reference/Updated%20Requirements/catalogue/requirements/US-05.3.5.md) Ledger tracks each Procedure's share | captured · admin-per-procedure | Stays captured (the item Matches). Re-shoot `admin-per-procedure` (`/admin/day/2026-07-20/bookings/BK0022`, highlight `booking-calculation`): the rows now read "Primary" and "Additional", primary first. Keep the caption "The Booking's fee broken down by Procedure, on the office view". The share is still recorded on invoice lines. |
+| [US-03.2.1](../../../../requirements-board/requirements/stories/US-03.2.1.md) One primary Procedure | captured · web-primary-and-additional, mobile-primary-and-additional | Stays captured. The old captions ("First procedure anchors base and modifier units"; "it bills time units only, base and modifiers stay on the first") are superseded. Re-shoot both on BK0009 (`/web/lists/L-34821-2026-07-21-PM/bookings/BK0009`, and the mobile route) after adding a second procedure: highlight `procedure-primary-pill` on the first block and the additional note (`procedure-additional-note`) on the second ("Base units are on the primary procedure"). Keep the shot `name`s. Caption: one Procedure is the primary, shown first. |
+| [US-03.2.2](../../../../requirements-board/requirements/stories/US-03.2.2.md) Anyone with edit rights can set the primary | absent | Captured. Create a recipe: `web-make-primary` and `mobile-make-primary`, starting on BK0009 (the US-03.2.1 routes, an editable Souter DRAFT Booking) after clicking "Add another procedure", with states `before` (the teal "Make primary" action, `make-primary`), `sheet` (the `MakePrimarySheet`, a bottom sheet on mobile and a dialog on web, naming what moves) and `moved` (the new primary on top with the Primary pill); `admin-make-primary` on the seeded three-procedure Booking (`SEED_MARKERS.multiProcedureBooking`, find its id from the built seed). Caption: anyone with edit rights can set the primary Procedure, and it is shown first. Drop the absent reason. |
+| [US-03.2.3](../../../../requirements-board/requirements/stories/US-03.2.3.md) Add procedures to a Booking | partial · web-add-procedure (before, copy, added), mobile-add-procedure (before, added) | Not a covered item, but its shots show the additional block that changes. 15b drops the `copy` state with Copy (the catalogue caption is now "Add another procedure to the Booking"); 20 sets the status and the partial reason. Re-shoot both (the Primary pill, no ASA card on the additional Procedure, the added Procedure starting on the primary's Contract). Keep the status and reason as 20 left them; this phase does not change how a Contract is chosen per added Procedure. |
+| [US-04.2.5](../../../../requirements-board/requirements/stories/US-04.2.5.md) Multi-procedure rule per Contract | partial · admin-ordinal-rows | Captured. The ordinal rows are gone (work item 12c). Replace `admin-ordinal-rows` with `admin-multi-procedure-rule` on `/admin/masters`: the Contract sheet's "Additional procedures" section (`contract-multi-procedure-rule`) with states for the four options (RVG default, % of own code, Add-on fee, Not billable) and the "Proposed" pills; drop the ordinal caption. Add `admin-contracts-table` for the new "Additional procedures" column. Drop the partial reason. |
+| [US-04.2.11](../../../../requirements-board/requirements/stories/US-04.2.11.md) Combination Contracts | absent ("Not built yet: catch-up Phase 23 builds this.") | Create, captured. Admin: `admin-contract-combination` on the Contract sheet (`contract-combination`, the "Combination of procedures" switch and its caption) for "Southern Cross cosmetic combination". Picker shots on mobile, web and admin (`contract-picker-combination`): on an editable DRAFT Booking on a Southern Cross List (BK0009 on Souter Tue 21 PM, `L-34821-2026-07-21-PM`, is Southern Cross and DRAFT at `3d3a18c`; confirm in the built seed and name it in ATLAS.md), picking abdominoplasty, breast lift or liposuction offers the combination under "Combinations" with the neutral pill and "Covers {parts}"; one state with its AA code typed in the search, filtered to it. Caption in the catalogue's words: when any of the parent procedures is picked, the Contract is offered, and the picker's filters and AA code search find it. Drop the absent reason. |
+| [US-05.3.1](../../../../requirements-board/requirements/stories/US-05.3.1.md) Multi-procedure BTM rule | captured · web-additional-base, mobile-additional-base | Stays captured. Re-shoot both on BK0022 (`/web/lists/L-34821-2026-07-20-AM/bookings/BK0022`, and the mobile route): the highlight `units-row-b` of the additional block now reads 0 with the caption that base units are on the primary; re-check the `nth=1` selector still lands, since the additional block loses its ASA card and chips and the blocks follow `inDisplayOrder`. Add `admin-modifier-split` on the seeded three-procedure Booking, highlight `booking-total-split` ("Primary · B + T + M 3 of 7", "Additional · T + M 2 of 7" twice, the 3/2/2 split). Caption in the catalogue's words. The anaesthetist shots show units and shares only, no fee. |
+| [US-05.3.4](../../../../requirements-board/requirements/stories/US-05.3.4.md) Contract-specific second-procedure rules | captured · admin-second-procedure | Stays captured, retitled: the second Procedure is priced by the Contract's rule, not an ordinal row. Re-shoot `admin-second-procedure` (`/admin/day/2026-07-14/bookings/BK0028`, the bariatric Booking), replacing the caption "Second procedure priced by the contract's own ordinal rule" with "Additional procedure priced by the Contract's add-on fee" ($950 on the Doyle bariatric Contract). Highlight `booking-total-split` inside `booking-calculation`. |
+| [US-05.3.5](../../../../requirements-board/requirements/stories/US-05.3.5.md) Ledger tracks each Procedure's share | captured · admin-per-procedure | Stays captured (the item Matches). Re-shoot `admin-per-procedure` (`/admin/day/2026-07-20/bookings/BK0022`, highlight `booking-calculation`): the rows now read "Primary" and "Additional", primary first. Keep the caption "The Booking's fee broken down by Procedure, on the office view". The share is still recorded on invoice lines. |
 
 **Recipes this phase breaks.**
 - `US-03.2.1` highlights `[data-shot=procedure-additional-note]` and carries the "time units only" caption; `US-03.2.3` clicks "Add another procedure" and highlights `procedure-header` and `procedure-contract` at `nth=1`. Re-point both to the new block anatomy and order.

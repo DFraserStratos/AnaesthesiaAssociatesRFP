@@ -1,24 +1,26 @@
 /**
- * Register a file (or a mermaid diagram) as an artifact: take the next AR-nn, put a drawing in the
- * catalogue's artifacts folder (a document elsewhere in the repository is pointed at, not copied),
- * and write the sidecar with what is known. Prints what the file holds, to choose anchors from.
+ * Register a file (or a mermaid diagram) as an artifact: take the next AR-nn, bring the file into
+ * the requirements folder's `artifacts/files/` (a drawing is copied in as AR-nn.<ext>; a transcript
+ * or document keeps its name and is moved in, with `git mv` when git tracks it), and write the
+ * sidecar with what is known. Prints what the file holds, to choose anchors from.
  *
  *   npm run artifact:new -- <file> --title "Name" --kind diagram --date 2026-10-06 [--author "..."] [--source "..."] [--keep]
  *   npm run artifact:new -- --mermaid <file.mmd> --title "Name" [--kind diagram]
  *
  * --date is when the artifact itself was made (the meeting, the publication, the drawing), YYYY-MM-DD,
- * YYYY-MM or YYYY. --keep leaves a drawing where it is instead of copying it in. Then add regions and a description
+ * YYYY-MM or YYYY. --keep leaves the file where it is (a path from the repository root) instead of bringing it in. Then add regions and a description
  * to the sidecar, link items to it (`artifacts: [AR-nn#spot]`), and run `npm run check`.
  */
-import { copyFileSync, existsSync, readFileSync } from 'node:fs'
-import { extname, relative, resolve, sep } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs'
+import { basename, extname, join, relative, resolve, sep } from 'node:path'
 import { markdownFacts, svgFacts } from '../shared/artifacts.ts'
 import { isArtifactDate } from '../shared/check.ts'
 import { serialiseArtifact } from '../shared/files.ts'
 import { nextArtifactId } from '../shared/ids.ts'
 import { ARTIFACT_KINDS, artifactFormat, type Artifact, type ArtifactKind } from '../shared/types.ts'
 import { artifactInfo, REPO_ROOT } from '../server/artifactFiles.ts'
-import { CATALOGUE_DIR, artifactSidecarPath, artifactsDir, createAtomic, loadCatalogue, takenIds } from '../server/catalogueFs.ts'
+import { REQUIREMENTS_DIR, artifactSidecarPath, artifactsDir, createAtomic, loadCatalogue, takenIds } from '../server/catalogueFs.ts'
 
 const argv = process.argv.slice(2)
 const opt = (name: string) => {
@@ -63,16 +65,33 @@ if (mermaid) {
   const format = artifactFormat({ file: abs, source: '' })
   if (!format) fail(`${given} is not a kind the board shows (.svg, .png, .jpg, .jpeg, .webp, .md, .pdf)`)
   const drawing = format === 'svg' || format === 'raster'
-  if (drawing && !flag('--keep') && !inside(abs, artifactsDir())) {
-    const to = resolve(artifactsDir(), `${id}${extname(abs).toLowerCase()}`)
-    copyFileSync(abs, to)
-    file = `artifacts/${id}${extname(abs).toLowerCase()}`
-    console.log(`copied ${relative(process.cwd(), abs)} to ${relative(process.cwd(), to)} (delete the original when it is no longer needed)`)
-  } else if (inside(abs, CATALOGUE_DIR)) {
-    file = relative(CATALOGUE_DIR, abs).split(sep).join('/')
-  } else if (inside(abs, REPO_ROOT)) {
+  const filesDir = join(artifactsDir(), 'files')
+  if (inside(abs, REQUIREMENTS_DIR)) {
+    file = relative(REQUIREMENTS_DIR, abs).split(sep).join('/')
+  } else if (flag('--keep')) {
+    if (!inside(abs, REPO_ROOT)) fail(`${given} is outside the repository; --keep needs a file inside it`)
     file = '/' + relative(REPO_ROOT, abs).split(sep).join('/')
-  } else fail(`${given} is outside the repository; copy it in first`)
+  } else {
+    const name = drawing ? `${id}${extname(abs).toLowerCase()}` : basename(abs)
+    const to = join(filesDir, name)
+    if (existsSync(to)) fail(`${relative(process.cwd(), to)} already exists; rename the file or pass --keep`)
+    mkdirSync(filesDir, { recursive: true })
+    if (drawing || !inside(abs, REPO_ROOT)) {
+      copyFileSync(abs, to)
+      console.log(`copied ${relative(process.cwd(), abs)} to ${relative(process.cwd(), to)} (delete the original when it is no longer needed)`)
+    } else {
+      let tracked = true
+      try {
+        execFileSync('git', ['ls-files', '--error-unmatch', abs], { cwd: REPO_ROOT, stdio: 'ignore' })
+      } catch {
+        tracked = false
+      }
+      if (tracked) execFileSync('git', ['mv', abs, to], { cwd: REPO_ROOT })
+      else renameSync(abs, to)
+      console.log(`moved ${relative(process.cwd(), abs)} to ${relative(process.cwd(), to)}${tracked ? ' (git mv)' : ''}; fix any links to its old place`)
+    }
+    file = `artifacts/files/${name}`
+  }
 }
 
 const a: Artifact = {
@@ -95,16 +114,16 @@ createAtomic(artifactSidecarPath(id), serialiseArtifact(a))
 console.log(`wrote ${relative(process.cwd(), artifactSidecarPath(id))}`)
 
 // What the file holds, to pick anchors from.
-const info = artifactInfo(a, CATALOGUE_DIR)
+const info = artifactInfo(a, REQUIREMENTS_DIR)
 if (!info.facts.ok) console.log(`warning: ${info.facts.error}`)
 if (info.meta.format === 'svg' && file) {
-  const f = svgFacts(readFileSync(resolve(file.startsWith('/') ? REPO_ROOT : CATALOGUE_DIR, file.replace(/^\//, '')), 'utf8'))
+  const f = svgFacts(readFileSync(resolve(file.startsWith('/') ? REPO_ROOT : REQUIREMENTS_DIR, file.replace(/^\//, '')), 'utf8'))
   const ids = f.elements.filter((e) => e.attrs.id).map((e) => `#${e.attrs.id}`)
   console.log(`\nviewBox ${JSON.stringify(f.bounds)}; ${f.texts.length} texts${ids.length ? `; ids: ${ids.slice(0, 30).join(' ')}` : ''}`)
   console.log('texts (text= anchors):')
   for (const t of [...new Set(f.texts)].filter(Boolean).slice(0, 60)) console.log(`  ${t}`)
 } else if (info.meta.format === 'markdown' && file) {
-  const f = markdownFacts(readFileSync(resolve(file.startsWith('/') ? REPO_ROOT : CATALOGUE_DIR, file.replace(/^\//, '')), 'utf8'))
+  const f = markdownFacts(readFileSync(resolve(file.startsWith('/') ? REPO_ROOT : REQUIREMENTS_DIR, file.replace(/^\//, '')), 'utf8'))
   console.log(`\n${f.lines} lines; headings (spots of their own, by slug):`)
   for (const h of f.headings) console.log(`  ${'  '.repeat(h.depth - 1)}${h.slug}  ${h.text}`)
 } else if (info.meta.format === 'pdf') {

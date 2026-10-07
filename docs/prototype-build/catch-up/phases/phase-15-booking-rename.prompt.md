@@ -9,10 +9,10 @@ Before doing anything else, read these in order:
    - the RV-03 and RV-12 rows under "Prototype behaviour to remove or rework";
    - the US-03.1.3 row in the EP-03 table.
    Then read epics/EP-03.md#us-03.1.3, analysis/domain-model-delta.md (DM-01, DM-39) and analysis/reverse-check.md (RV-03, RV-12).
-4. The catalogue items, under docs/discovery-reference/Updated Requirements/catalogue/requirements/:
+4. The catalogue items, under requirements-board/requirements/stories/:
    - US-03.1.3.md (covered);
    - read alongside: US-02.4.3.md, US-02.4.1.md, FT-03.2.md and US-03.2.3.md;
-   - docs/discovery-reference/Updated Requirements/domain-model.md, section 2 "Booking" and section 4, the glossary (Booking, Card, Recurring booking, Timesheet).
+   - requirements-board/requirements/domain-model.md, section 2 "Booking" and section 4, the glossary (Booking, Card, Recurring booking, Timesheet).
 5. The code maps under docs/prototype-build/catch-up/analysis/:
    - prototype-map-store-seed.md (sections 1 to 3, 6 and 7);
    - prototype-map-domain.md (sections 2 and 5);
