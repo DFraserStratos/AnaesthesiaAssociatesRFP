@@ -89,12 +89,16 @@ for (const d of gaps.dataModelDeltas ?? []) itemById.set(d.id, { ...d, kind: 'dm
 for (const r of gaps.reverseFindings ?? []) itemById.set(r.id, { ...r, kind: 'rv' });
 
 const phases = plan.phases ?? [];
+// Built phases (DONE rows in PROGRESS.md's status table) may still list ids a later re-grade closed
+// (now Matches, or a delta or finding no longer reported): those were delivered, not lost.
+const progressMd = readText('../PROGRESS.md') ?? '';
+const builtPhases = new Set([...progressMd.matchAll(/^\|\s*(\d{2}[a-z]?)\s*\|[^|\n]*\|\s*DONE\s*\|/gim)].map((m) => m[1]));
 const phasesCovering = new Map(); // item id -> [phase num]
 for (const p of phases) {
   for (const id of p.covers ?? []) {
     if (!phasesCovering.has(id)) phasesCovering.set(id, []);
     phasesCovering.get(id).push(p.num);
-    if (!itemById.has(id)) warn(`Phase ${p.num} covers ${id}, which is not in gaps.json`);
+    if (!itemById.has(id) && !builtPhases.has(p.num)) warn(`Phase ${p.num} covers ${id}, which is not in gaps.json`);
   }
 }
 

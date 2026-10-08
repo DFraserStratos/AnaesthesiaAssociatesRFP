@@ -1,19 +1,27 @@
 # Phase 40a · NHI lookup and identity standards
 
 **Requirements covered:**
-[FT-14.4](../../../../requirements-board/requirements/stories/FT-14.4.md) NZ identity standards (Proposed; the NHI and HPI CPN parts, changed at `3d3a18c`: "HPI number" became **HPI CPN**) ·
-[US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed; changed at `3d3a18c`: the HPI CPN wording, and a new note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day).
+[FT-14.4](../../../../requirements-board/requirements/stories/FT-14.4.md) NZ identity standards (Proposed, Partial; the NHI and HPI CPN parts, with "HPI number" now **HPI CPN**; unchanged by the 2026-10-08 update) ·
+[US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub (Proposed, Partial; the HPI CPN wording, and the note that the NHI can be refreshed from the central register, with hospitals getting updates twice a day; unchanged by the 2026-10-08 update).
+**Re-planned 2026-10-08 (catalogue `60e2d1e`)** only for what this phase builds on: neither covered
+item changed, but the add-booking form it works in is now the one 15b, 19, 20a and 21 rebuild (an
+assigned List is ACTIVE with no "Open" label, the sheet opens straight on the manual form, the
+procedure is picked on 19's two tabs with 20a's optional "As given" field, and 21's payer on the
+Booking, prefilled from the patient, replaces the old billing route and billable-party fields).
 Treated here without closing it: [DM-30](../analysis/domain-model-delta.md#dm-30) (its sentence "The
 NHI can be refreshed from the central register" only; the rest of DM-30 is Phase 40's).
 Read alongside (not closed here):
 [US-11.1.2](../../../../requirements-board/requirements/stories/US-11.1.2.md) (dual-format NHI validation; its testing note puts "NHI lookups via the Hub" in the dual-format regression set; the validators screen stays where Phase 34 put it),
-[US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) (ethnicity coded to NZHIS Level 4: Phase 40's),
+[US-11.1.1](../../../../requirements-board/requirements/stories/US-11.1.1.md) (ethnicity coded to NZHIS Level 4: Phase 40's; at `60e2d1e` it gained Vanessa's 2026-10-07 "make NHI mandatory" note, which leans toward the NHI as the patient identifier throughout, still OQ-49),
 [US-11.1.5](../../../../requirements-board/requirements/stories/US-11.1.5.md) (the missing-NHI problem list, the reason a solid NHI matters),
 [US-12.1.4](../../../../requirements-board/requirements/stories/US-12.1.4.md) (the anaesthetist's HPI CPN, Phase 26),
-[US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17),
+[US-13.6.2](../../../../requirements-board/requirements/stories/US-13.6.2.md) (the surgeon's HPI CPN, Phase 17; its `60e2d1e` change, private pairing preferences in place of the blacklist, is 17's and does not touch the HPI CPN),
+[US-11.2.2](../../../../requirements-board/requirements/stories/US-11.2.2.md) (the payer on the Booking, prefilled from the patient and editable to a parent or guardian: Phase 21's; the lookup fills the patient the payer is prefilled from),
+[US-02.4.1](../../../../requirements-board/requirements/stories/US-02.4.1.md) (Add a Booking manually, with the optional "as given" wording: 20a's form, which this phase extends),
+[FT-07.1](../../../../requirements-board/requirements/stories/FT-07.1.md) (the List states DRAFT, ACTIVE, SUBMITTED, AUTHORISED: an assigned List is ACTIVE, 15b; a Draft List has no anaesthetist, 31),
 [OQ-52](../../../../requirements-board/requirements/questions/OQ-52.md) (Answered 2026-10-01: one identifier, called the HPI CPN),
 [OQ-30](../../../../requirements-board/requirements/questions/OQ-30.md) (Answered: no PII and no NHI in Xero, only a unique ID),
-[OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (Open, owner decision **D11**; context only, nothing here changes it),
+[OQ-49](../../../../requirements-board/requirements/questions/OQ-49.md) (Open, owner decision **D11**, partly answered 2026-10-07: Vanessa wants the NHI mandatory; whether a Booking without one is refused or held pending is undecided, and Phase 40 builds D11's default. Context only: nothing here changes it; when the Hub is down the form falls back to manual entry and Save follows 40's rules, unchanged),
 and points 23 and 26 of
 [the 2026-10-01 meeting note](../../../../requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md)
 (the register refresh and the twice-daily hospital cadence; the HPI CPN naming).
@@ -23,15 +31,25 @@ checks, shown on the mobile and web Profile) and 40 (the patient record at `/adm
 the Attach NHI sheet, `detailDifferences` in `src/domain/patients/patientDetails.ts`,
 `store/patientActions.ts` with `applyNhiAttach`, `buildNhiIndex`, `store/patientSelectors.ts` and `nhiBadge`'s `missing` flag). By the roadmap
 order 14 (the trigger registry, `useDemoTriggerContext`, `OFFICE_ACTOR`, the PWA demo-actions sheet),
-15 (`ManualBookingForm`, `AddBookingFlow`, `createBooking`), 17 (`normaliseHpiCpn`,
+15 (`ManualBookingForm`, `AddBookingFlow`, `createBooking`), 15b (the Add a booking sheet opens
+straight on the manual form, with no chooser and no "Enter manually"; the photo flow kept at most as a
+badged Future-scope demo; an assigned List's state renamed DRAFT to **ACTIVE**), 17 (`normaliseHpiCpn`,
 `isPlausibleHpiCpn` in `src/domain/surgeons.ts`, the "HPI CPN" field label, the surgeon profile), 19
-and 21 (the procedure-first picker and the billable-party fields in the same form), 31 (Draft Lists,
-which have no anaesthetist), 34 (the Future-scope HL7/FHIR surface, the reworded Integrations
-callout, and the `DemoSettings.failNextSync` precedent for demo switches) and 38a (the search field on
-the mobile Lists tab and the web Lists page) have also run.
+(the form's "Procedure" chooser row opening the two-tab `ProcedurePickerSheet`: Procedures and RVG
+codes), 20a (the optional **"As given"** field, `data-shot="as-given"`, in the form's procedure
+section), 21 (`Booking.payer`, a `BookingPayer` prefilled from the chosen patient with "Someone else"
+inline in `ManualBookingForm` and `PhoneAdviceBooking`, `PayerSheet`, `setBookingPayer`; the old
+billing route select and billable-party fields are gone), 28 (seeded List ids keep the
+`L-<reg>-<date>-<AM|PM>` form through `projectedListId`, so the routes below hold; it adds no "Open"
+label), 31 (Draft Lists, state DRAFT, which have no anaesthetist), 34 (the Future-scope HL7/FHIR
+surface and surgeon PDF ingest, the reworded Integrations callout, and `DemoSettings.autoMatchDemo` with
+`setAutoMatchDemo`, audited `demo.autoMatch`: with Phase 10's `failNextHandoff` and `armHandoffFault` in
+`store/demoSettingsActions.ts`, the precedent for demo switches) and 38a (the search field on the mobile Lists tab and the web Lists page)
+have also run.
 **Estimated:** 1 session, full. If it runs long, stop after work item 7 (pure modules, the Hub stub,
 the store action, tests green with the UI edited only to compile) and do items 8 to 16 in a short
-second sitting; propose that split in plan mode if the mapping shows it will not fit.
+second sitting; record the split in the PROGRESS entry if the mapping shows it will not fit (no
+plan-approval stop).
 
 ## Goal
 
@@ -44,8 +62,9 @@ the surgeon and anaesthetist records, appears nowhere in the booking or lookup f
 
 This phase:
 
-- **validates the NHI as it is typed** on every add-booking flow (mobile List, web List, Admin phone
-  advice, and the photo and PDF review form, which reuse `ManualBookingForm`). An I or O is flagged at
+- **validates the NHI as it is typed** on every add-booking flow (mobile List, web List and Admin phone
+  advice, which all use `ManualBookingForm`; the Future-scope photo demo's review form, where 15b kept
+  it, reuses the same form and inherits the change with no extra work). An I or O is flagged at
   once, and a wrong check digit or check letter as soon as the seventh character lands, with
   `validateNhi`'s own reason. Look up stays disabled until the NHI is valid, so **an invalid NHI is never
   sent to the Hub**;
@@ -65,22 +84,43 @@ This phase:
 - makes **HPI CPN** the one label and one format wherever a practitioner identifier shows, including
   the new lookup purpose line and the Future-scope FHIR pane.
 
+**The form it works in** is the 2026-10-08 one, already built by earlier phases: Add a booking on an
+**ACTIVE** List (15b; there is no "Open" label and no DRAFT state on an assigned List, and 28 adds
+none) opens straight on the manual form; the procedure is picked on 19's two tabs, with 20a's optional
+"As given" field beside it; and 21's **payer on the Booking** sits in the same form, prefilled from
+the patient. The lookup fills the patient, so the payer follows it while the payer is "The patient",
+and a payer already changed to someone else (a guardian) is never overwritten. The lookup touches
+nothing else in the form: not the procedure, the "As given" wording or the Contract. On a Draft List
+(31, no anaesthetist), where the office adds Bookings, the purpose note names "the AA office". Tests,
+the checklist, the recipes and the PWA parity check all run on an ACTIVE List.
+
 New stored state is small: `DemoSettings.nhiHubMode` (optional; absent reads as Available) and
 `Patient.registerRefreshedAtISO` (optional, unseeded). The register is not app state. It stands for an
 external system, so it is built from the seed by a pure function and never persisted.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff since the plan's baseline:
+1. Diff the covered and read-alongside items against the plan's snapshot (catalogue commit `60e2d1e`,
+   the 2026-10-07 meetings and the 2026-10-08 plan update; the tool is rename-aware, so never a plain
+   git diff of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,OQ-52,OQ-30,OQ-49
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,US-11.2.2,US-02.4.1,FT-07.1,OQ-52,OQ-30,OQ-49
    ```
 
-   Read the hunks for FT-14.4, US-14.4.1, US-11.1.2, US-11.1.1, US-11.1.5, US-12.1.4, US-13.6.2,
-   OQ-52, OQ-30 and OQ-49, and the domain-model lines on the NHI, the register refresh and the HPI CPN
-   glossary row. At plan time (2026-10-01) both covered items were **Proposed**, and no OQ was linked.
-2. If an item changed, re-read it in full and adjust the work items. Specifically:
+   Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on the
+   Booking and the HPI CPN glossary row. (At plan update, 2026-10-08, this doc is current at
+   `60e2d1e`. What `60e2d1e` changed, and this plan already reflects: neither covered item changed,
+   and both are still **Proposed** with no OQ linked; US-11.1.1 and OQ-49 gained Vanessa's
+   2026-10-07 "make NHI mandatory", leaving D11 open with Phase 40's default; US-13.6.2's blacklist
+   became 17's private pairing preferences; the domain model names a payer on every Booking,
+   prefilled from the patient (21); the List states became DRAFT, ACTIVE, SUBMITTED, AUTHORISED
+   (15b, 31); and the add-booking form gained the two-tab picker (19) and "As given" (20a).)
+2. If an item changed after `60e2d1e`, re-read it in full and adjust the work items. Specifically:
+   - **OQ-49 answered.** If AA answers that a Booking cannot be created without an NHI, that is
+     Phase 40's guard at Save, not this phase's: keep the lookup and its manual fallback (a typed,
+     valid NHI still saves), and record the answer. If it says the NHI is the patient identifier
+     throughout, record it for 40 and 43; the register and refresh here are unchanged.
    - **Refresh cadence.** If US-14.4.1 now asks for an automatic refresh on a schedule (the
      "twice a day" note becoming a rule), keep work item 6's action. Add a "Run register refresh"
      demo trigger on Admin · Patients that runs it over every patient with an NHI, not a timer, and
@@ -103,8 +143,18 @@ external system, so it is built from the seed by a pure function and never persi
    twice-daily cadence is a note about hospitals, not an acceptance criterion. The pill sits beside the
    refresh button: "On demand, to confirm with AA".
 5. **Prerequisite names.** Confirm Phases 26 and 40 are DONE in PROGRESS.md, then read their handoff
-   notes and name maps and the entries for 14, 15, 17, 34 and 38a. Wherever this doc names a planned
-   symbol, use the real one:
+   notes and name maps and the entries for 14, 15, 15b, 17, 19, 20a, 21, 28, 31, 34 and 38a. Wherever
+   this doc names a planned symbol, use the real one:
+   - **15b, 19, 20a, 21:** how `AddBookingFlow` opens now (no chooser, no "Enter manually"; the
+     `initialMode` prop and whether the Future-scope photo demo survived), the "Procedure" chooser row
+     and `ProcedurePickerSheet`, the "As given" field and its `data-shot`, and the payer block in
+     `ManualBookingForm` and `PhoneAdviceBooking` (`Booking.payer`, `BookingPayer`, the "The patient" /
+     "Someone else" choice, `setBookingPayer`, and how the form keeps the payer in step with the chosen
+     patient). Note the form's section order now, so the lookup's status line and purpose note stay in
+     the patient section's caption slot;
+   - **28, 31:** that Dr Souter's Tue 21 Jul PM List (`L-34821-2026-07-21-PM`) is ACTIVE after reset,
+     how a Draft List is reached in Admin and whether Add booking opens on it (31's surface), and that
+     no "Open" label exists for an assigned List;
    - **40:** the patient record route and screen, the Details card and `EditPatientSheet` additions,
      the Attach NHI sheet and its live `validateNhi`, `detailDifferences` (its field union and
      comparison rules), `patientActions.ts`, `patientSelectors.ts` (`patientRecordView`),
@@ -115,14 +165,17 @@ external system, so it is built from the seed by a pure function and never persi
    - **17:** `normaliseHpiCpn`, `isPlausibleHpiCpn`, the `hpiId` field label, and the surgeon
      profile's HPI CPN chip and caption;
    - **15:** `ManualBookingForm`, `AddBookingFlow` (with its `manualEmptyLookupPrefill` prop for S2),
-     `PhotoCaptureFlow`'s review form, and `createBooking`;
+     `PhotoCaptureFlow`'s review form if 15b kept it behind the Future-scope demo (if 15b deleted it,
+     drop it from this doc's surface list), and `createBooking`;
    - **14:** the `DemoTrigger` contract, `DemoContextValues`, `useDemoTriggerContext`, the PWA sheet's
      reachability while a bottom sheet is open, and `src/store/demoActors.ts`;
-   - **34:** where `failNextSync` and its setter live (the precedent for `nhiHubMode`), the reworded
+   - **34:** where `autoMatchDemo` and `setAutoMatchDemo` live (with Phase 10's `failNextHandoff` and
+     `armHandoffFault` in `store/demoSettingsActions.ts`, the precedent for `nhiHubMode`), the reworded
      Keycloak and Hub callout, and the Future-scope surface's path (`src/apps/demo/futureScope/`);
    - **38a:** the search field components on mobile and web and `parseBookingQuery`;
    - the current `PERSIST_VERSION`.
-6. Record the result (changed items, the provisional reading, the real names) in the PROGRESS entry.
+6. Record the result (changed items against `60e2d1e`, the provisional reading, the real names) in
+   the PROGRESS entry.
 
 ## Reference
 
@@ -142,8 +195,9 @@ external system, so it is built from the seed by a pure function and never persi
   `Callout`, and Phase 40's Details differ table. Do not invent a new visual language.
 
 **Catalogue items:** the two covered above, plus the read-alongside list. The catalogue images for
-US-14.4.1 (`web-nhi-lookup.png`, `mobile-nhi-lookup.png`) are screenshots of the **current**
-prototype. They show where the lookup sits today, not what the story requires.
+US-14.4.1 (`web-nhi-lookup.png`, `mobile-nhi-lookup.png`) are screenshots of the **old** prototype
+(an "Enter manually" chooser step, the billing route select and a six-patient stub). They show where
+the lookup sat, not what the story requires; this phase's capture step replaces them.
 
 **Analysis files:**
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Summary theme 9 (it lists US-14.4.1 and FT-14.4), the
@@ -158,36 +212,40 @@ prototype. They show where the lookup sits today, not what the story requires.
   [analysis/prototype-map-shell-demo-pwa.md](../analysis/prototype-map-shell-demo-pwa.md) (the PWA
   closure and `pwaPurity.test.ts`).
 
-**Code entry points** (July names and lines; Phases 15 to 40 have moved many of them, so use the real
-ones from their PROGRESS entries):
+**Code entry points** (names and lines at the 2026-10-08 plan update; Phases 15b to 40 move many of
+them, so use the real ones from their PROGRESS entries):
 - The canned lookup: `aa-prototype/src/domain/nzhis.ts:81-119` (`NhiLookupHit`, `CANNED_PATIENTS`,
   `lookupNhi`). The ethnicity half of the file (`ETHNICITY_DEMO_SUBSET`, `validateEthnicityCode`)
   stays.
 - The validator: `aa-prototype/src/domain/nhi.ts` (`validateNhi` :54 with its verbatim reasons,
   `generateNhi` :133, `NHI_ALPHABET`). It is the one validator; nothing here adds a second regex.
-- The form: `aa-prototype/src/shared/flows/ManualCardForm.tsx` (15's `ManualBookingForm`): `runLookup`
-  :76-98 (with the S2 empty-NHI prefill branch), the NHI field, the Look up button and the
-  `DemoBadge` "NHI FHIR lookup · Digital Services Hub" :144-162, and `save` (`createBooking`, which still
-  refuses an invalid NHI through `upsertPatient`, `store/intake.ts:52`, the refusal at :60-64).
-- Its hosts: `shared/flows/AddCardFlow.tsx` (15's `AddBookingFlow`); `shared/flows/PhotoCaptureFlow.tsx`
-  (the review form; its 900 ms "processing" `setTimeout` at :27 is the UI-timer precedent);
-  `shared/flows/sampleExtractions.ts` (a comment that names the canned lookup);
-  `apps/web/screens/ListDetailView.tsx:237`; `apps/mobile/routes.tsx:134`;
-  `apps/admin/flows/PhoneAdviceBooking.tsx` (`PHONE_ADVICE_LOOKUP_PREFILL` with `DEM1239` :28-33, passed
-  at :101), opened from `apps/admin/components/ListDrawer.tsx:108`.
+- The form: `aa-prototype/src/shared/flows/ManualBookingForm.tsx`: `runLookup` :78 (with the S2
+  empty-NHI prefill branch), the NHI field :149, the Look up button :151 and the `DemoBadge` "NHI FHIR
+  lookup · Digital Services Hub" :155, and `save` (`createBooking` :111, which still refuses an invalid
+  NHI through `upsertPatient`, `store/intake.ts:52`, the `validateNhi` refusal at :61). At the plan
+  update the form still has the billing route select and `billablePartyId` (:44, :69, :124, :235);
+  20 and 21 replace them with the payer block, 19 the "Procedure code" select with the chooser row,
+  and 20a adds "As given", so read the form as those phases left it.
+- Its hosts: `shared/flows/AddBookingFlow.tsx` (the chooser at :105 goes in 15b);
+  `shared/flows/PhotoCaptureFlow.tsx` (the review form, Future scope after 15b if kept; its 900 ms
+  "processing" `setTimeout` at :29 is the UI-timer precedent, and if 15b deleted the file,
+  `officeSimulation`'s delay is the one left); `shared/flows/sampleExtractions.ts` (a comment that names
+  the canned lookup, if it survives 15b); `apps/web/screens/ListDetailView.tsx:257`;
+  `apps/mobile/routes.tsx:137`; `apps/admin/flows/PhoneAdviceBooking.tsx` (`PHONE_ADVICE_LOOKUP_PREFILL`
+  with `DEM1239` :28, passed at :101), opened from `apps/admin/components/ListDrawer.tsx`.
 - Seed: `domain/seed/patients.ts` (`PINNED`, the comment naming "the five canned lookupNhi patients"
   :72, `FIRST_NAMES`, `SURNAMES`, `GENERIC_COUNT`, `buildPatients(seed)` with
-  `slotRng(seed, 'patients')`); `domain/seed/index.ts` (`SEED = 20260721` :81, `buildPatients(SEED)`
-  :367); `domain/seed/slotHash.ts` (`slotRng`).
-- Types: `domain/types.ts` (`Patient` :103, `Anaesthetist.hpiId` :149, `DemoSettings` :886).
-- HPI display sites: `shared/audit/fieldLabels.ts:121` (17 relabelled it); `apps/admin/flows/
+  `slotRng(seed, 'patients')`); `domain/seed/index.ts` (`SEED = 20260721` :85, `buildPatients(SEED)`
+  :393); `domain/seed/slotHash.ts` (`slotRng`).
+- Types: `domain/types.ts` (`Patient` :103, `Anaesthetist.hpiId` :149, `DemoSettings` :896).
+- HPI display sites: `shared/audit/fieldLabels.ts:125` (17 relabels it); `apps/admin/flows/
   AddAnaesthetistFlow.tsx:72` and `EditAnaesthetistSheet.tsx:61` ("HPI {id} or 'not set'"; 26 reworked
   both); `apps/demo/DemoIntegrations.tsx:54` and the callout at :315-322 ("provider identity carries
   the HPI"); `domain/integrations/messages.ts:47, :256` (a message description naming "the
   anaesthetist HPI"); `domain/integrations/fhir.ts:20, :151, :203-237` (`HPI_SYSTEM`, the Practitioner
   identifier, `practitionerHpi`; the system URL is a standard and stays).
-- Clock and persistence: `store/mutate.ts` (`clockISO`), `store/appStore.ts:130` (`PERSIST_VERSION`, 13
-  at the snapshot), `store/persistMigrate.test.ts`.
+- Clock and persistence: `store/mutate.ts` (`clockISO`), `store/appStore.ts:136` (`PERSIST_VERSION`, 16
+  at the 2026-10-08 plan update; later phases bump it), `store/persistMigrate.test.ts`.
 - PWA boundary: `src/pwa/pwaPurity.test.ts` (`FORBIDDEN`: `apps/web`, `apps/admin`, `apps/demo`, the
   harness shell); `src/pwa/officeSimulation.ts:46` (its note on a UI-layer `window.setTimeout`).
 
@@ -261,7 +319,10 @@ ones from their PROGRESS entries):
    - **Remove** `lookupNhi`, `NhiLookupHit`, `NhiLookupMiss`, `NhiLookupResult` and `CANNED_PATIENTS`
      from `nzhis.ts`, and rewrite its header so it covers ethnicity only. Grep gate:
      `lookupNhi|CANNED_PATIENTS|Not found in this demo's records` returns nothing in `aa-prototype/src`
-     or `aa-prototype/visual`.
+     or `aa-prototype/visual`. That includes the tests: `domain/nzhis.test.ts`'s `lookupNhi` block and
+     `domain/seed/seed.test.ts`'s `lookupNhi` import move to `lookupOnRegister` over `nhiRegister()`,
+     keeping what they asserted (CQY9304, MYY54SL and DEM1239 found with the same details; normalised
+     input; `ABC1234`, which fails the check digit, now `invalid` with that reason rather than a miss).
    - Tests: found in both formats; not found for `ZBW6638`; invalid for `ZAA0068` with the reason;
      Fiona Gray gives one difference (name) and one enrichment (address); Sarah Mitchell gives neither;
      an ethnicity mismatch is a difference.
@@ -309,12 +370,12 @@ ones from their PROGRESS entries):
      timer fires, and only B shows); cancel and retry; unmount clears timers.
 
 5. **Model, demo switch and persistence.**
-   - `DemoSettings.nhiHubMode?: NhiHubMode`, where absent reads as `available` (34's `failNextSync`
-     precedent). It is demo scaffolding, not AA configuration, so it does not go in Phase 40's
+   - `DemoSettings.nhiHubMode?: NhiHubMode`, where absent reads as `available` (the precedent of
+     Phase 10's `failNextHandoff` and 34's `autoMatchDemo`). It is demo scaffolding, not AA configuration, so it does not go in Phase 40's
      `appSettings`. Reset clears it.
-   - `setNhiHubMode(api, actor, mode)` beside 34's sync switch setter (real file from 34's entry),
-     through `mutate()`, audited the same way 34 audits its switch (`demo.nhiHubMode`, before and
-     after). It refuses an unknown mode.
+   - `setNhiHubMode(api, actor, mode)` in `store/demoSettingsActions.ts` beside `armHandoffFault` (or
+     beside 34's `setAutoMatchDemo` if 34 put it elsewhere; real file from 34's entry), through
+     `mutate()`, audited the same way 34 audits its switch (`demo.nhiHubMode`, before and after). It refuses an unknown mode.
    - `Patient.registerRefreshedAtISO?: string` (unseeded), with a doc comment saying it is stamped by
      the office's refresh from the demo clock.
    - `Patient`'s doc comment gains one line: "Identity is looked up and refreshed against the NHI
@@ -353,21 +414,35 @@ ones from their PROGRESS entries):
 7. **Session checkpoint.** Build, PWA build and Vitest green, with the form edited only to compile
    (it now calls the hook in place of `lookupNhi`). Record the counts.
 
-8. **The add-booking flow** (`ManualBookingForm`, shared by mobile, web, Admin phone advice and the
-   photo and PDF review).
+8. **The add-booking flow** (`ManualBookingForm`, shared by mobile and web Add a booking, Admin phone
+   advice and, if 15b kept it, the Future-scope photo demo's review; surgeon PDF ingest is Future scope
+   after 34 and gets nothing new). The form is the 2026-10-08 one: Add a booking opens straight on it
+   (15b), on an ACTIVE List or, for the office, a Draft List (31), with 19's "Procedure" chooser row,
+   20a's "As given" field and 21's payer block. This item changes only the patient section.
    - The NHI field gets `mono`, `autoCapitalize="characters"`, `spellCheck={false}` and
      `autoComplete="off"`. Its caption slot shows the shape hint, `nhiEntryFeedback`'s reason (error
      tint) or "Valid NHI" with the format (success tint, small) as the user types. Editing the NHI
      resets the hook.
    - Look up (teal secondary, as today) is enabled only when the feedback is `valid`, or for S2's empty
-     NHI with `manualEmptyLookupPrefill` (kept). While checking or slow it shows a small spinner and
+     NHI with `manualEmptyLookupPrefill` (kept). The S2 branch does not bypass the Hub: it looks up the
+     prefill's NHI (`DEM1239`, valid and on the register) through the same hook, so its Hub states
+     apply, and on `found` fills the rest of the prefill as today; when the Hub is Unavailable it shows
+     the fallback like any lookup. While checking or slow it shows a small spinner and
      "Checking". `NhiLookupStatus` sits under it.
    - **Found** fills name, DOB, phone if present, and ethnicity, as today, then the S2 prefill branch
-     unchanged. Phase 40's "matched existing record" and "details differ" lines still appear at Save.
+     unchanged. Phase 40's "matched existing record" and "details differ" lines and its balance warning
+     for the patient paying still appear where 40 put them.
+   - **The payer follows the patient, never the other way.** 21's payer block is prefilled from the
+     patient. While it is "The patient", a found person becomes the payer's name, with the email from
+     the matched AA record if there is one (the register holds no email), through the form's existing
+     prefill, not a second path. If the user has already chosen "Someone else" (a guardian), a lookup,
+     a second lookup or a Retry never changes it. A found patient under 18 on the List date shows 21's
+     mild "Under 18" note on the payer choice, as 21 built it; nothing new is added. The lookup never
+     writes the procedure, the "As given" wording or the Contract.
    - **Not found, unavailable, cancelled:** every field stays editable and Save works on the typed
      details. `createBooking` still refuses an invalid NHI at Save, so there is still one gate.
    - `NhiPurposeNote` under the status line, naming the List's anaesthetist (read through
-     `listId`), or "the AA office" for a Draft List.
+     `listId`), or "the AA office" for a Draft List (31: state DRAFT, no anaesthetist).
    - The `DemoBadge` keeps "NHI FHIR lookup · Digital Services Hub". When `nhiHubMode` is not
      available, a second amber badge reads "Hub simulated as Slow" or "Hub simulated as Unavailable",
      so a presenter is never surprised by a mode left on.
@@ -377,7 +452,11 @@ ones from their PROGRESS entries):
    - Component tests: `ZAA0068` shows the check-digit reason and disables Look up; `ABI` shows the I
      and O reason at once; `ZBR4417` finds Mereana Tipene (zero timing); Unavailable shows Retry and Save
      still creates the Booking; Slow shows the notice and Stop waiting cancels; the purpose note names
-     "Dr Melanie Souter (HPI CPN 10SOUM)"; an NHI edit during checking discards the answer.
+     "Dr Melanie Souter (HPI CPN 10SOUM)" on her ACTIVE Tue 21 PM List and "the AA office" on a Draft
+     List; an NHI edit during checking discards the answer; with the payer left as "The patient",
+     `ZBR4417` makes Mereana Tipene the payer, and with the payer already set to "Someone else" (a typed
+     guardian), `ZBR4417` fills the patient and leaves the guardian payer exactly as typed; a picked
+     procedure and typed "As given" survive a lookup unchanged.
 
 9. **The other places the NHI is entered.**
    - **Patient record** (40's `/admin/patients/:patientId`, the Details card): an **NHI register**
@@ -436,8 +515,9 @@ ones from their PROGRESS entries):
     body calls `setNhiHubMode` from `src/store`. Add `nhiHub.inUse` to `DemoContextValues`. Nothing is
     added to the Control Panel page; its index lists the entry under its screens.
 
-13. **PWA parity check.** On the PWA, open an Open List (approval state `DRAFT`, which Phase 28 labels "Open"), then Add booking, then Enter manually: the
-    demo chip offers the Hub entry. Run Unavailable, then Look up, and the fallback shows. If 14's chip
+13. **PWA parity check.** On the PWA, open Dr Souter's ACTIVE Tue 21 Jul PM List
+    (`/mobile/lists/L-34821-2026-07-21-PM`), then Add a booking, which opens straight on the manual
+    form (15b): the demo chip offers the Hub entry. Run Unavailable, then Look up, and the fallback shows. If 14's chip
     cannot be reached while the Add booking sheet is open (the scrim), make the PWA chip stack above
     the sheet, as 14's sheet does for other entries, rather than widening the entry's visibility, and
     record which was done. Pin visibility in a Vitest test over `demoTriggersFor` (`pwa` surface, with
@@ -448,8 +528,14 @@ ones from their PROGRESS entries):
       and `src/domain/seed/nhiRegister.ts` and nothing forbidden); the trigger shows only with
       `nhiHub.inUse` on its routes; `demoScenarios.test.ts` S2's phone-advice path still fills the
       DEM1239 Booking.
-    - Playwright: a new `visual/nhi-lookup.spec.ts`. On web Add booking: `ZAA0068` reason, `ZBR4417`
-      found, Unavailable through Demo actions with Retry, then Available. On the Admin patient record:
+    - Existing Playwright specs that drive Look up: `visual/admin-phase06.spec.ts` (the S2 phone-advice
+      lookup filling DEM1239, and "generic manual-booking lookup still requires an NHI") still pass with
+      the Hub's visible wait, by waiting on values and `data-shot` selectors, never a fixed sleep; re-point
+      only what this phase changed (earlier phases own their "Enter manually" and field changes).
+    - Playwright: a new `visual/nhi-lookup.spec.ts`, on Dr Souter's ACTIVE Tue 21 Jul PM List. On web
+      Add a booking: `ZAA0068` reason, `ZBR4417` found with the payer reading Mereana Tipene, then
+      "Someone else" typed as a guardian and a second lookup leaving it, Unavailable through Demo
+      actions with Retry, then Available. On the Admin patient record:
       Fiona Gray refresh, Use register for the name, Apply, Last refreshed. Plus a mobile shot of the
       lookup with the purpose note. The PWA device spec runs the Hub entry from the sheet. Wait on
       `data-shot` selectors, never on fixed sleeps.
@@ -462,7 +548,7 @@ ones from their PROGRESS entries):
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
-| Hub: Available / Slow / Unavailable (id `nhi-hub-mode`) | Add booking wherever it opens: Mobile · List (`/mobile/lists/:listId`), Web · List (`/web/lists/:listId`), Admin · Day (`/admin/day/:dateISO`, phone advice from the List drawer, and 31's Draft List surface if it hosts Add booking), plus Admin · Patient record (`/admin/patients/:patientId`, while the refresh panel or Attach NHI is open). `when`: `ctx.published['nhiHub.inUse'] === true`, so it shows only while a Hub surface is open | bar and pwa | `choices`: Available, Slow, Unavailable; `setNhiHubMode(api, DEMO_ACTOR, choice)`. Disabled with "Already set" for the current mode. Message: "The simulated Hub now answers as Unavailable. The next lookup shows the manual fallback." It stays set until changed or Reset, and the form's badge shows it |
+| Hub: Available / Slow / Unavailable (id `nhi-hub-mode`) | Add booking wherever it opens: Mobile · List (`/mobile/lists/:listId`), Web · List (`/web/lists/:listId`), Admin · Day (`/admin/day/:dateISO`, phone advice from the List drawer, and 31's Draft List surface, `/admin/draft-lists`, where the office adds a Booking to a Draft List; real route from 31's entry), plus Admin · Patient record (`/admin/patients/:patientId`, while the refresh panel or Attach NHI is open). `when`: `ctx.published['nhiHub.inUse'] === true`, so it shows only while a Hub surface is open | bar and pwa | `choices`: Available, Slow, Unavailable; `setNhiHubMode(api, OFFICE_ACTOR, choice)` (14's `demoActors.ts`, as `arm-handoff-fault` does; there is no exported `DEMO_ACTOR`). `disabledReason` "Already set" for the current mode. Message: "The simulated Hub now answers as Unavailable. The next lookup shows the manual fallback." It stays set until changed or Reset, and the form's badge shows it |
 | (product, no trigger) Refresh from NHI register | Admin · Patient record | none | A product button over the Hub stub. Fiona Gray's register record already carries her married name and address (`NHI_REGISTER_UPDATES`), so the refresh is demoable through normal use. Every other seeded patient refreshes with "nothing to change" |
 
 PWA parity: the mobile beat is the lookup itself, its validation and its Hub states. All of that runs
@@ -489,31 +575,44 @@ is expected.
 - A lookup on the Admin Intake matching screen or in the patient search. Search stays exact over AA's
   own records.
 - A full-scale register and timings (Phase 43).
+- The rest of the add-booking form: the two-tab picker (19), "As given" (20a), the payer block and its
+  under-18 note (21), and whether a Booking without an NHI is refused (OQ-49, D11, Phase 40's guard).
 
 ## Manual test checklist
 
 The agent runs every item itself in the running app and reports it with evidence; none is handed
 to the owner (ROADMAP.md "Owner review: agents test themselves").
 
-- [ ] Reset. Web, Dr Souter, an Open List (approval state `DRAFT`), then Add booking, then Enter manually. Under the NHI field:
-      the shape hint, the Hub badge, and "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM),
-      only to identify this patient. Health Information Privacy Code 2020."
+- [ ] Reset. Web, Dr Souter, her ACTIVE Tue 21 Jul PM List (`/web/lists/L-34821-2026-07-21-PM`; the
+      header shows ACTIVE, never "Open" or "DRAFT"), then Add a booking: it opens straight on the
+      manual form. Under the NHI field: the shape hint, the Hub badge, and "Looked up on behalf of Dr
+      Melanie Souter (HPI CPN 10SOUM), only to identify this patient. Health Information Privacy Code
+      2020." The form's other sections (19's Procedure chooser, 20a's "As given", 21's payer) are as
+      those phases left them.
 - [ ] Type `ABI`: "The letters I and O are never used in an NHI." shows at once. Type `ZAA0068`:
       "The check digit does not match." shows on the seventh character, and Look up stays disabled.
       Type `ZAA0067`: "Valid NHI".
 - [ ] `ZBR4417`, then Look up: "Checking the NHI register" briefly, then "Found Mereana Tipene", with
-      name, DOB and ethnicity filled and editable. `ZBX41AL` finds Ana Fifita with "New format NHI".
-      `ZBW6638` says no one with that NHI is on the register, and the details can be typed by hand.
+      name, DOB and ethnicity filled and editable, and the payer block (still "The patient") reading
+      Mereana Tipene. `ZBX41AL` finds Ana Fifita with "New format NHI". `ZBW6638` says no one with that
+      NHI is on the register, and the details can be typed by hand.
+- [ ] Payer and the rest of the form: pick a procedure on the two-tab picker and type an "As given"
+      wording, then change the payer to "Someone else" and type a guardian. Look up `ZBT2253`: Lucas
+      Brennan fills the patient, and the guardian payer, the procedure and the "As given" text are
+      unchanged. Save: the Booking has Lucas Brennan as patient and the guardian as payer.
 - [ ] With Add booking closed, Demo actions has no Hub entry. With it open: "Hub: Available / Slow /
       Unavailable". Choose Unavailable, then Look up: the warning line with Retry, and the amber "Hub
       simulated as Unavailable" badge. Type the details and Save: the Booking is created. Choose Slow:
       the slow notice appears, then the answer; Stop waiting cancels it. Choose Available: the badge
       goes.
-- [ ] Admin, Day, Tue 21 Jul, Dr Sharma's PM, Book (phone advice), Continue, then Enter manually, then
-      Look up with the NHI empty. The DEM1239 Booking fills as before, and the purpose note names "Dr
-      Priya Sharma (HPI CPN 12SHAP)".
-- [ ] Mobile, an Open List, Add booking: the same validation, states and purpose note in the bottom
-      sheet. Nothing opens as a centred modal.
+- [ ] Admin, Day, Tue 21 Jul, Dr Sharma's PM, Book (phone advice), Continue to add booking (the form opens straight
+      on manual entry, 15b), then Look up with the NHI empty. The DEM1239 Booking fills as before, the
+      payer reads the patient, and the purpose note names "Dr Priya Sharma (HPI CPN 12SHAP)". The saved
+      Booking's List is ACTIVE.
+- [ ] Admin, a Draft List (31; state DRAFT, no anaesthetist), add a Booking: the lookup works the same
+      and the purpose note reads "Looked up on behalf of the AA office".
+- [ ] Mobile, Dr Souter's ACTIVE Tue 21 Jul PM List, Add a booking: the same validation, states,
+      payer prefill and purpose note in the bottom sheet. Nothing opens as a centred modal.
 - [ ] Admin, Patients, Fiona Gray (`/admin/patients/PT0018`): "Not refreshed yet" with the Provisional
       pill. Refresh from NHI register: Name differs (Fiona Gray, Fiona Tamihana) and Address "Will be
       added". Choose Use register, then Apply. The record and her Bookings read Fiona Tamihana, the row
@@ -529,23 +628,30 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] HPI CPN reads the same everywhere it shows: the Admin anaesthetist editor, the surgeon profile,
       the mobile and web Profile, the purpose note and the Future-scope FHIR pane. Nothing reads "HPI
       id".
-- [ ] PWA (`npm run build:pwa`, then preview): Add booking on an Open List; the demo chip offers the
-      Hub entry; Unavailable shows the fallback.
+- [ ] PWA (`npm run build:pwa`, then preview): Add a booking on Dr Souter's ACTIVE Tue 21 Jul PM List;
+      the demo chip offers the Hub entry over the sheet; Unavailable shows the fallback, and Save still
+      creates the Booking.
 - [ ] Reset restores Available and Fiona Gray's name and empty address.
 - [ ] Catalogue screenshots: the recipes for US-14.4.1 are created or updated, any recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` are green.
 
 ## Demo guide updates
 
-Patch these in the same session, and the same sections of `master-demo-guide.html`:
+Patch these in the same session, and the same sections of `master-demo-guide.html`. The beats are
+read as 15b, 19, 20a, 21 and 28 left them: Add a booking opens straight on the manual form (no "Enter
+manually"), the List is ACTIVE (never "Open" or "DRAFT"), and the form already has the two-tab
+picker, "As given" and the payer on the Booking. This phase adds only the lookup lines below; it does
+not re-narrate the payer or the picker.
 
 - `03-demo-script.md`:
   - **S2 Beat 2** (phone advice, as earlier phases left it): the **Expected** line adds that the lookup
-    answers from the NHI register and the purpose note names Dr Sharma's HPI CPN. Add an optional
+    answers from the NHI register, the payer is prefilled from the patient it finds (21's line, kept),
+    and the purpose note names Dr Sharma's HPI CPN. Add an optional
     step: "Demo actions, Hub: Unavailable, then Look up: the office can still book by hand. Set it back
     to Available." One **Say** line: "The NHI is checked as it is typed and looked up through the
     Digital Services Hub, and only ever used to identify the patient."
-  - **S5 Beat 2** (NHI validation): add the Add booking path. `ZAA0068` is rejected as it is typed,
+  - **S5 Beat 2** (NHI validation): add the Add a booking path, on Dr Souter's ACTIVE Tue 21 Jul PM
+    List. `ZAA0068` is rejected as it is typed,
     and `ZBX41AL` (new format) looks up Ana Fifita, so the dual-format check covers the lookup path
     too.
   - **S5, a new optional beat, "refresh from the NHI register"**: Patients, Fiona Gray, Refresh from
@@ -582,12 +688,12 @@ matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · nhi-lookup (web), nhi-lookup (mobile): Add a card, Enter manually, NHI CQY9304, Look up | captured as a simulation (the Hub is a badged stand-in over a synthetic register; keep the real-Hub gap in the story's own words, not the recipe). Keep both `nhi-lookup` shots (web `/web/lists/L-34821-2026-07-21-PM`, mobile `/mobile/lists/L-34821-2026-07-21-PM`) and give each states: `invalid` (type ZAA0068: the check-digit reason shows, Look up disabled), `found` (ZBR4417, Look up: "Found Mereana Tipene" with the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient"; highlight the status line and note, not the whole dialog), `not-on-register` (ZBW6638) and `hub-unavailable` (run the `nhi-hub-mode` entry from `[data-shot=demo-actions]`, or the PWA Demo sheet on mobile, choose Unavailable, then Look up: warning line with Retry, amber "Hub simulated as Unavailable" badge). Add an admin shot `register-refresh` on `/admin/patients/PT0018` (Fiona Gray): the Refresh from NHI register panel with Name differs and Address "Will be added", then the "Last refreshed 21 Jul 2026, 08:00" state. Captions in the catalogue's words ("HPI CPN", "NHI register"). Drop the partial reason, or reduce it to "The Hub is simulated; no real NHI FHIR call" if the owner wants the gap kept |
+| [US-14.4.1](../../../../requirements-board/requirements/stories/US-14.4.1.md) NHI lookup via Digital Services Hub | partial · nhi-lookup (web), nhi-lookup (mobile): Add a booking, Enter manually, NHI CQY9304, Look up; caption "NHI lookup when adding a Booking"; partial reason "simulated against a small set of demo records ... anaesthetists carry an HPI only as an optional field" | captured as a simulation (the Hub is a badged stand-in over a synthetic register; keep the real-Hub gap in the story's own words, not the recipe). Re-take both `nhi-lookup` shots on Dr Souter's **ACTIVE** Tue 21 Jul PM List (web `/web/lists/L-34821-2026-07-21-PM`, mobile `/mobile/lists/L-34821-2026-07-21-PM`): drop the "Enter manually" click (15b: Add a booking opens straight on the manual form), and the shot shows the 2026-10-08 form (19's Procedure chooser, 20a's "As given", 21's payer block), never a billing route select, a billable-party field, an "Open" label or "DRAFT". Give each shot states: `invalid` (type ZAA0068: the check-digit reason shows, Look up disabled), `found` (ZBR4417, Look up: "Found Mereana Tipene" with the purpose note "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient", and the payer prefilled as the patient; highlight the status line and note, not the whole dialog), `not-on-register` (ZBW6638) and `hub-unavailable` (run the `nhi-hub-mode` entry from `[data-shot=demo-actions]`, or the PWA Demo sheet on mobile, choose Unavailable, then Look up: warning line with Retry, amber "Hub simulated as Unavailable" badge). The lookup now answers after the Hub's visible wait (600 ms), so after Look up replace the recipe's fixed `{ "wait": 400 }` with a selector wait on `[data-shot=nhi-lookup-status]` showing the answer (for example `{ "wait": "[data-shot=nhi-lookup-status] >> text=Found" }`), and drive the Hub with a `{ "trigger": "nhi-hub-mode", "choice": "Unavailable" }` step; on mobile that step taps the scrim to close the PWA Demo sheet, so check it closes only the Demo sheet and leaves Add a booking open (work item 13's chip outcome). Add an admin shot `register-refresh` on `/admin/patients/PT0018` (Fiona Gray): the Refresh from NHI register panel with Name differs and Address "Will be added", then the "Last refreshed 21 Jul 2026, 08:00" state. Captions in the catalogue's words ("HPI CPN", "NHI register"), replacing the stale one, for example "NHI checked as typed and looked up on the NHI register through the Digital Services Hub, on an ACTIVE List". Drop the partial reason (its "small set of demo records" and "HPI only" are both fixed here), or reduce it to "The Hub is simulated; no real NHI FHIR call" if the owner wants the gap kept |
 
 **Recipes this phase breaks.**
 
-- `US-11.1.3.json` (`dedupe-nhi`, web and mobile, four states) fills the NHI placeholder `ABC1234` and clicks "Look up" with CQY9304 (Sarah Mitchell); the register mirrors every seeded patient, so the answer should still be found, but Look up is now disabled until the NHI is valid and the dialog gains the status line and purpose note. Re-run with `--dry` and re-check its highlights.
-- `US-02.4.1.json` and `US-02.4.2.json` open Add a card; confirm their selectors still resolve.
+- `US-11.1.3.json` (`dedupe-nhi`, web and mobile, four states) fills the NHI placeholder `ABC1234` and clicks "Look up" with CQY9304 (Sarah Mitchell); the register mirrors every seeded patient, so the answer should still be found, but Look up is now disabled until the NHI is valid and the dialog gains the status line and purpose note. Earlier phases (15b, 19, 20a) re-point its "Enter manually" click and procedure fill; check it still runs on an ACTIVE List. Its fixed `{ "wait": 400 }` after Look up is shorter than the Hub's 600 ms answer: replace it with a selector wait on `[data-shot=nhi-lookup-status]`, so the `lookup` state shows the found patient, not "Checking the NHI register". Re-run with `--dry` and re-check its highlights.
+- `US-02.4.1.json` (Add a Booking manually, re-taken by 15b and 20a on the 2026-10-08 form) opens Add a booking; confirm its selectors still resolve with the status line and purpose note under the NHI field. (`US-02.4.2` is Retired; its recipe is 15b's, not this phase's.)
 - `US-12.1.4.json` (`anaesthetist-record`, `/admin/masters`) shows the HPI field, now labelled "HPI CPN" everywhere: check its highlight.
 - Work item 14 already lists the Playwright specs; the `--dry` run is the check for the rest.
 
@@ -620,6 +726,12 @@ re-raise anything settled in the Decisions log.
   defaulting to Keep, while enrichments apply. A refusal leaves state deep-equal. It never touches
   Xero, the ledger, Bookings or 40's `pendingDetails`. It resolves merged ids. The audit has before
   and after.
+- **The 2026-10-08 form.** The lookup changes only the patient section of `ManualBookingForm`. The
+  payer follows a found patient only while it is "The patient"; a "Someone else" payer is never
+  overwritten by a lookup, a second lookup or a Retry, and there is no second payer-writing path
+  beside 21's. The procedure chooser, "As given" and the Contract are untouched. Tests, shots and the
+  checklist run on an ACTIVE List; no "Open" label, no "DRAFT" for an assigned List and no "Enter
+  manually" step appear anywhere this phase adds or changes.
 - **Purpose and privacy.** The purpose note is on every lookup surface and names the right
   practitioner (the List's anaesthetist, or "the AA office" for a Draft List or the Attach sheet). No
   register data, NHI or name reaches Xero or any email (`xeroNhi.test.ts` still passes). Anaesthetist
@@ -640,8 +752,8 @@ re-raise anything settled in the Decisions log.
   themselves"): the defaults built for open questions, provisional readings, anything logged
   rather than fixed, and the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 40a, and a phase entry with:
-  - the drift-check result (items changed or not; the refresh cadence and HPI CPN checks; the
-    provisional reading built);
+  - the drift-check result against `60e2d1e` (items changed or not; the refresh cadence, HPI CPN and
+    OQ-49 checks; the provisional reading built; the real form names from 15b, 19, 20a and 21);
   - what was built, with the name map for later phases: `nhiEntryFeedback`; `src/domain/nhiRegister/`
     (`NhiRegisterPerson`, `buildNhiRegister`, `lookupOnRegister`, `registerDifferences`);
     `src/domain/seed/nhiRegister.ts` (`nhiRegister()`, `NHI_REGISTER_UPDATES`, the register-only people,
@@ -674,5 +786,7 @@ re-raise anything settled in the Decisions log.
     lines, the purpose note and the `patient.registerRefreshed` audit entries. The synthetic-data
     badge applies to the register. A lookup access log under HIPC 2020 is an open point.
   - For **44**: S2 Beat 2's lookup line, its optional Hub step, S5 Beat 2's lookup path and the new
-    refresh beat were added here; re-read them in the rewrite. Walk the Hub entry in the PWA-parity
-    audit.
+    refresh beat were added here, on an ACTIVE List and the 2026-10-08 form; re-read them in the
+    rewrite. Walk the Hub entry in the PWA-parity audit.
+  - For **40 and 43**, if OQ-49 is answered: the lookup and its fallback need no change; a refusal
+    without an NHI is 40's Save guard, and "the NHI as the patient identifier" is 43's privacy scan.

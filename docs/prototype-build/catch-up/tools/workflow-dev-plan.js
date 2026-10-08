@@ -3,7 +3,7 @@ export const meta = {
   description: 'Opus planners: catch-up roadmap, detailed phase docs, kick-off prompts and HTML build plan from the verified gap analysis',
   phases: [
     { title: 'Outline', detail: 'architect, coverage check, critic, revision', model: 'opus' },
-    { title: 'Detail', detail: 'one writer + one reviewer per phase', model: 'opus' },
+    { title: 'Detail', detail: 'one writer + one reviewer per phase', model: 'sonnet' },
     { title: 'Publish', detail: 'HTML build plan + final consistency pass', model: 'opus' },
   ],
 }
@@ -209,7 +209,7 @@ Research before writing:
    - ## Adversarial review (after build): the standard pass (PROGRESS convention 18), with "Steer this phase's reviewers at:" bullets specific to this phase.
    - ## PROGRESS.md updates
 2. Write "${ROOT}/${promptFile(p)}": ONLY the kick-off prompt text (no heading, no fences), in the style of the original Phase 05 kick-off prompt: "Please run catch-up Phase ${p.num} (${p.title}) of the Anaesthesia Associates prototype." Then an ordered read-first list (CLAUDE.md is automatic, so do not list it; list ${CU}/ROADMAP.md, this phase doc, the relevant section of ${CU}/GAP-ANALYSIS.md, the covered catalogue files, the relevant design files, and the PROGRESS.md sections that matter: binding conventions + any Decisions log entries this phase supersedes). Then: do the drift check, write a step plan and start building without waiting for approval (ROADMAP.md "Owner review: agents test themselves"); "While working:" bullets with the phase's key rules; "When done:" checklist run by the agent itself in the running app (never handed to the owner), adversarial review pass, the catalogue screenshot step (create or update the phase's capture recipes and any it broke, node scripts/capture.ts --dry then a full npm run capture in requirements-board/ with no failed recipe, check the shots, npm run verify:board), PROGRESS.md entry ending with a "For the owner's review" list, demo guide updates, short notes; and a one-line phase goal. If the phase touches UI, the prompt's "While working:" list opens with the frontend-design bullet (ROADMAP.md "Front-end design"; copy it from a neighbouring prompt). Plain ASCII punctuation.
-Return goal_short, checks and changes "".`, { label: `write:${p.num}`, phase: 'Detail', model: O, effort: 'high', schema: DETAIL }),
+Return goal_short, checks and changes "".`, { label: `write:${p.num}`, phase: 'Detail', model: 'sonnet', effort: 'high', schema: DETAIL }),
   (draft, p) => agent(`${CTX}
 
 TASK: you are an independent reviewer of the plan for catch-up Phase ${p.num} "${p.title}". Files: "${ROOT}/${phaseFile(p)}" and its kick-off prompt "${ROOT}/${promptFile(p)}". Fix problems by editing both files in place.
@@ -225,7 +225,7 @@ Check, reading the sources yourself:
 4. Rules: mock backend + audited mutate(), determinism, PERSIST_VERSION, pure tested billing maths, design authority and colour rules, no en/em dashes in app copy, finish green, demo triggers screen-contextual in the harness bar (+ PWA equivalent), demo guide mirroring.
 5. The prompt: points at the right files, includes the drift check, no plan-approval stop, the agent running the checklist itself, and "When done" steps; readable by a fresh agent with no other context. If the phase touches UI, "While working:" carries the frontend-design bullet (ROADMAP.md "Front-end design").
 6. Size: realistic for ${p.est_sessions}? If clearly not, say so in changes (do not restructure the outline).
-Return goal_short and checks (improved if needed) and changes (a short list of what you changed, or "none").`, { label: `review:${p.num}`, phase: 'Detail', model: O, effort: 'high', schema: DETAIL }).then(r => r || draft),
+Return goal_short and checks (improved if needed) and changes (a short list of what you changed, or "none").`, { label: `review:${p.num}`, phase: 'Detail', model: 'sonnet', effort: 'medium', schema: DETAIL }).then(r => r || draft),
 )
 const det = details.filter(Boolean)
 log(`phase docs: ${det.length}/${outline.phases.length} written and reviewed`)

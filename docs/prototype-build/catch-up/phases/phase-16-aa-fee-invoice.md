@@ -3,13 +3,16 @@
 **Requirements covered:**
 [EP-10](../../../../requirements-board/requirements/stories/EP-10.md),
 [FT-10.3](../../../../requirements-board/requirements/stories/FT-10.3.md) (Verify; notes now carry Greg's 2026-10-02 view),
-[US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md),
+[US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md)
+(still Contradicts at 60e2d1e; its text now says the released payable enters the next
+[weekly payment run](../../../../requirements-board/requirements/stories/US-10.2.7.md), US-10.2.7,
+Proposed, which is Phase 39a's: this phase builds only the release rule),
 [US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md) (Verify; notes now carry Greg's view),
 [US-10.3.2](../../../../requirements-board/requirements/stories/US-10.3.2.md),
 [US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) (Verify; the fixed schedule is for AA's accountant),
 [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md),
 [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md)
-(Confirmed; re-graded **Contradicts** at 3d3a18c: the Xero contact Name holds the patient's or
+(Confirmed; **Contradicts**, unchanged at 60e2d1e: the Xero contact Name holds the patient's or
 individual payer's real name, against "rather than by name" and OQ-30's "no personal information in
 Xero");
 [DM-26](../analysis/domain-model-delta.md#dm-26);
@@ -27,17 +30,25 @@ count's rule, switchable in one place until the accountant confirms; **part 1, t
 is still unknown (Greg does not know it), so a labelled sample is seeded.
 Still open, built as noted: [OQ-29](../../../../requirements-board/requirements/questions/OQ-29.md)
 (BCTI granularity: one per receivable invoice, the plan's one provisional point, kept beside OQ-60 for
-the accountant) and [OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md)
-(payment day and cycle: not modelled).
+the accountant; its 2026-10-07 update leaves it open and adds only the GST rule below).
+Applied here, not covered: [US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md)
+(Confirmed 2026-10-07: every price is held excluding GST and GST goes at the foot of the invoice), so
+the AA fee settings hold their amounts ex GST and the "amounts include GST" toggle is gone (work
+items 11, 12, 15 and 16): the US-10.3.1 example's $700 is the fee before GST.
 Left this phase: US-09.2.1 (re-graded Matches; the webhook amounts still change with step 1, but no
-work is planned against it) and OQ-19 (answered: an AA-side error is credited and reissued, which is
-Phase 39's concern; anything else stays outstanding, which is today's behaviour).
+work is planned against it), OQ-19 (answered: an AA-side error is credited and reissued, which is
+Phase 39's concern; anything else stays outstanding, which is today's behaviour) and
+[OQ-47](../../../../requirements-board/requirements/questions/OQ-47.md) (now **Proposed**: the weekly
+ISO-week payment cycle, US-10.2.7, which Phase 39a builds; this phase names no payment day, week or
+cycle, and its monthly fee run is a separate office action for a chosen month).
 **Depends on:** Phases 15a and 15b, and through them 14 and 15: the screen-contextual trigger
 registry, `useDemoTriggerContext` and the re-homed "Payment received (webhook)" triggers (14); Card
 becomes Booking, so every `cardId`, `casesForCard`, "Card" string and audit entity type named below is
 its post-15 Booking equivalent (15); the warning routine, the `appSettings` slice and the Admin to-do
-list (15a, both sessions); and Copy and photo capture out of the prototype (15b). 15a and 15b run first
-so the "After 16" milestone has the warnings and the removals. This phase registers no warning rule.
+list (15a, both sessions); and Copy and photo capture out of the prototype, with an assigned List's
+state renamed DRAFT to ACTIVE (15b; any S3 Authorise step below reads ACTIVE, never DRAFT). 15a and
+15b run first so the "After 16" milestone has the warnings and the removals. This phase registers no
+warning rule.
 **Estimated:** 2 sessions. Session 1 is step 1 (fee removal), plus the two Xero simulator items that
 share its files and its reseed (work items 9 and 10: InvoiceNumber, Reference and paid date stored on
 the Xero records, and no personal information in Xero, contact names included), re-greened and handed
@@ -52,6 +63,9 @@ The money story the catalogue now tells, in two steps that each leave the app gr
 **Step 1: the payable is the gross amount.** Stop netting the illustrative 5% AA fee off the ACCPAY.
 The payable equals the receivable, and a payment releases a payable for exactly the amount received
 (US-10.2.1, which merged US-10.2.2): a half payment of $152.38 releases $76.19, not 95% of it. The
+released payable still goes out through today's manual Run payables; the weekly ISO-week payment
+cycle that US-10.2.1 now names as the next payables run (US-10.2.7, Proposed, OQ-47) is Phase 39a's,
+and nothing here names a payment day or week. The
 seeded billing history is rebuilt on that basis, the Xero simulator loses its fee block, the web
 Payments table loses its "AA fee" and "Net to you" columns, and the S3 figures are re-baselined
 ($152.38 is now what Dr Souter is paid; the $7.62 and $144.76 figures disappear). While the Xero
@@ -70,7 +84,10 @@ page holds the fixed fee items (several may make up the fixed fee) and the charg
 (US-10.3.3). An Admin **AA fee invoices** screen has a month picker and a **Run monthly fee
 invoices** button that raises one AA-FEE invoice to each active anaesthetist for the month (FT-10.3,
 US-10.3.1): the fixed items plus the per-BCTI charge times the number of their BCTIs paid that
-month, for example $500 + $5 x 40 = $700. Each fee invoice has its own `AA-FEE-2026-####` number,
+month, for example $500 + $5 x 40 = $700. Every amount in the settings is held excluding GST and
+GST goes at the foot of the fee invoice (US-05.2.7, the system-wide rule Greg set on 2026-10-07), so
+the example's $700.00 is the fee before GST and the invoice reads $700.00 + GST $105.00 = $805.00.
+Each fee invoice has its own `AA-FEE-2026-####` number,
 is its own billing case, and has a simulated Xero ACCREC against the anaesthetist's existing Xero
 contact, with no ACCPAY behind it (it is AA charging its own fee, not money passing through). It is
 always a separate invoice, paid into AA's own bank account and never netted against the
@@ -96,25 +113,40 @@ This is the corrected payables story for the "After 16" milestone.
 
 ## Before you start: drift check
 
-1. Run the catalogue diff for this phase's items and open questions against the plan's baseline:
+1. Run the catalogue diff for this phase's items and open questions against the plan's baseline,
+   catalogue commit `60e2d1e` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-10,FT-10.3,FT-10.2,US-10.2.1,US-10.3.1,US-10.3.2,US-10.3.3,US-09.1.1,US-09.1.4,US-09.3.1,US-15.0.6,US-08.4.3,US-08.3.1,US-10.2.6,OQ-02,OQ-60,OQ-29,OQ-30,OQ-47
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-10,FT-10.3,FT-10.2,US-10.2.1,US-10.3.1,US-10.3.2,US-10.3.3,US-09.1.1,US-09.1.4,US-09.3.1,US-15.0.6,US-08.4.3,US-08.3.1,US-10.2.6,US-10.2.7,US-05.2.7,OQ-02,OQ-60,OQ-29,OQ-30,OQ-47
    ```
 
    Read the hunks (if any) for EP-10, FT-10.3, FT-10.2, US-10.2.1, US-10.3.1, US-10.3.2, US-10.3.3,
    US-09.1.1, US-09.1.4 (the BCTI note), US-09.3.1, US-15.0.6 (NHI never sent), US-08.4.3 (the `-P`
    suffix rule this phase relies on), US-08.3.1 (ledger pair), US-10.2.6 (period BCTI approval, Phase
-   39a), OQ-02, OQ-60 (and its "Meeting update"), OQ-29, OQ-30, OQ-47, the meeting note
-   `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #1 and #36, and the domain-model lines on the
-   AA fee (the "Payment to anaesthetist implied a fee deducted" row, "AA fee invoices ... are separate
-   ledger items, raised by a monthly fee invoice run", the BCTI line above it, the "NHI and other PII
-   never go to Xero" line, and the glossary entry).
+   39a), US-10.2.7 (the weekly payment cycle, Phase 39a), US-05.2.7 (prices held ex GST, applied to
+   the fee settings), OQ-02, OQ-60 (and its "Meeting update"), OQ-29, OQ-30, OQ-47, the meeting notes
+   `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` #1 and #36 and
+   `requirements-board/requirements/notes/2026-10-07-aa-meeting-with-greg.md` #32, and the
+   domain-model lines on the AA fee (the "Payment to anaesthetist implied a fee deducted" row, the
+   "Fee schedules quoted GST inclusive, exclusive or both" row, the "Payment day and cycle not
+   settled" row, "AA fee invoices ... are separate ledger items, raised by a monthly fee invoice
+   run", the BCTI line above it, the "NHI and other PII never go to Xero" line, and the glossary
+   entry).
+
+   At plan time (2026-10-08, `3d3a18c..60e2d1e`), the changes that touch this phase were: US-10.2.1
+   now links the released payable to the [weekly payment run](../../../../requirements-board/requirements/stories/US-10.2.7.md)
+   (US-10.2.7, new, Proposed) and names Greg's weekly cycle as the proposed solution; OQ-47 moved from
+   Open to **Proposed** (owner AA's accountant); US-10.2.6 points at the same cycle; OQ-29 gained a
+   2026-10-07 update (still open; GST treatment and layout set on the Contract, every price held ex
+   GST); and US-05.2.7 (prices held ex GST, GST at the foot) was confirmed. EP-10, FT-10.2, US-08.3.1,
+   US-09.1.1, US-09.1.4 and US-09.3.1 changed only in artifact and related links. OQ-02, OQ-30, OQ-60,
+   FT-10.3 and US-10.3.1 to US-10.3.3 did not change. The plan already reflects all of this; diff only
+   for anything after `60e2d1e`.
 2. If an item changed, re-read it in full and adjust the work items before building. If an item is
    now Retired or Future, drop it from this phase and say so in the PROGRESS entry. A new item on
    this surface joins this phase only if it is small and Confirmed; otherwise record it for Phase 36
    or 39a.
-3. **If OQ-60 has been answered on the board since 3d3a18c**, build the answer. The plan already
+3. **If OQ-60 has been answered on the board since 60e2d1e**, build the answer. The plan already
    builds Greg's view (never netted; only paid BCTIs count); if the accountant confirms it, only the
    comment beside `bctisFor` and the Admin caption change (drop "being confirmed"). If the answer
    counts every issued BCTI, paid or not, flip the paid-only switch in `bctisFor` (work item 12) and
@@ -129,9 +161,11 @@ This is the corrected payables story for the "After 16" milestone.
    (only paid BCTIs count): built as `bctisFor`'s rule, counting in the month the receivable is paid
    in full, behind one switch, and named "being confirmed with AA's accountant" in one code comment
    and the Admin fee screen's caption, nowhere else. OQ-60 part 1 (the fixed schedule): unknown, so
-   seed demo-plausible items labelled as a sample (work item 15). OQ-29: one BCTI per receivable
-   invoice, stated in the same comment. OQ-47: not modelled; the fee run is a monthly office action
-   for a chosen month, and nothing in the copy names Tuesday, Wednesday, the 20th or a weekly cycle.
+   seed demo-plausible items labelled as a sample (work item 15), held ex GST (US-05.2.7). OQ-29: one
+   BCTI per receivable invoice, stated in the same comment. OQ-47 (Proposed: the weekly ISO-week
+   payment cycle, US-10.2.7) is Phase 39a's and is not built here: the fee run is a monthly office
+   action for a chosen month, and nothing in this phase's copy names Tuesday, Wednesday, the 20th, a
+   week number or a weekly cycle.
 5. Confirm Phases 14, 15, 15a (both sessions) and 15b are done: the registry
    (`src/shared/demoTriggers/`, entries in `registry.ts`) and `useDemoTriggerContext` exist, the
    "Payment received (webhook)" and "Automated jobs" triggers are re-homed (at plan time they are
@@ -139,7 +173,8 @@ This is the corrected payables story for the "After 16" milestone.
    `/demo/xero/invoices/:accRecId`, `run-reconciliation-poll` / `run-archive-job` on the Billing
    monitor and Xero sim, and the PWA's `pwa-payment-full` / `pwa-payment-half`; note any difference),
    the Booking rename has landed, 15a's warning routine, `appSettings` slice and Admin to-do list are
-   in place, and 15b has removed Copy a Booking. Note the current `PERSIST_VERSION` (16 at plan time,
+   in place, and 15b has removed Copy a Booking and renamed an assigned List's DRAFT to ACTIVE. Note
+   the current `PERSIST_VERSION` (16 at plan time,
    after 15a session 1; 15a session 2 and 15b may have bumped it).
 6. Record the result (changed items, OQ-60 and OQ-29 status, where 14 re-homed the webhook trigger)
    in the PROGRESS entry.
@@ -162,12 +197,20 @@ settings card), do not invent a new visual language.
   (unique numbers; the payable carries the receivable's number with `-P`),
   [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md)
   (the BCTI note), [US-15.0.6](../../../../requirements-board/requirements/stories/US-15.0.6.md)
-  (NHI never sent), the meeting notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` (#1, #14,
+  (NHI never sent), [US-05.2.7](../../../../requirements-board/requirements/stories/US-05.2.7.md)
+  (every price held ex GST, GST at the foot of the invoice; applied to the fee settings),
+  [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) (the weekly payment
+  cycle, Proposed: read for context only, Phase 39a builds it), the payable-release spots on the
+  flow diagrams ([AR-24](../../../../requirements-board/requirements/artifacts/AR-24.md) regions
+  `payable-release` and `xero-pair`;
+  [AR-25](../../../../requirements-board/requirements/artifacts/AR-25.md) regions `payable-release`,
+  `accrec-accpay` and `store-ids`; its `payment-cycle` region is 39a's), the meeting notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` (#1, #14,
   #41, #54) and `requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` (#1: OQ-60 discussed, Greg's
   view on parts 2 and 3; #34: the working rule that the prototype chooses where nothing is said;
-  #36: for AA's accountant), and
-  [domain-model.md](../../../../requirements-board/requirements/domain-model.md) (AA fee rows,
-  the "NHI and other PII never go to Xero" line).
+  #36: for AA's accountant) and `requirements-board/requirements/notes/2026-10-07-aa-meeting-with-greg.md`
+  (#32: all prices held GST exclusive), and
+  [domain-model.md](../../../../requirements-board/requirements/domain-model.md) (AA fee rows, the
+  GST-exclusive and payment-cycle rows, the "NHI and other PII never go to Xero" line).
 - [GAP-ANALYSIS.md](../GAP-ANALYSIS.md): Summary theme 7 ("Money model: fee, payables, ledger,
   GST"), the "Structural first" bullet naming US-09.3.1 Xero contact names as a cheap early fix, the
   "Uncertainty" bullet on OQ-60 and OQ-47, and the S3, S4 and S5 demo-impact bullets; per-gap detail
@@ -347,7 +390,9 @@ settings card), do not invent a new visual language.
    image (the verified gap needs no change there); only point it at the stored numbers instead of
    deriving `-P`. Tests: handoff stores every field; the `-P` suffix; Reference equals the case
    reference; `issuedAtISO` equals the clock; `paidAtISO` is set once, by the completing partial, and
-   not by a replay; `xeroNhi.test.ts` still passes.
+   not by a replay; `xeroNhi.test.ts` still passes. The "Duplicate-invoice-number-prevention" callout
+   (`shot="xero-duplicate-number-policy"`) stays as it is: US-09.4.2 is still Open, which is what it
+   says (the US-09.1.1 gap entry's minor note on it is not this phase's; Phase 37 covers US-09.4.2).
 10. **No personal information in Xero** (US-09.3.1, Confirmed, re-graded Contradicts; OQ-30
     answered: "No PII in Xero").
     - **Contact names.** One pure helper, `xeroIndividualContactName(type, hiddenId)` in new
@@ -388,8 +433,11 @@ settings card), do not invent a new visual language.
 ### Step 2 · fee settings and the monthly fee invoice (session 2)
 
 11. **The fee model** (DM-26). In `domain/types.ts` add:
-    - `AaFeeSettings`: `fixedItems: { id, description, amount }[]` (several allowed),
-      `perBctiCharge: number`, `amountsIncludeGst: boolean`. Stored as `appSettings.aaFee`, the
+    - `AaFeeSettings`: `fixedItems: { id, description, amount }[]` (several allowed) and
+      `perBctiCharge: number`, every amount **excluding GST** (US-05.2.7: the system holds every
+      price ex GST and works GST out at the foot of the invoice, because the rate can change; so
+      there is no "amounts include GST" flag, and the comment on the type says why). Stored as
+      `appSettings.aaFee`, the
       product settings record Phase 15a added (DM-31: `DemoSettings` is the wrong home for product
       parameters): add `aaFee: AaFeeSettings` to `AppSettings`, seed it beside `defaultAppSettings()`
       in the seed's `appSettings`, and check the persist merge in `appStore.ts` (its one second level
@@ -429,14 +477,16 @@ settings card), do not invent a new visual language.
       (Greg's 2026-10-02 view, OQ-60 part 2, being confirmed with AA's accountant: flip `paidOnly`
       if it is not); and the fee never nets against payables (Greg, trust law: a rule, not a switch).
     - `src/domain/billing/aaFee.ts`: `aaFeeFor(settings, bctiCount)` returning `{ lines, subtotal,
-      gst, total }`: the fixed items summed plus `perBctiCharge x bctiCount`, rounded once on the
-      total; when `amountsIncludeGst` the total is the sum and `gst = total x 3 / 23` rounded,
-      otherwise GST is added at 15% (`GST_RATE`). `validateAaFeeSettings(settings)` (description
-      required, amounts finite, zero or more, to the cent).
+      gst, total }`: `subtotal` is the fixed items summed plus `perBctiCharge x bctiCount`, ex GST,
+      rounded once; `gst` is worked out at the foot from the subtotal at `GST_RATE`
+      (`domain/billing/invoiceBuild.ts`, 15%) and rounded once; `total = subtotal + gst`.
+      `validateAaFeeSettings(settings)` (description required, amounts finite, zero or more, to the
+      cent).
     - Vitest: **the US-10.3.1 acceptance criterion**: fixed items of $500 (two items, $350 and $150)
-      and $5 per BCTI with 40 BCTIs give $700; **US-10.3.3's**: the total is the sum of the fixed items
-      plus rate times count, and a changed rate gives the new total; zero BCTIs give the fixed items
-      only; GST split conserves to the cent both ways; `bctisFor` counts by anaesthetist and paid
+      and $5 per BCTI with 40 BCTIs give a fee of $700 (the subtotal, ex GST; GST $105.00 at the foot,
+      total $805.00); **US-10.3.3's**: the subtotal is the sum of the fixed items plus rate times
+      count, and a changed rate gives the new subtotal; zero BCTIs give the fixed items only;
+      `subtotal + gst === total` to the cent; `bctisFor` counts by anaesthetist and paid
       month (a BCTI paid on 31 Jul and one paid on 1 Aug land in different months; one issued 28 Jul
       and paid 3 Aug counts in August, not July), skips unpaid and part-paid records, counts every paid
       record exactly once across consecutive months, drops voided records, counts a duplicated record
@@ -502,16 +552,16 @@ settings card), do not invent a new visual language.
     status `unpaid | paid`) and `allAaFeeInvoices(state)` read the billing mirror only, never
     `state.xero` (the Phase 10 convention 9 rule for app money views). Seed (determinism, convention 5):
     - `appSettings.aaFee`: two sample fixed items, "Practice management" $350.00 and "Office and
-      reception" $150.00 ($500 in all), $5.00 per BCTI, amounts include GST. Labelled in the UI as a
-      sample schedule: AA's real fixed charges come from its accountant (OQ-60 part 1; Greg does not
-      know them).
+      reception" $150.00 ($500 in all), $5.00 per BCTI, all ex GST. Labelled in the UI as a sample
+      schedule: AA's real fixed charges come from its accountant (OQ-60 part 1; Greg does not know
+      them).
     - Dr Souter's fee history in the `H` id namespace, computed through `bctiRecords`, `bctisFor` and
       `aaFeeFor` over the seeded history (never typed-in totals): `AA-FEE-2026-H01` for May 2026,
       raised 2026-06-01 and **paid** 2026-06-05 (with its `PaymentIn`), and `AA-FEE-2026-H02` for June
       2026, raised 2026-07-01 and **unpaid**, each with a `kind:'aaFee'` ACCREC against payee contact
       `XCH01`. Under the paid-month count today's history gives May two BCTIs (pa04, pa05) and June one
-      (pa03), so expect about $510.00 and $505.00; the test asserts the computed values, never these
-      figures. July stays uninvoiced so the first live run has a month to raise. Only Dr Souter has
+      (pa03), so expect subtotals of about $510.00 and $505.00 before GST; the test asserts the
+      computed values, never these figures. July stays uninvoiced so the first live run has a month to raise. Only Dr Souter has
       seeded billing history, so only she has fee history. Counters continue past the seeded ids.
     - **Bump `PERSIST_VERSION`** again (this bump also covers items 9 and 10 if they slipped to
       session 2). Extend `seedBilling.test.ts`: two builds deep-equal, the
@@ -524,11 +574,11 @@ settings card), do not invent a new visual language.
     - **Fee invoices** (`data-shot="admin-aa-fee-invoices"`): a month picker (months up to the demo
       month, default the demo month, July 2026, with the caption "The real run is made at month end;
       in the demo, running the current month invoices it to date."), the preview table from
-      `aaFeeRunPreview` (Anaesthetist via `drSurname`, BCTIs paid, Fixed, Per-BCTI, Total, and
-      "Invoiced" where one exists), and a teal **Run monthly fee invoices** button (an unbadged
+      `aaFeeRunPreview` (Anaesthetist via `drSurname`, BCTIs paid, Fixed, Per-BCTI, Fee (ex GST),
+      and "Invoiced" where one exists), and a teal **Run monthly fee invoices** button (an unbadged
       product office action, disabled with the reason when every active anaesthetist already has one
       for the month). A result line after a run. Below, every fee invoice: Number (mono),
-      Anaesthetist, Month, BCTIs, Total (incl GST), Raised, Status pill (Paid with date on success
+      Anaesthetist, Month, BCTIs, Fee (ex GST), GST, Total, Raised, Status pill (Paid with date on success
       tint, Unpaid neutral). A row expands inline to its lines and its counted BCTIs (ACCPAY number,
       procedure invoice number, issued date, paid date). One caption states the count and is the
       only place in the UI that says it is being confirmed: "Counts one BCTI per receivable invoice,
@@ -537,11 +587,12 @@ settings card), do not invent a new visual language.
       separate invoice, paid into AA's own account and never deducted from a payment to the
       anaesthetist."
     - **Fee settings** (`data-shot="admin-aa-fee-settings"`, US-10.3.3): the fixed items as editable
-      rows (description, amount, remove) with "Add item", the per-BCTI charge, the "Amounts include
-      GST" toggle, a live worked example ("With 40 BCTIs: $500.00 + $5.00 x 40 = $700.00"), the sample
-      schedule label, and a teal **Save settings** button calling `saveAaFeeSettings`, with the
-      validator's reason inline. Copy: "Changes apply from the next monthly run. Raised fee invoices
-      keep the settings they were raised with."
+      rows (description, amount, remove) with "Add item", the per-BCTI charge, a live worked example
+      ("With 40 BCTIs: $500.00 + $5.00 x 40 = $700.00, plus GST at the foot of the invoice"), the
+      sample schedule label, and a teal **Save settings** button calling `saveAaFeeSettings`, with the
+      validator's reason inline. No GST toggle. Copy: "Amounts exclude GST; GST is added at the foot
+      of each fee invoice. Changes apply from the next monthly run. Raised fee invoices keep the
+      settings they were raised with."
     - The Billing monitor gains a compact **AA fee invoices** panel beneath Payables run
       (`data-shot="billing-aa-fee-invoices"`): the latest fee month, unpaid fee invoices and their
       total, and an "Open AA fee invoices" link. Its intro copy gains one sentence: "AA's own fee is
@@ -550,7 +601,8 @@ settings card), do not invent a new visual language.
 17. **Web Accounts: "AA fees" sub-tab** (US-10.3.2). Add `'fees'` to `AccountsSubTab` and
     `ACCOUNTS_SUB_TABS` (`/web/accounts/fees`), a fourth `SubTabButton` "AA fees", and an
     `AaFeesTable` (`data-shot="web-accounts-aa-fees"`): Invoice (mono), Month, BCTIs, Fixed charges,
-    Per-BCTI charge, Total, GST, Status pill (Paid with date, or Unpaid). Footer: total unpaid fees.
+    Per-BCTI charge, Fee (ex GST), GST, Total, Status pill (Paid with date, or Unpaid). Footer: total
+    unpaid fees (incl GST).
     Caption: "AA invoices its fee monthly: fixed charges plus a charge for each buyer-created tax
     invoice (BCTI) AA issued for your work and was paid for that month. It is a separate invoice you
     pay into AA's own account, never deducted from your payments."
@@ -575,15 +627,19 @@ settings card), do not invent a new visual language.
     re-homed payment triggers. Vitest in the registry's test: each new entry matches only its
     routes, "Record fee payment" is invisible on a procedure pair, the payment triggers are invisible
     on a fee pair, every disabled reason fires, and "Seed a month of BCTIs" then "Run monthly fee
-    invoices" gives Dr Rutherford a July fee invoice of exactly $700.00 at seed settings (40 BCTIs,
+    invoices" gives Dr Rutherford a July fee invoice of exactly $700.00 before GST ($805.00 with GST)
+    at seed settings (40 BCTIs,
     all paid in July).
 20. **Tests and shots for step 2.** Vitest for items 11 to 15 as listed, plus component tests for the
     AA fees tab (rows, pills, focus highlight), the Fee invoices screen (preview, button disabled
     state, a run adds rows) and the Fee settings screen (add and remove an item, invalid amount
     refused, save audited). Playwright: add `visual/aa-fee.spec.ts` through settings, seed BCTIs,
     run, the fee pair, Record fee payment and the web AA fees tab, with the five new `data-shot`
-    hooks. Copy sweep: no en or em dashes in any new string; grep confirms `0.05` appears nowhere in
-    `src`, and `350`, `150` and the `5` per-BCTI charge appear only in the settings seed and tests.
+    hooks. Copy sweep: no en or em dashes in any new string; grep confirms no fee-rate literal
+    (`0.05`, `0.95`) survives in `src/domain/billing`, `src/store`, `src/apps/demo` or the money
+    screens (the theme's shadow and gradient `0.05` / `0.95` values are unrelated and stay), and the
+    sample fee amounts ($350, $150, $5 per BCTI) appear only in the settings seed and tests: the run,
+    the screens, the worked example and the triggers read `appSettings.aaFee`.
 21. **Re-green step 2:** `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots`.
 
 ## Demo triggers
@@ -596,7 +652,8 @@ added to the Control Panel page; it lists them under their screens automatically
    `runMonthlyFeeInvoices` as the scheduled system actor for the month shown in the picker (the
    screen publishes it with `useDemoTriggerContext` under a new `'aaFees.month'` key in
    `DemoContextValues`; default the demo month). The stand-in for the month-end job, whose day is
-   not settled (OQ-47). Disabled when every active anaesthetist already has a fee invoice for that
+   not set (the weekly payment cycle of OQ-47 and US-10.2.7 schedules payouts, not this run, and is
+   Phase 39a's). Disabled when every active anaesthetist already has a fee invoice for that
    month. The product form of the same action is the in-page teal **Run monthly fee invoices** button
    (office actor, unbadged, not a demo trigger). `indexPath`: `/admin/billing/aa-fees`.
 2. **"Seed a month of BCTIs"** · screen `/admin/billing/aa-fees` · seed-scoped to `ANAE.rutherford`
@@ -650,16 +707,20 @@ passes the purity check.
 - Period approval of BCTIs (US-10.2.6) and negative invoices netted against payments (US-10.2.5):
   Phase 39a. A negative with no later payment to net against is handled outside the system (OQ-71,
   answered): nothing is built for it in any phase.
-- A payment day, the weekly trust cycle or the separate monthly cycle on the 20th (OQ-47): the fee
-  run is an office action for a chosen month; no "Close accounting week".
+- The weekly ISO-week payment cycle (US-10.2.7, Proposed; OQ-47 Proposed): Friday close, Monday
+  checks, Tuesday schedule and week numbers on payments are Phase 39a's. The separate monthly cycle
+  on the 20th (OQ-47, still with AA's accountant) is not modelled either: the fee run is an office
+  action for a chosen month; no "Close accounting week" and no payment day in any copy.
 - Fixed items per anaesthetist (OQ-60): not built; one schedule for all. Netting the fee against
   payables is never built (Greg: trust law forbids it).
 - Charging a BCTI paid after its month's fee invoice was raised early: in the demo the current month
   can be run to date, so a BCTI paid later that month is not charged; the real run is made at month
-  end (OQ-47), where this cannot arise. Logged for the owner, not built.
-- The billable party model (Phase 21). Item 10's neutral label follows the Xero contact type, so a
-  billable party that is an organisation (seed BP0002, Aria Skin and Laser Clinic) is labelled too,
-  until Phase 21's Contract-defined billable party says which payers are organisations.
+  end, where this cannot arise. Logged for the owner, not built.
+- Who is billed (Phases 18 and 21: a third-party contract holder's billable party when the holder
+  is billed, else the payer on the Booking, a person prefilled from the patient). Item 10's neutral
+  label follows the Xero contact type, so a billable party that is an organisation (seed BP0002, Aria
+  Skin and Laser Clinic) is labelled too, until 18's contract holders and 21's payer on the Booking
+  say which payers are organisations and which are people.
 - Part payment of a fee invoice, fee credit notes or fee voids, and AA-side corrections generally
   (OQ-19's credit and reissue is Phase 39).
 - A printable AA fee invoice document and fee invoices on the Admin Invoices screen; the AA fee
@@ -703,7 +764,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] The admin invoice rail for AA-2026-0005 shows the same numbers as before (ACCREC number, ACCPAY
       number with `-P`), now read from the stored fields.
 - [ ] Admin → Billing → AA fee invoices → Fee settings: two sample items ($350, $150) labelled as a
-      sample schedule, $5.00 per BCTI, the worked example reads $700.00 for 40 BCTIs; add an item,
+      sample schedule, $5.00 per BCTI, amounts stated as excluding GST with no GST toggle, the worked
+      example reads $700.00 plus GST for 40 BCTIs; add an item,
       save, the example updates; an empty description or negative amount is refused with a reason;
       remove it again and save.
 - [ ] Fee invoices: AA-FEE-2026-H01 (May) Paid and H02 (June) Unpaid for Dr Souter, their totals
@@ -713,9 +775,9 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
       never deducted. July preview lists every active anaesthetist. Paid-only check: on a fresh
       reset, authorise S3's Mon 20 Jul Lists: Dr Souter's July BCTI count does not change while
       AA-2026-0005 is unpaid; Simulate payment and payout on it and the count rises by one.
-      "Seed a month of BCTIs" in the bar: Dr Rutherford shows 40 BCTIs and $700.00, and the Day view
+      "Seed a month of BCTIs" in the bar: Dr Rutherford shows 40 BCTIs and a $700.00 fee before GST, and the Day view
       for 7 to 20 July shows no doubled Rutherford List. Run monthly fee invoices: one July fee
-      invoice per active anaesthetist, Dr Rutherford's $700.00, Dr Souter's $500 plus $5 times her
+      invoice per active anaesthetist, Dr Rutherford's $700.00 + GST $105.00 = $805.00, Dr Souter's $500 plus $5 times her
       BCTIs paid in July, the others $500.00 plus $5 per July BCTI shown in their row (the seeded
       BC0001 pre-payment, paid 14 July, counts for its anaesthetist); a second click is disabled with its reason. Expand Dr Rutherford's row: 40 counted
       BCTIs, each once, each with a July paid date.
@@ -740,8 +802,10 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - [ ] The PWA demo-actions sheet lists none of this phase's new triggers; on Mobile · Balances,
       "Payment received · half" releases exactly the amount received, its message carries no fee
       wording, and no fee invoice is offered as a choice.
+- [ ] No new or changed app copy (Payments caption, Billing monitor, webhook trigger messages, the AA
+      fee screens) names a payment day, a week number or a weekly cycle: that is Phase 39a's.
 - [ ] No new app copy contains an en or em dash; the only action colour is teal.
-- [ ] Catalogue screenshots: the recipes for the covered items above (US-10.3.1, US-10.3.2, US-10.3.3, US-09.3.1 and the re-shot ones) and the merged items' recipes whose images the catalogue shows on them (US-09.1.2, US-09.3.2, US-10.2.2) are created or updated, every recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye (no patient name on any Xero shot), and `npm run verify:board` is green.
+- [ ] Catalogue screenshots: the recipes for the covered items above (US-10.3.1, US-10.3.2, US-10.3.3, US-09.3.1, the re-shot ones, and US-10.2.7 absent for 39a) and the merged items' recipes whose images the catalogue shows on them (US-09.1.2, US-09.3.2, US-10.2.2) are created or updated, every recipe this phase broke is re-pointed, a full `npm run capture` ends with no failed recipe and no story without a recipe, the covered items' new shots are checked by eye (no patient name on any Xero shot), and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` and `npm run verify:board` green.
 
 ## Demo guide updates
@@ -752,7 +816,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
     ($7.62, $144.76) and the "rate and GST need confirmation" line. S3 Beat 3: "nib pays $152.38 into
     AA, then AA pays the same $152.38 to Dr Souter"; the Payments row shows $152.38 received, released
     and paid to you. S4 Beat 5: "A partial payment authorises a payable for exactly the amount
-    received"; Expected: each run pays exactly what arrived.
+    received"; Expected: each run pays exactly what arrived. Say nothing about a payment day or a
+    weekly run: S4 Beat 5's weekly cycle (US-10.2.7) is Phase 39a's rewrite.
   - S5 Beat 3 (no NHI in Xero, ~403-411): Click adds the Contacts tab: patient and guardian contacts
     are named only by their hidden ID. Say "No personal information goes into Xero: no NHI and no
     patient name, only a hidden internal ID that links each transaction back to the billing system.
@@ -776,7 +841,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 - **Step 2 (patched in session 2):**
   - S3 gains **Beat 4: AA's monthly fee** (Admin → Billing → AA fee invoices → Fee settings: the
     fixed items and $5 per BCTI → Fee invoices → "Seed a month of BCTIs" → Run monthly fee invoices →
-    Dr Rutherford's $700.00 ($500 + $5 x 40) and Dr Souter's July invoice, which counts AA-2026-0005's
+    Dr Rutherford's $700.00 ($500 + $5 x 40, before GST; $805.00 with GST at the foot) and Dr Souter's July invoice, which counts AA-2026-0005's
     BCTI because Beat 3 paid it → Xero simulation fee pair → Record fee payment → web Accounts → AA
     fees shows Paid). Say: the fee is AA invoicing the anaesthetist monthly from settings the office
     maintains; it is always a separate invoice, paid into AA's own account and never deducted from a
@@ -786,7 +851,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
     figures from the built app, do not compute them by hand.
   - The cheat sheet gains a one-line AA fee flow ("Month end: fee settings + BCTIs paid that month ->
     AA-FEE invoice (ACCREC) -> Anaesthetist pays AA's own account; never netted") and one caveat line
-    (fixed schedule, paid-only count and BCTI granularity with AA's accountant); the workflows doc
+    (fixed schedule, paid-only count and BCTI granularity with AA's accountant; amounts ex GST, GST
+    at the foot); the workflows doc
     gains a short "Monthly AA fee invoicing" workflow (settings, trigger, steps, what the anaesthetist
     sees); `01-personas-and-responsibilities.md` adds "maintain AA fee settings and run the monthly fee
     invoices" to the office's money duties.
@@ -811,14 +877,15 @@ matches what was built:
 |---|---|---|
 | [US-10.1.1](../../../../requirements-board/requirements/stories/US-10.1.1.md) All payments into AA | captured · simulator-money-path | stays captured. Re-shoot `money-path` (the money-flow card now has no fee line: the payable equals the receivable). Caption unchanged |
 | [US-10.1.2](../../../../requirements-board/requirements/stories/US-10.1.2.md) Two payment states | captured · admin-two-states[paid-in,disbursed], admin-invoice-states | stays captured. Re-shoot both shots: the disbursed amount now equals the amount received. Captions unchanged |
-| [US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md) Payable released to match the amount received | captured · simulator-full-payment[unpaid,paid], admin-payables-run | stays captured. Re-shoot `full-payment` and `payables-run` at the gross amount (the payable released equals what was received). The catalogue now shows the merged US-10.2.2's `part-payment` image first on this story, so do not add a second part-payment shot here: re-shoot that one through the US-10.2.2 recipe (see "Recipes this phase breaks") |
+| [US-10.2.1](../../../../requirements-board/requirements/stories/US-10.2.1.md) Payable released to match the amount received | captured · simulator-full-payment[unpaid,paid], admin-payables-run | stays captured. Re-shoot `full-payment` and `payables-run` at the gross amount (the payable released equals what was received); `payables-run` shows today's manual Run payables with no week number or cycle day (the weekly cycle the story now links is 39a's). The catalogue now shows the merged US-10.2.2's `part-payment` image first on this story, so do not add a second part-payment shot here: re-shoot that one through the US-10.2.2 recipe (see "Recipes this phase breaks") |
 | [US-10.2.3](../../../../requirements-board/requirements/stories/US-10.2.3.md) Reconcile back to the ledger | captured · web-receipt-in-ledger, simulator-engine-link | stays captured. Re-shoot `receipt-in-ledger` at `/web/accounts/payments?invoice=AA-2026-0002`: received, released and paid to you, with no AA fee or Net to you column. `engine-link` re-shot as is |
 | [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | stays absent (by design; Phase 37 may revisit). Nothing to do beyond the capture run |
 | [US-10.2.5](../../../../requirements-board/requirements/stories/US-10.2.5.md) Negative invoices netted in the payment run | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it. This phase builds nothing visible for it, and the fee is never netted, so no netting shot belongs here |
 | [US-10.2.6](../../../../requirements-board/requirements/stories/US-10.2.6.md) Approve the period's BCTIs for payment | absent ("Not built yet: catch-up Phase 39a builds this") | stays absent; Phase 39a builds it |
-| [US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md) Generate AA fee invoices | partial · simulator-service-fee | captured; drop the partial reason. Replace `service-fee` (the fee box is gone) with admin shot `fee-run` at `/admin/billing/aa-fees`: states `preview` and `run` (Demo actions, "Seed a month of BCTIs", then the teal "Run monthly fee invoices"), highlight `[data-shot=admin-aa-fee-invoices]`, caption "One run raises every anaesthetist's fee invoice for the month: Dr Rutherford, 40 paid BCTIs, $700.00". Add simulator shot `fee-pair` on the fee ACCREC (`[data-shot=xero-aa-fee-pair]`, "AA fee invoice to the anaesthetist, paid into AA's own account, with no payable") |
+| [US-10.2.7](../../../../requirements-board/requirements/stories/US-10.2.7.md) Weekly payment cycle | none (new at 60e2d1e, Proposed) | absent ("Not built yet: catch-up Phase 39a builds this"). If no earlier phase has created its recipe, create an absent recipe with that reason so the capture run has no story without a recipe. This phase builds nothing for it: no week number, cycle day or schedule on any screen |
+| [US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md) Generate AA fee invoices | partial · simulator-service-fee | captured; drop the partial reason. Replace `service-fee` (the fee box is gone) with admin shot `fee-run` at `/admin/billing/aa-fees`: states `preview` and `run` (Demo actions, "Seed a month of BCTIs", then the teal "Run monthly fee invoices"), highlight `[data-shot=admin-aa-fee-invoices]`, caption "One run raises every anaesthetist's fee invoice for the month: Dr Rutherford, 40 paid BCTIs, $700.00 plus GST". Add simulator shot `fee-pair` on the fee ACCREC (`[data-shot=xero-aa-fee-pair]`, "AA fee invoice to the anaesthetist, paid into AA's own account, with no payable") |
 | [US-10.3.2](../../../../requirements-board/requirements/stories/US-10.3.2.md) AA fee visible to the anaesthetist | partial · web-fee-in-payments | stays partial. The web AA fees tab is built; the mobile app has no fee view (open owner item, no phase plans it), so the reason reads "Web shows AA fee invoices and their status; the mobile app does not show them". Replace `fee-in-payments` with web shot `aa-fees` at `/web/accounts/fees` (highlight `[data-shot=web-accounts-aa-fees]`, caption "AA's monthly fee invoices and whether each is paid", H01 paid and H02 unpaid in one state) |
-| [US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) AA fee settings | absent ("Not built yet: catch-up Phase 16 builds this") | captured, with the reason cleared. Admin shot `fee-settings` at `/admin/billing/aa-fees/settings`, highlight `[data-shot=admin-aa-fee-settings]`, states `schedule` (two fixed items, $5.00 per BCTI, the worked example $700.00 for 40 BCTIs) and `edited` (add an item, the example updates). Caption "Fixed items plus a charge per BCTI, kept in settings and not in code" |
+| [US-10.3.3](../../../../requirements-board/requirements/stories/US-10.3.3.md) AA fee settings | absent ("Not built yet: catch-up Phase 16 builds this") | captured, with the reason cleared. Admin shot `fee-settings` at `/admin/billing/aa-fees/settings`, highlight `[data-shot=admin-aa-fee-settings]`, states `schedule` (two fixed items, $5.00 per BCTI, amounts ex GST, the worked example $700.00 plus GST for 40 BCTIs) and `edited` (add an item, the example updates). Caption "Fixed items plus a charge per BCTI, kept in settings and not in code" |
 | [US-09.1.1](../../../../requirements-board/requirements/stories/US-09.1.1.md) Invoice pair creation and identification | captured · simulator-invoice-pairs, simulator-pair-detail, admin-invoice-xero-ids | stays captured. Re-shoot `invoice-pairs` (the Payer column now shows the neutral label for patient-billed pairs) and `pair-detail` highlighting the new InvoiceNumber and Reference items (caption "One pair: both records carry InvoiceNumber and Reference"); `invoice-xero-ids` re-shot as is. The catalogue now shows the merged US-09.1.2's `invoice-number-reference` image first on this story: re-point that recipe (see "Recipes this phase breaks") rather than adding a duplicate shot here |
 | [US-09.3.1](../../../../requirements-board/requirements/stories/US-09.3.1.md) Contact identification without NHI | captured · simulator-contacts, simulator-pair-contact-ids | stays captured; the shots must now show no patient name. `contacts`: highlight the table with a patient and a billable-party row showing "Patient PT…" and "Billable party BP…" in the Name column; caption "Xero contacts carry only the hidden internal ID: no name, no NHI". `pair-contact-ids` on `XRH12`: the ACCREC card's Payer shows the label beside ContactID and ContactNumber; caption unchanged unless it names the patient. The catalogue now shows the merged US-09.3.2's `no-nhi` image (the policy callout) first on this story, so do not add a `no-personal-info` shot here: re-caption that recipe instead (see "Recipes this phase breaks") |
 
@@ -840,7 +907,11 @@ US-10.2.2 on US-10.2.1), so their recipes stay and are updated here, keeping the
 - Any recipe that finds a Xero contact, row or card by a patient's or guardian's name (check the
   recipes on `/demo/xero` listed by `grep -l demo/xero requirements-board/capture/recipes/*.json`,
   especially US-06.3.x, US-06.4.1, US-08.3.x, FT-09.3 and US-09.3.x): re-point it to the invoice
-  number or the hidden ID; captions that name a patient as Xero data are reworded.
+  number or the hidden ID; captions that name a patient as Xero data are reworded. At plan time
+  this includes `US-08.3.3`'s `archived-contacts` ("Annette Riley's Xero contact archived by the
+  nightly job": it highlights `xero-contact-pt0017`, which still resolves, so only the caption changes,
+  for example "A patient's Xero contact, known only by its hidden ID, archived by the nightly job";
+  its `history-kept` shot reads the web Payments table, the billing system, so its patient name stays).
 - `US-09.1.4`: its `absentReason` says the ACCPAY carries "the AA service fee"; drop that wording.
 - `US-08.3.3` and `US-08.3.5` (`/web/accounts/payments`): the table loses its AA fee and Net to you
   columns. Re-shoot; fix any caption or highlight that names them.
@@ -853,7 +924,7 @@ US-10.2.2 on US-10.2.1), so their recipes stay and are updated here, keeping the
 
 **ATLAS.md.** Routes (`/admin/billing/aa-fees`, `/admin/billing/aa-fees/settings`,
 `/web/accounts/fees`), Seed data worth shooting (the fee invoices AA-FEE-2026-H01 paid and H02 unpaid
-for Dr Souter, "Seed a month of BCTIs" giving Dr Rutherford 40 paid BCTIs and $700.00, and patient and
+for Dr Souter, "Seed a month of BCTIs" giving Dr Rutherford 40 paid BCTIs and $700.00 before GST, and patient and
 billable-party Xero contacts named "Patient PT…" / "Billable party BP…"), the `/demo/xero/invoices/:accRecId`
 route line (drop "illustrative AA service fee"; add the fee pair), Demo control panel (the fee
 triggers are on their screens), and Existing hooks (`admin-aa-fee-invoices`, `admin-aa-fee-settings`,
@@ -875,7 +946,8 @@ the 2026-07-29 fee ruling this phase explicitly supersedes.
 - Money conservation on every procedure pair, seeded and live: `amountPayable === amountDue`;
   `authorised === min(received, payable)` to the cent after any sequence of partials, replays and
   poll catches; `disbursed <= authorised`; no residual fee maths anywhere (grep `serviceFee`,
-  `agencyFee`, `0.95`, `0.05`, `proRata`).
+  `agencyFee` and `proRata` across `src`, and `0.95` / `0.05` in `src/domain`, `src/store` and the
+  money screens; the theme's shadow and gradient values are unrelated).
 - The BCTI count: `bctisFor` is the only function that counts BCTIs and `bctiRecords` the only list
   it reads (grep for any other `accPays` count or `.length` used as a BCTI count); each ACCPAY counted
   once, against its stored `anaesthetistId`, only once its receivable is paid in full, in the month
@@ -885,8 +957,9 @@ the 2026-07-29 fee ruling this phase explicitly supersedes.
   counting cleanly; voided excluded; fee ACCRECs never counted; the rules (one per receivable
   invoice, OQ-29; once against the doer; paid only, being confirmed with AA's accountant; never
   netted) are stated in one comment and on the Admin caption, nowhere else.
-- The fee: $500 + $5 x 40 = $700 at seed settings; the total is fixed items plus rate times count,
-  rounded once; GST conserves; a settings change never alters a raised invoice; one fee invoice per
+- The fee: $500 + $5 x 40 = $700 before GST at seed settings; settings amounts are ex GST
+  (US-05.2.7) with GST worked out once at the foot and no inclusive flag anywhere; the subtotal is
+  fixed items plus rate times count, rounded once; GST conserves; a settings change never alters a raised invoice; one fee invoice per
   active anaesthetist per month; a rerun is a no-op; no future month.
 - Settings, not code: no fee amount or rate appears outside the settings seed and tests; the settings
   write is office-only, validated, audited and restored by reset.
@@ -919,10 +992,12 @@ the 2026-07-29 fee ruling this phase explicitly supersedes.
   themselves"): the defaults built for open questions, anything logged rather than fixed, and the
   screens worth a look, each with its route and persona. At least: the paid-only count by paid month
   (Greg's view, for the accountant) and the `paidOnly` switch; the labelled sample fixed schedule;
-  the current month runnable to date in the demo (a BCTI paid later that month is not charged); the
+  the fee settings held ex GST with GST at the foot (US-05.2.7), so US-10.3.1's $700 is read as the
+  fee before GST and the example invoice totals $805.00; the current month runnable to date in the
+  demo (a BCTI paid later that month is not charged); the
   pre-payment invoice's ACCPAY counted as a BCTI; the
   neutral contact label format ("Patient PT0001", "Billable party BP0001") and Aria Skin and Laser
-  Clinic (an organisation billable party) labelled too until Phase 21; the mobile fee view (no phase
+  Clinic (an organisation billable party) labelled too until Phases 18 and 21; the mobile fee view (no phase
   plans it); and the screens `/admin/billing/aa-fees`, `/admin/billing/aa-fees/settings`,
   `/web/accounts/fees` and `/demo/xero` (Contacts).
 - Catch-up status row for Phase 16 and a phase entry (template in PROGRESS.md), recording the drift
@@ -953,17 +1028,21 @@ the 2026-07-29 fee ruling this phase explicitly supersedes.
     built from the hidden internal ID; organisation and payee contacts keep their names; the
     simulator no longer calls it a contradiction. Extends 2026-07-28 "Xero invoice pairs are routed"
     (patient identity only in the engine-link panel) and keeps 2026-07-22 Fourth review #5.
-  - AA fee settings live in `appSettings` (DM-31), not `DemoSettings`.
+  - AA fee settings live in `appSettings` (DM-31), not `DemoSettings`, and hold every amount ex GST
+    with GST at the foot of the fee invoice (US-05.2.7, Greg 2026-10-07): no inclusive toggle.
+  - The release is per payment, through today's Run payables; the weekly ISO-week payment cycle
+    (US-10.2.7, OQ-47 Proposed) is Phase 39a's.
 - **Catalogue screenshots:** recipes created or changed (US-10.3.3 captured; US-10.3.1 and US-10.3.2
-  rebuilt; US-09.3.1's shots without names; the merged US-09.1.2, US-09.3.2 and US-10.2.2 recipes
+  rebuilt; US-10.2.7 absent for Phase 39a if no earlier phase made it; US-09.3.1's shots without names; the merged US-09.1.2, US-09.3.2 and US-10.2.2 recipes
   re-pointed; the re-shot and re-pointed ones), the `REPORT.md` counts before and after (captured, partial,
   absent, failed), and the partial reason on US-10.3.2 (no mobile fee view) handed to the owner.
 - **Handoff notes:** Phase 36 must fold `billing.aaFeeInvoices` into the ledger and re-read
   `bctiRecords` from its payable legs with a parity test, keeping the paid date; Phases 22, 38b, 39
   and 39b feed `bctiRecords` and never count BCTIs elsewhere (39 settles with OQ-60 whether a credit
   note or negative invoice counts); Phases 32a and 41 update an ACCPAY's `anaesthetistId` (the
-  doer, and only the payable half of a moved prepaid Booking, OQ-70) so the count follows; Phase 21 revisits
-  item 10's label rule for organisation billable parties; Phase 36 gives `raiseAnaesthetistInvoiceInto` its ledger pair; Phase 22 must exempt
+  doer, and only the payable half of a moved prepaid Booking, OQ-70) so the count follows; Phases 18 and 21 revisit
+  item 10's label rule (a contract holder's billable party is an organisation and keeps its name;
+  the payer on the Booking is a person and carries only the label); Phase 36 gives `raiseAnaesthetistInvoiceInto` its ledger pair; Phase 22 must exempt
   the AA fee invoice from the "anaesthetist's name, AA as agent" wording; the mobile fee view as an
   open item for the owner; add a one-line
   "superseded by catch-up Phase 16" note where `docs/prototype-build/REQUIREMENTS.md`,

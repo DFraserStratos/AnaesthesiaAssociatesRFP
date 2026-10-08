@@ -1,20 +1,28 @@
 # Phase 30 · Conflicts, holidays and the conflict dashboard
 
 **Requirements covered:**
+[DM-53](../analysis/domain-model-delta.md#dm-53) Recurring booking replaces the Permanent List (ChangedEntity, S; its rename, projection across the horizon, painting order and retire are built here; its last strand, a pairing on an unavailable session emitting a Draft List, is Phase 31's, from this phase's `skipped` sessions) ·
 [FT-01.5](../../../../requirements-board/requirements/stories/FT-01.5.md) Hospital holiday calendar and conflicts (Confirmed) ·
 [US-01.5.1](../../../../requirements-board/requirements/stories/US-01.5.1.md) Hospital holiday calendar (Confirmed) ·
 [US-01.5.2](../../../../requirements-board/requirements/stories/US-01.5.2.md) Conflict flagging (Verify, OQ-81) ·
 [US-01.5.4](../../../../requirements-board/requirements/stories/US-01.5.4.md) Availability conflict dashboard (Proposed, OQ-81) ·
 [US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) Recurring bookings drive most assignments (Verify, OQ-81).
-At `3d3a18c` US-01.5.2, US-01.5.4 and US-01.3.2 were rewritten (the 2026-10-02 meetings with Greg):
-the conflict flag now covers **hospital closures** and **Bookings that land on a session already
-marked unavailable**; a recurring booking that lands on an unavailable session becomes a **Draft
-List** with no anaesthetist (OQ-81 part 2, built in Phase 31); an anaesthetist who marks a booked
-session unavailable **returns the List to the office or assigns it to a colleague** (US-01.5.5, built
-in Phase 32), so it is no longer a conflict. Short-notice sickness is the one case still open (OQ-81
-part 3). US-01.3.2 adds that a recurring booking creates its List across the horizon before any
-Bookings exist, and that the anaesthetist's calendar is painted first. FT-01.5 and US-01.5.1 are now
-Confirmed.
+The covered stories are unchanged in substance at `60e2d1e` (only artifact links were added; US-01.3.2
+now links [AR-22](../../../../requirements-board/requirements/artifacts/AR-22.md) `#draft-arises`), so
+their 2026-10-02 reading stands: the conflict flag covers **hospital closures** and **Bookings that
+land on a session already marked unavailable**; a recurring booking that lands on an unavailable
+session becomes a **Draft List** with no anaesthetist (OQ-81 part 2, built in Phase 31); an
+anaesthetist who marks a booked session unavailable **returns the List to the office or assigns it to
+a colleague** (US-01.5.5, built in Phase 32), so it is no longer a conflict. Short-notice sickness is
+the one case still open (OQ-81 part 3). US-01.3.2: a recurring booking creates its List across the
+horizon before any Bookings exist, and the anaesthetist's calendar is painted first. What moved
+around this phase at `60e2d1e`: **DM-53** is the new delta id for the recurring booking (the 3d3a18c
+pass carried it in DM-38's vocabulary line and DM-03's triggers); the List lifecycle now has four states, DRAFT (a Draft List, no
+anaesthetist) → ACTIVE → SUBMITTED → AUTHORISED (EP-07, FT-07.1, FT-01.3, FT-01.6), so a List this
+phase projects or assigns is **ACTIVE** (Phase 15b renames today's `DRAFT` before this phase runs) and
+a `DRAFT` List is a Draft List (Phase 31); and the blacklist became private two-way **pairing
+preferences** with an admin-only priority tier (OQ-43 answered, D44; US-13.6.3, US-01.3.5, US-01.3.6;
+Phase 17), which the reassign picker and the recurring-booking sheet already use.
 Also touches, without closing:
 [US-01.5.3](../../../../requirements-board/requirements/stories/US-01.5.3.md) (the availability calendar, Phase 29; this phase re-homes its conflict writes),
 [US-01.5.5](../../../../requirements-board/requirements/stories/US-01.5.5.md) (mark unavailable while holding a List: return or assign, **Phase 32**; until then an anaesthetist blocking a booked session is flagged by this phase's rule, an interim),
@@ -23,8 +31,10 @@ Also touches, without closing:
 [FT-01.6](../../../../requirements-board/requirements/stories/FT-01.6.md) and [US-01.6.1](../../../../requirements-board/requirements/stories/US-01.6.1.md) (Draft Lists, Phase 31, which also turns a recurring clash into a Draft List: this phase's projection hands it the skipped closed sessions),
 [US-01.3.1](../../../../requirements-board/requirements/stories/US-01.3.1.md) (the pairing rule, Phase 31, which refuses an incomplete recurring booking at save),
 [US-13.1.1](../../../../requirements-board/requirements/stories/US-13.1.1.md) (the Day view, related to US-01.5.4; Phase 31 owns its dashboard changes),
-[DM-04](../analysis/domain-model-delta.md#dm-04) (its "reconcile logic in setAvailability, conflict flagging and canvas generation change" clause: this phase makes conflicts one derived rule),
-[DM-32](../analysis/domain-model-delta.md#dm-32) (the hospital-calendar half only; the statutory holiday master and loads are Phase 42).
+[US-01.1.2](../../../../requirements-board/requirements/stories/US-01.1.2.md) and [US-13.4.1](../../../../requirements-board/requirements/stories/US-13.4.1.md) (DM-53's other references: the roll-forward paints recurring bookings onto the new far-edge day, and recurring bookings are one of the masters; Phase 42 owns the full master),
+[DM-04](../analysis/domain-model-delta.md#dm-04) (its "else an availability ListConflict" reconcile in `setAvailability`, which Phase 29 rebuilt on the Slot: this phase makes conflicts one derived rule),
+[DM-05](../analysis/domain-model-delta.md#dm-05) (mark-unavailable stops producing the availability conflict for an anaesthetist: Phase 32; here that path is the named interim),
+[DM-38](../analysis/domain-model-delta.md#dm-38) (the hospital-calendar half only; the master public-holiday calendar and loads are Phase 42).
 No RV finding is closed here.
 **Open questions:**
 [OQ-09](../../../../requirements-board/requirements/questions/OQ-09.md) (hard block or soft warning) is **answered: soft warning**, which this phase builds.
@@ -32,7 +42,8 @@ No RV finding is closed here.
 [OQ-27](../../../../requirements-board/requirements/questions/OQ-27.md) are **answered** (2026-10-01): every active anaesthetist has AM and PM Slots and the Slot holds the availability status. This phase reads only Phase 29's `isClosed` helper.
 [OQ-64](../../../../requirements-board/requirements/questions/OQ-64.md) (the logical model) is **answered** (owner decision D14, 2026-10-02): a Slot is a status container a List goes into; every Slot is stored across the horizon; statuses are a user-maintained list with a fixed ID and an editable label and colour (Phase 29), so the conflict rule keys on the status's ID and closed flag and the copy reads its label; "slot" is never said in the UI (say session, AM or PM); and marking unavailable a Slot that holds a List offers return to the office or assign to a colleague (Phase 32), not a conflict.
 [OQ-81](../../../../requirements-board/requirements/questions/OQ-81.md) (which calendar wins when Lists are generated) is **open, parts 1 and 2 settled in the room**: (1) the anaesthetist's availability is painted first, then the surgeons' recurring bookings, which this phase's generator and projection follow and a test asserts; (2) a recurring booking on an unavailable session becomes a Draft List, which is **Phase 31's** (until then it is not painted, today's behaviour); (3) short-notice sickness is **still open**. Its recommendation for an anaesthetist-marked sickness is the return-or-assign path (Phase 32); a sickness the **office records** (the anaesthetist phones in) is built here as a conflict with the Bookings left in place, as the 2026-09-29 meeting said. That one reading is provisional and sits on the "For the owner's review" list.
-**Depends on:** Phase 29 (the Slot status master, `domain/slotStatus.ts` with `isClosed` / `isOpenForBooking`, `setAvailabilityRange`, the mobile and web calendars), and through it Phase 28 (the `Slot` record, Lists created on assignment, `assignListToSlot`, `moveListToSlot`, `placeListOnSlot`, `generateCanvasForDates`, the horizon setting, the golden canvas fixture, the `'adminDay.selectedSlotId'` context key). Also Phase 14 (the demo-trigger registry, `useDemoTriggerContext`, `store/demoActors.ts` with `OFFICE_ACTOR`), Phase 15a (the Admin Day right rail's To-do card and the Booking warning outline) and Phase 17 (the Master data `?view=` param, the blacklist helper already wired into the reassign picker).
+[OQ-43](../../../../requirements-board/requirements/questions/OQ-43.md) is **answered** (2026-10-07, D44): pairing preferences are private, two-way and admin only, with a soft warning when the office assigns or moves a List and none when an anaesthetist hands on their own. This phase only keeps Phase 17's grouping on the office pickers it touches (Reassign list, the recurring-booking sheet); it adds no preference rule.
+**Depends on:** Phase 29 (the Slot status master, `domain/slotStatus.ts` with `isClosed` / `isOpenForBooking`, `setAvailabilityRange`, the mobile and web calendars), and through it Phase 28 (the `Slot` record, Lists created on assignment, `assignListToSlot`, `moveListToSlot`, `placeListOnSlot`, `generateCanvasForDates`, the horizon setting, the golden canvas fixture, the `'adminDay.selectedSlotId'` context key, the admin finder ordered by tier). Also Phase 14 (the demo-trigger registry, `useDemoTriggerContext`, `store/demoActors.ts` with `OFFICE_ACTOR`), Phase 15a (the Admin Day right rail's To-do card and the Booking warning outline), Phase 15b (the List state `DRAFT` renamed `ACTIVE` for an assigned List) and Phase 17 (the Master data `?view=` param; the pairing-preference and tier helper `src/domain/pairingPreferences.ts`, already wired into Reassign list and into the Permanent List sheet's usual surgeon, which item 1 renames and keeps wired; the privacy boundary that keeps preferences and tiers out of the anaesthetist apps).
 **Estimated:** 1 session nominally, but this is at the top of the one-session range (a mechanical rename, a `mutate()` change, two pure engines, a new screen, a calendar and a trigger): plan for the split. Session 1 is items 1 to 11 plus the minimal consumer switch named in item 11 (the rename, model, rules, seed, store and selectors, with every screen still compiling and rendering), and stops green. Session 2 is items 12 to 20 (screens, trigger, shots, demo guide).
 
 ## Goal
@@ -48,7 +59,7 @@ closure or unavailability behind them. The office's standing arrangements are st
 "Permanent lists" (the catalogue says **recurring bookings**), their edits change nothing on the
 existing canvas, weekend patterns are silently dropped, and one cannot be retired.
 
-At `3d3a18c` the catalogue narrowed what a conflict is (US-01.5.2, US-01.5.4): a **booked List whose
+Since the 2026-10-02 meetings (and unchanged at `60e2d1e`) the catalogue narrows what a conflict is (US-01.5.2, US-01.5.4): a **booked List whose
 hospital is closed**, or a **Booking that lands on a session its anaesthetist has already marked
 unavailable**. Two clashes are no longer conflicts and are not built here: a recurring booking
 landing on an unavailable session becomes a Draft List (OQ-81 part 2, Phase 31), and an anaesthetist
@@ -85,15 +96,20 @@ This phase:
   catalogue keeps: hospital closures, and Bookings on an unavailable anaesthetist's List (including an
   office-recorded sickness). Recurring clashes and returned Lists are Draft Lists and show on Phase
   31's Draft List view, not here (US-01.5.4 AC3);
-- **renames Permanent Lists to recurring bookings** in code and copy (US-01.3.2): the standing
-  intersection of a hospital, an anaesthetist and a surgeon on a day of the week and a session, all
-  five making the arrangement (Phase 31's pairing rule refuses an incomplete one at save). A
+- **renames Permanent Lists to recurring bookings** in model, code and copy (DM-53, US-01.3.2),
+  replacing `PermanentList` and the terms "template", "permanent booking" and "Permanent List": the
+  standing intersection of a hospital, an anaesthetist and a surgeon on a day of the week and a
+  session, all five making the arrangement (Phase 31's pairing rule refuses an incomplete one at
+  save, and gives the pre-op pairing at AA's rooms its location record, so whether a null hospital
+  or surgeon survives is decided there, as one rule; this phase keeps the fields as they are). A
   recurring booking is a pattern of Lists, not a Booking for one patient, and the copy says so;
 - makes a recurring booking **create its Lists across the horizon before any Bookings exist**: on
   each roll-forward the new far-edge day gets its recurring Lists, empty, and an add or edit projects
   over the existing canvas from tomorrow to the far end of Phase 28's configurable horizon (four
   months in current practice) through **"Apply to canvas now"**, never disturbing a List that
-  carries Bookings or an office edit. The anaesthetist's calendar is painted first (OQ-81 part 1): a
+  carries Bookings or an office edit. Every List it creates is an assigned List in the ACTIVE
+  state (FT-07.1; 15b's name for today's `DRAFT`); it never touches a DRAFT List (a Draft List,
+  Phase 31). The anaesthetist's calendar is painted first (OQ-81 part 1): a
   session already closed is skipped, and the plan names those sessions so Phase 31 can turn them into
   Draft Lists. A view-level "Apply to canvas now" re-paints every active recurring booking onto
   sessions that have come free. The result line counts what changed and links to the next affected
@@ -105,19 +121,26 @@ This phase:
 
 ## Before you start: drift check
 
-1. Diff the catalogue for this phase's items against the plan's snapshot:
+1. Diff the catalogue for this phase's items against the plan's snapshot (baseline `60e2d1e`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-01.5,US-01.5.1,US-01.5.2,US-01.5.4,US-01.3.2,US-01.5.3,US-01.5.5,US-01.1.1,FT-01.1,US-01.4.1,FT-01.3,US-01.3.1,FT-01.6,US-01.6.1,OQ-09,OQ-17,OQ-27,OQ-64,OQ-81
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-01.5,US-01.5.1,US-01.5.2,US-01.5.4,US-01.3.2,US-01.5.3,US-01.5.5,US-01.1.1,US-01.1.2,FT-01.1,US-01.4.1,FT-01.3,US-01.3.1,FT-01.6,US-01.6.1,EP-07,FT-07.1,US-13.4.1,OQ-09,OQ-17,OQ-27,OQ-43,OQ-64,OQ-81
    ```
 
-   If an item changed, re-read it and adjust the work items before planning. If a covered item is now
-   Retired or Future, drop it from this phase and say so in the PROGRESS entry. Watch in particular
-   for: a change to what counts as a conflict (US-01.5.2 and US-01.5.4 now keep hospital closures and
-   Bookings on an unavailable anaesthetist's List only), a rule for Draft Lists at a closed hospital,
-   a requirement to capture a reason when clearing, a change to who may edit a recurring arrangement
-   (US-01.3.2's note says it is not settled; this phase builds office editing in Admin Master data
-   only), and the title's "most" (Donald doubted it; the title is unchanged at `3d3a18c`).
+   It is rename-aware (the catalogue moved to `requirements-board/requirements/` after earlier
+   baselines), so never use a plain `git diff` of the folder. If an item changed, re-read it and
+   adjust the work items before planning. If a covered item is now Retired or Future, drop it from
+   this phase and say so in the PROGRESS entry. Watch in particular for: a change to what counts as a
+   conflict (US-01.5.2 and US-01.5.4 keep hospital closures and Bookings on an unavailable
+   anaesthetist's List only), a rule for Draft Lists at a closed hospital, a requirement to capture a
+   reason when clearing, a change to who may edit a recurring arrangement (US-01.3.2's note says it is
+   not settled; this phase builds office editing in Admin Master data only), a rule on a recurring
+   booking's null hospital or surgeon (DM-53: decided with Phase 31's location record), a change to
+   the List states (DRAFT for a Draft List, ACTIVE for an assigned List: EP-07, FT-07.1), and the
+   title's "most" (Donald doubted it; the title is unchanged at `60e2d1e`).
+   At plan time (2026-10-08) the covered stories had no substantive change since `3d3a18c`; FT-01.3,
+   FT-01.6, US-01.6.1 and EP-07 gained the DRAFT / ACTIVE states (List lifecycle states, 2026-10-07),
+   and US-01.5.5's note now applies **no** preference warning to an anaesthetist's assign (Phase 32).
 2. **OQ-09.** Answered "soft warning" at the snapshot. If it has been re-opened or changed to a hard
    block, stop and raise it with the owner before planning: the accept-and-flag paths in work item 7
    invert. If the answer now asks for a captured reason on override (the RFP response's original
@@ -166,8 +189,15 @@ This phase:
      `store/selectors.ts` (the master counts, :862 and :882), `store/clockActions.ts`,
      `store/canvasRoll.test.ts`, `shared/audit/actionLabels.ts` (:59 to :60),
      `apps/admin/screens/MasterData.tsx`, `apps/admin/flows/PermanentListSheet.tsx` and
-     `apps/demo/DemoControlPanel.tsx` (:137); plus what 28 and 29 added (`PermanentList.kind`, 29's
-     usage count in `validateSlotStatusDraft`).
+     `apps/demo/DemoControlPanel.tsx` (:137); plus what 17, 28 and 29 added (17's preference and
+     tier wiring on the sheet's usual surgeon, `PermanentList.kind`, 29's usage count in
+     `validateSlotStatusDraft`).
+   - Confirm 15b is DONE and note the List state union (expected `'DRAFT' | 'ACTIVE' | 'SUBMITTED' |
+     'AUTHORISED'` or `'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'` until 31 adds DRAFT back as the Draft
+     List state); every "state" test in items 4 and 10 reads ACTIVE for an assigned List.
+   - Note 17's helper names in `src/domain/pairingPreferences.ts` (the not-preferred grouping and tier
+     order) and the shared picker pieces it put in `src/shared/schedule/`, used by item 12's reassign
+     group and kept on the renamed recurring-booking sheet.
    - Find every place that writes `List.conflicts` today
      (`grep -rn "conflicts" src/store src/domain`): expected 29's `availabilityClash` and every
      Slot-status path that calls it (`setAvailability`, `setAvailabilityRange`, `clearAvailability`,
@@ -215,7 +245,10 @@ Slot already marked unavailable; a recurring clash becomes a Draft List; return-
 anaesthetist; the calendar painted first; sickness open), the "Permanent Lists and List templates" row
 (recurring bookings), the "Two Lists per active anaesthetist" row, "Slot, List and Draft List" (a
 recurring booking creates its List at the far end of the rolling schedule, before any Bookings), and
-the glossary's "Recurring booking" entry; the notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md`
+the glossary's "Recurring booking" and "Active List" entries and the List state bullet (DRAFT, ACTIVE,
+SUBMITTED, AUTHORISED; the change log `requirements-board/requirements/changes/2026-10-07-list-lifecycle-states.md`);
+[AR-22](../../../../requirements-board/requirements/artifacts/AR-22.md) `#draft-arises` (where a Draft List arises,
+linked from US-01.3.2); the notes `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md`
 points 42 to 44, `2026-10-02-aa-meeting-with-greg.md` points 5, 27, 28 and 45 (Slots stored and
 painted, recurring bookings creating empty Lists, return or assign) and
 `2026-10-02-aa-requirements-review-with-greg.md` point 1 (OQ-81: painting order and the recurring
@@ -234,7 +267,7 @@ clash) and the US-01.3.2 and US-01.5.4 points it cites.
   which is 31's) and US-01.3.2 (Contradicts: the wrong term, no painting of the existing horizon, no
   retire, hospital and surgeon optional, weekday only, and no Draft List for a recurring clash, which
   is 31's). US-01.5.5 (Contradicts, Phase 32) for the block-while-booked copy this phase corrects.
-- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (DM-04, DM-32).
+- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (DM-53, DM-04, DM-05 and DM-38; DM ids are stable across the `60e2d1e` pass).
 - `analysis/prototype-map-admin.md` (Day grid, List drawer, Master data, flows),
   `prototype-map-store-seed.md` (mutate, lifecycle, masters actions, canvas generator, seed fixups),
   `prototype-map-domain.md`, `prototype-map-shared.md` and `prototype-map-shell-demo-pwa.md` (router,
@@ -283,6 +316,8 @@ clash) and the US-01.3.2 and US-01.5.4 points it cites.
 - `aa-prototype/src/apps/admin/screens/MasterData.tsx`: `NAV` (the entity `permanentLists` at :31,
   labelled "Permanent lists" at :44), `PermanentListsView` (:244, subtitle at :253 "... Edits apply to
   future generated days.", button "Add permanent list"), `HospitalsView` (:275, holiday pills).
+  Phase 17 splits these views out into `apps/admin/screens/masters/` (and gives each hospital card
+  its contact email); use the files it created.
 - `aa-prototype/src/apps/admin/components/SideNav.tsx` (`NavSection`, warn badges),
   `apps/admin/AdminApp.tsx` (`sectionForPath`, the drawer's local `drawerListId` state),
   `apps/admin/routes.tsx`, `aa-prototype/src/router.tsx` (the `admin` routes, :88-106),
@@ -335,6 +370,14 @@ after item 11 if the phase runs over one session.
    - copy: `DemoControlPanel.tsx` :137 ("new far edge days generate from recurring bookings"), every
      doc comment (`types.ts`, `clock.ts`, `canvas.ts`, `clockActions.ts`, the seed header), test
      names (the seed's "roughly 80% ... from recurring bookings");
+   - the generator's "template" wording for the same thing (`canvas.ts`'s `template` variable and its
+     comments, any "permanent booking" string) becomes recurring booking too (DM-53 retires
+     "template", "permanent booking" and "Permanent List"); unrelated templates (15a's or 35's email
+     templates) are left alone;
+   - 17's pairing-preference wiring on the sheet's usual surgeon (`SurgeonPicker`, not-preferred
+     grouping, tier order, the soft warning and its "Save anyway" / "Add anyway" acknowledgement)
+     moves with the file unchanged, and stays admin-only (item 15 re-labels the acknowledgement when
+     the primary button becomes "Apply to canvas now");
    - wherever the word could be read as a patient Booking, the copy names it in full ("recurring
      booking", never "booking" alone), and the Master data subtitle says it is a pattern of Lists,
      not a Booking for one patient.
@@ -408,9 +451,9 @@ after item 11 if the phase runs over one session.
        US-01.5.2 AC3): **Phase 31** turns `skipped` entries into Draft Lists; here they are counted
        in the preview and result lines and nothing else happens;
      - **update**: a List with `recurringBookingId === before.id` (or `after.id`), no active
-       Bookings, state DRAFT, and still in a Slot `after` covers: hospital, surgeon, kind, notes and
+       Bookings, state ACTIVE, and still in a Slot `after` covers: hospital, surgeon, kind, notes and
        times follow `after`;
-     - **remove**: a List projected from `before` with no active Bookings and state DRAFT, whose date
+     - **remove**: a List projected from `before` with no active Bookings and state ACTIVE, whose date
        `after` no longer covers (retired, ended, or moved to another day, session or anaesthetist).
        Its Slot is left empty and available;
      - **kept**: any List in a covered Slot that carries Bookings, is SUBMITTED or AUTHORISED, has no
@@ -572,7 +615,8 @@ after item 11 if the phase runs over one session.
         `after.source: 'recurringBooking'`), each with no Bookings;
       - updates audit `list.update`;
       - removals audit `list.remove` (a new action code; the List record is deleted and its Slot left
-        empty). Only projected, empty, DRAFT Lists are ever removed;
+        empty). Only projected, empty, ACTIVE Lists are ever removed (never a DRAFT List, which is a
+        Draft List from Phase 31 on);
       - `skipped` sessions (closed when the recurring booking reaches them) write nothing here; Phase
         31 makes them Draft Lists;
       - the recurring-booking change audits `recurringBooking.create`, `.update` or `.retire`.
@@ -649,7 +693,8 @@ after item 11 if the phase runs over one session.
     - **Reassign from a conflict.** When the source Slot is closed, `ReassignListFlow`'s "Vacated
       session becomes" (its copy never says "slot") defaults to **Keep as is** (the sick anaesthetist
       stays Unavailable), passed to `moveListToSlot` as the Slot's current status. The targets stay 28's available empty Slots
-      (`isOpenSlot`), with 17's blacklist warning, followed by a collapsed "Not available" group of
+      (`isOpenSlot`), grouped and ordered by 17's `pairingPreferences.ts` helper (not-preferred pairings
+      apart with their soft warning, preferred marked, tier order), followed by a collapsed "Not available" group of
       empty closed Slots, each with its status chip; picking one shows item 16's warning ("Dr Ngata is marked
       Holiday for this session. The List will be flagged.") and confirm stays enabled. Phase 31's
       grouped picker supersedes this group.
@@ -731,7 +776,8 @@ after item 11 if the phase runs over one session.
       (have Bookings) and skips 1 (anaesthetist unavailable).") updates as the fields change. The
       primary teal button reads **"Apply to canvas now"** in both add and edit mode: it saves the
       recurring booking and projects it in one action, so an edit is never saved without reaching the
-      canvas.
+      canvas. While 17's not-preferred surgeon warning shows, it reads **"Apply anyway"** (17's "Save
+      anyway" / "Add anyway" acknowledgement, same semantics and audit), never disabled.
     - After applying, the sheet shows the result: "Applied to 17 future Mondays: 14 Lists added, 1
       updated, 2 kept (have Bookings)." and a "Show on day grid" link to `firstAffectedDateISO`. The
       kept and skipped rows expand to list their dates and reasons. The skipped wording stays neutral
@@ -883,7 +929,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   anaesthetist, hospital, availability and Booking count, and only the two kinds (hospital closed,
   anaesthetist unavailable). The filters narrow the rows and survive a reload (URL).
 - [ ] From Rutherford's row, Reassign to Dr Sharma. "Vacated session becomes" defaults to "Keep as
-  is". The
+  is"; the picker keeps 17's grouping (not-preferred pairings apart, tier order) above the collapsed
+  "Not available" group. The
   row leaves the screen and the badge drops by one. On the Day grid the List sits in Sharma's AM with
   its Bookings and no conflict, and Rutherford's AM reads Unavailable.
 - [ ] Clear Morrison's conflict with the note "Theatre confirmed running". It leaves the default view,
@@ -910,7 +957,8 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   conflict resolves. Pick a closed hospital: the select says "closed" and the save flags it.
 - [ ] Master data shows "Recurring bookings" (no "Permanent" anywhere in the app: nav, titles,
   buttons, audit labels, Control Panel copy, the inspector). The subtitle says they are patterns of
-  Lists, not patient Bookings.
+  Lists, not patient Bookings. The sheet's surgeon choice still shows 17's not-preferred group and
+  tier order (a not-preferred surgeon warns and the button reads "Apply anyway"), and a projected List reads ACTIVE in the drawer and inspector, never "DRAFT".
 - [ ] Recurring bookings: edit a Monday recurring booking's surgeon. The preview line counts what
   will change before you press "Apply to canvas now"; the result line then counts the added, updated
   and kept Lists, and "Show on day grid" opens Mon 27 Jul with the new surgeon on an empty projected
@@ -985,9 +1033,13 @@ In the same session (each phase patches the beats it touches):
   Rutherford's conflicted AM ..." becomes "from Conflicts, reassign Dr Rutherford's AM ... to Dr Sharma
   (vacated session kept Unavailable)"; the clock note at :137 is item 1's rename. No trigger is added
   to the page.
+- S2 Beat 3's reassign was already re-worded by Phase 17 (the not-preferred grouping and tier order
+  in the picker, never "blacklist"): keep 17's lines and layer this phase's Conflicts start and
+  "Keep as is" default on them. Any assigned List the patched beats name is ACTIVE (15b), never
+  "DRAFT"; "Draft List" means only Phase 31's unassigned List.
 - Not a milestone phase, so no full consistency read. Check the patched sections match the run sheet,
-  that `grep -rni "permanent list" docs/demo-guide` returns nothing, and that no patched app-facing
-  quote says "slot".
+  that `grep -rniE "permanent (list|booking)|list template" docs/demo-guide` returns nothing, and that
+  no patched app-facing quote says "slot".
 
 ## Catalogue screenshots
 
@@ -1002,16 +1054,16 @@ matches what was built:
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
 | [US-01.5.1](../../../../requirements-board/requirements/stories/US-01.5.1.md) Hospital holiday calendar (Confirmed) | captured · `hospital-holidays` (list, add) | stays captured. Re-shoot `list` on the new Hospitals view (pills are buttons, new subtitle); keep `add` and click the "Add holiday" button as before. Add a `calendar` state (Calendar mode, Southern Cross, a month with a closure block and its conflict count) and an `edit` state (the holiday sheet in edit mode with "Delete holiday"). Highlight the calendar grid and the sheet. Captions: "Each hospital keeps its own closure calendar", "Edit or delete a closure and its flags clear" |
-| [US-01.5.2](../../../../requirements-board/requirements/stories/US-01.5.2.md) Conflict flagging (Verify) | partial · `holiday-conflict` (grid, reason), `unavailable-conflict` (admin and mobile) | stays partial, with the reason rewritten to the `3d3a18c` text: "A recurring booking that lands on a session already marked unavailable is not painted yet; Phase 31 makes it a Draft List. An anaesthetist marking a booked session unavailable is still flagged until Phase 32's return-or-assign." Drop the OQ-09 and "web shows no conflict" wording. Re-shoot `holiday-conflict` `grid` to show the amber conflict colour, "!" and reason line (the seeded Wed 22 Southern Cross closure is now real, so drop the add-holiday setup or add a second closure on another date), and `reason` on the drawer's conflict text. Re-point the admin `unavailable-conflict` shot to the seeded office-recorded sickness (Rutherford Wed 22 AM drawer, "Unwell, short notice") and caption it "A Booking on an unavailable anaesthetist's List is accepted and flagged". Drop the mobile `unavailable-conflict` shot (blocking a booked session is no longer a conflict in the catalogue; Phase 32 shoots return-or-assign). Add an admin `phone-advice-warning` shot (the inline "will be flagged" warning when phone-booking onto an unavailable session). Caption in the catalogue's words: "Booking accepted, List flagged as a conflict" |
+| [US-01.5.2](../../../../requirements-board/requirements/stories/US-01.5.2.md) Conflict flagging (Verify) | partial · `holiday-conflict` (grid, reason), `unavailable-conflict` (admin and mobile) | stays partial, with the reason rewritten to the catalogue text (unchanged in substance at `60e2d1e`): "A recurring booking that lands on a session already marked unavailable is not painted yet; Phase 31 makes it a Draft List. An anaesthetist marking a booked session unavailable is still flagged until Phase 32's return-or-assign." Drop the OQ-09 and "web shows no conflict" wording. Re-shoot `holiday-conflict` `grid` to show the amber conflict colour, "!" and reason line (the seeded Wed 22 Southern Cross closure is now real, so drop the add-holiday setup or add a second closure on another date), and `reason` on the drawer's conflict text. Re-point the admin `unavailable-conflict` shot to the seeded office-recorded sickness (Rutherford Wed 22 AM drawer, "Unwell, short notice") and caption it "A Booking on an unavailable anaesthetist's List is accepted and flagged". Drop the mobile `unavailable-conflict` shot and its stale caption "Blocking a booked session flags a conflict" (blocking a booked session is no longer a conflict in the catalogue; Phase 32 shoots return-or-assign). Add an admin `phone-advice-warning` shot (the inline "will be flagged" warning when phone-booking onto an unavailable session). Caption in the catalogue's words: "Booking accepted, List flagged as a conflict" |
 | [US-01.5.3](../../../../requirements-board/requirements/stories/US-01.5.3.md) Anaesthetist availability calendar | partial · `my-availability` (before, blocked) | Phase 29 owns this recipe. Here only check that the `blocked` state still shows the conflict "!" from the reconcile and the corrected outcome line ("flagged for the office", no "notified"), and that its caption is true. Stays partial for Phase 29's reason |
 | [US-01.5.4](../../../../requirements-board/requirements/stories/US-01.5.4.md) Availability conflict dashboard (Proposed) | absent · "Not built yet: catch-up Phase 30 builds this." | becomes captured. Admin shots on `/admin/conflicts`: `conflicts-screen` (default filter, grouped by day, rows with reason, anaesthetist, hospital, availability, Bookings; highlight the table), `conflict-clear` (the Clear sheet from a row), `conflict-reassigned` (after Reassign, the row has left and the count dropped), and a `simulate-sickness` state staged by the Demo actions menu or by the seeded Wed 22 rows. Add a `data-shot` hook on the Conflicts table and the side-nav badge. Captions: "Closed hospitals and unavailable anaesthetists, Bookings still in place", "Reassign to an available anaesthetist and the conflict clears". AC3 (a recurring clash shows as a Draft List) is Phase 31's; if the capture marks partial stories, say so in a note, otherwise leave it to 31's recipe update |
 | [US-01.5.5](../../../../requirements-board/requirements/stories/US-01.5.5.md) Mark unavailable while holding a List | none | not built here (Phase 32). Create an `absent` recipe, "Not built yet: catch-up Phase 32 builds this.", so the full capture has no story without a recipe |
-| [US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) Recurring bookings drive most assignments (Verify) | captured · `permanent-lists` (table, add) | becomes partial, reason: "A recurring booking that lands on a session already marked unavailable is not painted yet; Phase 31 makes it a Draft List. Hospital and surgeon are not yet required (Phase 31's pairing rule)." Keep the shot `name` `permanent-lists`; re-point the clicks to the "Recurring bookings" nav label and "Add recurring booking" button, and rewrite captions ("Recurring bookings: hospital, day, anaesthetist, session and surgeon"). Add an `apply` state (sheet with the live preview line and the "Apply to canvas now" result line, with "Show on day grid") and a `retired` state (a retired row, muted, with its last date). Highlight the table, then the sheet |
+| [US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) Recurring bookings drive most assignments (Verify) | captured · `permanent-lists` (table, add) | becomes partial, reason: "A recurring booking that lands on a session already marked unavailable is not painted yet; Phase 31 makes it a Draft List. Hospital and surgeon are not yet required (Phase 31's pairing rule)." Keep the shot `name` `permanent-lists`; re-point the clicks to the "Recurring bookings" nav label and "Add recurring booking" button, and rewrite captions ("Recurring bookings: hospital, day, anaesthetist, session and surgeon"). Add an `apply` state (sheet with the live preview line and the "Apply to canvas now" result line, with "Show on day grid") and a `retired` state (a retired row, muted, with its last date). Highlight the table, then the sheet. No shot shows "Permanent", "template" or a "DRAFT" label on a projected List (it is ACTIVE). This recipe also stands for DM-53, which has no recipe of its own |
 
 **Recipes this phase breaks.** Found by grep at plan time:
 - Re-grep first (`grep -li "Permanent\|Hospitals & holidays\|vacated" requirements-board/capture/recipes/*.json`): later phases may have added recipes that click these labels, and the reassign flow's "Vacated session becomes" copy may break a text selector.
 - `US-01.1.2.json` and `US-13.4.1.json` click the "Permanent lists" nav label (and `US-13.4.1` the "Permanent Lists" caption and `absentReason`): re-point to "Recurring bookings", keep shot and state names. `US-01.1.2` keeps its partial reason (the roll-forward has no screen).
-- `US-13.4.1.json` and `US-04.4.1.json` click "Hospitals & holidays" (`role=button`): check the label survives the Hospitals view change.
+- `US-13.4.1.json` and `US-04.4.1.json` click "Hospitals & holidays" (`role=button`): check the label survives the Hospitals view change. US-04.4.1 is Retired at `60e2d1e` (no default Contracts); if Phase 18 or 19a has not already retired its recipe, leave it to the capture's retired-story handling rather than re-pointing it.
 - `US-01.4.1.json` (`reassign`) drives `ReassignListFlow` from `/admin/day/2026-07-21`; the new collapsed "Not available" group sits after the open Slots, so "Hughes, Rawiri" should still resolve. Confirm in the `--dry` run.
 - `US-01.2.1.json` and `US-01.5.3.json` (mobile, `availability-block-pm`) show the conflict "!" via 29's calendar: re-check the highlight and captions after the reconcile moves into `mutate()`.
 - Any recipe that opens a Wed 22 List drawer or highlights its "Needs attention" box (`US-01.5.2`) needs the drawer's new conflict lines and Clear link; add a `data-shot` hook on the attention box rather than the text selector.
@@ -1055,15 +1107,17 @@ review-and-fix pass (PROGRESS convention 18)**:
   provisional in one place). No copy promises a notification.
 - **Recurring bookings never disturb booked work.** The projection never touches a List with
   Bookings, a SUBMITTED or AUTHORISED List, an office-edited List, or anything before tomorrow.
-  Removals are only of empty projected DRAFT Lists; the view-level "Apply to canvas now" never
+  Removals are only of empty projected ACTIVE Lists (a DRAFT List is a Draft List, never touched); the view-level "Apply to canvas now" never
   removes. The anaesthetist's calendar is painted first; created Lists hold no Bookings; the
   projection runs to the horizon setting's far end, not a constant; a roll-forward paints the new
   far-edge day. Weekend patterns, start and end dates, and retire work, and a retired row never
   projects again. The generator and the projection agree (a fresh generation gives a
   `projectAllRecurringBookings` plan with nothing but `skipped`), and the sheet's preview equals
   what applying does.
-- **The rename is complete and unambiguous.** No "Permanent List" survives in code, copy, audit
-  labels, tests or specs; no copy says "booking" alone where it means a recurring booking; ids and
+- **The rename is complete and unambiguous (DM-53).** No "Permanent List", "permanent booking" or
+  generator "template" for a recurring booking survives in code, copy, audit labels, tests or specs;
+  17's preference and tier wiring on the sheet survived the file rename and stays admin-only; no
+  projected or assigned List is labelled "DRAFT" (it is ACTIVE after 15b); no copy says "booking" alone where it means a recurring booking; ids and
   the `ID_FORMATS` prefix do not clash. No new user-visible string says "slot" (OQ-64): session, AM
   or PM.
 - **The colour change stays in the design language.** Only `semantic.warning` tokens; no new hex; the
@@ -1090,10 +1144,12 @@ review-and-fix pass (PROGRESS convention 18)**:
     replaces the beat);
   - US-01.3.2: office-only editing of recurring bookings (who else may edit is not settled), and the
     title's "most" left as catalogued;
+  - DM-53: a recurring booking's null hospital or surgeon (the seeded pre-op and acute rows) kept as
+    is here and handed to Phase 31's location record and pairing rule, so there is one rule;
   - screens: Admin · Conflicts (`/admin/conflicts`), the Wed 22 Day grid, Master data · Hospitals &
     holidays (calendar) and Recurring bookings, as Kirsty.
 - **Status row** for catch-up Phase 30, and a phase entry with:
-  - the drift-check result against 3d3a18c (items changed or not, OQ-09 still answered, OQ-81's
+  - the drift-check result against 60e2d1e (items changed or not, OQ-09 still answered, OQ-81's
     state, the 28 and 29 names used);
   - what was built, per work item;
   - the seed's flagged-List set before and after;
@@ -1120,9 +1176,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   6. **Reassigning from a closed Slot keeps the vacated Slot's status by default.**
   7. **The Wed 22 seeded conflicts are real facts** (Rutherford Unavailable, recorded by the office; a
      Southern Cross closure). This replaces `applyPhase06Conflicts`.
-  8. **Permanent Lists are renamed recurring bookings** in code and copy (the standing intersection
-     of hospital, anaesthetist and surgeon on a day and session, a pattern of Lists, not a patient
-     Booking).
+  8. **Permanent Lists are renamed recurring bookings** in model, code and copy (DM-53; the standing
+     intersection of hospital, anaesthetist and surgeon on a day and session, a pattern of Lists, not
+     a patient Booking; "template", "permanent booking" and "Permanent List" retired).
   9. **Recurring bookings create their Lists across the horizon, painted after the anaesthetist's
      calendar (OQ-81 part 1), and changes project over the existing canvas from tomorrow through
      "Apply to canvas now"**, never touching Lists with Bookings or office edits; a view-level "Apply
@@ -1131,7 +1187,7 @@ review-and-fix pass (PROGRESS convention 18)**:
      supported. This supersedes the Phase 07 "edits apply to future generated days, no
      retro-regeneration" behaviour.
   10. **Hospital holidays can be edited and deleted.** The hospital of a holiday row is fixed.
-  11. **What a conflict is follows the catalogue at `3d3a18c`:** a closed hospital, or a List in a
+  11. **What a conflict is follows the catalogue at `60e2d1e` (unchanged since `3d3a18c`):** a closed hospital, or a List in a
       closed Slot (US-01.5.2, US-01.5.4). A recurring clash is a Draft List (Phase 31) and an
       anaesthetist marking a booked session unavailable is return-or-assign (Phase 32, US-01.5.5,
       OQ-64); until 32 the latter is flagged as an interim. An office-recorded sickness stays a
@@ -1149,7 +1205,11 @@ review-and-fix pass (PROGRESS convention 18)**:
     - The pairing rule on recurring bookings goes on `addRecurringBooking` / `editRecurringBooking`
       (renamed here from `addPermanentList` / `editPermanentList`); the projection paints whatever
       the row holds, so an incomplete row must be refused at save, and the seeded acute and pre-op
-      rows completed.
+      rows completed. DM-53's open point (whether a null hospital or surgeon survives, for the pre-op
+      pairing at AA's rooms) is decided there with the location record, as one rule; the projection
+      reads whatever the row holds, so it needs no change.
+    - Lists the projection creates are ACTIVE; a DRAFT List (a Draft List) is never created, updated
+      or removed by it, and `kept` should name one if it ever meets one.
     - `applyPhase06Conflicts` is gone: the seeded sickness is Dr Rutherford's Wed 22 AM Slot set
       Unavailable by the office ("Unwell, short notice") with his List flagged in it, and the
       Southern Cross Wed 22 closure (`HH900`) is the seeded holiday example. Neither becomes a Draft

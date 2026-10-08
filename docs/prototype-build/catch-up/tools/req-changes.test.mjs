@@ -80,3 +80,12 @@ test('deletions, new items, new notes and logs, and domain-model edits show, in 
   const after = requirementChanges({ cwd: s.dir, from: moved, to: s.commit('more') })
   assert.deepEqual(ids(after), ['US-01.1.1:D', 'US-01.1.2:A'])
 })
+
+test('substance ignores evidence links, order, lanes, images and link markup, but not status or text', async () => {
+  const { substance } = await import('./req-changes.mjs')
+  const a = '---\nid: US-1\nstatus: Verify\nsources:\n  - "Notes #1"\norder: 2\n---\n\nSee [the Contract](US-04.1.1) for detail.\n'
+  const b = '---\nid: US-1\nstatus: Verify\nsources:\n  - "Notes #1"\n  - OQ-04\norder: 3\nartifacts:\n  - AR-28#x\nimages:\n  - src: a.png\n---\n\nSee the Contract for detail.\n'
+  assert.equal(substance(a), substance(b))
+  assert.notEqual(substance(a), substance(a.replace('Verify', 'Confirmed')))
+  assert.notEqual(substance(a), substance(a.replace('for detail', 'for the detail')))
+})

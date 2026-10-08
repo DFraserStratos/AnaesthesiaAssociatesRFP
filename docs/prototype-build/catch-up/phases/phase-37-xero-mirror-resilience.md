@@ -9,7 +9,7 @@ idempotency, alerting, a void made directly in Xero),
 [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md)
 (bulk remittance stays in Xero),
 [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md)
-(processing monitor; **Confirmed** at `3d3a18c`, graded Partial: "This list will get quite large", so
+(processing monitor; **Confirmed** at `60e2d1e`, graded Partial: "This list will get quite large", so
 the monitor is restyled with standard sorting and filtering; its Notes say the view is grouped by
 anaesthetist and "is where authorised Lists are approved", and Greg asked for a problems-only filter and
 an all-or-one-anaesthetist filter, "Neither is settled; both come with the prototype's restyle").
@@ -30,7 +30,7 @@ where this surface sits" copy goes),
 (manual intervention, now **Confirmed**; Matches: Resolve & retry stays for billing exceptions through
 the restyle) and
 [US-13.5.2](../../../../requirements-board/requirements/stories/US-13.5.2.md)
-(audit trail; since `3d3a18c` its list names invoices and credit notes, not payments or disbursements,
+(audit trail; since `60e2d1e` its list names invoices and credit notes, not payments or disbursements,
 "It's done in Xero". The prototype still audits every write through `mutate()` (convention), so the
 detection and queue rows stay; no copy claims the audit trail is required to cover payments).
 No DM or RV item is owned here. The phase builds on
@@ -119,7 +119,7 @@ record.
 
    Read the hunks for EP-09, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
    US-10.2.1, US-10.2.3, US-10.2.4, US-08.3.2, FT-13.3, US-13.3.1, US-13.3.2, US-13.5.2, OQ-47 and the
-   domain-model lines on Xero, the payables run and bank reconciliation. At `3d3a18c` the Xero items
+   domain-model lines on Xero, the payables run and bank reconciliation. At `60e2d1e` the Xero items
    are unchanged in substance since the plan was first written (only image order and one caption moved
    on US-09.1.1, US-09.2.1, US-09.3.1 and US-10.2.1); US-13.3.1, FT-13.3 and US-13.3.2 became
    Confirmed, and US-13.3.1 gained the restyle sentence and the Notes this phase builds.
@@ -927,7 +927,7 @@ matches what was built:
 | [US-09.4.1](../../../../requirements-board/requirements/stories/US-09.4.1.md) Xero organisation | partial · simulator-xero-organisation | stays partial: no organisation setup or separation from general accounting is built. The new outage banner appears on this tab, so re-shoot with Xero connected and check |
 | [US-09.4.2](../../../../requirements-board/requirements/stories/US-09.4.2.md) Duplicate invoice number setting | partial · simulator-duplicate-number-setting | stays partial (OQ-11). The Phase 10 duplicate-number callout now points to the Bank reconciliation tab; re-shoot and check the `xero-duplicate-number-policy` highlight |
 | [US-10.2.4](../../../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero | absent | captured (simulator). New recipe shots: `bank-reconciliation` (`/demo/xero/bank`, `xero-bank-reconciliation` with the scope callout "The Billing Engine does not match bulk remittances. Xero's bank reconciliation and remittance add-on do...") with states `remittance` (after the `xero-bulk-remittance` trigger, run in `setup` after a `goto` to `/demo/xero/invoices`: the two matched St George's lines, learned by webhook) and `unmatched` (the unmatched $980.00 line "for office staff, handled in Xero", highlight the unmatched list). Remove the absent reason |
-| [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `3d3a18c`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
+| [US-13.3.1](../../../../requirements-board/requirements/stories/US-13.3.1.md) Processing monitor | captured · admin-billing-monitor | captured, re-shot on the restyle. Joined this phase at `60e2d1e`. `billing-monitor`: keep the shot `name` and setup (two Authorise clicks on `L-25490-2026-07-20-AM`), start at `/admin/billing?list=L-25490-2026-07-20-AM`, highlight `[data-shot=billing-pipeline-L-25490-2026-07-20-AM]` (the expanded List inside its anaesthetist's group: stage strip, invoiced, sent, Xero). Add `grouped` (from reset with one List authorised: the anaesthetist groups with their "Awaiting approval" rows and **Open in Review**, highlight one `[data-shot=billing-awaiting-<listId>]` and the summary tiles; caption: grouped by anaesthetist, Lists awaiting approval open in Review), `filtered` (`?anaesthetist=<the authorised List's anaesthetist id>`: highlight `[data-shot=billing-monitor-filters]` and the one group) and `problems-only` (staged in `setup` with the `billing-failure` trigger on `/admin/billing`, then `?problems=1`: only Ropata's List, expanded, with Losa Tuilagi's reason; highlight the filter bar and the List). Captions in the catalogue's words: why anything failed; standard sorting and filtering; grouped by anaesthetist |
 
 **Recipes this phase breaks.** Found at plan time:
 - `US-09.2.4` (`payables-run`, `accpay-disbursed`): the engine-side payout is gone. The Billing monitor button is now "Run payables in Xero" and the pair detail pays through Xero. Rebuilt above.

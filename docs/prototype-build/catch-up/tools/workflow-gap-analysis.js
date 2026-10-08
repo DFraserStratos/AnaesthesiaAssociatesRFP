@@ -16,6 +16,8 @@ export const meta = {
  *   runDelta: false   skip the data-model delta (domain-model.md unchanged)
  *   runReverse: false skip the reverse check (no newly retired items)
  *   runThemes: false  skip the themes summary (assemble-gaps.mjs --merge keeps the earlier one)
+ *   baseline: <sha>   the plan's previous catalogue commit: the delta then works as an update of the
+ *                     existing analysis/domain-model-delta.md, from the domain model's diff, keeping ids
  */
 const ROOT = args.root
 const OPT = { reuseMaps: !!args.reuseMaps, runDelta: args.runDelta !== false, runReverse: args.runReverse !== false, runThemes: args.runThemes !== false }
@@ -173,10 +175,15 @@ Final answer: 3-5 lines saying what you covered and anything you could not map.`
   { label: `map:${mp.key}`, phase: 'Map', model: M, effort: 'medium' },
 ))
 
+const STABLE_IDS = args.baseline
+  ? `This is an UPDATE of "${ROOT}/${AN}/domain-model-delta.md" (written against catalogue ${args.baseline.slice(0, 7)}). Read it first, then the domain model's diff: node docs/prototype-build/catch-up/tools/plan-state.mjs --to ${args.commit.slice(0, 7)} --diff domain-model (and --diff <IDs> for the items it names). Re-check every earlier delta against the current catalogue and code, but spend your reading on what changed. IDS ARE STABLE: the build plan cites deltas by number. A delta that continues an earlier one (same entity, relationship or lifecycle concern, even if the reading moved) keeps its id; a new delta takes the next number above the highest id ever used; an earlier id with no delta now is listed in the intro as closed, merged into DM-xx, or dropped, with why. Never renumber.`
+  : 'Number the deltas DM-01 upward.'
+
 const deltaJob = () => agent(
   `${CTX}
 
 TASK: data-model delta. Compare the entity/relationship/lifecycle model the requirements now describe with the model the prototype implements.
+${STABLE_IDS}
 1. Read "requirements-board/requirements/domain-model.md" fully, then skim every epic and feature file in "${CAT}/stories/" (EP-*.md, FT-*.md) and the stories that define entities, statuses or lifecycles. Ignore items with status Retired or Future.
 2. Read the prototype's types and lifecycles: aa-prototype/src/domain (types, lifecycle, billing, integrations), the store shape in aa-prototype/src/store/appStore.ts and related slices, and the seed's shape in aa-prototype/src/domain/seed.
 3. List every structural difference: new entities, changed entities (fields, identity, cardinality), removed/renamed entities, relationships, lifecycle/status machines, and model-level rules (who owns what, what is derived vs stored). Skip cosmetic naming unless it changes meaning.
@@ -271,7 +278,7 @@ TASK: ADVERSARIAL VERIFIER for a data-model delta (structural differences betwee
 Draft deltas (JSON):
 ${JSON.stringify(draft)}
 
-Return the final list. verify_outcome per delta: upheld | corrected | added (drop refuted ones and name them in summary). Then UPDATE "${ROOT}/${AN}/domain-model-delta.md" to match your final list.`
+Keep every id as the author set it (the build plan cites them by number); a delta you add takes the next free number. Return the final list. verify_outcome per delta: upheld | corrected | added (drop refuted ones and name them in summary). Then UPDATE "${ROOT}/${AN}/domain-model-delta.md" to match your final list.`
 
 const missingIds = (items, got) => {
   const have = new Set((got || []).map(x => x.id))

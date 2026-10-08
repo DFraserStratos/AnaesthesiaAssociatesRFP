@@ -3,6 +3,7 @@
 // baseline can predate a move, so the diff spans every layout with rename detection. A pure move
 // (R100) is not a change; a file moved and edited counts as changed; old-path entries map to IDs the
 // same way as new ones. Used by plan-state.mjs; tested by req-changes.test.mjs.
+import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 
@@ -72,4 +73,35 @@ export function requirementChanges({ cwd, from, to = null, layouts = LAYOUTS }) 
   out.items = [...byId.items.values()]
   out.questions = [...byId.questions.values()]
   return out
+}
+
+// Fields and markup that are not requirement substance: links to evidence and other items, ordering,
+// board lanes and screenshots. An item that changed only in these needs no re-grading.
+export const COSMETIC_FIELDS = ['artifacts', 'related', 'sources', 'order', 'swimlane', 'images']
+
+/** An item or question's text with cosmetic front-matter fields and link markup taken out. */
+export function substance(text) {
+  if (text == null) return null
+  const m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/)
+  const fm = m ? m[1] : ''
+  const body = m ? m[2] : text
+  let skip = false
+  const kept = fm.split('\n').filter(line => {
+    const key = line.match(/^([A-Za-z_]+):/)
+    if (key) skip = COSMETIC_FIELDS.includes(key[1])
+    return !skip
+  })
+  const unlink = s => s.replace(/\[([^\]]*)\]\((?![a-z]+:\/\/)[^)]*\)/g, '$1')
+  return `${kept.join('\n')}\n---\n${unlink(body)}`.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim()
+}
+
+/** True when a changed entry from requirementChanges() differs in substance (status included). */
+export function changedInSubstance({ cwd, from, to = null, entry }) {
+  if (entry.change !== 'M') return true
+  const show = (ref, file) => {
+    try { return execFileSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return null }
+  }
+  const before = show(from, entry.was ?? entry.file)
+  const after = to ? show(to, entry.file) : (() => { try { return fs.readFileSync(path.join(cwd, entry.file), 'utf8') } catch { return null } })()
+  return substance(before) !== substance(after)
 }

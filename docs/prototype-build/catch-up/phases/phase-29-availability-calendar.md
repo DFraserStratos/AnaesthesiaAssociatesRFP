@@ -6,25 +6,34 @@
 [US-01.5.3](../../../../requirements-board/requirements/stories/US-01.5.3.md) Anaesthetist availability calendar ·
 [US-03.1.4](../../../../requirements-board/requirements/stories/US-03.1.4.md) Web app parity (Proposed) ·
 [US-15.0.2](../../../../requirements-board/requirements/stories/US-15.0.2.md) Mobile-first for anaesthetists (Proposed).
-US-01.2.1, US-01.2.2 and US-01.5.3 are Confirmed at `3d3a18c` (2026-10-02 requirements review with
-Greg); US-01.2.2 gained two acceptance criteria (a rename or recolour shows in every view with rules
-unchanged; a new status is usable without a code change).
+US-01.2.1, US-01.2.2 and US-01.5.3 are Confirmed at `60e2d1e` (2026-10-02 requirements review with
+Greg); US-01.2.2 carries two acceptance criteria (a rename or recolour shows in every view with rules
+unchanged; a new status is usable without a code change), and since 2026-10-07 (Notes 2026-10-07 ·
+List lifecycle states #3) it says the Slot's availability status is **not** the List's state
+(DRAFT, ACTIVE, SUBMITTED, AUTHORISED; [EP-07](../../../../requirements-board/requirements/stories/EP-07.md),
+[FT-07.1](../../../../requirements-board/requirements/stories/FT-07.1.md)): the status master never
+holds a List state. US-01.2.1, US-01.2.2 and FT-01.2 now link the diagram region
+[AR-17#slot-status](../../../../requirements-board/requirements/artifacts/AR-17.md) (Slot status:
+Free, Unavailable, On holiday and other user-maintained statuses), and US-01.2.3
+[AR-17#slot-pm](../../../../requirements-board/requirements/artifacts/AR-17.md) (a Slot holding a
+List): the picture this phase builds.
 Also touches, without closing:
 [FT-01.2](../../../../requirements-board/requirements/stories/FT-01.2.md) (Confirmed: a Slot is a box with a status and a List goes into it; the values are a user-maintained list, not a fixed set; Phase 28 put the status on the Slot, this phase gives it the calendar and the master),
+[EP-07](../../../../requirements-board/requirements/stories/EP-07.md) and [FT-07.1](../../../../requirements-board/requirements/stories/FT-07.1.md) (the List's lifecycle state, DRAFT, ACTIVE, SUBMITTED and AUTHORISED since 2026-10-07: Phase 15b renamed today's DRAFT to ACTIVE before this phase and Phase 31 adds DRAFT for Draft Lists; this phase only keeps the two apart, the List's state on the List and the session's availability in the status master),
 [FT-01.1](../../../../requirements-board/requirements/stories/FT-01.1.md) (the horizon, four months in current practice and configurable; Phase 28 builds the setting, and the calendar's bounds read it),
 [US-01.2.3](../../../../requirements-board/requirements/stories/US-01.2.3.md) (Confirmed, closed in 28: the List shows in place of the status; this phase must not regress it),
-[US-01.5.5](../../../../requirements-board/requirements/stories/US-01.5.5.md) (new, Confirmed: marking unavailable a session that holds a List offers return to the office or assign to a colleague; Phase 32 builds it and replaces this phase's interim flag),
+[US-01.5.5](../../../../requirements-board/requirements/stories/US-01.5.5.md) (Confirmed: marking unavailable a session that holds a List offers return to the office or assign to a colleague, with the move's notifications and, since 2026-10-08, no preference warning on the assign; Phase 32 builds it and replaces this phase's interim flag),
 [US-01.5.2](../../../../requirements-board/requirements/stories/US-01.5.2.md) and
-[US-01.5.4](../../../../requirements-board/requirements/stories/US-01.5.4.md) (conflict flagging and the dashboard, Phase 30; at `3d3a18c` they no longer cover an anaesthetist marking a booked session unavailable, only a hospital closure and a Booking landing on a session already marked unavailable),
-[FT-01.6](../../../../requirements-board/requirements/stories/FT-01.6.md) (Draft Lists, Phase 31, which now arise from a List returned to the office and from a recurring booking landing on an unavailable session),
+[US-01.5.4](../../../../requirements-board/requirements/stories/US-01.5.4.md) (conflict flagging and the dashboard, Phase 30; at `60e2d1e` they do not cover an anaesthetist marking a booked session unavailable, only a hospital closure and a Booking landing on a session already marked unavailable),
+[FT-01.6](../../../../requirements-board/requirements/stories/FT-01.6.md) (Draft Lists, Phase 31: the DRAFT state of a List since 2026-10-07, arising from a List returned to the office and from a recurring booking landing on an unavailable session, and becoming ACTIVE when the office assigns an anaesthetist; [OQ-86](../../../../requirements-board/requirements/questions/OQ-86.md) answered no, anaesthetists never browse them),
 [DM-04](../analysis/domain-model-delta.md#dm-04) (availability is a status on the Slot, kept from one calendar with series, and the status set is master data with fixed IDs: this phase delivers the calendar, the series and the master on top of 28's Slot; return-or-assign is 32's),
 [RV-14](../analysis/reverse-check.md#rv-14-list-and-slot-are-one-record-a-free-list-that-gains-a-booking-still-reads-free-and-is-unreachable-to-the-anaesthetist-statuses-are-a-fixed-enum) (28 split the model; this phase takes the availability values out of the List-type set for good and makes them a user-maintained list).
-**Open questions:** [OQ-64](../../../../requirements-board/requirements/questions/OQ-64.md) is **Answered** (2026-10-02, owner decision D14): a Slot is a container with a status that a List goes into; every Slot is created and stored across the horizon; the statuses are a user-maintained list (a fixed internal ID that rules read, an editable label and an editable colour), starting from the values in use (free by default, on holiday, unavailable), with the final values to be defined later with AA's users; "slot" never appears in the UI; and marking unavailable a session that holds a List offers return to the office (a Draft List) or assign to a colleague (US-01.5.5, Phase 32). This phase builds parts 1, 2 (with 28), 4 and 5 as answered, not provisional.
+**Open questions:** [OQ-64](../../../../requirements-board/requirements/questions/OQ-64.md) is **Answered** (2026-10-02, owner decision D14): a Slot is a container with a status that a List goes into; every Slot is created and stored across the horizon; the statuses are a user-maintained list (a fixed internal ID that rules read, an editable label and an editable colour), starting from the values in use (free by default, on holiday, unavailable), with the final values to be defined later with AA's users; "slot" never appears in the UI; and marking unavailable a session that holds a List offers return to the office (a Draft List) or assign to a colleague (US-01.5.5, Phase 32). This phase builds parts 1, 2 (with 28), 4 and 5 as answered, not provisional. D14's row also records the List states DRAFT, ACTIVE, SUBMITTED and AUTHORISED (15b and 31), which stay out of the status master built here.
 [OQ-17](../../../../requirements-board/requirements/questions/OQ-17.md) and
 [OQ-27](../../../../requirements-board/requirements/questions/OQ-27.md) are **Answered** (2026-10-01): availability values belong to the Slot, not the List; the calendar edits the Slot status directly (one mechanism, nothing to reconcile); the anaesthetist marks days off ahead, creates a series and edits or deletes one instance.
 [OQ-81](../../../../requirements-board/requirements/questions/OQ-81.md) parts 1 and 2 are settled in the room: generation paints the anaesthetist's calendar first, then surgeons' recurring bookings, and a recurring booking on an unavailable session becomes a Draft List (Phase 31). Part 3 (short-notice sickness) is open and not this phase's.
 [OQ-84](../../../../requirements-board/requirements/questions/OQ-84.md) (what a session shows after its List is moved away) is open and belongs to 32 and 32a; this phase only makes the vacated status read the default status record.
-**Depends on:** Phase 28 (the Slot record holds the availability status and default times for every active anaesthetist from their start date across the configurable horizon, a List has its own id and sits in a Slot and shows in place of the status, and status no longer derives from bookings). Also Phase 14 (the demo-trigger registry; this phase registers nothing, but its new routes must fit the route matcher) and Phase 17 (the Master data `?view=` param, the `apps/admin/screens/masters/` split and the editable-master sheet pattern). 17 is not a hard dependency in the outline: if it is not DONE, build the editor inside `MasterData.tsx` and add the `?view=` search param the way 17's plan describes (read from and written to the query), so 17 can adopt it.
+**Depends on:** Phase 28 (the Slot record holds the availability status and default times for every active anaesthetist from their start date across the configurable horizon, a List has its own id and sits in a Slot and shows in place of the status, and status no longer derives from bookings), and through it Phase 15b (an assigned List's state is ACTIVE, not DRAFT; the List states are ACTIVE, SUBMITTED and AUTHORISED until Phase 31 adds DRAFT for Draft Lists). Also Phase 14 (the demo-trigger registry; this phase registers nothing, but its new routes must fit the route matcher) and Phase 17 (the Master data `?view=` param, the `apps/admin/screens/masters/` split and the editable-master sheet pattern). 17 is not a hard dependency in the outline: if it is not DONE, build the editor inside `MasterData.tsx` and add the `?view=` search param the way 17's plan describes (read from and written to the query), so 17 can adopt it.
 **Estimated:** 2 sessions. Session 1 is work items 1 to 10 (model, pure status and series rules, seed, palette, shared status UI, the store actions and the Admin status editor) and stops green; if it runs long, move item 10 (the Admin editor) to the start of session 2. Session 2 is items 11 to 17 (the shared availability pieces, the mobile and web calendars, the finders, removals, shots and the demo guide).
 
 ## Goal
@@ -75,7 +84,10 @@ This phase:
   what an admin can add (for example Public hospital or Annual leave, closed, same effect as
   Unavailable). The master holds **availability values only**: the List types (private, public,
   pre-op) leave the status set and stay a fixed, design-coloured List attribute, so a session holding
-  a List shows the List in its place with the design's List colours.
+  a List shows the List in its place with the design's List colours. It **never holds a List state**
+  (US-01.2.2 since 2026-10-07): DRAFT, ACTIVE, SUBMITTED and AUTHORISED are the List's lifecycle
+  (EP-07), kept on the List and shown on it as today; no status ID or label may be one of them, and the
+  editor's copy says so.
 - keeps "slot" out of every word of app copy (OQ-64 part 5): users read session, AM or PM, day off and
   availability. Slot stays a code and planning word.
 
@@ -85,17 +97,31 @@ statuses, not the palette.
 
 ## Before you start: drift check
 
-1. Diff the catalogue for this phase's items against the plan's snapshot:
+1. Run the catalogue diff for this phase's items and open questions against the plan's baseline,
+   catalogue commit `60e2d1e` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-01.2.1,US-01.2.2,US-01.5.3,US-03.1.4,US-15.0.2,FT-01.1,FT-01.2,US-01.2.3,US-01.5.2,US-01.5.4,US-01.5.5,FT-01.6,OQ-64,OQ-81,OQ-84,OQ-17,OQ-27
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-01.2.1,US-01.2.2,US-01.5.3,US-03.1.4,US-15.0.2,FT-01.1,FT-01.2,US-01.2.3,US-01.5.2,US-01.5.4,US-01.5.5,FT-01.6,EP-07,FT-07.1,OQ-64,OQ-81,OQ-84,OQ-86,OQ-17,OQ-27
    ```
 
-   If an item changed, re-read it and adjust the work items before planning. If a covered item is now
+   At plan time (2026-10-08, `3d3a18c..60e2d1e`), the changes that touch this phase were: US-01.2.2
+   now says the availability status is not the DRAFT, ACTIVE, SUBMITTED and AUTHORISED List state
+   (Notes 2026-10-07 · List lifecycle states #3), which work items 2, 10 and 16 build as a rule; EP-07,
+   FT-07.1 and FT-01.6 gained the four List states (DRAFT a Draft List, ACTIVE the assigned List;
+   15b renames, 31 adds DRAFT); OQ-86 was answered no (Draft Lists are an office job, Phase 31);
+   US-01.5.5's note now applies no preference warning to the anaesthetist's assign (Phase 32); and
+   domain-model.md gained the List state row and draws `SLOT }o--|| SLOT_STATUS : "has
+   (user-maintained list)"`. US-01.2.1, FT-01.1, FT-01.2 and US-01.2.3 changed only in artifact links
+   (AR-17#slot-status, #slot-pm, #day). US-01.5.3, US-03.1.4, US-15.0.2, US-01.5.2, US-01.5.4, OQ-64,
+   OQ-81, OQ-84, OQ-17 and OQ-27 did not change in substance. The gap grades are unchanged (US-01.2.1
+   and US-01.5.3 Partial, US-01.2.2 Contradicts, US-03.1.4 and US-15.0.2 Partial). The plan already
+   reflects all of this; diff only for anything after `60e2d1e`.
+
+   If an item changed after `60e2d1e`, re-read it and adjust the work items before planning. If a covered item is now
    Retired or Future, drop it from this phase and say so in the PROGRESS entry. A new item on the
    same surfaces comes in only if it is small and on these screens; otherwise note it for the owner.
    A config page for warnings and thresholds is US-13.7.4 (Future): not here.
-2. **OQ-64 (answered at `3d3a18c`).** Build the answer as this doc describes, with no provisional
+2. **OQ-64 (answered at `60e2d1e`).** Build the answer as this doc describes, with no provisional
    label anywhere: statuses as a user-maintained list seeded from Free, On holiday and Unavailable,
    colours chosen from the design tokens, no "slot" in app copy.
    - **If AA's users have since named the final values and colours** (US-01.2.1 and US-01.2.2 say they
@@ -112,7 +138,10 @@ statuses, not the palette.
    - **OQ-81 part 3 (short-notice sickness) and OQ-84 (the vacated session)** stay open; neither
      changes this phase.
 3. **Baseline.**
-   - Confirm Phase 28 is DONE in PROGRESS.md.
+   - Confirm Phase 28 is DONE in PROGRESS.md, and Phase 15b before it: note the List state union 15b
+     left (`ListState`, expected `'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'` with the state chip labels it
+     uses; Phase 31 adds `'DRAFT'` later). Work item 2's List-state guard reads that union and its
+     labels, plus the word Draft, so it keeps working when 31 adds DRAFT.
    - Read its entry and Decisions-log rows for the names it chose. Phase 28's plan expects, and this
      doc assumes where it says "28's":
      - `Slot` in `schedule.slots` (id `S-<reg>-<date>-<AM|PM>`), created for every active anaesthetist
@@ -148,7 +177,7 @@ statuses, not the palette.
        (28's interim; Phase 31 turns each into a Draft List);
      - the golden canvas fixture: `domain/seed/canvasGolden.test.ts` over
        `domain/seed/__fixtures__/canvas-golden.json` (display keys per Slot).
-     Use 28's actual names wherever they differ; this doc's code references are as at `3d3a18c`.
+     Use 28's actual names wherever they differ; this doc's code references are as at `60e2d1e`.
    - Check whether 28 already stopped a bookable status from flagging a conflict on a Slot that holds a
      List (its plan says it does, but leaves an earlier availability conflict in place). If it did,
      keep its test; work item 7 still adds the clearing.
@@ -156,8 +185,8 @@ statuses, not the palette.
      anaesthetist, an earlier start date, a reactivation): work item 8 feeds active series into the
      generator's calendar input on each.
    - Check that 28 removed the mobile "a conflict was flagged and the office notified" line
-     (`AvailabilityScreen.tsx:111` at `3d3a18c`); if it survived, work item 12 removes it.
-   - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 at `3d3a18c`; 15b to 28 may have
+     (`AvailabilityScreen.tsx:111` at `60e2d1e`); if it survived, work item 12 removes it.
+   - Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 at `60e2d1e`; 15b to 28 may have
      bumped it) and bump it by one from whatever it is now.
 
 ## Reference
@@ -193,22 +222,34 @@ the "Availability conflicts" row of the changes table. The meeting notes:
   order), 29 (Slot or List with a status), 30 (statuses as a user-maintained list), 38, 45 and 46;
 - `requirements-board/requirements/notes/2026-10-02-aa-requirements-review-with-greg.md` points 1, 20 (the horizon), 22
   (FT-01.2, US-01.2.1, US-01.2.2 confirmed), 55 (the master endorsed over an enum) and 56 (several
-  kinds of unavailable, same effect).
+  kinds of unavailable, same effect);
+- `requirements-board/requirements/notes/2026-10-07-list-lifecycle-states.md` point 3 (Slot
+  availability is separate from the List's DRAFT, ACTIVE, SUBMITTED and AUTHORISED state), with the
+  change log `requirements-board/requirements/changes/2026-10-07-list-lifecycle-states.md`.
+
+**Artifacts:** [AR-17](../../../../requirements-board/requirements/artifacts/AR-17.md) (Day, Slot,
+List, Booking hierarchy), regions `slot-status` (Free, Unavailable, On holiday and other
+user-maintained statuses: what the master and the calendar show), `slot-am` (an empty Slot with a
+status) and `slot-pm` (a Slot holding a List, the List in place of the status).
+[AR-22](../../../../requirements-board/requirements/artifacts/AR-22.md) regions `draft` and `active`
+show the List states this phase keeps out of the master.
 
 **Analysis:**
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 1 (Slot, List and Draft List: status as
   editable master data), the DM-04 and RV-14 rows, and the EP-01, EP-03 and EP-15 tables.
 - `docs/prototype-build/catch-up/epics/EP-01.md` (FT-01.2, US-01.2.1, US-01.2.2, US-01.5.3, US-01.5.5,
   and the EP-01 structural note), `epics/EP-03.md` (US-03.1.4), `epics/EP-15.md` (US-15.0.2).
-- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (DM-02, DM-04) and
+- `docs/prototype-build/catch-up/analysis/domain-model-delta.md` (DM-02, DM-04, and DM-52 for the List states kept apart) and
   `analysis/reverse-check.md` (RV-14).
 - `analysis/prototype-map-apps-mobile-web.md` (Availability sections), `prototype-map-admin.md`
   (Master data, Day grid), `prototype-map-domain.md`, `prototype-map-store-seed.md`,
   `prototype-map-shared.md` and `prototype-map-shell-demo-pwa.md` (router and the PWA entry).
 
-**Code entry points (as at `3d3a18c`, the prototype as Phases 14, 15 and 15a session 1 left it; use
+**Code entry points (as at `60e2d1e`, the prototype as Phases 14, 15 and 15a session 1 left it; use
 Phase 28's names where they differ):**
-- `aa-prototype/src/domain/types.ts`: `LIST_STATUS_KEYS` and `ListStatusKey` (:53-61),
+- `aa-prototype/src/domain/types.ts`: `ListState` (:46, `'DRAFT' | 'SUBMITTED' | 'AUTHORISED'`
+  here; 15b renames DRAFT to ACTIVE, 31 adds DRAFT for Draft Lists: the List's lifecycle, which the
+  status master must never hold), `LIST_STATUS_KEYS` and `ListStatusKey` (:53-61),
   `ListConflict` (:265), `List.statusKey` (:307), the Permanent List template's `statusKey` (:593),
   `AnaesthetistAvailability` (:603, kinds `available | unavailable | holiday`), `ListStatus` (:620).
 - `aa-prototype/src/theme/statusColours.ts`: the `StatusKey` union (:12), `StatusTreatment` (:20),
@@ -231,7 +272,7 @@ Phase 28's names where they differ):**
   `apps/mobile/screens/ForwardListsScreen.tsx` (:97-123), `store/bookingActions.ts` (:315) and
   `domain/seed/bookings.ts` (:1187, seed, may stay). After 28, add its `domain/slots.ts`
   (`displayStatusKey`, `isOpenSlot`), `store/slotActions.ts` and the `slotView*` selectors. About 76
-  literal comparisons exist at `3d3a18c`
+  literal comparisons exist at `60e2d1e`
   (`grep -rnE "=== '(free|holiday|unavailable|private|public|preop)'" src`); 28 will have changed some.
 - `aa-prototype/src/store/lifecycle.ts`: `setAvailability` (:698-829): the reconciliation, the false
   conflict for `kind: 'available'` on a List with booking context (:797-815, copy at :802), the
@@ -309,6 +350,12 @@ screen renders from the records, and the store actions are tested); session 2 is
      Assessment") moved out of the theme map. They are not master data. The catalogue has no List kind
      (DM-04): they stay because the design's six colours and every existing screen use them, and that
      is logged for the owner's review.
+   - **The List's state stays on the List** (US-01.2.2 since 2026-10-07: "the availability status,
+     not the DRAFT, ACTIVE, SUBMITTED and AUTHORISED List state"). `ListState` (15b's `'ACTIVE' |
+     'SUBMITTED' | 'AUTHORISED'`, 31 adds `'DRAFT'`) is untouched by this phase: it is never a
+     `SlotStatusKey`, never a master row and never part of the display key space below. The display
+     key says what the session holds (a status, or the List's kind); the List's state keeps its own
+     chip on the List as 15b left it.
    - **One display key space.** 28's `displayStatusKey(slot, list)` already returns `list.kind` when a
      List is in the Slot (the List shows in place of the status, US-01.2.3) and otherwise
      `slot.status` unchanged; it is retyped `ListKind | SlotStatusKey`, and 28's closed
@@ -375,6 +422,11 @@ screen renders from the records, and the store actions are tested); session 2 is
        statuses (case-insensitive); no en or em dash in any of them (the copy rule applies to
        admin-entered labels too, since they render in every app); and no "slot" in them (OQ-64:
        the word stays out of the UI);
+     - **no List state** (US-01.2.2): a label or long label equal, case-insensitive, to a List state
+       or its label (the `ListState` values 15b left and their chip labels, plus "Draft" and "Draft
+       List" so the guard already covers Phase 31's DRAFT) is refused with "That is a List's state,
+       not availability. A List's state is shown on the List." A generated or seeded key can never be
+       one either (seeded keys are lower-case availability words; generated keys are `ST####`);
      - colour in `STATUS_COLOUR_TOKENS`; treatment one of three;
      - exactly one active default; the default cannot be retired or made not bookable;
      - a status used by an active series cannot be retired (the issue names the count); `ctx` carries
@@ -383,7 +435,9 @@ screen renders from the records, and the store actions are tested); session 2 is
      `to` before `from`, any date before today, and any date past the horizon end (Phase 28's
      setting). `slotsInRange` enumerates `{dateISO, session}` pairs with `enumerateDatesISO`.
    - Tests cover every rule above, plus: the seed has exactly one default and it is Free; every seeded
-     status's colour is a palette token; no status key equals a List kind; `anaesthetistChoices` of the
+     status's colour is a palette token; no status key equals a List kind; no seeded key or label
+     equals a List state or its label, and a draft labelled "Active", "Submitted", "Authorised",
+     "Draft" or "Draft List" is refused (US-01.2.2's List-state line); `anaesthetistChoices` of the
      seed is exactly Free, On holiday, Unavailable, in that order; the clash table (closed over a List,
      bookable over a flagged List, either over an empty Slot); a renamed or recoloured status gives
      the same `isClosed`, `isOpenForBooking` and clash results (US-01.2.2 criterion 1).
@@ -473,7 +527,7 @@ screen renders from the records, and the store actions are tested); session 2 is
    - RTL test `StatusChip.test.tsx`: renders a renamed label, a recoloured token, a List kind, and the
      unknown-key fallback.
 7. **Store: days off ahead and single-instance edits** (28's `src/store/slotActions.ts`, beside
-   `setAvailability`; `store/lifecycle.ts` at `3d3a18c`; US-01.2.1, US-01.5.3):
+   `setAvailability`; `store/lifecycle.ts` at `60e2d1e`; US-01.2.1, US-01.5.3):
    - New `setAvailabilityRange(api, actor, { anaesthetistId, fromISO, toISO, sessions: 'AM' | 'PM' |
      'both', statusKey, note? })`. 28's `setAvailability` keeps its signature, outcome and `slot.status`
      audit, so existing callers, tests and Phase 30's sickness trigger keep working; it shares the
@@ -572,18 +626,21 @@ screen renders from the records, and the store actions are tested); session 2 is
      by `setAvailabilityRange` (US-01.2.2 criterion 2), a rename leaves every rule's result unchanged
      (criterion 1), and retire then restore.
 10. **Admin: Availability statuses editor** (17's `apps/admin/screens/masters/` split, `MasterData.tsx`
-    at `3d3a18c`; US-01.2.2). It replaces 28's view-only "List statuses" view and any provisional line
+    at `60e2d1e`; US-01.2.2). It replaces 28's view-only "List statuses" view and any provisional line
     on it:
     - The nav entry becomes "Availability statuses" (view param `availability-statuses`, via 17's
       `?view=`). The word "slot" appears nowhere on the screen (OQ-64).
     - Header copy: "The availability anaesthetists set on their AM and PM sessions. Every session is
       Free until changed, and a List placed in it shows instead. Rules use each status's ID, so you can
-      rename or recolour a status, or add one, without changing how it behaves. This is availability,
-      not the Draft, Submitted and Authorised approval state." No provisional line (OQ-64 is answered).
+      rename or recolour a status, or add one, without changing how it behaves. This is a session's
+      availability, not a List's state (Draft, Active, Submitted, Authorised), which shows on the
+      List." (US-01.2.2 since 2026-10-07; use the state labels the app shows after 15b, with Draft for
+      Phase 31's Draft Lists.) No provisional line (OQ-64 is answered).
     - Table: preview chip (live `StatusChip`) · ID (mono, read only) · Long label · Open for bookings ·
-      Anaesthetists can set · Default · Description · state (Active, or Retired with date). Retired rows
-      sit below the active ones, in mist. A short footnote names the three List types as fixed List
-      attributes with their chips, so the office sees the whole legend.
+      Anaesthetists can set · Default · Description · "In use" or "Retired" with its date (not
+      "Active", which is a List state). Retired rows sit below the in-use ones, in mist. A short
+      footnote names the three List types as fixed List attributes with their chips, so the office
+      sees the whole legend. No List state appears anywhere on the screen as a row, chip or filter.
     - "Add status" and a row "Edit" open `SlotStatusSheet` through `useSurface().Overlay`:
       - the ID shown read only on edit ("Assigned when saved" on create);
       - fields for label, long label and description;
@@ -686,7 +743,11 @@ screen renders from the records, and the store actions are tested); session 2 is
 14. **Finders and other consumers read the helpers**:
     - Mobile and web "Free only" filters and free counts, the mobile Forward Lists rows, the web
       Dashboard "Who's free", the Admin Day free count (`AdminApp.tsx`) and the Admin
-      `ReassignListFlow` free-target list use `isOpenSlot` over `isOpenForBooking`.
+      `ReassignListFlow` free-target list use `isOpenSlot` over `isOpenForBooking`. Only what counts
+      as free changes: the office finder's priority-tier ordering (shuffled within a tier), its
+      not-preferred group and Phase 17's soft not-preferred warning, wired in by Phase 28, stay exactly
+      as they are, and the anaesthetists' own finders stay untiered (US-01.3.5, US-01.3.6). An
+      admin-added closed status is never offered as free.
     - 28's `isOpenSlot(slot, list)` takes the status records (or a resolved status) and means "no List
       and `isOpenForBooking`"; `requestCover`'s `notFree` refusal reads it.
     - 28's store refusals read the helpers, not keys: `assignListToSlot`'s `slotNotAvailable` and
@@ -720,7 +781,9 @@ screen renders from the records, and the store actions are tested); session 2 is
         spec creates a series through the store action;
       - the web My availability page with a range selected and the rail showing;
       - the Admin Availability statuses table and `SlotStatusSheet` with the live preview.
-    - Add one assertion that no rendered text on these screens contains "slot" (case-insensitive).
+    - Add one assertion that no rendered text on these screens contains "slot" (case-insensitive), and
+      one that the Admin statuses table has no row whose label is a List state (Draft, Active,
+      Submitted, Authorised).
     - Keep `mobile-insets.spec.ts`, `mobile-interactions.spec.ts` and `pwa-device.spec.ts` passing (the
       calendar layer must respect the PWA insets and the `DockSpacer` rule).
 17. **Finish green:**
@@ -821,6 +884,11 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
   back.
 - [ ] Trying to retire Free (the default), a duplicate label, or a label with an em dash or the word
   "slot" is refused with the reason.
+- [ ] List state kept apart (US-01.2.2): adding or renaming a status to "Active", "Submitted",
+  "Authorised" or "Draft" is refused with the List-state message; the statuses screen's header names
+  the List states as separate, its table says "In use" or "Retired" (never "Active"), and no List
+  state appears as a row, chip or legend entry. A List in a session still shows its own state chip
+  (ACTIVE after 15b, SUBMITTED, AUTHORISED) on the List, unchanged by a status rename.
 - [ ] No rendered text on the mobile and web availability screens, the sheet, or the Admin statuses
   screen contains "slot".
 - [ ] S2 runs unchanged: Beat 1's Tue 21 grid is identical; Beat 2's phone-advice booking on Sharma Tue
@@ -854,8 +922,10 @@ after Phase 32, so keep these edits small:
     constraints or warnings"; leave that point to Phase 30. Add, as settled context rather than a
     question, that availability is a status on each session kept from the anaesthetist's calendar (one
     mechanism, OQ-17, OQ-27 and OQ-64 answered) and that the status values are a list AA maintains,
-    starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users.
-    If Phase 28 already added an OQ-64 line, rewrite it rather than adding a second.
+    starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users,
+    and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from
+    Phase 31; US-01.2.2). If Phase 28 already added an OQ-64 line, rewrite it rather than adding a
+    second.
   - **Direct URLs:** add `/mobile/availability/calendar`, `/web/availability/mine` and
     `/admin/masters?view=availability-statuses`.
 - `docs/demo-guide/04-presenter-cheat-sheet.md`:
@@ -863,7 +933,8 @@ after Phase 32, so keep these edits small:
     on a booked session flags the List for now, and the settled rule (return it to the office or hand
     it to a colleague) is still to be built, so do not demo that path;
   - one line on the status master ("rename, recolour or add a status and every app follows; rules read
-    the status's ID");
+    the status's ID; it is availability only, never a List's state, Active, Submitted or Authorised,
+    or Draft for a Draft List");
   - add "mark days off ahead, repeating days off, change or delete one occurrence" to the mobile and web
     feature lists.
 - `docs/demo-guide/02-workflows-and-handoffs.md`:
@@ -898,8 +969,8 @@ names the requirement itself.
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
-| [US-01.2.1](../../../../requirements-board/requirements/stories/US-01.2.1.md) Anaesthetist sets half-day availability | partial · mobile-my-availability (before, pm-blocked), web-availability-grid | captured. Re-shoot `my-availability` (mobile, `/mobile/availability`): the Find cover screen with the "My availability" card, the day's AM and PM chips and a "Change" button. Drop the `pm-blocked` state: its caption claimed "the office notified", which was never true, and the booked-session case is now US-01.5.5 (Phase 32). Add a mobile `calendar` shot at `/mobile/availability/calendar` (July, Souter's seeded leave 24 to 26 Jul) and a state `sheet` with On holiday and "1 week" selected, showing the three seeded choices. Re-shoot `availability-grid` (web) and add web `my-availability` at `/web/availability/mine` with a range selected and the rail form showing; add an admin state where the Day grid shows the change at once (open the anaesthetist's day after saving). The Free and Block buttons and the `availability-block-*` hooks are gone. Caption: "Anaesthetist marks a session Free, On holiday or Unavailable, with an optional note". Drop the partial reason. |
-| [US-01.2.2](../../../../requirements-board/requirements/stories/US-01.2.2.md) Slot status master data | partial · admin-list-statuses | captured. Re-shoot `list-statuses` (keep the shot name; the nav entry is now "Availability statuses", so the `text="List statuses"` click changes) with states `table` (live chips, the read-only ID column, Open for bookings, Anaesthetists can set, Default, no provisional line), `sheet` (Edit: read-only ID, label, six colour swatches, treatment, live preview) and `renamed` (the Day grid legend after renaming Unavailable to "Blocked" in the recipe's steps, the criterion that every view shows the new label). Caption: "Admins add, rename and recolour availability statuses without code; rules read each status's fixed ID". Drop the partial reason. |
+| [US-01.2.1](../../../../requirements-board/requirements/stories/US-01.2.1.md) Anaesthetist sets half-day availability | partial · mobile-my-availability (before, pm-blocked), web-availability-grid | captured. Re-shoot `my-availability` (mobile, `/mobile/availability`): the Find cover screen with the "My availability" card, the day's AM and PM chips and a "Change" button. Drop the `pm-blocked` state: its caption claimed "the office notified", which was never true, and the booked-session case is now US-01.5.5 (Phase 32). Drop Phase 28's `list-session` state too (a booked session blocked, keeping the List with the amber flag): it clicks the removed Block button and shows the interim, not the requirement. Keep 28's web state where a session the office assigned reads booked, not Free. Add a mobile `calendar` shot at `/mobile/availability/calendar` (July, Souter's seeded leave 24 to 26 Jul) and a state `sheet` with On holiday and "1 week" selected, showing the three seeded choices. Re-shoot `availability-grid` (web) and add web `my-availability` at `/web/availability/mine` with a range selected and the rail form showing; add an admin state where the Day grid shows the change at once (open the anaesthetist's day after saving). The Free and Block buttons and the `availability-block-*` hooks are gone. Caption: "Anaesthetist marks a session Free, On holiday or Unavailable, with an optional note". Drop the partial reason. |
+| [US-01.2.2](../../../../requirements-board/requirements/stories/US-01.2.2.md) Slot status master data | partial · admin-list-statuses | captured. Re-shoot `list-statuses` (keep the shot name; the nav entry is now "Availability statuses", so the `text="List statuses"` click changes) with states `table` (live chips, the read-only ID column, Open for bookings, Anaesthetists can set, Default, "In use" or "Retired", no provisional line, the header line saying this is a session's availability and not a List's state, and **no List state** (Draft, Active, Submitted, Authorised) as a row or chip: US-01.2.2 since 2026-10-07), `sheet` (Edit: read-only ID, label, six colour swatches, treatment, live preview) and `renamed` (the Day grid legend after renaming Unavailable to "Blocked" in the recipe's steps, the criterion that every view shows the new label). Caption, replacing the stale "List statuses master data": "Admins add, rename and recolour availability statuses without code; rules read each status's fixed ID, and a List's state is kept apart". Drop the partial reason. |
 | [US-01.5.3](../../../../requirements-board/requirements/stories/US-01.5.3.md) Anaesthetist availability calendar | partial · mobile-my-availability (before, blocked) | captured. Re-shoot `my-availability` (keep the name) as the calendar: states `month` (mobile `/mobile/availability/calendar`), `series-sheet` (the form with "Every 2 weeks", Friday and PM selected), `instance` (a series instance's panel: Change this one, Delete this one, Delete the series; stage the series with the form's steps, not a store call). Drop the `blocked` state ("PM blocked while booked: flagged as a conflict for the office"): marking a booked session unavailable is now the return-or-assign choice, US-01.5.5, Phase 32. Web: `/web/availability/mine` with the "Your series" list. The calendar edits the session's status directly, so the "separate calendar independent of Lists" reason (OQ-27) goes. Caption: "Days off marked weeks ahead, a repeating series, and one instance changed or deleted". |
 | [US-03.1.4](../../../../requirements-board/requirements/stories/US-03.1.4.md) Web app parity | captured · web-card-capture, mobile-card-capture | captured. Keep `card-capture` (web and mobile) as Phase 15 left it. Add a `my-availability` pair showing the same capability on both apps: mobile `/mobile/availability/calendar` and web `/web/availability/mine`, no highlight. Caption: "The same availability calendar on web and on mobile". |
 | [US-15.0.2](../../../../requirements-board/requirements/stories/US-15.0.2.md) Mobile-first for anaesthetists | captured · mobile-lists-home, web-lists | captured. Keep `lists-home` and `lists`. Add a mobile shot of the Add days off bottom sheet (chips and segmented controls, a sticky teal action, no dropdown, no centred modal) at `/mobile/availability/calendar`, highlighting the sheet. Caption: "Availability is set from a bottom sheet with chips, built for one-handed use". |
@@ -907,11 +978,11 @@ names the requirement itself.
 **Recipes this phase breaks.**
 - `US-01.5.2` mobile `unavailable-conflict` ("Blocking a booked session flags a conflict"): clicks
   `[data-shot=availability-block-pm]`, which is removed with the Free and Block buttons. Drop this
-  shot rather than re-point it: at `3d3a18c` US-01.5.2 no longer covers an anaesthetist marking a
+  shot rather than re-point it: at `60e2d1e` US-01.5.2 no longer covers an anaesthetist marking a
   booked session unavailable (that is US-01.5.5, Phase 32). Leave its admin shots (the hospital
   closure and the seeded conflict) to Phase 30, which owns that recipe; check they still pass.
-- `US-01.2.1` and `US-01.5.3` (`my-availability`): both click `availability-block-pm`; re-pointed
-  above.
+- `US-01.2.1` and `US-01.5.3` (`my-availability`): both click `availability-block-pm` (and US-01.2.1's
+  `list-session` state, added by Phase 28, clicks a Block button too); re-pointed or dropped above.
 - `US-13.4.1`: clicks `role=button[name="List statuses"]`; the nav entry is now "Availability
   statuses". Re-point the click and the caption, and update its partial reason (statuses are now
   editable).
@@ -950,6 +1021,10 @@ review-and-fix pass (PROGRESS convention 18)**:
   `domain/slotStatus.ts`. Renaming or recolouring a status changes every view and no rule; adding a
   status in Admin, with no code change, makes it selectable, rendered and correctly bookable or closed
   everywhere. IDs are fixed (seeded or generated, never edited) and cannot collide with a List kind.
+- **Availability is not the List's state** (US-01.2.2 since 2026-10-07). No status record, display
+  key, legend entry or filter holds DRAFT, ACTIVE, SUBMITTED or AUTHORISED; the validator refuses
+  those names (and Draft List) as labels; `ListState` and its chip are untouched; the statuses
+  screen's copy keeps the two apart and never labels an in-use status "Active".
 - **Series integrity.** Occurrences are pure and deterministic on the demo clock; a single-instance
   edit or delete is recorded as an exception and survives a later series write, a clock roll forward
   and a horizon extend; a series never overwrites a session the anaesthetist already set; deleting a
@@ -990,6 +1065,9 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the List types private, public and pre-op kept as a fixed List attribute with the design's colours,
     although the catalogue has no List kind (DM-04);
   - the Admin nav name "Availability statuses" (the catalogue's "Slot status", kept out of the UI);
+  - the List-state guard: a status may not be labelled Draft, Draft List, Active, Submitted or
+    Authorised, and the table says "In use" rather than "Active" (our reading of US-01.2.2's
+    List-state line);
   - generated IDs (`ST0001`) for added statuses, shown read only;
   - the interim flag on a booked session marked unavailable (one-off, range or series) until Phase 32,
     and how a series over several Lists will need Phase 32's choice List by List (not discussed,
@@ -999,7 +1077,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - routes: `/mobile/availability/calendar` (Dr Souter), `/web/availability/mine` (Dr Souter),
     `/admin/masters?view=availability-statuses` (Kirsty).
 - **Status row** for catch-up Phase 29, and a phase entry with:
-  - the drift-check result (items changed or not against `3d3a18c`; OQ-64 answered, built as
+  - the drift-check result (items changed or not against `60e2d1e`; OQ-64 answered, built as
     answered);
   - what was built, per work item;
   - the `PERSIST_VERSION` bump (from and to);
@@ -1014,7 +1092,9 @@ review-and-fix pass (PROGRESS convention 18)**:
      editable colour (OQ-64, US-01.2.2). This amends convention 10 and supersedes the 2026-07-21
      "Status colour mapping" as a closed six-key set: the palette stays in `src/theme/statusColours.ts`
      as the six Design Language tokens, statuses reference a token, and the List types (private,
-     public, pre-op) are a fixed List attribute mapped to their own tokens (the OQ-17 answer).
+     public, pre-op) are a fixed List attribute mapped to their own tokens (the OQ-17 answer). It
+     never holds a List state (DRAFT, ACTIVE, SUBMITTED, AUTHORISED; US-01.2.2 since 2026-10-07), and
+     the validator refuses those names as status labels.
   2. **One mechanism** (the OQ-27 and OQ-64 answers): the calendar writes the Slot status directly, and
      a series is a rule that writes Slots, with instance edits and deletes kept as exceptions. This
      supersedes item (2) of the 2026-07-22 external plan review (availability writes a master).
@@ -1046,7 +1126,7 @@ review-and-fix pass (PROGRESS convention 18)**:
     List colour change and clearing. This phase clears only on a bookable status replacing a closed one.
     There is no emergency status, so no `isEmergencyOnly`. Generation never calls `availabilityClash`
     (series are painted before recurring bookings, so nothing generated sits on a closed session). The anaesthetist-marks-a-booked-session case
-    is no longer a US-01.5.2 conflict at `3d3a18c` (it is US-01.5.5, Phase 32); the US-01.5.2 mobile
+    is no longer a US-01.5.2 conflict at `60e2d1e` (it is US-01.5.5, Phase 32); the US-01.5.2 mobile
     recipe shot was dropped.
   - For **31**: `seriesCalendarFor` feeds active series into `generateCanvasForDates`' calendar step
     on every generating path, so a recurring booking on a series-closed session comes back in 28's
@@ -1056,7 +1136,9 @@ review-and-fix pass (PROGRESS convention 18)**:
     series (start and until the same day), so let the office simulation actor start one past the
     horizon end (a store option, no UI) and record that. Do not turn the anaesthetist's own
     unavailability into a Draft List here (Phase 32 asks them). Draft List assignment targets
-    `isOpenSlot` sessions.
+    `isOpenSlot` sessions. A Draft List is the List's DRAFT state, never a Slot status: when 31 adds
+    `'DRAFT'` to `ListState`, check the status validator's List-state guard picks it up (it already
+    refuses "Draft" and "Draft List").
   - For **32**: replace the `'flag'` branch for anaesthetist actions (`setAvailability`,
     `setAvailabilityRange`, `createAvailabilitySeries`, instance edits) with the return-or-assign choice
     (US-01.5.5), using the actions' `flagged` List ids; replace the `AvailabilitySlotPanel` interim line

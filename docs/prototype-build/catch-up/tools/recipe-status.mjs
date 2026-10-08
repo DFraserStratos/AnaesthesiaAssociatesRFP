@@ -1,6 +1,8 @@
 // The capture recipes behind each phase's catalogue screenshots.
 // Usage (repo root): node docs/prototype-build/catch-up/tools/recipe-status.mjs [<phase> ...] [--check]
 //   <phase>   list the items a phase covers with their recipe status and shots (default: every phase)
+//   --plan <file>  read phases from this plan file instead of plan.json (phase-briefs.mjs passes the
+//             outline of an update in progress, before plan.json is rebuilt)
 //   --check   exit 1 unless every unbuilt phase doc has a "## Catalogue screenshots" section that names
 //             each story it covers (and each feature it covers that has no stories), and its kick-off
 //             prompt runs the capture step
@@ -16,9 +18,10 @@ const RECIPES = path.join(ROOT, 'requirements-board/capture/recipes')
 const SECTION = '## Catalogue screenshots'
 const argv = process.argv.slice(2)
 const check = argv.includes('--check')
-const wanted = argv.filter(a => !a.startsWith('--'))
+const planFile = argv.includes('--plan') ? path.resolve(argv[argv.indexOf('--plan') + 1]) : path.join(CU, 'plan.json')
+const wanted = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--plan')
 
-const plan = JSON.parse(fs.readFileSync(path.join(CU, 'plan.json'), 'utf8'))
+const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'))
 const progress = fs.readFileSync(path.join(ROOT, 'docs/prototype-build/PROGRESS.md'), 'utf8')
 
 const status = {}
