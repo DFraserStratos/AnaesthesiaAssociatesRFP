@@ -39,14 +39,9 @@ export interface ReviewProcedureInput {
   baseCode?: RvgCode
 }
 
-/** The derived pre-payment status, passed in so `reviewFlags` stays pure (no store). */
-export type ReviewPrepaymentStatus = 'none' | 'required' | 'outstanding' | 'paid'
-
 export interface ReviewBookingInput {
   booking: Booking
   procedures: readonly ReviewProcedureInput[]
-  /** From the store's `prepaymentStatusFor` (Phase 09). Absent = not evaluated. */
-  prepaymentStatus?: ReviewPrepaymentStatus
 }
 
 /** The natural (non-overridden) B/T/M computation, to diff a manual override against. */
@@ -59,7 +54,7 @@ function naturalBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdown {
 }
 
 /** Flags for a single Booking. A cancelled Booking yields none (excluded from review). */
-export function reviewFlagsForBooking({ booking, procedures, prepaymentStatus }: ReviewBookingInput): ReviewFlag[] {
+export function reviewFlagsForBooking({ booking, procedures }: ReviewBookingInput): ReviewFlag[] {
   if (booking.cancellation !== undefined) return []
   const flags: ReviewFlag[] = []
 
@@ -68,11 +63,9 @@ export function reviewFlagsForBooking({ booking, procedures, prepaymentStatus }:
     flags.push({ tone: 'neutral', text: 'Not marked completed', bookingId: booking.id })
   }
 
-  // (e) pre-payment still to resolve (Phase 09; B7), flagged (warn) so the
-  // office sees it at authorisation. Never a block.
-  if (prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') {
-    flags.push({ tone: 'warn', text: 'Pre-payment outstanding', bookingId: booking.id })
-  }
+  // (e) an unpaid prepayment is no longer a Review flag: it is a warning
+  // (catch-up Phase 15a), shown on the row by the warning triangle, as every
+  // later warning rule is (21's insurer-will-pay at office review among them).
 
   for (const { procedure, fee, baseCode } of procedures) {
     // (b) missing billing reference on the contract-holder route.

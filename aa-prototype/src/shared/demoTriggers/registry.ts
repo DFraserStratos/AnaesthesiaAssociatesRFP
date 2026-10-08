@@ -16,6 +16,18 @@
 
 import {
   OFFICE_ACTOR,
+  OFFICE_SIMULATION_ACTOR,
+  WARNING_RULE_COUNT,
+  allSampleClearRefusal,
+  clearAllSamples,
+  clearSamplesOn,
+  clearWarning,
+  daySampleRaiseRefusal,
+  raiseDaySamples,
+  raiseSamplesOn,
+  sampleClearRefusal,
+  sampleRaiseRefusal,
+  warningsForBooking,
   armHandoffFault,
   authoriseAsSimulatedOffice,
   officeStandInRefusal,
@@ -52,6 +64,11 @@ const ADMIN_INTEGRATIONS = '/admin/integrations'
 const INTEGRATIONS_SIM = '/demo/integrations'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
+const ADMIN_DAY = '/admin/day/:dateISO'
+const ADMIN_BOOKING = '/admin/day/:dateISO/bookings/:bookingId'
+const MOBILE_BOOKING = '/mobile/lists/:listId/bookings/:bookingId'
+/** Where the sample warnings show (Admin in the bar; the mobile Booking in the bar and the PWA). */
+const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as const
 
 // ---------------------------------------------------------------------------
 // Seed-scoped targets
@@ -185,6 +202,37 @@ function messageReplayDisabledReason(state: AppState): string | null {
 function firstOpenInvoicePath(state: AppState): string | null {
   const first = openAccRecs(state)[0]
   return first === undefined ? null : `/admin/invoices/${first.invoiceId}`
+}
+
+// ---------------------------------------------------------------------------
+// Sample warnings (catch-up Phase 15a): bodies in `store/warningSamples.ts`
+// ---------------------------------------------------------------------------
+
+/** The rule count, said honestly: with one rule, two warnings on one Booking are proven in tests only. */
+const RULES_NOTE =
+  WARNING_RULE_COUNT === 1
+    ? '1 rule registered, so each Booking shows one warning; a Booking with two is proven in tests until a second rule is added.'
+    : `${WARNING_RULE_COUNT} rules registered.`
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
+}
+
+function raiseSampleDisabled(state: AppState, ctx: DemoTriggerCtx): string | null {
+  const bookingId = ctx.params['bookingId']
+  return bookingId === undefined ? daySampleRaiseRefusal(state) : sampleRaiseRefusal(state, bookingId)
+}
+
+function clearSampleDisabled(state: AppState, ctx: DemoTriggerCtx): string | null {
+  const bookingId = ctx.params['bookingId']
+  return bookingId === undefined ? allSampleClearRefusal(state) : sampleClearRefusal(state, bookingId)
+}
+
+/** The Booking's open warnings, as the PWA stand-in's choices. */
+function openWarningChoices(state: AppState, ctx: DemoTriggerCtx) {
+  return warningsForBooking(state, ctx.params['bookingId'] ?? '')
+    .filter((w) => w.clearance === undefined)
+    .map((w) => ({ id: w.key, label: w.text }))
 }
 
 // ---------------------------------------------------------------------------
@@ -445,6 +493,76 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
   },
+  // ── Admin · Day, Booking detail and Mobile · Booking: sample warnings ──
+  {
+    id: 'raise-sample-warnings',
+    label: 'Raise sample warnings',
+    description:
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: today an unpaid prepayment. Later rules add theirs: base units outside the range, a child as the payer on the Booking, insurer-will-pay with no insurer Contract, a prepaid procedure with no price, a paying patient with a balance.",
+    screen: 'Admin · Day and Booking detail, Mobile · Booking',
+    routes: SAMPLE_WARNING_ROUTES,
+    surfaces: ['bar', 'pwa'],
+    disabledReason: raiseSampleDisabled,
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      const res = bookingId === undefined ? raiseDaySamples(api) : raiseSamplesOn(api, bookingId)
+      if (!res.ok) return { ok: false, message: res.message }
+      return {
+        ok: true,
+        message:
+          bookingId === undefined
+            ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 21 Jul Lists. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}`
+            : `Raised ${plural(res.value, 'sample warning')} on this Booking: the triangle and the warning at the top of the Booking. ${RULES_NOTE}`,
+      }
+    },
+    indexPath: () => '/admin/day/2026-07-21',
+  },
+  {
+    id: 'clear-sample-warnings',
+    label: 'Clear sample warnings',
+    description:
+      "Undoes the samples: restores the seeded values and drops their clearances, so the sample warnings disappear. Not the office's Clear on the To-do card.",
+    screen: 'Admin · Day and Booking detail, Mobile · Booking',
+    routes: SAMPLE_WARNING_ROUTES,
+    surfaces: ['bar', 'pwa'],
+    disabledReason: clearSampleDisabled,
+    run: (api, ctx) => {
+      const bookingId = ctx.params['bookingId']
+      const res = bookingId === undefined ? clearAllSamples(api) : clearSamplesOn(api, bookingId)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `Removed ${plural(res.value, 'sample warning')}. The seeded values are back.` }
+    },
+    indexPath: () => '/admin/day/2026-07-21',
+  },
+  // ── Mobile · Booking, installed PWA only: the office stand-in ─────────
+  {
+    id: 'office-clears-warning',
+    label: 'Office clears this warning',
+    description:
+      'Stands in for the office, which has no app on the phone: clears a warning on this Booking, as Kirsty would from the To-do card in Admin.',
+    screen: 'Mobile · Booking',
+    routes: [MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    choices: openWarningChoices,
+    disabledReason: (state, ctx, choiceId) => {
+      const open = openWarningChoices(state, ctx)
+      if (open.length === 0) return 'No open warnings on this Booking'
+      if (choiceId !== undefined && !open.some((c) => c.id === choiceId)) return 'Choose a warning'
+      return null
+    },
+    run: (api, ctx, choiceId) => {
+      const bookingId = ctx.params['bookingId'] ?? ''
+      const key = choiceId ?? openWarningChoices(api.getState(), ctx)[0]?.id
+      if (key === undefined) return { ok: false, message: 'No open warnings on this Booking' }
+      const res = clearWarning(api, OFFICE_SIMULATION_ACTOR, bookingId, key)
+      return res.ok
+        ? { ok: true, message: 'The office cleared this warning. The triangle turns grey and the Booking shows who cleared it.' }
+        : { ok: false, message: res.message }
+    },
+    indexPath: () => null,
+  },
+
   // ── Hospital messages (Future scope) ──────────────────────────────────
   {
     id: 'fire-hospital-message',

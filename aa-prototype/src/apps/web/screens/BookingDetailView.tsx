@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
-import { StatusChip } from '../../../shared'
+import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
 
@@ -44,6 +44,8 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack, onCopied
       .sort((a, b) => a.id.localeCompare(b.id))[0]
   }, [booking, bookingId, proceduresRecord])
 
+  const warnings = useBookingWarnings(bookingId)
+
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   const badge = nhiBadge(patient?.nhi)
@@ -62,9 +64,12 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack, onCopied
       }}
     >
       <div>
-        <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
-          {patient?.name ?? 'Unknown patient'}
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
+            {patient?.name ?? 'Unknown patient'}
+          </h1>
+          <WarningTriangle warnings={warnings} />
+        </div>
         <div className="mono" style={{ fontSize: 12.5, color: neutral.mist, marginTop: 6 }}>
           {badge.text}
           {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}

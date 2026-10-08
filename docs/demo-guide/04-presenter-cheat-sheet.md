@@ -276,6 +276,8 @@ Say:
 - AA decided not to block (OQ-57): an unpaid prepayment is a strong before-procedure warning in both
   apps, and completing, submitting and authorising all go through. There is no override.
 - The escalation as the date nears and the automatic prepayment invoice come later (catch-up Phase 27).
+- Warnings: one routine; a To-do card in Admin; a small triangle on Bookings in all three apps; the
+  warning at the top of the Booking when it opens. Never a block, and no confirm step at submit.
 
 ### 9. Concurrency
 

@@ -62,7 +62,7 @@ function renderGrid() {
       }}
       masters={masters}
       activeBookingCounts={{}}
-      prepaymentFlags={new Map([['prepaid', 'outstanding']])}
+      warningFlags={new Map([['prepaid', { open: 2, strongest: 'strong' as const }]])}
       onSelectList={vi.fn()}
     />,
   )
@@ -101,7 +101,7 @@ describe('DayGrid filters', () => {
 
     const attentionFilter = screen.getByRole('button', { name: 'Needs attention' })
     const noteFilter = screen.getByRole('button', { name: 'Has note' })
-    const prepaymentFilter = screen.getByRole('button', { name: 'Pre-payment flagged' })
+    const prepaymentFilter = screen.getByRole('button', { name: 'Has warnings' })
 
     fireEvent.click(attentionFilter)
     expect(attentionFilter).toHaveAttribute('aria-pressed', 'true')
@@ -129,5 +129,17 @@ describe('DayGrid filters', () => {
     expect(noteFilter).toHaveAttribute('aria-pressed', 'false')
     expect(prepaymentFilter).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByText('4 of 4 anaesthetists have matching blocks. Showing 4 of 4 blocks.', { exact: false })).toBeInTheDocument()
+  })
+
+  it('marks a List with open warnings: triangle with the count, the capture hook (US-13.7.3)', () => {
+    const { container } = renderGrid()
+    const block = container.querySelector('[data-shot="daygrid-block-warnings"]') as HTMLElement
+    expect(block).not.toBeNull()
+    expect(block.textContent).toContain('Free')
+    expect(screen.getByRole('img', { name: '2 open warnings' })).toBeInTheDocument()
+    // The List-level `!` stays on the surgeon-TBC block only, never on a warning block.
+    const tbc = screen.getByRole('button', { name: /Surgeon TBC/ })
+    expect(tbc.textContent).toContain('!')
+    expect(block.textContent).not.toContain('!')
   })
 })

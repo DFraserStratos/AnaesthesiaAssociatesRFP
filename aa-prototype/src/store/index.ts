@@ -132,7 +132,22 @@ export {
 } from './billingRun'
 export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
-export { OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export {
+  WARNING_SAMPLES,
+  WARNING_RULE_COUNT,
+  hasStagedSample,
+  stagedSampleBookings,
+  sampleRaiseRefusal,
+  daySampleRaiseRefusal,
+  sampleClearRefusal,
+  allSampleClearRefusal,
+  raiseSamplesOn,
+  clearSamplesOn,
+  raiseDaySamples,
+  clearAllSamples,
+  type WarningSample,
+} from './warningSamples'
 export { authoriseAsSimulatedOffice, officeStandInRefusal } from './officeStandIn'
 export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentInput } from './paymentActions'

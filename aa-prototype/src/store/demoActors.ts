@@ -30,6 +30,14 @@ export const SOUTER_ACTOR: Actor = {
 export const OFFICE_SIMULATION_ACTOR: Actor = { who: 'AA office (simulated)', role: 'office', source: 'office' }
 
 /**
+ * The demo actions themselves (catch-up Phase 15a): stages scenario data such
+ * as the sample warnings, so the audit never shows the office (or anyone) doing
+ * the staging. A system actor edits assigned and SUBMITTED Lists; an AUTHORISED
+ * List refuses it, which is the triggers' disabled state.
+ */
+export const DEMO_TRIGGER_ACTOR: Actor = { who: 'Demo actions', role: 'system', source: 'demo' }
+
+/**
  * Kirsty W.'s account id for the simulated sign-in audit rows. She has no
  * seeded master record (office staff are not modelled), so the rows need a
  * fixed id of their own.

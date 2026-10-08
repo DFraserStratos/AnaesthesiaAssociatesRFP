@@ -4,7 +4,7 @@ import { accent, neutral } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
-import { StatusChip } from '../../../shared'
+import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
 
 interface BookingDetailScreenProps {
@@ -59,6 +59,8 @@ export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: Book
       .sort((a, b) => a.id.localeCompare(b.id))[0]
   }, [booking, bookingId, proceduresRecord])
 
+  const warnings = useBookingWarnings(bookingId)
+
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   const patientName = patient?.name ?? 'Unknown patient'
@@ -86,6 +88,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: Book
           <span data-aa-selectable style={{ fontSize: 17, lineHeight: '24px', fontWeight: 600, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {patientName}
           </span>
+          <WarningTriangle warnings={warnings} size="sm" />
           <StatusChip status={list.statusKey} style={{ flex: 'none', padding: '3px 8px' }} />
         </span>
       </div>
@@ -94,8 +97,11 @@ export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: Book
           truncate. Overshooting the real height is harmless — it is a max. */}
       {/* The patient name stays selectable under the hosts' blanket
           `user-select: none` — see the touch-polish block in `global.css`. */}
-      <div data-aa-selectable style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em', maxHeight: collapsed ? 0 : 62, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}>
-        {patientName}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxHeight: collapsed ? 0 : 62, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}>
+        <div data-aa-selectable style={{ fontSize: 24, lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+          {patientName}
+        </div>
+        <WarningTriangle warnings={warnings} />
       </div>
       <div
         style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: collapsed ? 0 : 8, maxHeight: collapsed ? 0 : 64, opacity: collapsed ? 0 : 1, overflow: 'hidden', transition: FOLD }}

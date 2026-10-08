@@ -3,8 +3,8 @@ import { runDemoAction } from './demoActions'
 
 /**
  * Phase 09 admin walkthrough — the billing monitor (trigger a failure, see
- * per-booking isolation, resolve & retry) and the pre-payment gate surfaced on a
- * booking (the outstanding banner + the office raise / override actions). A working
+ * per-booking isolation, resolve & retry) and the prepayment warning on a
+ * booking (the warnings panel + the office's raise action; no gate, no override). A working
  * artifact for eyeballing plus light assertions.
  */
 
@@ -42,8 +42,8 @@ test('admin phase 09: prepayment warning on a booking (never a block)', async ({
     await page.waitForTimeout(200)
   }
   await expect(page.getByRole('heading', { name: /Friday 24 July 2026/ })).toBeVisible()
-  // The day grid legend carries the pre-payment indicator key.
-  await expect(page.getByText('Pre-payment flagged')).toBeVisible()
+  // The day grid's focus filters carry the warnings key (catch-up Phase 15a).
+  await expect(page.getByRole('button', { name: 'Has warnings' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-04-friday.png', fullPage: true })
 
   // Open Souter's AM list (Forte / Ms G. Lim) and its booking: the warning banner.
@@ -51,7 +51,7 @@ test('admin phase 09: prepayment warning on a booking (never a block)', async ({
   await page.waitForTimeout(300)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
-  await expect(page.getByText('Pre-payment required', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-shot="booking-warnings"]')).toBeVisible()
   await expect(page.getByText('Prepayment required. No prepayment invoice has been raised yet.')).toBeVisible()
   await expect(page.getByText(/never a block/)).toBeVisible()
   await expect(page.getByRole('button', { name: /Raise pre-procedure invoice/ })).toBeVisible()

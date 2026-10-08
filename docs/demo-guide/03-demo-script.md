@@ -305,15 +305,23 @@ actions** on the screen named in its beat.
 ### Beat 1: prepayment warning
 
 - **Click:**
-  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List → Annette Riley**.
-  - Read the **Pre-payment required** warning on her Booking.
-  - Select **Mark complete**: it completes.
-  - Optionally, go to **Admin Day view → Fri 24 Jul → Souter AM → Annette Riley** and show the same
-    warning to the office, with **Raise pre-procedure invoice** beside it.
-- **Say:** "A warning, never a block. The anaesthetist sees it before surgery starts, while the
-  surgeon can still be told; the office sees it too. AA decided not to block (OQ-57)."
-- **Expected:** completion goes through while the prepayment is unpaid; the warning shows in both
-  apps. There is no override any more.
+  - Go to **Anaesthetist Mobile App → Dr Souter's Fri 24 Jul AM List**. Point at the small warning
+    triangle on **Annette Riley**'s row (it is a marker; tapping it does nothing of its own).
+  - Open her Booking: the warning is at the top, **Prepayment required**, Before procedure, Strong,
+    on screen with no scroll and no tap.
+  - Select **Mark complete**: it completes. Then **Mark list completed → Submit to office**: the
+    usual submit sheet, with no warning step; it goes straight through.
+  - Go to **Admin Day view → Fri 24 Jul**: the Souter AM block has the red outline and the triangle.
+    Open it: Annette Riley's row in the drawer carries the same outline.
+  - In the right rail, the **To-do** card under the calendar lists her warning. Select **Clear**: it
+    leaves the list, the outline drops, and her Booking shows who cleared it and when.
+- **Say:** "A warning, never a block, and no pop-up in the way. The anaesthetist sees it when they
+  open the Booking, the night before, while the surgeon can still be told; the office sees it on its
+  to-do list as a second check. AA decided not to block (OQ-57)."
+- **Expected:** completion and submit go through with no extra step; the warning shows in both apps
+  and leaves the to-do list when cleared. There is no override any more.
+- **Optional:** on **Admin Day view → Tue 21 Jul**, **Demo actions → Raise sample warnings** fills
+  the To-do card with sample warnings on Dr Rutherford's Lists; **Clear sample warnings** removes them.
 
 ### Beat 2: post-op addendum
 
@@ -361,7 +369,7 @@ actions** on the screen named in its beat.
 - **Expected:** the payable authorises pro-rata; payables pays only the increment each run.
 
 **Discovery points:** billing-failure isolation (a prototype choice; the RFP leaves it open); which
-conditions warn, and how strongly; and how inbound messages targeting a submitted or authorised List
+conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
 are parked for manual intervention.
 
 ---

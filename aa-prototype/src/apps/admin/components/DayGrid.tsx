@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic } from '../../../theme/tokens'
 import {
   STATUS_ORDER,
@@ -8,7 +9,7 @@ import {
   type StatusKey,
 } from '../../../theme/statusColours'
 import type { Anaesthetist, List } from '../../../domain/types'
-import type { AppState } from '../../../store'
+import type { AppState, ListWarningSummary } from '../../../store'
 import { StatusLegend } from '../../../shared'
 import { attentionReasons, blockGeometry, displayStatusKeyForList, isBooked, listSpan, surnameFirst } from '../util'
 
@@ -20,9 +21,9 @@ interface DayGridProps {
   /** Active (non-cancelled) booking count per list — a Free list that gains bookings
    *  via the phone-advice path renders as a booked block. */
   activeBookingCounts: Record<string, number>
-  /** Lists holding a booking whose pre-payment is flagged (Phase 09): outstanding
-   *  (required / invoiced-unpaid). */
-  prepaymentFlags: Map<string, 'outstanding'>
+  /** Open warnings per List on the selected date (catch-up Phase 15a): the
+   *  count and the strongest strength, from `warningSummaryByList`. */
+  warningFlags: ReadonlyMap<string, ListWarningSummary>
   onSelectList: (listId: string) => void
 }
 
@@ -37,13 +38,16 @@ interface Segment {
   end: number
 }
 
-type FocusFilter = 'attention' | 'note' | 'prepayment'
+type FocusFilter = 'attention' | 'note' | 'warnings'
 
 interface DisplaySegment extends Segment {
   displayKey: StatusKey
+  /** List-level attention (conflicts, surgeon TBC; `attentionReasons`): the amber `!` corner. */
+  listAttention: boolean
+  /** List-level attention or an open warning on one of its Bookings: the outline. */
   needsAttention: boolean
   hasNote: boolean
-  prepaymentFlag?: 'outstanding'
+  warnings?: ListWarningSummary
 }
 
 /** Merge a both-sessions holiday/unavailable pair into one full-day block. */
@@ -69,7 +73,7 @@ function hasNoteSignal(list: List, displayKey: StatusKey): boolean {
   return hasText && isBooked(displayKey) && list.surgeonId !== undefined
 }
 
-export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBookingCounts, prepaymentFlags, onSelectList }: DayGridProps) {
+export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBookingCounts, warningFlags, onSelectList }: DayGridProps) {
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<StatusKey>>(() => new Set())
   const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
 
@@ -81,17 +85,20 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
           (segment): DisplaySegment => {
             const hasBookings = (activeBookingCounts[segment.list.id] ?? 0) > 0
             const displayKey = displayStatusKeyForList(segment.list, hasBookings)
+            const listAttention = attentionReasons(segment.list).length > 0
+            const warnings = warningFlags.get(segment.list.id)
             return {
               ...segment,
               displayKey,
-              needsAttention: attentionReasons(segment.list).length > 0,
+              listAttention,
+              needsAttention: listAttention || warnings !== undefined,
               hasNote: hasNoteSignal(segment.list, displayKey),
-              prepaymentFlag: prepaymentFlags.get(segment.list.id),
+              warnings,
             }
           },
         ),
       })),
-    [activeBookingCounts, anaesthetists, listsByAnaesthetist, prepaymentFlags],
+    [activeBookingCounts, anaesthetists, listsByAnaesthetist, warningFlags],
   )
 
   const filteredRows = useMemo(
@@ -102,9 +109,9 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
           if (hiddenStatuses.has(segment.displayKey)) return false
           if (focusFilters.size === 0) return true
           return (
-            (focusFilters.has('attention') && segment.needsAttention) ||
+            (focusFilters.has('attention') && segment.listAttention) ||
             (focusFilters.has('note') && segment.hasNote) ||
-            (focusFilters.has('prepayment') && segment.prepaymentFlag !== undefined)
+            (focusFilters.has('warnings') && segment.warnings !== undefined)
           )
         }),
       })),
@@ -225,10 +232,10 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
             onClick={() => toggleFocus('note')}
           />
           <SignalFilterButton
-            label="Pre-payment flagged"
-            active={focusFilters.has('prepayment')}
-            icon="$"
-            onClick={() => toggleFocus('prepayment')}
+            label="Has warnings"
+            active={focusFilters.has('warnings')}
+            icon="warning"
+            onClick={() => toggleFocus('warnings')}
           />
         </div>
         {filtered && (
@@ -244,7 +251,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
   )
 }
 
-function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | '$' | 'note'; onClick: () => void }) {
+function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | 'warning' | 'note'; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -267,6 +274,8 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
     >
       {icon === 'note' ? (
         <span aria-hidden style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
+      ) : icon === 'warning' ? (
+        <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TriangleAlert size={8} strokeWidth={3} /></span>
       ) : (
         <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
       )}
@@ -280,13 +289,16 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
   // A Free list booked via the phone-advice path (bookings added or a hospital
   // assigned) renders as a booked block, even though its statusKey stays free
   // (status is reassign/reconcile-owned, not office-editable).
-  const { displayKey, needsAttention, hasNote: hasNoteSignal, prepaymentFlag } = seg
+  const { displayKey, listAttention, needsAttention, hasNote: hasNoteSignal, warnings } = seg
   const colour = statusColours[displayKey]
   const reasons = attentionReasons(list)
   const geo = blockGeometry(seg.start, seg.end)
 
   const bg = displayKey === 'unavailable' ? unavailableHatchTint : colour.tint
-  const border = displayKey === 'free' ? freeDashedBorder : needsAttention ? `1.5px solid ${ATTENTION}` : '1px solid rgba(0,0,0,0)'
+  // A strong open warning outlines the block in the error red; otherwise any
+  // attention (List-level, or a mild warning) is the amber outline (US-13.7.3).
+  const outline = warnings?.strongest === 'strong' ? semantic.error.solid : ATTENTION
+  const border = displayKey === 'free' ? freeDashedBorder : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
 
   const hospitalName = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : undefined
   const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
@@ -310,14 +322,15 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
   // as the block's subtitle (template labels, free-cover text).
   const hasNote = list.notes !== undefined && list.notes.trim() !== ''
   const noteIsSubtitle = hasNote && l2 === list.notes
-  const showNoteDot = hasNoteSignal && !needsAttention
-  const tooltip = [...reasons, hasNote && !noteIsSubtitle ? `Note: ${list.notes}` : ''].filter(Boolean).join(' · ')
+  const showNoteDot = hasNoteSignal && !listAttention
+  const warningTip = warnings !== undefined ? `${warnings.open} open warning${warnings.open === 1 ? '' : 's'}` : ''
+  const tooltip = [...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${list.notes}` : ''].filter(Boolean).join(' · ')
 
   return (
     <button
       type="button"
       onClick={onClick}
-      data-shot={prepaymentFlag !== undefined ? 'daygrid-block-prepayment' : undefined}
+      data-shot={warnings !== undefined ? 'daygrid-block-warnings' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{
         position: 'absolute',
@@ -345,14 +358,22 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
       {l2 !== '' && (
         <span style={{ fontSize: 9.5, lineHeight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint, opacity: 0.75 }}>{l2}</span>
       )}
-      {needsAttention && (
+      {listAttention && (
         <span style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
       {showNoteDot && (
         <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
       )}
-      {prepaymentFlag !== undefined && (
-        <span title="Pre-payment outstanding" style={{ position: 'absolute', bottom: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>$</span>
+      {warnings !== undefined && (
+        <span
+          role="img"
+          aria-label={`${warnings.open} open warning${warnings.open === 1 ? '' : 's'}`}
+          title={`${warnings.open} open warning${warnings.open === 1 ? '' : 's'}`}
+          style={{ position: 'absolute', bottom: 3, right: 3, height: 13, padding: '0 4px 0 3px', boxSizing: 'border-box', borderRadius: 99, background: warnings.strongest === 'strong' ? semantic.error.solid : ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+        >
+          <TriangleAlert size={8} strokeWidth={3} aria-hidden />
+          <span style={{ fontVariantNumeric: 'tabular-nums', lineHeight: '13px' }}>{warnings.open}</span>
+        </span>
       )}
     </button>
   )

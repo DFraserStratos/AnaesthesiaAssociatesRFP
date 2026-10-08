@@ -1,6 +1,63 @@
 {
   "id": "US-13.7.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 15a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "todo-list",
+      "app": "admin",
+      "caption": "Warnings on the dashboard to-do list",
+      "start": "/admin/day/2026-07-24",
+      "states": [
+        {
+          "state": "open",
+          "caption": "Open warnings on the to-do list",
+          "steps": [
+            {
+              "wait": "[data-shot=admin-warnings-todo]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-warnings-todo]"
+          ]
+        },
+        {
+          "state": "cleared",
+          "caption": "A cleared warning leaves the to-do list",
+          "steps": [
+            {
+              "click": "[data-shot=admin-warnings-todo] >> role=button[name=\"Clear warning for Annette Riley\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-warnings-todo]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "todo-samples",
+      "app": "admin",
+      "caption": "Several warnings on the to-do list, soonest first",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "trigger": "raise-sample-warnings"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-warnings-todo]"
+          ]
+        }
+      ]
+    }
+  ]
 }

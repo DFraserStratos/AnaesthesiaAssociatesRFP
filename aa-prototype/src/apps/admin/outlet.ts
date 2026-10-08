@@ -1,6 +1,6 @@
 import { useOutletContext } from 'react-router-dom'
 import type { Anaesthetist, DayNote, List } from '../../domain/types'
-import type { Actor, AppState } from '../../store'
+import type { Actor, AppState, ListWarningSummary, OpenWarningRow } from '../../store'
 import type { SortMode } from './components/DayNav'
 
 interface ReviewRow {
@@ -21,7 +21,10 @@ export interface AdminOutletContext {
   listsByAnaesthetist: Record<string, List[]>
   masters: AppState['masters']
   activeBookingCounts: Record<string, number>
-  prepaymentFlags: Map<string, 'outstanding'>
+  /** Open warnings per List on the selected date (the day grid outline). */
+  warningFlags: ReadonlyMap<string, ListWarningSummary>
+  /** Every open warning, all dates (the To-do card, US-13.7.2). */
+  todoRows: OpenWarningRow[]
   summary: string
   notes: DayNote[]
   reviewRows: ReviewRow[]

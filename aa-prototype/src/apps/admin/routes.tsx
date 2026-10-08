@@ -71,7 +71,7 @@ export function AdminDayRoute() {
           listsByAnaesthetist={ctx.listsByAnaesthetist}
           masters={ctx.masters}
           activeBookingCounts={ctx.activeBookingCounts}
-          prepaymentFlags={ctx.prepaymentFlags}
+          warningFlags={ctx.warningFlags}
           onSelectList={ctx.onSelectList}
         />
         <RightRail
@@ -84,6 +84,9 @@ export function AdminDayRoute() {
           reviewRows={ctx.reviewRows}
           shellScrollbarWidth={ctx.shellScrollbarWidth}
           onReviewList={(listId) => navigate(`/admin/review/${listId}`)}
+          todoRows={ctx.todoRows}
+          actor={ctx.actor}
+          onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
         />
       </div>
     </>

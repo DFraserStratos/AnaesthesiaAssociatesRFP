@@ -19,6 +19,11 @@ export function dayMicroCap(dateISO: string): string {
   return format(parseISO(dateISO), 'EEE d MMM').toUpperCase()
 }
 
+/** "Tue 21 Jul": the short day used beside warnings, drawers and clearances. */
+export function shortDay(dateISO: string): string {
+  return format(parseISO(dateISO.slice(0, 10)), 'EEE d MMM')
+}
+
 /** The "HH:MM" slice of a local-naive ISO datetime ("" when absent/short). */
 export function hhmm(iso: string | undefined): string {
   return iso !== undefined && iso.length >= 16 ? iso.slice(11, 16) : ''

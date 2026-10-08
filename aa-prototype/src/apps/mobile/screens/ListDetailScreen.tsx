@@ -4,7 +4,7 @@ import { accent, elevation, neutral, radius, semantic } from '../../../theme/tok
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
 import { removeAttachment, useAppStore, useToday, type Actor } from '../../../store'
-import { DockSpacer, StatusChip } from '../../../shared'
+import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
@@ -86,6 +86,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
     const done = active.filter((r) => r.booking.completed).length
     return { rows, activeCount: active.length, done }
   }, [list, listId, bookingsRecord, proceduresRecord, patients])
+
+  const warningsByBooking = useListWarnings(listId)
 
   if (list === undefined || model === undefined) return null
 
@@ -189,15 +191,18 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
                 {r.time}
               </span>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span
-                  data-aa-selectable
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    textDecoration: cancelled ? 'line-through' : 'none',
-                  }}
-                >
-                  {r.patientName}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <span
+                    data-aa-selectable
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      textDecoration: cancelled ? 'line-through' : 'none',
+                    }}
+                  >
+                    {r.patientName}
+                  </span>
+                  <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
                 </span>
                 {r.nhi !== undefined && (
                   <span className="mono" style={{ fontSize: 11, color: neutral.mist }}>

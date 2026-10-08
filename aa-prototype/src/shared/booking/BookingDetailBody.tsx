@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, TriangleAlert, XCircle } from 'lucide-react'
+import { Copy, History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
-import { PREPAYMENT_REQUIRED_TEXT, PREPAYMENT_UNPAID_TEXT } from '../../domain/warnings'
 import {
   validateBookingForBilling,
   type BillingValidationFailure,
@@ -33,6 +32,7 @@ import {
   EditProcedureSheet,
   RemoveProcedureSheet,
 } from '../flows'
+import { useBookingWarnings, WarningsPanel } from '../warnings'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { HistorySheet } from './HistorySheet'
 
@@ -89,7 +89,7 @@ function EditLink({ onClick }: { onClick: () => void }) {
   )
 }
 
-/** A teal-only office action button used inside the pre-payment banner (convention 17). */
+/** A teal-only office action button used on the prepayment warning's row (convention 17). */
 const officeActionStyle: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -130,6 +130,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
   const masters = useAppStore((s) => s.masters)
   const prepaymentStatus = useAppStore((s) => prepaymentStatusFor(s, bookingId))
+  const warnings = useBookingWarnings(bookingId)
   const audit = useAppStore((s) => s.audit)
   // The anaesthetist Booking carries no calculation; only the office sees the fee.
   const showBookingTotal = actor.role !== 'anaesthetist'
@@ -462,15 +463,30 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
   )
 
   const hasBanners =
+    warnings.length > 0 ||
     cancelled ||
     (booking.copiedFromBookingId !== undefined && !booking.completed) ||
     booking.bookingType === 'postOpAddendum' ||
-    prepaymentStatus !== 'none' ||
+    prepaymentStatus === 'paid' ||
     error !== null ||
     (completeError !== null && showValidation)
 
   const banners = hasBanners ? (
     <>
+      {/* First, so the warning is on screen the moment the Booking opens (US-13.7.3). */}
+      <WarningsPanel
+        warnings={warnings}
+        actor={actor}
+        canClear={isOffice}
+        rowShot={(w) => (w.ruleId === 'prepaymentUnpaid' ? 'booking-prepayment' : undefined)}
+        extra={(w) =>
+          w.ruleId === 'prepaymentUnpaid' && isOffice && prepaymentStatus === 'required' && canEdit ? (
+            <button onClick={doRaisePrepayment} style={officeActionStyle}>
+              <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
+            </button>
+          ) : null
+        }
+      />
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
           <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
@@ -486,29 +502,10 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
           <strong>Post-op addendum</strong> · linked to the original episode. It bills as a new booking through its own cycle; the original booking stays locked and immutable (the RFP immutability answer).
         </div>
       )}
-      {prepaymentStatus !== 'none' && (
-        <div data-shot="booking-prepayment" style={{ background: prepaymentStatus === 'paid' ? semantic.success.tint : semantic.error.tint, color: prepaymentStatus === 'paid' ? semantic.success.onTint : semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-            {prepaymentStatus === 'paid' ? <ShieldCheck size={16} aria-hidden /> : <TriangleAlert size={16} aria-hidden />}
-            {prepaymentStatus === 'required' && 'Pre-payment required'}
-            {prepaymentStatus === 'outstanding' && 'Pre-payment outstanding'}
-            {prepaymentStatus === 'paid' && 'Pre-payment received'}
-          </div>
-          <span>
-            {prepaymentStatus === 'required' && PREPAYMENT_REQUIRED_TEXT}
-            {prepaymentStatus === 'outstanding' && PREPAYMENT_UNPAID_TEXT}
-            {prepaymentStatus === 'paid' && 'The prepayment invoice has been paid.'}
-          </span>
-          {(prepaymentStatus === 'required' || prepaymentStatus === 'outstanding') && (
-            <span style={{ fontSize: 11.5, opacity: 0.85 }}>A warning, never a block: this Booking can still be completed and submitted.</span>
-          )}
-          {isOffice && prepaymentStatus === 'required' && canEdit && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
-              <button onClick={doRaisePrepayment} style={officeActionStyle}>
-                <Receipt size={14} aria-hidden /> Raise pre-procedure invoice
-              </button>
-            </div>
-          )}
+      {prepaymentStatus === 'paid' && (
+        <div data-shot="booking-prepayment" style={{ background: semantic.success.tint, color: semantic.success.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ShieldCheck size={16} aria-hidden />
+          <span><strong>Prepayment received.</strong> The prepayment invoice has been paid.</span>
         </div>
       )}
       {error !== null && (

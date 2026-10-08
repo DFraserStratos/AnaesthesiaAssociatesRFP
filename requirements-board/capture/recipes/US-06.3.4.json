@@ -14,7 +14,7 @@
           "caption": "Half the pre-payment received, pre-payment still outstanding",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
@@ -65,7 +65,7 @@
           "caption": "Pre-payment paid in full, pre-payment received and warning cleared",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"

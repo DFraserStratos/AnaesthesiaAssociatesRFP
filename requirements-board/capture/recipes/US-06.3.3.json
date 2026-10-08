@@ -1,18 +1,18 @@
 {
   "id": "US-06.3.3",
   "status": "partial",
-  "absentReason": "An unpaid pre-payment is flagged on the admin day grid and on the booking, and completion is blocked. There is no time-based alert or notification as the procedure date approaches.",
+  "absentReason": "An unpaid prepayment is a warning on the admin day grid and at the top of the Booking, never a block. There is no time-based escalation as the procedure date approaches.",
   "shots": [
     {
       "name": "day-grid-flag",
       "app": "admin",
-      "caption": "Pre-payment outstanding flag on the day grid",
+      "caption": "The unpaid prepayment's warning on the day grid",
       "start": "/admin/day/2026-07-24",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "[data-shot=daygrid-block-prepayment]"
+            "[data-shot=daygrid-block-warnings]"
           ]
         }
       ]
@@ -20,7 +20,7 @@
     {
       "name": "card-gate",
       "app": "mobile",
-      "caption": "The anaesthetist sees the unpaid pre-payment on the Booking",
+      "caption": "The anaesthetist sees the unpaid prepayment's warning at the top of the Booking",
       "start": "/mobile/lists/L-34821-2026-07-24-AM",
       "states": [
         {
@@ -29,11 +29,11 @@
               "click": "text=\"Annette Riley\" >> nth=0"
             },
             {
-              "wait": "[data-testid=slide-booking] [data-shot=booking-prepayment]"
+              "wait": "[data-testid=slide-booking] [data-shot=booking-warnings]"
             }
           ],
           "highlight": [
-            "[data-testid=slide-booking] [data-shot=booking-prepayment]"
+            "[data-testid=slide-booking] [data-shot=booking-warnings]"
           ]
         }
       ]

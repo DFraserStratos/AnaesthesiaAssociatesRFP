@@ -6,14 +6,14 @@
     {
       "name": "deposit-invoice",
       "app": "admin",
-      "caption": "The pre-payment deposit invoice raised before the procedure",
+      "caption": "Older screen, a pre-payment deposit invoice raised before the procedure; the prepaid amount is now the anaesthetist's own fixed price",
       "start": "/admin/invoices",
       "setup": [
         {
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "text=\"Ms G. Lim \u00b7 Plastics\""
+          "click": "text=\"Ms G. Lim · Plastics\""
         },
         {
           "wait": 600
@@ -26,22 +26,6 @@
         },
         {
           "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 500
-        },
-        {
-          "click": "role=button[name=\"Override gate\"]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "fill": "[role=dialog] textarea",
-          "value": "Patient paid the deposit by EFTPOS in clinic"
-        },
-        {
-          "click": "role=button[name=\"Override and allow completion\"]"
         },
         {
           "wait": 500
@@ -105,14 +89,14 @@
     {
       "name": "balance-invoice",
       "app": "admin",
-      "caption": "Balance invoice less the pre-payment deposit already invoiced",
+      "caption": "Older screen, a balance invoice less the pre-payment already invoiced; nothing is now left to bill afterwards",
       "start": "/admin/invoices",
       "setup": [
         {
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "text=\"Ms G. Lim \u00b7 Plastics\""
+          "click": "text=\"Ms G. Lim · Plastics\""
         },
         {
           "wait": 600
@@ -125,22 +109,6 @@
         },
         {
           "click": "role=button[name=\"Raise pre-procedure invoice\"]"
-        },
-        {
-          "wait": 500
-        },
-        {
-          "click": "role=button[name=\"Override gate\"]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "fill": "[role=dialog] textarea",
-          "value": "Patient paid the deposit by EFTPOS in clinic"
-        },
-        {
-          "click": "role=button[name=\"Override and allow completion\"]"
         },
         {
           "wait": 500

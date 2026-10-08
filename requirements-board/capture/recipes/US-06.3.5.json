@@ -14,7 +14,7 @@
           "caption": "Payment category Pre-payment, so pre-payment is required",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
@@ -29,10 +29,10 @@
         },
         {
           "state": "after",
-          "caption": "Category changed to Self-funded, the pre-payment banner is gone from the Booking",
+          "caption": "Category changed to Self-funded, the prepayment warning is gone from the Booking",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"

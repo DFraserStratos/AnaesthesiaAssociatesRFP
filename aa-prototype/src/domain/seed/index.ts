@@ -524,6 +524,28 @@ export function buildSeed(): SeedState {
   return SEED_BUILD.state
 }
 
+/** The earliest non-cancelled Booking on a seeded List (by time, then id). */
+function firstSeedBookingOn(listId: string): string {
+  const first = Object.values(SEED_BUILD.state.schedule.bookings)
+    .filter((b) => b.listId === listId && b.cancellation === undefined)
+    .sort((a, b) => (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))[0]
+  if (first === undefined) throw new Error(`Seed List ${listId} has no Booking for the warning samples`)
+  return first.id
+}
+
+/**
+ * The demo day's sample-warning targets (catch-up Phase 15a): the first Booking
+ * on each of Dr Rutherford's Tue 21 Jul Lists (assigned, not submitted), which
+ * no Booking-level scenario marker and no S1 to S5 beat uses. "Raise sample
+ * warnings" stages every rule's sample on them; `multiWarning` is the Booking
+ * every rule's sample lands on, so it carries two warnings once a second rule
+ * is registered. Constants derived from the cached seed, not seed content.
+ */
+export const SEED_WARNING_SAMPLE_BOOKINGS = {
+  targets: [firstSeedBookingOn(SEED_LIST_IDS.rutherfordAm21), firstSeedBookingOn(SEED_LIST_IDS.rutherfordPm21)],
+  multiWarning: firstSeedBookingOn(SEED_LIST_IDS.rutherfordAm21),
+} as const
+
 export { buildSeedBillingSlice, type SeedBillingSlice } from './billing'
 
 /**
@@ -640,7 +662,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Pre-payment booking (split, unpaid)',
       entityType: 'booking',
       entityId: scenario.prepayment,
-      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, $800 deposit on a $1,200 self funded fee. Unpaid: raises the prepayment warning, never a block.',
+      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, an $800 prepayment on a $1,200 self funded fee. Unpaid: raises the prepayment warning, never a block.',
     },
     prepaymentPaidBooking: {
       label: 'Pre-payment booking (mixed + full, seeded paid)',

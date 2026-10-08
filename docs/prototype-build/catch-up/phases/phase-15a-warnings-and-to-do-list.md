@@ -1,8 +1,8 @@
 # Phase 15a · Warnings and the to-do list
 
-**Status: IN PROGRESS.** Session 1 (work items 1 to 8) is built, green and committed (commit
-`b342a7d`, PERSIST_VERSION 16, 758 Vitest + 89 Playwright): do not rewrite it. Session 2 (work items
-9 to 15) is not built and is planned below against catalogue commit `3d3a18c`, read together with the
+**Status: DONE (2026-10-09).** Session 1 (work items 1 to 8) is built, green and committed (commit
+`b342a7d`, PERSIST_VERSION 16, 758 Vitest + 89 Playwright). Session 2 (work items 9 to 15) is built
+(787 Vitest + 92 Playwright; see the PROGRESS.md phase entry), as planned below against catalogue commit `3d3a18c`, read together with the
 dated section "Requirements changed since session 1 (2026-10-08)" below, which says what the
 catalogue update to `60e2d1e` changes for session 2 (by the owner's exception this phase keeps its
 `3d3a18c` baseline).

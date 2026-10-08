@@ -6,7 +6,7 @@
     {
       "name": "prepayment-flag",
       "app": "mobile",
-      "caption": "Booking flagged Pre-payment required",
+      "caption": "The Booking carries a prepayment warning",
       "start": "/mobile/lists/L-34821-2026-07-24-AM",
       "states": [
         {
@@ -27,7 +27,7 @@
     {
       "name": "prepayment-flag",
       "app": "web",
-      "caption": "Booking flagged Pre-payment required",
+      "caption": "The Booking carries a prepayment warning",
       "start": "/web/lists/L-34821-2026-07-24-AM",
       "states": [
         {

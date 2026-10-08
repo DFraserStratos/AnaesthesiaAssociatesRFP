@@ -14,7 +14,7 @@
           "caption": "Pre-payment required, with Raise pre-procedure invoice",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
@@ -32,7 +32,7 @@
           "caption": "Pre-procedure invoice raised, pre-payment now outstanding",
           "steps": [
             {
-              "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
             },
             {
               "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
@@ -53,7 +53,7 @@
     {
       "name": "prepayment-invoice",
       "app": "admin",
-      "caption": "Pre-procedure invoice, full estimated fee",
+      "caption": "Older screen, pre-procedure invoice for an estimated full fee; the prepaid amount is now the anaesthetist's own fixed price",
       "start": "/admin/invoices/INV0001",
       "states": [
         {

@@ -433,6 +433,23 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - The office raises the pre-procedure invoice; once it is paid the warning goes.
 - Exact timing relative to the normal `AUTHORISED` billing trigger is a prototype reading.
 
+#### Warnings and the to-do list
+
+- One warning routine checks each Booking and raises warnings, each with its own text, a kind
+  (before or after the procedure) and a strength (mild or strong). A Booking can carry several.
+- A warning never blocks: saving, completing, submitting and authorising all go through, and there
+  is no confirm step at submit.
+- The anaesthetist sees a small triangle on the Booking's row and the warning at the top of the
+  Booking when they open it. The office sees the same triangle, the Day view outline down to the
+  Booking, and the **To-do** card on the Admin dashboard.
+- The office clears a warning from the To-do card once it is dealt with (a mild one optionally); the
+  clearance is recorded and audited, and the Booking shows who cleared it and when.
+- The to-do list holds warnings that need action only. Notices that need none go to the shared
+  notification pool when it is built.
+- Today's rule is the unpaid prepayment. Later rules add theirs: base units outside the range, a
+  child as the payer on the Booking, insurer-will-pay with no insurer Contract, a prepaid procedure
+  with no price, and a paying patient with a balance.
+
 #### Post-operative addition
 
 - A later pain consult or ward review can create another charge.

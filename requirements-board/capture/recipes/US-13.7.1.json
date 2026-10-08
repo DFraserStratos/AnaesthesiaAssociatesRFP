@@ -1,6 +1,25 @@
 {
   "id": "US-13.7.1",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 15a builds this.",
-  "shots": []
+  "status": "partial",
+  "absentReason": "One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21), a prepaid procedure with no price on the anaesthetist's own Contract (27) and a paying patient with a balance (40).",
+  "shots": [
+    {
+      "name": "warning-text",
+      "app": "admin",
+      "caption": "One routine raises each warning, with its text, kind and strength",
+      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=booking-warnings]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-warnings]"
+          ]
+        }
+      ]
+    }
+  ]
 }

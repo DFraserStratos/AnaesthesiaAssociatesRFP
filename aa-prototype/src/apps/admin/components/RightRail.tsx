@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { addDays, addMonths, addYears, format, getDay, getDaysInMonth, parseISO, startOfMonth } from 'date-fns'
 import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
+import type { Actor, OpenWarningRow } from '../../../store'
+import { WarningsToDo } from './WarningsToDo'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 
 interface ReviewRow {
@@ -21,12 +23,20 @@ interface RightRailProps {
   reviewRows: ReviewRow[]
   shellScrollbarWidth: number
   onReviewList: (listId: string) => void
+  /** Every open warning (US-13.7.2), and the office actor that clears them. */
+  todoRows: readonly OpenWarningRow[]
+  actor: Actor
+  onOpenBooking: (dateISO: string, bookingId: string) => void
 }
 
 export function RightRail(props: RightRailProps) {
   return (
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
+      {/* The to-do list sits directly under the calendar. Phase 31's Draft
+          Lists and Phase 32's shared notification pool stack below it, as
+          further cards in this column, without moving it. */}
+      <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} />
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />
     </div>

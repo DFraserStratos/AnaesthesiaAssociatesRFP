@@ -27,6 +27,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.attachmentRemove': 'Attachment removed',
   'booking.reassign': 'Booking moved to another list',
   'booking.warningCleared': 'Warning cleared',
+  'booking.warningSampleUnstaged': 'Sample warning removed',
   'booking.billed': 'Booking billed',
   'booking.billingException': 'Billing exception raised',
 

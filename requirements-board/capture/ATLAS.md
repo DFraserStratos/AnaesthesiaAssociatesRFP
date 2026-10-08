@@ -334,9 +334,16 @@ shown under "List attachments" on mobile and web and read-only in the Admin List
 - There are advisory conflicts.
 - Rutherford AM "is now marked unavailable": the S2 reassign target.
 
-**Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a). AM is
-unpaid: Annette Riley's Booking shows "Pre-payment required" with the warning text and "Raise
-pre-procedure invoice", and still completes. PM is paid (Priya Nair).
+**Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a; no gate, no
+override). AM is unpaid: Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
+row in all three apps, and opening it shows the warnings panel at the top (`[data-shot=booking-warnings]`,
+"Prepayment required", Before procedure, Strong; the prepayment row is `[data-shot=booking-prepayment]`
+with the office's "Raise pre-procedure invoice"). It still completes and submits through the usual
+sheet. On Admin Day Fri 24 the Souter AM block has the red outline and a triangle with "1"
+(`[data-shot=daygrid-block-warnings]`, the block button itself), her drawer row carries the same
+outline (`[data-shot=drawer-booking-warning]`), and the To-do card under the calendar
+(`[data-shot=admin-warnings-todo]`) lists the warning with Open and Clear. PM is paid (Priya Nair:
+the success note keeps `booking-prepayment`).
 
 **Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney.
 Authorising Morrison raises 6 invoices.
@@ -445,6 +452,16 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `mobile-list-header`, `mobile-list-scroll`, `mobile-list-footer`, `list-submission-overlay`
 - `mobile-booking-header`, `mobile-booking-header-actions`, `mobile-booking-scroll`, `mobile-booking-commit`
 
+**`data-shot` hooks for warnings** (catch-up Phase 15a; use as `[data-shot=...]`)
+
+- `booking-warning` (the small triangle on a Booking row or header; not interactive),
+  `booking-warnings` (the warnings panel at the top of the Booking detail), `booking-prepayment`
+  (the prepayment warning's row in that panel, or the paid note), `admin-warnings-todo` (the To-do
+  card in the Admin Day rail), `daygrid-block-warnings` (a day-grid block button whose List has an
+  open warning; click it to open the drawer), `drawer-booking-warning` (an outlined Booking row in
+  the List drawer). `daygrid-block-prepayment` and the "Pre-payment flagged" filter are gone: the
+  filter is "Has warnings".
+
 **`data-shot` hooks for attachments and source** (use as `[data-shot=...]`)
 
 - `booking-attachments` (the Booking's Attachments section), `list-attachments` (mobile and web List
@@ -505,8 +522,10 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
+| `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 
-The PWA-only entries (`office-authorises-list` on a mobile List, `pwa-payment-full` and
+The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
+mobile Booking with an open warning, badged as the office stand-in, `pwa-payment-full` and
 `pwa-payment-half` on Balances) are in the handset's Demo sheet, not the bar. On a mobile shot,
 use the same `trigger` step (mobile shots hide the Demo chip, as desktop shots hide the bar; the
 step shows it while it runs). "Play the office" is off on a fresh profile, so a submitted List waits

@@ -73,18 +73,10 @@ describe('reviewFlags (pure)', () => {
     expect(flags.some((f) => f.text === 'B set manually')).toBe(true)
   })
 
-  it('(e) flags outstanding pre-payment (warn), input-driven', () => {
-    const outstanding = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'outstanding' })
-    expect(outstanding.find((f) => f.text === 'Pre-payment outstanding')?.tone).toBe('warn')
-
-    const required = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: 'required' })
-    expect(required.some((f) => f.text === 'Pre-payment outstanding')).toBe(true)
-
-    // Paid / none / absent add no pre-payment flag.
-    for (const status of ['paid', 'none', undefined] as const) {
-      const flags = reviewFlagsForBooking({ booking: booking(), procedures: [], prepaymentStatus: status })
-      expect(flags.some((f) => f.text.startsWith('Pre-payment'))).toBe(false)
-    }
+  it('(e) raises no prepayment flag: an unpaid prepayment is a warning, shown by the triangle (Phase 15a)', () => {
+    const proc0 = proc({ billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPrepayment', prepaymentDetail: { type: 'full' } })
+    const flags = reviewFlagsForBooking({ booking: booking(), procedures: [{ procedure: proc0, fee: stubFee(ZERO_BTM) }] })
+    expect(flags.some((f) => /pre-?payment/i.test(f.text))).toBe(false)
   })
 
   it('yields no flags for a cancelled booking', () => {

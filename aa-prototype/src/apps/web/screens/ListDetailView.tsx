@@ -4,7 +4,7 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
 import { removeAttachment, useAppStore, type Actor } from '../../../store'
-import { StatusChip, TickBadge } from '../../../shared'
+import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, SubmitListSheet } from '../../../shared/flows'
 import { formatCurrency, sessionTimeRange } from '../../../shared/format'
@@ -90,6 +90,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
       fee: active.reduce((n, r) => n + r.fee, 0),
     }
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
+
+  const warningsByBooking = useListWarnings(listId)
 
   if (list === undefined || model === undefined) return null
 
@@ -182,7 +184,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                       </span>
                     </Td>
                     <Td>
-                      <div style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</span>
+                        <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
+                      </div>
                       <div className="mono" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
                     </Td>
                     <Td>

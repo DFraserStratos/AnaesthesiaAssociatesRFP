@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { BillingRoute, Booking, Procedure } from '../../../domain/types'
-import { authoriseList, logListNote, prepaymentStatusFor, useAppStore, type Actor } from '../../../store'
-import { Button, StatusChip, TextArea, useSurface } from '../../../shared'
+import { authoriseList, logListNote, useAppStore, type Actor } from '../../../store'
+import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee, procedureFee } from '../../../shared/capture'
 import { dayMicroCap, formatCurrency, hhmm, routeLabel, sessionTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
@@ -42,8 +42,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
-  const schedule = useAppStore((s) => s.schedule)
-  const billing = useAppStore((s) => s.billing)
   const invoicesRecord = useAppStore((s) => s.billing.invoices)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
@@ -71,7 +69,6 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       const flags = reviewFlagsForBooking({
         booking,
         procedures: procs.map((p, i) => ({ procedure: p, fee: views[i]!.fee, baseCode: views[i]!.baseCode })),
-        prepaymentStatus: prepaymentStatusFor({ schedule, billing }, booking.id),
       })
       const primary: Procedure | undefined = procs[0]
       const primaryView = views[0]
@@ -96,7 +93,8 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
       }
       return { booking, primary, primaryView, totals, flags, routeText, procCount: procs.length, entityIds, entityLabels }
     })
-  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters, schedule, billing])
+  }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
+  const warningsByBooking = useListWarnings(listId)
 
   if (list === undefined) return null
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
@@ -254,7 +252,10 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
                 <tr key={booking.id}>
                   <td className="mono" style={nowrapCell}>{booking.scheduledTime ?? '·'}</td>
                   <td style={cellStyle}>
-                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
+                      <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
+                    </div>
                     <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? 'NHI pending'} · {primary?.description ?? 'Procedure'}{procCount > 1 ? ` · +${procCount - 1} more` : ''}</div>
                   </td>
                   <td style={cellStyle}>{routeText}</td>

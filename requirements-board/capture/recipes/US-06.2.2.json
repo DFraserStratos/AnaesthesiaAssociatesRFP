@@ -13,7 +13,7 @@
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+          "click": "[data-shot=daygrid-block-warnings] >> nth=0"
         },
         {
           "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"
@@ -41,7 +41,7 @@
     {
       "name": "full-fee-invoice",
       "app": "admin",
-      "caption": "Pre-procedure invoice for the estimated full fee",
+      "caption": "Older screen, pre-procedure invoice for an estimated full fee; the prepaid amount is now the anaesthetist's own fixed price",
       "start": "/admin/invoices/INV0001",
       "states": [
         {

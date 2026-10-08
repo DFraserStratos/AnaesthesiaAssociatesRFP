@@ -1,6 +1,91 @@
 {
   "id": "US-13.7.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 15a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "warning-triangle",
+      "app": "mobile",
+      "caption": "A small warning triangle on the Booking, much like the day grid's marker",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-testid=slide-list] [data-shot=booking-warning]"
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-list] [data-shot=booking-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "warning-triangle",
+      "app": "web",
+      "caption": "A small warning triangle on the Booking, much like the day grid's marker",
+      "start": "/web/lists/L-34821-2026-07-24-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=booking-warning]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "warning-on-open",
+      "app": "mobile",
+      "caption": "Opening the Booking shows its warning at the top",
+      "start": "/mobile/lists/L-34821-2026-07-24-AM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Annette Riley\" >> nth=0"
+            },
+            {
+              "wait": "[data-testid=slide-booking] [data-shot=booking-warnings]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-testid=slide-booking] [data-shot=booking-warnings]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "outline-down",
+      "app": "admin",
+      "caption": "The Day view outline extends down to the Booking",
+      "start": "/admin/day/2026-07-24",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=daygrid-block-warnings] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=drawer-booking-warning]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=drawer-booking-warning]"
+          ]
+        }
+      ]
+    }
+  ]
 }

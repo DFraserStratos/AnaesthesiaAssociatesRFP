@@ -6,14 +6,14 @@
     {
       "name": "balance-invoice",
       "app": "admin",
-      "caption": "Balance invoice after the procedure, final fee less the paid prepayment",
+      "caption": "Older screen, balance invoice after the procedure, final fee less the paid prepayment; nothing is now invoiced automatically afterwards",
       "start": "/admin/invoices/INV0003",
       "setup": [
         {
           "goto": "/admin/day/2026-07-24"
         },
         {
-          "click": "[data-shot=daygrid-block-prepayment] >> nth=0"
+          "click": "[data-shot=daygrid-block-warnings] >> nth=0"
         },
         {
           "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Open\"] >> nth=0"

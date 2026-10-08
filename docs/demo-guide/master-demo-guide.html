@@ -525,6 +525,7 @@
     <tr><td>Admin day view, changes, cover, review, authorise, masters, audit</td><td><span class="chip ready">Ready</span></td><td>Phases 06 to 07</td></tr>
     <tr><td>Billing run and invoice documents</td><td><span class="chip ready">Ready</span></td><td>Phase 08</td></tr>
     <tr><td>Prepayment warning, post-op addendum, billing monitor</td><td><span class="chip ready">Ready</span></td><td>Phase 09</td></tr>
+    <tr><td>Warnings: To-do card, triangle on Bookings, warning on opening, Day view outline</td><td><span class="chip ready">Ready</span></td><td>Catch-up 15a</td></tr>
     <tr><td>Xero pairs, payments, payables, live balances, GST</td><td><span class="chip ready">Ready</span></td><td>Phase 10</td></tr>
     <tr><td>HL7/FHIR/PDF ingestion and integration monitoring</td><td><span class="chip ready">Ready</span></td><td>Phase 11</td></tr>
     <tr><td>Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under Demo actions in the top bar, and a Demo sheet on a handset</td><td><span class="chip ready">Ready</span></td><td>Phase 12; per-screen actions from catch-up Phase 14</td></tr>
@@ -742,7 +743,9 @@
 
   <details><summary>8 · Failures, late additions and compliance</summary><div class="details-body">
     <p><strong>Pre-payment:</strong> an unpaid prepayment is a clear warning in both apps, never a block
-    (AA's decision, OQ-57). <strong>Post-op:</strong> a linked addendum Booking with its own cycle; the original stays
+    (AA's decision, OQ-57). <strong>Warnings:</strong> one routine; a small triangle on the Booking, the
+    warning at the top of the Booking on opening, the Day view outline, and the office's To-do card with
+    Clear; no confirm step at submit. <strong>Post-op:</strong> a linked addendum Booking with its own cycle; the original stays
     immutable. <strong>Billing failure:</strong> the failed Booking is isolated, others invoice, then
     resolve-and-retry. <strong>Integration failure:</strong> a malformed message retries then dead-letters
     for manual intervention; a duplicate is an idempotent no-op; a message for a SUBMITTED/AUTHORISED target
@@ -926,9 +929,9 @@
       <span class="stage">Stage it: Reset &#8594; Confirm reset. Work top to bottom.</span>
     </div>
     <div class="beat"><h4>Beat 1 · prepayment warning</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Dr Souter Fri 24 Jul AM &#8594; Annette Riley.</li><li>Read the Pre-payment required warning on her Booking.</li><li>Mark complete: it completes.</li><li>Optionally, Admin Day &#8594; Fri 24 &#8594; Souter AM &#8594; Annette: the same warning, with Raise pre-procedure invoice beside it.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A warning, never a block. The anaesthetist sees it before surgery starts, while the surgeon can still be told; the office sees it too. AA decided not to block (OQ-57)."</span></div>
-      <div class="row"><span class="k">Expect</span><span>Completion goes through while the prepayment is unpaid; the warning shows in both apps; no override.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Mobile &#8594; Dr Souter Fri 24 Jul AM: the small triangle on Annette Riley's row (a marker; tapping it does nothing of its own).</li><li>Open her Booking: Prepayment required is at the top, Before procedure, Strong, with no scroll.</li><li>Mark complete: it completes. Mark list completed &#8594; Submit to office: the usual sheet, straight through.</li><li>Admin Day &#8594; Fri 24: the Souter AM red outline, carried down to her row in the drawer; the To-do card under the calendar &#8594; Clear.</li><li>Optionally, Admin Day &#8594; Tue 21 &#8594; Demo actions &#8594; Raise sample warnings, then Clear sample warnings.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"A warning, never a block, and no pop-up in the way. The anaesthetist sees it when they open the Booking, the night before, while the surgeon can still be told; the office sees it on its to-do list as a second check. AA decided not to block (OQ-57)."</span></div>
+      <div class="row"><span class="k">Expect</span><span>Completion and submit go through with no extra step; the warning shows in both apps and leaves the to-do list when cleared; no override.</span></div>
     </div>
     <div class="beat"><h4>Beat 2 · post-op addendum</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 14 Jul &#8594; Dr Priya Sharma AM &#8594; Sarah Mitchell.</li><li>Demo actions &#8594; Stage post-op scenario &#8594; Run (shown only for this List).</li><li>Select Add post-op event.</li><li>Pause on the new addendum Booking.</li></ul></div>
@@ -950,7 +953,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"A partial payment authorises only its proportional payable share. Two runs across a part-then-balance payment prove there is no double payment."</span></div>
       <div class="row"><span class="k">Expect</span><span>The payable authorises pro-rata; payables pays only the increment each run.</span></div>
     </div>
-    <div class="callout warn">Discovery: billing-failure isolation (a prototype choice); which conditions warn, and how strongly; and how inbound messages targeting a SUBMITTED/AUTHORISED List are parked.</div>
+    <div class="callout warn">Discovery: billing-failure isolation (a prototype choice); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a SUBMITTED/AUTHORISED List are parked.</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S5 · Compliance tour</summary><div class="details-body">
@@ -1117,7 +1120,9 @@
       groups by counterparty, two invoices when funders differ.</p></div>
     <div class="card"><h3>8 · Pre-payment</h3><p style="font-size:14px">Payment before the procedure is
       required. AA decided not to block (OQ-57): an unpaid prepayment is a strong before-procedure
-      warning in both apps. The escalation by date and the automatic invoice come later.</p></div>
+      warning in both apps. The escalation by date and the automatic invoice come later.</p>
+      <p style="font-size:14px"><strong>Warnings:</strong> one routine, a To-do card in Admin, a triangle on Bookings,
+      the warning at the top of the Booking. Never a block, and no confirm step.</p></div>
     <div class="card"><h3>9 · Concurrency</h3><p style="font-size:14px">Several sources can change a Booking.
       The prototype is single-user with audited last-write-wins; production concurrency is a discovery
       topic, shown via the audit trail and live integration updates.</p></div>

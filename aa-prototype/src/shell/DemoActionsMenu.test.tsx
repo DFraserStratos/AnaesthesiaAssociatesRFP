@@ -18,7 +18,7 @@ describe('DemoActionsMenu', () => {
   })
 
   it('is not rendered on a screen with no entries', () => {
-    const { container } = renderAt('/admin/day/2026-07-21')
+    const { container } = renderAt('/admin/review')
     expect(container.innerHTML).toBe('')
   })
 

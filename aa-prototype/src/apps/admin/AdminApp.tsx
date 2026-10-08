@@ -7,8 +7,9 @@ import {
   addDayNote,
   billingAttentionCount,
   integrationAttentionCount,
-  prepaymentStatusFor,
+  openWarnings,
   useAppStore,
+  warningSummaryByList,
   useToday,
   OFFICE_ACTOR,
 } from '../../store'
@@ -61,6 +62,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
+  const appSettings = useAppStore((s) => s.appSettings)
+  const clock = useAppStore((s) => s.clock)
   const masters = useAppStore((s) => s.masters)
   const integrations = useAppStore((s) => s.integrations)
   const dayNotesRecord = useAppStore((s) => s.dayNotes)
@@ -186,19 +189,12 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
   const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
 
-  // Lists on the selected day holding a booking whose pre-payment is unpaid: a
-  // day-grid indicator (Phase 09). Session 2 of catch-up Phase 15a replaces it
-  // with the warning routine's per-List summary.
-  const prepaymentFlags = useMemo(() => {
-    const map = new Map<string, 'outstanding'>()
-    for (const booking of Object.values(bookingsRecord)) {
-      const list = listsRecord[booking.listId]
-      if (list === undefined || list.dateISO !== selectedDate) continue
-      const status = prepaymentStatusFor({ schedule, billing }, booking.id)
-      if (status === 'required' || status === 'outstanding') map.set(list.id, 'outstanding')
-    }
-    return map
-  }, [bookingsRecord, listsRecord, selectedDate, schedule, billing])
+  // The warning routine, read once for the day view (catch-up Phase 15a): the
+  // per-List outline on the selected date and every open warning for the
+  // To-do card (all dates).
+  const warningState = useMemo(() => ({ schedule, billing, appSettings, clock }), [schedule, billing, appSettings, clock])
+  const warningFlags = useMemo(() => warningSummaryByList(warningState, selectedDate), [warningState, selectedDate])
+  const todoRows = useMemo(() => openWarnings(warningState), [warningState])
 
   const notes = dayNotesRecord[selectedDate] ?? []
 
@@ -211,7 +207,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     listsByAnaesthetist,
     masters,
     activeBookingCounts,
-    prepaymentFlags,
+    warningFlags,
+    todoRows,
     summary,
     notes,
     reviewRows,

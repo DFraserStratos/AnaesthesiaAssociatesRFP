@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
+import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
 import { sessionTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
@@ -28,6 +29,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const masters = useAppStore((s) => s.masters)
   const [sheet, setSheet] = useState<Sheet>('none')
+  const warningsByBooking = useListWarnings(listId)
 
   if (list === undefined) return null
   const bookings = Object.values(bookingsRecord)
@@ -77,10 +79,33 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
             {bookings.map((booking) => {
               const patient = masters.patients[booking.patientId]
               const cancelled = booking.cancellation !== undefined
+              const warnings = warningsByBooking.get(booking.id) ?? []
+              // The Day view's outline carries down to the Booking (US-13.7.3):
+              // the same colour as the block, strong red or mild amber.
+              const strongest = strongestOpen(warnings)
+              const outline = strongest !== undefined ? warningTone(strongest).solid : undefined
               return (
-                <div key={booking.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, opacity: cancelled ? 0.5 : 1 }}>
+                <div
+                  key={booking.id}
+                  data-shot={outline !== undefined ? 'drawer-booking-warning' : undefined}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    padding: '8px 10px',
+                    margin: '0 -10px',
+                    borderBottom: `1px solid ${outline !== undefined ? 'transparent' : neutral.line}`,
+                    borderRadius: outline !== undefined ? radius.ctl : 0,
+                    boxShadow: outline !== undefined ? `inset 0 0 0 1.5px ${outline}` : 'none',
+                    opacity: cancelled ? 0.5 : 1,
+                  }}
+                >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: neutral.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{patient?.name ?? 'Unknown'}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{patient?.name ?? 'Unknown'}</span>
+                      <WarningTriangle warnings={warnings} size="sm" />
+                    </div>
                     <div style={{ fontSize: 11, color: neutral.slate }}>{cancelled ? 'Cancelled' : booking.completed ? 'Completed' : 'In progress'}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flex: 'none' }}>

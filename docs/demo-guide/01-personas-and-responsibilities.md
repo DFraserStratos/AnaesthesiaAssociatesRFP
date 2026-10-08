@@ -149,6 +149,7 @@ short-notice cover.
 9. Maintain schedule-related master data such as anaesthetists, Permanent Lists and hospital
    holidays.
 10. Review the audit history when a change needs explanation.
+11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
 
 ### Permissions
 

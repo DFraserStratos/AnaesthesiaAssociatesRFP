@@ -8,9 +8,10 @@ import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList } from '../../store/lifecycle'
 import { resetDemo } from '../../store/clockActions'
-import { bookingsForList, openAccRecs } from '../../store/selectors'
+import { bookingsForList, openAccRecs, proceduresForBooking } from '../../store/selectors'
+import { clearWarning, warningsForBooking } from '../../store/warnings'
 import { OFFICE_ACTOR } from '../../store/demoActors'
-import { CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
+import { CONTRACT, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { SURGEON_PDFS } from '../../domain/integrations'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { demoTriggersFor, initialChoice } from './match'
@@ -85,8 +86,8 @@ describe('route scoping', () => {
     expect(ids(api, '/admin/billing')).toEqual(['billing-failure', 'arm-handoff-fault', 'run-reconciliation-poll', 'run-archive-job'])
   })
 
-  it('the Admin day view has no entries', () => {
-    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toEqual([])
+  it('the Admin day view shows only the sample-warning entries (catch-up Phase 15a)', () => {
+    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toEqual(['raise-sample-warnings', 'clear-sample-warnings'])
   })
 
   it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Booking, and nowhere else', () => {
@@ -293,5 +294,81 @@ describe('session 2 entries', () => {
     const api = createAppStore()
     expect(ids(api, '/mobile/more', 'pwa')).toEqual([])
     expect(ids(api, '/mobile/availability', 'pwa')).toEqual([])
+  })
+})
+
+describe('sample warnings (catch-up Phase 15a)', () => {
+  const [AM_TARGET] = SEED_WARNING_SAMPLE_BOOKINGS.targets
+  const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
+  const rileyPath = `/mobile/lists/${SEED_LIST_IDS.prepaymentUnpaidList}/bookings/${RILEY}`
+
+  it('show on Admin Day, Admin Booking detail and the mobile Booking, on both surfaces there, and nowhere else', () => {
+    const api = createAppStore()
+    for (const path of ['/admin/day/2026-07-24', `/admin/day/2026-07-21/bookings/${AM_TARGET}`]) {
+      expect(ids(api, path, 'bar')).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings']))
+    }
+    const mobile = `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}/bookings/${AM_TARGET}`
+    for (const surface of ['bar', 'pwa'] as const) {
+      expect(ids(api, mobile, surface)).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings']))
+    }
+    for (const path of ['/admin/review', '/admin/billing', '/mobile/lists', `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}`, '/web/dashboard']) {
+      expect(ids(api, path, 'bar')).not.toContain('raise-sample-warnings')
+    }
+  })
+
+  it('"Office clears this warning" is PWA only, on the mobile Booking, badged as the office stand-in', () => {
+    const api = createAppStore()
+    const t = byId('office-clears-warning')
+    expect(t.surfaces).toEqual(['pwa'])
+    expect(t.badge).toBe('office-stand-in')
+    expect(ids(api, rileyPath, 'bar')).not.toContain('office-clears-warning')
+    expect(ids(api, rileyPath, 'pwa')).toContain('office-clears-warning')
+    expect(ids(api, `/admin/day/2026-07-24/bookings/${RILEY}`, 'bar')).not.toContain('office-clears-warning')
+  })
+
+  it('raise then clear on the Day view: disabled states, seed values back, no clearance left', () => {
+    const api = createAppStore()
+    const raise = byId('raise-sample-warnings')
+    const clear = byId('clear-sample-warnings')
+    const day = ctxFor('/admin/day/2026-07-21')
+    expect(clear.disabledReason(api.getState(), day)).toBe('Nothing staged')
+    expect(raise.disabledReason(api.getState(), day)).toBeNull()
+    const before = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
+    const res = raise.run(api, day)
+    expect(res.ok).toBe(true)
+    expect(res.message).toContain('1 rule registered')
+    expect(raise.disabledReason(api.getState(), day)).toBe('Samples already raised')
+    expect(clear.disabledReason(api.getState(), day)).toBeNull()
+    const key = warningsForBooking(api.getState(), AM_TARGET!)[0]!.key
+    clearWarning(api, OFFICE_ACTOR, AM_TARGET!, key)
+    expect(clear.run(api, day).ok).toBe(true)
+    expect(proceduresForBooking(api.getState(), AM_TARGET!)[0]).toEqual(before)
+    expect(api.getState().schedule.warningClearances[key]).toBeUndefined()
+    expect(clear.disabledReason(api.getState(), day)).toBe('Nothing staged')
+  })
+
+  it('on a Booking: Riley already carries it; an unknown Booking is not seeded', () => {
+    const api = createAppStore()
+    const raise = byId('raise-sample-warnings')
+    expect(raise.disabledReason(api.getState(), ctxFor(rileyPath, { listId: SEED_LIST_IDS.prepaymentUnpaidList, bookingId: RILEY }))).toBe(
+      'This Booking already carries these warnings',
+    )
+    expect(raise.disabledReason(api.getState(), ctxFor('/admin/day/2026-07-21/bookings/BK9999', { bookingId: 'BK9999' }))).toBe(
+      'Samples stage on seeded Bookings only',
+    )
+  })
+
+  it('the PWA stand-in clears as the simulated office, then disables', () => {
+    const api = createAppStore()
+    const t = byId('office-clears-warning')
+    const ctx = ctxFor(rileyPath, { listId: SEED_LIST_IDS.prepaymentUnpaidList, bookingId: RILEY })
+    const choice = initialChoice(t, api.getState(), ctx)
+    expect(choice).toBe(`${RILEY}:prepaymentUnpaid`)
+    expect(t.disabledReason(api.getState(), ctx, choice)).toBeNull()
+    expect(t.run(api, ctx, choice).ok).toBe(true)
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'booking.warningCleared', who: 'AA office (simulated)' })
+    expect(t.disabledReason(api.getState(), ctx)).toBe('No open warnings on this Booking')
+    const none = ctxFor('/mobile/lists/L/bookings/X', { bookingId: AM_TARGET! })
+    expect(t.disabledReason(api.getState(), none)).toBe('No open warnings on this Booking')
   })
 })
