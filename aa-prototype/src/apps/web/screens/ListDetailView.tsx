@@ -103,7 +103,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const subline = [surgeon?.name, surgeon?.specialty, dayLabel, sessionTimeRange(list)]
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
-  const canEdit = list.state === 'DRAFT'
+  const canEdit = list.state === 'ACTIVE'
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
@@ -298,7 +298,7 @@ function SubmitAction({
     gap: 8,
   } as const
 
-  if (state !== 'DRAFT') {
+  if (state !== 'ACTIVE') {
     return (
       <span style={{ ...shared, background: semantic.success.tint, color: semantic.success.onTint }}>
         <Check size={16} strokeWidth={3} aria-hidden /> Submitted to office

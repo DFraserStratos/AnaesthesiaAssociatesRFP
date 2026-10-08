@@ -373,7 +373,7 @@ function buildSeedInternal(): SeedBuild {
   const bookingsBuild = buildBookings(SEED, Object.values(lists))
 
   // The seeded SUBMITTED lists awaiting authorisation (past dates — the clock
-  // seeds at 08:00, so today's lists are DRAFT mid-capture): the two Phase-02
+  // seeds at 08:00, so today's lists are ACTIVE mid-capture): the two Phase-02
   // queue lists, S3's two Souter money-story Lists, the Phase-09 billing-failure
   // exemplar (Ropata Thu 16), and the Phase-11 locked-target list (Delaney Fri
   // 17 — its integration-origin Booking is what the locked-target message parks
@@ -572,7 +572,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Design day AM list (done, unbilled)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.souterAm21,
-      detail: "Souter, St George's / Mr Hale, 5 bookings all complete, DRAFT.",
+      detail: "Souter, St George's / Mr Hale, 5 bookings all complete, ACTIVE.",
     },
     designDayPmList: {
       label: 'Design day PM list (mid capture)',

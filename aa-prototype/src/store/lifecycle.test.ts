@@ -138,11 +138,11 @@ describe('submitList', () => {
     expect(outcome.ok).toBe(true)
   })
 
-  it('rejects submission of a non-DRAFT list', () => {
+  it('rejects submission of a non-ACTIVE list', () => {
     const api = store()
     const outcome = submitList(api, MORRISON, MORRISON_LIST)
     expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('listNotDraft')
+    if (!outcome.ok) expect(outcome.code).toBe('listNotActive')
   })
 
   it('anaesthetists can only submit their own lists', () => {
@@ -154,7 +154,7 @@ describe('submitList', () => {
 })
 
 describe('authoriseList', () => {
-  it('rejects authorising a non-SUBMITTED list (no DRAFT jump)', () => {
+  it('rejects authorising a non-SUBMITTED list (no ACTIVE jump)', () => {
     const api = store()
     const outcome = authoriseList(api, OFFICE, SOUTER_AM)
     expect(outcome.ok).toBe(false)
@@ -198,7 +198,7 @@ describe('edit rights matrix', () => {
     expect(api.getState().schedule.bookings[bookingId]?.notes).toBe('checked with theatre')
   })
 
-  it('integration edit of a SUBMITTED booking is refused as an exception outcome; DRAFT is allowed', () => {
+  it('integration edit of a SUBMITTED booking is refused as an exception outcome; ACTIVE is allowed', () => {
     const api = store()
     const submittedBooking = firstBookingOf(api, MORRISON_LIST)
     const refused = editBooking(api, INTEGRATION, submittedBooking, { notes: 'feed update' })
@@ -255,7 +255,7 @@ describe('cancelBooking', () => {
     expect(complete.ok).toBe(false)
   })
 
-  it('role/source matrix: office may cancel on SUBMITTED, integration only on DRAFT, nobody on AUTHORISED', () => {
+  it('role/source matrix: office may cancel on SUBMITTED, integration only on ACTIVE, nobody on AUTHORISED', () => {
     const api = store()
     const submittedBooking = firstBookingOf(api, WHITAKER_LIST)
     const integrationOnSubmitted = cancelBooking(api, INTEGRATION, submittedBooking, 'S15 cancellation')
@@ -286,7 +286,7 @@ describe('reassignList', () => {
         l.dateISO === dateISO &&
         l.session === session &&
         l.statusKey === 'free' &&
-        l.state === 'DRAFT' &&
+        l.state === 'ACTIVE' &&
         l.anaesthetistId !== exclude &&
         bookingsForList(state, l.id).length === 0,
     )
@@ -324,7 +324,7 @@ describe('reassignList', () => {
     // The vacated slot regenerated with the default status.
     const vacated = listForSlot(state, ANAE.souter, WED22, 'AM')
     expect(vacated?.statusKey).toBe('unavailable')
-    expect(vacated?.state).toBe('DRAFT')
+    expect(vacated?.state).toBe('ACTIVE')
 
     const trail = auditForEntity(state, sourceId)
     expect(trail.at(-1)?.action).toBe('list.reassign')
@@ -601,7 +601,7 @@ describe('logListNote (office phone note; no return channel)', () => {
   })
 
   it('exposes NO return-to-anaesthetist / Returned transition anywhere', () => {
-    // Convention 6: DRAFT to SUBMITTED to AUTHORISED only; there is no Returned
+    // Convention 6: ACTIVE to SUBMITTED to AUTHORISED only; there is no Returned
     // state and no action that sends a SUBMITTED List back to the anaesthetist.
     const names = Object.keys(lifecycleModule)
     expect(names.some((n) => /return|unsubmit|reject|revert|reopenlist/i.test(n))).toBe(false)

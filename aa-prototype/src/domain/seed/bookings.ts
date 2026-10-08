@@ -968,7 +968,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Integration-origin bookings (Phase 11) — bookings that arrived via the St
   // George's feed, each carrying `{sourceFeedId, externalAppointmentId}` so the
   // S13/S14/S15 messages locate them by appointment id (never patient
-  // guesswork). Their forward DRAFT St George's Lists are deliberately separate
+  // guesswork). Their forward ACTIVE St George's Lists are deliberately separate
   // from Tue 28 AM, so a modify message can never be confused with S1's own
   // create. The fifth is on a SUBMITTED (office-locked) List for manual
   // intervention.

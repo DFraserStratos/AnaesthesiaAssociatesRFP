@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
-import { addPostOpAddendum, copyBooking, createBooking } from './bookingActions'
+import { addPostOpAddendum, createBooking } from './bookingActions'
 import { authoriseList, submitList } from './lifecycle'
 import { ingestPdfRow, processMessage } from './integrationActions'
 import { bookingsForList } from './selectors'
@@ -18,7 +18,8 @@ import type { BookingSource } from '../domain/types'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SOURCES: readonly BookingSource[] = ['hospitalDownload', 'surgeonPdf', 'admin', 'anaesthetistAdHoc', 'anaesthetistPhoto', 'copy']
+/** The four live sources: Copy (US-02.4.3, Retired) and photo (US-02.4.4, Future Work) left in Phase 15b. */
+const SOURCES: readonly BookingSource[] = ['hospitalDownload', 'surgeonPdf', 'admin', 'anaesthetistAdHoc']
 
 function store(): BoundAppStore {
   return createAppStore()
@@ -69,13 +70,6 @@ describe('creation paths stamp their source', () => {
     const created = ingestPdfRow(api, OFFICE, listId, row)
     if (!created.ok) throw new Error(created.message)
     expect(api.getState().schedule.bookings[created.value.bookingId]?.source).toBe('surgeonPdf')
-  })
-
-  it('Copy stamps copy', () => {
-    const api = store()
-    const outcome = copyBooking(api, SOUTER, SEED_MARKERS['pendingCaptureBooking']!.entityId)
-    if (!outcome.ok) throw new Error(outcome.message)
-    expect(api.getState().schedule.bookings[outcome.value.bookingId]?.source).toBe('copy')
   })
 
   it('the post-op addendum follows the actor: admin for the office (interim until Phase 39)', () => {
@@ -131,6 +125,15 @@ describe('the seed source rule', () => {
     }
     // A seeded Forte scenario Booking reads Surgeon PDF (the S3 split Booking).
     expect(seed.schedule.bookings[SEED_MARKERS['splitBillingBooking']!.entityId]?.source).toBe('surgeonPdf')
+  })
+
+  it('carries nothing of Copy a Booking: no copiedFromBookingId, no removed source, no booking.copy audit (Phase 15b)', () => {
+    for (const b of all) {
+      expect(b, b.id).not.toHaveProperty('copiedFromBookingId')
+      if (b.source !== undefined) expect(SOURCES, b.id).toContain(b.source)
+    }
+    expect(seed.audit.filter((a) => a.action === 'booking.copy')).toEqual([])
+    expect(seed.audit.filter((a) => JSON.stringify(a.after ?? {}).includes('copiedFromBookingId'))).toEqual([])
   })
 
   it('stays deterministic: two builds deep-equal', () => {

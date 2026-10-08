@@ -2,7 +2,7 @@
  * Shared flow bodies (Phase 05). Each renders through `useSurface().Overlay`, so
  * the same body is a mobile bottom sheet or a web dialog with no branching here.
  */
-export { AddBookingFlow } from './AddBookingFlow'
+export { AddBookingFlow, type AddBookingMode } from './AddBookingFlow'
 export { ManualBookingForm, type ExtractionFields } from './ManualBookingForm'
 export { PhotoCaptureFlow } from './PhotoCaptureFlow'
 export { SAMPLE_EXTRACTIONS, type SampleExtraction } from './sampleExtractions'

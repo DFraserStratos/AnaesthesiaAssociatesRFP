@@ -1,122 +1,99 @@
 import { useEffect, useState } from 'react'
-import { Camera, ChevronLeft, PencilLine } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { neutral, semantic, type as typeScale } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import type { BookingSource } from '../../domain/types'
 import { Button, TickBadge } from '../ui'
+import { DemoBadge } from '../DemoBadge'
 import { useSurface } from '../surface'
 import { ManualBookingForm, type ExtractionFields } from './ManualBookingForm'
 import { PhotoCaptureFlow } from './PhotoCaptureFlow'
+
+/** The prong the sheet opens on. Only the Future-scope demo opens on `photo`. */
+export type AddBookingMode = 'manual' | 'photo'
 
 interface AddBookingFlowProps {
   open: boolean
   listId: string
   actor: Actor
   manualEmptyLookupPrefill?: ExtractionFields & { nhi: string }
+  /** Defaults to `manual`. `photo` is the "Photo capture (Future scope)" demo action's way in. */
+  initialMode?: AddBookingMode
+  /** Changing it while open restarts the sheet (a second Future-scope request). */
+  resetKey?: number
   onClose: () => void
   onCreated: (bookingId: string) => void
 }
 
-type Mode = 'choose' | 'manual' | 'photo' | 'done'
+type Mode = AddBookingMode | 'done'
 
-/** The display-only Booking source for a prong (DM-39): the office's phone
- *  advice is an office entry either way; an anaesthetist adds ad hoc or from a
- *  photo of the booking card. */
-function sourceFor(actor: Actor, prong: 'manual' | 'photo'): BookingSource {
-  if (actor.role === 'office') return 'admin'
-  return prong === 'photo' ? 'anaesthetistPhoto' : 'anaesthetistAdHoc'
+/** The display-only Booking source (DM-39): the office's phone advice is an
+ *  office entry; an anaesthetist adds ad hoc. The Future-scope photo demo is an
+ *  ad hoc Booking with a photo attachment, so it stamps the same. */
+function sourceFor(actor: Actor): BookingSource {
+  return actor.role === 'office' ? 'admin' : 'anaesthetistAdHoc'
 }
 
 /**
- * Add a booking: the chooser forks to the manual form or the simulated photo
- * capture, then a shared success state.
+ * Add a booking: the manual form, then a shared success state.
  *
- * The fork carries its own back affordance. Picking the wrong prong is easy on
- * a phone, and until it existed the only way out of the six-field manual form
- * was to close the whole sheet and start again — a dead end in the installable
- * PWA, where there is no browser back button, no URL bar and no reload. The
- * chevron follows the mobile screens' back treatment (borderless, `accent.base`,
- * 44px target) and sits below the `BottomSheet` drag handle, which is a centred
- * block of its own; on web the surface seam swaps in `Dialog`, which has no
- * handle, and the same row reads as the dialog's top-left back link.
+ * Manual entry is the one way in (US-02.4.1), so the sheet opens straight on
+ * the form under its own title, with no chooser and no back control; the
+ * sheet's close is the exit. Photo capture is Future Work (US-02.4.4, catch-up
+ * Phase 15b): `PhotoCaptureFlow` is reachable only through the badged "Photo
+ * capture (Future scope)" demo action on the mobile List, which opens this
+ * sheet with `initialMode="photo"`. That prong keeps the flow's own heading,
+ * so the sheet never stacks two titles.
  */
-export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, onClose, onCreated }: AddBookingFlowProps) {
+export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, initialMode = 'manual', resetKey, onClose, onCreated }: AddBookingFlowProps) {
   const { Overlay } = useSurface()
-  const [mode, setMode] = useState<Mode>('choose')
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [result, setResult] = useState<{ bookingId: string; reused: boolean } | null>(null)
 
-  // Reset to the chooser each time the sheet opens.
+  // Reset to the starting prong each time the sheet opens (or is re-requested).
   useEffect(() => {
     if (open) {
-      setMode('choose')
+      setMode(initialMode)
       setResult(null)
     }
-  }, [open])
+  }, [open, initialMode, resetKey])
 
   function handleSaved(r: { bookingId: string; reused: boolean }) {
     setResult(r)
     setMode('done')
   }
 
-  /**
-   * Back to the fork. Only the two capture prongs offer it: `done` is past the
-   * point of no return (the booking exists, and its own Done button is the exit),
-   * and `choose` is the destination.
-   */
-  const canGoBack = mode === 'manual' || mode === 'photo'
-
-  function goBack() {
-    // The prong components unmount, which discards their draft state; `result`
-    // is the only transient this component owns.
-    setResult(null)
-    setMode('choose')
-  }
-
   return (
     <Overlay open={open} onClose={onClose}>
-      {canGoBack && (
-        <button
-          type="button"
-          onClick={goBack}
-          aria-label="Back to Add a booking"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            minHeight: 44,
-            border: 'none',
-            background: 'none',
-            padding: 0,
-            color: accent.base,
-            fontFamily: 'inherit',
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <ChevronLeft size={18} strokeWidth={2.4} aria-hidden />
-          Add a booking
-        </button>
-      )}
-
-      {mode === 'choose' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>Add a booking</div>
-          <ChooseButton icon={<PencilLine size={20} strokeWidth={2} aria-hidden />} title="Enter manually" detail="Type the patient and operation" onClick={() => setMode('manual')} />
-          <ChooseButton icon={<Camera size={20} strokeWidth={2} aria-hidden />} title="Photo of paper list" detail="Scan a paper theatre card (demo)" onClick={() => setMode('photo')} />
+      {mode === 'manual' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: typeScale.title.size,
+              lineHeight: `${typeScale.title.line}px`,
+              fontWeight: typeScale.title.weight,
+              letterSpacing: typeScale.title.tracking,
+              color: neutral.ink,
+            }}
+          >
+            Add a booking
+          </h2>
+          <ManualBookingForm
+            listId={listId}
+            actor={actor}
+            emptyLookupPrefill={manualEmptyLookupPrefill}
+            source={sourceFor(actor)}
+            onSaved={handleSaved}
+          />
         </div>
       )}
-
-      {mode === 'manual' && (
-        <ManualBookingForm
-          listId={listId}
-          actor={actor}
-          emptyLookupPrefill={manualEmptyLookupPrefill}
-          source={sourceFor(actor, 'manual')}
-          onSaved={handleSaved}
-        />
+      {mode === 'photo' && (
+        // Keyed, so a repeat request restarts the flow at the card picker.
+        <div key={resetKey} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <DemoBadge tone="future" style={{ alignSelf: 'flex-start' }} />
+          <PhotoCaptureFlow listId={listId} actor={actor} source={sourceFor(actor)} onSaved={handleSaved} />
+        </div>
       )}
-      {mode === 'photo' && <PhotoCaptureFlow listId={listId} actor={actor} source={sourceFor(actor, 'photo')} onSaved={handleSaved} />}
 
       {mode === 'done' && result !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0 8px' }}>
@@ -141,34 +118,5 @@ export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, 
         </div>
       )}
     </Overlay>
-  )
-}
-
-function ChooseButton({ icon, title, detail, onClick }: { icon: React.ReactNode; title: string; detail: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: 16,
-        borderRadius: radius.card,
-        border: `1px solid ${neutral.line}`,
-        background: neutral.surface,
-        fontFamily: 'inherit',
-        textAlign: 'left',
-        cursor: 'pointer',
-        width: '100%',
-      }}
-    >
-      <span style={{ width: 44, height: 44, borderRadius: 12, background: accent.tint, color: accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-        {icon}
-      </span>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 16, fontWeight: 600 }}>{title}</span>
-        <span style={{ fontSize: 13, color: neutral.slate }}>{detail}</span>
-      </span>
-    </button>
   )
 }

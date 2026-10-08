@@ -121,7 +121,7 @@ export interface CannedMessage {
   simulatedFault?: 'transient'
 }
 
-// Souter forward DRAFT Lists the creates land on (hospital-coherent with the feed).
+// Souter forward ACTIVE Lists the creates land on (hospital-coherent with the feed).
 const STG_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'AM' } as const // St George's / Mr Hale
 const STG_MODIFY_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-08-04', session: 'AM' } as const // St George's / Mr Hale
 const SX_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'PM' } as const // Southern Cross / Ms Patel

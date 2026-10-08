@@ -13,7 +13,7 @@ interface OfficeBillingSetupProps {
   /** 1-based position on the Booking. */
   ordinal: number
   actor: Actor
-  /** Office may edit (DRAFT or SUBMITTED, not AUTHORISED, not cancelled). */
+  /** Office may edit (ACTIVE or SUBMITTED, not AUTHORISED, not cancelled). */
   canEdit: boolean
 }
 

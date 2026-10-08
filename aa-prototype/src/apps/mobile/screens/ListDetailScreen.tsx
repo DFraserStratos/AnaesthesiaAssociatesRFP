@@ -102,7 +102,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
     dayLabel,
     sessionTimeRange(list),
   ].filter((p): p is string => p !== undefined && p !== '')
-  const canEdit = list.state === 'DRAFT'
+  const canEdit = list.state === 'ACTIVE'
   const listAttachments = list.attachments ?? []
   const incomplete = model.activeCount - model.done
   const pct = model.activeCount > 0 ? Math.round((model.done / model.activeCount) * 100) : 0
@@ -303,7 +303,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           borderTop: `1px solid ${neutral.line}`,
         }}
       >
-        {list.state !== 'DRAFT' ? (
+        {list.state !== 'ACTIVE' ? (
           <div
             style={{
               height: 54,

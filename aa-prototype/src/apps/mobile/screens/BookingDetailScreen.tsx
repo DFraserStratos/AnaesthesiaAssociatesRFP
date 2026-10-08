@@ -11,8 +11,6 @@ interface BookingDetailScreenProps {
   bookingId: string
   actor: Actor
   onBack: () => void
-  /** Opens the new Booking a Copy made. */
-  onCopied: (newBookingId: string) => void
 }
 
 /**
@@ -45,7 +43,7 @@ const REVEAL = `max-width ${motion.cardAdvance.return}ms ${motion.cardAdvance.ea
  * home for patient reference data; the masthead's job is to say whose record
  * this is and which list it belongs to.
  */
-export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: BookingDetailScreenProps) {
+export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailScreenProps) {
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -123,7 +121,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack, onCopied }: Book
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} header={header} />
     </div>
   )
 }

@@ -66,7 +66,7 @@ function firstProcedureId(api: BoundAppStore, bookingId: string): string {
   return procedure.id
 }
 
-/** The design-day Tane booking: completed, valid, on Souter's DRAFT PM list. */
+/** The design-day Tane booking: completed, valid, on Souter's ACTIVE PM list. */
 function taneBookingId(api: BoundAppStore): string {
   const booking = bookingsForList(api.getState(), SOUTER_PM)[0]
   if (booking === undefined) throw new Error('no PM bookings')
@@ -440,7 +440,7 @@ describe('removeProcedure', () => {
 })
 
 describe('uncompleteBooking', () => {
-  it('re-opens a completed booking on the anaesthetist\'s own DRAFT list, audited', () => {
+  it('re-opens a completed booking on the anaesthetist\'s own ACTIVE list, audited', () => {
     const api = store()
     const bookingId = taneBookingId(api)
     expect(api.getState().schedule.bookings[bookingId]?.completed).toBe(true)

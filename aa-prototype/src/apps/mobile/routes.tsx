@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { useAppStore } from '../../store'
-import { AddBookingFlow, RequestCoverSheet } from '../../shared/flows'
+import { AddBookingFlow, RequestCoverSheet, type AddBookingMode } from '../../shared/flows'
+import { useDemoTriggerMemory } from '../../shared/demoTriggers/memory'
 import { SlideStack, type SlideLayer } from './components'
 import {
   AvailabilityScreen,
@@ -38,7 +39,22 @@ export function MobileListsRoute() {
   const { depth, listId: urlListId, bookingId: urlBookingId } = listsStackLocation(pathname)
 
   const [addOpen, setAddOpen] = useState(false)
+  const [addMode, setAddMode] = useState<AddBookingMode>('manual')
+  const [addResetKey, setAddResetKey] = useState(0)
   const [offer, setOffer] = useState<OfferTarget | null>(null)
+
+  // "Photo capture (Future scope)" (catch-up Phase 15b): the demo action leaves
+  // a UI-only request for the List in the URL; this opens the Add a booking
+  // sheet on the photo prong and clears it. Photo capture is Future Work
+  // (US-02.4.4), so the List's own "Add a booking" never reaches it.
+  const photoRequest = useDemoTriggerMemory((m) => m.photoCaptureRequest)
+  useEffect(() => {
+    if (photoRequest === null || photoRequest.listId !== urlListId) return
+    setAddMode('photo')
+    setAddResetKey(photoRequest.n)
+    setAddOpen(true)
+    useDemoTriggerMemory.getState().clearPhotoCaptureRequest()
+  }, [photoRequest, urlListId])
 
   // A POPPED layer has to stay mounted so it can slide out — exactly what the
   // old `onBack={() => setDepth(0)}` did, which moved depth but left listId /
@@ -115,7 +131,10 @@ export function MobileListsRoute() {
             actor={actor}
             onBack={backToLists}
             onOpenBooking={(id) => navigate(`/mobile/lists/${listId}/bookings/${id}`)}
-            onAddBooking={() => setAddOpen(true)}
+            onAddBooking={() => {
+              setAddMode('manual')
+              setAddOpen(true)
+            }}
           />
         ) : null,
     },
@@ -124,7 +143,7 @@ export function MobileListsRoute() {
       mounted: bookingId !== null,
       node:
         bookingId !== null ? (
-          <BookingDetailScreen key={bookingId} bookingId={bookingId} actor={actor} onBack={backToList} onCopied={(newId) => navigate(`/mobile/lists/${listId}/bookings/${newId}`)} />
+          <BookingDetailScreen key={bookingId} bookingId={bookingId} actor={actor} onBack={backToList} />
         ) : null,
     },
   ]
@@ -138,7 +157,12 @@ export function MobileListsRoute() {
           open={addOpen}
           listId={listId}
           actor={actor}
-          onClose={() => setAddOpen(false)}
+          initialMode={addMode}
+          resetKey={addResetKey}
+          onClose={() => {
+            setAddOpen(false)
+            setAddMode('manual')
+          }}
           onCreated={() => undefined}
         />
       )}

@@ -42,8 +42,16 @@ export type InvoiceId = string
 
 export type Session = 'AM' | 'PM'
 
-/** List lifecycle (PROGRESS convention 6 — no Returned state). */
-export type ListState = 'DRAFT' | 'SUBMITTED' | 'AUTHORISED'
+/**
+ * List lifecycle (EP-07, FT-07.1; PROGRESS convention 6 as amended in catch-up
+ * Phase 15b, no Returned state). The catalogue's states are DRAFT (a Draft
+ * List with no anaesthetist yet; added in Phase 31), ACTIVE, SUBMITTED and
+ * AUTHORISED. ACTIVE was called DRAFT until 7 October 2026, so 'DRAFT' stays out
+ * of the union until it returns with its new meaning. Until Phase 28 separates
+ * Slots from Lists, every generated session carries a state, an empty free one
+ * included.
+ */
+export type ListState = 'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'
 
 /**
  * The six list-status keys. MUST stay string-identical to the theme's
@@ -367,8 +375,13 @@ export interface Attachment {
   dataUrl?: string
 }
 
-/** The catalogue's Booking sources (domain model, Booking > Sources). */
-export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc' | 'anaesthetistPhoto' | 'copy'
+/**
+ * The catalogue's live Booking sources (domain model, Booking > Sources;
+ * DM-39). The domain model's bullet still lists a copy of another Booking and a
+ * photo of the physical card: Copy a Booking is Retired (US-02.4.3) and photo
+ * capture is Future Work (US-02.4.4), so neither is a source (catch-up Phase 15b).
+ */
+export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc'
 
 export interface Booking {
   id: BookingId
@@ -379,8 +392,6 @@ export interface Booking {
   /** Completion is validation-gated; submission is completion-gated (1st review #1). */
   completed: boolean
   completedAtISO?: IsoDateTime
-  /** Set on a Booking made by Copy (US-02.4.3): a skeleton copy of this one. */
-  copiedFromBookingId?: BookingId
   /**
    * Post-op addendum Bookings (B8; Phase 09) carry `bookingType: 'postOpAddendum'`
    * and link back to the original episode via `addendumOfBookingId`. The addendum
@@ -489,7 +500,7 @@ export interface Procedure {
   /**
    * Set on a Procedure added with "Add another procedure" (`addProcedure`):
    * additional procedures yield TIME UNITS ONLY (RFP split-billing rule). A
-   * Booking's first Procedure, including a copy's, is never additional.
+   * Booking's first Procedure is never additional.
    */
   isAdditional: boolean
 

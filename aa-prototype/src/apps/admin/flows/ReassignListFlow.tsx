@@ -51,7 +51,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
     return Object.values(anaesthetists)
       .filter((a) => a.registrationNumber !== list.anaesthetistId)
       .map((a) => ({ anae: a, slot: listForSlot(state, a.registrationNumber, list.dateISO, list.session) }))
-      .filter(({ slot }) => slot !== undefined && slot.statusKey === 'free' && slot.state === 'DRAFT' && bookingsForList(state, slot.id).length === 0)
+      .filter(({ slot }) => slot !== undefined && slot.statusKey === 'free' && slot.state === 'ACTIVE' && bookingsForList(state, slot.id).length === 0)
   }, [anaesthetists, list.anaesthetistId, list.dateISO, list.session, state])
 
   const target = targetId !== null ? anaesthetists[targetId] : undefined

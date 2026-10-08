@@ -71,7 +71,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
 
     function inWindow(l: List): boolean {
       if (filter === 'todo') {
-        return l.state === 'DRAFT' && activeBookings(l.id).some((c) => !c.completed)
+        return l.state === 'ACTIVE' && activeBookings(l.id).some((c) => !c.completed)
       }
       // Done = submitted or authorised and still unbilled (an authorised list
       // is still unbilled until Phase 08's run stamps it).

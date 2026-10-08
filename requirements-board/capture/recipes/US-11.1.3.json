@@ -20,12 +20,6 @@
               "wait": 400
             },
             {
-              "click": "text=\"Enter manually\""
-            },
-            {
-              "wait": 400
-            },
-            {
               "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
               "value": "CQY9304"
             },
@@ -46,12 +40,6 @@
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "text=\"Enter manually\""
             },
             {
               "wait": 400
@@ -100,12 +88,6 @@
               "wait": 400
             },
             {
-              "click": "text=\"Enter manually\""
-            },
-            {
-              "wait": 400
-            },
-            {
               "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"ABC1234\"]",
               "value": "CQY9304"
             },
@@ -124,12 +106,6 @@
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "text=\"Enter manually\""
             },
             {
               "wait": 400

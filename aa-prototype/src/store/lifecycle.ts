@@ -1,5 +1,6 @@
 /**
- * Lifecycle guards (PROGRESS convention 6). DRAFT → SUBMITTED → AUTHORISED is
+ * Lifecycle guards (PROGRESS convention 6, amended in catch-up Phase 15b: the
+ * state was DRAFT until EP-07 and FT-07.1 renamed it). ACTIVE → SUBMITTED → AUTHORISED is
  * strictly ordered; SUBMITTED strips anaesthetist edit rights; AUTHORISED
  * locks Bookings immutable; there is NO Returned transition anywhere. UI can
  * never bypass a guard — every guard returns an `Outcome` (refusals as data;
@@ -7,9 +8,9 @@
  * items).
  *
  * The RFP state table, as enforced here:
- *   - anaesthetist: edits own DRAFT Lists' Bookings only;
- *   - office: edits DRAFT and SUBMITTED; authorises; nobody edits AUTHORISED;
- *   - integration-sourced writes only while the List is DRAFT.
+ *   - anaesthetist: edits own ACTIVE Lists' Bookings only;
+ *   - office: edits ACTIVE and SUBMITTED; authorises; nobody edits AUTHORISED;
+ *   - integration-sourced writes only while the List is ACTIVE.
  */
 
 import type { Booking, CoverRequest, List, ListPhoneNote, ListStatusKey, Procedure, Session } from '../domain/types'
@@ -50,7 +51,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
     return refuse('listAuthorised', 'This List is authorised and its Bookings are locked. No edits are possible.')
   }
   if (actor.source === 'integration') {
-    if (list.state !== 'DRAFT') {
+    if (list.state !== 'ACTIVE') {
       return refuse(
         'integrationImmutable',
         'An integration update cannot change a submitted List. This message needs manual intervention.',
@@ -62,12 +63,12 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== list.anaesthetistId) {
       return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
     }
-    if (list.state !== 'DRAFT') {
+    if (list.state !== 'ACTIVE') {
       return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
     }
     return null
   }
-  // office / system: DRAFT and SUBMITTED are editable.
+  // office / system: ACTIVE and SUBMITTED are editable.
   return null
 }
 
@@ -157,7 +158,7 @@ export function completeBooking(api: AppStoreApi, actor: Actor, bookingId: strin
 
 /**
  * Re-open a completed Booking (Phase 04's "Amend" link). The anaesthetist amends
- * their own Booking while the List is DRAFT; the office may re-open on DRAFT or
+ * their own Booking while the List is ACTIVE; the office may re-open on ACTIVE or
  * SUBMITTED (the standard edit-rights matrix). Completion is a clinical
  * sign-off, so integrations never take it back either — mirrors completeBooking.
  */
@@ -203,7 +204,7 @@ export function uncompleteBooking(api: AppStoreApi, actor: Actor, bookingId: str
 // ---------------------------------------------------------------------------
 
 /**
- * DRAFT → SUBMITTED. Completion-gated: every non-cancelled Booking must be
+ * ACTIVE → SUBMITTED. Completion-gated: every non-cancelled Booking must be
  * marked Completed (validation alone is not enough); a cancelled Booking never
  * blocks.
  */
@@ -211,8 +212,8 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
   const state = api.getState()
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
-  if (list.state !== 'DRAFT') {
-    return refuse('listNotDraft', 'Only a draft List can be submitted.')
+  if (list.state !== 'ACTIVE') {
+    return refuse('listNotActive', 'Only an active List can be submitted.')
   }
   if (actor.source === 'integration' || actor.source === 'system') {
     return refuse('submitForbidden', 'Only the anaesthetist or the office can submit a List.')
@@ -241,7 +242,7 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
       entityType: 'list',
       entityId: listId,
       action: 'list.submit',
-      before: { state: 'DRAFT' },
+      before: { state: 'ACTIVE' },
       after: { state: 'SUBMITTED' },
     },
     (s) => ({
@@ -255,7 +256,7 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
 }
 
 /**
- * SUBMITTED → AUTHORISED (strictly ordered — a DRAFT List can never jump).
+ * SUBMITTED → AUTHORISED (strictly ordered — an ACTIVE List can never jump).
  * Office only. Locks the List's Bookings immutable and emits `listAuthorised`
  * for Phase 08's billing run.
  */
@@ -343,7 +344,7 @@ export function logListNote(api: AppStoreApi, actor: Actor, listId: string, text
  * Audited soft-cancel (7th review B23) — the legacy "Delete Booking",
  * modernised. The Booking is retained and visible, excluded from validation and
  * billing; never a hard delete. Phase 11's S15 message calls this same guard
- * with source=integration (DRAFT Lists only).
+ * with source=integration (ACTIVE Lists only).
  */
 export function cancelBooking(api: AppStoreApi, actor: Actor, bookingId: string, reason: string): Outcome {
   const state = api.getState()
@@ -484,8 +485,8 @@ export type ListPatch = Partial<Pick<List, 'hospitalId' | 'surgeonId' | 'startTi
 
 /**
  * Patch a List's hospital/surgeon/times/notes through the standard edit-rights
- * matrix (office edits DRAFT and SUBMITTED; the anaesthetist only their own
- * DRAFT; AUTHORISED blocked). An empty string (or explicit undefined) on a key
+ * matrix (office edits ACTIVE and SUBMITTED; the anaesthetist only their own
+ * ACTIVE; AUTHORISED blocked). An empty string (or explicit undefined) on a key
  * present in the patch clears that field. Audited `list.update`, stamps no Booking.
  */
 export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: ListPatch): Outcome {
@@ -571,7 +572,7 @@ export function reassignList(
   const targetBookings = bookingsForList(state, target.id)
   // A target carrying List attachments is not genuinely Free: absorbing it would
   // delete them unaudited (catch-up Phase 15).
-  if (target.statusKey !== 'free' || target.state !== 'DRAFT' || targetBookings.length > 0 || (target.attachments ?? []).length > 0) {
+  if (target.statusKey !== 'free' || target.state !== 'ACTIVE' || targetBookings.length > 0 || (target.attachments ?? []).length > 0) {
     return refuse('targetNotFree', 'The target session must be Free to receive a reassigned List.')
   }
 
@@ -616,7 +617,7 @@ export function reassignList(
       dateISO: source.dateISO,
       anaesthetistId: source.anaesthetistId,
       session: source.session,
-      state: 'DRAFT',
+      state: 'ACTIVE',
       statusKey: vacatedStatus,
       conflicts: [],
     }
@@ -630,7 +631,7 @@ export function reassignList(
  * single-booking move, audited at Booking level. Neither List's status or other
  * Bookings change. Blocked when either List is AUTHORISED; a SUBMITTED target is
  * allowed for the office (the all-Bookings-completed rule gates the
- * DRAFT→SUBMITTED transition, not later office rebooking).
+ * ACTIVE→SUBMITTED transition, not later office rebooking).
  */
 export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: string, toListId: string): Outcome {
   const state = api.getState()
@@ -645,10 +646,10 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
     return refuse('listAuthorised', 'Bookings on an authorised List are locked; an authorised List cannot receive Bookings.')
   }
   if (actor.source === 'integration') {
-    if (source.state !== 'DRAFT' || target.state !== 'DRAFT') {
+    if (source.state !== 'ACTIVE' || target.state !== 'ACTIVE') {
       return refuse(
         'integrationImmutable',
-        'An integration update can only move a Booking between draft Lists. This message needs manual intervention.',
+        'An integration update can only move a Booking between active Lists. This message needs manual intervention.',
       )
     }
   } else if (actor.role === 'anaesthetist') {
@@ -658,7 +659,7 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
     ) {
       return refuse('notOwnList', 'Anaesthetists can only move Bookings between their own Lists.')
     }
-    if (source.state !== 'DRAFT' || target.state !== 'DRAFT') {
+    if (source.state !== 'ACTIVE' || target.state !== 'ACTIVE') {
       return refuse('listSubmitted', 'This List has been submitted. Only the office can change it now.')
     }
   }
@@ -735,10 +736,10 @@ export function setAvailability(
       // A List's own attachments are booking context too (catch-up Phase 15).
       (list.attachments ?? []).length === 0
     if (kind === 'holiday' || kind === 'unavailable') {
-      if (list.statusKey === 'free' && unreserved && list.state === 'DRAFT') reconciled = 'restatused'
+      if (list.statusKey === 'free' && unreserved && list.state === 'ACTIVE') reconciled = 'restatused'
       else reconciled = 'conflictFlagged'
     } else {
-      if ((list.statusKey === 'holiday' || list.statusKey === 'unavailable') && unreserved && list.state === 'DRAFT') {
+      if ((list.statusKey === 'holiday' || list.statusKey === 'unavailable') && unreserved && list.state === 'ACTIVE') {
         reconciled = 'restatused'
       } else if (list.statusKey === 'free') {
         reconciled = 'noChange'

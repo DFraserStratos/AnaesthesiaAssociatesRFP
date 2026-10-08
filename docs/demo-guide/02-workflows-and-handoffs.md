@@ -46,14 +46,16 @@ These describe what the half-day List is being used for.
 ### Approval lifecycle
 
 ```text
-DRAFT -> SUBMITTED -> AUTHORISED
+ACTIVE -> SUBMITTED -> AUTHORISED
 ```
 
 | State | Anaesthetist | Office | Integrations | Meaning |
 |---|---|---|---|---|
-| `DRAFT` | View and edit | View and edit | May update | Work is still being prepared |
+| `ACTIVE` | View and edit | View and edit | May update | Work is still being prepared |
 | `SUBMITTED` | View only | View and edit | Do not apply updates | Anaesthetist has handed the whole List to office |
 | `AUTHORISED` | Locked | Locked | Do not apply updates | Office has approved it for billing |
+
+`DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
 
 There is no `RETURNED` state.
 
@@ -98,7 +100,7 @@ session.
 
 **Primary actors:** AA scheduling coordinator, surgeon rooms, hospital/PAS
 
-**Prototype readiness:** Ready. Manual phone booking, mobile photo/manual Booking creation, and the
+**Prototype readiness:** Ready. Manual phone booking, mobile and web manual Booking creation, and the
 HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 
 ### Triggers
@@ -116,14 +118,14 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 3. Patient appointments are represented as time-ordered Bookings inside the List.
 4. Each Booking points to a patient and contains one or more Procedures.
 5. Later messages or office actions can add, reschedule, modify, move or soft-cancel a Booking while the
-   List remains `DRAFT`.
+   List remains `ACTIVE`.
 6. Every change writes `lastModifiedBy/At` and append-only audit history.
 
 ### Manual fallback paths
 
 - **Phone advice:** Kirsty creates the booking in Admin.
 - **Mobile/web manual Booking:** Dr Souter enters the missing Booking and its advised billing route.
-- **Photo:** Dr Souter photographs a paper booking card; simulated extraction pre-fills a draft for review.
+- **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
 - **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
   NHI, so a re-ingest updates rather than duplicates).
 
@@ -167,7 +169,7 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 ### Handoff
 
 The updated List and Bookings are immediately visible in Dr Souter's mobile and web views while the List
-is `DRAFT`.
+is `ACTIVE`.
 
 ### Demo point
 
@@ -262,8 +264,6 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 - One Booking can have several Procedures.
 - An additional Procedure in the same episode (added with **Add another procedure**) is time-only under the
   hard split-billing rule. Brian Holt's Booking on Dr Souter's Mon 20 AM List is the seeded example.
-- **Copy booking** is different: it starts a new Booking for the same patient on the same List, with its
-  own primary Procedure and only the billing reference carried over.
 - Base and Modifier units must not be charged a second time.
 
 ### Handoff
@@ -481,7 +481,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 |---|---:|---|
 | Fixed canvas and Permanent Lists | Yes | Phase 02 |
 | Manual phone booking and office changes | Yes | Phase 06 |
-| Mobile/web manual and photo Booking creation | Yes | Phases 03 to 05 |
+| Mobile/web manual Booking creation | Yes | Phases 03 to 05 |
 | Cover request and office List reassignment | Yes | Phases 03, 06 |
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |

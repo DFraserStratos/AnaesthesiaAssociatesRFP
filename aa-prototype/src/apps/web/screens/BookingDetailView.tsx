@@ -12,8 +12,6 @@ interface BookingDetailViewProps {
   actor: Actor
   todayISO: string
   onBack: () => void
-  /** Opens the new Booking a Copy made. */
-  onCopied: (newBookingId: string) => void
 }
 
 /**
@@ -30,7 +28,7 @@ interface BookingDetailViewProps {
  * white panel was the mobile stack borrowed whole, and it flattened the
  * hierarchy on a surface that has room for a real one.
  */
-export function BookingDetailView({ bookingId, actor, todayISO, onBack, onCopied }: BookingDetailViewProps) {
+export function BookingDetailView({ bookingId, actor, todayISO, onBack }: BookingDetailViewProps) {
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -95,7 +93,7 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack, onCopied
         <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> List
       </button>
 
-      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} header={header} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} header={header} />
     </div>
   )
 }

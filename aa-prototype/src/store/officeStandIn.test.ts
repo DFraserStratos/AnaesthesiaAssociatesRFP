@@ -11,12 +11,12 @@ import { SEED_LIST_IDS } from '../domain/seed'
 const SUBMITTED = SEED_LIST_IDS.souterMon20Am
 
 describe('authoriseAsSimulatedOffice', () => {
-  it('refuses a DRAFT List and an AUTHORISED one', () => {
+  it('refuses an ACTIVE List and an AUTHORISED one', () => {
     const api = createAppStore()
-    const draft = Object.values(api.getState().schedule.lists).find((l) => l.state === 'DRAFT')
-    expect(draft).toBeDefined()
-    const refusedDraft = authoriseAsSimulatedOffice(api, draft?.id ?? '')
-    expect(refusedDraft.ok ? '' : refusedDraft.message).toBe('Submit the List first')
+    const active = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE')
+    expect(active).toBeDefined()
+    const refusedActive = authoriseAsSimulatedOffice(api, active?.id ?? '')
+    expect(refusedActive.ok ? '' : refusedActive.message).toBe('Submit the List first')
 
     authoriseList(api, OFFICE_ACTOR, SUBMITTED)
     const refusedDone = authoriseAsSimulatedOffice(api, SUBMITTED)

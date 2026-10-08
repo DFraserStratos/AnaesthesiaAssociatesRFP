@@ -146,20 +146,6 @@ test('capture: refused completion focuses the first missing field', async ({ pag
   await expect(page.getByText('Record the handover time.')).toBeVisible()
 })
 
-test('capture: Copy booking opens a new skeleton Booking with a primary procedure', async ({ page }) => {
-  await openEllison(page)
-  await expect(page).toHaveURL(/\/bookings\/BK0009$/)
-  await page.getByRole('button', { name: 'Copy booking' }).click()
-  await page.waitForTimeout(600)
-  // The copy opens straight away: a new Booking, not the List.
-  await expect(page).toHaveURL(/\/mobile\/lists\/[^/]+\/bookings\/BK\d{4}$/)
-  expect(page.url()).not.toMatch(/BK0009$/)
-  await expect(page.getByText('Copy of another Booking')).toBeVisible()
-  // A primary procedure: base capture is live, not the time-only note.
-  await expect(page.getByText(/time units only/i)).toHaveCount(0)
-  await page.screenshot({ path: 'visual/shots/m4-10-copied-skeleton.png', fullPage: true })
-})
-
 test('capture: Chen read-only with adjusted-manually provenance', async ({ page }) => {
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')

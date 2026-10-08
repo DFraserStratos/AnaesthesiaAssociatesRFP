@@ -45,19 +45,20 @@ Bookings and capture the data AA needs for billing.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
 8. Use Availability to offer a Free session or request cover.
-9. Create a missing Booking manually or through simulated photo extraction.
-10. Copy a Booking to start a new Booking for the same patient on the same List (its own primary procedure,
-    nothing else inherited); record an additional procedure inside a Booking with **Add another procedure**,
-    which charges time units only.
+9. Create a missing Booking manually.
+10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
+    units only.
 
 ### Permissions
 
-- `DRAFT`: may edit her Bookings and submit the List when every active Booking is complete.
+- `ACTIVE`: may edit her Bookings and submit the List when every uncancelled Booking is complete.
 - `SUBMITTED`: may view the List as completed/unbilled, but may not edit its Bookings.
 - `AUTHORISED`: Bookings are locked for everyone.
 - May only see her own Lists and patient Bookings.
 - May see colleagues' session availability, but not their patient details.
 - May not authorise a List, edit master data or use office monitoring.
+
+`DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
 
 ### Pain points the design should solve
 
@@ -80,7 +81,7 @@ Bookings and capture the data AA needs for billing.
 - `Project Overview - Mobile and Web Applications`
 - `The Card as the Billing Anchor`
 - `The Big Picture: What Are We Actually Calculating?`
-- `Card Copy`
+- `Card Copy` (retired)
 - `Ad-Hoc Card creation`
 - `Mobile App Consumption Model`
 - Appendices 3 and 5
@@ -100,7 +101,7 @@ underlying List, Booking and BTM actions.
 - Review the dashboard and coming week.
 - Browse a date-ranged view of Lists.
 - Drill into the same List and Booking detail available on mobile.
-- Create or copy a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
+- Create a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
 - Find Free anaesthetists and request cover.
 - Review accounts outstanding and GST-period activity.
 
@@ -154,7 +155,7 @@ short-notice cover.
 ### Permissions
 
 - Sees all Lists and Bookings.
-- May edit `DRAFT` and `SUBMITTED` Lists/Bookings.
+- May edit `ACTIVE` and `SUBMITTED` Lists/Bookings.
 - May not edit Bookings after `AUTHORISED`.
 - May perform office-only billing setup corrections.
 - May reassign a List or a Booking.

@@ -2,7 +2,7 @@ import { accent, elevation, neutral, radius, semantic } from '../../theme/tokens
 
 interface CompleteBarProps {
   completed: boolean
-  /** DRAFT list — the completed bar offers the audited Amend. */
+  /** ACTIVE list — the completed bar offers the audited Amend. */
   canAmend: boolean
   onComplete: () => void
   onAmend: () => void
@@ -11,7 +11,7 @@ interface CompleteBarProps {
 /**
  * The Booking screen's sticky-footer CONTENT (mockup screen 3): the teal "Mark
  * complete" CTA, or once completed the static success bar with the "Amend" link
- * (→ the audited uncompleteBooking) while the list is still DRAFT.
+ * (→ the audited uncompleteBooking) while the list is still ACTIVE.
  *
  * Phase 05 split the outer positioning out into the surface `Footer` (mobile
  * absolute bar vs web sticky bar), so this renders only the inner control and

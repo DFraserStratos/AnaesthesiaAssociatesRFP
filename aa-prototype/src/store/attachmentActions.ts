@@ -7,7 +7,7 @@
  * log small.
  *
  * Rights follow the Booking edit matrix (`editRefusal`) on the List: the
- * anaesthetist on their own DRAFT List, the office on DRAFT and SUBMITTED,
+ * anaesthetist on their own ACTIVE List, the office on ACTIVE and SUBMITTED,
  * nobody on AUTHORISED. A cancelled Booking takes no attachments.
  */
 

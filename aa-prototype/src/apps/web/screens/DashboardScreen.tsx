@@ -78,7 +78,7 @@ export function DashboardScreen({
     for (const l of booked) {
       const active = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined)
       bookings += active.length
-      if (l.state === 'DRAFT' && active.length > 0 && active.every((c) => c.completed)) awaiting += 1
+      if (l.state === 'ACTIVE' && active.length > 0 && active.every((c) => c.completed)) awaiting += 1
     }
     return { lists: booked.length, bookings, awaiting }
   }, [listsRecord, bookingsRecord, anaesthetistId, todayISO])

@@ -2,7 +2,7 @@
  * Post-op addendum tests (Phase 09; B8).
  *
  * The addendum requires an AUTHORISED (locked) original, lands on the original
- * anaesthetist's empty/free DRAFT session for today, leaves the original Booking
+ * anaesthetist's empty free session for today (state ACTIVE), leaves the original Booking
  * byte-for-byte unchanged, and runs its OWN capture -> submit -> authorise ->
  * bill cycle to a separate invoice. Refused `noOpenSession` when no free, empty
  * session is available.
@@ -44,11 +44,11 @@ function authoriseOriginal(api: BoundAppStore): string {
 describe('addPostOpAddendum', () => {
   it('requires an authorised original', () => {
     const api = store()
-    const original = originalOn(api, SHARMA_TUE14) // still DRAFT
+    const original = originalOn(api, SHARMA_TUE14) // still ACTIVE
     expect(addPostOpAddendum(api, OFFICE, original)).toMatchObject({ ok: false, code: 'notAuthorised' })
   })
 
-  it('lands a linked DRAFT addendum on the anaesthetist free session today; original unchanged', () => {
+  it('lands a linked addendum on the anaesthetist\'s empty free session today; original unchanged', () => {
     const api = store()
     const original = authoriseOriginal(api)
     const before = JSON.parse(JSON.stringify(api.getState().schedule.bookings[original])) as unknown

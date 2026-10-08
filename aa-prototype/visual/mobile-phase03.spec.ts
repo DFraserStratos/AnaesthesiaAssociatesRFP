@@ -1,4 +1,4 @@
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /** Phase 03 mobile walkthrough screenshots (working artifacts, not assertions). */
 
@@ -52,8 +52,7 @@ test('mobile: manual booking form', async ({ page }) => {
   await page.waitForTimeout(500)
   await page.getByText('Add a booking', { exact: false }).first().click()
   await page.waitForTimeout(400)
-  await page.getByText('Enter manually', { exact: false }).first().click()
-  await page.waitForTimeout(400)
+  await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/m-06-manual.png', fullPage: true })
 })
 

@@ -120,7 +120,7 @@ describe('addAttachment / removeAttachment', () => {
 })
 
 describe('the rights matrix', () => {
-  it('anaesthetist on their own DRAFT List only; office on DRAFT and SUBMITTED; nobody on AUTHORISED', () => {
+  it('anaesthetist on their own ACTIVE List only; office on ACTIVE and SUBMITTED; nobody on AUTHORISED', () => {
     const api = store()
     const morrison: Actor = { who: 'Dr Kate Morrison', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.morrison }
     expect(addAttachment(api, morrison, { kind: 'list', id: SOUTER_PM }, FILE)).toMatchObject({ ok: false, code: 'notOwnList' })
@@ -157,10 +157,10 @@ describe('List attachments are booking context on a Free List', () => {
     const api = store()
     const state = api.getState()
     const source = Object.values(state.schedule.lists).find(
-      (l) => l.state === 'DRAFT' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO &&
-        Object.values(state.schedule.lists).some((t) => t.dateISO === l.dateISO && t.session === l.session && t.anaesthetistId !== l.anaesthetistId && t.statusKey === 'free' && t.state === 'DRAFT' && bookingsForList(state, t.id).length === 0),
+      (l) => l.state === 'ACTIVE' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO &&
+        Object.values(state.schedule.lists).some((t) => t.dateISO === l.dateISO && t.session === l.session && t.anaesthetistId !== l.anaesthetistId && t.statusKey === 'free' && t.state === 'ACTIVE' && bookingsForList(state, t.id).length === 0),
     )!
-    const target = Object.values(state.schedule.lists).find((t) => t.dateISO === source.dateISO && t.session === source.session && t.anaesthetistId !== source.anaesthetistId && t.statusKey === 'free' && t.state === 'DRAFT' && bookingsForList(state, t.id).length === 0)!
+    const target = Object.values(state.schedule.lists).find((t) => t.dateISO === source.dateISO && t.session === source.session && t.anaesthetistId !== source.anaesthetistId && t.statusKey === 'free' && t.state === 'ACTIVE' && bookingsForList(state, t.id).length === 0)!
     expect(addAttachment(api, OFFICE, { kind: 'list', id: target.id }, FILE).ok).toBe(true)
     expect(reassignList(api, OFFICE, source.id, target.anaesthetistId)).toMatchObject({ ok: false, code: 'targetNotFree' })
     expect(api.getState().schedule.lists[target.id]?.attachments).toHaveLength(1)
@@ -171,9 +171,9 @@ describe('List attachments travel with reassignList', () => {
   it('a reassigned List keeps its attachments', () => {
     const api = store()
     const state = api.getState()
-    // A booked DRAFT List and a colleague whose same slot is a free, empty DRAFT List.
+    // A booked ACTIVE List and a colleague whose same slot is an empty free session (state ACTIVE).
     const candidates = Object.values(state.schedule.lists).filter(
-      (l) => l.state === 'DRAFT' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO,
+      (l) => l.state === 'ACTIVE' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO,
     )
     let done = false
     for (const list of candidates) {
@@ -183,7 +183,7 @@ describe('List attachments travel with reassignList', () => {
           t.session === list.session &&
           t.anaesthetistId !== list.anaesthetistId &&
           t.statusKey === 'free' &&
-          t.state === 'DRAFT' &&
+          t.state === 'ACTIVE' &&
           bookingsForList(state, t.id).length === 0,
       )
       if (target === undefined) continue

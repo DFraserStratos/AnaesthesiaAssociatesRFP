@@ -22,19 +22,6 @@
           "caption": "Add another procedure to the booking"
         },
         {
-          "state": "copy",
-          "steps": [
-            {
-              "scroll": "role=button[name=\"Copy booking\"]"
-            }
-          ],
-          "highlight": [
-            "role=button[name=\"Add another procedure\"]",
-            "role=button[name=\"Copy booking\"]"
-          ],
-          "caption": "Add another procedure adds to this Booking; Copy booking starts a new one"
-        },
-        {
           "state": "added",
           "steps": [
             {

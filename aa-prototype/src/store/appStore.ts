@@ -93,7 +93,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v16: 2026-10-02 · catch-up Phase 15a: app settings for the warning routine;
+/** v17: 2026-10-09 · catch-up Phase 15b: Copy a Booking removed (US-02.4.3 Retired):
+ *  no `copiedFromBookingId`, no 'copy' or 'anaesthetistPhoto' source; List state
+ *  DRAFT renamed ACTIVE (EP-07, FT-07.1).
+ *  v16: 2026-10-02 · catch-up Phase 15a: app settings for the warning routine;
  *  warning clearances; prepayment override removed (D5).
  *  v15: 2026-10-02 · catch-up Phase 15: Booking.source on the scenario Bookings,
  *  List attachments (the seeded theatre-list PDF), AT attachment ids.
@@ -133,7 +136,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 16
+export const PERSIST_VERSION = 17
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }

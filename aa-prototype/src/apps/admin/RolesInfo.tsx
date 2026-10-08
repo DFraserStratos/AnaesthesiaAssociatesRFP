@@ -21,17 +21,17 @@ const ROLES: RoleEntry[] = [
   {
     role: 'Anaesthetist (e.g. Dr Melanie Souter)',
     view: 'Only their OWN Lists and Bookings. A colleague\'s availability shows session status only, never patient or billing detail.',
-    edit: 'Edits their own Bookings while the List is DRAFT; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
+    edit: 'Edits their own Bookings while the List is ACTIVE; sets their own availability; submits their own Lists. No access to authorisation, master data, audit or billing.',
   },
   {
     role: 'OfficeAdmin (Kirsty W. · Office)',
     view: 'The whole day across every anaesthetist; every Booking, the master data, the audit trail and the billing monitor.',
-    edit: 'Edits Bookings on DRAFT and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data. Cannot edit an AUTHORISED List (locked).',
+    edit: 'Edits Bookings on ACTIVE and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data. Cannot edit an AUTHORISED List (locked).',
   },
   {
     role: 'Integration (HL7 / FHIR feed · source integration)',
     view: 'Writes appointment Bookings through the feed; no interactive UI.',
-    edit: 'Creates and updates Bookings only while the List is DRAFT; never completes or authorises. A write to a SUBMITTED / AUTHORISED List is refused into a monitor manual-intervention item.',
+    edit: 'Creates and updates Bookings only while the List is ACTIVE; never completes or authorises. A write to a SUBMITTED / AUTHORISED List is refused into a monitor manual-intervention item.',
   },
   {
     role: 'System / Demo (automated · source system/demo)',

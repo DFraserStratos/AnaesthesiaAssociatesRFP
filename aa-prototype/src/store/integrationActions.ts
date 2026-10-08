@@ -14,7 +14,7 @@
  * Reliability: `MAX_ATTEMPTS` retries. A transient fault fails once then
  * succeeds; a deterministic fault (a bad NHI under a wrong mapping) fails every
  * time and exhausts the budget into `deadLetter`; a locked target (a
- * non-DRAFT List) or an unmatched appointment parks as `manualIntervention`.
+ * non-ACTIVE List) or an unmatched appointment parks as `manualIntervention`.
  * "Retried" is a derived display label (processed with attempts > 1), never a
  * stored status. Tests drive `processMessage`/`retryMessage` synchronously; the
  * UI wires a short-timer auto-retry (`wireIntegrationRetry`).

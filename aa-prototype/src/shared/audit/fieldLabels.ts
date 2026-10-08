@@ -24,7 +24,6 @@ export const FIELD_LABELS: Record<string, string> = {
   scheduledTime: 'Scheduled time',
   completed: 'Completed',
   completedAtISO: 'Completed at',
-  copiedFromBookingId: 'Copied from booking',
   bookingType: 'Booking type',
   addendumOfBookingId: 'Addendum of booking',
   correlationRef: 'Appointment reference',

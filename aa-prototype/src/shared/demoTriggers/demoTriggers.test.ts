@@ -266,8 +266,8 @@ describe('session 2 entries', () => {
     expect(t.run(api, ctx).message).toMatch(/invoices/)
     expect(api.getState().schedule.lists[listId]?.state).toBe('AUTHORISED')
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already authorised')
-    const draft = SEED_LIST_IDS.souterPm21
-    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${draft}`, { listId: draft }))).toBe('Submit the List first')
+    const active = SEED_LIST_IDS.souterPm21
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${active}`, { listId: active }))).toBe('Submit the List first')
   })
 
   it('every office stand-in declares the PWA surface only', () => {
@@ -370,5 +370,57 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     expect(t.disabledReason(api.getState(), ctx)).toBe('No open warnings on this Booking')
     const none = ctxFor('/mobile/lists/L/bookings/X', { bookingId: AM_TARGET! })
     expect(t.disabledReason(api.getState(), none)).toBe('No open warnings on this Booking')
+  })
+})
+
+describe('Photo capture (Future scope) (catch-up Phase 15b)', () => {
+  const OPEN_LIST = SEED_LIST_IDS.souterPm21
+
+  beforeEach(() => {
+    useDemoTriggerMemory.getState().clearPhotoCaptureRequest()
+  })
+
+  it('shows only on the mobile List screen, on both surfaces, badged Future scope', () => {
+    const api = createAppStore()
+    const t = byId('photo-capture-future')
+    expect(t.badge).toBe('future-scope')
+    expect(ids(api, `/mobile/lists/${OPEN_LIST}`, 'bar')).toContain('photo-capture-future')
+    expect(ids(api, `/mobile/lists/${OPEN_LIST}`, 'pwa')).toContain('photo-capture-future')
+    for (const path of ['/mobile/lists', `/mobile/lists/${OPEN_LIST}/bookings/BK0009`, `/web/lists/${OPEN_LIST}`, '/admin/day/2026-07-21', '/mobile/more']) {
+      expect(ids(api, path, 'bar'), path).not.toContain('photo-capture-future')
+      expect(ids(api, path, 'pwa'), path).not.toContain('photo-capture-future')
+    }
+    expect(t.indexPath(api.getState())).toBe(`/mobile/lists/${OPEN_LIST}`)
+  })
+
+  it('is disabled on a List no longer open for new Bookings, and on a stale id', () => {
+    const api = createAppStore()
+    const t = byId('photo-capture-future')
+    const submitted = SEED_MARKERS['submittedListMorrison']!.entityId
+    expect(api.getState().schedule.lists[submitted]?.state).toBe('SUBMITTED')
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${OPEN_LIST}`, { listId: OPEN_LIST }))).toBeNull()
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${submitted}`, { listId: submitted }))).toBe(
+      'This List is no longer open for new Bookings',
+    )
+    expect(authoriseList(api, OFFICE_ACTOR, submitted).ok).toBe(true)
+    expect(t.disabledReason(api.getState(), ctxFor(`/mobile/lists/${submitted}`, { listId: submitted }))).toBe(
+      'This List is no longer open for new Bookings',
+    )
+    expect(t.disabledReason(api.getState(), ctxFor('/mobile/lists/L-gone', { listId: 'L-gone' }))).toBe('List not found')
+  })
+
+  it('run only leaves a UI request for the List in the URL; a repeat request counts up', () => {
+    const api = createAppStore()
+    const t = byId('photo-capture-future')
+    const before = JSON.stringify(api.getState())
+    const ctx = ctxFor(`/mobile/lists/${OPEN_LIST}`, { listId: OPEN_LIST })
+    const res = t.run(api, ctx)
+    expect(res.ok).toBe(true)
+    expect(JSON.stringify(api.getState())).toBe(before)
+    const first = useDemoTriggerMemory.getState().photoCaptureRequest
+    expect(first?.listId).toBe(OPEN_LIST)
+    useDemoTriggerMemory.getState().clearPhotoCaptureRequest()
+    t.run(api, ctx)
+    expect(useDemoTriggerMemory.getState().photoCaptureRequest?.n).toBeGreaterThan(first!.n)
   })
 })

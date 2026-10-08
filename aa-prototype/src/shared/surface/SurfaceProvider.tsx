@@ -186,7 +186,7 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
  * dashboard (`repeat(12, 1fr)`, 16px gutters, panels on the grey canvas rather
  * than nested inside one big white panel).
  *
- *   span 12  booking-wide banners when present (cancelled, copied, prepayment warning)
+ *   span 12  booking-wide banners when present (warnings, cancelled, post-op, prepayment)
  *   span 8   capture: the per-procedure BTM blocks
  *   span 4   commit rail: starts level with the ASA / procedure-code pair, then
  *            pins the Booking calculation (office Bookings) with a separate,

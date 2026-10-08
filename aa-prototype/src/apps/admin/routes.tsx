@@ -126,7 +126,6 @@ export function AdminBookingDetailRoute() {
               : `/admin/invoices/${returnInvoice.id}`,
           )
         }
-        onCopied={(newId) => navigate(`/admin/day/${dateISO}/bookings/${newId}`)}
         backLabel={
           returnInvoice === undefined
             ? 'Day view'

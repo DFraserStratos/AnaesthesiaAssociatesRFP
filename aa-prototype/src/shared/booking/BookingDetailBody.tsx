@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, XCircle } from 'lucide-react'
+import { History, Minus, Plus, Receipt, ShieldCheck, Stethoscope, XCircle } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { Procedure } from '../../domain/types'
 import {
@@ -11,7 +11,6 @@ import {
   addPostOpAddendum,
   addProcedure,
   completeBooking,
-  copyBooking,
   editBooking,
   prepaymentStatusFor,
   raisePreProcedureInvoice,
@@ -41,8 +40,6 @@ interface BookingDetailBodyProps {
   actor: Actor
   /** Called after the completion overlay dismisses (chrome pops back to the list). */
   onBack: () => void
-  /** Called with the new Booking's id after Copy; the chrome opens it. */
-  onCopied: (newBookingId: string) => void
   /**
    * The platform masthead, handed to the layout rather than rendered above the
    * body, for chrome that wants it to react to the scroll it does not own.
@@ -111,7 +108,7 @@ const officeActionStyle: React.CSSProperties = {
  * `BookingDetailScreen` below the header: the patient / scheduled-time /
  * attachments / notes sections, the per-procedure BTM capture blocks (ordinal
  * ordered), the live `validateBookingForBilling` + the showValidation latch, the
- * copy / cancel / add-procedure / complete / amend handlers, the edit sheets,
+ * cancel / add-procedure / complete / amend handlers, the edit sheets,
  * the completion overlay, and the complete/amend bar. Both mobile's
  * `BookingDetailScreen` and web's `BookingDetailView` are thin chrome wrappers around
  * it — one body, one set of guards / validation, so a BTM edit behaves
@@ -122,7 +119,7 @@ const officeActionStyle: React.CSSProperties = {
  * `useSurface().BookingLayout`, which owns the arrangement: one phone column, or
  * the desktop's capture-plus-sticky-rail grid. No `variant` branching here.
  */
-export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }: BookingDetailBodyProps) {
+export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingDetailBodyProps) {
   const { BookingLayout, BookingTotal } = useSurface()
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
@@ -305,13 +302,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   // Mirror the store's editRefusal so the UI never offers an action the guard
-  // would refuse, nor hides one it allows: the office edits DRAFT and SUBMITTED
-  // (never AUTHORISED); the anaesthetist only their own DRAFT. This is what lets
+  // would refuse, nor hides one it allows: the office edits ACTIVE and SUBMITTED
+  // (never AUTHORISED); the anaesthetist only their own ACTIVE. This is what lets
   // the office correct billing setup, edit the patient/times/BTM, amend and
   // cancel a Booking on a SUBMITTED list (Phase 06 WI2), while the anaesthetist
   // stays blocked on SUBMITTED. Mobile/web pass an anaesthetist actor, so their
-  // behaviour is unchanged (DRAFT-only).
-  const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'DRAFT' || actor.role === 'office')
+  // behaviour is unchanged (ACTIVE-only).
+  const canEdit = !cancelled && list.state !== 'AUTHORISED' && (list.state === 'ACTIVE' || actor.role === 'office')
   const canCapture = canEdit && !booking.completed
   const isOffice = actor.role === 'office'
   const badge = nhiBadge(patient?.nhi)
@@ -335,15 +332,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
 
   function removeBookingAttachment(attachmentId: string) {
     return removeAttachment(useAppStore, actor, { kind: 'booking', id: bookingId }, attachmentId)
-  }
-
-  function doCopy() {
-    const outcome = copyBooking(useAppStore, actor, bookingId)
-    if (!outcome.ok) {
-      setError(outcome.message)
-      return
-    }
-    onCopied(outcome.value.bookingId)
   }
 
   function doAddProcedure() {
@@ -465,7 +453,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
   const hasBanners =
     warnings.length > 0 ||
     cancelled ||
-    (booking.copiedFromBookingId !== undefined && !booking.completed) ||
     booking.bookingType === 'postOpAddendum' ||
     prepaymentStatus === 'paid' ||
     error !== null ||
@@ -490,11 +477,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
       {cancelled && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.card, padding: 14, fontSize: 13 }}>
           <strong>Booking cancelled.</strong> {booking.cancellation?.reason} It stays visible but is excluded from the list's completion count and billing.
-        </div>
-      )}
-      {booking.copiedFromBookingId !== undefined && !booking.completed && (
-        <div style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.card, padding: 12, fontSize: 13 }}>
-          Copied from another Booking for this patient on this List. Capture its procedure, then mark it complete.
         </div>
       )}
       {booking.bookingType === 'postOpAddendum' && (
@@ -641,16 +623,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, onCopied, header }
     <>
       {/* Actions */}
       {canEdit && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Button variant="secondary" block onClick={doCopy}>
-              <Copy size={16} aria-hidden /> Copy booking
-            </Button>
-            <span style={{ fontSize: 11.5, color: neutral.mist }}>
-              Starts a new Booking for this patient on this List.
-              {canCapture && ' To add a procedure to this Booking, use Add another procedure.'}
-            </span>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
           <button
             onClick={() => setSheet('cancel')}
             style={{ minHeight: 48, borderRadius: radius.ctl, border: `1px solid ${semantic.error.solid}55`, background: neutral.surface, color: semantic.error.onTint, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}

@@ -62,7 +62,7 @@ async function openLists(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
 }
 
-/** Lists tab → the Southern Cross PM list (a DRAFT list, so the footer is live). */
+/** Lists tab → the Southern Cross PM list (an ACTIVE list, so the footer is live). */
 async function openList(page: Page): Promise<void> {
   await openLists(page)
   await page.getByText('Southern Cross', { exact: false }).first().click()

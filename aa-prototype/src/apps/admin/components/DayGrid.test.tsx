@@ -30,7 +30,7 @@ function list(
     dateISO: DATE,
     anaesthetistId,
     session: 'AM',
-    state: 'DRAFT',
+    state: 'ACTIVE',
     statusKey,
     conflicts: [],
     ...patch,

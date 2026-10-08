@@ -6,19 +6,19 @@ Scope: every story plus every feature with no stories (266 items, 266 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 122 | 111 |
-| Partial | 62 | 62 |
-| Absent from the prototype | 69 | 69 |
+| Captured | 119 | 108 |
+| Partial | 63 | 63 |
+| Absent from the prototype | 72 | 72 |
 | Failed recipe | 0 | 0 |
-| No recipe | 24 | 24 |
+| No recipe | 23 | 23 |
 
-412 screenshots. Items per app: admin 113, web 60, mobile 55, simulator 36.
+401 screenshots. Items per app: admin 113, web 58, mobile 53, simulator 36.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the prototype (69)
+## Absent from the prototype (72)
 
 - **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · Not built yet: catch-up Phase 17 builds this.
 - **US-01.4.5** No preference warning when an anaesthetist moves their own List · Not built yet: catch-up Phase 32 builds this.
@@ -32,6 +32,9 @@ None.
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
 - **US-02.3.2** Save Booking changes explicitly · Not built yet: catch-up Phase 35 builds this.
 - **US-02.3.3** Draft a booking update email · Not built yet: catch-up Phase 35 builds this.
+- **US-02.4.2** Photo capture of the physical card · Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b
+- **US-02.4.3** Copy a Booking · Retired: removed in Phase 15b
+- **US-02.4.4** Add a Booking from a photo of the booking card · Future: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List
 - **US-02.5.6** Concurrent edits · No concurrency handling is shown. The prototype is a single in-browser store where writes apply in order (last write wins, each audited); there is no conflict detection, locking or merge UI. Searched store/ and apps/ for concurrency, stale or version-conflict handling.
 - **US-03.1.5** Anaesthetist sees the patient's NHI · Not built yet: catch-up Phase 40 builds this.
 - **US-03.1.6** Find past work and old invoices · Not built yet: catch-up Phase 38a builds this.
@@ -90,7 +93,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (62)
+## Partial (63)
 
 - **US-01.1.2** Horizon rolls forward daily · The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.
 - **US-01.1.3** New anaesthetist gets a populated canvas · Adding an anaesthetist generates their forward Lists in the store (confirmed on save), but the admin day grid shows only the seeded roster, so the new rows are not visible there.
@@ -105,7 +108,8 @@ None.
 - **US-02.1.2** Match rows to Lists and Bookings · No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Booking instead of duplicating it. There is no option to create a new List or to reject a row.
 - **US-02.1.4** Unmatched queue · There are no hospital download rows, so there is no unmatched-row queue. The analogue shown is the integration message log: messages that cannot be applied (dead-letter, or manual intervention when the target List is already submitted) are retained for the office to fix and reprocess, never dropped.
 - **US-02.3.1** Create or amend a Booking · The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a Free, empty List through the phone-advice booking; there is no way for the office to add a Booking to a List that already has one.
-- **US-02.5.4** Changes accepted until the procedure · Inbound changes are applied to any DRAFT List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.
+- **US-02.4.1** Add a Booking manually · Manual entry is built and is the sheet's one way in; the optional 'as given' field kept as the Procedure's source wording is not built yet (Phase 20a)
+- **US-02.5.4** Changes accepted until the procedure · Inbound changes are applied to any ACTIVE List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.
 - **US-03.1.2** See the Contract on each Procedure · The applied Contract is shown read-only on each procedure of the booking, but not on the List view before the session.
 - **US-03.2.3** Add additional Procedures · Anaesthetists add procedures on web and mobile; each carries its own billing route, but the Contract is not chosen separately per added procedure. Admin adding procedures is covered by the admin booking screen, not shot here.
 - **US-03.3.6** Other billing lines · Non-BTM lines are added as a fixed amount with a description; there is no typed list of line kinds (HDU review, nerve catheter and so on) and no service date on a line. Charges dated after the procedure are handled as a post-op event on a locked booking, not shot here.
@@ -155,14 +159,13 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (24)
+## No recipe (23)
 
 - **US-01.3.6** Anaesthetist priority tiers for assignment
 - **US-01.4.7** Anaesthetist moves a single Booking
 - **US-01.5.5** Mark unavailable while holding a List
 - **US-02.3.4** Update email templates per kind of change
 - **US-02.3.5** Send booking change emails automatically
-- **US-02.4.4** Add a Booking from a photo of the booking card
 - **US-02.5.7** Keep the procedure text as received
 - **US-03.1.8** See the prepaid amount on the Booking
 - **US-03.1.9** Source wording, procedure and Contract shown together
@@ -182,7 +185,7 @@ None.
 - **US-13.8.1** See the team's notifications
 - **US-13.8.2** Notify the team when an anaesthetist moves a List
 
-## Captured (122)
+## Captured (119)
 
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
@@ -205,9 +208,6 @@ None.
 - **US-01.5.1** Hospital holiday calendar · admin
 - **US-02.2.1** Read, correct and ingest a surgeon PDF list · admin
 - **US-02.2.2** Edit then ingest · admin
-- **US-02.4.1** Add a Booking manually · web, mobile
-- **US-02.4.2** Photo capture of the physical card · web, mobile
-- **US-02.4.3** Copy a Booking · web, mobile
 - **US-02.5.1** Apply a modification · simulator, admin
 - **US-02.5.2** Apply a reschedule · simulator, web
 - **US-02.5.3** Record a cancellation · simulator, web

@@ -50,11 +50,11 @@ function listOf(api: BoundAppStore, bookingId: string): string {
   return booking.listId
 }
 
-/** DRAFT → submit (office) → authorise → run. Every step must succeed. */
+/** ACTIVE → submit (office) → authorise → run. Every step must succeed. */
 function stageAndBill(api: BoundAppStore, listId: string): BillingRunResult {
   const list = api.getState().schedule.lists[listId]
   if (list === undefined) throw new Error(`missing list ${listId}`)
-  if (list.state === 'DRAFT') {
+  if (list.state === 'ACTIVE') {
     const submitted = submitList(api, OFFICE, listId)
     if (!submitted.ok) throw new Error(`submit refused: ${submitted.message}`)
   }

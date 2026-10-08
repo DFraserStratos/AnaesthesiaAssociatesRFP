@@ -12,8 +12,6 @@ interface AdminBookingDetailProps {
   actor: Actor
   todayISO: string
   onBack: () => void
-  /** Opens the new Booking a Copy made. */
-  onCopied: (newBookingId: string) => void
   backLabel?: string
 }
 
@@ -25,7 +23,7 @@ interface AdminBookingDetailProps {
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
-export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, onCopied, backLabel = 'Day view' }: AdminBookingDetailProps) {
+export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLabel = 'Day view' }: AdminBookingDetailProps) {
   const booking = useAppStore((s) => s.schedule.bookings[bookingId])
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
@@ -72,7 +70,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, onCopie
         <StatusChip status={list.statusKey} />
       </div>
 
-      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onCopied={onCopied} />
+      <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />
     </div>
   )
 }

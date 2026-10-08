@@ -252,7 +252,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
 
   const listOptions = useMemo(() => {
     return Object.values(lists)
-      .filter((l) => l.anaesthetistId === pdf.targetList.anaesthetistId && l.state === 'DRAFT' && l.dateISO >= pdf.targetList.dateISO)
+      .filter((l) => l.anaesthetistId === pdf.targetList.anaesthetistId && l.state === 'ACTIVE' && l.dateISO >= pdf.targetList.dateISO)
       .sort((a, b) => (a.dateISO === b.dateISO ? a.session.localeCompare(b.session) : a.dateISO.localeCompare(b.dateISO)))
       .slice(0, 12)
   }, [lists, pdf.targetList])

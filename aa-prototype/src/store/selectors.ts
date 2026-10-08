@@ -74,6 +74,19 @@ export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: strin
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
+/**
+ * An empty free session: Free availability and no live (uncancelled) Booking.
+ * It carries a List state in the data until Phase 28 separates Slots from
+ * Lists, but it is not an ACTIVE List in the catalogue's sense (no pairing), so
+ * the Admin List drawer and the Move booking picker print no state for it
+ * (catch-up Phase 15b). One test, so the two surfaces cannot drift. The
+ * reassign-list guard (`reassignList`, `ReassignListFlow`) is deliberately
+ * stricter: its target must hold no Booking at all, cancelled ones included.
+ */
+export function isEmptyFreeSession(list: Pick<List, 'statusKey'>, listBookings: readonly Booking[]): boolean {
+  return list.statusKey === 'free' && listBookings.every((b) => b.cancellation !== undefined)
+}
+
 /** Procedures in Booking order (creation order — the billing ordinal). */
 export function proceduresForBooking(state: Pick<AppState, 'schedule'>, bookingId: string): Procedure[] {
   return Object.values(state.schedule.procedures)

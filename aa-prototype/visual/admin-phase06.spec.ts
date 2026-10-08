@@ -155,7 +155,7 @@ test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
   // The office can cancel a booking on a SUBMITTED list (checklist item 7); this
-  // affordance is hidden for the anaesthetist and was DRAFT-only before the fix.
+  // affordance is hidden for the anaesthetist and was ACTIVE-only before the fix.
   await expect(page.getByRole('button', { name: /Cancel booking/ })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-10-submitted-booking.png', fullPage: true })
 })
@@ -184,7 +184,7 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await page.getByLabel('Hospital').selectOption({ label: "St George's" })
   await page.getByLabel('Surgeon').selectOption({ label: 'Mr T. Hale' })
   await page.getByRole('button', { name: 'Continue to add booking' }).click()
-  await page.getByRole('button', { name: 'Enter manually' }).click()
+  await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
 
   const lookup = page.getByRole('button', { name: 'Look up' })
   await expect(lookup).toBeEnabled()
@@ -211,7 +211,7 @@ test('generic manual-booking lookup still requires an NHI', async ({ page }) => 
   await page.waitForLoadState('networkidle')
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.getByText('Add a booking', { exact: false }).first().click()
-  await page.getByText('Enter manually', { exact: false }).first().click()
+  await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
 
   await expect(page.getByRole('button', { name: 'Look up' })).toBeDisabled()
   await expect(page.getByLabel('Name')).toHaveValue('')

@@ -88,7 +88,7 @@ product UI; never add a trigger to the Control Panel page.
   the advanceable `clock.ts`, NHI/NZHIS validators, and the integration message/PDF fixtures
   (`integrations/`). Fully unit-tested.
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
-  Booking creation and Copy (`bookingActions.ts`), Booking and List attachments
+  Booking creation (`bookingActions.ts`), Booking and List attachments
   (`attachmentActions.ts`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
@@ -375,7 +375,7 @@ the invoices, the Balances movement (the next day) and the Xero mirror all follo
 `src/pwa/officeSimulation.ts` is the older, automatic version: **"Play the office"** on More. It is
 **off by default** (absent or unreadable storage reads off), badged "Simulated office" while on, and
 PWA-only (`src/main.tsx` never wires it; auto-authorising would sabotage the scripted S3 review beat).
-When on, a few seconds after a List goes DRAFT → SUBMITTED it runs the same stand-in.
+When on, a few seconds after a List goes ACTIVE → SUBMITTED it runs the same stand-in.
 
 **It is explicitly a simulation and explicitly not the RFP flow.** Nothing in the RFP authorises a List
 off the back of the anaesthetist's own submit; a real submission goes to the office review queue and a
@@ -387,8 +387,9 @@ seconds later, rather than orphaning it, so the story can carry on from where th
 
 - **No shared state between devices.** Two installs and the desktop prototype are three independent
   demo worlds, each with its own localStorage. Closing that needs a real backend.
-- **No real camera.** `PhotoCaptureFlow` picks between two bundled SVG "paper cards"
-  (`src/assets/samplePaperCards.ts`), and the attachment sheet's simulated file picker offers the
+- **No real camera.** `PhotoCaptureFlow`, a Future-scope demo reached only from the mobile List's
+  Demo actions ("Photo capture (Future scope)"; US-02.4.4 is Future Work), picks between two bundled
+  SVG "paper cards" (`src/assets/samplePaperCards.ts`), and the attachment sheet's simulated file picker offers the
   bundled samples in `src/assets/sampleAttachments.ts`; there is no `<input type="file">`, no `FileReader` and no
   `getUserMedia` anywhere in `src/`.
 - **No push notifications.** iOS 16.4+ supports them for installed PWAs, so "a new list was assigned

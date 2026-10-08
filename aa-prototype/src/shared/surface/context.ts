@@ -83,13 +83,13 @@ export interface BookingLayoutSlots {
   header: ((collapsed: boolean, history: ReactNode) => ReactNode) | null
   /** The History affordance (right-aligned; a page action on desktop). */
   history: ReactNode
-  /** Booking-wide notices: cancelled, copied, post-op, prepayment warning, refusals. */
+  /** Booking-wide notices: warnings, cancelled, post-op, prepayment, refusals. */
   banners: ReactNode
   /** Patient, scheduled time, attachments, notes for the office. */
   context: ReactNode
   /** The per-procedure BTM capture blocks plus Add another procedure. */
   capture: ReactNode
-  /** Copy booking, cancel booking, post-op addendum. */
+  /** Cancel booking, post-op addendum. */
   actions: ReactNode
   /**
    * The Booking's visible calculation, as a function of the action to embed in it.

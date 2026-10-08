@@ -37,7 +37,7 @@
  * is right there behind the app switcher, and auto-authorising would sabotage
  * the scripted S3 review beat. Only the PWA entry calls `wireOfficeSimulation`.
  *
- * THE CHAIN IT COMPLETES. A few seconds after a List transitions DRAFT ->
+ * THE CHAIN IT COMPLETES. A few seconds after a List transitions ACTIVE ->
  * SUBMITTED it authorises that List as the office, through the ordinary
  * `authoriseList` guard with an office-shaped Actor. That commits the
  * SUBMITTED -> AUTHORISED transition, locks the Bookings, and emits
@@ -157,7 +157,7 @@ const WIRED = new WeakMap<BoundAppStore, () => void>()
  * Subscribe the job to the store. Returns an unsubscribe, which also cancels
  * any run still waiting on its timer.
  *
- * The trigger is a STORE SUBSCRIPTION watching for the DRAFT -> SUBMITTED
+ * The trigger is a STORE SUBSCRIPTION watching for the ACTIVE -> SUBMITTED
  * transition, not an app event: `events.ts` emits only `listAuthorised` and
  * `dayAdvanced`, and there is no `listSubmitted` to hang off. Watching the
  * transition rather than scanning for SUBMITTED Lists is what keeps the seeded
@@ -179,13 +179,13 @@ export function wireOfficeSimulation(api: BoundAppStore): () => void {
     // schedule patch, so audit-only, billing and Xero commits leave here at once.
     if (lists === before) return
     for (const [listId, list] of Object.entries(lists)) {
-      // DRAFT -> SUBMITTED is the only legal way into SUBMITTED, so requiring
-      // the previous state to be DRAFT is the transition, exactly.
-      if (list.state !== 'SUBMITTED' || before[listId]?.state !== 'DRAFT') continue
+      // ACTIVE -> SUBMITTED is the only legal way into SUBMITTED, so requiring
+      // the previous state to be ACTIVE is the transition, exactly.
+      if (list.state !== 'SUBMITTED' || before[listId]?.state !== 'ACTIVE') continue
       if (pending.has(listId)) continue
       // The visit RE-ARMS rather than gives up when the toggle is off, and that
       // is the whole reason it is a named function. Getting into `pending` needs
-      // a live DRAFT -> SUBMITTED transition, which happens exactly once (a
+      // a live ACTIVE -> SUBMITTED transition, which happens exactly once (a
       // SUBMITTED List only ever flows forward), so dropping the entry here
       // would strand that List for the rest of the session: the presenter who
       // switched the toggle off to answer "what really happens?" could never

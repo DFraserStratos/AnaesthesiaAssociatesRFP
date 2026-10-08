@@ -39,7 +39,7 @@ function triggerFailure(api: BoundAppStore): void {
   expect(editContract(api, OFFICE, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' }).ok).toBe(true)
   const listId = SEED_LIST_IDS.billingFailure
   const list = api.getState().schedule.lists[listId]!
-  if (list.state === 'DRAFT') expect(submitList(api, OFFICE, listId).ok).toBe(true)
+  if (list.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   const run = runBillingForList(api, listId)
   expect(run.ok).toBe(true)

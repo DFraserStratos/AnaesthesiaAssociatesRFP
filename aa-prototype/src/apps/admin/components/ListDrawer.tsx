@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import { useAppStore, type Actor } from '../../../store'
+import { isEmptyFreeSession, useAppStore, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
-import { sessionTimeRange } from '../../../shared/format'
+import { LIST_STATE_LABELS, sessionTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
 import { attentionReasons, isBooked, surnameFirst } from '../util'
 import { EditListSheet } from '../flows/EditListSheet'
@@ -40,7 +40,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
   const hospital = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : 'Unassigned'
   const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : 'Not assigned'
   const reasons = attentionReasons(list)
-  const isFreeEmpty = list.statusKey === 'free' && activeBookings.length === 0
+  const isFreeEmpty = isEmptyFreeSession(list, bookings)
 
   return (
     <>
@@ -50,7 +50,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {list.state}</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session}{isFreeEmpty ? '' : ` · ${LIST_STATE_LABELS[list.state]}`}</div>
             <div style={{ marginTop: 8 }}><StatusChip status={list.statusKey} /></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
@@ -119,7 +119,7 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
 
           {/* The List's own attachments (US-03.1.3), read-only by design in the
               drawer: the phase adds no Admin attach UI, although the store's
-              rights would let the office attach on DRAFT and SUBMITTED. */}
+              rights would let the office attach on ACTIVE and SUBMITTED. */}
           <div data-shot="admin-list-attachments">
             <Section label={`Attachments (${(list.attachments ?? []).length})`}>
               <AttachmentStrip attachments={list.attachments ?? []} canRemove={false} emptyText="No attachments on this List." />

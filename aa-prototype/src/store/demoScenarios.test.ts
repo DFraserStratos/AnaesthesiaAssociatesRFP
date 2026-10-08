@@ -26,7 +26,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 describe('S1 · booking to theatre', () => {
-  it('the St George\'s S12 booking lands a new DRAFT Booking on Souter\'s Tue 28 Jul AM List', () => {
+  it('the St George\'s S12 booking lands a new Booking on Souter\'s ACTIVE Tue 28 Jul AM List', () => {
     const api = createAppStore()
     const listId = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
     const before = bookingsForList(api.getState(), listId)
@@ -38,7 +38,7 @@ describe('S1 · booking to theatre', () => {
     expect(res.ok).toBe(true)
 
     const list = api.getState().schedule.lists[listId]
-    expect(list?.state).toBe('DRAFT')
+    expect(list?.state).toBe('ACTIVE')
     expect(bookingsForList(api.getState(), listId)).toHaveLength(4)
   })
 

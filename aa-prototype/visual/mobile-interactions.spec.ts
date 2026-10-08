@@ -142,7 +142,7 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.waitForTimeout(300)
   await page.getByText('Add a booking', { exact: false }).first().click()
-  await page.getByText('Enter manually', { exact: false }).first().click()
+  await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
   await page.getByText('Billing route', { exact: true }).scrollIntoViewIfNeeded()
   const formSegment = page.locator('[role="dialog"] [data-sliding-segmented-control]').first()
   await expectHighlightAligned(formSegment)
@@ -155,7 +155,7 @@ test('Start now becomes the travelling Finish action without a validation-focus 
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await page.waitForTimeout(300)
   await page.getByText('Add a booking', { exact: false }).first().click()
-  await page.getByText('Enter manually', { exact: false }).first().click()
+  await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
 
   await page.getByLabel('Name').fill('Timer Motion Test')
   await page.getByLabel('Date of birth').fill('1980-01-01')

@@ -222,8 +222,8 @@ Hooks already added:
 
 | List | ID | What it is |
 |---|---|---|
-| Souter Tue 21 AM | `L-34821-2026-07-21-AM` | St George's, Mr T. Hale. 5 complete bookings, DRAFT. |
-| Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 bookings, Ellison pending, DRAFT. |
+| Souter Tue 21 AM | `L-34821-2026-07-21-AM` | St George's, Mr T. Hale. 5 complete bookings, ACTIVE. |
+| Souter Tue 21 PM | `L-34821-2026-07-21-PM` | Southern Cross, Ms K. Patel. 4 bookings, Ellison pending, ACTIVE. |
 | Morrison Mon 20 | `L-25490-2026-07-20-AM` | SUBMITTED. 6 complete and 1 cancelled. |
 | Whitaker Fri 17 | `L-36208-2026-07-17-AM` | SUBMITTED. |
 | Souter Mon 20 AM | `L-34821-2026-07-20-AM` | SUBMITTED. Split billing, Brian Holt. |
@@ -316,7 +316,7 @@ Audit.
 **Booking source** (catch-up Phase 15): every scenario Booking shows one quiet "SOURCE · …" line on
 its detail (`[data-shot=booking-source]`): St George's, Southern Cross and Christchurch Public read
 "Hospital download", Forte Health and Christchurch Eye Surgery "Surgeon PDF". History Bookings show
-none. A Copy reads "Copy of another Booking".
+none. A Booking added on the List reads "Added by anaesthetist", one from phone advice "Office entry".
 
 **List attachments:** Souter Tue 28 AM (`L-34821-2026-07-28-AM`) carries the seeded theatre-list PDF,
 shown under "List attachments" on mobile and web and read-only in the Admin List drawer.
@@ -368,9 +368,11 @@ Authorising Morrison raises 6 invoices.
 
 **Anaesthetist app** (web and mobile: a sheet on mobile, a dialog on web)
 
-- **Add booking:** `text="Add a booking" >> nth=0` on list detail. The sheet offers "Enter manually"
-  and "Photo of paper list". The manual form has "Look up", which is disabled without an NHI,
-  "Save booking" and "Done".
+- **Add booking:** `text="Add a booking" >> nth=0` on list detail. Since catch-up Phase 15b the sheet
+  opens straight on the manual form, titled "Add a booking" (`role=heading[name="Add a booking"]`);
+  there is no chooser. The manual form has "Look up", which is disabled without an NHI,
+  "Save booking" and "Done". Photo capture is Future Work: only the `photo-capture-future` demo
+  action opens it (see Demo actions by screen).
 - **Procedure picker:** `text="Change" >> nth=0` on a booking. The search placeholder is "Search code
   or name".
 - **Add billing line:** `role=button[name="Add billing line"]`.
@@ -379,7 +381,6 @@ Authorising Morrison raises 6 invoices.
   `[data-shot=add-attachment-sheet]`, badged "Simulated file picker", with two groups:
   `role=group[name="Take a photo"]` and `role=group[name="Choose a file"]`. Clicking a sample attaches
   it and closes the sheet. Remove buttons are named `Remove <name>` and show on hover or focus.
-- **Copy booking:** `role=button[name="Copy booking"]` opens the new Booking (a new `BK` id) at once.
 - **History:** `role=button[name="History"]` opens a dialog titled "Booking history". On mobile it is
   inside `[data-testid=mobile-booking-header-actions]`.
 - **Cancel booking:** "Cancel booking", then fill `role=textbox[name="Reason"]`, then confirm.
@@ -521,6 +522,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
 | `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
+| `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 

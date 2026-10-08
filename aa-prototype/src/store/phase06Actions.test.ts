@@ -68,10 +68,10 @@ function twoFunderLines(api: BoundAppStore): { proc: string; withOverride: Billi
 // ---------------------------------------------------------------------------
 
 describe('editList', () => {
-  it('office overrides a DRAFT list start/end times, audited list.update', () => {
+  it('office overrides an ACTIVE list start/end times, audited list.update', () => {
     const api = store()
     const before = api.getState().schedule.lists[SOUTER_AM]
-    expect(before?.state).toBe('DRAFT')
+    expect(before?.state).toBe('ACTIVE')
     const r = editList(api, OFFICE, SOUTER_AM, { startTime: '08:30', endTime: '14:15' })
     expect(r.ok).toBe(true)
     const after = api.getState().schedule.lists[SOUTER_AM]
@@ -96,7 +96,7 @@ describe('editList', () => {
     expect(api.getState().schedule.lists[SOUTER_AM]?.notes).toBeUndefined()
   })
 
-  it('anaesthetist edits own DRAFT, but not a colleague list or a submitted one', () => {
+  it('anaesthetist edits own ACTIVE, but not a colleague list or a submitted one', () => {
     const api = store()
     expect(editList(api, SOUTER, SOUTER_AM, { notes: 'mine' }).ok).toBe(true)
     const notOwn = editList(api, SOUTER, MORRISON_LIST, { notes: 'nope' })

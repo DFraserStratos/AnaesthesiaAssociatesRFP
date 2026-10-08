@@ -1,6 +1,5 @@
 /**
- * Booking-creation guards (Phase 03) — the ad-hoc/manual + photo path and
- * Booking Copy (a skeleton-only new Booking since catch-up Phase 15). Modelled exactly on `cancelBooking` /
+ * Booking-creation guards (Phase 03): the ad-hoc/manual path. Modelled exactly on `cancelBooking` /
  * `editBooking`: an `editRefusal` gate, then one audited `mutate()` commit with
  * the audit metas allocated inside the recipe (the `reassignList` pattern).
  *
@@ -174,101 +173,6 @@ export function createBooking(
 }
 
 // ---------------------------------------------------------------------------
-// copyBooking
-// ---------------------------------------------------------------------------
-
-/**
- * Copy a Booking (US-02.4.3; catch-up Phase 15). A NEW Booking with only the
- * skeleton: the same List and patient, and the source's billing reference (the
- * reading of "references" recorded in the Decisions log; never the hospital
- * appointment correlation, because a copy is a different appointment). It has
- * one fresh PRIMARY Procedure and inherits nothing else: no notes,
- * attachments, time, procedure details, insurer, billable party, payment
- * category or Contract. Additional Procedures are added inside a Booking with
- * `addProcedure`, which is the only additional-procedure path.
- *
- * `billingRoute: 'hospital'` is a DEFAULT, not an inheritance: the same
- * starting value the add flow offers any new Booking, so the anaesthetist can
- * capture and complete the copy without an office step (interim until Phase 20
- * replaces the route with the default hospital Contract). Audited
- * `booking.copy` + `procedure.create`; the source Booking is untouched.
- */
-export function copyBooking(api: AppStoreApi, actor: Actor, sourceBookingId: string): Outcome<{ bookingId: string }> {
-  const state = api.getState()
-  const found = getBooking(state, sourceBookingId)
-  if (found === undefined) return refuse('notFound', 'Booking not found.')
-  const { booking: source, list } = found
-  const rights = editRefusal(actor, list)
-  if (rights !== null) return rights
-
-  const billingReference = proceduresForBooking(state, sourceBookingId)[0]?.billingReference
-
-  let bookingId = ''
-  const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
-    let counters = s.counters
-    const bookingAlloc = allocateId(counters, 'booking')
-    counters = bookingAlloc.counters
-    bookingId = bookingAlloc.id
-    const procAlloc = allocateId(counters, 'procedure')
-    counters = procAlloc.counters
-    const procedureId = procAlloc.id
-    const atISO = clockISO(s.clock)
-
-    const booking: Booking = {
-      id: bookingId,
-      listId: source.listId,
-      patientId: source.patientId,
-      completed: false,
-      copiedFromBookingId: sourceBookingId,
-      source: 'copy',
-      attachments: [],
-      lastModifiedBy: actor.who,
-      lastModifiedAtISO: atISO,
-    }
-
-    const procedure: Procedure = {
-      id: procedureId,
-      bookingId,
-      description: '',
-      billingRoute: 'hospital',
-      accRelated: false,
-      isAdditional: false,
-      selectedModifierCodes: [],
-    }
-    if (billingReference !== undefined) procedure.billingReference = billingReference
-
-    metas.push(
-      {
-        entityType: 'booking',
-        entityId: bookingId,
-        action: 'booking.copy',
-        after: { copiedFromBookingId: sourceBookingId, listId: source.listId, patientId: source.patientId, source: 'copy' },
-      },
-      {
-        entityType: 'procedure',
-        entityId: procedureId,
-        action: 'procedure.create',
-        after:
-          billingReference !== undefined
-            ? { isAdditional: false, billingRoute: 'hospital', billingReference }
-            : { isAdditional: false, billingRoute: 'hospital' },
-      },
-    )
-    return {
-      schedule: {
-        ...s.schedule,
-        bookings: { ...s.schedule.bookings, [bookingId]: booking },
-        procedures: { ...s.schedule.procedures, [procedureId]: procedure },
-      },
-      counters,
-    }
-  })
-
-  return ok({ bookingId })
-}
-
-// ---------------------------------------------------------------------------
 // addPostOpAddendum
 // ---------------------------------------------------------------------------
 
@@ -279,11 +183,11 @@ export function copyBooking(api: AppStoreApi, actor: Actor, sourceBookingId: str
  * is a NEW linked Booking (`bookingType: 'postOpAddendum'`, `addendumOfBookingId`) that
  * runs its own capture -> submit -> authorise -> bill cycle.
  *
- * It lands on the original anaesthetist's empty/free DRAFT List for today (AM
- * before PM) — an empty List is required because submission is completion-gated
+ * It lands on the original anaesthetist's empty free session for today (state
+ * ACTIVE; AM before PM) — an empty List is required because submission is completion-gated
  * for the whole List, so a shared List would block on incomplete siblings or
  * bill them together (same pattern as Phase 06 phone-advice booking). Refused
- * `noOpenSession` when neither of today's sessions is a free, empty DRAFT List.
+ * `noOpenSession` when neither of today's sessions is an empty free session (state ACTIVE).
  * The patient is reused; the billing setup is inherited from the original's
  * first procedure. Audited `booking.create` + `procedure.create`; original untouched.
  */
@@ -311,7 +215,7 @@ export function addPostOpAddendum(
     .filter((l): l is NonNullable<typeof l> => l !== undefined)
   const target = candidates.find(
     (l) =>
-      l.state === 'DRAFT' &&
+      l.state === 'ACTIVE' &&
       l.statusKey === 'free' &&
       l.hospitalId === undefined &&
       l.surgeonId === undefined &&
@@ -415,7 +319,7 @@ export function addPostOpAddendum(
  * Add an additional Procedure to an existing Booking (Phase 04's "Add another
  * procedure"). Additional from the first (RFP split-billing rule): it bills
  * time units only — base and modifier units stay on the first procedure. The
- * skeleton mirrors copyBooking's: empty description, `isAdditional: true`, the
+ * skeleton is an empty additional Procedure: empty description, `isAdditional: true`, the
  * funding context (route / insurer / billable party / category / contract)
  * inherited from the Booking's FIRST procedure. Audited `procedure.create`.
  */

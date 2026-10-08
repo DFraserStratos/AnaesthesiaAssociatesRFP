@@ -100,8 +100,8 @@ export function resolveBtm(procedure: Procedure, baseCode?: RvgCode): BtmBreakdo
 }
 
 /**
- * The RFP's split-billing rule: an additional procedure (e.g. on a copied
- * Booking) yields TIME UNITS ONLY; base and modifiers charge on the first
+ * The RFP's split-billing rule: an additional procedure (added with Add
+ * another procedure) yields TIME UNITS ONLY; base and modifiers charge on the first
  * procedure alone.
  */
 export function splitBillingUnits(procedure: Procedure, btm: BtmBreakdown): number {

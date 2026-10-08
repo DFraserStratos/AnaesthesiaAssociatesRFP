@@ -264,7 +264,7 @@ describe('field labels', () => {
 
 describe('Booking source values (catch-up Phase 15)', () => {
   it('render as their labels, and an unrelated source passes through', () => {
-    expect(formatAuditValue('source', 'copy')).toBe('Copy of another Booking')
+    expect(formatAuditValue('source', 'admin')).toBe('Office entry')
     expect(formatAuditValue('source', 'surgeonPdf')).toBe('Surgeon PDF')
     expect(formatAuditValue('source', 'webhook')).toBe('webhook')
     expect(formatAuditValue('source', 'constructor')).toBe('constructor')

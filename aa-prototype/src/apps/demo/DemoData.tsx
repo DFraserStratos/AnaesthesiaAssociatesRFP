@@ -172,13 +172,13 @@ export function DemoData() {
   const filteredLists = useMemo(
     () =>
       Object.values(schedule.lists)
-        .filter((l) => (stateFilter === 'ALL' ? l.state !== 'DRAFT' : l.state === stateFilter))
+        .filter((l) => (stateFilter === 'ALL' ? l.state !== 'ACTIVE' : l.state === stateFilter))
         .sort((a, b) => a.dateISO.localeCompare(b.dateISO)),
     [schedule.lists, stateFilter],
   )
 
   const stateCounts = useMemo(() => {
-    const out = { DRAFT: 0, SUBMITTED: 0, AUTHORISED: 0 }
+    const out: Record<ListState, number> = { ACTIVE: 0, SUBMITTED: 0, AUTHORISED: 0 }
     for (const l of Object.values(schedule.lists)) out[l.state] += 1
     return out
   }, [schedule.lists])
@@ -210,7 +210,7 @@ export function DemoData() {
     // Lists holding a seeded scenario booking (SEED_MARKERS) are always offered,
     // whatever their date — Phase 08's billing exemplars (split pair, two
     // funders, bariatric Type 3, rate x time, insured reimbursement, COS) sit
-    // on past DRAFT lists and must be stageable from here (P7: jump to seeded
+    // on past ACTIVE lists and must be stageable from here (P7: jump to seeded
     // scenario states) for the submit → authorise → billing-run demo.
     const markerListIds = new Set(
       Object.values(SEED_MARKERS)
@@ -219,7 +219,7 @@ export function DemoData() {
         .filter((id): id is string => id !== undefined),
     )
     const interestingLists = Object.values(schedule.lists)
-      .filter((l) => l.state !== 'DRAFT' || l.dateISO === todayISO || markerListIds.has(l.id))
+      .filter((l) => l.state !== 'ACTIVE' || l.dateISO === todayISO || markerListIds.has(l.id))
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
     const listIds = new Set(interestingLists.map((l) => l.id))
     const bookings = Object.values(schedule.bookings)
@@ -497,10 +497,10 @@ export function DemoData() {
       {/* Lifecycle filters */}
       <Panel
         title="Lifecycle states"
-        subtitle={`DRAFT ${stateCounts.DRAFT.toLocaleString()} · SUBMITTED ${stateCounts.SUBMITTED} · AUTHORISED ${stateCounts.AUTHORISED}`}
+        subtitle={`ACTIVE ${stateCounts.ACTIVE.toLocaleString()} · SUBMITTED ${stateCounts.SUBMITTED} · AUTHORISED ${stateCounts.AUTHORISED}`}
       >
         <div style={{ display: 'flex', gap: 8 }}>
-          {(['ALL', 'SUBMITTED', 'AUTHORISED', 'DRAFT'] as const).map((f) => (
+          {(['ALL', 'SUBMITTED', 'AUTHORISED', 'ACTIVE'] as const).map((f) => (
             <button
               key={f}
               type="button"
@@ -517,12 +517,12 @@ export function DemoData() {
                 cursor: 'pointer',
               }}
             >
-              {f === 'ALL' ? 'Non draft' : f}
+              {f === 'ALL' ? 'Not active' : f}
             </button>
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {(stateFilter === 'DRAFT' ? filteredLists.slice(0, 20) : filteredLists).map((list) => (
+          {(stateFilter === 'ACTIVE' ? filteredLists.slice(0, 20) : filteredLists).map((list) => (
             <button
               key={list.id}
               type="button"
@@ -542,9 +542,9 @@ export function DemoData() {
               {describeList(list.id)}
             </button>
           ))}
-          {stateFilter === 'DRAFT' && filteredLists.length > 20 && (
+          {stateFilter === 'ACTIVE' && filteredLists.length > 20 && (
             <span style={{ fontSize: 12, color: neutral.mist }}>
-              Showing 20 of {filteredLists.length.toLocaleString()} draft Lists.
+              Showing 20 of {filteredLists.length.toLocaleString()} active Lists.
             </span>
           )}
         </div>

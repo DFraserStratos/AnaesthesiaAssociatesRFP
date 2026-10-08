@@ -105,7 +105,7 @@ export function WebBookingDetailRoute() {
 
   return (
     <RequireEntity exists={exists}>
-      <BookingDetailView key={bookingId} bookingId={bookingId} actor={actor} todayISO={todayISO} onBack={backToList} onCopied={(newId) => navigate(`/web/lists/${listId}/bookings/${newId}`)} />
+      <BookingDetailView key={bookingId} bookingId={bookingId} actor={actor} todayISO={todayISO} onBack={backToList} />
     </RequireEntity>
   )
 }

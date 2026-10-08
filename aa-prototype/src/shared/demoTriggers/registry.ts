@@ -239,6 +239,17 @@ function openWarningChoices(state: AppState, ctx: DemoTriggerCtx) {
 // The registry
 // ---------------------------------------------------------------------------
 
+/** Dr Souter's Tue 21 PM List: open, and already used by the catalogue recipes. */
+const PHOTO_CAPTURE_INDEX_LIST_ID = SEED_LIST_IDS.souterPm21
+
+/** The photo demo adds a Booking, so it needs a List still open for new Bookings. */
+function photoCaptureDisabledReason(state: AppState, listId: string): string | null {
+  const list = state.schedule.lists[listId]
+  if (list === undefined) return 'List not found'
+  if (list.state !== 'ACTIVE') return 'This List is no longer open for new Bookings'
+  return null
+}
+
 export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   // ── Admin · Billing monitor ───────────────────────────────────────────
   {
@@ -263,7 +274,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         return { ok: false, message: 'Already triggered. Use Resolve & retry on the failed booking in the billing monitor.' }
       }
       editContract(api, OFFICE_ACTOR, CONTRACT.cosAcc, { effectiveToISO: '2026-07-15' })
-      if (list.state === 'DRAFT') submitList(api, OFFICE_ACTOR, listId)
+      if (list.state === 'ACTIVE') submitList(api, OFFICE_ACTOR, listId)
       const outcome = authoriseList(api, OFFICE_ACTOR, listId)
       return {
         ok: outcome.ok,
@@ -379,7 +390,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const listId = POST_OP_ORIGINAL_LIST_ID
       const list = api.getState().schedule.lists[listId]
       if (list === undefined) return { ok: false, message: 'The post-op original list is not present in this seed.' }
-      if (list.state === 'DRAFT') submitList(api, OFFICE_ACTOR, listId)
+      if (list.state === 'ACTIVE') submitList(api, OFFICE_ACTOR, listId)
       const submitted = api.getState().schedule.lists[listId]
       if (submitted?.state === 'SUBMITTED') authoriseList(api, OFFICE_ACTOR, listId)
       return {
@@ -563,6 +574,29 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => null,
   },
 
+  // ── Photo capture (Future scope) ──────────────────────────────────────
+  // Photo capture is Future Work (US-02.4.4, catch-up Phase 15b): out of the
+  // Add a booking sheet, kept here so a presenter can still show it. UI-only:
+  // it leaves a request that `MobileListsRoute` turns into the sheet.
+  {
+    id: 'photo-capture-future',
+    label: 'Photo capture (Future scope)',
+    description:
+      'Opens the simulated photo of a paper booking card on this List. Photo capture is Future Work (US-02.4.4), not first-release scope.',
+    screen: 'Mobile · List',
+    routes: ['/mobile/lists/:listId'],
+    surfaces: ['bar', 'pwa'],
+    badge: 'future-scope',
+    disabledReason: (state, ctx) => photoCaptureDisabledReason(state, ctx.params['listId'] ?? ''),
+    run: (api, ctx) => {
+      const listId = ctx.params['listId'] ?? ''
+      const reason = photoCaptureDisabledReason(api.getState(), listId)
+      if (reason !== null) return { ok: false, message: reason }
+      useDemoTriggerMemory.getState().requestPhotoCapture(listId)
+      return { ok: true, message: 'Photo capture opened on this List (Future scope).' }
+    },
+    indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
+  },
   // ── Hospital messages (Future scope) ──────────────────────────────────
   {
     id: 'fire-hospital-message',

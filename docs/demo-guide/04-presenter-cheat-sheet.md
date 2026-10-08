@@ -33,15 +33,16 @@
 ## The lifecycle
 
 ```text
-DRAFT -> SUBMITTED -> AUTHORISED -> Billing run completed
+ACTIVE -> SUBMITTED -> AUTHORISED -> Billing run completed
 ```
 
-- `DRAFT`: anaesthetist, office and integrations may update.
+- `ACTIVE`: anaesthetist, office and integrations may update.
 - `SUBMITTED`: office-only edits; anaesthetist sees completed/unbilled.
 - `AUTHORISED`: Bookings are locked; the whole List hands to billing.
 - Billing-run completion: the prototype stamps `billedAt` and removes the List from the
   anaesthetist's work view.
 - There is no `RETURNED` state.
+- `DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
 
 ## Permission matrix
 
@@ -49,7 +50,7 @@ DRAFT -> SUBMITTED -> AUTHORISED -> Billing run completed
 |---|---:|---:|---:|
 | View own Lists/Bookings | Yes | Yes, all | As needed |
 | View colleague patient details | No | Yes | As needed |
-| Edit a `DRAFT` Booking | Yes, own | Yes | Yes |
+| Edit a Booking on an `ACTIVE` List | Yes, own | Yes | Yes |
 | Edit a `SUBMITTED` Booking | No | Yes | No, park for intervention |
 | Edit an `AUTHORISED` Booking | No | No | No |
 | Submit a List | Yes, own | No; office receives it after submission | No |
@@ -99,7 +100,6 @@ Do not treat these as the same workflow.
 
 - A second/additional Procedure in the same episode (**Add another procedure**) is time-only; Brian Holt
   on Dr Souter's Mon 20 AM List (the S3 split Booking) shows it.
-- **Copy booking** starts a new Booking with its own primary Procedure; it is not the additional-procedure path.
 - Base and Modifiers cannot be charged again.
 - One Procedure may allocate conserved lines across two funders.
 - The prototype groups lines by counterparty; different funders create separate invoices.
@@ -134,7 +134,8 @@ Payer -> ACCREC -> AA account -> illustrative AA fee -> ACCPAY net -> Anaestheti
 - Procedure-day Lists and Bookings
 - BTM capture
 - Complete Booking and submit List
-- Add, copy or missing Booking
+- Add a missing Booking
+- Photo of the booking card: Future Work (Demo actions, badged)
 - Availability and cover
 - Later: balances
 
@@ -337,7 +338,7 @@ anaesthetist-facing views. Xero is the AR and banking add-on.
 
 ### "How do late hospital changes work?"
 
-While the List is `DRAFT`, mapped hospital messages can update the Booking in near real time. Once the
+While the List is `ACTIVE`, mapped hospital messages can update the Booking in near real time. Once the
 List is `SUBMITTED` or `AUTHORISED`, an inbound change must park for manual intervention.
 
 ### "What if the patient has no NHI?"

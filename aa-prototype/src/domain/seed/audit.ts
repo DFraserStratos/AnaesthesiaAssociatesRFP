@@ -118,7 +118,6 @@ function procedureCapture(procedure: Procedure): Record<string, unknown> {
 function bookingContext(booking: Booking): Record<string, unknown> {
   const after: Record<string, unknown> = {
     scheduledTime: booking.scheduledTime,
-    copiedFromBookingId: booking.copiedFromBookingId,
     bookingType: booking.bookingType,
     addendumOfBookingId: booking.addendumOfBookingId,
     notes: booking.notes,

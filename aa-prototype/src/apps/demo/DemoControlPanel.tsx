@@ -257,7 +257,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Booking. The List itself stays DRAFT, because its other three Bookings are still to be captured.',
+          'Reset to a clean S1 state. Note: HL7 v2 and FHIR are Future scope, so present this beat as an illustration of intake; the in-scope path, a hospital download matched by the office, arrives in a later build. Start in Mobile to introduce the AM and PM Lists, then open Demo actions in the harness bar and run Fire hospital message with MSG-STG-1001 (the Integrations simulator is the alternative). Sarah Mitchell arrives as a fourth Booking on Dr Souter\'s Tue 28 Jul AM List, alongside its three booked cases. Use "Procedure day · 28 Jul", then capture code 20950 and complete her Booking. The List itself stays active, because its other three Bookings are still to be captured.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Integrations', path: APP_CONFIG['demo-integrations'].path },

@@ -105,7 +105,7 @@ export function generateListsForDates(masters: CanvasMasters, datesISO: readonly
           dateISO,
           anaesthetistId,
           session,
-          state: 'DRAFT',
+          state: 'ACTIVE',
           statusKey: 'free',
           conflicts: [],
         }

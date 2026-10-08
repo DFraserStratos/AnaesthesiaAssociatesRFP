@@ -67,7 +67,6 @@ export {
 } from './intake'
 export {
   createBooking,
-  copyBooking,
   addProcedure,
   removeProcedure,
   addPostOpAddendum,

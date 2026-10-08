@@ -154,7 +154,7 @@ working List rather than an empty one.
   reason the List is the unit of approval, not the Booking."
 - **Expected:** Sarah changes the List from **0 of 4 complete** to **1 of 4 complete**. The List action then reads **Mark list completed · 3 to finish**; tapping it opens the
   **Bookings still to finish** sheet, which names each remaining Booking by time and patient with what it
-  needs. The List stays `DRAFT`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
+  needs. The List stays `ACTIVE`. S2 Beat 4 carries the submitted-to-authorised half of the handoff from
   the seeded Review queue.
 - **Worth pointing at:** only **Mark complete** is pinned to the bottom of the phone; the anaesthetist
   captures inputs and sees no running fee, which the office sees on the Admin Booking in S2. Scroll down
@@ -189,7 +189,7 @@ already seeded.
 - **Click:**
   - Open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**.
   - Choose **St George's Hospital** and **Mr T. Hale**; keep 13:00 to 17:00.
-  - Select **Continue to add booking → Enter manually → Look up**.
+  - Select **Continue to add booking → Look up**.
   - Pause on the populated booking.
   - Select **Review → Save booking → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks

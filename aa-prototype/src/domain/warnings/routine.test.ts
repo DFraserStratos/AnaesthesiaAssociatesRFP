@@ -20,7 +20,7 @@ const BOOKING: Booking = {
   lastModifiedBy: 'seed',
   lastModifiedAtISO: '2026-07-21T08:00:00',
 }
-const LIST = { id: 'L-1', dateISO: '2026-07-24', session: 'AM', state: 'DRAFT' } as unknown as List
+const LIST = { id: 'L-1', dateISO: '2026-07-24', session: 'AM', state: 'ACTIVE' } as unknown as List
 
 function facts(over: Partial<WarningFacts> = {}): WarningFacts {
   return { booking: BOOKING, list: LIST, procedures: [], prepaymentStatus: 'none', todayISO: '2026-07-21', ...over }

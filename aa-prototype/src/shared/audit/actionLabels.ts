@@ -22,7 +22,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'booking.complete': 'Booking completed',
   'booking.uncomplete': 'Booking reopened for amendment',
   'booking.cancel': 'Booking cancelled',
-  'booking.copy': 'Booking copied',
   'booking.attachmentAdd': 'Attachment added',
   'booking.attachmentRemove': 'Attachment removed',
   'booking.reassign': 'Booking moved to another list',

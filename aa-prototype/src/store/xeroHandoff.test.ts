@@ -37,7 +37,7 @@ function listOf(api: BoundAppStore, bookingId: string): string {
 /** Submit → authorise → run → hand off (no wired emitter). */
 function billAndHandoff(api: BoundAppStore, listId: string): void {
   const list = api.getState().schedule.lists[listId]
-  if (list?.state === 'DRAFT') expect(submitList(api, OFFICE, listId).ok).toBe(true)
+  if (list?.state === 'ACTIVE') expect(submitList(api, OFFICE, listId).ok).toBe(true)
   expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
   expect(runBillingForList(api, listId).ok).toBe(true)
   handoffListCases(api, listId)

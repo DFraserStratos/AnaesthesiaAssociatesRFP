@@ -20,7 +20,7 @@ import { isListBilled } from './selectors'
 export function officeStandInRefusal(state: Pick<AppState, 'schedule'>, listId: string): string | null {
   const list = state.schedule.lists[listId]
   if (list === undefined) return 'This List is not in the current demo data'
-  if (list.state === 'DRAFT') return 'Submit the List first'
+  if (list.state === 'ACTIVE') return 'Submit the List first'
   if (list.state !== 'SUBMITTED') return 'Already authorised'
   return null
 }

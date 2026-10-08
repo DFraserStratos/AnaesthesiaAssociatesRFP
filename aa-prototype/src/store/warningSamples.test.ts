@@ -53,7 +53,7 @@ describe('pinned sample targets', () => {
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
       const list = seed.schedule.lists[seed.schedule.bookings[id]!.listId]!
       expect(list.dateISO).toBe(DEMO_TODAY)
-      expect(list.state).toBe('DRAFT')
+      expect(list.state).toBe('ACTIVE')
       expect(proceduresForBooking(seed, id).length).toBeGreaterThan(0)
     }
     expect(SEED_WARNING_SAMPLE_BOOKINGS.multiWarning).toBe(AM_TARGET)

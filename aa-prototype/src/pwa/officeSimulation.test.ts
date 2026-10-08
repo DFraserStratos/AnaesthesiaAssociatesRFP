@@ -44,7 +44,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 /** The office simulation's own audit identity — asserted, so a rename breaks here first. */
 const SIMULATED_OFFICE = 'AA office (simulated)'
 
-/** Souter's Tue-21 PM List: DRAFT, one booking left to capture (the design-day path). */
+/** Souter's Tue-21 PM List: ACTIVE, one booking left to capture (the design-day path). */
 const SOUTER_PM = SEED_LIST_IDS.souterPm21
 /** A List the SEED ships already SUBMITTED for the Admin review queue. */
 const SEEDED_QUEUE_LIST = SEED_LIST_IDS.morrisonMon20
@@ -396,8 +396,8 @@ describe('silent no-ops', () => {
       submitAsSouter(api)
       resetDemo(api)
       expect(() => vi.advanceTimersByTime(OFFICE_SIM_DELAY_MS)).not.toThrow()
-      // Back to the pristine seed: DRAFT, mid-capture, nothing billed.
-      expect(listState(api, SOUTER_PM)).toBe('DRAFT')
+      // Back to the pristine seed: ACTIVE, mid-capture, nothing billed.
+      expect(listState(api, SOUTER_PM)).toBe('ACTIVE')
       expect(invoicesForList(api.getState(), SOUTER_PM)).toHaveLength(0)
       expect(authorisersOf(api, SOUTER_PM)).toEqual([])
     } finally {

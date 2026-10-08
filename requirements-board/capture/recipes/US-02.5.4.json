@@ -1,7 +1,7 @@
 {
   "id": "US-02.5.4",
   "status": "partial",
-  "absentReason": "Inbound changes are applied to any DRAFT List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.",
+  "absentReason": "Inbound changes are applied to any ACTIVE List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.",
   "shots": [
     {
       "name": "change-cutoff",

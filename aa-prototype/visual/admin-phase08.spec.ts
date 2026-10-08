@@ -341,7 +341,7 @@ test('exemplar staging via the guard console: patient layout + nib upload portal
   await page.waitForTimeout(400)
 
   // Stage the insured-reimbursement list (Rutherford Thu 16, a pinned past
-  // DRAFT exemplar) as the office: submit, then authorise — the billing run
+  // ACTIVE exemplar) as the office: submit, then authorise — the billing run
   // fires on the authorise event.
   // The demo-data page carries several selects; scope to the guard console's
   // by their distinctive option values/placeholders.

@@ -1,7 +1,7 @@
 {
   "id": "US-02.4.1",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "Manual entry is built and is the sheet's one way in; the optional 'as given' field kept as the Procedure's source wording is not built yet (Phase 20a)",
   "shots": [
     {
       "name": "add-card",
@@ -10,32 +10,11 @@
       "start": "/web/lists/L-34821-2026-07-21-PM",
       "states": [
         {
-          "state": "choose",
-          "caption": "Add a Booking, enter manually or from a photo",
-          "steps": [
-            {
-              "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 600
-            }
-          ],
-          "highlight": [
-            "[role=dialog]"
-          ]
-        },
-        {
           "state": "manual",
-          "caption": "Manual entry of the patient and operation",
+          "caption": "Add a Booking: enter the patient and operation",
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 600
-            },
-            {
-              "click": "text=\"Enter manually\""
             },
             {
               "wait": 600
@@ -54,32 +33,11 @@
       "start": "/mobile/lists/L-34821-2026-07-21-PM",
       "states": [
         {
-          "state": "choose",
-          "caption": "Add a Booking, enter manually or from a photo",
-          "steps": [
-            {
-              "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 600
-            }
-          ],
-          "highlight": [
-            "[data-aa-mobile-product] [role=dialog]"
-          ]
-        },
-        {
           "state": "manual",
-          "caption": "Manual entry of the patient and operation",
+          "caption": "Add a Booking: enter the patient and operation",
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
-            },
-            {
-              "wait": 600
-            },
-            {
-              "click": "text=\"Enter manually\""
             },
             {
               "wait": 600

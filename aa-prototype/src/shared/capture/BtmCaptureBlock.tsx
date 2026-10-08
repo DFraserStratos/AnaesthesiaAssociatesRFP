@@ -116,7 +116,7 @@ export function BtmCaptureBlock({
     (p): p is string => p !== undefined,
   )
 
-  const editable = list.state === 'DRAFT' && procedure !== undefined
+  const editable = list.state === 'ACTIVE' && procedure !== undefined
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

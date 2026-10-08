@@ -94,7 +94,7 @@ test('a List opens, a Booking completes and the List submits, all within the dev
   await page.goto('/')
   await page.waitForLoadState('networkidle')
 
-  // Southern Cross PM: a DRAFT list with one booking left to finish.
+  // Southern Cross PM: an ACTIVE list with one booking left to finish.
   await page.getByText('Southern Cross', { exact: false }).first().click()
   await expect(page.getByTestId('mobile-list-header')).toBeVisible()
   await settleSlide(page)
