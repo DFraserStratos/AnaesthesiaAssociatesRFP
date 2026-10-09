@@ -1,5 +1,5 @@
 import { roundToCents } from '../../domain/billing'
-import type { InvoiceLine, XeroContact } from '../../domain/types'
+import type { InvoiceLine, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
 
 export interface XeroContactView {
@@ -11,10 +11,14 @@ export interface XeroContactView {
 }
 
 export interface XeroInvoicePairView {
+  /** `aaFee`: AA's own monthly fee invoice to an anaesthetist, with no ACCPAY (catch-up Phase 16). */
+  kind: 'procedure' | 'aaFee'
   accRec: {
     id: string
     invoiceId: string
     invoiceNumber: string
+    /** Xero Reference: the case reference, stored on the record (US-09.1.1). */
+    reference: string
     contactId: string
     contact?: XeroContactView
     amountDue: number
@@ -30,11 +34,9 @@ export interface XeroInvoicePairView {
   accPay?: {
     id: string
     billNumber: string
+    reference: string
     contactId: string
     contact?: XeroContactView
-    grossAmount: number
-    serviceFeeRate: number
-    serviceFeeAmount: number
     totalPayable: number
     amountAuthorised: number
     amountDisbursed: number
@@ -49,6 +51,9 @@ export interface XeroInvoicePairView {
     bookingId?: string
     patientName?: string
     anaesthetistId?: string
+    /** For an AA fee pair: the fee invoice behind it. */
+    aaFeeInvoiceId?: string
+    aaFeeMonthISO?: string
   }
   incomplete: boolean
 }
@@ -89,6 +94,7 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
 
   return Object.values(state.xero.accRecs)
     .map((rec): XeroInvoicePairView => {
+      if (rec.kind === 'aaFee') return feePairView(state, rec)
       const linkedCase = casesByAccRecId.get(rec.id)
       const invoice = state.billing.invoices[rec.invoiceId]
       const accPay =
@@ -100,23 +106,26 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
       const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
       const patientName =
         booking !== undefined ? state.masters.patients[booking.patientId]?.name : undefined
-      const invoiceNumber = invoice?.invoiceNumber ?? rec.invoiceId
+      // InvoiceNumber and Reference are stored on the Xero records, not derived.
+      const invoiceNumber = rec.invoiceNumber
       const payer = contactView(state.xero.contacts[rec.contactId])
       const payee =
         accPay !== undefined ? contactView(state.xero.contacts[accPay.contactId]) : undefined
 
       return {
+        kind: 'procedure',
         accRec: {
           id: rec.id,
           invoiceId: rec.invoiceId,
           invoiceNumber,
+          reference: rec.reference,
           contactId: rec.contactId,
           ...(payer !== undefined ? { contact: payer } : {}),
           amountDue: rec.amountDue,
           amountReceived: rec.amountReceived,
           balance: roundToCents(Math.max(0, rec.amountDue - rec.amountReceived)),
           status: rec.status,
-          ...(invoice?.raisedAtISO !== undefined ? { raisedAtISO: invoice.raisedAtISO } : {}),
+          raisedAtISO: rec.issuedAtISO,
           ...(invoice !== undefined
             ? {
                 subtotal: invoice.subtotal,
@@ -130,12 +139,10 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
           ? {
               accPay: {
                 id: accPay.id,
-                billNumber: `${invoiceNumber}-P`,
+                billNumber: accPay.invoiceNumber,
+                reference: accPay.reference,
                 contactId: accPay.contactId,
                 ...(payee !== undefined ? { contact: payee } : {}),
-                grossAmount: accPay.grossAmount,
-                serviceFeeRate: accPay.serviceFeeRate,
-                serviceFeeAmount: accPay.serviceFeeAmount,
                 totalPayable: accPay.amountPayable,
                 amountAuthorised: accPay.amountAuthorised,
                 amountDisbursed: accPay.amountDisbursed,
@@ -168,4 +175,38 @@ export function xeroInvoicePairViews(state: XeroPairState): XeroInvoicePairView[
       }
     })
     .sort((a, b) => a.accRec.invoiceNumber.localeCompare(b.accRec.invoiceNumber))
+}
+
+/**
+ * An AA fee pair: the fee ACCREC against the anaesthetist's contact, its lines
+ * from the fee invoice snapshot, and no ACCPAY (AA charging its own fee, not
+ * money passing through). No patient is involved.
+ */
+function feePairView(state: XeroPairState, rec: XeroAccRec): XeroInvoicePairView {
+  const fee = state.billing.aaFeeInvoices[rec.invoiceId]
+  const payer = contactView(state.xero.contacts[rec.contactId])
+  return {
+    kind: 'aaFee',
+    accRec: {
+      id: rec.id,
+      invoiceId: rec.invoiceId,
+      invoiceNumber: rec.invoiceNumber,
+      reference: rec.reference,
+      contactId: rec.contactId,
+      ...(payer !== undefined ? { contact: payer } : {}),
+      amountDue: rec.amountDue,
+      amountReceived: rec.amountReceived,
+      balance: roundToCents(Math.max(0, rec.amountDue - rec.amountReceived)),
+      status: rec.status,
+      raisedAtISO: rec.issuedAtISO,
+      ...(fee !== undefined ? { subtotal: fee.subtotal, gst: fee.gst, total: fee.total } : {}),
+      lines: (fee?.lines ?? []).map((line, i) => ({ id: `${rec.invoiceId}-L${i + 1}`, invoiceId: rec.invoiceId, description: line.description, amount: line.amount })),
+    },
+    engine: {
+      caseReference: rec.reference,
+      billingInvoiceId: rec.invoiceId,
+      ...(fee !== undefined ? { aaFeeInvoiceId: fee.id, aaFeeMonthISO: fee.monthISO, anaesthetistId: fee.anaesthetistId } : {}),
+    },
+    incomplete: fee === undefined || payer === undefined,
+  }
 }

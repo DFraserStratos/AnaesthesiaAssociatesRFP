@@ -6,13 +6,14 @@
     {
       "name": "contacts",
       "app": "simulator",
-      "caption": "Xero contacts identified by the hidden internal ID in ContactNumber",
+      "caption": "Xero contacts carry only the hidden internal ID: no name, no NHI",
       "start": "/demo/xero",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "table"
+            "[data-shot=xero-contact-pt0017]",
+            "[data-shot=xero-contact-bp0001]"
           ]
         }
       ]
@@ -20,7 +21,7 @@
     {
       "name": "pair-contact-ids",
       "app": "simulator",
-      "caption": "ContactID and ContactNumber on the ACCREC",
+      "caption": "The payer named only by its hidden ID, with ContactID and ContactNumber on the ACCREC",
       "start": "/demo/xero/invoices/XRH12",
       "states": [
         {
@@ -30,6 +31,7 @@
             }
           ],
           "highlight": [
+            "[data-shot=xero-accrec-card] >> text=\"Payer\" >> xpath=../..",
             "[data-shot=xero-accrec-card] >> text=\"ContactID\" >> xpath=../.."
           ]
         }

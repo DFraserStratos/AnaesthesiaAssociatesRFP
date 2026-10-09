@@ -1,6 +1,44 @@
 {
   "id": "US-10.3.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 16 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "fee-settings",
+      "app": "admin",
+      "caption": "Fixed items plus a charge per BCTI, kept in settings and not in code",
+      "start": "/admin/billing/aa-fees/settings",
+      "states": [
+        {
+          "state": "schedule",
+          "steps": [],
+          "highlight": [
+            "[data-shot=admin-aa-fee-settings]"
+          ]
+        },
+        {
+          "state": "edited",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add item\"]"
+            },
+            {
+              "fill": "[aria-label=\"Fixed item 3 description\"]",
+              "value": "Software licence"
+            },
+            {
+              "fill": "[aria-label=\"Fixed item 3 amount\"]",
+              "value": "25.00"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-aa-fee-settings]"
+          ]
+        }
+      ]
+    }
+  ]
 }

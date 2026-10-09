@@ -252,7 +252,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". |
 | `/web/availability` | Practice availability grid. Free cells read "Free · Open for booking" and can be clicked for cover. |
-| `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. |
+| `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 
 **Admin app** (`src/apps/admin/`)
 
@@ -265,7 +265,9 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
 | `/admin/invoices` | Invoice list. |
 | `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail. |
-| `/admin/billing` | Billing monitor. |
+| `/admin/billing` | Billing monitor. Its AA fee invoices panel is `[data-shot=billing-aa-fee-invoices]`. |
+| `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
+| `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
 | `/admin/masters` | Master data. Tabs include Contracts and "Hospitals & holidays". |
 | `/admin/audit` | Audit viewer. |
@@ -296,7 +298,7 @@ Audit.
 | `/demo/control` | The presenter's index: clock and reset, scenario jumps, and every demo action listed under its screen with an "Open screen" link. No trigger buttons. |
 | `/demo/xero` | Xero simulation, Contacts tab. |
 | `/demo/xero/invoices` | Invoices tab. |
-| `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, illustrative AA service fee. `XRB0` exists in the seed. |
+| `/demo/xero/invoices/:accRecId` | Pair detail: ACCREC and ACCPAY, money flow, both records' InvoiceNumber and Reference (`xero-invoice-identifiers`); the payable equals the receivable. `XRB0` exists in the seed. An AA fee pair (`XRFH01`, `XRFH02`) shows the fee ACCREC and a "No payable" note (`xero-aa-fee-pair`). |
 | `/demo/integrations` | Integration simulator: feeds, message library, raw HL7 to FHIR to schedule change. |
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
@@ -361,6 +363,15 @@ Authorising Morrison raises 6 invoices.
 - A provisional patient with no NHI.
 - Repeat patients: Mitchell and Walker.
 - Procedures missing a billing reference.
+
+**AA fee (catch-up Phase 16):** Dr Souter's AA-FEE-2026-H01 (May, paid) and H02 (June, unpaid), ACCRECs
+`XRFH01` / `XRFH02`. Sample settings: $350.00 + $150.00 fixed, $5.00 per BCTI, ex GST. "Seed a month of BCTIs"
+gives Dr Rutherford 40 paid July BCTIs (`L-RB-…` Lists on 1 to 6 July, invoices `AA-2026-RB01…RB40`), so
+the next run raises his $700.00 before GST ($805.00 with GST).
+
+**Xero contacts:** no personal information. Patient and billable-party contacts are named "Patient PT…" /
+"Billable party BP…" (for example `xero-contact-pt0017` is "Patient PT0017", archived; `xero-contact-bp0001`
+"Billable party BP0001"). Find a Xero contact, row or card by invoice number or hidden ID, never a patient name.
 
 **NHIs:** Ellison ZAA0067, Tane ZBC1123, Chen ZAE0310, Prentice ZAC3326, Holt ZAF4434.
 
@@ -444,7 +455,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `integration-workspace`, `integration-inspector`, `integration-library`
 - `xero-invoice-table`, `xero-invoice-table-shell`, `xero-invoice-row-<accRecId>`, `xero-pair-detail`,
-  `xero-money-flow-grid`, `aa-service-fee`
+  `xero-money-flow-grid`, `xero-invoice-identifiers`, `xero-aa-fee-pair`, `xero-accrec-card`, `xero-accpay-card`
+- AA fee: `admin-aa-fee-invoices`, `admin-aa-fee-settings`, `billing-aa-fee-invoices`, `web-accounts-aa-fees`
 
 **Mobile**
 
@@ -518,9 +530,11 @@ and in the installed PWA's "Demo" sheet. The registry is
 |---|---|---|
 | `/admin/billing` | `billing-failure`, `arm-handoff-fault`, `run-reconciliation-poll`, `run-archive-job` | Billing failure dates out the COS ACC contract and authorises Ropata Thu 16. "Run payables" is the screen's own product button, `[data-shot=billing-payables-run]`, not a demo action |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]` | `run-reconciliation-poll`, `run-archive-job` | |
+| `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
+| `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List |
 | `/admin/integrations`, Surgeon PDFs tab | `ingest-pdf-row` | Click the "Surgeon PDFs" tab first; the entry shows only there |
-| `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
+| `/admin/invoices/<invoiceId>`, `/demo/xero/invoices/<accRecId>` | `payment-full`, `payment-half`, `payment-replay` | Acts on the invoice in the URL; the payable authorises for exactly the amount received. After the S3 AM authorise, AA-2026-0002 is the first open invoice; a raised pre-procedure invoice is `XR0001` |
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |

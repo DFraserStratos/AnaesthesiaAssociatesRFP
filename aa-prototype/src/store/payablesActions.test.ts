@@ -1,10 +1,11 @@
 /**
  * Payables run & disbursement tests (Phase 10; WI4, X5).
  *
- * The load-bearing accounting proof: partial → authorise pro-rata → run
- * disburses that slice → second partial → authorised rises → the next run pays
- * ONLY the increment (never double-pays); the total disbursed equals the
- * pro-rata share, and the case flips to `disbursed` only when fully paid out.
+ * The load-bearing accounting proof: partial → authorise exactly the amount
+ * received → run disburses it → second partial → authorised rises → the next
+ * run pays ONLY the increment (never double-pays); the total disbursed equals
+ * the gross payable (catch-up Phase 16), and the case flips to `disbursed` only
+ * when fully paid out.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -12,7 +13,6 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases, wireBillingRun } from './billingRun'
 import { receivePayment } from './paymentActions'
-import { proRataAuthorised } from './paymentActions'
 import { disbursePayable, runPayables, payablesDue, type PayablesRunResult } from './payablesActions'
 import { casesForList, openAccRecs } from './selectors'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -65,10 +65,12 @@ describe('payables run', () => {
     const { caseId, accRecId, accPayId, amountDue, amountPayable } = billCos(api)
     const p1 = roundToCents(amountDue * 0.4)
     const p2 = roundToCents(amountDue - p1)
-    const authorised1 = proRataAuthorised(p1, amountDue, amountPayable)
-    const authorised2 = roundToCents(amountPayable - authorised1)
+    // The payable is the gross amount; each run pays exactly what arrived.
+    expect(amountPayable).toBe(amountDue)
+    const authorised1 = p1
+    const authorised2 = p2
 
-    // Partial 1 → authorise pro-rata → run disburses that slice.
+    // Partial 1 → authorise exactly p1 → run disburses it.
     expect(receivePayment(api, { accRecId, amount: p1, idempotencyKey: 'A', source: 'webhook' }).ok).toBe(true)
     expect(payablesDue(api.getState()).total).toBe(authorised1)
     const run1 = runPayables(api, OFFICE)

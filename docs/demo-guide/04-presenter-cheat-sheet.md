@@ -115,17 +115,31 @@ Do not treat these as the same workflow.
 ## The money model
 
 ```text
-Payer -> ACCREC -> AA account -> illustrative AA fee -> ACCPAY net -> Anaesthetist
+Payer -> ACCREC -> AA account -> ACCPAY (full amount) -> Anaesthetist
 ```
 
 - `ACCREC`: money AA is collecting.
-- `ACCPAY`: net money AA owes the anaesthetist.
-- The 5% AA service fee is a prototype assumption. The RFP does not specify the rate or GST treatment.
+- `ACCPAY`: the full amount AA owes the anaesthetist; it equals the ACCREC. AA's own fee is never
+  deducted from it (it is invoiced to the anaesthetist separately).
 - Paid into AA and disbursed to the anaesthetist are separate states.
-- Partial payments authorise proportional disbursement.
+- A partial payment releases the payable for exactly the amount received; the rest stays outstanding.
+- Both Xero records carry the InvoiceNumber (the ACCPAY's ends `-P`) and the case Reference.
 - The mobile/web app reads the Billing Engine's mirror, never Xero directly.
 - Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
   anaesthetist personally owes.
+
+### AA's monthly fee
+
+```text
+Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> Anaesthetist pays AA's own account; never netted
+```
+
+- Admin → Billing monitor → **Open AA fee invoices**: Fee settings (fixed items plus a charge per BCTI)
+  and **Run monthly fee invoices** (one AA-FEE invoice per active anaesthetist per month).
+- Seeded sample: $350.00 + $150.00 fixed, $5.00 per BCTI. "Seed a month of BCTIs" then the run gives Dr
+  Rutherford $500 + $5 x 40 = $700.00 before GST, $805.00 with GST.
+- Caveat: the fixed schedule, the paid-only count and BCTI granularity (per invoice or per procedure) are
+  with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.
 
 ## What each app is for
 
@@ -227,16 +241,17 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 
 ## RFP ambiguities: present as discovery decisions
 
-### 1. NHI in Xero
+### 1. NHI in Xero (settled)
 
-- One RFP section says NHI can be a searchable Xero contact cross-reference.
-- Appendix 2 says NHI never leaves the practice system.
-- The prototype chooses the stricter no-NHI-in-Xero reading.
+- One RFP section said NHI could be a searchable Xero contact cross-reference; Appendix 2 said NHI
+  never leaves the practice system.
+- Confirmed with AA: no NHI or other personal information in Xero, patient names included. Patient and
+  guardian contacts are named only by their hidden internal ID.
 
 Say:
 
-> We have chosen the stricter data-minimisation interpretation for the prototype and would confirm
-> that with AA.
+> AA confirmed the rule: Xero holds no NHI and no patient name, only a hidden ID that links each
+> transaction back to the billing system.
 
 ### 2. Exact List disappearance trigger
 

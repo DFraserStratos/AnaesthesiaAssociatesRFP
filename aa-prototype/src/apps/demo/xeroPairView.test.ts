@@ -52,11 +52,13 @@ describe('Xero invoice-pair view', () => {
     expect(pair.accRec.amountDue).toBe(152.38)
     expect(pair.accRec.amountReceived).toBe(0)
     expect(pair.accRec.balance).toBe(152.38)
-    expect(pair.accPay?.grossAmount).toBe(152.38)
-    expect(pair.accPay?.serviceFeeRate).toBe(0.05)
-    expect(pair.accPay?.serviceFeeAmount).toBe(7.62)
-    expect(pair.accPay?.totalPayable).toBe(144.76)
+    // The payable is the gross amount (FT-10.3); no fee fields exist.
+    expect(pair.accPay?.totalPayable).toBe(152.38)
     expect(pair.accPay?.amountAuthorised).toBe(0)
+    // Identifiers read from the stored Xero records (US-09.1.1).
+    expect(pair.accPay?.billNumber).toBe(`${pair.accRec.invoiceNumber}-P`)
+    expect(pair.accRec.reference).toBe(pair.engine.caseReference)
+    expect(pair.accPay?.reference).toBe(pair.engine.caseReference)
     expect(pair.accPay?.amountDisbursed).toBe(0)
     expect(pair.accPay?.remainingAuthorised).toBe(0)
     expect(pair.incomplete).toBe(false)

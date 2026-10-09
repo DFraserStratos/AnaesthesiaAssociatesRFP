@@ -22,6 +22,9 @@ export function runReconciliationPoll(api: AppStoreApi): number {
   let applied = 0
   for (const payment of Object.values(state.xero.payments)) {
     if (mirroredKeys.has(payment.idempotencyKey)) continue
+    // An AA fee payment never has a receipt (it is not a procedure receipt), so
+    // without this skip every day advance would re-detect it (catch-up Phase 16).
+    if (payment.source === 'aaFee' || state.xero.accRecs[payment.accRecId]?.kind === 'aaFee') continue
     const outcome = receivePayment(api, {
       accRecId: payment.accRecId,
       amount: payment.amount,

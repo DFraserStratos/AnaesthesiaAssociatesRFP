@@ -21,6 +21,8 @@ import {
 import {
   AdminAuditRoute,
   AdminBillingRoute,
+  AdminAaFeesRoute,
+  AdminAaFeeSettingsRoute,
   AdminBookingDetailRoute,
   AdminDayRoute,
   AdminIndexRedirect,
@@ -102,7 +104,11 @@ export function AppRouter() {
               <Route index element={<AdminInvoicesRoute />} />
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
             </Route>
-            <Route path="billing" element={<AdminBillingRoute />} />
+            <Route path="billing">
+              <Route index element={<AdminBillingRoute />} />
+              <Route path="aa-fees" element={<AdminAaFeesRoute />} />
+              <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
+            </Route>
             <Route path="integrations" element={<AdminIntegrationsRoute />} />
             <Route path="masters" element={<AdminMastersRoute />} />
             <Route path="audit" element={<AdminAuditRoute />} />

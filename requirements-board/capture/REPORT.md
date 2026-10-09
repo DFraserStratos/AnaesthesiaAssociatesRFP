@@ -6,13 +6,13 @@ Scope: every story plus every feature with no stories (266 items, 266 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 119 | 108 |
-| Partial | 63 | 63 |
+| Captured | 121 | 110 |
+| Partial | 62 | 62 |
 | Absent from the prototype | 72 | 72 |
 | Failed recipe | 0 | 0 |
-| No recipe | 23 | 23 |
+| No recipe | 22 | 22 |
 
-401 screenshots. Items per app: admin 113, web 58, mobile 53, simulator 36.
+405 screenshots. Items per app: admin 115, web 58, mobile 53, simulator 36.
 
 ## Failed recipes (0)
 
@@ -72,7 +72,7 @@ None.
 - **US-10.2.4** Bulk remittance stays in Xero · Bulk remittance and bank reconciliation stay in Xero by design, so the prototype has no screen for them. Searched the Xero simulator, admin and control panel for remittance and bank reconciliation; only a note on the Xero simulator mentions remittance matching.
 - **US-10.2.5** Negative invoices netted in the payment run · Not built yet: catch-up Phase 39a builds this.
 - **US-10.2.6** Approve the period's BCTIs for payment · Not built yet: catch-up Phase 39a builds this.
-- **US-10.3.3** AA fee settings · Not built yet: catch-up Phase 16 builds this.
+- **US-10.2.7** Weekly payment cycle · Not built yet: catch-up Phase 39a builds this.
 - **US-11.1.5** Missing NHI problem list · Not built yet: catch-up Phase 40 builds this.
 - **US-11.2.3** Payer email required when the payer is billed · No invoice email is captured or required for patient-direct billing; searched the add booking form, billing setup sheet, patient edit sheet and billing guards for an invoice email field or rule.
 - **US-11.2.4** Warn when a child is the payer on the Booking · Not built yet: catch-up Phase 21 builds this.
@@ -93,7 +93,7 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (63)
+## Partial (62)
 
 - **US-01.1.2** Horizon rolls forward daily · The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.
 - **US-01.1.3** New anaesthetist gets a populated canvas · Adding an anaesthetist generates their forward Lists in the store (confirmed on save), but the admin day grid shows only the seeded roster, so the new rows are not visible there.
@@ -142,11 +142,10 @@ None.
 - **US-08.4.4** Invoice reproducibility · Invoices are stored as snapshots that later contract edits do not change, but there is no action to regenerate a past invoice from the locked data and contract version.
 - **US-08.4.5** Anaesthetist as supplier, AA as agent · The invoice names the anaesthetist and states AA bills as agent, but it does not show the anaesthetist as supplier with their GST number.
 - **US-08.6.1** Additional invoice for late billing lines · The post-op charge becomes a new linked addendum booking on the anaesthetist's free session today and bills when that list is authorised, rather than raising a supplementary invoice directly against the invoiced booking. It needs a free session that day.
-- **US-09.1.4** ACCPAY as buyer-created tax invoice · The ACCPAY to the anaesthetist exists with payee, bill number and the AA service fee, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).
+- **US-09.1.4** ACCPAY as buyer-created tax invoice · The ACCPAY to the anaesthetist exists with payee, bill number and the full payable, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
 - **US-09.4.2** Duplicate invoice number prevention · The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).
-- **US-10.3.1** Generate AA fee invoices · No separate AA fee invoice to the anaesthetist. The prototype deducts an illustrative AA service fee from each payable instead, the nearest analogue.
-- **US-10.3.2** AA fee visible to the anaesthetist · No AA fee invoices or their payment status: the web app shows the fee deducted from each payment. The mobile app does not show the AA fee.
+- **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app does not show them.
 - **US-11.1.1** Patient record keyed on NHI · Patient details show on each booking; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.
 - **US-11.1.4** Patient without NHI · A patient can be created without an NHI (the add booking form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.
 - **US-11.2.2** Payer on the Booking, editable to a guardian · Admin only: the office sets a guardian or other payer in the billing setup. There is no invoice email for the billable party, and the anaesthetist apps show the billable party read-only without a way to change it.
@@ -159,7 +158,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (23)
+## No recipe (22)
 
 - **US-01.3.6** Anaesthetist priority tiers for assignment
 - **US-01.4.7** Anaesthetist moves a single Booking
@@ -179,13 +178,12 @@ None.
 - **US-07.4.2** Anaesthetist's main view
 - **US-08.6.5** Credit note option on additional invoices
 - **US-08.6.6** Start a rebill from a copy of the original lines
-- **US-10.2.7** Weekly payment cycle
 - **US-13.5.3** Sign in to the anaesthetist app
 - **US-13.6.4** Preferred pairings
 - **US-13.8.1** See the team's notifications
 - **US-13.8.2** Notify the team when an anaesthetist moves a List
 
-## Captured (119)
+## Captured (121)
 
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
@@ -282,6 +280,8 @@ None.
 - **US-10.2.1** Payable released to match the amount received · simulator, admin
 - **US-10.2.2** Partial payment releases exactly that amount · simulator
 - **US-10.2.3** Reconcile back to the ledger · web, simulator
+- **US-10.3.1** Generate AA fee invoices · admin, simulator
+- **US-10.3.3** AA fee settings · admin
 - **US-11.1.2** Dual-format NHI validation · admin
 - **US-11.1.3** Deduplicate on NHI · web, mobile
 - **US-11.2.1** Patient billed when the Contract does not bill its holder · admin

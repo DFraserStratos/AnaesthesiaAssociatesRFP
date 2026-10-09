@@ -42,8 +42,12 @@ describe('DemoXero invoice table', () => {
     expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('Anaesthesia Associates')
     expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('MONEY INTO AA')
     expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('MONEY OUT OF AA')
-    expect(screen.getByTestId('aa-service-fee')).toHaveTextContent('Illustrative AA service fee')
-    expect(screen.getByTestId('aa-service-fee')).toHaveTextContent('Net payable to anaesthetist')
+    // No fee box: the payable is the gross amount (catch-up Phase 16).
+    expect(screen.queryByTestId('aa-service-fee')).toBeNull()
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('full amount AA will disburse')
+    // Both records show their stored InvoiceNumber and Reference (US-09.1.1).
+    expect(screen.getAllByText('InvoiceNumber')).toHaveLength(2)
+    expect(screen.getAllByText('Reference')).toHaveLength(2)
   })
 
   it('uses a fixed six-column table without a forced minimum width', () => {
@@ -82,9 +86,25 @@ describe('DemoXero invoice table', () => {
         'href',
         '/web/accounts/payments?invoice=AA-2026-0005',
       )
-      expect(screen.getByRole('status')).toHaveTextContent('$144.76')
+      expect(screen.getByRole('status')).toHaveTextContent('$152.38')
+      expect(screen.getByRole('status')).not.toHaveTextContent('$144.76')
     } finally {
       unwire()
     }
+  })
+
+  it('shows an AA fee pair with no payable, and Record fee payment in place of payment and payout', () => {
+    const fee = Object.values(useAppStore.getState().billing.aaFeeInvoices).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
+    renderInvoices(`/demo/xero/invoices/${fee.accRecId}`)
+    expect(screen.queryByRole('button', { name: 'Simulate payment and payout' })).toBeNull()
+    expect(screen.getByTestId('xero-aa-fee-no-payable')).toHaveTextContent('never netted')
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent("Anaesthesia Associates (AA's own account)")
+    fireEvent.click(screen.getByRole('button', { name: 'Record fee payment' }))
+    expect(screen.getByRole('status')).toHaveTextContent('AA-FEE-2026-H02 paid')
+    expect(useAppStore.getState().billing.aaFeeInvoices[fee.id]?.paidAtISO).toBeDefined()
+    expect(screen.getByRole('link', { name: /View in Dr Souter's account/ })).toHaveAttribute(
+      'href',
+      '/web/accounts/fees?invoice=AA-FEE-2026-H02',
+    )
   })
 })

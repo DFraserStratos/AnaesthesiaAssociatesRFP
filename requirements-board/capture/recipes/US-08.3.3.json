@@ -6,7 +6,7 @@
     {
       "name": "archived-contacts",
       "app": "simulator",
-      "caption": "Annette Riley's Xero contact archived by the nightly job",
+      "caption": "A patient's Xero contact, known only by its hidden ID, archived by the nightly job",
       "start": "/demo/xero",
       "setup": [
         {

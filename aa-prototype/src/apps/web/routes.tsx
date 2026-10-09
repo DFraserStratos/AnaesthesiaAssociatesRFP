@@ -25,7 +25,7 @@ import { useWebOutlet } from './outlet'
 // Dashboard — `/web` (?week=<ISO>)
 // ---------------------------------------------------------------------------
 
-const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'payments', 'gst']
+const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'payments', 'gst', 'fees']
 
 export function WebDashboardRoute() {
   const { anaesthetistId, personaName, todayISO, onCover } = useWebOutlet()
@@ -127,7 +127,7 @@ export function WebAvailabilityRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts — `/web/accounts/:subTab` (overdue | payments | gst)
+// Accounts — `/web/accounts/:subTab` (overdue | payments | gst | fees)
 // ---------------------------------------------------------------------------
 
 export function WebAccountsRoute() {

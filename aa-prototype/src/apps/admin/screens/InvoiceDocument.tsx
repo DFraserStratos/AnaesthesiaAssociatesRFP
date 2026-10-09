@@ -248,6 +248,13 @@ function InvoiceInfoRail({
   const showEmailAction = !isInsurerDirect && emailedAtISO === undefined
   const handoffFailed = billingCase?.handoffFailure !== undefined
   const handoffComplete = billingCase?.accRecId !== undefined
+  // The InvoiceNumbers stored on the Xero records (US-09.1.1), not derived here.
+  const accRecNumber = useAppStore((s) =>
+    billingCase?.accRecId !== undefined ? s.xero.accRecs[billingCase.accRecId]?.invoiceNumber : undefined,
+  )
+  const accPayNumber = useAppStore((s) =>
+    billingCase?.accPayId !== undefined ? s.xero.accPays[billingCase.accPayId]?.invoiceNumber : undefined,
+  )
 
   return (
     <aside
@@ -316,8 +323,10 @@ function InvoiceInfoRail({
           </div>
         ) : handoffComplete ? (
           <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
-            <XeroReference label="ACCREC" value={invoice.invoiceNumber} testId="xero-accrec-reference" />
-            <XeroReference label="ACCPAY" value={`${invoice.invoiceNumber}-P`} testId="xero-accpay-reference" />
+            <XeroReference label="ACCREC" value={accRecNumber ?? invoice.invoiceNumber} testId="xero-accrec-reference" />
+            {accPayNumber !== undefined && (
+              <XeroReference label="ACCPAY" value={accPayNumber} testId="xero-accpay-reference" />
+            )}
           </dl>
         ) : null}
       </RailCard>

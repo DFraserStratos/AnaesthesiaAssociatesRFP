@@ -17,6 +17,7 @@
  */
 
 import type {
+  AaFeeInvoice,
   BillingCase,
   BillingReceipt,
   Disbursement,
@@ -28,8 +29,9 @@ import type {
   XeroContact,
 } from '../types'
 import { buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
-import { aaServiceFeeFor } from '../billing/agencyFee'
+import { xeroIndividualContactName } from '../xeroContact'
 import { buildHistory } from './history'
+import { buildSeedAaFeeHistory } from './aaFee'
 import type { SeedState } from './index'
 
 /** The seeded Xero slice (shape matches the store's XeroSlice; typed here with domain types for purity). */
@@ -55,6 +57,8 @@ export interface SeedBillingSlice {
   xero: SeedXeroSlice
   /** PMS-side ContactID cache (empty in the pre-payment slice; Step 6 seeds history). */
   contactIdCache: Record<string, string>
+  /** Dr Souter's seeded AA fee invoices (catch-up Phase 16). */
+  aaFeeInvoices: Record<string, AaFeeInvoice>
   /** seed.counters bumped past the ids this slice consumed. */
   counters: Record<string, number>
 }
@@ -117,8 +121,6 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     hospitals: seed.masters.hospitals,
     surgeons: seed.masters.surgeons,
     organisations: seed.masters.organisations,
-    patients: seed.masters.patients,
-    billableParties: seed.masters.billableParties,
   })
 
   const invoices: Record<string, Invoice> = { ...history.invoices }
@@ -132,15 +134,26 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
   const disbursements: Record<string, Disbursement> = { ...history.disbursements }
   const contactIdCache: Record<string, string> = { ...history.contactIdCache }
 
-  const finishAndReturn = (bumps: Record<string, number> = {}): SeedBillingSlice => ({
-    invoices,
-    invoiceLines,
-    cases,
-    receipts,
-    xero: { contacts, accRecs, accPays, payments, disbursements },
-    contactIdCache,
-    counters: { ...seed.counters, ...bumps },
-  })
+  const finishAndReturn = (bumps: Record<string, number> = {}): SeedBillingSlice => {
+    // AA's fee history last: it counts every seeded BCTI, the pre-payment pair's included.
+    const fees = buildSeedAaFeeHistory({ accRecs, accPays }, contactIdCache, seed.appSettings.aaFee)
+    return {
+      invoices,
+      invoiceLines,
+      cases,
+      receipts,
+      xero: {
+        contacts,
+        accRecs: { ...accRecs, ...fees.accRecs },
+        accPays,
+        payments: { ...payments, ...fees.payments },
+        disbursements,
+      },
+      contactIdCache,
+      aaFeeInvoices: fees.aaFeeInvoices,
+      counters: { ...seed.counters, ...bumps },
+    }
+  }
 
   const booking = seed.schedule.bookings[prepaidBookingId]
   const ctx = contextFor(seed, prepaidBookingId)
@@ -150,11 +163,9 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
 
   const anaesthetistId = seed.schedule.lists[booking.listId]?.anaesthetistId
   const payeeContactId = anaesthetistId !== undefined ? contactIdCache[`anaesthetist:${anaesthetistId}`] : undefined
-  const cpName = (cp: { kind: string; id: string }): string => {
-    if (cp.kind === 'patient') return seed.masters.patients[cp.id]?.name ?? cp.id
-    if (cp.kind === 'billableParty') return seed.masters.billableParties[cp.id]?.name ?? cp.id
-    return cp.id
-  }
+  // No personal information in Xero (US-09.3.1): the neutral label built from the hidden id.
+  const cpName = (cp: { kind: string; id: string }): string =>
+    xeroIndividualContactName(cp.kind === 'billableParty' ? 'billableParty' : 'patient', cp.id)
   const cpType = (kind: string): XeroContact['type'] => (kind === 'billableParty' ? 'billableParty' : 'patient')
 
   const n = { invoice: 0, invoiceLine: 0, billingCase: 0, invoiceNumber: 0 }
@@ -201,21 +212,38 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
     }
     const accRecId = `XRB${index}`
     const accPayId = `XPB${index}`
-    const payable = aaServiceFeeFor(draft.total)
-    accRecs[accRecId] = { id: accRecId, invoiceId, contactId: payerContactId, amountDue: draft.total, amountReceived: draft.total, status: 'paid' }
-    if (payeeContactId !== undefined) {
+    // The payable is the gross amount (FT-10.3): it equals the receivable.
+    const amountPayable = draft.total
+    accRecs[accRecId] = {
+      id: accRecId,
+      kind: 'procedure',
+      invoiceId,
+      contactId: payerContactId,
+      invoiceNumber,
+      reference: caseId,
+      issuedAtISO: SEED_PREPAYMENT_RAISED_ISO,
+      amountDue: draft.total,
+      amountReceived: draft.total,
+      paidAtISO: SEED_PREPAYMENT_RAISED_ISO,
+      status: 'paid',
+    }
+    if (payeeContactId !== undefined && anaesthetistId !== undefined) {
       // Received Jul 14, disbursed Jul 16 (both before today) so a fresh store
       // starts with nothing pending — the demo creates the first payable live.
       accPays[accPayId] = {
         id: accPayId,
         accRecId,
         contactId: payeeContactId,
-        ...payable,
-        amountAuthorised: payable.amountPayable,
-        amountDisbursed: payable.amountPayable,
+        invoiceNumber: `${invoiceNumber}-P`,
+        reference: caseId,
+        issuedAtISO: SEED_PREPAYMENT_RAISED_ISO,
+        anaesthetistId,
+        amountPayable,
+        amountAuthorised: amountPayable,
+        amountDisbursed: amountPayable,
         status: 'paid',
       }
-      disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: payable.amountPayable, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
+      disbursements[`DSBB${index}`] = { id: `DSBB${index}`, accPayId, amount: amountPayable, atISO: SEED_PREPAYMENT_DISBURSED_ISO, payablesRunId: 'PR-SEED-01' }
     }
     payments[`PMTB${index}`] = { id: `PMTB${index}`, accRecId, amount: draft.total, atISO: SEED_PREPAYMENT_RAISED_ISO, idempotencyKey: `${SEED_PREPAYMENT_KEY}-${index}`, source: 'webhook' }
     if (anaesthetistId !== undefined) {
@@ -239,8 +267,8 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string)
       ...(payeeContactId !== undefined ? { accPayId } : {}),
       status: payeeContactId !== undefined ? 'disbursed' : 'paid',
       receivedAmount: draft.total,
-      authorisedAmount: payeeContactId !== undefined ? payable.amountPayable : 0,
-      disbursedAmount: payeeContactId !== undefined ? payable.amountPayable : 0,
+      authorisedAmount: payeeContactId !== undefined ? amountPayable : 0,
+      disbursedAmount: payeeContactId !== undefined ? amountPayable : 0,
       paidInAtISO: SEED_PREPAYMENT_RAISED_ISO,
       ...(payeeContactId !== undefined ? { disbursedAtISO: SEED_PREPAYMENT_DISBURSED_ISO } : {}),
     }

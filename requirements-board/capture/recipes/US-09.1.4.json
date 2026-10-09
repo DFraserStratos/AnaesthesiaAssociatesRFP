@@ -1,7 +1,7 @@
 {
   "id": "US-09.1.4",
   "status": "partial",
-  "absentReason": "The ACCPAY to the anaesthetist exists with payee, bill number and the AA service fee, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).",
+  "absentReason": "The ACCPAY to the anaesthetist exists with payee, bill number and the full payable, but it carries no buyer-created tax invoice wording or the details that treatment requires (open question OQ-29).",
   "shots": [
     {
       "name": "accpay-record",

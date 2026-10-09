@@ -267,12 +267,15 @@ organisational assumption.
 - Confirm the related anaesthetist payable becomes available for a payables run.
 - Run disbursements and distinguish paid-in from paid-out.
 - Manage individual Xero contact archiving at scale.
+- Maintain AA fee settings and run the monthly fee invoices (AA's own fee to each anaesthetist, never
+  deducted from a payment to them).
 
 ### Prototype status
 
 Built. Invoice calculation and documents (Phase 08), then the Xero collection/payable pairs, payment
 webhook and reconciliation poll, payables run with separate paid-in and disbursed states, contact
-archiving and live anaesthetist balances (Phase 10) are all clickable.
+archiving and live anaesthetist balances (Phase 10) are all clickable. AA's monthly fee settings,
+the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch-up Phase 16.
 
 ## External actors, not prototype login personas
 

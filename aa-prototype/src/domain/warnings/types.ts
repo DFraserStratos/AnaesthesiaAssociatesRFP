@@ -11,7 +11,7 @@
  * Pure (enforced by `domainPurity.test.ts`).
  */
 
-import type { ActorRole, Booking, BookingId, IsoDate, IsoDateTime, List, Procedure, ProcedureId } from '../types'
+import type { AaFeeSettings, ActorRole, Booking, BookingId, IsoDate, IsoDateTime, List, Procedure, ProcedureId } from '../types'
 
 export type WarningKind = 'beforeProcedure' | 'afterProcedure'
 export type WarningStrength = 'mild' | 'strong'
@@ -87,6 +87,8 @@ export interface WarningRuleSetting {
  */
 export interface AppSettings {
   warningRules: Partial<Record<WarningRuleId, WarningRuleSetting>>
+  /** AA's monthly fee settings (catch-up Phase 16; US-10.3.3), every amount ex GST. */
+  aaFee: AaFeeSettings
 }
 
 export function warningKey(bookingId: BookingId, ruleId: WarningRuleId, procedureId?: ProcedureId): string {

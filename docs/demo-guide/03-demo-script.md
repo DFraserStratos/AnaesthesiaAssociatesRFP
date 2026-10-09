@@ -229,8 +229,8 @@ in Admin Web or a separate surface (the prototype places it in Admin Web).
 
 ## S3 · Money end-to-end
 
-**Serves:** the Billing Engine at the centre, split billing, the Xero pair, and the two separate money
-states. **Time:** 6 to 8 minutes. This is the money story's payoff, so authorise live.
+**Serves:** the Billing Engine at the centre, split billing, the Xero pair, the two separate money
+states, and AA's own monthly fee. **Time:** 8 to 10 minutes. This is the money story's payoff, so authorise live.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to Admin. Both of Dr Souter's Mon 20 Jul
 Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM
@@ -262,15 +262,16 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
 
 - **Click:**
   - Go to **Demo: Billing Monitor & Xero → Invoices**.
-  - Open **AA-2026-0005 · Alan Prentice · nib**.
+  - Open **AA-2026-0005** (payer nib).
   - Pause on the two money-flow cards, then the ACCREC and ACCPAY pair beneath them.
 - **Say:** "Read the flow from left to right. The ACCREC tracks money coming from nib into AA. The
-  ACCPAY tracks the net money going from AA to Dr Souter. This prototype illustrates a 5% AA service
-  fee; the actual rate and GST treatment need confirmation because the RFP does not specify them. No
-  NHI ever crosses into Xero."
-- **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice. Alan appears only in the
-  "Linked Billing Engine case" panel, never as a field on nib's Xero contact. On this pair, nib owes
-  $152.38, the illustrative AA fee is $7.62 and the net payable to Dr Souter is $144.76.
+  ACCPAY tracks the full amount going from AA to Dr Souter: AA passes on everything it receives, and
+  invoices its own fee separately. Both records carry the invoice number and the case reference. No
+  NHI or other personal information ever crosses into Xero."
+- **Expected:** a matched ACCREC plus draft ACCPAY pair per invoice, each showing its InvoiceNumber
+  and Reference (the ACCPAY's number ends `-P`). The patient, Alan Prentice, is named only in the
+  "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On
+  this pair, nib owes $152.38 and the payable to Dr Souter is $152.38.
 
 ### Beat 3: payment, balances and disbursement
 
@@ -280,23 +281,51 @@ Lists are already in the Review queue: AM (Forte Health, the split-billing Booki
   - Select **View in Dr Souter's account**.
   - Pause on the highlighted **AA-2026-0005** row under **Accounts → Payments**.
 - **Say:** "One demo action is standing in for two real money events: nib pays $152.38 into AA, then
-  AA keeps the illustrative $7.62 service fee and pays the $144.76 net amount to Dr Souter. In a real
-  operation those outgoing payments may be grouped into a payables run. We keep the paid-in and
+  AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into
+  a payables run. We keep the paid-in and
   paid-out states separate underneath, even though this guided path advances both together. The
   anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."
 - **Expected:** ACCREC shows paid, ACCPAY shows disbursed, and the Web Payments row remains visible
-  with $152.38 customer paid, $7.62 AA fee, $144.76 net to Dr Souter and **Paid to you**. It does not
+  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It does not
   remain under Overdue because it is no longer outstanding.
 
+### Beat 4: AA's monthly fee
+
+- **Click:**
+  - Go to **Admin → Billing monitor → Open AA fee invoices → Fee settings**. Pause on the two fixed
+    items ($350.00 and $150.00, labelled **Sample schedule**), the **$5.00** charge per BCTI and the worked
+    example: "$500.00 + $5.00 x 40 = $700.00, plus GST at the foot of the invoice".
+  - Select **Fee invoices**. July 2026 is in the month picker; Dr Souter's May invoice
+    (**AA-FEE-2026-H01**) is Paid and June's (**AA-FEE-2026-H02**) Unpaid.
+  - Open **Demo actions → Seed a month of BCTIs → Run**: Dr Rutherford's row shows 40 BCTIs paid and
+    **$700.00**.
+  - Select **Run monthly fee invoices**. Every active anaesthetist gets a July fee invoice. Expand Dr
+    Rutherford's: **$700.00 + GST $105.00 = $805.00**, with his 40 counted BCTIs. Dr Souter's July invoice
+    counts four BCTIs, including **AA-2026-0005**, because Beat 3 paid it: **$520.00 + GST $78.00 =
+    $598.00**.
+  - Go to **Demo: Billing Monitor & Xero → Invoices → AA-FEE-2026-H02** (the AA fee chip). Pause on the
+    money flow to **Anaesthesia Associates (AA's own account)** and the **No payable** note, then
+    select **Record fee payment** and **View in Dr Souter's account**.
+- **Say:** "AA's fee is AA invoicing the anaesthetist once a month, from settings the office maintains:
+  fixed charges plus a charge per buyer-created tax invoice. It is always a separate invoice, paid into
+  AA's own account, and never deducted from a payment to the anaesthetist, because trust law forbids
+  it. Only invoices that have been paid are counted, so a Booking moved between anaesthetists is never
+  charged twice. The real fixed schedule, and confirmation of the paid-only count and of one BCTI per
+  invoice, are with AA's accountant."
+- **Expected:** Web **Accounts → AA fees** highlights **AA-FEE-2026-H02** as Paid, with May Paid and July
+  Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. Read
+  Dr Souter's July figures from the app if Beat 3 was skipped (then three BCTIs, $515.00 before GST).
+
 **Discovery points:** the exact List-disappearance trigger (the prototype uses billing-run completion);
-and the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
-differ).
+the split-billing invoice count (the prototype groups by counterparty, two invoices when funders
+differ); and AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure
+(all with AA's accountant).
 
 ---
 
 ## S4 · Exceptions
 
-**Serves:** resilience, the RFP's hard cases, and the audited overrides that keep them honest.
+**Serves:** resilience, the RFP's hard cases, and the audit trail that keeps them honest.
 **Time:** 8 to 10 minutes. Use this for a technical audience; every sub-trigger is under **Demo
 actions** on the screen named in its beat.
 
@@ -364,9 +393,11 @@ actions** on the screen named in its beat.
   - Open **Demo actions → Payment received · half → Run**.
   - Go to **Billing monitor** and select its own **Run payables** button.
   - Back on the invoice, **Demo actions → Payment received · full → Run**, then **Run payables** again.
-- **Say:** "A partial payment authorises only its proportional payable share. Two payables runs across a
-  part-then-balance payment prove there is no double payment."
-- **Expected:** the payable authorises pro-rata; payables pays only the increment each run.
+- **Say:** "A partial payment authorises a payable for exactly the amount received, to the cent; the
+  rest stays outstanding on the invoice. Two payables runs across a part-then-balance payment prove
+  there is no double payment."
+- **Expected:** the payable authorises exactly the amount received; each run pays exactly what arrived,
+  and the total paid out equals the invoice total, never more.
 
 **Discovery points:** billing-failure isolation (a prototype choice; the RFP leaves it open); which
 conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a submitted or authorised List
@@ -408,15 +439,17 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   new-format NHI with a mod-23 check letter validates and processes end to end."
 - **Expected:** the new-format NHI validates; an invalid one is rejected with a reason.
 
-### Beat 3: no NHI in Xero
+### Beat 3: no personal information in Xero
 
 - **Click:**
   - Open **Demo: Billing Monitor & Xero**.
-  - Pause on the contact and invoice data.
-- **Say:** "The prototype takes the stricter data-minimisation reading: no NHI ever crosses to Xero.
-  Contacts carry a hidden internal ID only. The RFP's Appendix 1 and Appendix 2 contradict each other
-  here, so we flag it as a decision to confirm with AA."
-- **Expected:** the Xero surface shows the internal ID and a visible callout of the RFP contradiction.
+  - Pause on the **No personal information in Xero** callout, then the **Contacts** tab: patient and
+    guardian contacts are named only by their hidden ID ("Patient PT0017", "Billable party BP0001").
+- **Say:** "No personal information goes into Xero: no NHI and no patient name, only a hidden
+  internal ID that links each transaction back to the billing system. AA confirmed this rule."
+- **Expected:** the callout states the confirmed rule (no RFP-contradiction callout), and no patient
+  or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist
+  payees keep their names.
 
 ### Beat 4: contract effective-dating
 
@@ -429,7 +462,7 @@ invoices. Use **Go to Admin app** and **Go to Xero sim**.
   under the old terms; the invoice reproduces against what was true when it billed."
 - **Expected:** the contract change is recorded; the earlier invoice is unchanged.
 
-**Discovery points:** the NHI-in-Xero contradiction; the demo-plausible modifier values (not an
+**Discovery points:** the demo-plausible modifier values (not an
 authoritative NZSA schedule); and the concurrency model (single-user by design, audited
 last-write-wins, with the multi-source reality shown via the audit trail and live integration updates).
 

@@ -12,12 +12,12 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
-import { handoffCase } from './xeroHandoff'
+import { handoffCase, payerContactSpec } from './xeroHandoff'
 import { raisePreProcedureInvoice } from './prepaymentActions'
 import { armHandoffFault } from './demoSettingsActions'
 import { casesForList, casesForBooking } from './selectors'
-import type { Actor } from './mutate'
-import { SEED_LIST_IDS, SEED_MARKERS, PAT } from '../domain/seed'
+import { clockISO, type Actor } from './mutate'
+import { SEED_LIST_IDS, SEED_MARKERS, PAT, BP } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -60,16 +60,28 @@ describe('Xero handoff — the atomic pair', () => {
       const accPay = accPays[c.accPayId!]!
       const invoice = api.getState().billing.invoices[c.invoiceId!]!
       expect(accRec.invoiceId).toBe(invoice.id)
+      expect(accRec.kind).toBe('procedure')
       expect(accRec.amountDue).toBe(invoice.total)
+      // US-09.1.1: identifiers stored on both records, not derived; -P on the payable (US-08.4.3).
+      expect(accRec.invoiceNumber).toBe(invoice.invoiceNumber)
+      expect(accPay.invoiceNumber).toBe(`${invoice.invoiceNumber}-P`)
+      expect(accRec.reference).toBe(invoice.caseReference)
+      expect(accPay.reference).toBe(invoice.caseReference)
+      expect(accRec.issuedAtISO).toBe(clockISO(api.getState().clock))
+      expect(accPay.issuedAtISO).toBe(accRec.issuedAtISO)
+      expect(accRec.paidAtISO).toBeUndefined()
+      expect(accPay.anaesthetistId).toBe(api.getState().schedule.lists[listId]!.anaesthetistId)
       expect(accRec.amountReceived).toBe(0)
       expect(accRec.status).toBe('awaitingPayment')
       // ACCPAY DRAFT, paired to the ACCREC, nothing authorised yet.
       expect(accPay.accRecId).toBe(accRec.id)
       expect(accPay.status).toBe('draft')
-      expect(accPay.grossAmount).toBe(accRec.amountDue)
-      expect(accPay.serviceFeeRate).toBe(0.05)
-      expect(accPay.serviceFeeAmount).toBeGreaterThan(0)
-      expect(accPay.amountPayable).toBe(accPay.grossAmount - accPay.serviceFeeAmount)
+      // FT-10.3: the payable is the gross amount, never net of a fee.
+      expect(accPay.amountPayable).toBe(accRec.amountDue)
+      expect(Object.keys(accPay).sort()).toEqual([
+        'accRecId', 'amountAuthorised', 'amountDisbursed', 'amountPayable', 'anaesthetistId',
+        'contactId', 'id', 'invoiceNumber', 'issuedAtISO', 'reference', 'status',
+      ])
       expect(accPay.amountAuthorised).toBe(0)
       expect(accPay.amountDisbursed).toBe(0)
     }
@@ -106,6 +118,48 @@ describe('Xero handoff — the atomic pair', () => {
     const riley = api.getState().masters.patients[PAT.riley]!
     expect(riley.nhi).toBeDefined()
     expect(JSON.stringify(api.getState().xero)).not.toContain(riley.nhi!)
+  })
+})
+
+describe('Xero handoff — no personal information in Xero (US-09.3.1)', () => {
+  it('names a patient payer contact only by the neutral label, reusing the archived contact', () => {
+    const api = store()
+    const before = Object.keys(api.getState().xero.contacts).length
+    expect(raisePreProcedureInvoice(api, OFFICE, marker('prepaymentBooking')).ok).toBe(true)
+    const contact = Object.values(api.getState().xero.contacts).find((c) => c.contactNumber === PAT.riley)!
+    expect(contact.name).toBe(`Patient ${PAT.riley}`)
+    expect(contact.archived).toBe(false)
+    // The seeded (archived) contact is reused, not duplicated.
+    expect(Object.keys(api.getState().xero.contacts).length).toBe(before)
+    expect(JSON.stringify(api.getState().xero)).not.toContain(api.getState().masters.patients[PAT.riley]!.name)
+  })
+
+  it('builds every individual payer contact from the hidden id, never a name', () => {
+    const masters = store().getState().masters
+    expect(payerContactSpec({ kind: 'patient', id: PAT.riley }, masters)).toMatchObject({
+      contactNumber: PAT.riley,
+      name: `Patient ${PAT.riley}`,
+      type: 'patient',
+    })
+    expect(payerContactSpec({ kind: 'billableParty', id: BP.guardian }, masters)).toMatchObject({
+      contactNumber: BP.guardian,
+      name: `Billable party ${BP.guardian}`,
+      type: 'billableParty',
+    })
+    // The seeded guardian contact carries the same label (history and handoff agree).
+    const seeded = Object.values(store().getState().xero.contacts).find((c) => c.contactNumber === BP.guardian)!
+    expect(seeded.name).toBe(`Billable party ${BP.guardian}`)
+  })
+
+  it('keeps an organisation payer and the anaesthetist payee named', () => {
+    const api = store()
+    billAndHandoff(api, SEED_LIST_IDS.morrisonMon20)
+    const contacts = Object.values(api.getState().xero.contacts)
+    const stg = contacts.find((c) => c.contactNumber === 'H-STG')!
+    const payee = contacts.find((c) => c.contactNumber === 'ANAE-25490')!
+    expect(stg.name).toBe(api.getState().masters.hospitals[stg.contactNumber]?.name ?? stg.name)
+    expect(stg.name).not.toMatch(/^Patient |^Billable party /)
+    expect(payee.name).toBe(api.getState().masters.anaesthetists['25490']!.name)
   })
 })
 

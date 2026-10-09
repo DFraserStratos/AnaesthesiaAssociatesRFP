@@ -51,7 +51,7 @@ test('demo actions: a half payment from an invoice page moves that invoice\'s mo
   const chips = page.locator('[data-shot="invoice-money-states"]')
   await expect(chips).toBeVisible()
   const before = await chips.textContent()
-  expect(await runDemoAction(page, 'payment-half')).toMatch(/^Webhook applied/)
+  expect(await runDemoAction(page, 'payment-half')).toMatch(/^Webhook for AA-2026-\d{4}: .* authorised for exactly /)
   expect(await runDemoAction(page, 'payment-replay')).toMatch(/^Duplicate webhook ignored/)
   await page.keyboard.press('Escape')
   await expect(chips).not.toHaveText(before ?? '')

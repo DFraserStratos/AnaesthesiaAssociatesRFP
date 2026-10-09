@@ -8,8 +8,10 @@
  * On a payment against an ACCREC (money into the AA account):
  *   - append a `PaymentIn` (unless Xero already recorded it — the missed-webhook
  *     case the poll catches), bump `XeroAccRec.amountReceived` + status;
- *   - authorise the paired `XeroAccPay` PRO-RATA (cumulative-rounded), flipping
- *     it DRAFT → AUTHORISED ("partial payments pass through proportionally");
+ *   - authorise the paired `XeroAccPay` for EXACTLY the cumulative amount
+ *     received (`payableReleasedFor`, US-10.2.1), flipping it DRAFT → AUTHORISED;
+ *   - stamp the ACCREC's `paidAtISO` once, with the payment that completes it
+ *     (webhook or poll; a replay never moves it). The BCTI count reads it;
  *   - mirror the money onto the BillingCase (received/authorised, paidInAt, a
  *     derived status label), so a fully-paid PRE-PAYMENT case reads `paid` and
  *     the `prepaymentUnpaid` warning (catch-up Phase 15a) goes;
@@ -17,13 +19,13 @@
  *     key-set), GST = gross × 0.15 / 1.15.
  *
  * All automated money events audit `source:'system'` (convention 7). The
- * The anaesthetist ACCPAY is the gross collection less the prototype's
- * illustrative AA service fee. The RFP does not state that fee model, so the
- * assumption is labelled wherever the pair is presented.
+ * anaesthetist ACCPAY equals the ACCREC (FT-10.3): AA's own fee is a separate
+ * monthly invoice, never deducted from a payable (catch-up Phase 16).
  */
 
 import type { BillingCase, PaymentIn, XeroAccPay, XeroAccRec } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
+import { payableReleasedFor } from '../domain/billing/payableRelease'
 import { GST_RATE } from '../domain/billing/invoiceBuild'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -31,17 +33,6 @@ import type { AppState, AppStoreApi } from './appStore'
 /** GST component of a GST-inclusive amount received (3/23 of the gross). */
 export function gstComponentOf(gross: number): number {
   return roundToCents((gross * GST_RATE) / (1 + GST_RATE))
-}
-
-/**
- * Cumulative-rounded pro-rata authorisation (D-money-state): the fraction of
- * the ACCREC received, applied to the ACCPAY total. Guards a $0 ACCREC and
- * clamps the ratio at 1.
- */
-export function proRataAuthorised(received: number, amountDue: number, accPayTotal: number): number {
-  if (toCents(amountDue) === 0) return 0
-  const ratio = Math.min(received / amountDue, 1)
-  return roundToCents(ratio * accPayTotal)
 }
 
 /** The system actors for the two detection paths (both audit source=system). */
@@ -79,6 +70,11 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   const state = api.getState()
   const accRec = state.xero.accRecs[input.accRecId]
   if (accRec === undefined) return refuse('notFound', 'ACCREC not found.')
+  // AA's own fee invoice is paid through recordAaFeePayment, never as a
+  // procedure receipt: no payable, no GST receipt (catch-up Phase 16).
+  if (accRec.kind === 'aaFee') {
+    return refuse('aaFeeInvoice', 'This is an AA fee invoice; record its payment as a fee payment.')
+  }
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
     return refuse('invalidAmount', 'The payment amount must be positive.')
   }
@@ -100,7 +96,7 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
   const accPay = theCase.accPayId !== undefined ? state.xero.accPays[theCase.accPayId] : undefined
   const accPayTotal = accPay?.amountPayable ?? accRec.amountDue
   const priorAuthorised = accPay?.amountAuthorised ?? 0
-  const authorisedCumulative = proRataAuthorised(newReceived, accRec.amountDue, accPayTotal)
+  const authorisedCumulative = payableReleasedFor(newReceived, accPayTotal)
   const fullyPaid = toCents(newReceived) >= toCents(accRec.amountDue)
 
   const gross = added
@@ -140,9 +136,11 @@ export function receivePayment(api: AppStoreApi, input: ReceivePaymentInput): Ou
       ...recNow,
       amountReceived: roundToCents(recNow.amountReceived + added),
       status: fullyPaid ? 'paid' : 'awaitingPayment',
+      // Set once, by the completing payment (the BCTI count's paid month).
+      ...(fullyPaid && recNow.paidAtISO === undefined ? { paidAtISO: atISO } : {}),
     } satisfies XeroAccRec
 
-    // 3) ACCPAY — pro-rata authorise (cumulative), flip DRAFT → AUTHORISED.
+    // 3) ACCPAY — authorise exactly the amount received (cumulative), flip DRAFT → AUTHORISED.
     if (theCase.accPayId !== undefined) {
       const payNow = s.xero.accPays[theCase.accPayId]
       if (payNow !== undefined) {

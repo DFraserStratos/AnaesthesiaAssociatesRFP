@@ -1,22 +1,26 @@
 import { useMemo, useState } from 'react'
 import { format, parseISO, startOfMonth, subMonths } from 'date-fns'
-import { neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { type AgingBucketKey } from '../../../domain/seed'
 import {
+  aaFeeInvoicesFor,
   gstActivityFor,
   paymentHistoryFor,
   receivablesAgingFor,
   useAppStore,
   useToday,
+  type AaFeeInvoiceRow,
   type AccpayInvoiceRow,
   type PaymentHistoryRow,
   type PaymentHistoryStatus,
 } from '../../../store'
 import { Segmented } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
+import { aaFeeFixedTotal, aaFeeMonthLabel } from '../../../domain/billing/aaFee'
+import { roundToCents } from '../../../domain/billing/money'
 import { Panel } from '../components'
 
-export type AccountsSubTab = 'overdue' | 'payments' | 'gst'
+export type AccountsSubTab = 'overdue' | 'payments' | 'gst' | 'fees'
 
 interface AccountsScreenProps {
   anaesthetistId: string
@@ -53,7 +57,7 @@ export function AccountsScreen({
       <div>
         <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Accounts</h1>
         <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>
-          Outstanding accounts, payments and your GST activity.
+          Outstanding accounts, payments, your GST activity and AA's fee invoices to you.
         </div>
       </div>
 
@@ -61,6 +65,7 @@ export function AccountsScreen({
         <SubTabButton active={subTab === 'overdue'} onClick={() => onSubTab('overdue')}>Overdue</SubTabButton>
         <SubTabButton active={subTab === 'payments'} onClick={() => onSubTab('payments')}>Payments</SubTabButton>
         <SubTabButton active={subTab === 'gst'} onClick={() => onSubTab('gst')}>GST activity</SubTabButton>
+        <SubTabButton active={subTab === 'fees'} onClick={() => onSubTab('fees')}>AA fees</SubTabButton>
       </div>
 
       {subTab === 'overdue' ? (
@@ -69,7 +74,10 @@ export function AccountsScreen({
         <PaymentsTable
           anaesthetistId={anaesthetistId}
           focusInvoiceNumber={focusInvoiceNumber}
+          onOpenFees={() => onSubTab('fees')}
         />
+      ) : subTab === 'fees' ? (
+        <AaFeesTable anaesthetistId={anaesthetistId} focusInvoiceNumber={focusInvoiceNumber} />
       ) : (
         <GstReport anaesthetistId={anaesthetistId} />
       )}
@@ -174,9 +182,11 @@ const PAYMENT_STATUS_LABEL: Record<PaymentHistoryStatus, string> = {
 function PaymentsTable({
   anaesthetistId,
   focusInvoiceNumber,
+  onOpenFees,
 }: {
   anaesthetistId: string
   focusInvoiceNumber?: string
+  onOpenFees: () => void
 }) {
   const billing = useAppStore((s) => s.billing)
   const schedule = useAppStore((s) => s.schedule)
@@ -189,20 +199,20 @@ function PaymentsTable({
   return (
     <Panel flush>
       <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist }}>
-        Received invoices remain here after they leave Overdue. The illustrative AA service fee is
-        deducted from the customer payment to show the net amount payable to you.
+        Received invoices remain here after they leave Overdue. Everything AA receives for an
+        invoice is released to you in full. AA's own fee is{' '}
+        <button type="button" onClick={onOpenFees} style={inlineLinkStyle}>invoiced to you monthly</button>.
       </div>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 1050 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 960 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
               <Th>Date received</Th>
               <Th>Invoice</Th>
               <Th>Patient</Th>
               <Th>Payer</Th>
-              <Th right>Customer paid</Th>
-              <Th right>AA fee</Th>
-              <Th right>Net to you</Th>
+              <Th right>Received by AA</Th>
+              <Th right>Released to you</Th>
               <Th right>Paid to you</Th>
               <Th>Status</Th>
             </tr>
@@ -210,7 +220,7 @@ function PaymentsTable({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
+                <td colSpan={8} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
                   No payments received yet.
                 </td>
               </tr>
@@ -232,8 +242,7 @@ function PaymentsTable({
                     <Td>{row.patientName}</Td>
                     <Td>{row.payerLabel}</Td>
                     <Td mono right>{formatCurrency(row.grossReceived)}</Td>
-                    <Td mono right>−{formatCurrency(row.serviceFeeAmount)}</Td>
-                    <Td mono right bold>{formatCurrency(row.netPayable)}</Td>
+                    <Td mono right bold>{formatCurrency(row.releasedAmount)}</Td>
                     <Td mono right>{formatCurrency(row.disbursedAmount)}</Td>
                     <Td>
                       <span
@@ -257,6 +266,116 @@ function PaymentsTable({
             )}
           </tbody>
         </table>
+      </div>
+    </Panel>
+  )
+}
+
+const inlineLinkStyle: React.CSSProperties = {
+  border: 'none',
+  background: 'none',
+  padding: 0,
+  font: 'inherit',
+  fontWeight: 600,
+  color: accent.base,
+  textDecoration: 'underline',
+  cursor: 'pointer',
+}
+
+/**
+ * AA's monthly fee invoices to this anaesthetist (catch-up Phase 16;
+ * US-10.3.2): paid or unpaid, from the billing mirror (never Xero). A fee
+ * invoice shows as soon as it is raised.
+ */
+function AaFeesTable({ anaesthetistId, focusInvoiceNumber }: { anaesthetistId: string; focusInvoiceNumber?: string }) {
+  const billing = useAppStore((s) => s.billing)
+  const rows = useMemo(() => aaFeeInvoicesFor({ billing }, anaesthetistId), [billing, anaesthetistId])
+  const unpaidTotal = rows.filter((r) => r.status === 'unpaid').reduce((sum, r) => sum + r.total, 0)
+
+  return (
+    <Panel flush>
+      <div data-shot="web-accounts-aa-fees">
+        <div style={{ padding: '16px 20px 0', fontSize: 12, lineHeight: 1.5, color: neutral.mist, maxWidth: 860 }}>
+          AA invoices its fee monthly: fixed charges plus a charge for each buyer-created tax invoice (BCTI) AA
+          issued for your work and was paid for that month. It is a separate invoice you pay into AA's own
+          account, never deducted from your payments.
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 960 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${neutral.line}` }}>
+                <Th>Invoice</Th>
+                <Th>Month</Th>
+                <Th right>BCTIs</Th>
+                <Th right>Fixed charges</Th>
+                <Th right>Per-BCTI charge</Th>
+                <Th right>Fee (ex GST)</Th>
+                <Th right>GST</Th>
+                <Th right>Total</Th>
+                <Th>Status</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={9} style={{ padding: '28px 20px', textAlign: 'center', color: neutral.mist }}>
+                    No AA fee invoices yet.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row: AaFeeInvoiceRow) => {
+                  const focused = row.invoiceNumber === focusInvoiceNumber
+                  const fixed = aaFeeFixedTotal(row.settings)
+                  return (
+                    <tr
+                      key={row.id}
+                      data-testid={`aa-fee-history-row-${row.invoiceNumber}`}
+                      style={{
+                        borderBottom: `1px solid ${neutral.sunken}`,
+                        background: focused ? semantic.success.tint : undefined,
+                        boxShadow: focused ? `inset 3px 0 0 ${semantic.success.solid}` : undefined,
+                      }}
+                    >
+                      <Td mono bold={focused}>{row.invoiceNumber}</Td>
+                      <Td>{aaFeeMonthLabel(row.monthISO)}</Td>
+                      <Td mono right>{row.bctiCount}</Td>
+                      <Td mono right>{formatCurrency(fixed)}</Td>
+                      <Td mono right>{formatCurrency(roundToCents(row.subtotal - fixed))}</Td>
+                      <Td mono right>{formatCurrency(row.subtotal)}</Td>
+                      <Td mono right>{formatCurrency(row.gst)}</Td>
+                      <Td mono right bold>{formatCurrency(row.total)}</Td>
+                      <Td>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            padding: '4px 8px',
+                            borderRadius: radius.pill,
+                            whiteSpace: 'nowrap',
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            color: row.status === 'paid' ? semantic.success.onTint : neutral.slate,
+                            background: row.status === 'paid' ? semantic.success.tint : neutral.sunken,
+                          }}
+                        >
+                          {row.status === 'paid' && row.paidAtISO !== undefined
+                            ? `Paid ${format(parseISO(row.paidAtISO.slice(0, 10)), 'd MMM yyyy')}`
+                            : 'Unpaid'}
+                        </span>
+                      </Td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+            <tfoot>
+              <tr style={{ borderTop: `1px solid ${neutral.line}` }}>
+                <td colSpan={7} style={{ padding: '12px 16px', color: neutral.slate }}>Unpaid AA fees (incl GST)</td>
+                <td className="mono" style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(unpaidTotal)}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </Panel>
   )

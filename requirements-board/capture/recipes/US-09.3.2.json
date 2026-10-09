@@ -6,7 +6,7 @@
     {
       "name": "no-nhi",
       "app": "simulator",
-      "caption": "Only the hidden internal ID crosses to Xero, never the NHI",
+      "caption": "No personal information in Xero: only the hidden internal ID, never a name or the NHI",
       "start": "/demo/xero",
       "states": [
         {

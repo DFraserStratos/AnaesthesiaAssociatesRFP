@@ -15,8 +15,19 @@
  */
 
 import {
+  AA_FEE_RUN_ACTOR,
+  BCTI_SEED_MONTH,
+  BCTI_SEED_TARGET,
+  DEMO_TRIGGER_ACTOR,
   OFFICE_ACTOR,
   OFFICE_SIMULATION_ACTOR,
+  aaFeePaymentDisabledReason,
+  aaFeeRunDisabledReason,
+  allAaFeeInvoices,
+  recordAaFeePayment,
+  runMonthlyFeeInvoices,
+  seedBctisDisabledReason,
+  seedMonthOfBctis,
   WARNING_RULE_COUNT,
   allSampleClearRefusal,
   clearAllSamples,
@@ -47,6 +58,7 @@ import {
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
 import { roundToCents } from '../../domain/billing/money'
+import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { formatCurrency } from '../format'
 import { useDemoTriggerMemory } from './memory'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
@@ -61,6 +73,8 @@ export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
 const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId'] as const
 const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
 const ADMIN_INTEGRATIONS = '/admin/integrations'
+const AA_FEE_INVOICES = '/admin/billing/aa-fees'
+const XERO_PAIR = '/demo/xero/invoices/:accRecId'
 const INTEGRATIONS_SIM = '/demo/integrations'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
@@ -89,6 +103,41 @@ const DEFAULT_MESSAGE_ID = CANNED_MESSAGES[0]?.id ?? 'MSG-STG-1001'
 // ---------------------------------------------------------------------------
 // Payments: one body for the bar's invoice pages and the PWA's Balances
 // ---------------------------------------------------------------------------
+
+/**
+ * Record the anaesthetist's payment of a fee invoice: the one body behind the
+ * "Record fee payment" trigger and the fee pair's in-page button.
+ */
+export function recordFeePaymentFor(api: AppStoreApi, aaFeeInvoiceId: string | undefined): DemoTriggerResult {
+  const reason = aaFeePaymentDisabledReason(api.getState(), aaFeeInvoiceId)
+  if (reason !== null || aaFeeInvoiceId === undefined) return { ok: false, message: reason ?? 'Not an AA fee invoice' }
+  const fee = api.getState().billing.aaFeeInvoices[aaFeeInvoiceId]!
+  const res = recordAaFeePayment(api, { aaFeeInvoiceId, idempotencyKey: `FEE-PAY-${aaFeeInvoiceId}` })
+  if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
+  return {
+    ok: true,
+    message: res.value.applied
+      ? `${fee.invoiceNumber} paid: ${formatCurrency(fee.total - fee.amountReceived)} received into AA's own account.`
+      : 'No change (already paid).',
+  }
+}
+
+/** True on a Xero pair whose ACCREC is AA's own fee invoice (catch-up Phase 16). */
+function isFeePairOnScreen(state: AppState, ctx: DemoTriggerCtx): boolean {
+  const accRecId = ctx.params['accRecId']
+  return accRecId !== undefined && state.xero.accRecs[accRecId]?.kind === 'aaFee'
+}
+
+/** The AA fee invoice behind the fee pair on screen. */
+function feeInvoiceIdOnScreen(state: AppState, ctx: DemoTriggerCtx): string | undefined {
+  const accRec = state.xero.accRecs[ctx.params['accRecId'] ?? '']
+  return accRec?.kind === 'aaFee' ? accRec.invoiceId : undefined
+}
+
+/** The month in the AA fee invoices picker (default the demo clock's month). */
+function feeMonthOnScreen(state: AppState, ctx: DemoTriggerCtx): string {
+  return ctx.published['aaFees.month'] ?? state.clock.todayISO.slice(0, 7)
+}
 
 /** The ACCREC on screen: the URL's `accRecId`, or the ACCREC of the URL's `invoiceId`. */
 function accRecIdOnScreen(state: AppState, ctx: DemoTriggerCtx): string | undefined {
@@ -141,7 +190,7 @@ export function sendPaymentWebhook(api: AppStoreApi, accRecId: string | undefine
     ok: res.ok,
     message: res.ok
       ? res.value.applied
-        ? `Webhook applied ${formatCurrency(amount)} to ${active.invoiceNumber}. The paired ACCPAY is authorised pro-rata.`
+        ? `Webhook for ${active.invoiceNumber}: ${formatCurrency(amount)} received, the paired ACCPAY is authorised for exactly ${formatCurrency(amount)}.`
         : 'No change (already fully paid).'
       : `Refused: ${res.message}`,
   }
@@ -435,10 +484,12 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'payment-full',
     label: 'Payment received · full',
     description:
-      'Simulates a Xero payment webhook for the remaining balance of the invoice on screen. Its paired ACCPAY is authorised pro-rata. Also on the Xero simulation pair.',
+      'Simulates a Xero payment webhook for the remaining balance of the invoice on screen. Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
     screen: 'Admin · Invoice',
     routes: INVOICE_PAGES,
     surfaces: ['bar'],
+    // A fee payment is "Record fee payment", never a procedure webhook.
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     disabledReason: (state, ctx) => paymentDisabledReason(state, accRecIdOnScreen(state, ctx)),
     run: (api, ctx) => sendPaymentWebhook(api, accRecIdOnScreen(api.getState(), ctx), 'full'),
     indexPath: firstOpenInvoicePath,
@@ -448,10 +499,12 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'payment-half',
     label: 'Payment received · half',
     description:
-      'Simulates a Xero payment webhook for half the remaining balance of the invoice on screen (a part payment). Also on the Xero simulation pair.',
+      'Simulates a Xero payment webhook for half the remaining balance of the invoice on screen (a part payment). Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
     screen: 'Admin · Invoice',
     routes: INVOICE_PAGES,
     surfaces: ['bar'],
+    // A fee payment is "Record fee payment", never a procedure webhook.
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     disabledReason: (state, ctx) => paymentDisabledReason(state, accRecIdOnScreen(state, ctx)),
     run: (api, ctx) => sendPaymentWebhook(api, accRecIdOnScreen(api.getState(), ctx), 'partial'),
     indexPath: firstOpenInvoicePath,
@@ -465,6 +518,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     screen: 'Admin · Invoice',
     routes: INVOICE_PAGES,
     surfaces: ['bar'],
+    // A fee payment is "Record fee payment", never a procedure webhook.
+    when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     disabledReason: (state) => replayDisabledReason(state),
     run: (api) => {
       const last = useDemoTriggerMemory.getState().lastWebhook
@@ -478,6 +533,70 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
+  },
+
+  // ── Admin · AA fee invoices (catch-up Phase 16) ───────────────────────
+  {
+    id: 'run-scheduled-fee-run',
+    label: 'Run scheduled month-end fee run',
+    description:
+      'Stands in for the month-end job: raises AA\'s fee invoice to every active anaesthetist not yet invoiced for the month in the picker, as the scheduled system run.',
+    screen: 'Admin · AA fee invoices',
+    routes: [AA_FEE_INVOICES],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => aaFeeRunDisabledReason(state, feeMonthOnScreen(state, ctx)),
+    run: (api, ctx) => {
+      const monthISO = feeMonthOnScreen(api.getState(), ctx)
+      const res = runMonthlyFeeInvoices(api, AA_FEE_RUN_ACTOR, { monthISO })
+      if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
+      return {
+        ok: true,
+        message:
+          res.value.raisedCount === 0
+            ? `Nothing to raise: every active anaesthetist already has a fee invoice for ${aaFeeMonthLabel(monthISO)}.`
+            : `The scheduled run raised ${res.value.raisedCount} AA fee invoice${res.value.raisedCount === 1 ? '' : 's'} for ${aaFeeMonthLabel(monthISO)}, ${formatCurrency(res.value.total)} incl GST.`,
+      }
+    },
+    indexPath: () => AA_FEE_INVOICES,
+  },
+  {
+    id: 'seed-month-of-bctis',
+    label: 'Seed a month of BCTIs',
+    description: `Tops Dr Rutherford up to ${BCTI_SEED_TARGET} BCTIs paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)} (paid and disbursed procedure invoices on 1 to 6 July), so the next fee run shows the worked example.`,
+    screen: 'Admin · AA fee invoices',
+    routes: [AA_FEE_INVOICES],
+    surfaces: ['bar'],
+    when: (state) => state.masters.anaesthetists[ANAE.rutherford] !== undefined,
+    disabledReason: (state) => seedBctisDisabledReason(state, ANAE.rutherford),
+    run: (api) => {
+      const res = seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
+      if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
+      const fee = aaFeeFor(api.getState().appSettings.aaFee, BCTI_SEED_TARGET)
+      return {
+        ok: true,
+        message: `Added ${res.value.added} paid BCTIs: Dr Rutherford now has ${BCTI_SEED_TARGET} paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)}. At the current settings his fee is ${formatCurrency(fee.subtotal)} before GST. Run monthly fee invoices to raise it.`,
+      }
+    },
+    indexPath: () => AA_FEE_INVOICES,
+  },
+
+  // ── Xero simulation · an AA fee pair (catch-up Phase 16) ──────────────
+  {
+    id: 'record-fee-payment',
+    label: 'Record fee payment',
+    description:
+      'The anaesthetist pays this AA fee invoice in full, by bank transfer into AA\'s own account (never deducted from a payment to them).',
+    screen: 'Xero simulation · AA fee pair',
+    routes: [XERO_PAIR],
+    surfaces: ['bar'],
+    when: (state, ctx) => isFeePairOnScreen(state, ctx),
+    disabledReason: (state, ctx) => aaFeePaymentDisabledReason(state, feeInvoiceIdOnScreen(state, ctx)),
+    run: (api, ctx) => recordFeePaymentFor(api, feeInvoiceIdOnScreen(api.getState(), ctx)),
+    indexPath: (state) => {
+      const oldestUnpaid = allAaFeeInvoices(state).filter((f) => f.status === 'unpaid').at(-1)
+      return oldestUnpaid === undefined ? null : `/demo/xero/invoices/${oldestUnpaid.accRecId}`
+    },
+    indexEmptyReason: 'Every AA fee invoice is paid',
   },
 
   // ── Mobile · List, installed PWA only: the office stand-in ───────────

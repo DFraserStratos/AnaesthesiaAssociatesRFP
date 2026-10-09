@@ -12,6 +12,8 @@ export interface DemoContextValues {
   'integrations.tab': 'messages' | 'feeds' | 'pdfs' | 'quality' | 'validators'
   /** Integrations simulator: the message selected in the library. */
   'integrationsSim.selectedMessageId': string
+  /** Admin · AA fee invoices: the month in the picker (`YYYY-MM`; catch-up Phase 16). */
+  'aaFees.month': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

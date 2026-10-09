@@ -384,17 +384,21 @@ An invoice has been generated.
 
 1. The Billing Engine creates a matched Xero pair:
    - `ACCREC`: what the hospital, insurer or patient owes AA;
-   - `ACCPAY`: the net amount AA owes the anaesthetist after an illustrative 5% AA service fee.
-   The fee is a prototype assumption; the RFP does not state the rate or GST treatment.
+   - `ACCPAY`: the full amount AA owes the anaesthetist, equal to the `ACCREC`. AA's own fee is
+     invoiced to the anaesthetist separately and never deducted here.
+   Both records carry the InvoiceNumber (the `ACCPAY`'s ends `-P`) and the case Reference.
 2. `ACCPAY` begins in `DRAFT`.
 3. Payment lands in the AA account.
 4. A Xero webhook notifies the Billing Engine; a daily poll is the safety net.
-5. The matching net payable becomes `AUTHORISED`, proportionally for a partial payment.
+5. The matching payable becomes `AUTHORISED` for exactly the amount received, including a partial
+   payment; the rest stays outstanding on the invoice.
 6. AA runs payables and disburses the authorised amount to the anaesthetist.
 7. The system tracks **paid into AA** and **disbursed to anaesthetist** separately.
 8. The anaesthetist's flat balance view, persistent payment history and GST activity update from the
    Billing Engine's mirror, not from direct Xero queries.
-9. Eligible individual Xero contacts may later be archived to manage active-contact volume.
+9. Eligible individual Xero contacts may later be archived to manage active-contact volume. These
+   patient and guardian contacts carry only the hidden internal ID: no name, NHI or other personal
+   information.
 
 ### Handoff
 
@@ -414,6 +418,34 @@ audience, use a partial payment followed by two payables runs to prove no double
 - RFP: `Mobile App Consumption Model`
 - Appendix 2
 - Prototype: `X1` to `X5`
+
+## Workflow 7a: monthly AA fee invoicing
+
+**Primary actors:** office finance, Billing Engine, Xero, the anaesthetist
+
+### Trigger
+
+Month end: the office runs the month's fee invoices (in the prototype, **Run monthly fee invoices** on
+Admin → Billing → AA fee invoices, or the "Run scheduled month-end fee run" demo action).
+
+### Steps
+
+1. The office maintains **AA fee settings**: several fixed items and a charge per BCTI, every amount held
+   excluding GST. A change applies from the next run; raised fee invoices keep their settings.
+2. For the chosen month the Billing Engine counts each anaesthetist's BCTIs: one per receivable invoice,
+   once, against the anaesthetist who did the procedure, in the month its invoice is paid in full.
+3. It raises one **AA-FEE** invoice to each active anaesthetist: the fixed items plus the charge per BCTI
+   times the count, with GST worked out at the foot. Each is its own case with a Xero ACCREC against the
+   anaesthetist's existing contact and no ACCPAY.
+4. The anaesthetist pays it by bank transfer into AA's own account. It is never deducted from a payment
+   to them (trust law), and it is not their income, so it never reaches their GST activity.
+5. Admin and the web **Accounts → AA fees** tab show each fee invoice paid or unpaid.
+
+### Demo point
+
+S3 Beat 4: Seed a month of BCTIs, then Run monthly fee invoices, gives Dr Rutherford $500 + $5 x 40 =
+$700.00 before GST ($805.00 with GST). The fixed schedule, the paid-only count and BCTI granularity are
+with AA's accountant.
 
 ## Workflow 8: handle failures, late additions and compliance
 
@@ -472,8 +504,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 - All changes, including automated ones, are audited.
 - Both old and new NHI formats are validated.
-- The prototype follows the stricter reading that NHI never enters Xero.
-- RFP Appendix 1 and Appendix 2 contradict each other on that last point; it must be confirmed.
+- No NHI or other personal information enters Xero, patient names included (confirmed with AA).
 
 ## Workflow-to-prototype readiness
 
@@ -488,6 +519,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Invoice calculation and documents | Yes | Phase 08 |
 | Pre-payment, addendum, billing monitor/retry | Yes | Phase 09 |
 | Xero pairs, payment, balances and disbursement | Yes | Phase 10 |
+| AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | HL7/FHIR/PDF ingestion and monitoring | Yes | Phase 11 |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Upcoming | Phase 13 |

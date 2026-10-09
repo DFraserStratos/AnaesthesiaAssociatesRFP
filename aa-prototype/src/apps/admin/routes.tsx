@@ -8,6 +8,7 @@ import { RightRail } from './components/RightRail'
 import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
 import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
+import { AaFeesScreen } from './screens/AaFeesScreen'
 import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
 import { InvoicesScreen } from './screens/InvoicesScreen'
 import { MasterData } from './screens/MasterData'
@@ -197,6 +198,17 @@ export function AdminInvoicesRoute() {
 export function AdminBillingRoute() {
   const { actor } = useAdminOutlet()
   return <BillingMonitorScreen actor={actor} />
+}
+
+/** AA's monthly fee: the fee invoices and the fee settings (catch-up Phase 16). */
+export function AdminAaFeesRoute() {
+  const { actor } = useAdminOutlet()
+  return <AaFeesScreen actor={actor} tab="invoices" />
+}
+
+export function AdminAaFeeSettingsRoute() {
+  const { actor } = useAdminOutlet()
+  return <AaFeesScreen actor={actor} tab="settings" />
 }
 
 export function AdminIntegrationsRoute() {

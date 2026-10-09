@@ -4,6 +4,10 @@
  * the serialised Xero slice contains none of the seeded NHIs, in either format.
  * The Xero slice keys patients on the hidden internal id (ContactNumber), never
  * the NHI (RFP Appendix 2, the prototype's implemented reading).
+ *
+ * Catch-up Phase 16 widens it into the Xero privacy scan (US-09.3.1, OQ-30
+ * answered: no personal information in Xero): no patient or billable-party
+ * name, phone, email or address either, seeded or live.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -16,7 +20,8 @@ import { runPayables } from './payablesActions'
 import { openAccRecs } from './selectors'
 import { validateNhi } from '../domain/nhi'
 import type { Actor } from './mutate'
-import { SEED_MARKERS } from '../domain/seed'
+import { SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import type { AppState } from './appStore'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -60,5 +65,48 @@ describe('no NHI in the Xero slice (convention 8 / Appendix 2)', () => {
     for (const nhi of nhis) {
       expect(serialised, `NHI ${nhi} must not appear in the Xero slice`).not.toContain(nhi)
     }
+  })
+})
+
+/** Every personal value a patient or billable party holds (never in Xero). */
+function personalValues(state: AppState): string[] {
+  const people = [...Object.values(state.masters.patients), ...Object.values(state.masters.billableParties)]
+  const values = people.flatMap((p) => [p.name, p.phone, p.email, p.address])
+  return values.filter((v): v is string => v !== undefined && v.trim() !== '')
+}
+
+function expectNoPersonalInformation(state: AppState): void {
+  const serialised = JSON.stringify(state.xero)
+  const values = personalValues(state)
+  expect(values.length).toBeGreaterThan(100)
+  for (const value of values) {
+    expect(serialised, `"${value}" must not appear in the Xero slice`).not.toContain(value)
+  }
+}
+
+describe('Xero privacy scan (US-09.3.1: no personal information in Xero)', () => {
+  it('the seeded Xero slice holds no patient or billable-party name, phone, email or address', () => {
+    const api = store()
+    // The seed ships patient and billable-party contacts (history + pre-payment pair).
+    const individual = Object.values(api.getState().xero.contacts).filter((c) => c.type !== 'organisation')
+    expect(individual.length).toBeGreaterThan(0)
+    for (const c of individual) expect(c.name).toMatch(/^(Patient|Billable party) [A-Z]+\d+$/)
+    expectNoPersonalInformation(api.getState())
+  })
+
+  it('stays clean after the S3 billing run, a pre-payment invoice and payments', () => {
+    const api = store()
+    for (const listId of [SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm]) {
+      expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
+      expect(runBillingForList(api, listId).ok).toBe(true)
+      handoffListCases(api, listId)
+    }
+    expect(raisePreProcedureInvoice(api, OFFICE, SEED_MARKERS.prepaymentBooking!.entityId).ok).toBe(true)
+    let i = 0
+    for (const cand of openAccRecs(api.getState())) {
+      receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
+    }
+    expect(runPayables(api, OFFICE).ok).toBe(true)
+    expectNoPersonalInformation(api.getState())
   })
 })

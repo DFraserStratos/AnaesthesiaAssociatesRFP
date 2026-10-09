@@ -286,8 +286,14 @@ describe('session 2 entries', () => {
     const choices = t.choices?.(api.getState(), ctx) ?? []
     expect(choices.length).toBeGreaterThan(0)
     const chosen = choices[choices.length - 1]?.id
-    expect(t.run(api, ctx, chosen).message).toMatch(/^Webhook applied/)
-    expect(api.getState().xero.accRecs[chosen ?? '']?.amountReceived).toBeGreaterThan(0)
+    const message = t.run(api, ctx, chosen).message
+    // Exactly the amount received is released; no fee wording (catch-up Phase 16).
+    expect(message).toMatch(/^Webhook for AA-2026-\d{4}: \$[\d,.]+ received, the paired ACCPAY is authorised for exactly \$[\d,.]+\.$/)
+    expect(message).not.toMatch(/fee|pro-rata|proportion/i)
+    const received = api.getState().xero.accRecs[chosen ?? '']?.amountReceived ?? 0
+    expect(received).toBeGreaterThan(0)
+    const pay = Object.values(api.getState().xero.accPays).find((p) => p.accRecId === chosen)
+    expect(pay?.amountAuthorised).toBe(received)
   })
 
   it('the PWA chip is absent on More and Availability', () => {
@@ -422,5 +428,80 @@ describe('Photo capture (Future scope) (catch-up Phase 15b)', () => {
     useDemoTriggerMemory.getState().clearPhotoCaptureRequest()
     t.run(api, ctx)
     expect(useDemoTriggerMemory.getState().photoCaptureRequest?.n).toBeGreaterThan(first!.n)
+  })
+})
+
+describe('AA fee entries (catch-up Phase 16)', () => {
+  const FEE = '/admin/billing/aa-fees'
+
+  it('show only on their screens, bar only', () => {
+    const api = createAppStore()
+    expect(ids(api, FEE)).toEqual(['run-scheduled-fee-run', 'seed-month-of-bctis'])
+    expect(ids(api, `${FEE}/settings`)).toEqual([])
+    expect(ids(api, '/admin/billing')).not.toContain('run-scheduled-fee-run')
+    for (const id of ['run-scheduled-fee-run', 'seed-month-of-bctis', 'record-fee-payment']) {
+      expect(byId(id).surfaces).toEqual(['bar'])
+    }
+    // The PWA sheet lists none of them.
+    expect(ids(api, '/mobile/balances', 'pwa')).toEqual(['pwa-payment-full', 'pwa-payment-half'])
+  })
+
+  it('"Record fee payment" shows on a fee pair only, and the payment webhook triggers never do', () => {
+    const api = createAppStore()
+    const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.invoiceNumber === 'AA-FEE-2026-H02')!
+    const feePath = `/demo/xero/invoices/${fee.accRecId}`
+    expect(ids(api, feePath)).toContain('record-fee-payment')
+    for (const id of ['payment-full', 'payment-half', 'payment-replay']) expect(ids(api, feePath)).not.toContain(id)
+    const procedurePath = '/demo/xero/invoices/XRH01'
+    expect(ids(api, procedurePath)).not.toContain('record-fee-payment')
+    expect(ids(api, procedurePath)).toContain('payment-full')
+
+    const t = byId('record-fee-payment')
+    const ctx = ctxFor(feePath, { accRecId: fee.accRecId })
+    expect(t.indexPath(api.getState())).toBe(feePath)
+    expect(t.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(t.run(api, ctx).message).toMatch(/^AA-FEE-2026-H02 paid: \$[\d,.]+ received into AA's own account\.$/)
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Already paid')
+    expect(t.indexPath(api.getState())).toBeNull()
+  })
+
+  it('"Seed a month of BCTIs" then the run gives Dr Rutherford exactly $700.00 before GST ($805.00 with GST)', () => {
+    const api = createAppStore()
+    const seed = byId('seed-month-of-bctis')
+    const run = byId('run-scheduled-fee-run')
+    const ctx = ctxFor(FEE, {}, { 'aaFees.month': '2026-07' })
+    expect(seed.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(seed.run(api, ctx).message).toMatch(/now has 40 paid in July 2026\. At the current settings his fee is \$700\.00 before GST/)
+    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already 40 BCTIs paid in July 2026')
+
+    expect(run.disabledReason(api.getState(), ctx)).toBeNull()
+    expect(run.run(api, ctx).ok).toBe(true)
+    const rutherford = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === '29104' && f.monthISO === '2026-07')!
+    expect([rutherford.bctiCount, rutherford.subtotal, rutherford.gst, rutherford.total]).toEqual([40, 700, 105, 805])
+    expect(new Set(rutherford.bctis.map((b) => b.accPayId)).size).toBe(40)
+    expect(rutherford.bctis.every((b) => b.receivablePaidAtISO?.startsWith('2026-07'))).toBe(true)
+    expect(rutherford.raisedBy).toBe('scheduled')
+    expect(run.disabledReason(api.getState(), ctx)).toBe('Every active anaesthetist already has a fee invoice for July 2026.')
+    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already invoiced for July 2026')
+  })
+
+  it('the seeded BCTIs add nothing to Overdue or the payables run, and no List from 7 July on', () => {
+    const api = createAppStore()
+    const openBefore = openAccRecs(api.getState()).length
+    byId('seed-month-of-bctis').run(api, ctxFor(FEE))
+    const s = api.getState()
+    expect(openAccRecs(s).length).toBe(openBefore)
+    const added = Object.values(s.schedule.lists).filter((l) => l.id.startsWith('L-RB-'))
+    expect(added).toHaveLength(8)
+    expect(added.every((l) => l.anaesthetistId === '29104' && l.dateISO < '2026-07-07' && l.state === 'AUTHORISED')).toBe(true)
+    const pays = Object.values(s.xero.accPays).filter((p) => p.id.startsWith('XPRB'))
+    expect(pays.every((p) => p.amountDisbursed === p.amountPayable && p.status === 'paid')).toBe(true)
+  })
+
+  it('the run trigger reads the month in the picker and refuses a future one', () => {
+    const api = createAppStore()
+    const run = byId('run-scheduled-fee-run')
+    expect(run.disabledReason(api.getState(), ctxFor(FEE, {}, { 'aaFees.month': '2026-08' }))).toBe('August 2026 has not started yet.')
+    expect(run.run(api, ctxFor(FEE, {}, { 'aaFees.month': '2026-06' })).message).toMatch(/for June 2026/)
   })
 })

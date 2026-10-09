@@ -13,8 +13,16 @@
  *    Patients key on `hiddenInternalId`; billable parties on their own hidden id
  *    (each payer its own contact). An ARCHIVED match is invoiced against and
  *    unarchived (the Xero unarchive step is TBC in the sandbox — surfaced).
+ *  - NO PERSONAL INFORMATION IN XERO (catch-up Phase 16; US-09.3.1, OQ-30):
+ *    a patient or billable-party contact is named only by a neutral label built
+ *    from its hidden id ("Patient PT0001"), never a name, NHI or contact detail.
  *  - The anaesthetist PAYEE is an `organisation`-type contact (Xero has no
  *    anaesthetist type; org type is archive-exempt, correct for the payee).
+ *  - THE PAYABLE IS THE GROSS AMOUNT (catch-up Phase 16; FT-10.3): the ACCPAY's
+ *    amountPayable equals the ACCREC's amountDue. AA's own fee is a separate
+ *    monthly invoice and is never deducted here.
+ *  - Both records store InvoiceNumber (the ACCPAY's with `-P`, US-08.4.3),
+ *    Reference (the case reference) and the issue date (US-09.1.1).
  *  - IDEMPOTENT: a case whose `accRecId` is set is a no-op (retry-safe).
  *  - FAULT PATH (D-handoff): `settings.failNextHandoff` records `handoffFailure`
  *    on the case, clears the flag, creates NO pair and keeps `status:'invoiced'`
@@ -25,9 +33,9 @@
  * One `mutate`, `source:'system'` audit (`xero.contactResolved`, `xero.pairCreated`).
  */
 
-import type { CounterpartyRef, XeroContact } from '../domain/types'
-import { aaServiceFeeFor } from '../domain/billing/agencyFee'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import type { Anaesthetist, CounterpartyRef, XeroContact } from '../domain/types'
+import { xeroIndividualContactName } from '../domain/xeroContact'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { casesForBooking, counterpartyName } from './selectors'
 
@@ -42,7 +50,7 @@ const HANDOFF_FAULT = {
 const UNARCHIVE_NOTE =
   'This contact was archived; it is unarchived to invoice against it. The Xero unarchive step is TBC in the sandbox.'
 
-interface ContactSpec {
+export interface ContactSpec {
   /** Composite cache key `${kind}:${id}` — never a raw id (4 disjoint org namespaces). */
   key: string
   contactNumber: string
@@ -50,22 +58,40 @@ interface ContactSpec {
   type: XeroContact['type']
 }
 
-/** The payer contact spec for an invoice counterparty (NHI never sent; convention 8). */
-function payerContactSpec(cp: CounterpartyRef, masters: AppState['masters']): ContactSpec {
+/**
+ * The anaesthetist's Xero contact: the payee on every procedure ACCPAY, and the
+ * contact AA's fee invoice is raised against (catch-up Phase 16). An org-type
+ * contact (archive-exempt). The key uses the registration number, which IS the
+ * anaesthetist id, so it matches the seed's payee key (`seed/history.ts`) and
+ * every caller reuses the one contact via the cache rather than minting a
+ * duplicate.
+ */
+export function anaesthetistContactSpec(anaesthetist: Pick<Anaesthetist, 'registrationNumber' | 'name'>): ContactSpec {
+  return {
+    key: `anaesthetist:${anaesthetist.registrationNumber}`,
+    contactNumber: `ANAE-${anaesthetist.registrationNumber}`,
+    name: anaesthetist.name,
+    type: 'organisation',
+  }
+}
+
+/** The payer contact spec for an invoice counterparty (no NHI or other personal information; convention 8). */
+export function payerContactSpec(cp: CounterpartyRef, masters: AppState['masters']): ContactSpec {
   const key = `${cp.kind}:${cp.id}`
   if (cp.kind === 'patient') {
-    // ContactNumber = the patient's hidden internal id (never the NHI).
-    return { key, contactNumber: cp.id, name: masters.patients[cp.id]?.name ?? cp.id, type: 'patient' }
+    // ContactNumber = the patient's hidden internal id (never the NHI); the
+    // name is the neutral label built from it (no personal information in Xero).
+    return { key, contactNumber: cp.id, name: xeroIndividualContactName('patient', cp.id), type: 'patient' }
   }
   if (cp.kind === 'billableParty') {
-    return { key, contactNumber: cp.id, name: masters.billableParties[cp.id]?.name ?? cp.id, type: 'billableParty' }
+    return { key, contactNumber: cp.id, name: xeroIndividualContactName('billableParty', cp.id), type: 'billableParty' }
   }
   // hospital / insurer / surgeon / organisation → one persistent organisation
   // contact, keyed by the (globally-unique) holder id.
   return { key, contactNumber: cp.id, name: counterpartyName({ masters }, cp), type: 'organisation' }
 }
 
-interface ResolveResult {
+export interface ResolveResult {
   contactId: string
   counters: Record<string, number>
   via: 'cache' | 'contactNumber' | 'created'
@@ -78,7 +104,7 @@ interface ResolveResult {
  * → create (RFP Appendix 2). An archived match is unarchived. Returns the id,
  * how it resolved, and the bumped counters.
  */
-function resolveContactInto(
+export function resolveContactInto(
   spec: ContactSpec,
   contacts: Record<string, XeroContact>,
   cache: Record<string, string>,
@@ -126,7 +152,7 @@ function resolveContactInto(
   return { contactId, counters: nextCounters, via, unarchived }
 }
 
-function contactResolvedMeta(contactId: string, spec: ContactSpec, r: ResolveResult): MutationMeta {
+export function contactResolvedMeta(contactId: string, spec: ContactSpec, r: ResolveResult): MutationMeta {
   return {
     entityType: 'xeroContact',
     entityId: contactId,
@@ -192,16 +218,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   }
 
   const payerSpec = payerContactSpec(invoice.counterparty, state.masters)
-  // Payee = the anaesthetist, an org-type contact (archive-exempt). The key uses
-  // the registration number, which IS the anaesthetist id — so this matches the
-  // seed's payee key (`seed/history.ts`) and a live handoff reuses the seeded
-  // payee contact via the cache rather than minting a duplicate.
-  const payeeSpec: ContactSpec = {
-    key: `anaesthetist:${anaesthetist.registrationNumber}`,
-    contactNumber: `ANAE-${anaesthetist.registrationNumber}`,
-    name: anaesthetist.name,
-    type: 'organisation',
-  }
+  const payeeSpec = anaesthetistContactSpec(anaesthetist)
 
   const metas: MutationMeta[] = []
   let out: HandoffResult = {}
@@ -231,12 +248,16 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
     counters = xr.counters
     const xp = allocateId(counters, 'xeroAccPay')
     counters = xp.counters
-    const payable = aaServiceFeeFor(invoice.total)
+    const issuedAtISO = clockISO(s.clock)
 
     accRecs[xr.id] = {
       id: xr.id,
+      kind: 'procedure',
       invoiceId: invoice.id,
       contactId: payer.contactId,
+      invoiceNumber: invoice.invoiceNumber,
+      reference: invoice.caseReference,
+      issuedAtISO,
       amountDue: invoice.total,
       amountReceived: 0,
       status: 'awaitingPayment',
@@ -245,7 +266,11 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
       id: xp.id,
       accRecId: xr.id,
       contactId: payee.contactId,
-      ...payable,
+      invoiceNumber: `${invoice.invoiceNumber}-P`,
+      reference: invoice.caseReference,
+      issuedAtISO,
+      anaesthetistId: anaesthetist.registrationNumber,
+      amountPayable: invoice.total,
       amountAuthorised: 0,
       amountDisbursed: 0,
       status: 'draft',
@@ -267,8 +292,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
         payerContactId: payer.contactId,
         payeeContactId: payee.contactId,
         amountDue: invoice.total,
-        serviceFeeAmount: payable.serviceFeeAmount,
-        amountPayable: payable.amountPayable,
+        amountPayable: invoice.total,
       },
     })
 

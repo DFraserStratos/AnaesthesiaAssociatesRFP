@@ -7,6 +7,7 @@
  */
 
 import type {
+  AaFeeInvoice,
   BillingCase,
   BillingPipelineStatus,
   Booking,
@@ -28,6 +29,8 @@ import type { BookingBillingContext } from '../domain/billing/validateBookingFor
 import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
+import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
+import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
@@ -152,10 +155,11 @@ export function dashboardFiguresFor(state: AppState, anaesthetistId: string): Da
  * payment picker) exclude them, while the mirror money selectors include them.
  */
 export function isBackdropList(list: Pick<List, 'id'>): boolean {
-  return list.id.startsWith('L-HIST')
+  return list.id.startsWith('L-HIST') || list.id.startsWith('L-RB-')
 }
 export function isBackdropInvoice(invoice: Pick<Invoice, 'id'>): boolean {
-  return invoice.id.startsWith('HINV')
+  // HINV: Dr Souter's seeded history. RBINV: the "Seed a month of BCTIs" demo action (catch-up Phase 16).
+  return invoice.id.startsWith('HINV') || invoice.id.startsWith('RBINV')
 }
 
 /** Every LIVE billed List, most recently billed first (Phase 08; excludes seed backdrop). */
@@ -252,6 +256,9 @@ export interface PaymentCandidate {
  */
 export function openAccRecs(state: Pick<AppState, 'xero' | 'billing' | 'masters' | 'schedule'>): PaymentCandidate[] {
   return Object.values(state.xero.accRecs)
+    // Procedure receivables only: an AA fee invoice is paid by "Record fee
+    // payment", never a procedure payment webhook (catch-up Phase 16).
+    .filter((r) => r.kind === 'procedure')
     .filter((r) => toCents(r.amountReceived) < toCents(r.amountDue))
     // Exclude the seeded historical backdrop (its aged receivables are the
     // anaesthetist money-view story; the missed webhook is caught by the poll).
@@ -760,8 +767,8 @@ export interface PaymentHistoryRow {
   payerLabel: string
   receivedAtISO: string
   grossReceived: number
-  serviceFeeAmount: number
-  netPayable: number
+  /** What AA has released to the anaesthetist: exactly what it received (US-10.2.1). */
+  releasedAmount: number
   disbursedAmount: number
   status: PaymentHistoryStatus
 }
@@ -769,7 +776,7 @@ export interface PaymentHistoryRow {
 /**
  * Payment history for the anaesthetist account. Unlike the outstanding balance
  * handover, this is an immediate transaction history: a received payment
- * remains visible after it leaves Overdue and shows the net payable and payout.
+ * remains visible after it leaves Overdue and shows what was released and paid out.
  * It reads only the Billing Engine mirror, never Xero.
  */
 export function paymentHistoryFor(
@@ -813,8 +820,7 @@ export function paymentHistoryFor(
       payerLabel: counterpartyName(state, invoice.counterparty),
       receivedAtISO,
       grossReceived: c.receivedAmount,
-      serviceFeeAmount: roundToCents(c.receivedAmount - c.authorisedAmount),
-      netPayable: c.authorisedAmount,
+      releasedAmount: c.authorisedAmount,
       disbursedAmount: c.disbursedAmount,
       status,
     })
@@ -1046,4 +1052,118 @@ export function useToday(): string {
 
 export function useClockTimeLabel(): string {
   return useAppStore((s) => clockTimeLabel(s))
+}
+
+// ---------------------------------------------------------------------------
+// AA's monthly fee (catch-up Phase 16; FT-10.3, US-10.3.1, US-10.3.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * The BCTI record list: the ONLY source `bctisFor` is fed from (one record per
+ * procedure ACCPAY, the pre-payment invoice's included; fee ACCRECs have no
+ * ACCPAY so are never counted). See `bctiRecordsFrom` for the feeders later
+ * phases add.
+ */
+export function bctiRecords(state: Pick<AppState, 'xero'>): BctiRecord[] {
+  return bctiRecordsFrom(state.xero)
+}
+
+/** What an anaesthetist's fee invoices already hold, for `bctisFor` (charged BCTIs, invoiced months). */
+export function bctiFeeHistoryFor(state: Pick<AppState, 'billing'>, anaesthetistId: string): BctiFeeHistory {
+  return bctiFeeHistory(Object.values(state.billing.aaFeeInvoices), anaesthetistId)
+}
+
+/** The BCTIs `anaesthetistId` would be charged for `monthISO` on the next run (the one count, with its fee history). */
+export function bctisToChargeFor(state: Pick<AppState, 'xero' | 'billing'>, anaesthetistId: string, monthISO: string): BctiRecord[] {
+  return bctisFor(bctiRecords(state), anaesthetistId, monthISO, BCTI_COUNT_RULE, bctiFeeHistoryFor(state, anaesthetistId))
+}
+
+export interface AaFeeRunPreviewRow {
+  anaesthetistId: string
+  anaesthetistName: string
+  bctiCount: number
+  fixedTotal: number
+  perBctiTotal: number
+  /** Excluding GST. */
+  subtotal: number
+  gst: number
+  total: number
+  /** The fee invoice already raised for this month, if any. */
+  invoice?: AaFeeInvoice
+}
+
+/**
+ * The month's fee for every active anaesthetist: from the current settings and
+ * count for one not yet invoiced, or the raised invoice's own snapshot.
+ */
+export function aaFeeRunPreview(
+  state: Pick<AppState, 'xero' | 'billing' | 'masters' | 'appSettings'>,
+  monthISO: string,
+): AaFeeRunPreviewRow[] {
+  const records = bctiRecords(state)
+  const settings = state.appSettings.aaFee
+  const raised = new Map(
+    Object.values(state.billing.aaFeeInvoices)
+      .filter((f) => f.monthISO === monthISO)
+      .map((f) => [f.anaesthetistId, f]),
+  )
+  return Object.values(state.masters.anaesthetists)
+    .filter((a) => a.active)
+    .map((a): AaFeeRunPreviewRow => {
+      const invoice = raised.get(a.registrationNumber)
+      if (invoice !== undefined) {
+        const fixedTotal = aaFeeFixedTotal(invoice.settings)
+        return {
+          anaesthetistId: a.registrationNumber,
+          anaesthetistName: a.name,
+          bctiCount: invoice.bctiCount,
+          fixedTotal,
+          perBctiTotal: roundToCents(invoice.subtotal - fixedTotal),
+          subtotal: invoice.subtotal,
+          gst: invoice.gst,
+          total: invoice.total,
+          invoice,
+        }
+      }
+      const bctiCount = bctisFor(records, a.registrationNumber, monthISO, BCTI_COUNT_RULE, bctiFeeHistoryFor(state, a.registrationNumber)).length
+      const fee = aaFeeFor(settings, bctiCount)
+      return {
+        anaesthetistId: a.registrationNumber,
+        anaesthetistName: a.name,
+        bctiCount,
+        fixedTotal: aaFeeFixedTotal(settings),
+        perBctiTotal: roundToCents(settings.perBctiCharge * bctiCount),
+        subtotal: fee.subtotal,
+        gst: fee.gst,
+        total: fee.total,
+      }
+    })
+    .sort((a, b) => a.anaesthetistName.localeCompare(b.anaesthetistName))
+}
+
+export type AaFeeInvoiceStatus = 'unpaid' | 'paid'
+
+export interface AaFeeInvoiceRow extends AaFeeInvoice {
+  status: AaFeeInvoiceStatus
+}
+
+function aaFeeRow(f: AaFeeInvoice): AaFeeInvoiceRow {
+  return { ...f, status: toCents(f.amountReceived) >= toCents(f.total) ? 'paid' : 'unpaid' }
+}
+
+function newestFirst(a: AaFeeInvoice, b: AaFeeInvoice): number {
+  return b.monthISO.localeCompare(a.monthISO) || b.raisedAtISO.localeCompare(a.raisedAtISO) || a.invoiceNumber.localeCompare(b.invoiceNumber)
+}
+
+/** One anaesthetist's fee invoices, newest first. Reads the billing mirror only, never Xero. */
+export function aaFeeInvoicesFor(state: Pick<AppState, 'billing'>, anaesthetistId: string): AaFeeInvoiceRow[] {
+  return Object.values(state.billing.aaFeeInvoices)
+    .filter((f) => f.anaesthetistId === anaesthetistId)
+    .sort(newestFirst)
+    .map(aaFeeRow)
+}
+
+/** Every fee invoice, newest first. Reads the billing mirror only. */
+export function allAaFeeInvoices(state: Pick<AppState, 'billing'>): AaFeeInvoiceRow[] {
+  return Object.values(state.billing.aaFeeInvoices).sort(newestFirst).map(aaFeeRow)
 }

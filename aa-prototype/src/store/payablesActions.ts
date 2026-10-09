@@ -7,9 +7,10 @@
  * the INCREMENT since the last run and can never double-pay (7th review A16).
  *
  * A payable is fully paid out only when its cumulative disbursement reaches the
- * full net payable (`XeroAccPay.amountPayable`); a partial payment authorises
- * (and this run disburses) only its proportional share, and the balance follows
- * on later payments + runs. Audited `source:'system'` (`xero.disbursed`).
+ * full payable (`XeroAccPay.amountPayable`, which equals the receivable); a
+ * partial payment authorises (and this run disburses) exactly the amount
+ * received, and the balance follows on later payments + runs. AA's own fee is a
+ * separate monthly invoice and is never deducted here (FT-10.3). Audited `source:'system'` (`xero.disbursed`).
  */
 
 import type { BillingCase, Disbursement, XeroAccPay } from '../domain/types'
@@ -99,7 +100,7 @@ function disbursePayables(
       } satisfies Disbursement
 
       const newDisbursed = roundToCents(original.amountDisbursed + increment)
-      // Fully paid out = cumulative disbursement reaches the FULL net payable,
+      // Fully paid out = cumulative disbursement reaches the FULL payable,
       // not merely the currently-authorised slice.
       const fullPayable = original.amountPayable
       const fullyPaidOut = toCents(newDisbursed) >= toCents(fullPayable)

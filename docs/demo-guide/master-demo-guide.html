@@ -600,7 +600,8 @@
       <h3>Kirsty W. · billing review and authorisation</h3>
       <p style="font-size:14px;color:var(--slate)">May be the same staff member. Reviews all Bookings of a
       submitted List as a set, corrects office-owned data without returning the List, authorises a clean
-      List, and monitors later billing, Xero and integration exceptions.</p>
+      List, monitors later billing, Xero and integration exceptions, and maintains AA fee settings and runs
+      the monthly fee invoices (AA's own fee to each anaesthetist, never deducted from a payment to them).</p>
       <p style="font-size:13px"><strong>Critical rule:</strong> there is no RETURNED state. The office phones
       for clarification and corrects it; the anaesthetist does not reopen the Booking.</p>
     </div>
@@ -734,12 +735,22 @@
   </div></details>
 
   <details><summary>7 · Collect money and disburse to the anaesthetist</summary><div class="details-body">
-    <p>The Billing Engine creates a Xero pair: ACCREC (what the payer owes AA) and a DRAFT ACCPAY (the net
-    amount AA owes the anaesthetist after an illustrative 5% AA service fee). A webhook (with a daily reconciliation
-    poll as safety net) marks payment; the net payable authorises, proportionally for a partial; the payables run disburses. Paid into AA and disbursed
+    <p>The Billing Engine creates a Xero pair: ACCREC (what the payer owes AA) and a DRAFT ACCPAY (the full
+    amount AA owes the anaesthetist, equal to the ACCREC; AA's own fee is invoiced separately, never deducted). Both
+    carry the InvoiceNumber and Reference. A webhook (with a daily reconciliation poll as safety net) marks payment;
+    the payable authorises for exactly the amount received, including a partial; the payables run disburses. Paid into AA and disbursed
     to the anaesthetist are separate states. The apps read the Billing Engine's mirror, never Xero directly.
-    The fee rate and its GST treatment are prototype assumptions to confirm with AA.
     <span class="chip ready">Ready</span></p>
+  </div></details>
+
+  <details><summary>7a · Monthly AA fee invoicing</summary><div class="details-body">
+    <p>The office maintains AA fee settings (several fixed items and a charge per BCTI, all ex GST; a change
+    applies from the next run). At month end, Run monthly fee invoices counts each anaesthetist's BCTIs (one per
+    receivable invoice, once, against the anaesthetist who did the procedure, in the month it is paid in full) and
+    raises one AA-FEE invoice to each active anaesthetist, with GST at the foot and a Xero ACCREC against their
+    existing contact (no ACCPAY). The anaesthetist pays it into AA's own account; it is never deducted from a payment
+    to them, and Admin and web Accounts &#8594; AA fees show it paid or unpaid. The fixed schedule, the paid-only count
+    and BCTI granularity are with AA's accountant. <span class="chip ready">Ready</span></p>
   </div></details>
 
   <details><summary>8 · Failures, late additions and compliance</summary><div class="details-body">
@@ -750,8 +761,8 @@
     immutable. <strong>Billing failure:</strong> the failed Booking is isolated, others invoice, then
     resolve-and-retry. <strong>Integration failure:</strong> a malformed message retries then dead-letters
     for manual intervention; a duplicate is an idempotent no-op; a message for a SUBMITTED/AUTHORISED target
-    is parked. <strong>Compliance:</strong> everything is audited, both NHI formats validate, and NHI never
-    enters Xero (a flagged reading of contradictory RFP appendices). <span class="chip ready">Ready</span></p>
+    is parked. <strong>Compliance:</strong> everything is audited, both NHI formats validate, and
+    no NHI or other personal information enters Xero, patient names included (confirmed with AA). <span class="chip ready">Ready</span></p>
   </div></details>
 </section>
 
@@ -883,7 +894,7 @@
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm reassignment.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Bookings and audit trail, different from moving one Booking. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
       <div class="row"><span class="k">Expect</span><span>A brief List reassigned success moment appears before the modal closes. The List and Bookings move; the vacated slot regenerates; the change is audited.</span></div>
     </div>
@@ -899,7 +910,7 @@
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
     <div class="scenario-head">
       <span style="font-size:14px;color:var(--slate)">Serves the Billing Engine at the centre, split billing,
-      the Xero pair and the two money states. 6 to 8 minutes. Authorise live.</span>
+      the Xero pair, the two money states and AA's own monthly fee. 8 to 10 minutes. Authorise live.</span>
       <span class="stage">Stage it: Reset &#8594; Confirm reset. Go directly to Admin; both Mon 20 Souter Lists are already in the Review queue, but their invoices do not exist until you authorise them live.</span>
     </div>
     <div class="beat">
@@ -910,23 +921,29 @@
     </div>
     <div class="beat">
       <h4>Beat 2 · the Xero pair</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices.</li><li>Open <strong>AA-2026-0005 · Alan Prentice · nib</strong>.</li><li>Pause on the two money-flow bookings, then the ACCREC and ACCPAY pair beneath them.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"Read the flow from left to right. The ACCREC tracks money coming from nib into AA. The ACCPAY tracks the net money going from AA to Dr Souter. This prototype illustrates a 5% AA service fee; the actual rate and GST treatment need confirmation because the RFP does not specify them. No NHI ever crosses into Xero."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice. Alan appears only in the "Linked Billing Engine case" panel, never as a field on nib's Xero contact. On this pair, nib owes $152.38, the illustrative AA fee is $7.62 and the net payable to Dr Souter is $144.76.</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices.</li><li>Open <strong>AA-2026-0005</strong> (payer nib).</li><li>Pause on the two money-flow cards, then the ACCREC and ACCPAY pair beneath them.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Read the flow from left to right. The ACCREC tracks money coming from nib into AA. The ACCPAY tracks the full amount going from AA to Dr Souter: AA passes on everything it receives, and invoices its own fee separately. Both records carry the invoice number and the case reference. No NHI or other personal information ever crosses into Xero."</span></div>
+      <div class="row"><span class="k">Expect</span><span>A matched ACCREC plus draft ACCPAY per invoice, each with its InvoiceNumber and Reference (the ACCPAY's number ends -P). The patient, Alan Prentice, is named only in the "Linked Billing Engine case" panel, which reads the billing system; read his name from there. On this pair, nib owes $152.38 and the payable to Dr Souter is $152.38.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · payment, balances, disbursement</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the open <strong>AA-2026-0005</strong> pair, select <strong>Simulate payment and payout</strong>.</li><li>Pause on the updated ACCREC and ACCPAY states.</li><li>Select <strong>View in Dr Souter's account</strong>.</li><li>Pause on the highlighted <strong>AA-2026-0005</strong> row under Accounts &#8594; Payments.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"One demo action is standing in for two real money events: nib pays $152.38 into AA, then AA keeps the illustrative $7.62 service fee and pays the $144.76 net amount to Dr Souter. In a real operation those outgoing payments may be grouped into a payables run. We keep the paid-in and paid-out states separate underneath, even though this guided path advances both together. The anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."</span></div>
-      <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY disbursed, and the Web Payments row remains visible with $152.38 customer paid, $7.62 AA fee, $144.76 net to Dr Souter and <strong>Paid to you</strong>. It is no longer under Overdue because it is no longer outstanding.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"One demo action is standing in for two real money events: nib pays $152.38 into AA, then AA pays the same $152.38 to Dr Souter. In a real operation those outgoing payments are grouped into a payables run. We keep the paid-in and paid-out states separate underneath, even though this guided path advances both together. The anaesthetist app reads the Billing Engine's mirror; it never queries Xero directly."</span></div>
+      <div class="row"><span class="k">Expect</span><span>ACCREC paid, ACCPAY disbursed, and the Web Payments row remains visible with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and <strong>Paid to you</strong>. It is no longer under Overdue because it is no longer outstanding.</span></div>
     </div>
-    <div class="callout warn">Discovery: the exact List-disappearance trigger (prototype uses billing-run completion); split-billing invoice count (group by counterparty, two invoices when funders differ).</div>
+    <div class="beat">
+      <h4>Beat 4 · AA's monthly fee</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Billing monitor &#8594; Open AA fee invoices &#8594; <strong>Fee settings</strong>: the two fixed items ($350.00 and $150.00, labelled Sample schedule), <strong>$5.00</strong> per BCTI and the worked example "$500.00 + $5.00 x 40 = $700.00, plus GST at the foot of the invoice".</li><li><strong>Fee invoices</strong>: July 2026 in the picker; Dr Souter's May invoice (AA-FEE-2026-H01) Paid and June's (AA-FEE-2026-H02) Unpaid.</li><li>Demo actions &#8594; <strong>Seed a month of BCTIs</strong> &#8594; Run: Dr Rutherford shows 40 BCTIs paid and $700.00.</li><li><strong>Run monthly fee invoices</strong>. Expand Dr Rutherford's: <strong>$700.00 + GST $105.00 = $805.00</strong> with 40 counted BCTIs. Dr Souter's July invoice counts four BCTIs, including AA-2026-0005 because Beat 3 paid it: <strong>$520.00 + GST $78.00 = $598.00</strong>.</li><li>Demo: Billing Monitor &amp; Xero &#8594; Invoices &#8594; <strong>AA-FEE-2026-H02</strong> (AA fee chip): the flow to Anaesthesia Associates (AA's own account) and the No payable note, then <strong>Record fee payment</strong> and View in Dr Souter's account.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"AA's fee is AA invoicing the anaesthetist once a month, from settings the office maintains: fixed charges plus a charge per buyer-created tax invoice. It is always a separate invoice, paid into AA's own account, and never deducted from a payment to the anaesthetist, because trust law forbids it. Only invoices that have been paid are counted, so a Booking moved between anaesthetists is never charged twice. The real fixed schedule, and confirmation of the paid-only count and of one BCTI per invoice, are with AA's accountant."</span></div>
+      <div class="row"><span class="k">Expect</span><span>Web Accounts &#8594; AA fees highlights AA-FEE-2026-H02 as Paid, with May Paid and July Unpaid. Payables, GST activity and Overdue do not change when a fee invoice is raised or paid. If Beat 3 was skipped, Dr Souter's July invoice counts three BCTIs ($515.00 before GST).</span></div>
+    </div>
+    <div class="callout warn">Discovery: the exact List-disappearance trigger (prototype uses billing-run completion); split-billing invoice count (group by counterparty, two invoices when funders differ); AA's fee schedule, the paid-only BCTI count and one BCTI per invoice or per procedure (all with AA's accountant).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S4 · Exceptions</summary><div class="details-body">
     <div class="scenario-head">
-      <span style="font-size:14px;color:var(--slate)">Serves resilience and the RFP's hard cases with audited
-      overrides. 8 to 10 minutes. Every sub-trigger is under Demo actions on its screen.</span>
+      <span style="font-size:14px;color:var(--slate)">Serves resilience and the RFP's hard cases, with the audit trail
+      that keeps them honest. 8 to 10 minutes. Every sub-trigger is under Demo actions on its screen.</span>
       <span class="stage">Stage it: Reset &#8594; Confirm reset. Work top to bottom.</span>
     </div>
     <div class="beat"><h4>Beat 1 · prepayment warning</h4>
@@ -951,8 +968,8 @@
     </div>
     <div class="beat"><h4>Beat 5 · partial payment</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Invoices &#8594; Hemi Walker · St George's (the clean-sibling invoice).</li><li>Demo actions &#8594; Payment received · half &#8594; Run; then the Billing monitor's own Run payables button.</li><li>Back on the invoice, Payment received · full &#8594; Run; Run payables again.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A partial payment authorises only its proportional payable share. Two runs across a part-then-balance payment prove there is no double payment."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The payable authorises pro-rata; payables pays only the increment each run.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"A partial payment authorises a payable for exactly the amount received, to the cent; the rest stays outstanding on the invoice. Two runs across a part-then-balance payment prove there is no double payment."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The payable authorises exactly the amount received; each run pays exactly what arrived, and the total paid out equals the invoice total, never more.</span></div>
     </div>
     <div class="callout warn">Discovery: billing-failure isolation (a prototype choice); which conditions warn, and how strongly; where the to-do list sits on the dashboard; and how inbound messages targeting a SUBMITTED/AUTHORISED List are parked.</div>
   </div></details>
@@ -973,17 +990,17 @@
       <div class="row"><span class="k">Say</span><span class="say">"Both NHI formats validate using the official check-digit algorithms. A new-format NHI with a mod-23 check letter validates and processes end to end."</span></div>
       <div class="row"><span class="k">Expect</span><span>The new-format NHI validates; an invalid one is rejected with a reason.</span></div>
     </div>
-    <div class="beat"><h4>Beat 3 · no NHI in Xero</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero.</li><li>Pause on the contact and invoice data.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"The prototype takes the stricter data-minimisation reading: no NHI ever crosses to Xero, only a hidden internal ID. Appendix 1 and Appendix 2 contradict each other, so we flag it to confirm with AA."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The Xero surface shows the internal ID and a visible callout of the contradiction.</span></div>
+    <div class="beat"><h4>Beat 3 · no personal information in Xero</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Demo: Billing Monitor &amp; Xero.</li><li>Pause on the No personal information in Xero callout, then the Contacts tab: patient and guardian contacts are named only by their hidden ID ("Patient PT0017", "Billable party BP0001").</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"No personal information goes into Xero: no NHI and no patient name, only a hidden internal ID that links each transaction back to the billing system. AA confirmed this rule."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The callout states the confirmed rule (no RFP-contradiction callout), and no patient or guardian name shows on any Xero contact or record; hospitals, insurers and the anaesthetist payees keep their names.</span></div>
     </div>
     <div class="beat"><h4>Beat 4 · contract effective-dating</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Master data &#8594; Contracts &#8594; Health NZ agreed rate (Type 2).</li><li>Set Effective to: 16 Jul 2026 &#8594; Save.</li><li>Invoices &#8594; open Hemi Walker's Health NZ invoice from Dr Whitaker's Fri 17 Jul List.</li><li>Pause on the unchanged invoice.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Contracts are effective-dated. Changing one does not rewrite invoices already raised under the old terms; the invoice reproduces against what was true when it billed."</span></div>
       <div class="row"><span class="k">Expect</span><span>The contract change is recorded; the earlier invoice is unchanged.</span></div>
     </div>
-    <div class="callout warn">Discovery: the NHI-in-Xero contradiction; demo-plausible modifier values (not an authoritative NZSA schedule); the concurrency model (single-user, audited last-write-wins, shown via audit + live integration updates).</div>
+    <div class="callout warn">Discovery: demo-plausible modifier values (not an authoritative NZSA schedule); the concurrency model (single-user, audited last-write-wins, shown via audit + live integration updates).</div>
   </div></details>
 
   <h2>Recommended run orders</h2>
@@ -1057,12 +1074,14 @@
   </div>
 
   <h2>The money model</h2>
-  <pre class="tree">Payer &#8594; ACCREC &#8594; AA account &#8594; illustrative AA fee &#8594; ACCPAY net &#8594; Anaesthetist</pre>
+  <pre class="tree">Payer &#8594; ACCREC &#8594; AA account &#8594; ACCPAY (full amount) &#8594; Anaesthetist</pre>
   <ul class="tight">
-    <li>ACCREC is money AA is collecting; ACCPAY is the net money AA owes the anaesthetist.</li>
-    <li>The 5% AA service fee is a prototype assumption. The RFP does not specify the rate or GST treatment.</li>
+    <li>ACCREC is money AA is collecting; ACCPAY is the full amount AA owes the anaesthetist, equal to the ACCREC. AA's own fee is never deducted from it (it is invoiced to the anaesthetist separately).</li>
     <li>Paid into AA and disbursed to the anaesthetist are separate states.</li>
-    <li>Partial payments authorise proportional disbursement.</li>
+    <li>A partial payment releases the payable for exactly the amount received; the rest stays outstanding.</li>
+    <li>Both Xero records carry the InvoiceNumber (the ACCPAY's ends -P) and the case Reference.</li>
+    <li><strong>AA's monthly fee:</strong> Month end: fee settings + BCTIs paid that month &#8594; AA-FEE invoice (ACCREC) &#8594; Anaesthetist pays AA's own account; never netted. Sample: $350.00 + $150.00 fixed, $5.00 per BCTI; "Seed a month of BCTIs" then the run gives Dr Rutherford $700.00 before GST ($805.00 with GST).</li>
+    <li>Caveat: the fixed schedule, the paid-only count and BCTI granularity are with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.</li>
     <li>The apps read the Billing Engine's mirror, never Xero directly.</li>
     <li>Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
       anaesthetist personally owes.</li>
@@ -1101,9 +1120,9 @@
   it. Present these as design proposals to confirm with AA, not settled facts.</p>
 
   <div class="grid2">
-    <div class="card"><h3>1 · NHI in Xero</h3><p style="font-size:14px">One section allows NHI as a searchable
-      Xero cross-reference; Appendix 2 says NHI never leaves the practice system. The prototype takes the
-      stricter no-NHI-in-Xero reading.</p></div>
+    <div class="card"><h3>1 · NHI in Xero (settled)</h3><p style="font-size:14px">One section allowed NHI as a searchable
+      Xero cross-reference; Appendix 2 said NHI never leaves the practice system. Confirmed with AA: no NHI or
+      other personal information in Xero, patient names included.</p></div>
     <div class="card"><h3>2 · List disappearance trigger</h3><p style="font-size:14px">A table implies
       disappearance at AUTHORISED; the text says invoice generation is the precise trigger and needs
       confirming. The prototype uses billing-run completion.</p></div>
@@ -1310,7 +1329,7 @@ simulated integrations · not production software.</div>
         why: 'Submission hands it over. The office edits from there; there is no send-back to the anaesthetist.' },
       { q: 'Does the patient’s NHI get sent into Xero?',
         opts: [{ t: 'Yes, as a searchable reference', ok: false }, { t: 'No, only a hidden internal ID', ok: true }],
-        why: 'The prototype takes the stricter reading: no NHI in Xero. It is a flagged RFP contradiction to confirm with AA.' }
+        why: 'Confirmed with AA: no NHI or other personal information in Xero, patient names included. Each contact carries only a hidden internal ID.' }
     ];
     var quizWrap = document.getElementById('quiz');
     (function buildQuiz() {

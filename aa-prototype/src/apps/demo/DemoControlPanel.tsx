@@ -282,7 +282,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S3',
     title: 'S3 · Money end-to-end',
-    blurb: 'Authorise the split-billing and two-funder Lists, then follow one Xero pair from payment to the anaesthetist account.',
+    blurb: 'Authorise the split-billing and two-funder Lists, follow one Xero pair from payment to the anaesthetist account, then raise AA\'s monthly fee invoices.',
     run: () => {
       resetDemo(useAppStore)
       const state = useAppStore.getState()
@@ -294,7 +294,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM (St George\'s, the two-funder Booking). In Admin, authorise both to generate the invoices and Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button, then follow the direct link to Dr Souter\'s payment history.',
+          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the split-billing Booking) and PM (St George\'s, the two-funder Booking). In Admin, authorise both to generate the invoices and Xero pairs live. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (the full $152.38 is paid to Dr Souter), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },
@@ -308,7 +308,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley: see the triangle, open the Booking and read the warning, Mark complete and submit (no block, no confirm step), then clear it from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button; pay the balance and run again.',
+          'Reset. Walk the exceptions: (1) Mobile, Souter Fri 24 AM, Annette Riley: see the triangle, open the Booking and read the warning, Mark complete and submit (no block, no confirm step), then clear it from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario, then Add post-op event; (3) Admin Billing monitor, Demo actions, Trigger billing failure, then Resolve & retry Losa Tuilagi; (4) Admin Integrations, Demo actions, Fire hospital message MSG-CPH-2001, then on the Feed config tab (badged Future scope) change Christchurch Public patientNhi from PID-2 to PID-3, save and reprocess; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then the Billing monitor\'s own Run payables button, which pays exactly the amount received; pay the balance and run again.',
         nav: [
           { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
           { label: 'Go to Billing monitor', path: '/admin/billing' },
@@ -319,7 +319,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S5',
     title: 'S5 · Compliance tour',
-    blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no-NHI-in-Xero callout, contract effective-dating.',
+    blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no personal information in Xero, contract effective-dating.',
     run: () => {
       resetDemo(useAppStore)
       const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
@@ -337,7 +337,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) show that no NHI crosses to Xero; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
+          'Reset to rich seeded Booking histories, added three live edits to David Chen\'s trail, and authorised Dr Whitaker\'s Fri 17 Jul List to raise invoices under the Health NZ agreed-rate contract. Compliance tour: (1) open David Chen\'s History; (2) in Admin Integrations open Demo actions and fire MSG-STG-1002 for the new-format NHI; (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs; (4) set "Health NZ agreed rate (Type 2)" to end on 16 Jul, then reopen the Health NZ invoice for Hemi Walker from Whitaker\'s Fri 17 Jul List to show its snapshot is unchanged.',
         nav: [
           { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
           { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },

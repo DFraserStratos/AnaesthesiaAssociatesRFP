@@ -22,6 +22,7 @@ import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
 import type {
+  AaFeeInvoice,
   BillingCase,
   BillingReceipt,
   Disbursement,
@@ -53,6 +54,11 @@ export interface BillingSlice {
    * org namespaces). A hint only: never authoritative, never NHI-derived.
    */
   contactIdCache: Record<string, string>
+  /**
+   * AA's monthly fee invoices to anaesthetists (catch-up Phase 16), each its
+   * own case, deliberately outside `cases` (see `AaFeeInvoice`).
+   */
+  aaFeeInvoices: Record<string, AaFeeInvoice>
 }
 
 export interface XeroSlice {
@@ -93,7 +99,16 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v17: 2026-10-09 · catch-up Phase 15b: Copy a Booking removed (US-02.4.3 Retired):
+/** v19: 2026-10-09 · catch-up Phase 16 step 2: AA fee settings in
+ *  `appSettings.aaFee` (a labelled sample schedule, ex GST), the
+ *  `billing.aaFeeInvoices` map with Dr Souter's seeded May and June fee
+ *  invoices and their `aaFee` ACCRECs (and the paid one's payment).
+ *  v18: 2026-10-09 · catch-up Phase 16 step 1: no AA fee deducted from a payable
+ *  any more (every seeded ACCPAY equals its ACCREC, disbursed in full); Xero
+ *  records store InvoiceNumber, Reference, issue and paid dates (and the ACCREC
+ *  kind, the ACCPAY anaesthetist); no personal information in Xero (patient and
+ *  billable-party contacts named by hidden id); the missed webhook dated July.
+ *  v17: 2026-10-09 · catch-up Phase 15b: Copy a Booking removed (US-02.4.3 Retired):
  *  no `copiedFromBookingId`, no 'copy' or 'anaesthetistPhoto' source; List state
  *  DRAFT renamed ACTIVE (EP-07, FT-07.1).
  *  v16: 2026-10-02 · catch-up Phase 15a: app settings for the warning routine;
@@ -136,10 +151,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 17
+export const PERSIST_VERSION = 19
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {} }
+  return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
   return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {} }
@@ -172,6 +187,7 @@ export function freshAppState(): AppState {
       cases: seedBilling.cases,
       receipts: seedBilling.receipts,
       contactIdCache: seedBilling.contactIdCache,
+      aaFeeInvoices: seedBilling.aaFeeInvoices,
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

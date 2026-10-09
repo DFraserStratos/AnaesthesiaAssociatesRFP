@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   billingMonitor,
   editContract,
   handoffCase,
+  allAaFeeInvoices,
   payablesDue,
   retryBillingCase,
   runPayables,
@@ -108,7 +111,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           the Admin app or a separate Billing Engine screen, the prototype puts it here. The "Prior
           balance" flag reads any open (unpaid) prior episode; whether to separately distinguish open
           from genuinely overdue is held as a discovery question, since invoices carry a raised date
-          but no due date.
+          but no due date. AA's own fee is invoiced to each anaesthetist monthly; it is never deducted
+          from a payable.
         </div>
       </div>
 
@@ -126,8 +130,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           <div style={{ fontSize: 14, fontWeight: 700 }}>Payables run</div>
           <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
             {due.count > 0
-              ? `${due.count} payable${due.count === 1 ? '' : 's'} authorised · ${formatCurrency(due.total)} to disburse to anaesthetists.`
-              : 'No payables are authorised for disbursement. A payable authorises when its ACCREC is paid.'}
+              ? `${due.count} payable${due.count === 1 ? '' : 's'} authorised · ${formatCurrency(due.total)} to disburse to anaesthetists. A payable authorises for exactly what its ACCREC has received.`
+              : 'No payables are authorised for disbursement. A payable authorises for exactly what its ACCREC has received.'}
           </div>
           {payRunMsg !== null && (
             <div style={{ fontSize: 12.5, color: semantic.success.onTint, marginTop: 6 }}>{payRunMsg}</div>
@@ -141,6 +145,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           Run payables
         </button>
       </div>
+
+      <AaFeePanel />
 
       {error !== null && (
         <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
@@ -300,5 +306,32 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     <span style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: it.background, color: it.color }}>
       {it.label}
     </span>
+  )
+}
+
+/** AA's monthly fee invoices at a glance (catch-up Phase 16): separate from the payables above. */
+function AaFeePanel() {
+  const billing = useAppStore((s) => s.billing)
+  const invoices = useMemo(() => allAaFeeInvoices({ billing }), [billing])
+  const latestMonth = invoices[0]?.monthISO
+  const unpaid = invoices.filter((f) => f.status === 'unpaid')
+  const unpaidTotal = unpaid.reduce((sum, f) => sum + f.total, 0)
+  return (
+    <div data-shot="billing-aa-fee-invoices" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>AA fee invoices</div>
+        <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+          {latestMonth === undefined
+            ? 'No fee invoices yet.'
+            : `Latest month invoiced: ${aaFeeMonthLabel(latestMonth)} · ${unpaid.length} unpaid · ${formatCurrency(unpaidTotal)} incl GST owed to AA.`}
+        </div>
+      </div>
+      <Link
+        to="/admin/billing/aa-fees"
+        style={{ minHeight: 38, display: 'inline-flex', alignItems: 'center', padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.ink, fontSize: 13.5, fontWeight: 600, textDecoration: 'none' }}
+      >
+        Open AA fee invoices
+      </Link>
+    </div>
   )
 }

@@ -98,3 +98,14 @@ describe('backfillMerge', () => {
     expect(merged.billing.receipts).toBeDefined()
   })
 })
+
+describe('backfillMerge · AA fee settings (catch-up Phase 16)', () => {
+  it('gives a snapshot from before the fee settings the seeded schedule, and keeps a persisted one whole', () => {
+    const fresh = freshAppState()
+    const old = { ...fresh, appSettings: { warningRules: fresh.appSettings.warningRules } }
+    expect(backfillMerge(fresh as never, old).appSettings.aaFee).toEqual(fresh.appSettings.aaFee)
+    const edited = { fixedItems: [{ id: 'X', description: 'Only item', amount: 10 }], perBctiCharge: 1 }
+    const persisted = { ...fresh, appSettings: { ...fresh.appSettings, aaFee: edited } }
+    expect(backfillMerge(fresh as never, persisted).appSettings.aaFee).toEqual(edited)
+  })
+})

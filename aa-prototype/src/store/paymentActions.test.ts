@@ -2,7 +2,8 @@
  * Payment detection tests (Phase 10; WI3, X4).
  *
  * Webhook idempotency (replay is a no-op; two distinct partials both apply),
- * partial pro-rata authorisation of the ACCPAY, webhook-then-poll double
+ * a partial authorising the ACCPAY for exactly the amount received
+ * (catch-up Phase 16), the ACCREC's paid date set once, webhook-then-poll double
  * delivery causing no double effect, receipts (GST) as the idempotency
  * key-set, and a pre-payment webhook removing the prepayment warning.
  */
@@ -12,12 +13,13 @@ import { createAppStore, type BoundAppStore } from './appStore'
 import { authoriseList, completeBooking, submitList } from './lifecycle'
 import { runBillingForList, handoffListCases } from './billingRun'
 import { raisePreProcedureInvoice } from './prepaymentActions'
-import { receivePayment, gstComponentOf, proRataAuthorised } from './paymentActions'
+import { receivePayment, gstComponentOf } from './paymentActions'
 import { runReconciliationPoll } from './reconciliationPoll'
+import { advanceClockDays } from './clockActions'
 import { casesForList, casesForBooking, prepaymentStatusFor } from './selectors'
 import { warningsForBooking } from './warnings'
 import { roundToCents, toCents } from '../domain/billing/money'
-import type { Actor } from './mutate'
+import { clockISO, type Actor } from './mutate'
 import { SEED_MARKERS } from '../domain/seed'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -62,8 +64,10 @@ describe('webhook payment detection', () => {
     expect(accRec.status).toBe('paid')
     const c = s.billing.cases[caseId]!
     const accPay = s.xero.accPays[c.accPayId!]!
-    expect(accPay.amountAuthorised).toBe(amountPayable)
+    expect(amountPayable).toBe(amountDue)
+    expect(accPay.amountAuthorised).toBe(amountDue)
     expect(accPay.status).toBe('authorised')
+    expect(accRec.paidAtISO).toBe(clockISO(s.clock))
     expect(c.receivedAmount).toBe(amountDue)
     expect(c.authorisedAmount).toBe(amountPayable)
     expect(c.status).toBe('paid')
@@ -88,7 +92,7 @@ describe('webhook payment detection', () => {
     expect(Object.keys(api.getState().billing.receipts).length).toBe(receiptsAfterFirst)
   })
 
-  it('two distinct partials both apply and accumulate; the ACCPAY authorises pro-rata', () => {
+  it('two distinct partials both apply and accumulate; the ACCPAY authorises exactly what was received', () => {
     const api = store()
     const { caseId, accRecId, amountDue, amountPayable } = billCosAndHandoff(api)
     const p1 = roundToCents(amountDue * 0.4)
@@ -97,9 +101,11 @@ describe('webhook payment detection', () => {
     expect(receivePayment(api, { accRecId, amount: p1, idempotencyKey: 'P1', source: 'webhook' }).ok).toBe(true)
     let c = api.getState().billing.cases[caseId]!
     expect(c.receivedAmount).toBe(p1)
-    expect(c.authorisedAmount).toBe(proRataAuthorised(p1, amountDue, amountPayable))
+    expect(c.authorisedAmount).toBe(p1)
+    expect(api.getState().xero.accPays[c.accPayId!]!.amountAuthorised).toBe(p1)
     expect(c.status).toBe('partPaid')
     expect(api.getState().xero.accRecs[accRecId]!.status).toBe('awaitingPayment')
+    expect(api.getState().xero.accRecs[accRecId]!.paidAtISO).toBeUndefined()
 
     expect(receivePayment(api, { accRecId, amount: p2, idempotencyKey: 'P2', source: 'webhook' }).ok).toBe(true)
     c = api.getState().billing.cases[caseId]!
@@ -107,6 +113,31 @@ describe('webhook payment detection', () => {
     expect(c.authorisedAmount).toBe(amountPayable)
     expect(c.status).toBe('paid')
     expect(Object.values(api.getState().billing.receipts).filter((r) => r.caseId === caseId)).toHaveLength(2)
+    // The completing partial sets the paid date.
+    expect(api.getState().xero.accRecs[accRecId]!.paidAtISO).toBe(clockISO(api.getState().clock))
+  })
+
+  it('a half payment of $152.38 releases exactly $76.19 (US-10.2.1)', () => {
+    const api = store()
+    const { caseId, accRecId, amountDue } = billCosAndHandoff(api)
+    // Scale the rule check to this invoice: half received releases exactly half.
+    const half = roundToCents(amountDue / 2)
+    expect(receivePayment(api, { accRecId, amount: half, idempotencyKey: 'H1', source: 'webhook' }).ok).toBe(true)
+    const c = api.getState().billing.cases[caseId]!
+    expect(c.authorisedAmount).toBe(half)
+    expect(toCents(c.authorisedAmount)).toBe(toCents(c.receivedAmount))
+  })
+
+  it('a replay never moves the paid date', () => {
+    const api = store()
+    const { accRecId, amountDue } = billCosAndHandoff(api)
+    expect(receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'R1', source: 'webhook' }).ok).toBe(true)
+    const paidAt = api.getState().xero.accRecs[accRecId]!.paidAtISO
+    expect(paidAt).toBeDefined()
+    advanceClockDays(api, 3)
+    receivePayment(api, { accRecId, amount: amountDue, idempotencyKey: 'R1', source: 'webhook' })
+    receivePayment(api, { accRecId, amount: 1, idempotencyKey: 'R2', source: 'webhook' })
+    expect(api.getState().xero.accRecs[accRecId]!.paidAtISO).toBe(paidAt)
   })
 })
 
@@ -126,6 +157,11 @@ describe('reconciliation poll (safety net)', () => {
     const accRec = api.getState().xero.accRecs[accRecId]!
     expect(accRec.amountReceived).toBe(accRec.amountDue)
     expect(accRec.status).toBe('paid')
+    // The poll completes it: the paid date is the payment's own date.
+    expect(accRec.paidAtISO).toBe(missed!.atISO)
+    // Its payable releases the full amount.
+    const pay = Object.values(api.getState().xero.accPays).find((p) => p.accRecId === accRecId)!
+    expect(pay.amountAuthorised).toBe(accRec.amountDue)
     // The receipt lands in the payment's own period, not the poll/clock day.
     const receipt = Object.values(api.getState().billing.receipts).find((r) => r.idempotencyKey === missed!.idempotencyKey)!
     expect(receipt.atISO).toBe(missed!.atISO)

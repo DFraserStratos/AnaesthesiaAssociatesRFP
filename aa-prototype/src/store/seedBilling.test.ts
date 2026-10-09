@@ -89,3 +89,36 @@ describe('the seeded paid pre-payment slice', () => {
     expect(fromFresh).toEqual(fromStore)
   })
 })
+
+describe('seeded Xero pairs (catch-up Phase 16)', () => {
+  it('every seeded payable equals its receivable and releases exactly what was received', () => {
+    const state = createAppStore().getState()
+    const pairs = Object.values(state.billing.cases).filter((c) => c.accRecId !== undefined && c.accPayId !== undefined)
+    expect(pairs.length).toBeGreaterThan(5)
+    for (const c of pairs) {
+      const accRec = state.xero.accRecs[c.accRecId!]!
+      const accPay = state.xero.accPays[c.accPayId!]!
+      expect(accPay.amountPayable).toBe(accRec.amountDue)
+      expect(c.authorisedAmount).toBe(Math.min(c.receivedAmount, accPay.amountPayable))
+      expect(accPay.amountAuthorised).toBe(c.authorisedAmount)
+      expect(accPay.amountDisbursed).toBeLessThanOrEqual(accPay.amountAuthorised)
+    }
+  })
+
+  it('every seeded Xero record stores its InvoiceNumber, Reference and issue date; paid ones their paid date', () => {
+    const state = createAppStore().getState()
+    for (const accRec of Object.values(state.xero.accRecs).filter((r) => r.kind === 'procedure')) {
+      const invoice = state.billing.invoices[accRec.invoiceId]!
+      expect(accRec.invoiceNumber).toBe(invoice.invoiceNumber)
+      expect(accRec.reference).toBe(invoice.caseReference)
+      expect(accRec.issuedAtISO).toBeTruthy()
+      expect(accRec.paidAtISO !== undefined).toBe(accRec.status === 'paid')
+    }
+    for (const accPay of Object.values(state.xero.accPays)) {
+      const accRec = state.xero.accRecs[accPay.accRecId]!
+      expect(accPay.invoiceNumber).toBe(`${accRec.invoiceNumber}-P`)
+      expect(accPay.reference).toBe(accRec.reference)
+      expect(accPay.anaesthetistId).toBeTruthy()
+    }
+  })
+})

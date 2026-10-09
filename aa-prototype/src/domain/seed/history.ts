@@ -46,7 +46,7 @@ import type {
 } from '../types'
 import { roundToCents } from '../billing/money'
 import { GST_RATE } from '../billing/invoiceBuild'
-import { aaServiceFeeFor } from '../billing/agencyFee'
+import { xeroIndividualContactName } from '../xeroContact'
 import { ANAE, HOSP, ORG, SURG } from './cast'
 import { BP, PAT } from './patients'
 
@@ -56,13 +56,11 @@ export interface HistoryMasters {
   hospitals: Record<string, Hospital>
   surgeons: Record<string, Surgeon>
   organisations: Record<string, ContractHolderOrganisation>
-  patients: Record<string, { name: string }>
-  billableParties: Record<string, { name: string }>
 }
 
 type PaidState = 'unpaid' | 'paid' | 'missedWebhook'
 
-interface HistoryAccount {
+export interface HistoryAccount {
   key: string
   patientId: string
   counterparty: CounterpartyRef
@@ -79,11 +77,20 @@ interface HistoryAccount {
   total: number
   accRelated: boolean
   paidState: PaidState
-  /** paid only: when received (GST-report date) + when disbursed. */
+  /**
+   * paid: when received (GST-report date). missedWebhook: when Xero received
+   * the payment the webhook missed (the poll backdates the receipt to it).
+   */
   paidAtISO?: string
   disbursedAtISO?: string
   /** Archive this (patient) contact in the seed (archived-then-returning). */
   archivedContact?: boolean
+  /**
+   * Accounts sharing a `listKey` share one billed List (in that `session`);
+   * without one, each account gets its own AM List (Dr Souter's history).
+   */
+  listKey?: string
+  session?: 'AM' | 'PM'
 }
 
 const HOSP_STG: CounterpartyRef = { kind: 'hospital', id: HOSP.stg }
@@ -99,7 +106,7 @@ const ORG_COS: CounterpartyRef = { kind: 'organisation', id: ORG.cos }
 const ACCOUNTS: readonly HistoryAccount[] = [
   // --- 8 outstanding (unpaid) across the aging buckets ---
   { key: 'oa01', patientId: PAT.tane, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Knee arthroscopy', rvgBaseCode: '49558', serviceISO: '2026-06-26', raisedISO: '2026-06-26T09:00:00', total: 845.0, accRelated: false, paidState: 'unpaid' },
-  { key: 'oa02', patientId: PAT.marsh, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', rvgBaseCode: '20941', serviceISO: '2026-06-24', raisedISO: '2026-06-24T09:00:00', total: 1240.0, accRelated: false, paidState: 'missedWebhook' },
+  { key: 'oa02', patientId: PAT.marsh, counterparty: HOSP_SX, surgeonId: SURG.patel, hospitalId: HOSP.sx, description: 'Laparoscopic cholecystectomy', rvgBaseCode: '20941', serviceISO: '2026-06-24', raisedISO: '2026-06-24T09:00:00', total: 1240.0, accRelated: false, paidState: 'missedWebhook', paidAtISO: '2026-07-20T10:00:00' },
   { key: 'oa03', patientId: PAT.chen, counterparty: HOSP_STG, surgeonId: SURG.hale, hospitalId: HOSP.stg, description: 'Hip hemiarthroplasty', rvgBaseCode: '47519', serviceISO: '2026-06-22', raisedISO: '2026-06-22T09:00:00', total: 520.5, accRelated: false, paidState: 'unpaid' },
   { key: 'oa04', patientId: PAT.prentice, counterparty: HOSP_STG, surgeonId: SURG.doyle, hospitalId: HOSP.stg, description: 'ACC knee reconstruction', rvgBaseCode: '49558', serviceISO: '2026-06-04', raisedISO: '2026-06-04T09:00:00', total: 980.0, accRelated: true, paidState: 'unpaid' },
   { key: 'oa05', patientId: PAT.holt, counterparty: HOSP_CPH, surgeonId: SURG.tan, hospitalId: HOSP.cph, description: 'Cystoscopy', rvgBaseCode: '50120', serviceISO: '2026-05-27', raisedISO: '2026-05-27T09:00:00', total: 1410.0, accRelated: false, paidState: 'unpaid' },
@@ -167,12 +174,94 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
   // account and by live runtime handoffs via the cache).
   const payeeContactId = resolveContact('anaesthetist', anaesthetistId, souter?.name ?? 'Dr Melanie Souter', 'organisation', false)
 
+  addHistoryAccounts(build, {
+    anaesthetistId,
+    accounts: ACCOUNTS,
+    ids: HISTORY_IDS,
+    masters,
+    payeeContactId,
+    resolveContact,
+    payablesRunId: 'PR-HIST-01',
+  })
+
+  return build
+}
+
+/** The ids one history namespace mints (Dr Souter's: `H`). */
+export interface HistoryIds {
+  list: (n: string) => string
+  booking: (n: string) => string
+  procedure: (n: string) => string
+  invoice: (n: string) => string
+  invoiceLine: (n: string) => string
+  billingCase: (n: string) => string
+  invoiceNumber: (n: string) => string
+  accRec: (n: string) => string
+  accPay: (n: string) => string
+  payment: (n: string) => string
+  receipt: (n: string) => string
+  disbursement: (n: string) => string
+  paymentKey: (accountKey: string) => string
+}
+
+/** A namespace's ids: `H` gives Dr Souter's `L-HIST-01`, `HBK01`, `AA-2026-H01` and so on. */
+export function historyIds(ns: string): HistoryIds {
+  return {
+    list: (n) => (ns === 'H' ? `L-HIST-${n}` : `L-${ns}-${n}`),
+    booking: (n) => `${ns}BK${n}`,
+    procedure: (n) => `${ns}P${n}`,
+    invoice: (n) => `${ns}INV${n}`,
+    invoiceLine: (n) => `${ns}IL${n}`,
+    billingCase: (n) => `${ns}BC${n}`,
+    invoiceNumber: (n) => `AA-2026-${ns}${n}`,
+    accRec: (n) => `XR${ns}${n}`,
+    accPay: (n) => `XP${ns}${n}`,
+    payment: (n) => `PMT${ns}${n}`,
+    receipt: (n) => `RCT${ns}${n}`,
+    disbursement: (n) => `DSB${ns}${n}`,
+    paymentKey: (accountKey) => (ns === 'H' ? `HIST-PAY-${accountKey}` : `${ns}-PAY-${accountKey}`),
+  }
+}
+
+const HISTORY_IDS = historyIds('H')
+
+/** Resolves (or creates) a Xero contact and returns its ContactID. */
+export type HistoryContactResolver = (
+  kind: string,
+  id: string,
+  name: string,
+  type: XeroContact['type'],
+  archived: boolean,
+) => string
+
+export interface HistoryAccountsOptions {
+  anaesthetistId: string
+  accounts: readonly HistoryAccount[]
+  ids: HistoryIds
+  masters: HistoryMasters
+  payeeContactId: string
+  resolveContact: HistoryContactResolver
+  payablesRunId: string
+}
+
+/**
+ * Add billed accounts to `build` as one coherent graph each: a billed List
+ * (shared by accounts with the same `listKey`), a completed Booking and
+ * Procedure, an Invoice and line, a BillingCase carrying the money, and the
+ * Xero side (payer contact, ACCREC and ACCPAY with their stored identifiers,
+ * payments, receipts, disbursements). Dr Souter's history and the "Seed a
+ * month of BCTIs" demo action both build through here. Pure and deterministic.
+ */
+export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOptions): void {
+  const { anaesthetistId, masters, ids } = opts
   const payerName = (cp: CounterpartyRef): string => {
     switch (cp.kind) {
       case 'hospital': return masters.hospitals[cp.id]?.name ?? cp.id
       case 'organisation': return masters.organisations[cp.id]?.name ?? cp.id
-      case 'patient': return masters.patients[cp.id]?.name ?? cp.id
-      case 'billableParty': return masters.billableParties[cp.id]?.name ?? cp.id
+      // No personal information in Xero (US-09.3.1): individual contacts carry
+      // only the neutral label built from the hidden id.
+      case 'patient': return xeroIndividualContactName('patient', cp.id)
+      case 'billableParty': return xeroIndividualContactName('billableParty', cp.id)
       default: return cp.id
     }
   }
@@ -183,23 +272,23 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
   // the contract-holder route (the RFP names it 'hospital').
   const isPatientRoute = (cp: CounterpartyRef): boolean => cp.kind === 'patient' || cp.kind === 'billableParty'
 
-  const dsbRunId = 'PR-HIST-01'
+  const dsbRunId = opts.payablesRunId
   let seq = 0
-  for (const acc of ACCOUNTS) {
+  for (const acc of opts.accounts) {
     seq += 1
     const n = pad(seq)
     const subtotal = roundToCents(acc.total / (1 + GST_RATE))
     const gst = roundToCents(acc.total - subtotal)
 
     // --- schedule: List + Booking + Procedure ---
-    const listId = `L-HIST-${n}`
-    const bookingId = `HBK${n}`
-    const procId = `HP${n}`
+    const listId = acc.listKey !== undefined ? ids.list(acc.listKey) : ids.list(n)
+    const bookingId = ids.booking(n)
+    const procId = ids.procedure(n)
     const list: List = {
       id: listId,
       dateISO: acc.serviceISO,
       anaesthetistId,
-      session: 'AM',
+      session: acc.session ?? 'AM',
       state: 'AUTHORISED',
       statusKey: 'private',
       conflicts: [],
@@ -208,7 +297,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     }
     if (acc.hospitalId !== undefined) list.hospitalId = acc.hospitalId
     list.surgeonId = acc.surgeonId
-    build.lists[listId] = list
+    if (build.lists[listId] === undefined) build.lists[listId] = list
 
     build.bookings[bookingId] = {
       id: bookingId,
@@ -238,11 +327,11 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
     build.procedures[procId] = procedure
 
     // --- billing mirror: Invoice + line + Case ---
-    const invoiceId = `HINV${n}`
-    const caseId = `HBC${n}`
+    const invoiceId = ids.invoice(n)
+    const caseId = ids.billingCase(n)
     const invoice: Invoice = {
       id: invoiceId,
-      invoiceNumber: `AA-2026-H${n}`,
+      invoiceNumber: ids.invoiceNumber(n),
       caseReference: caseId,
       bookingId,
       counterparty: acc.counterparty,
@@ -254,31 +343,42 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       raisedAtISO: acc.raisedISO,
     }
     build.invoices[invoiceId] = invoice
-    build.invoiceLines[`HIL${n}`] = { id: `HIL${n}`, invoiceId, procedureId: procId, description: acc.description, amount: subtotal }
+    build.invoiceLines[ids.invoiceLine(n)] = { id: ids.invoiceLine(n), invoiceId, procedureId: procId, description: acc.description, amount: subtotal }
 
     // --- Xero: contacts + ACCREC + ACCPAY ---
-    const payerContactId = resolveContact(acc.counterparty.kind, acc.counterparty.id, payerName(acc.counterparty), payerType(acc.counterparty), acc.archivedContact === true)
-    const accRecId = `XRH${n}`
-    const accPayId = `XPH${n}`
+    const payerContactId = opts.resolveContact(acc.counterparty.kind, acc.counterparty.id, payerName(acc.counterparty), payerType(acc.counterparty), acc.archivedContact === true)
+    const accRecId = ids.accRec(n)
+    const accPayId = ids.accPay(n)
     const paid = acc.paidState === 'paid'
     const received = paid ? acc.total : 0
-    const payable = aaServiceFeeFor(acc.total)
-    const disbursed = paid ? payable.amountPayable : 0
+    // The payable is the gross amount (FT-10.3): it equals the receivable.
+    const amountPayable = acc.total
+    const disbursed = paid ? amountPayable : 0
 
-    build.accRecs[accRecId] = {
+    const accRec: XeroAccRec = {
       id: accRecId,
+      kind: 'procedure',
       invoiceId,
       contactId: payerContactId,
+      invoiceNumber: invoice.invoiceNumber,
+      reference: invoice.caseReference,
+      issuedAtISO: acc.raisedISO,
       amountDue: acc.total,
       amountReceived: received,
       status: paid ? 'paid' : 'awaitingPayment',
     }
+    if (paid && acc.paidAtISO !== undefined) accRec.paidAtISO = acc.paidAtISO
+    build.accRecs[accRecId] = accRec
     build.accPays[accPayId] = {
       id: accPayId,
       accRecId,
-      contactId: payeeContactId,
-      ...payable,
-      amountAuthorised: paid ? payable.amountPayable : 0,
+      contactId: opts.payeeContactId,
+      invoiceNumber: `${invoice.invoiceNumber}-P`,
+      reference: invoice.caseReference,
+      issuedAtISO: acc.raisedISO,
+      anaesthetistId,
+      amountPayable,
+      amountAuthorised: paid ? amountPayable : 0,
       amountDisbursed: disbursed,
       status: paid ? 'paid' : 'draft',
     }
@@ -291,7 +391,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
       accPayId,
       status: paid ? 'disbursed' : 'handedOff',
       receivedAmount: received,
-      authorisedAmount: paid ? payable.amountPayable : 0,
+      authorisedAmount: paid ? amountPayable : 0,
       disbursedAmount: disbursed,
     }
     if (paid && acc.paidAtISO !== undefined) theCase.paidInAtISO = acc.paidAtISO
@@ -300,10 +400,10 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
 
     // --- payments / receipts / disbursements ---
     if (paid && acc.paidAtISO !== undefined) {
-      const key = `HIST-PAY-${acc.key}`
-      build.payments[`PMTH${n}`] = { id: `PMTH${n}`, accRecId, amount: acc.total, atISO: acc.paidAtISO, idempotencyKey: key, source: 'webhook' }
-      build.receipts[`RCTH${n}`] = {
-        id: `RCTH${n}`,
+      const key = ids.paymentKey(acc.key)
+      build.payments[ids.payment(n)] = { id: ids.payment(n), accRecId, amount: acc.total, atISO: acc.paidAtISO, idempotencyKey: key, source: 'webhook' }
+      build.receipts[ids.receipt(n)] = {
+        id: ids.receipt(n),
         caseId,
         anaesthetistId,
         accRecId,
@@ -314,15 +414,14 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
         source: 'webhook',
       }
       if (acc.disbursedAtISO !== undefined) {
-        build.disbursements[`DSBH${n}`] = { id: `DSBH${n}`, accPayId, amount: payable.amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
+        build.disbursements[ids.disbursement(n)] = { id: ids.disbursement(n), accPayId, amount: amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId }
       }
     } else if (acc.paidState === 'missedWebhook') {
       // An unmirrored PaymentIn: Xero recorded it but no receipt exists, so the
       // ACCREC still reads unpaid until the reconciliation poll catches it.
       const key = `HIST-MISSED-${acc.key}`
-      build.payments[`PMTH${n}`] = { id: `PMTH${n}`, accRecId, amount: acc.total, atISO: acc.raisedISO, idempotencyKey: key, source: 'webhook' }
+      build.payments[ids.payment(n)] = { id: ids.payment(n), accRecId, amount: acc.total, atISO: acc.paidAtISO ?? acc.raisedISO, idempotencyKey: key, source: 'webhook' }
     }
   }
 
-  return build
 }

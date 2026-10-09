@@ -59,6 +59,7 @@ import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
 import { defaultAppSettings } from '../warnings/settings'
+import { SAMPLE_AA_FEE_SETTINGS } from './aaFee'
 import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
@@ -406,8 +407,6 @@ function buildSeedInternal(): SeedBuild {
     hospitals: hospitalsRec,
     surgeons: surgeonsRec,
     organisations: organisationsRec,
-    patients: patientsRec,
-    billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
   })
   const bookingsRec = byId(bookingsBuild.bookings, (c) => c.id)
   const proceduresRec = byId(bookingsBuild.procedures, (p) => p.id)
@@ -460,7 +459,7 @@ function buildSeedInternal(): SeedBuild {
       // archive job decrements `activeContacts`. Not ~28k seeded records.
       volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
     },
-    appSettings: defaultAppSettings(),
+    appSettings: { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS },
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     counters: {

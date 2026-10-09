@@ -12,12 +12,11 @@
         {
           "steps": [
             {
-              "scroll": "[data-testid=xero-pair-detail] h2"
+              "scroll": "[data-shot=xero-invoice-identifiers]"
             }
           ],
           "highlight": [
-            "[data-testid=xero-pair-detail] h2",
-            "[data-shot=xero-engine-link]"
+            "[data-shot=xero-invoice-identifiers]"
           ]
         }
       ]

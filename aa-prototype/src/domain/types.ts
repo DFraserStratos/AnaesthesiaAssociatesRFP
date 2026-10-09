@@ -728,7 +728,7 @@ export interface BillingCase {
    * so `status` becomes a derived label and these three cumulative amounts are
    * authoritative. All default to 0 on every case creator.
    *   - `receivedAmount`   — cumulative received on the ACCREC (money in to AA).
-   *   - `authorisedAmount` — cumulative authorised on the ACCPAY (pro-rata of received).
+   *   - `authorisedAmount` — cumulative authorised on the ACCPAY (exactly the amount received, to the payable).
    *   - `disbursedAmount`  — cumulative disbursed to the anaesthetist (payables runs).
    */
   receivedAmount: number
@@ -790,11 +790,25 @@ export interface XeroContact {
 export interface XeroAccRec {
   /** Xero invoice GUID. */
   id: string
+  /**
+   * What the receivable is for. `procedure`: a procedure invoice, paired with
+   * an ACCPAY (its `invoiceId` is a Billing Engine `Invoice`). `aaFee`: AA's own
+   * monthly fee invoice to an anaesthetist, with no ACCPAY (catch-up Phase 16).
+   */
+  kind: 'procedure' | 'aaFee'
   invoiceId: InvoiceId
   contactId: string
+  /** Xero InvoiceNumber: the engine's invoice number, stored (US-09.1.1). */
+  invoiceNumber: string
+  /** Xero Reference: the case reference, for internal tracing only (US-09.1.1). */
+  reference: string
+  /** When the record was raised in Xero (the demo clock at handoff). */
+  issuedAtISO: IsoDateTime
   amountDue: number
   /** CUMULATIVE across successive partial payments (7th review A16). */
   amountReceived: number
+  /** Set once, by the payment that completes it (the BCTI count reads it). */
+  paidAtISO?: IsoDateTime
   status: 'awaitingPayment' | 'paid' | 'voided'
 }
 
@@ -804,12 +818,20 @@ export interface XeroAccPay {
   /** The paired ACCREC (handoff is pair-atomic; 7th review B8). */
   accRecId: string
   contactId: string
-  /** Gross customer collection before the illustrative AA service fee. */
-  grossAmount: number
-  /** Prototype assumption only; the RFP does not state AA's fee model. */
-  serviceFeeRate: number
-  serviceFeeAmount: number
-  /** Net amount AA owes the anaesthetist after the illustrative fee. */
+  /** The receivable's InvoiceNumber with the `-P` suffix (US-08.4.3), stored. */
+  invoiceNumber: string
+  /** The case reference, as on the paired ACCREC (US-09.1.1). */
+  reference: string
+  issuedAtISO: IsoDateTime
+  /**
+   * The payee: the anaesthetist who did the procedure (the List's anaesthetist
+   * at handoff). The BCTI count charges it to this anaesthetist.
+   */
+  anaesthetistId: AnaesthetistId
+  /**
+   * Equals the paired ACCREC's amountDue (FT-10.3: AA's fee is its own monthly
+   * invoice, never deducted here).
+   */
   amountPayable: number
   /** CUMULATIVE (7th review A16): payables runs pay authorised minus disbursed. */
   amountAuthorised: number
@@ -824,7 +846,87 @@ export interface PaymentIn {
   atISO: IsoDateTime
   /** Per-payment idempotency key alongside the InvoiceID (7th review A16). */
   idempotencyKey: string
-  source: 'webhook' | 'poll'
+  /**
+   * `aaFee`: an anaesthetist paying AA's monthly fee invoice into AA's own
+   * account (catch-up Phase 16). It is never a procedure receipt.
+   */
+  source: 'webhook' | 'poll' | 'aaFee'
+}
+
+// ---------------------------------------------------------------------------
+// AA's monthly fee (catch-up Phase 16; FT-10.3, US-10.3.1 to US-10.3.3, D1, DM-26)
+// ---------------------------------------------------------------------------
+
+/** One fixed item of AA's monthly fee (several may make up the fixed fee). */
+export interface AaFeeFixedItem {
+  id: string
+  description: string
+  /** Excluding GST. */
+  amount: number
+}
+
+/**
+ * AA's fee settings, kept in app settings and not in code (US-10.3.3). Every
+ * amount is held EXCLUDING GST: the system holds every price ex GST and works
+ * GST out once at the foot of the invoice, because the rate can change
+ * (US-05.2.7, Greg 2026-10-07). So there is no "amounts include GST" flag.
+ * One schedule for every anaesthetist; whether the fixed items vary by
+ * anaesthetist is OQ-60, so the shape can be keyed by anaesthetist later.
+ */
+export interface AaFeeSettings {
+  fixedItems: AaFeeFixedItem[]
+  /** Charge per BCTI paid in the month, excluding GST. */
+  perBctiCharge: number
+}
+
+export interface AaFeeInvoiceLine {
+  description: string
+  /** Excluding GST. */
+  amount: number
+}
+
+/** A counted BCTI, snapshotted onto the fee invoice that charged it. */
+export interface AaFeeCountedBcti {
+  accPayId: string
+  /** The ACCPAY's number (the receivable's with `-P`). */
+  billNumber: string
+  receivableInvoiceNumber: string
+  issuedAtISO: IsoDateTime
+  receivablePaidAtISO?: IsoDateTime
+}
+
+/**
+ * AA's monthly fee invoice to one anaesthetist. It is its own billing case,
+ * deliberately OUTSIDE `billing.cases`: every consumer of those cases
+ * (payables, GST activity, Overdue, the monitor pipeline, the Invoices screen)
+ * assumes a Booking behind it, and FT-10.3 says the fee is distinct from any
+ * procedure's receivable and payable. It carries its ACCREC link and its money
+ * state itself, has no ACCPAY, and is never netted against a payable.
+ */
+export interface AaFeeInvoice {
+  id: string
+  /** `AA-FEE-2026-####`. */
+  invoiceNumber: string
+  /** The fee invoice's own case reference (its id). */
+  reference: string
+  anaesthetistId: AnaesthetistId
+  /** `YYYY-MM`. */
+  monthISO: string
+  /** The settings it was raised with: a later change applies to the next run only. */
+  settings: AaFeeSettings
+  lines: AaFeeInvoiceLine[]
+  bctis: AaFeeCountedBcti[]
+  bctiCount: number
+  /** Excluding GST. */
+  subtotal: number
+  gst: number
+  total: number
+  raisedAtISO: IsoDateTime
+  /** The office button, or the scheduled month-end run. */
+  raisedBy: 'office' | 'scheduled'
+  accRecId: string
+  amountReceived: number
+  paidAtISO?: IsoDateTime
 }
 
 export interface Disbursement {

@@ -92,6 +92,10 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   disbursement: { prefix: 'DSB', pad: 4 },
   payablesRun: { prefix: 'PR', pad: 4 },
   receipt: { prefix: 'RCT', pad: 4 },
+  // AA's monthly fee invoices (catch-up Phase 16): the record id and the
+  // human-facing number. The seeded history uses its own H namespace.
+  aaFeeInvoice: { prefix: 'AF', pad: 4 },
+  aaFeeInvoiceNumber: { prefix: 'AA-FEE-2026-', pad: 4 },
   // Integration message-log rows (Phase 11).
   integrationMessage: { prefix: 'IM', pad: 4 },
 }
@@ -239,6 +243,7 @@ export function resetDomainState(api: AppStoreApi): void {
       cases: seedBilling.cases,
       receipts: seedBilling.receipts,
       contactIdCache: seedBilling.contactIdCache,
+      aaFeeInvoices: seedBilling.aaFeeInvoices,
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

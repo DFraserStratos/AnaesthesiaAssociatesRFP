@@ -149,8 +149,21 @@ export {
 } from './warningSamples'
 export { authoriseAsSimulatedOffice, officeStandInRefusal } from './officeStandIn'
 export { simulateSignInAttempts } from './authDemoActions'
-export { receivePayment, gstComponentOf, proRataAuthorised, type ReceivePaymentInput } from './paymentActions'
+export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'
+export {
+  saveAaFeeSettings,
+  runMonthlyFeeInvoices,
+  raiseAnaesthetistInvoiceInto,
+  recordAaFeePayment,
+  aaFeeRunDisabledReason,
+  aaFeePaymentDisabledReason,
+  AA_FEE_RUN_ACTOR,
+  AA_FEE_PAYMENT_ACTOR,
+  type MonthlyFeeRunResult,
+  type AnaesthetistInvoiceDraft,
+} from './aaFeeActions'
+export { seedMonthOfBctis, seedBctisDisabledReason, BCTI_SEED_MONTH, BCTI_SEED_TARGET } from './demoBctiSeed'
 export {
   runPayables,
   disbursePayable,

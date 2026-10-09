@@ -8,6 +8,8 @@ import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { XeroContact } from '../../domain/types'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { xeroInvoicePairViews, type XeroInvoicePairView } from './xeroPairView'
+import { recordFeePaymentFor } from '../../shared/demoTriggers'
+import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
 
 /**
  * The simulated Xero organisation. Contacts are a read-only reference table;
@@ -53,11 +55,11 @@ export function DemoXero() {
       maxWidth={1440}
       subtitleMaxWidth={820}
     >
-      <Callout tone="warn" title="NHI never resides in Xero (Appendix 2 vs Appendix 1)" shot="xero-nhi-policy">
-        The prototype implements RFP Appendix 2 (data minimisation): only the hidden internal ID
-        (ContactNumber) and the Xero ContactID cross to Xero, never the NHI. Appendix 1's design policy
-        instead wants the NHI as a searchable cross-reference field on the Xero contact. This is an
-        unresolved contradiction needing an AA ruling, not a settled requirement.
+      <Callout tone="info" title="No personal information in Xero" shot="xero-nhi-policy">
+        Xero holds no NHI and no other personal information about a patient or a person paying for one.
+        Each such contact is known to Xero only by a hidden internal ID in ContactNumber, shown as its
+        name, and by Xero's own ContactID, which link each transaction back to its invoice in the billing
+        system. Patient lookup happens in the billing system, never in Xero. Confirmed with AA.
       </Callout>
       <Callout tone="warn" title="Duplicate-invoice-number-prevention (mandated Xero org setting)" shot="xero-duplicate-number-policy">
         The RFP requires the Xero organisation setting that prevents duplicate invoice numbers, so the
@@ -73,7 +75,7 @@ export function DemoXero() {
       {!invoicesTab ? (
         <ContactsTable contacts={contacts} />
       ) : selectedPair !== undefined ? (
-        <PairDetail pair={selectedPair} />
+        selectedPair.kind === 'aaFee' ? <FeePairDetail key={selectedPair.accRec.id} pair={selectedPair} /> : <PairDetail key={selectedPair.accRec.id} pair={selectedPair} />
       ) : (
         <InvoicesTable pairs={pairs} />
       )}
@@ -97,9 +99,9 @@ function ContactsTable({ contacts }: { contacts: XeroContact[] }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate }}>
         Organisational contacts (hospitals, insurers, surgeons, groups and the anaesthetist payees)
-        persist and never archive. Patient and Billable Party contacts carry only the hidden internal ID.
-        <strong style={{ fontWeight: 600 }}> No NHI column exists.</strong> Open an invoice pair to see
-        the payer and payee identifiers used for that transaction.
+        persist and never archive. Patient and billable-party contacts carry only the hidden internal ID:
+        no name, no NHI and no other personal information. Open an invoice pair to see the identifiers
+        used for that transaction.
       </div>
       {contacts.length === 0 ? (
         <EmptyNote>No Xero contacts yet. Authorise a list (or raise a pre-payment invoice) to hand a pair off.</EmptyNote>
@@ -178,12 +180,16 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
                     >
                       {pair.accRec.invoiceNumber}
                     </Link>
-                    <span
-                      title="ACCPAY bill number"
-                      style={{ display: 'block', marginTop: 2, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                    >
-                      {pair.accPay?.billNumber ?? `${pair.accRec.invoiceNumber}-P`}
-                    </span>
+                    {pair.kind === 'aaFee' ? (
+                      <span style={{ display: 'block', marginTop: 3 }}><AaFeeChip /></span>
+                    ) : (
+                      <span
+                        title="ACCPAY bill number"
+                        style={{ display: 'block', marginTop: 2, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {pair.accPay?.billNumber ?? '·'}
+                      </span>
+                    )}
                   </Td>
                   <Td compact clip>
                     <TruncatedText value={pair.accRec.contact?.name ?? pair.accRec.contactId} />
@@ -206,7 +212,7 @@ function InvoicesTable({ pairs }: { pairs: XeroInvoicePairView[] }) {
                       secondary
                     />
                   </Td>
-                  <Td compact clip><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} /></Td>
+                  <Td compact clip><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} fee={pair.kind === 'aaFee'} /></Td>
                 </tr>
               ))}
             </tbody>
@@ -383,12 +389,148 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             from="Anaesthesia Associates"
             to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
           >
-            Simulated payable to the anaesthetist. This record tracks the net amount AA will disburse.
+            Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse.
           </MoneyFlowCard>
           <AccPayCard pair={pair} />
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * An AA fee pair (catch-up Phase 16): AA invoicing its own monthly fee to the
+ * anaesthetist, paid into AA's own bank account, with no payable and never
+ * netted against a payment to them.
+ */
+function FeePairDetail({ pair }: { pair: XeroInvoicePairView }) {
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const paid = pair.accRec.status === 'paid'
+  const feeId = pair.engine.aaFeeInvoiceId
+  const canOpenWebAccount = pair.engine.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+  const anaesthetist = pair.accRec.contact?.name ?? 'Anaesthetist'
+
+  function recordPayment() {
+    const res = recordFeePaymentFor(useAppStore, feeId)
+    setMessage({ ok: res.ok, text: res.message })
+  }
+
+  return (
+    <div data-testid="xero-pair-detail" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Link to="/demo/xero/invoices" style={{ ...recordLinkStyle, display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}>
+        <ChevronLeft size={16} strokeWidth={2.4} aria-hidden /> Back to invoices
+      </Link>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 11, color: neutral.mist, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Simulated Xero AA fee invoice
+          </div>
+          <h2 style={{ margin: '4px 0 0', fontSize: 23, lineHeight: '29px' }}>{pair.accRec.invoiceNumber}</h2>
+          {pair.engine.aaFeeMonthISO !== undefined && (
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>AA's fee for {aaFeeMonthLabel(pair.engine.aaFeeMonthISO)}</div>
+          )}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9 }}>
+          <StatusChip recStatus={pair.accRec.status} fee />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={recordPayment}
+              disabled={paid}
+              style={{
+                font: 'inherit',
+                fontSize: 13,
+                fontWeight: 700,
+                padding: '9px 14px',
+                borderRadius: radius.ctl,
+                border: `1px solid ${paid ? neutral.lineStrong : accent.base}`,
+                background: paid ? neutral.sunken : accent.base,
+                color: paid ? neutral.mist : '#FFFFFF',
+                cursor: paid ? 'default' : 'pointer',
+              }}
+            >
+              {paid ? 'Fee paid' : 'Record fee payment'}
+            </button>
+            {canOpenWebAccount && (
+              <Link
+                to={`/web/accounts/fees?invoice=${encodeURIComponent(pair.accRec.invoiceNumber)}`}
+                style={{
+                  ...recordLinkStyle,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 12px',
+                  border: `1px solid ${neutral.lineStrong}`,
+                  borderRadius: radius.ctl,
+                  background: neutral.surface,
+                }}
+              >
+                View in Dr Souter's account
+                <ExternalLink size={15} strokeWidth={2} aria-hidden />
+              </Link>
+            )}
+          </div>
+          {message !== null && (
+            <div
+              role="status"
+              style={{
+                maxWidth: 520,
+                padding: '8px 11px',
+                borderRadius: radius.ctl,
+                background: message.ok ? semantic.success.tint : semantic.error.tint,
+                color: message.ok ? semantic.success.onTint : semantic.error.onTint,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+                textAlign: 'right',
+              }}
+            >
+              {message.text}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pair.incomplete && (
+        <Callout tone="warn" title="Incomplete simulated record">
+          The AA fee invoice or the anaesthetist's contact behind this record is unavailable. The identifiers
+          that still exist are shown below.
+        </Callout>
+      )}
+
+      <div
+        data-shot="xero-aa-fee-pair"
+        data-testid="xero-money-flow-grid"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'start' }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <MoneyFlowCard eyebrow="ACCREC · AA FEE" from={anaesthetist} to="Anaesthesia Associates (AA's own account)">
+            AA's monthly fee to the anaesthetist. This record tracks what the anaesthetist owes AA.
+          </MoneyFlowCard>
+          <AccRecCard pair={pair} />
+        </div>
+        <section
+          data-testid="xero-aa-fee-no-payable"
+          style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '15px 18px', background: neutral.sunken, border: `1px solid ${neutral.line}`, borderRadius: radius.card }}
+        >
+          <div style={{ fontSize: 11, color: neutral.mist, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>No ACCPAY</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>No payable</div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, color: neutral.slate }}>
+            This is AA invoicing its own monthly fee to the anaesthetist. It is paid into AA's own bank account,
+            not the account client money passes through, and is never netted against a payment to the
+            anaesthetist.
+          </div>
+        </section>
+      </div>
+    </div>
+  )
+}
+
+function AaFeeChip() {
+  return (
+    <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 8px', background: neutral.sunken, color: neutral.slate, border: `1px solid ${neutral.line}` }}>
+      AA fee
+    </span>
   )
 }
 
@@ -401,6 +543,11 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
       title={rec.invoiceNumber}
       status={<RecordStatus status={rec.status} />}
     >
+      <IdentifierPair invoiceNumber={rec.invoiceNumber} reference={rec.reference} shot="xero-invoice-identifiers">
+        {pair.kind === 'procedure'
+          ? 'InvoiceNumber is the unique key hospitals and insurers quote on remittances, so automated remittance matching keys on it. Reference is for internal tracing only; Xero does not enforce its uniqueness.'
+          : 'InvoiceNumber is the AA-FEE number the anaesthetist quotes when paying. Reference is for internal tracing only.'}
+      </IdentifierPair>
       <MetaGrid>
         <MetaItem label="Xero InvoiceID" value={rec.id} mono />
         <MetaItem label="Billing invoice ID" value={rec.invoiceId} mono />
@@ -455,7 +602,7 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
   const pay = pair.accPay
   if (pay === undefined) {
     return (
-      <RecordCard eyebrow="Accounts payable · ACCPAY" title={`${pair.accRec.invoiceNumber}-P`}>
+      <RecordCard eyebrow="Accounts payable · ACCPAY" title={pair.engine.accPayId ?? 'ACCPAY'}>
         <Callout tone="warn" title="ACCPAY unavailable">
           The ACCREC still exists as <span className="mono">{pair.accRec.id}</span>, but its linked
           ACCPAY record could not be loaded. Expected identifier:
@@ -472,6 +619,7 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
       title={pay.billNumber}
       status={<RecordStatus status={pay.status} />}
     >
+      <IdentifierPair invoiceNumber={pay.billNumber} reference={pay.reference} />
       <MetaGrid>
         <MetaItem label="Xero BillID" value={pay.id} mono />
         <MetaItem label="Linked ACCREC" value={pair.accRec.id} mono />
@@ -481,34 +629,8 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MetaItem label="Pair reference" value={pair.engine.caseReference ?? pair.engine.caseId ?? 'Unavailable'} mono />
       </MetaGrid>
 
-      <div
-        data-testid="aa-service-fee"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          padding: 14,
-          background: neutral.sunken,
-          border: `1px solid ${neutral.line}`,
-          borderRadius: radius.ctl,
-        }}
-      >
-        <div>
-          <SectionLabel>Illustrative AA service fee</SectionLabel>
-          <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.45, color: neutral.slate }}>
-            {(pay.serviceFeeRate * 100).toFixed(0)}% prototype assumption. The RFP does not specify
-            AA's fee rate or GST treatment.
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: `1px solid ${neutral.line}`, paddingTop: 9 }}>
-          <TotalLine label="Gross customer payment" value={pay.grossAmount} wide />
-          <TotalLine label={`AA service fee (${(pay.serviceFeeRate * 100).toFixed(0)}%)`} value={-pay.serviceFeeAmount} wide />
-          <TotalLine label="Net payable to anaesthetist" value={pay.totalPayable} strong wide />
-        </div>
-      </div>
-
       <MoneyGrid>
-        <MoneyStat label="Net payable" value={pay.totalPayable} />
+        <MoneyStat label="Payable" value={pay.totalPayable} />
         <MoneyStat label="Authorised" value={pay.amountAuthorised} />
         <MoneyStat label="Disbursed" value={pay.amountDisbursed} />
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
@@ -591,6 +713,44 @@ function MetaItem({ label, value, mono }: { label: string; value: string; mono?:
   )
 }
 
+/**
+ * The two Xero identifiers stored on a record (US-09.1.1): InvoiceNumber, the
+ * remittance-matching key, and Reference, internal tracing only.
+ */
+function IdentifierPair({
+  invoiceNumber,
+  reference,
+  shot,
+  children,
+}: {
+  invoiceNumber: string
+  reference: string
+  shot?: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      data-shot={shot}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        padding: '10px 12px',
+        border: `1px solid ${neutral.line}`,
+        borderRadius: radius.ctl,
+      }}
+    >
+      <MetaGrid>
+        <MetaItem label="InvoiceNumber" value={invoiceNumber} mono />
+        <MetaItem label="Reference" value={reference} mono />
+      </MetaGrid>
+      {children !== undefined && (
+        <div style={{ fontSize: 12, lineHeight: 1.45, color: neutral.slate }}>{children}</div>
+      )}
+    </div>
+  )
+}
+
 function InlineId({ label, value }: { label: string; value: string }) {
   return <span><strong>{label}:</strong> <span className="mono">{value}</span></span>
 }
@@ -612,21 +772,14 @@ function TotalLine({
   label,
   value,
   strong,
-  wide,
 }: {
   label: string
   value: number | undefined
   strong?: boolean
-  wide?: boolean
 }) {
-  const formatted =
-    value === undefined
-      ? 'Unavailable'
-      : value < 0
-        ? `−${formatCurrency(Math.abs(value))}`
-        : formatCurrency(value)
+  const formatted = value === undefined ? 'Unavailable' : formatCurrency(value)
   return (
-    <div style={{ display: 'flex', gap: 20, justifyContent: 'space-between', width: wide === true ? '100%' : 230, fontSize: strong === true ? 14 : 12.5, fontWeight: strong === true ? 700 : 500 }}>
+    <div style={{ display: 'flex', gap: 20, justifyContent: 'space-between', width: 230, fontSize: strong === true ? 14 : 12.5, fontWeight: strong === true ? 700 : 500 }}>
       <span>{label}</span>
       <span className="mono">{formatted}</span>
     </div>
@@ -689,10 +842,12 @@ function ContactTypeChip({ type }: { type: XeroContact['type'] }) {
   )
 }
 
-function StatusChip({ recStatus, payStatus }: { recStatus: string; payStatus?: string }) {
+function StatusChip({ recStatus, payStatus, fee = false }: { recStatus: string; payStatus?: string; fee?: boolean }) {
   const paid = recStatus === 'paid'
   const disbursed = payStatus === 'paid'
-  const label = disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
+  const label = fee
+    ? paid ? 'Paid' : 'Awaiting payment'
+    : disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
   const on = paid || disbursed
   return (
     <span title={label} style={{ fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '3px 9px', whiteSpace: 'nowrap', background: on ? semantic.success.tint : neutral.sunken, color: on ? semantic.success.onTint : neutral.slate }}>

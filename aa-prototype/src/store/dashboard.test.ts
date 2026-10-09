@@ -114,12 +114,12 @@ describe('GST activity report', () => {
 })
 
 describe('payment history', () => {
-  it('keeps received invoices visible with their gross, AA fee, net and payout state', () => {
+  it('keeps received invoices visible with what was received, released and paid out', () => {
     const rows = paymentHistoryFor(mirror(store()), SOUTER)
     expect(rows.length).toBeGreaterThan(0)
     expect(rows.every((row) => row.grossReceived > 0)).toBe(true)
-    expect(rows.every((row) => row.serviceFeeAmount >= 0)).toBe(true)
-    expect(rows.every((row) => toCents(row.grossReceived - row.serviceFeeAmount) === toCents(row.netPayable))).toBe(true)
+    // Everything received is released in full (no fee is netted; catch-up Phase 16).
+    expect(rows.every((row) => toCents(row.releasedAmount) === toCents(row.grossReceived))).toBe(true)
     expect(rows.some((row) => row.status === 'paidOut')).toBe(true)
   })
 })

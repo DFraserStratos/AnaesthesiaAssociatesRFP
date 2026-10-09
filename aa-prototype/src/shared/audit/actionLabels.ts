@@ -97,10 +97,17 @@ export const ACTION_LABELS: Record<string, string> = {
   'xero.disbursed': 'Disbursement recorded',
   'xero.contactResolved': 'Xero contact resolved',
   'xero.contactArchived': 'Xero contact archived',
+  'xero.feeAccRecCreated': 'Xero AA fee invoice created',
+
+  // --- AA's monthly fee (catch-up Phase 16) -------------------------------
+  'aaFee.settingsChanged': 'AA fee settings changed',
+  'aaFee.invoiceRaised': 'AA fee invoice raised',
+  'aaFee.paymentRecorded': 'AA fee payment recorded',
 
   // --- Demo settings and triggers ---------------------------------------
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
+  'demo.bctisSeeded': 'A month of BCTIs seeded',
 
   // --- Accounts and sign-in (FT-13.5, simulated: catch-up Phase 14) -------
   'account.provisioned': 'Account provisioned',
