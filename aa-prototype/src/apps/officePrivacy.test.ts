@@ -21,10 +21,12 @@ import { describe, expect, it } from 'vitest'
 import { OFFICE_PRIVATE_AUDIT_ACTIONS } from '../domain/pairingPreferences'
 import { createAppStore } from '../store/appStore'
 import type { Actor } from '../store/mutate'
-import { editList, reassignList } from '../store/lifecycle'
+import { editList } from '../store/lifecycle'
+import { reassignList } from '../store/slotActions'
 import { addPermanentList } from '../store/mastersActions'
 import { addPairingPreference, endPairingPreference, setPriorityTier } from '../store/officePrivate'
-import { ANAE, SURG, listIdForSlot } from '../domain/seed'
+import { ANAE, SURG } from '../domain/seed'
+import { projectedListId } from '../domain/slots'
 
 const SRC = import.meta.glob('../**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 const ENTRY_DIR = import.meta.glob('../../pwa/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<
@@ -70,7 +72,7 @@ const ALLOWED: readonly { label: string; test: (p: string) => boolean }[] = [
   { label: 'the office store module', test: (p) => p === 'store/officePrivate.ts' },
   { label: 'the store and its Reset', test: (p) => p === 'store/appStore.ts' || p === 'store/mutate.ts' },
   { label: 'the persist files', test: (p) => p === 'store/persistStorage.ts' },
-  { label: 'the office write paths (acknowledgement)', test: (p) => p === 'store/lifecycle.ts' || p === 'store/mastersActions.ts' },
+  { label: 'the office write paths (acknowledgement)', test: (p) => p === 'store/lifecycle.ts' || p === 'store/mastersActions.ts' || p === 'store/slotActions.ts' },
   { label: 'the audit labels', test: (p) => p.startsWith('shared/audit/') },
   { label: 'tests', test: (p) => /\.test\.tsx?$/.test(p) },
   { label: 'the Admin app', test: (p) => p.startsWith('apps/admin/') },
@@ -182,9 +184,9 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     endPairingPreference(api, OFFICE, 'PP-001')
     addPairingPreference(api, OFFICE, { kind: 'NOT_PREFERRED', raisedBy: 'SURGEON', anaesthetistId: ANAE.sharma, surgeonId: SURG.reid })
     setPriorityTier(api, OFFICE, ANAE.sharma, 1)
-    editList(api, OFFICE, listIdForSlot(ANAE.sharma, '2026-07-21', 'AM'), { surgeonId: SURG.reid })
-    reassignList(api, OFFICE, listIdForSlot(ANAE.chen, '2026-07-21', 'PM'), ANAE.sharma)
-    addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', statusKey: 'private', hospitalId: null, surgeonId: SURG.reid })
+    editList(api, OFFICE, projectedListId(ANAE.sharma, '2026-07-21', 'AM'), { surgeonId: SURG.reid })
+    reassignList(api, OFFICE, projectedListId(ANAE.chen, '2026-07-21', 'PM'), ANAE.sharma)
+    addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: null, surgeonId: SURG.reid })
 
     const s = api.getState()
     const privateEntries = s.audit.filter((a) => OFFICE_PRIVATE_AUDIT_ACTIONS.has(a.action))

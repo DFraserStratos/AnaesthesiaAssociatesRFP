@@ -18,9 +18,10 @@ import { receivePayment } from './paymentActions'
 import { payablesDue, runPayables } from './payablesActions'
 import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../domain/seed'
+import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { SURGEON_PDFS } from '../domain/integrations'
 import type { Invoice } from '../domain/types'
+import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -28,7 +29,7 @@ const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 
 describe('S1 · booking to theatre', () => {
   it('the St George\'s S12 booking lands a new Booking on Souter\'s ACTIVE Tue 28 Jul AM List', () => {
     const api = createAppStore()
-    const listId = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
+    const listId = projectedListId(ANAE.souter, '2026-07-28', 'AM')
     const before = bookingsForList(api.getState(), listId)
     // Three seeded, booked, uncaptured Bookings: Sarah arrives as the fourth row.
     expect(before).toHaveLength(3)
@@ -66,8 +67,8 @@ describe('S3 · money end-to-end', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
-      const amListId = listIdForSlot(ANAE.souter, '2026-07-20', 'AM')
-      const pmListId = listIdForSlot(ANAE.souter, '2026-07-20', 'PM')
+      const amListId = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+      const pmListId = projectedListId(ANAE.souter, '2026-07-20', 'PM')
 
       expect(api.getState().schedule.lists[amListId]?.state).toBe('SUBMITTED')
       expect(api.getState().schedule.lists[pmListId]?.state).toBe('SUBMITTED')
@@ -186,7 +187,7 @@ describe('PDF arrival · Surgeon PDF ingest', () => {
     if (pdf === undefined) throw new Error('expected a seeded surgeon PDF')
     const row = pdf.rows.find((r) => r.id === 'R2')
     if (row === undefined) throw new Error('expected the clean R2 row')
-    const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
 
     const first = ingestPdfRow(api, OFFICE, listId, row)
     expect(first.ok && first.value.outcome === 'created').toBe(true)

@@ -36,7 +36,7 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppStoreApi, BoundAppStore } from './appStore'
 import { createBooking } from './bookingActions'
 import { cancelBooking, editBooking, editProcedure, reassignBooking, type BookingPatch } from './lifecycle'
-import { bookingsOnListByNhi, findBookingByCorrelation, listForSlot, proceduresForBooking } from './selectors'
+import { bookingsOnListByNhi, findBookingByCorrelation, listInSlot, proceduresForBooking, slotFor } from './selectors'
 
 export const MAX_ATTEMPTS = 3
 
@@ -145,8 +145,12 @@ function applyEffect(
   if (canned.eventType === 'S12') {
     const routing = canned.routing
     if (routing === undefined) return refuse('noTargetList', 'This booking has no target session configured.')
-    const list = listForSlot(api.getState(), routing.anaesthetistId, routing.dateISO, routing.session)
-    if (list === undefined) return refuse('noTargetList', 'The target session for this booking does not exist on the canvas.')
+    // Interim until Phase 33's matching screen: a message whose target session
+    // holds no List parks for the office (it never creates a List itself).
+    const slot = slotFor(api.getState(), routing.anaesthetistId, routing.dateISO, routing.session)
+    if (slot === undefined) return refuse('noTargetList', 'The target session for this booking is outside the schedule. Parked for the office.')
+    const list = listInSlot(api.getState(), slot.id)
+    if (list === undefined) return refuse('noTargetList', 'The target session has no List yet. Parked for the office.')
     const outcome = createBooking(api, actor, list.id, {
       patient: {
         ...(parsed.patient.nhi !== undefined ? { nhi: parsed.patient.nhi } : {}),
@@ -180,10 +184,18 @@ function applyEffect(
   }
 
   if (canned.eventType === 'S13') {
-    const target =
+    const targetSlot =
       parsed.scheduledDateISO !== undefined
-        ? listForSlot(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, timeToSession(parsed.scheduledTime))
+        ? slotFor(api.getState(), currentList.anaesthetistId, parsed.scheduledDateISO, timeToSession(parsed.scheduledTime))
         : undefined
+    if (parsed.scheduledDateISO !== undefined && targetSlot?.id !== currentList.slotId) {
+      // Interim until Phase 33: a reschedule into a session with no List parks
+      // for the office; it is never silently retimed in place.
+      if (targetSlot === undefined) return refuse('noTargetList', 'The new session is outside the schedule. Parked for the office.')
+      const targetList = listInSlot(api.getState(), targetSlot.id)
+      if (targetList === undefined) return refuse('noTargetList', 'The target session has no List yet. Parked for the office.')
+    }
+    const target = targetSlot !== undefined ? listInSlot(api.getState(), targetSlot.id) : undefined
     if (target !== undefined && target.id !== booking.listId) {
       // Cross-List reschedule: move the Booking FIRST (the guarded, refusable step),
       // then set the new time. Reassign-before-edit means a refused move commits

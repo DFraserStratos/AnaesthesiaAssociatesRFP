@@ -25,6 +25,10 @@ interface ListRowProps {
   onClick?: () => void
   /** Row body treatment. */
   variant?: 'default' | 'free' | 'holiday'
+  /** The session the row shows (a Slot id; catch-up Phase 28), for test and capture hooks. */
+  slotId?: string
+  /** The List the row opens, if any. */
+  listId?: string
 }
 
 function Chevron() {
@@ -113,6 +117,8 @@ export function ListRow({
   right,
   onClick,
   variant = 'default',
+  slotId,
+  listId,
 }: ListRowProps) {
   const c = statusColours[statusKey]
   const isFree = variant === 'free'
@@ -133,6 +139,8 @@ export function ListRow({
   return (
     <Tag
       onClick={onClick}
+      data-slot-id={slotId}
+      data-list-id={listId}
       style={{
         display: 'flex',
         alignItems: 'center',

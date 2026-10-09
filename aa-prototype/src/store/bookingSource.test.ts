@@ -12,9 +12,10 @@ import { authoriseList, submitList } from './lifecycle'
 import { ingestPdfRow, processMessage } from './integrationActions'
 import { bookingsForList } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed, listIdForSlot } from '../domain/seed'
+import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, buildSeed } from '../domain/seed'
 import { SURGEON_PDFS } from '../domain/integrations/pdfSamples'
 import type { BookingSource } from '../domain/types'
+import { projectedListId } from '../domain/slots'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -66,7 +67,7 @@ describe('creation paths stamp their source', () => {
     const api = store()
     const pdf = SURGEON_PDFS[0]!
     const row = pdf.rows.find((r) => r.id === 'R2')!
-    const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
     const created = ingestPdfRow(api, OFFICE, listId, row)
     if (!created.ok) throw new Error(created.message)
     expect(api.getState().schedule.bookings[created.value.bookingId]?.source).toBe('surgeonPdf')
@@ -74,7 +75,7 @@ describe('creation paths stamp their source', () => {
 
   it('the post-op addendum follows the actor: admin for the office (interim until Phase 39)', () => {
     const api = store()
-    const tue14 = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
+    const tue14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
     const original = bookingsForList(api.getState(), tue14)[0]!.id
     expect(submitList(api, OFFICE, tue14).ok).toBe(true)
     expect(authoriseList(api, OFFICE, tue14).ok).toBe(true)
@@ -88,7 +89,7 @@ describe('creation paths stamp their source', () => {
 describe('the post-op addendum, anaesthetist actor', () => {
   it('stamps anaesthetistAdHoc when the anaesthetist adds it', () => {
     const api = store()
-    const tue14 = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
+    const tue14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
     const original = bookingsForList(api.getState(), tue14)[0]!.id
     expect(submitList(api, OFFICE, tue14).ok).toBe(true)
     expect(authoriseList(api, OFFICE, tue14).ok).toBe(true)

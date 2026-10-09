@@ -24,6 +24,7 @@ import type { Actor } from './mutate'
 import type { BillingLine } from '../domain/types'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
 import { DEMO_TODAY } from '../domain/clock'
+import { setSlotTimes } from './slotActions'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -68,17 +69,16 @@ function twoFunderLines(api: BoundAppStore): { proc: string; withOverride: Billi
 // ---------------------------------------------------------------------------
 
 describe('editList', () => {
-  it('office overrides an ACTIVE list start/end times, audited list.update', () => {
+  it('office overrides an ACTIVE list session start/end times on its Slot, audited session.times (catch-up Phase 28)', () => {
     const api = store()
     const before = api.getState().schedule.lists[SOUTER_AM]
     expect(before?.state).toBe('ACTIVE')
-    const r = editList(api, OFFICE, SOUTER_AM, { startTime: '08:30', endTime: '14:15' })
+    const r = setSlotTimes(api, OFFICE, before!.slotId, { startTime: '08:30', endTime: '14:15' })
     expect(r.ok).toBe(true)
-    const after = api.getState().schedule.lists[SOUTER_AM]
-    expect(after?.startTime).toBe('08:30')
-    expect(after?.endTime).toBe('14:15')
-    const audit = auditForEntity(api.getState(), SOUTER_AM).filter((a) => a.action === 'list.update')
-    expect(audit.length).toBe(1)
+    const slot = api.getState().schedule.slots[before!.slotId]
+    expect(slot?.startTime).toBe('08:30')
+    expect(slot?.endTime).toBe('14:15')
+    expect(auditForEntity(api.getState(), before!.slotId).filter((a) => a.action === 'session.times')).toHaveLength(1)
   })
 
   it('office edits a SUBMITTED list (hospital/surgeon)', () => {

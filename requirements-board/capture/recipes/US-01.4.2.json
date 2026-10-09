@@ -6,12 +6,141 @@
     {
       "name": "availability-finder",
       "app": "admin",
-      "caption": "Free sessions across all anaesthetists on the day grid",
+      "caption": "Free sessions across every anaesthetist; a session holding a List is never offered as free",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
           "steps": [],
           "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "availability-finder-assigned",
+      "app": "admin",
+      "caption": "After Assign List on Dr Strand's Tue 21 PM, Free shows only the open sessions",
+      "start": "/admin/day/2026-07-21",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-21"
+        },
+        {
+          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Close\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Private status\"]"
+            },
+            {
+              "click": "role=button[name=\"Public status\"]"
+            },
+            {
+              "click": "role=button[name=\"Pre-op status\"]"
+            },
+            {
+              "click": "role=button[name=\"Holiday status\"]"
+            },
+            {
+              "click": "role=button[name=\"Unavailable status\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "office-finder",
+      "app": "admin",
+      "caption": "The office sees who is free by priority tier, with not-preferred pairings apart",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "tiers",
+          "steps": [
+            {
+              "click": "[data-shot=admin-availability-finder-open]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-availability-finder] >> role=button[name=\"PM\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-clear]",
+            "[data-shot=tier-filter]"
+          ],
+          "caption": "Find available: free this PM, Tier 1 first, with the tier filter"
+        },
+        {
+          "state": "not-preferred",
+          "steps": [
+            {
+              "click": "[data-shot=admin-availability-finder-open]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-availability-finder] >> role=button[name=\"PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=finder-surgeon]",
+              "value": "S-REID"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-not-preferred]"
+          ],
+          "caption": "With Ms Reid chosen, Dr Sharma sits apart under Not preferred, still selectable"
         }
       ]
     },
@@ -39,6 +168,59 @@
           ],
           "highlight": [],
           "caption": "Free sessions only, to find cover fast"
+        }
+      ]
+    },
+    {
+      "name": "availability-finder-assigned",
+      "app": "web",
+      "caption": "A session the office assigned is not listed under Free only",
+      "start": "/web/availability",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-21"
+        },
+        {
+          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "click": "button:has-text(\"Free only\")"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
         }
       ]
     },

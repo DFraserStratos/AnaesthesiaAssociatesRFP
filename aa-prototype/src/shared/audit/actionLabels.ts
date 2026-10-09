@@ -47,18 +47,24 @@ export const ACTION_LABELS: Record<string, string> = {
   'list.submit': 'List submitted',
   'list.authorise': 'List authorised',
   'list.billed': 'List billed',
+  'list.create': 'List assigned',
   'list.reassign': 'List reassigned',
-  'list.absorb': 'List absorbed a reassignment',
-  'list.restatus': 'List status changed',
-  'list.regenerate': 'List regenerated',
   'list.conflict': 'Conflict flagged',
-  'list.coverRequest': 'Cover requested',
   'list.phoneNote': 'Phone note logged',
   'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
+
+  // --- Sessions (catch-up Phase 28). A Slot's audit codes say "session", as
+  // the Audit viewer prints the raw code and entity type beside the label. --
+  'session.status': 'Availability set',
+  'session.times': 'Session times changed',
+  'session.coverRequest': 'Cover requested',
 
   // --- Canvas & scheduling masters ----------------------------------------
   'canvas.generate': 'Canvas generated',
   'canvas.rollForward': 'Canvas rolled forward',
+  'canvas.trim': 'Sessions removed',
+  'settings.scheduleDefaults': 'Default session times changed',
+  'settings.horizon': 'Schedule horizon changed',
   'permanentList.create': 'Permanent list added',
   'permanentList.update': 'Permanent list updated',
   'permanentList.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,

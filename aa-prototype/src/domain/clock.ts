@@ -82,10 +82,14 @@ export function advanceDays(state: DemoClockState, days: number): DemoClockState
   }
 }
 
-/** The seed/canvas horizon extends this many days into the past… */
+/** The schedule horizon extends this many days into the past (the recent days the office still works on)… */
 export const HORIZON_PAST_DAYS = 14
-/** …and this many months into the future (RFP: bookings ~4 months out). */
-export const HORIZON_FUTURE_MONTHS = 4
+/**
+ * …and, by default, this many months into the future (catch-up Phase 28;
+ * FT-01.1: "four months in current practice"). Used only to seed the setting:
+ * every reader takes `appSettings.schedule.horizonMonths`.
+ */
+export const DEFAULT_HORIZON_MONTHS = 4
 
 export interface Horizon {
   startISO: string
@@ -93,16 +97,22 @@ export interface Horizon {
 }
 
 /**
- * The canvas horizon around a given "today": 14 days back to 4 months forward.
- * Phase 02's seeder generates the List canvas across it, and `advanceDays`
- * rolls new far-edge days from Permanent Lists (3rd review #3).
+ * The schedule horizon around a given "today": 14 days back to the setting's
+ * months forward (FT-01.1, a configurable horizon). The seeder generates the
+ * Slots across it, and the clock rolls new far-edge days forward (US-01.1.2).
  */
-export function horizonFor(todayISO: string): Horizon {
+export function horizonFor(todayISO: string, horizonMonths: number): Horizon {
   const t = parseISO(todayISO)
   return {
     startISO: toISODate(addDays(t, -HORIZON_PAST_DAYS)),
-    endISO: toISODate(addMonths(t, HORIZON_FUTURE_MONTHS)),
+    endISO: toISODate(addMonths(t, horizonMonths)),
   }
+}
+
+/** The dates after `oldEndISO` up to and including `newEndISO` (empty when the end did not move forward). */
+export function horizonDatesBetween(oldEndISO: string, newEndISO: string): string[] {
+  if (newEndISO <= oldEndISO) return []
+  return enumerateDatesISO(oldEndISO, newEndISO).filter((d) => d > oldEndISO)
 }
 
 /** Every ISO date from `startISO` to `endISO`, inclusive of both ends. */

@@ -1,6 +1,6 @@
 import { useOutletContext } from 'react-router-dom'
-import type { Anaesthetist, DayNote, List } from '../../domain/types'
-import type { Actor, AppState, ListWarningSummary, OpenWarningRow } from '../../store'
+import type { Anaesthetist, DayNote } from '../../domain/types'
+import type { Actor, AppState, ListWarningSummary, OpenWarningRow, SlotView } from '../../store'
 import type { SortMode } from './components/DayNav'
 
 interface ReviewRow {
@@ -17,10 +17,13 @@ export interface AdminOutletContext {
    *  office is off in another section so "Day view" returns where it left. */
   selectedDate: string
   sortMode: SortMode
+  /** The roster for the selected day (`rosterForDate`), in the chosen row order. */
   anaesthetists: Anaesthetist[]
-  listsByAnaesthetist: Record<string, List[]>
+  /** The selected day's sessions per anaesthetist (catch-up Phase 28). */
+  viewsByAnaesthetist: Record<string, SlotView[]>
+  /** The schedule horizon's last day (the setting, FT-01.1): the date picker's bound. */
+  horizonEndISO: string
   masters: AppState['masters']
-  activeBookingCounts: Record<string, number>
   /** Open warnings per List on the selected date (the day grid outline). */
   warningFlags: ReadonlyMap<string, ListWarningSummary>
   /** Every open warning, all dates (the To-do card, US-13.7.2). */
@@ -30,8 +33,12 @@ export interface AdminOutletContext {
   reviewRows: ReviewRow[]
   /** Width reserved by the harness' vertical scrollbar, or zero for overlay scrollbars. */
   shellScrollbarWidth: number
-  /** Open the List drawer — a transient overlay, not a route. */
-  onSelectList: (listId: string) => void
+  /** Open the session drawer (a Slot id), a transient overlay, not a route. */
+  onSelectSlot: (slotId: string) => void
+  /** The session open in the drawer, if any (Find available starts on its session). */
+  selectedSlotId: string | null
+  /** Open a session's drawer straight on Assign List, with a surgeon already chosen (Find available). */
+  onAssignFromFinder: (slotId: string, surgeonId: string | undefined) => void
   onAddNote: (text: string, flagged: boolean) => void
 }
 

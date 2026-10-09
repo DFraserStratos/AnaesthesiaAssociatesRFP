@@ -81,14 +81,38 @@ product UI; never add a trigger to the Control Panel page.
 - **Vitest 4** (+ Testing Library, jsdom) for tests; **Playwright** as a visual-testing aid
 - **oxlint** for linting
 
+## The schedule: Slots and Lists (catch-up Phase 28)
+
+The canvas is two records. A **Slot** (`schedule.slots`, id `S-<reg>-<date>-<AM|PM>`) is the AM or
+PM half-day every **active** anaesthetist has on every day of the schedule horizon, **from their
+start date** (`Anaesthetist.startDateISO`). It holds a **status** (free by default, unavailable or
+holiday), an optional note, optional own times and the cover marker. Availability is that status
+and nothing else: there is no second record to reconcile. A **List** (`schedule.lists`) exists only
+when the office assigns one (`assignListToSlot`, runtime ids `LG####`) or a recurring booking
+projects one (`projectedListId`, `L-<reg>-<date>-<session>`, the Slot it was born in: never parse
+it, read `list.slotId`). Every new List is `ACTIVE`. A List shows in place of its Slot's status:
+the displayed status is the one pure `displayStatusKey(slot, list)` in `domain/slots.ts`, which
+takes no Bookings, read through the Slot views (`slotViewsForDate`, `slotViewsForAnaesthetist`,
+`slotView`) by all three apps and every finder; "free" for a finder is `isOpenSlot` (free and
+holding no List). Generation (`generateCanvasForDates`) writes every Slot free, then paints the
+calendar, then the recurring bookings (a recurring booking under leave is returned as a clash for
+Phase 31) and invents nothing; the seed alone records an ad hoc demo window (2026-07-07 to
+2026-08-16, `seedRecordedWindow`) with the old per-slot draws. The horizon and the default AM and
+PM times are one settings record, `appSettings.schedule`; every horizon reader goes through
+`horizonFor(today, months)` / `scheduleHorizon`. A reassign moves the List between Slots
+(`reassignList` over `moveListToSlot`), keeping its id, Bookings and history. "Slot" is a code
+word: the UI says session, AM or PM.
+
 ## Folder map (`src/`)
 
 - **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
-  `seed/bookings.ts`), billing maths (`billing/`, including `validateBookingForBilling.ts`),
-  the advanceable `clock.ts`, NHI/NZHIS validators, and the integration message/PDF fixtures
-  (`integrations/`). Fully unit-tested.
+  `seed/bookings.ts`; the canvas generator in `seed/canvas.ts`; the recorded demo window in
+  `seed/recordedWindow.ts`), the Slot module `slots.ts`, billing maths (`billing/`, including
+  `validateBookingForBilling.ts`), the advanceable `clock.ts`, NHI/NZHIS validators, and the
+  integration message/PDF fixtures (`integrations/`). Fully unit-tested.
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
-  Booking creation (`bookingActions.ts`), Booking and List attachments
+  Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
+  times, default times, the horizon, cover markers), Booking creation (`bookingActions.ts`), Booking and List attachments
   (`attachmentActions.ts`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same

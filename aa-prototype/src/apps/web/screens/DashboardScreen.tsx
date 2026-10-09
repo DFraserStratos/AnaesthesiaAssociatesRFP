@@ -2,9 +2,9 @@ import { useMemo } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { accent, neutral, semantic } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
-import type { List, Session } from '../../../domain/types'
+import type { Session, Slot } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
-import { receivablesAgingFor, useAppStore } from '../../../store'
+import { isOpenSlotView, openSlotViews, receivablesAgingFor, scheduleHorizon, slotViewsForAnaesthetist, useAppStore } from '../../../store'
 import { drSurname, formatCurrency } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
@@ -56,6 +56,10 @@ export function DashboardScreen({
   const billing = useAppStore((s) => s.billing)
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
+  const appSettings = useAppStore((s) => s.appSettings)
+  const clock = useAppStore((s) => s.clock)
+  // The same Slot views every app and finder reads (catch-up Phase 28).
+  const slotState = useMemo(() => ({ schedule, appSettings }), [schedule, appSettings])
 
   const figures = useDashboardFigures(anaesthetistId)
   // Receivables aging now derives from the billing mirror (Phase 10; W1/W4).
@@ -67,12 +71,12 @@ export function DashboardScreen({
   // The mockup greets by surname ("Kia ora, Dr Souter"); mobile does the same.
   const greetingName = drSurname(personaName)
 
-  // Day summary: today's booked lists + active bookings + lists ready to submit.
+  // Day summary: today's Lists (a session holding a List counts as booked) +
+  // active bookings + lists ready to submit.
   const daySummary = useMemo(() => {
-    const todays = Object.values(listsRecord).filter(
+    const booked = Object.values(listsRecord).filter(
       (l) => l.anaesthetistId === anaesthetistId && l.dateISO === todayISO && l.billedAtISO === undefined,
     )
-    const booked = todays.filter((l) => l.statusKey === 'private' || l.statusKey === 'public' || l.statusKey === 'preop')
     let bookings = 0
     let awaiting = 0
     for (const l of booked) {
@@ -83,26 +87,26 @@ export function DashboardScreen({
     return { lists: booked.length, bookings, awaiting }
   }, [listsRecord, bookingsRecord, anaesthetistId, todayISO])
 
-  // Souter's own next free session, for the Offer cover button.
-  const myFreeList = useMemo(
+  // Souter's own next open session, for the Offer cover button.
+  const myFreeSlot = useMemo(
     () =>
-      Object.values(listsRecord)
-        .filter((l) => l.anaesthetistId === anaesthetistId && l.statusKey === 'free' && l.dateISO >= todayISO && l.coverRequest === undefined)
-        .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session))[0],
-    [listsRecord, anaesthetistId, todayISO],
+      slotViewsForAnaesthetist(slotState, anaesthetistId, todayISO, scheduleHorizon({ clock, appSettings }).endISO).find(
+        (v) => isOpenSlotView(v) && v.slot.coverRequest === undefined,
+      )?.slot,
+    [slotState, clock, appSettings, anaesthetistId, todayISO],
   )
 
-  // Who's free, next 5 days (live availability, not the mockup's names).
+  // Who's free, next 5 days (live open sessions, name order, no tiers).
   const locumRows = useMemo(() => {
-    const rows: { key: string; label: string; entries: { name: string; phone: string; list: List }[] }[] = []
+    const rows: { key: string; label: string; entries: { name: string; phone: string; slot: Slot }[] }[] = []
     for (let i = 0; i < 5; i++) {
       const dateISO = format(addDays(parseISO(todayISO), i), 'yyyy-MM-dd')
       for (const session of ['AM', 'PM'] as Session[]) {
-        const entries = Object.values(listsRecord)
-          .filter((l) => l.dateISO === dateISO && l.session === session && l.statusKey === 'free' && l.anaesthetistId !== anaesthetistId)
-          .map((list) => {
-            const a = anaesthetists[list.anaesthetistId]
-            return { name: a?.name ?? 'Anaesthetist', phone: a?.phone ?? '', list }
+        const entries = openSlotViews(slotState, dateISO, session)
+          .filter((v) => v.slot.anaesthetistId !== anaesthetistId)
+          .map(({ slot }) => {
+            const a = anaesthetists[slot.anaesthetistId]
+            return { name: a?.name ?? 'Anaesthetist', phone: a?.phone ?? '', slot }
           })
           .sort((a, b) => a.name.localeCompare(b.name))
         if (entries.length > 0) {
@@ -111,28 +115,28 @@ export function DashboardScreen({
       }
     }
     return rows
-  }, [listsRecord, anaesthetists, anaesthetistId, todayISO])
+  }, [slotState, anaesthetists, anaesthetistId, todayISO])
 
   function offerCover() {
-    if (myFreeList === undefined) return
+    if (myFreeSlot === undefined) return
     onCover({
-      listId: myFreeList.id,
+      slotId: myFreeSlot.id,
       personName: personaName,
-      slotLabel: `${format(parseISO(myFreeList.dateISO), 'EEE d MMM')} · ${myFreeList.session}`,
+      slotLabel: `${format(parseISO(myFreeSlot.dateISO), 'EEE d MMM')} · ${myFreeSlot.session}`,
       kind: 'offer',
     })
   }
 
-  function askCover(name: string, list: List) {
+  function askCover(name: string, slot: Slot) {
     // A pending request already exists — the chip/link is disabled, but guard
     // here too so this can never dead-end in the store's duplicate refusal.
-    if (list.coverRequest !== undefined) return
+    if (slot.coverRequest !== undefined) return
     onCover({
-      listId: list.id,
+      slotId: slot.id,
       personName: name,
-      slotLabel: `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${list.session}`,
+      slotLabel: `${format(parseISO(slot.dateISO), 'EEE d MMM')} · ${slot.session}`,
       kind: 'request',
-      targetAnaesthetistId: list.anaesthetistId,
+      targetAnaesthetistId: slot.anaesthetistId,
     })
   }
 
@@ -151,19 +155,19 @@ export function DashboardScreen({
         <button
           type="button"
           onClick={offerCover}
-          disabled={myFreeList === undefined}
-          title={myFreeList === undefined ? 'No free session to offer' : undefined}
+          disabled={myFreeSlot === undefined}
+          title={myFreeSlot === undefined ? 'No free session to offer' : undefined}
           style={{
             height: 42,
             padding: '0 20px',
             borderRadius: 12,
             border: 'none',
-            background: myFreeList === undefined ? neutral.line : accent.base,
-            color: myFreeList === undefined ? neutral.mist : neutral.surface,
+            background: myFreeSlot === undefined ? neutral.line : accent.base,
+            color: myFreeSlot === undefined ? neutral.mist : neutral.surface,
             fontFamily: 'inherit',
             fontSize: 14,
             fontWeight: 600,
-            cursor: myFreeList === undefined ? 'default' : 'pointer',
+            cursor: myFreeSlot === undefined ? 'default' : 'pointer',
           }}
         >
           Offer cover
@@ -298,13 +302,13 @@ export function DashboardScreen({
                 <span className="mono" style={{ width: 84, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{row.label}</span>
                 <span style={{ flex: 1, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {row.entries.map((e) => {
-                    const requested = e.list.coverRequest !== undefined
+                    const requested = e.slot.coverRequest !== undefined
                     return (
                       <button
-                        key={e.list.id}
+                        key={e.slot.id}
                         type="button"
                         disabled={requested}
-                        onClick={() => askCover(e.name, e.list)}
+                        onClick={() => askCover(e.name, e.slot)}
                         title={requested ? 'Cover already requested' : `Ask ${e.name} to cover${e.phone !== '' ? ` · ${e.phone}` : ''}`}
                         style={{
                           padding: '5px 11px',
@@ -325,11 +329,11 @@ export function DashboardScreen({
                     )
                   })}
                 </span>
-                {row.entries.some((e) => e.list.coverRequest === undefined) && (
+                {row.entries.some((e) => e.slot.coverRequest === undefined) && (
                   <LinkButton
                     onClick={() => {
-                      const first = row.entries.find((e) => e.list.coverRequest === undefined)
-                      if (first !== undefined) askCover(first.name, first.list)
+                      const first = row.entries.find((e) => e.slot.coverRequest === undefined)
+                      if (first !== undefined) askCover(first.name, first.slot)
                     }}
                   >
                     Ask to cover

@@ -1,30 +1,23 @@
-import { useEffect, useState } from 'react'
-import { neutral, radius, semantic } from '../../../theme/tokens'
-import type { List } from '../../../domain/types'
+import { useEffect, useMemo, useState } from 'react'
+import { neutral } from '../../../theme/tokens'
 import { ANAE, HOSP, SURG } from '../../../domain/seed'
-import { editList, useAppStore, type Actor, type ListPatch } from '../../../store'
-import { Button, FieldLabel } from '../../../shared/ui'
+import { effectiveSlotTimes } from '../../../domain/slots'
+import { assignListToSlot, setSlotTimes, useAppStore, type Actor } from '../../../store'
+import { Button, FormError } from '../../../shared/ui'
 import { AddBookingFlow } from '../../../shared/flows'
 import { useSurface } from '../../../shared/surface'
-import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
+import { NotPreferredWarning, useNotPreferredWarning } from '../components/pairing'
+import { AssignListFields, assignDraftError, emptyAssignDraft, type AssignDraft } from './AssignListFields'
+import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
 
 interface PhoneAdviceBookingProps {
   open: boolean
-  list: List
+  /** The free session the call is about. */
+  slotId: string
   actor: Actor
   onClose: () => void
   onBooked: (bookingId: string) => void
 }
-
-const selectStyle = {
-  minHeight: 44,
-  borderRadius: radius.ctl,
-  border: `1px solid ${neutral.line}`,
-  background: neutral.bg,
-  padding: '0 12px',
-  fontFamily: 'inherit',
-  fontSize: 14,
-} as const
 
 const PHONE_ADVICE_LOOKUP_PREFILL = {
   nhi: 'DEM1239',
@@ -37,115 +30,122 @@ const PHONE_ADVICE_LOOKUP_PREFILL = {
 } as const
 
 /**
- * Phone-advice booking on a Free list ("call from the surgeon's rooms"). Step 1
- * sets the list context (hospital / surgeon / times) via `editList`; step 2
- * reuses the shared `AddBookingFlow` to capture the patient, procedure and initial
- * billing route. The Free block then renders booked on the admin grid (Step 3's
- * derived display); the anaesthetist's own views still show the session as
- * Free, since booking does not repaint the List status (parked as P5 in
- * PROGRESS).
+ * Phone-advice booking on a free session ("a call from the surgeon's rooms";
+ * catch-up Phase 28 rebuilt it on assignment). Step 1 is Assign List's fields
+ * (hospital and surgeon required, US-01.3.3) plus the session's times,
+ * prefilled from its effective times (the settings default, or its own).
+ * "Continue" assigns the List (`assignListToSlot`, which records Phase 17's
+ * acknowledgement for a not-preferred pairing, once), saves the times only if
+ * they changed, then opens the shared `AddBookingFlow` on the new List. The
+ * session reads as a Private List everywhere from that moment. Abandoning step
+ * 2 leaves an assigned List with no Bookings, which the catalogue allows.
  */
-export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: PhoneAdviceBookingProps) {
+export function PhoneAdviceBooking({ open, slotId, actor, onClose, onBooked }: PhoneAdviceBookingProps) {
   const { Overlay } = useSurface()
-  const hospitals = useAppStore((s) => s.masters.hospitals)
+  const slot = useAppStore((s) => s.schedule.slots[slotId])
+  const settings = useAppStore((s) => s.appSettings.schedule)
+  // The session's current times (its own, or the settings default) prefill the fields.
+  const current = useMemo<TimesDraft | undefined>(() => {
+    if (slot === undefined) return undefined
+    const t = effectiveSlotTimes(slot, settings)
+    return { startTime: t.startTime, endTime: t.endTime }
+  }, [slot, settings])
 
   const [step, setStep] = useState<'context' | 'booking'>('context')
-  const [hospitalId, setHospitalId] = useState('')
-  const [surgeonId, setSurgeonId] = useState('')
-  // Only a changed surgeon warns, as only a changed pairing is acknowledged (as in Edit list).
-  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== (list.surgeonId ?? '') ? surgeonId : undefined)
-  const [startTime, setStartTime] = useState(list.session === 'AM' ? '08:00' : '13:00')
-  const [endTime, setEndTime] = useState(list.session === 'AM' ? '12:00' : '17:00')
+  const [listId, setListId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<AssignDraft>(() => emptyAssignDraft())
+  const [times, setTimes] = useState<TimesDraft>(current ?? { startTime: '', endTime: '' })
   const [error, setError] = useState<string | null>(null)
+  const pairingWarning = useNotPreferredWarning(slot?.anaesthetistId, draft.surgeonId !== '' ? draft.surgeonId : undefined)
 
   useEffect(() => {
     if (open) {
       setStep('context')
-      setHospitalId('')
-      setSurgeonId('')
-      setStartTime(list.session === 'AM' ? '08:00' : '13:00')
-      setEndTime(list.session === 'AM' ? '12:00' : '17:00')
+      setListId(null)
+      setDraft(emptyAssignDraft())
+      setTimes(current ?? { startTime: '', endTime: '' })
       setError(null)
     }
-  }, [open, list.session])
+    // Reset only when the flow opens; a later default change must not wipe the form.
+  }, [open])
+
+  if (slot === undefined || current === undefined) return null
+  const sessionDefaults = settings.defaultTimes[slot.session]
 
   function continueToBooking() {
+    if (slot === undefined || current === undefined) return
     setError(null)
-    if (hospitalId === '') {
-      setError('Choose the hospital advising this booking.')
+    const invalid = assignDraftError(draft)
+    if (invalid !== null) {
+      setError(invalid)
       return
     }
+    const timesError = timesDraftError(times)
+    if (timesError !== null) {
+      setError(timesError)
+      return
+    }
+    const assigned = assignListToSlot(useAppStore, actor, slot.id, {
+      hospitalId: draft.hospitalId,
+      surgeonId: draft.surgeonId,
+      kind: draft.kind,
+    })
+    if (!assigned.ok) {
+      setError(assigned.message)
+      return
+    }
+    // Only changed times are saved, as overrides only where they differ from the default.
+    if (times.startTime !== current.startTime || times.endTime !== current.endTime) {
+      const timed = setSlotTimes(useAppStore, actor, slot.id, timesPatch(times, sessionDefaults))
+      if (!timed.ok) setError(timed.message)
+    }
+    setListId(assigned.value.listId)
     setStep('booking')
   }
 
-  // Write the list context only once the booking is actually created, so an
-  // abandoned flow never leaves a Free list carrying a hospital but no booking.
-  function onBookingCreated(bookingId: string) {
-    const patch: ListPatch = { hospitalId, startTime, endTime }
-    if (surgeonId !== '') patch.surgeonId = surgeonId
-    editList(useAppStore, actor, list.id, patch)
-    onBooked(bookingId)
-  }
-
   const isScriptedS2Booking =
-    list.anaesthetistId === ANAE.sharma &&
-    list.dateISO === '2026-07-21' &&
-    list.session === 'PM' &&
-    hospitalId === HOSP.stg &&
-    surgeonId === SURG.hale
+    slot.anaesthetistId === ANAE.sharma &&
+    slot.dateISO === '2026-07-21' &&
+    slot.session === 'PM' &&
+    draft.hospitalId === HOSP.stg &&
+    draft.surgeonId === SURG.hale
 
-  if (step === 'booking') {
+  if (step === 'booking' && listId !== null) {
     return (
       <AddBookingFlow
         open={open}
-        listId={list.id}
+        listId={listId}
         actor={actor}
         manualEmptyLookupPrefill={isScriptedS2Booking ? PHONE_ADVICE_LOOKUP_PREFILL : undefined}
         onClose={onClose}
-        onCreated={onBookingCreated}
+        onCreated={onBooked}
       />
     )
   }
 
   return (
     <Overlay open={open} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div data-shot="admin-phone-advice" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Book (phone advice)</div>
         <div style={{ fontSize: 13, color: neutral.slate }}>
-          A call from the surgeon's rooms. Set the list context, then add the patient's booking.
+          A call from the surgeon's rooms. Assign the List for this session, then add the patient's booking.
         </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Hospital</FieldLabel>
-          <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={selectStyle}>
-            <option value="">Select a hospital</option>
-            {Object.values(hospitals).map((h) => (
-              <option key={h.id} value={h.id}>{h.name}</option>
-            ))}
-          </select>
-        </label>
+        <AssignListFields
+          anaesthetistId={slot.anaesthetistId}
+          dateISO={slot.dateISO}
+          draft={draft}
+          withNote={false}
+          onChange={(next) => {
+            setDraft(next)
+            setError(null)
+          }}
+        />
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Surgeon</FieldLabel>
-          <SurgeonPicker anaesthetistId={list.anaesthetistId} value={surgeonId} onChange={setSurgeonId} emptyLabel="Not assigned yet" style={selectStyle} />
-        </label>
+        <SessionTimesFields session={slot.session} draft={times} defaults={sessionDefaults} onChange={setTimes} />
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Start</FieldLabel>
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={selectStyle} />
-          </label>
-          <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>End</FieldLabel>
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={selectStyle} />
-          </label>
-        </div>
-
-        {error !== null && (
-          <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
-        )}
-        {/* Catch-up Phase 17: warn, never block; the acknowledgement lands with
-            the List context in onBookingCreated, so an abandoned flow writes none. */}
+        <FormError message={error} />
+        {/* Catch-up Phase 17: warn, never block; the acknowledgement lands with the assignment. */}
         <NotPreferredWarning warning={pairingWarning} shot="phone-advice-pairing-warning" />
         <Button variant="primary" block onClick={continueToBooking}>{pairingWarning !== null ? 'Continue anyway' : 'Continue to add booking'}</Button>
       </div>

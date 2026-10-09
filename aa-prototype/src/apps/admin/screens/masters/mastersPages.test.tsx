@@ -9,14 +9,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ANAE, HOSP, SURG, listIdForSlot } from '../../../../domain/seed'
+import { ANAE, HOSP, SURG } from '../../../../domain/seed'
 import { activePairings } from '../../../../domain/pairingPreferences'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { selectPriorityTier } from '../../../../store/officePrivate'
 import { SurfaceProvider } from '../../../../shared'
 import { AdminAnaesthetistRecordRoute, AdminMastersRoute, AdminSurgeonProfileRoute } from '../../routes'
-import { ListDrawer } from '../../components/ListDrawer'
+import { SlotDrawer } from '../../components/SlotDrawer'
 import { parseMastersView } from './view'
+import { projectedListId } from '../../../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -248,12 +249,12 @@ describe('cross-links', () => {
   })
 
   it("the List drawer's surgeon opens the profile and closes the drawer", () => {
-    const listId = listIdForSlot(ANAE.chen, '2026-07-21', 'PM')
+    const listId = projectedListId(ANAE.chen, '2026-07-21', 'PM')
     const onClose = vi.fn()
     render(
       <MemoryRouter initialEntries={['/admin/day/2026-07-21']}>
         <SurfaceProvider variant="web">
-          <ListDrawer listId={listId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
+          <SlotDrawer slotId={useAppStore.getState().schedule.lists[listId]!.slotId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
           <LocationProbe />
         </SurfaceProvider>
       </MemoryRouter>,

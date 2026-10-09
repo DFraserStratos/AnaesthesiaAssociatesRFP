@@ -20,10 +20,13 @@ interface Props {
 }
 
 /**
- * Edit an anaesthetist's unit value, contact, HPI CPN, GST period and active
- * flag (office-only). The HPI CPN stays optional on an anaesthetist; a typed
- * one is stored normalised and must be unique across practitioners (catch-up
- * Phase 17). Pairings and the tier live on the record page, not here.
+ * Edit an anaesthetist's unit value, contact, HPI CPN, GST period, start date
+ * and active flag (office-only). The HPI CPN stays optional on an
+ * anaesthetist; a typed one is stored normalised and must be unique across
+ * practitioners (catch-up Phase 17). The start date and the active flag add
+ * or remove their sessions from today on, and are refused while a removed
+ * session holds a List (catch-up Phase 28; US-01.1.3, FT-01.1). Pairings and
+ * the tier live on the record page, not here.
  */
 export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRecordPage = false }: Props) {
   const { Overlay } = useSurface()
@@ -33,6 +36,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
   const [email, setEmail] = useState(anaesthetist.email)
   const [gstPeriod, setGstPeriod] = useState<GstPeriod>(anaesthetist.gstPeriod)
   const [active, setActive] = useState<'active' | 'inactive'>(anaesthetist.active ? 'active' : 'inactive')
+  const [startDateISO, setStartDateISO] = useState(anaesthetist.startDateISO)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -43,6 +47,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
       setGstPeriod(anaesthetist.gstPeriod)
       setActive(anaesthetist.active ? 'active' : 'inactive')
       setHpiId(anaesthetist.hpiId)
+      setStartDateISO(anaesthetist.startDateISO)
       setError(null)
     }
   }, [open, anaesthetist])
@@ -59,6 +64,8 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
       email,
       gstPeriod,
       active: active === 'active',
+      // Only a changed start date is sent (it may add or remove sessions).
+      ...(startDateISO !== anaesthetist.startDateISO ? { startDateISO } : {}),
       // Only a changed HPI CPN is sent, so an unrelated save logs no HPI CPN row.
       ...(normaliseHpiCpn(hpiId) !== anaesthetist.hpiId ? { hpiId } : {}),
     })
@@ -86,7 +93,17 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <TextField label="HPI CPN (optional)" value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" />
         <Segmented label="GST period" value={gstPeriod} options={GST_OPTIONS} onChange={setGstPeriod} />
+        <TextField
+          label="Start date"
+          type="date"
+          value={startDateISO}
+          onChange={setStartDateISO}
+          hint="Sessions are created from this date to the end of the schedule horizon."
+        />
         <Segmented label="Status" value={active} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={setActive} />
+        {anaesthetist.active && active === 'inactive' && (
+          <div style={{ fontSize: 12.5, color: neutral.slate }}>Their sessions from today are removed.</div>
+        )}
         {error !== null && (
           <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}

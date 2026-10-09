@@ -3,11 +3,11 @@ import { Check, ChevronLeft, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
-import { removeAttachment, useAppStore, type Actor } from '../../../store'
+import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, SubmitListSheet } from '../../../shared/flows'
-import { formatCurrency, sessionTimeRange } from '../../../shared/format'
+import { formatCurrency, slotTimeRange } from '../../../shared/format'
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
@@ -45,6 +45,7 @@ interface BookingRow {
  */
 export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking }: ListDetailViewProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
+  const times = useListTimes(list)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const billingLinesRecord = useAppStore((s) => s.schedule.billingLines)
@@ -97,10 +98,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
 
   const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
   const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
-  const isPreop = list.statusKey === 'preop'
+  const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
   const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO
-  const subline = [surgeon?.name, surgeon?.specialty, dayLabel, sessionTimeRange(list)]
+  const subline = [surgeon?.name, surgeon?.specialty, dayLabel, times !== undefined ? slotTimeRange(times) : undefined]
     .filter((p): p is string => p !== undefined && p !== '')
     .join(' · ')
   const canEdit = list.state === 'ACTIVE'
@@ -123,7 +124,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
             <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>
               {title} {list.session}
             </h1>
-            <StatusChip status={list.statusKey} />
+            <StatusChip status={list.kind} />
           </div>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{subline}</div>
         </div>
@@ -179,7 +180,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                   >
                     <Td mono>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: 99, background: statusColours[list.statusKey].solid, flex: 'none' }} />
+                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: 99, background: statusColours[list.kind].solid, flex: 'none' }} />
                         {r.time}
                       </span>
                     </Td>

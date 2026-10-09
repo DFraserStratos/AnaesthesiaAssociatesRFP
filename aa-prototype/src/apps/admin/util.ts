@@ -4,7 +4,8 @@
  * and the day-grid block geometry (the mockup's left=(start-7)/11 formula).
  */
 
-import type { Anaesthetist, Hospital, List, ListStatusKey, Session, Surgeon } from '../../domain/types'
+import type { Anaesthetist, Hospital, List, Surgeon } from '../../domain/types'
+import type { SlotView } from '../../store'
 import { nameWithoutTitle, surnameOf } from '../../shared/format'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
@@ -17,16 +18,15 @@ export function hoursOf(time: string): number {
   return (h ?? 0) + (m ?? 0) / 60
 }
 
-/** Default session span when a List carries no office-overridden times. */
-export function defaultSpan(session: Session): { start: number; end: number } {
-  return session === 'AM' ? { start: 7.5, end: 12.5 } : { start: 13, end: 17.5 }
-}
-
-/** A List's [start,end] in decimal hours (office times win; else session default). */
-export function listSpan(list: List): { start: number; end: number } {
-  const span = defaultSpan(list.session)
-  const start = list.startTime !== undefined ? hoursOf(list.startTime) : span.start
-  const end = list.endTime !== undefined ? hoursOf(list.endTime) : span.end
+/**
+ * A session's [start,end] in decimal hours, from its effective times (its own
+ * where the office set them, else the schedule settings' default; catch-up
+ * Phase 28). A session keeps its default shape on the grid even when its List
+ * holds a single Booking (US-01.1.4's note).
+ */
+export function slotSpan(view: Pick<SlotView, 'times'>): { start: number; end: number } {
+  const start = hoursOf(view.times.startTime)
+  const end = hoursOf(view.times.endTime)
   return { start, end: end > start ? end : start + 0.5 }
 }
 
@@ -87,22 +87,6 @@ export function listSourceLabels(
 }
 
 /**
- * The status treatment a List uses on the office day grid and on links back to
- * that grid. A Free slot that has gained booking context is presented as
- * Private even though the underlying status remains reconciliation-owned.
- */
-export function displayStatusKeyForList(list: List, hasBookings: boolean): ListStatusKey {
-  return list.statusKey === 'free' && (hasBookings || list.hospitalId !== undefined) ? 'private' : list.statusKey
-}
-
-const BOOKED = new Set(['private', 'public', 'preop'])
-
-/** True for a status carrying booking context (private / public / pre-op). */
-export function isBooked(statusKey: string): boolean {
-  return BOOKED.has(statusKey)
-}
-
-/**
  * Why a List block needs the amber attention flag: any reconciliation conflict,
  * or a PRIVATE List with no surgeon assigned yet (the Fitzgerald TBC case).
  * Public / pre-op sessions (acute theatre, clinics) legitimately carry no named
@@ -110,7 +94,7 @@ export function isBooked(statusKey: string): boolean {
  */
 export function attentionReasons(list: List): string[] {
   const reasons = list.conflicts.map((c) => c.message)
-  if (list.statusKey === 'private' && list.surgeonId === undefined) {
+  if (list.kind === 'private' && list.surgeonId === undefined) {
     reasons.push('Surgeon not yet assigned')
   }
   return reasons

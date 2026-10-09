@@ -181,25 +181,26 @@ already seeded.
 - **Click:**
   - Go to **Admin Web App → Day view → Tuesday 21 July**.
   - Pause on the day grid.
-- **Say:** "The schedule is a rolling four-month canvas. Every active anaesthetist has exactly two
-  half-day Lists a day. The office manages the whole day and handles the exceptions rather than
-  inventing every session."
-- **Expected:** a legible status-coloured grid; every block carries its label, never colour alone.
+- **Say:** "Every active anaesthetist has an AM and a PM session every day, four months ahead, from
+  their start date, whether or not anything is booked. A session is free until the anaesthetist marks
+  it otherwise, and when the office puts a List in it, the List shows instead."
+- **Expected:** a legible status-coloured grid; every block carries its label, never colour alone. The
+  dashed Free blocks are empty sessions; the coloured blocks are Lists.
 
 ### Beat 2: a phone-advice booking
 
 - **Click:**
-  - Open **Dr Priya Sharma's Tue 21 PM Free List → Book (phone advice)**.
-  - Choose **St George's Hospital** and **Mr T. Hale**; keep 13:00 to 17:00.
+  - Open **Dr Priya Sharma's Tue 21 PM Free session → Book (phone advice)**.
+  - Choose **St George's Hospital** and **Mr T. Hale**; keep the default times (13:00 to 17:30).
   - Select **Continue to add booking → Look up**.
   - Pause on the populated booking.
   - Select **Review → Save booking → Done**.
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
-- **Expected:** the lookup fills the complete booking and leaves every field editable. The Free block
-  repaints as booked on the admin day grid and the new Booking sits on that List (open the block's drawer
-  to see it). The anaesthetist's own web and mobile views still label the session Free for now; if
-  asked, name that honestly as an open polish item on the phone-booking path.
+- **Expected:** the lookup fills the complete booking and leaves every field editable. The session now
+  holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
+  availability finders show it as booked.
+- **Optional one-liner:** "Assign List does the same without a patient, for a session booked ahead."
 - **Optional pointer:** on the surgeon picker, show the separate **Not preferred with Dr Sharma** group.
   If time allows, select **Ms A. Reid** to show the soft amber warning and **Continue anyway**, then
   return to **Mr T. Hale**. The scripted path is unchanged.
@@ -211,22 +212,42 @@ already seeded.
   - Select **Reassign list**. The candidates are in tier order with a tier pill on each; Dr Priya
     Sharma is in the main group with a **Preferred** pill. Pick her **by name**, since the order within
     a tier varies each time the picker opens.
-  - Select **Sharma, Priya → Unavailable → Confirm reassignment**.
+  - Select **Sharma, Priya**. The vacated session defaults to **Free**; choose **Unavailable** because
+    Dr Rutherford is ill, then **Confirm reassignment**.
   - Pause on the confirmation, then reopen **Sharma AM → History**.
-- **Say:** "A whole-List reassignment preserves the Bookings and audit trail. It is different from moving
-  one patient Booking. The free-target, absorb and regenerate mechanics are the prototype's proposal for
-  keeping the fixed canvas intact."
+- **Say:** "The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing
+  about billing is recalculated. It is different from moving one patient Booking."
 - **Say:** "The office's private knowledge is now data: who works well with whom, either way round, and
   the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on
   top. Only the office ever sees it."
 - **Expected:** the picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred
   pill) and shows no warning for Sharma. Then a brief **List reassigned** success moment confirms the
-  move before the modal closes. The List and its Bookings move to Sharma, the vacated session
-  regenerates, and History records the reassignment.
+  move before the modal closes. The List and its Bookings move to Sharma, Dr Rutherford's session shows
+  Unavailable, and History records one reassignment.
 - **Optional pointer:** use the picker's **Filter by tier**, or open **Dr Alistair Chen's Tue 21 PM
   Christchurch Eye Surgery List → Reassign list** to show Dr Sharma apart under **Not preferred with
   Ms Reid**. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session,
   which Beat 2 books.
+
+### Optional: find who is free
+
+- **Click:**
+  - On the Day view, select **Find available**, choose **PM**, then choose **Ms A. Reid** as the
+    surgeon for the List.
+  - Pick any row to open that session's drawer on **Assign List** with Ms Reid already chosen; cancel.
+- **Say:** "When the office has a List to fill, it sees who is free that session, best-placed tier
+  first and shuffled within a tier so the same person is not always on top, and any pairing a surgeon
+  or anaesthetist has asked to avoid sits apart. Only the office sees this; the anaesthetists' own
+  finders are plain."
+- **Expected:** the free anaesthetists in tier order with tier pills and the tier filter; once Ms Reid
+  is chosen, Dr Sharma (free on Tue 21 PM unless Beat 2 has booked her) sits in a separate **Not
+  preferred with Ms Reid** group, still clickable. On Tue 21 run this before Beat 2.
+
+### Optional: the schedule is a setting
+
+- **Click:** **Master data → Schedule settings**.
+- **Say:** "The horizon is a setting, four months as today; default session times are one setting too.
+  Sessions with their own times keep them."
 
 ### Beat 4: authorise a submitted List
 
@@ -239,7 +260,8 @@ already seeded.
 - **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
 
 **Discovery points:** whether availability/holiday conflicts are hard constraints or warnings (the
-prototype uses advisory flags); the exact List-reassignment mechanics; whether monitoring belongs
+prototype uses advisory flags); what the vacated session shows after a move (OQ-84: the prototype
+returns it to Free unless the office marks it otherwise); whether monitoring belongs
 in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
 preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
 Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their
@@ -381,7 +403,8 @@ actions** on the screen named in its beat.
   - Pause on the new addendum Booking.
 - **Say:** "A later pain consult or ward review can create another charge. The original authorised Booking
   stays immutable; the addendum is a new linked Booking with its own submit, authorise and bill cycle."
-- **Expected:** a new addendum Booking; the original stays locked.
+- **Expected:** a new addendum Booking; the original stays locked. The addendum sits on a List created
+  in Dr Sharma's free Tue 21 PM session (interim until additional invoices replace the addendum).
 
 ### Beat 3: billing failure and retry
 

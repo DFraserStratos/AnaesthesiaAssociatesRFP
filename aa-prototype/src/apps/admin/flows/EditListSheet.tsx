@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
-import { editList, useAppStore, type Actor, type ListPatch } from '../../../store'
+import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type ListPatch } from '../../../store'
 import { Button, FieldLabel, TextArea } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
+import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
 
 interface EditListSheetProps {
   open: boolean
@@ -24,21 +25,25 @@ const selectStyle = {
 } as const
 
 /**
- * Office edit of a List's hospital / surgeon / start-end times / notes via
- * `editList` (5th review #6 — the office may override the default session
- * times; the grid block resizes to the new span). Status and anaesthetist are
- * deliberately not editable here (reassignment owns those).
+ * Office edit of a List's hospital, surgeon and notes through `editList`, and
+ * of its session's times through `setSlotTimes` (catch-up Phase 28: the times
+ * belong to the session, which "can override" the default, US-01.1.4; saved
+ * only when they changed; the grid block resizes to the new span). Kind and
+ * anaesthetist are not editable here (a move owns the anaesthetist).
  */
 export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps) {
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
+  const times = useListTimes(list)
+  const defaultTimes = useAppStore((s) => s.appSettings.schedule.defaultTimes[list.session])
+  const hasSlot = useAppStore((s) => s.schedule.slots[list.slotId] !== undefined)
 
   const [hospitalId, setHospitalId] = useState(list.hospitalId ?? '')
   const [surgeonId, setSurgeonId] = useState(list.surgeonId ?? '')
   // Only a changed surgeon warns, as only a changed pairing is acknowledged.
   const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== (list.surgeonId ?? '') ? surgeonId : undefined)
-  const [startTime, setStartTime] = useState(list.startTime ?? '')
-  const [endTime, setEndTime] = useState(list.endTime ?? '')
+  const current = useMemo<TimesDraft>(() => ({ startTime: times?.startTime ?? '', endTime: times?.endTime ?? '' }), [times])
+  const [timesDraft, setTimesDraft] = useState<TimesDraft>(current)
   const [notes, setNotes] = useState(list.notes ?? '')
   const [error, setError] = useState<string | null>(null)
 
@@ -46,20 +51,31 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
     if (open) {
       setHospitalId(list.hospitalId ?? '')
       setSurgeonId(list.surgeonId ?? '')
-      setStartTime(list.startTime ?? '')
-      setEndTime(list.endTime ?? '')
+      setTimesDraft(current)
       setNotes(list.notes ?? '')
       setError(null)
     }
-  }, [open, list])
+    // Reset when the sheet opens or the List changes underneath it.
+  }, [open, list, current])
 
   function save() {
     setError(null)
+    const timesError = hasSlot ? timesDraftError(timesDraft) : null
+    if (timesError !== null) {
+      setError(timesError)
+      return
+    }
+    // The session's times first: a refusal there leaves nothing half-saved.
+    if (hasSlot && (timesDraft.startTime !== current.startTime || timesDraft.endTime !== current.endTime)) {
+      const timed = setSlotTimes(useAppStore, actor, list.slotId, timesPatch(timesDraft, defaultTimes))
+      if (!timed.ok) {
+        setError(timed.message)
+        return
+      }
+    }
     const patch: ListPatch = {
       hospitalId: hospitalId !== '' ? hospitalId : '',
       surgeonId: surgeonId !== '' ? surgeonId : '',
-      startTime: startTime !== '' ? startTime : '',
-      endTime: endTime !== '' ? endTime : '',
       notes: notes.trim() !== '' ? notes.trim() : '',
     }
     const outcome = editList(useAppStore, actor, list.id, patch)
@@ -97,16 +113,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
           />
         </label>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>Start</FieldLabel>
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={selectStyle} />
-          </label>
-          <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <FieldLabel>End</FieldLabel>
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={selectStyle} />
-          </label>
-        </div>
+        {hasSlot && <SessionTimesFields session={list.session} draft={timesDraft} defaults={defaultTimes} onChange={setTimesDraft} controlStyle={selectStyle} />}
 
         <TextArea label="Notes" value={notes} onChange={setNotes} placeholder="Office annotation for this list" />
 

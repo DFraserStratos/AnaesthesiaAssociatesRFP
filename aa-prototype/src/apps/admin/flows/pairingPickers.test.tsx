@@ -7,16 +7,19 @@
 
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ANAE, SURG, listIdForSlot } from '../../../domain/seed'
-import { editList, freshAppState, useAppStore, type Actor } from '../../../store'
+import { ANAE, SURG } from '../../../domain/seed'
+import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { EditListSheet } from './EditListSheet'
 import { PhoneAdviceBooking } from './PhoneAdviceBooking'
 import { PermanentListSheet } from './PermanentListSheet'
+import { AssignListSheet } from './AssignListSheet'
+import { projectedListId, slotIdFor } from '../../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_AM = listIdForSlot(ANAE.sharma, '2026-07-21', 'AM')
-const SHARMA_PM = listIdForSlot(ANAE.sharma, '2026-07-21', 'PM')
+const SHARMA_AM = projectedListId(ANAE.sharma, '2026-07-21', 'AM')
+/** Sharma's free Tue 21 PM session (catch-up Phase 28: an empty Slot, no List). */
+const SHARMA_PM_SLOT = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
 
 function surgeonSelect(): HTMLSelectElement {
   return document.querySelector('select[data-shot="surgeon-picker"]') as HTMLSelectElement
@@ -54,36 +57,61 @@ describe('surgeon pickers', () => {
     expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
   })
 
-  it('Book (phone advice): a List already paired with Reid does not warn again, as nothing new is acknowledged', () => {
-    expect(editList(useAppStore, OFFICE, SHARMA_PM, { surgeonId: SURG.reid }).ok).toBe(true)
-    const list = useAppStore.getState().schedule.lists[SHARMA_PM]!
+  it('Book (phone advice): the surgeon is required; Reid warns with "Continue anyway"; Hale (the S2 path) never does', () => {
     render(
       <SurfaceProvider variant="web">
-        <PhoneAdviceBooking open list={list} actor={OFFICE} onClose={vi.fn()} onBooked={vi.fn()} />
-      </SurfaceProvider>,
-    )
-    fireEvent.change(surgeonSelect(), { target: { value: SURG.reid } })
-    expect(screen.queryByRole('status')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Continue to add booking' })).toBeInTheDocument()
-  })
-
-  it('Book (phone advice): Reid warns with "Continue anyway"; Hale (the S2 path) never does', () => {
-    const list = useAppStore.getState().schedule.lists[SHARMA_PM]!
-    render(
-      <SurfaceProvider variant="web">
-        <PhoneAdviceBooking open list={list} actor={OFFICE} onClose={vi.fn()} onBooked={vi.fn()} />
+        <PhoneAdviceBooking open slotId={SHARMA_PM_SLOT} actor={OFFICE} onClose={vi.fn()} onBooked={vi.fn()} />
       </SurfaceProvider>,
     )
     const select = surgeonSelect()
-    expect(select.querySelector('option')?.textContent).toBe('Not assigned yet')
+    expect(select.querySelector('option')?.textContent).toBe('Choose a surgeon')
     fireEvent.change(select, { target: { value: SURG.reid } })
     expect(screen.getByRole('status')).toHaveTextContent("Reason: Surgeon's preference")
     expect(screen.getByRole('button', { name: 'Continue anyway' })).toBeInTheDocument()
     fireEvent.change(select, { target: { value: SURG.hale } })
     expect(screen.queryByRole('status')).toBeNull()
     expect(screen.getByRole('button', { name: 'Continue to add booking' })).toBeInTheDocument()
-    // Nothing is written until the Booking is created.
+    // Nothing is written until the office continues (the assignment).
     expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(0)
+  })
+
+  it('Book (phone advice): continuing with Reid assigns the List and records the acknowledgement once, at assignment', () => {
+    render(
+      <SurfaceProvider variant="web">
+        <PhoneAdviceBooking open slotId={SHARMA_PM_SLOT} actor={OFFICE} onClose={vi.fn()} onBooked={vi.fn()} />
+      </SurfaceProvider>,
+    )
+    fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: 'H-STG' } })
+    fireEvent.change(surgeonSelect(), { target: { value: SURG.reid } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue anyway' }))
+    const list = Object.values(useAppStore.getState().schedule.lists).find((l) => l.slotId === SHARMA_PM_SLOT)
+    expect(list?.state).toBe('ACTIVE')
+    expect(list?.surgeonId).toBe(SURG.reid)
+    expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
+  })
+
+  it('Assign List: hospital and surgeon required, Reid apart and warned, "Assign anyway" creates an ACTIVE List with one acknowledgement', () => {
+    const onAssigned = vi.fn()
+    render(
+      <SurfaceProvider variant="web">
+        <AssignListSheet open slotId={SHARMA_PM_SLOT} actor={OFFICE} onClose={vi.fn()} onAssigned={onAssigned} />
+      </SurfaceProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Assign List' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose the hospital.')
+    fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: 'H-STG' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Assign List' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose the surgeon.')
+    const groups = Array.from(surgeonSelect().querySelectorAll('optgroup')).map((g) => g.label)
+    expect(groups).toEqual(['Surgeons', 'Not preferred with Dr Sharma'])
+    fireEvent.change(surgeonSelect(), { target: { value: SURG.reid } })
+    fireEvent.click(screen.getByRole('button', { name: 'Assign anyway' }))
+    expect(onAssigned).toHaveBeenCalled()
+    const list = Object.values(useAppStore.getState().schedule.lists).find((l) => l.slotId === SHARMA_PM_SLOT)
+    expect(list?.state).toBe('ACTIVE')
+    expect(list?.kind).toBe('private')
+    expect(list?.id.startsWith('LG')).toBe(true)
+    expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
   })
 
   it('Permanent List sheet: the usual surgeon regroups for the chosen anaesthetist and "Add anyway" saves', () => {

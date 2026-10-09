@@ -21,7 +21,7 @@ import type {
 } from '../types'
 import { APPT, FEED } from '../integrations'
 import { slotRng } from './slotHash'
-import { listIdForSlot } from './canvas'
+import { projectedListId } from '../slots'
 import { ANAE, ANAESTHETISTS, HOSP, INS } from './cast'
 import { CONTRACT } from './contracts'
 import { BP, PAT, genericPatientIds } from './patients'
@@ -320,7 +320,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Souter's design day (Tue 21 Jul): AM St George's / Mr Hale, 5 complete
   // -------------------------------------------------------------------------
 
-  const souterAm21 = listIdForSlot(ANAE.souter, TUE21, 'AM')
+  const souterAm21 = projectedListId(ANAE.souter, TUE21, 'AM')
   const amSpecs = [
     { patient: PAT.walker, code: '47516', sched: '07:30', start: '07:34', end: '08:52', asa: 'AS2' as const, desc: 'Right total hip replacement' },
     { patient: takePatient() ?? PAT.walker, code: '47519', sched: '09:00', start: '09:00', end: '10:05', asa: 'AS3' as const, desc: 'Hip hemiarthroplasty' },
@@ -354,7 +354,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Souter PM Southern Cross / Ms Patel: the four mockup bookings
   // -------------------------------------------------------------------------
 
-  const souterPm21 = listIdForSlot(ANAE.souter, TUE21, 'PM')
+  const souterPm21 = projectedListId(ANAE.souter, TUE21, 'PM')
 
   const taneBooking = addBooking({
     listId: souterPm21,
@@ -437,7 +437,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Morrison Mon 20 St George's / Mr Tan — SUBMITTED, 6 complete + 1 cancelled
   // -------------------------------------------------------------------------
 
-  const morrisonMon20 = listIdForSlot(ANAE.morrison, MON20, 'AM')
+  const morrisonMon20 = projectedListId(ANAE.morrison, MON20, 'AM')
   const morrisonSpecs = [
     { code: '36840', start: '08:04', end: '09:10', asa: 'AS3' as const, desc: 'TURP', ref: 'SG-2026-0771' },
     // Deliberately missing billing reference #1 (Phase 07 reference-completeness flag).
@@ -498,7 +498,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Whitaker Fri 17 Christchurch Public acute — SUBMITTED, 5 complete
   // -------------------------------------------------------------------------
 
-  const whitakerFri17 = listIdForSlot(ANAE.whitaker, FRI17, 'AM')
+  const whitakerFri17 = projectedListId(ANAE.whitaker, FRI17, 'AM')
   const whitakerSpecs = [
     { patient: PAT.walker, code: '20950', start: '07:40', end: '08:46', asa: 'AS2' as const, desc: 'Appendicectomy, laparoscopic', ref: 'HNZ-2026-3311' },
     { patient: takePatient() ?? PAT.walker, code: '20941', start: '08:55', end: '10:02', asa: 'AS1' as const, desc: 'Laparoscopic cholecystectomy', ref: 'HNZ-2026-3312' },
@@ -533,7 +533,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Souter Mon 20 AM Forte / Mr Okafor — split billing + missing ref #2
   // -------------------------------------------------------------------------
 
-  const souterMon20Am = listIdForSlot(ANAE.souter, MON20, 'AM')
+  const souterMon20Am = projectedListId(ANAE.souter, MON20, 'AM')
 
   const splitBooking = addBooking({
     listId: souterMon20Am,
@@ -605,7 +605,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Souter Mon 20 PM St George's / Ms Lim — the two-funder booking
   // -------------------------------------------------------------------------
 
-  const souterMon20Pm = listIdForSlot(ANAE.souter, MON20, 'PM')
+  const souterMon20Pm = projectedListId(ANAE.souter, MON20, 'PM')
 
   // Fee: B4 + T4 (60 min) + M0 (AS1) = 8 units x $26.50 = $212.00. Once any
   // line carries a funder override, the stored lines are the explicit
@@ -683,7 +683,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
 
   // Bariatric Type 3 with the second-procedure ordinal rule (Fitzgerald,
   // Tue 14 Jul, Southern Cross / Mr Doyle).
-  const fitzTue14 = listIdForSlot(ANAE.fitzgerald, TUE14, 'AM')
+  const fitzTue14 = projectedListId(ANAE.fitzgerald, TUE14, 'AM')
   const bariatricBooking = addBooking({
     listId: fitzTue14,
     patientId: PAT.mills,
@@ -716,7 +716,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
 
   // Rate x time under the billable-party-held individual-arrangement contract
   // (Fitzgerald, Wed 15 Jul, Forte / Ms Lim).
-  const fitzWed15 = listIdForSlot(ANAE.fitzgerald, WED15, 'AM')
+  const fitzWed15 = projectedListId(ANAE.fitzgerald, WED15, 'AM')
   const rateTimeBooking = addBooking({
     listId: fitzWed15,
     patientId: PAT.bennett,
@@ -741,7 +741,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
 
   // Insured reimbursement: the patient pays and claims back from AIA Health
   // (informational only — NOT the direct-claim Insurer route).
-  const ruthThu16 = listIdForSlot(ANAE.rutherford, THU16, 'AM')
+  const ruthThu16 = projectedListId(ANAE.rutherford, THU16, 'AM')
   const reimbursementBooking = addBooking({
     listId: ruthThu16,
     patientId: PAT.webb,
@@ -760,7 +760,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   })
 
   // COS externally held ACC contract (Rutherford, Thu 9 Jul, STG / Mr Hale).
-  const ruthThu09 = listIdForSlot(ANAE.rutherford, THU09, 'AM')
+  const ruthThu09 = projectedListId(ANAE.rutherford, THU09, 'AM')
   const cosAccBooking = addBooking({
     listId: ruthThu09,
     patientId: PAT.foster,
@@ -781,7 +781,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   })
 
   // Repeat patient: Sarah Mitchell's first episode (Sharma, Tue 14 Jul, CPH).
-  const sharmaTue14 = listIdForSlot(ANAE.sharma, TUE14, 'AM')
+  const sharmaTue14 = projectedListId(ANAE.sharma, TUE14, 'AM')
   const mitchellFirst = addBooking({
     listId: sharmaTue14,
     patientId: PAT.mitchell,
@@ -805,7 +805,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // -------------------------------------------------------------------------
 
   // Guardian pays for a minor (Grace Park, 12) — Chen, Fri 24 Jul, CES / Reid.
-  const chenFri24 = listIdForSlot(ANAE.chen, FRI24, 'AM')
+  const chenFri24 = projectedListId(ANAE.chen, FRI24, 'AM')
   const guardianBooking = addBooking({
     listId: chenFri24,
     patientId: PAT.park,
@@ -824,7 +824,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // (Phase 09; B7; a warning, never a block, since catch-up Phase 15a / D5). A self funded cosmetic case billed as a flat
   // agreed professional fee ($1,200), so an $800 deposit leaves a coherent
   // $400 balance (deposit + balance = the full fee).
-  const souterFri24Am = listIdForSlot(ANAE.souter, FRI24, 'AM')
+  const souterFri24Am = projectedListId(ANAE.souter, FRI24, 'AM')
   const prepaymentBooking = addBooking({
     listId: souterFri24Am,
     patientId: PAT.riley,
@@ -844,7 +844,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
 
   // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
   // — Souter, Mon 27 Jul, Forte / Mr Okafor.
-  const souterMon27 = listIdForSlot(ANAE.souter, MON27, 'AM')
+  const souterMon27 = projectedListId(ANAE.souter, MON27, 'AM')
   const provisionalBooking = addBooking({
     listId: souterMon27,
     patientId: PAT.provisional,
@@ -892,7 +892,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // demos the mixed case (hospital portion untouched), the full case (no balance
   // invoice) and the paid state (no prepayment warning). Left NOT completed so
   // the presenter can complete it live; both procedures carry full capture.
-  const souterFri24Pm = listIdForSlot(ANAE.souter, FRI24, 'PM')
+  const souterFri24Pm = projectedListId(ANAE.souter, FRI24, 'PM')
   const prepaidBooking = addBooking({
     listId: souterFri24Pm,
     patientId: PAT.nair,
@@ -926,7 +926,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // it out then authorises this list, so the booking is a genuine rating failure
   // (contractIneffective). The clean hospital-route sibling still invoices,
   // demonstrating per-booking failure isolation.
-  const ropataThu16 = listIdForSlot(ANAE.ropata, THU16, 'AM')
+  const ropataThu16 = projectedListId(ANAE.ropata, THU16, 'AM')
   const failureBooking = addBooking({
     listId: ropataThu16,
     patientId: PAT.tuilagi,
@@ -974,13 +974,13 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // intervention.
   // -------------------------------------------------------------------------
 
-  const souterTue28Am = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
-  const souterTue04AugAm = listIdForSlot(ANAE.souter, TUE04_AUG, 'AM')
-  const souterMon03AugPm = listIdForSlot(ANAE.souter, MON03_AUG, 'PM')
+  const souterTue28Am = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+  const souterTue04AugAm = projectedListId(ANAE.souter, TUE04_AUG, 'AM')
+  const souterMon03AugPm = projectedListId(ANAE.souter, MON03_AUG, 'PM')
   // Delaney Fri 17 AM (St George's / Mr Doyle) — a real past operating list (Delaney
   // is not on leave then; Beaumont/Morrison/Whitaker were unsuitable). Marked
   // SUBMITTED in index.ts to host the locked-target Booking.
-  const delaneyFri17Am = listIdForSlot(ANAE.delaney, FRI17, 'AM')
+  const delaneyFri17Am = projectedListId(ANAE.delaney, FRI17, 'AM')
 
   const stgRef = (appointmentId: string): IntegrationCorrelationRef => ({ sourceFeedId: FEED.stg, externalAppointmentId: appointmentId })
 
@@ -1022,7 +1022,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   // Near-future mockup counts: Wed 22 CES x6, Thu 23 CPH x8 + pre-op x6
   // -------------------------------------------------------------------------
 
-  const wed22Ces = listIdForSlot(ANAE.souter, WED22, 'AM')
+  const wed22Ces = projectedListId(ANAE.souter, WED22, 'AM')
   const eyeSpecs = ['42702', '42702', '42725', '42794', '42702', '42725']
   eyeSpecs.forEach((code, i) => {
     const patient = takePatient()
@@ -1042,7 +1042,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
     })
   })
 
-  const thu23Cph = listIdForSlot(ANAE.souter, THU23, 'AM')
+  const thu23Cph = projectedListId(ANAE.souter, THU23, 'AM')
   const acuteSpecs = ['20950', '49115', '20941', '46360', '20905', '49120', '36561', '20950']
   acuteSpecs.forEach((code, i) => {
     const patient = takePatient()
@@ -1062,7 +1062,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
     })
   })
 
-  const thu23Preop = listIdForSlot(ANAE.souter, THU23, 'PM')
+  const thu23Preop = projectedListId(ANAE.souter, THU23, 'PM')
   for (let i = 0; i < 6; i++) {
     const patient = takePatient()
     if (patient === null) break
@@ -1117,7 +1117,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
     // Phase 11 integration demo lists: S1's S12 destination (hand-authored
     // above), the separate seeded modify targets, and the create destinations.
     souterTue28Am, souterTue04AugAm, souterMon03AugPm, delaneyFri17Am,
-    listIdForSlot(ANAE.souter, '2026-07-28', 'PM'), listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
+    projectedListId(ANAE.souter, '2026-07-28', 'PM'), projectedListId(ANAE.souter, '2026-07-30', 'AM'),
   ])
 
   const sortedLists = [...lists].sort((a, b) =>
@@ -1184,7 +1184,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
   }
 
   const bookable = (list: List): boolean =>
-    (list.statusKey === 'private' || list.statusKey === 'public') && !pinnedListIds.has(list.id)
+    (list.kind === 'private' || list.kind === 'public') && !pinnedListIds.has(list.id)
 
   let pastBudget = 50
   let todayBudget = 20

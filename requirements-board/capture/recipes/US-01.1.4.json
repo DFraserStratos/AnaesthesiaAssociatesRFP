@@ -1,12 +1,12 @@
 {
   "id": "US-01.1.4",
-  "status": "partial",
-  "absentReason": "Start and end times can be overridden per List, but the AM and PM defaults (07:30 to 12:30, 13:00 to 17:30) are fixed in code with no admin setting.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "list-times",
       "app": "admin",
-      "caption": "Start time overridden to 08:00 on one List",
+      "caption": "A session with its own times, and Use default to return to the AM default",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
@@ -25,8 +25,50 @@
             }
           ],
           "highlight": [
-            "[role=dialog] label:has(input[type=time])"
+            "[data-shot=session-times]"
           ]
+        }
+      ]
+    },
+    {
+      "name": "schedule-settings",
+      "app": "admin",
+      "caption": "Admins set default start and end times for AM and PM sessions",
+      "start": "/admin/masters?view=scheduleSettings",
+      "states": [
+        {
+          "state": "table",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-session-times]"
+          ],
+          "caption": "Default session times; sessions with their own times keep them"
+        },
+        {
+          "state": "edit",
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Edit session times\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=admin-session-times-edit] label:has-text(\"PM start\") input",
+              "value": "13:30"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Changing the PM default to 13:30"
         }
       ]
     }

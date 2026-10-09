@@ -39,6 +39,7 @@ export type InsurerId = string
 export type OrganisationId = string
 export type ContractId = string
 export type ListId = string
+export type SlotId = string
 export type BookingId = string
 export type ProcedureId = string
 export type InvoiceId = string
@@ -50,18 +51,22 @@ export type Session = 'AM' | 'PM'
  * Phase 15b, no Returned state). The catalogue's states are DRAFT (a Draft
  * List with no anaesthetist yet; added in Phase 31), ACTIVE, SUBMITTED and
  * AUTHORISED. ACTIVE was called DRAFT until 7 October 2026, so 'DRAFT' stays out
- * of the union until it returns with its new meaning. Until Phase 28 separates
- * Slots from Lists, every generated session carries a state, an empty free one
- * included.
+ * of the union until it returns with its new meaning. Since Phase 28 an empty
+ * session is a Slot with no List, so it carries no state at all; every List
+ * created by assignment or projection starts ACTIVE.
  */
 export type ListState = 'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'
 
 /**
- * The six list-status keys. MUST stay string-identical to the theme's
- * `StatusKey` (`src/theme/statusColours.ts`) — parity is asserted in
- * `statusKeyParity.test.ts`; the domain stays self-contained (no theme import).
+ * The six displayed-status keys (catch-up Phase 28: was `ListStatusKey`). MUST
+ * stay string-identical to the theme's `StatusKey` (`src/theme/statusColours.ts`)
+ * — parity is asserted in `statusKeyParity.test.ts`; the domain stays
+ * self-contained (no theme import). A displayed status is derived, never
+ * stored: the List's kind when a List is in the Slot, the Slot's status
+ * otherwise (`displayStatusKey` in `domain/slots.ts`). The Slot statuses plus
+ * the List kinds are exactly these six.
  */
-export const LIST_STATUS_KEYS = [
+export const DISPLAY_STATUS_KEYS = [
   'private',
   'public',
   'preop',
@@ -69,7 +74,28 @@ export const LIST_STATUS_KEYS = [
   'unavailable',
   'free',
 ] as const
-export type ListStatusKey = (typeof LIST_STATUS_KEYS)[number]
+export type DisplayStatusKey = (typeof DISPLAY_STATUS_KEYS)[number]
+
+/**
+ * A Slot's status (catch-up Phase 28; FT-01.2, US-01.2.1; OQ-17, OQ-27 and
+ * OQ-64, answered). The status belongs to the Slot, is free by default and is
+ * the one mechanism the anaesthetist's calendar edits: there is no second
+ * availability record reconciled into Lists. These are the starting values
+ * the OQ-64 answer settled "for now"; Phase 29 turns the set into a
+ * user-maintained master list (US-01.2.2), so every reader goes through the
+ * one label lookup (`displayStatusLabel`).
+ */
+export const SLOT_STATUSES = ['free', 'unavailable', 'holiday'] as const
+export type SlotStatus = (typeof SLOT_STATUSES)[number]
+
+/**
+ * A List's kind (catch-up Phase 28). The catalogue models no List kind
+ * (DM-04: private, public and pre-op appear only as RFP candidate statuses);
+ * it is kept as a List attribute so the six-colour design language and the
+ * seed's acute and pre-op Lists still read. Logged for the owner.
+ */
+export const LIST_KINDS = ['private', 'public', 'preop'] as const
+export type ListKind = (typeof LIST_KINDS)[number]
 
 /** Who performed an action (audit + cancellation records). */
 export type ActorRole = 'anaesthetist' | 'office' | 'system'
@@ -163,6 +189,17 @@ export interface Anaesthetist {
    * blank is allowed here; a typed one is stored normalised (Phase 17).
    */
   hpiId: string
+  /**
+   * The date the anaesthetist starts (catch-up Phase 28; US-01.1.3: adding an
+   * anaesthetist "creates their Slots from their start date"). No Slot exists
+   * before it.
+   */
+  startDateISO: IsoDate
+  /**
+   * Only an active anaesthetist has Slots (FT-01.1, US-01.1.1 "every active
+   * anaesthetist"): generation skips an inactive one, and switching one off
+   * removes their Slots from today on.
+   */
   active: boolean
 }
 
@@ -356,14 +393,14 @@ export interface ContractPrice {
 // The canvas: Lists & Bookings
 // ---------------------------------------------------------------------------
 
-/** A reconciliation conflict flagged onto a List (availability/holiday; 1st review #2, 7th review A9). */
+/** A conflict flagged onto a List (availability or a closed hospital; advisory, never a block). */
 export interface ListConflict {
   kind: 'availability' | 'holiday'
   message: string
 }
 
 /**
- * A cover marker recorded on a Free List (Phase 03 mobile request-cover flow;
+ * A cover marker recorded on an open Slot (Phase 03 mobile request-cover flow;
  * Decisions log 2026-07-21 "New interactions"). `offer` = the owner offers
  * their own free session for cover; `request` = a colleague is asked to cover a
  * free session. Simulated only — no real notification; the audit entry and this
@@ -393,21 +430,54 @@ export interface ListPhoneNote {
   atISO: IsoDateTime
 }
 
+/**
+ * A Slot (catch-up Phase 28; EP-01, US-01.1.1, DM-02, DM-04): the AM or PM
+ * half-day an active anaesthetist has on every day of the schedule horizon,
+ * from their start date. Every Slot is stored (OQ-64). It is a box with a
+ * status and may be empty; a List is put into it (`List.slotId`) and then
+ * shows in place of the status. "Slot" never appears in app copy: the UI says
+ * session.
+ */
+export interface Slot {
+  id: SlotId
+  anaesthetistId: AnaesthetistId
+  dateISO: IsoDate
+  session: Session
+  /** Free by default; the one availability mechanism (FT-01.2). */
+  status: SlotStatus
+  /** The session's note (for example "open for cover" or a leave reason). */
+  note?: string
+  /**
+   * Per-Slot time overrides (US-01.1.4 "each Slot can override"); absent means
+   * the schedule settings' default for the session. They travel with a
+   * reassigned List.
+   */
+  startTime?: WallTime
+  endTime?: WallTime
+  /** A pending cover offer/request on an open Slot (Phase 03). Phase 32 removes it. */
+  coverRequest?: CoverRequest
+}
+
+/**
+ * A List (catch-up Phase 28): created only when the office assigns one or a
+ * recurring booking projects one, put into exactly one Slot, and holding
+ * Bookings. `anaesthetistId`, `dateISO` and `session` are denormalised copies
+ * of its Slot's, written only by the store actions that set `slotId`, and
+ * checked by an invariant test.
+ */
 export interface List {
   id: ListId
+  /** The Slot the List is in. Backdrop history Lists (`L-HIST`, `L-RB-`) predate the horizon and have no Slot record. */
+  slotId: SlotId
   dateISO: IsoDate
   anaesthetistId: AnaesthetistId
   session: Session
   state: ListState
-  statusKey: ListStatusKey
+  /** Private, public or pre-op (outside the catalogue's model; see `ListKind`). */
+  kind: ListKind
   hospitalId?: HospitalId
   surgeonId?: SurgeonId
-  /** Office-overridable session times (5th review #6). */
-  startTime?: WallTime
-  endTime?: WallTime
   conflicts: ListConflict[]
-  /** A pending cover offer/request on a Free List (Phase 03). */
-  coverRequest?: CoverRequest
   /** Office-logged phone-call notes (Phase 07 review); never a return channel. */
   phoneNotes?: ListPhoneNote[]
   /**
@@ -688,23 +758,37 @@ export interface PermanentList {
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
   session: Session
   surgeonId: SurgeonId | null
-  statusKey: ListStatusKey
+  /** The kind of List the projection creates (catch-up Phase 28: was `statusKey`). */
+  kind: ListKind
+  /** Optional template times, written as Slot overrides by the projection (e.g. pre-op 09:00 to 12:00). */
+  startTime?: WallTime
+  endTime?: WallTime
   /** Display label the generated List carries as its note (e.g. "Acute theatre"). */
   notes?: string
 }
 
 /**
- * Availability MASTER (1st review #2): anaesthetist availability writes here
- * and is reconciled into the canvas — free sessions restatus, booked sessions
- * conflict-flag — never written to Lists directly.
+ * One session of the seed's leave calendar (catch-up Phase 28: was the
+ * availability master, which was reconciled into the canvas). It is generator
+ * input only: generation paints it onto the Slot's status after writing the
+ * Slot free (US-01.1.1). At runtime availability lives on the Slot alone.
  */
-export interface AnaesthetistAvailability {
-  id: string
+export interface SeedLeaveWindow {
   anaesthetistId: AnaesthetistId
   dateISO: IsoDate
   session: Session
-  kind: 'available' | 'unavailable' | 'holiday'
+  status: Exclude<SlotStatus, 'free'>
   note?: string
+}
+
+/**
+ * The schedule settings (catch-up Phase 28; FT-01.1, US-01.1.4): the horizon
+ * in whole months (four in current practice) and the default AM and PM times,
+ * one record the office edits.
+ */
+export interface ScheduleSettings {
+  horizonMonths: number
+  defaultTimes: Record<Session, { startTime: WallTime; endTime: WallTime }>
 }
 
 export interface HospitalHoliday {
@@ -716,7 +800,7 @@ export interface HospitalHoliday {
 
 /** List-status master row (keyed by the shared six-status key). */
 export interface ListStatus {
-  key: ListStatusKey
+  key: DisplayStatusKey
   label: string
   description?: string
 }

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildSeed, listIdForSlot, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS } from './index'
+import { buildSeed, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, RECORDED_WINDOW, seedRecurringClashes } from './index'
 import { ANAESTHETISTS } from './cast'
 import { PERMANENT_LISTS } from './permanentLists'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
@@ -14,9 +14,13 @@ import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
 import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
-import type { Booking, List, Procedure } from '../types'
+import type { Booking, DisplayStatusKey, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
+import { displayStatusKey, projectedListId, slotIdFor } from '../slots'
+
+/** Pre-horizon backdrop history (the store's `isBackdropList`; the domain test does not import the store). */
+const isBackdropList = (l: Pick<List, 'id'>) => l.id.startsWith('L-HIST') || l.id.startsWith('L-RB-')
 
 const seed = buildSeed()
 
@@ -128,46 +132,100 @@ describe('rich seeded Booking history', () => {
   })
 })
 
-describe('the canvas', () => {
-  const horizon = horizonFor(DEMO_TODAY)
+describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
+  const horizon = horizonFor(DEMO_TODAY, seed.appSettings.schedule.horizonMonths)
   const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)
-  // The Phase-10 seeded historical billed Lists (L-HIST-*) sit outside the
-  // generated canvas; the canvas invariants below are about generated Lists.
-  const lists = Object.values(seed.schedule.lists).filter((l) => !l.id.startsWith('L-HIST'))
+  const slots = Object.values(seed.schedule.slots)
+  // The seeded historical billed Lists (L-HIST-*) sit before the horizon and have no Slot record.
+  const lists = Object.values(seed.schedule.lists).filter((l) => !isBackdropList(l))
+  const listBySlot = new Map(lists.map((l) => [l.slotId, l]))
+  const inWindow = (d: string) => d >= RECORDED_WINDOW.fromISO && d <= RECORDED_WINDOW.toISO
 
-  it('holds exactly 2 Lists per anaesthetist per day across the whole horizon', () => {
+  it('holds exactly two Slots per active anaesthetist per day across the horizon, none before a start date', () => {
     const byKey = new Map<string, number>()
-    for (const list of lists) {
-      const key = `${list.anaesthetistId}|${list.dateISO}`
+    for (const slot of slots) {
+      const key = `${slot.anaesthetistId}|${slot.dateISO}`
       byKey.set(key, (byKey.get(key) ?? 0) + 1)
     }
-    expect(lists.length).toBe(dates.length * ANAESTHETISTS.length * 2)
-    for (const date of dates) {
-      for (const a of ANAESTHETISTS) {
-        expect(byKey.get(`${a.registrationNumber}|${date}`)).toBe(2)
+    expect(slots.length).toBe(dates.length * ANAESTHETISTS.length * 2)
+    for (const a of ANAESTHETISTS) {
+      expect(a.active).toBe(true)
+      // Every seeded start date precedes the horizon and the billing history.
+      expect(a.startDateISO < horizon.startISO).toBe(true)
+      for (const date of dates) expect(byKey.get(`${a.registrationNumber}|${date}`)).toBe(2)
+    }
+    for (const slot of slots) expect(slot.id).toBe(slotIdFor(slot.anaesthetistId, slot.dateISO, slot.session))
+  })
+
+  it('puts every List in one existing Slot, with the denormalised fields equal to the Slot\'s', () => {
+    const seen = new Set<string>()
+    for (const list of lists) {
+      const slot = seed.schedule.slots[list.slotId]
+      expect(slot, list.id).toBeDefined()
+      expect(list.anaesthetistId).toBe(slot?.anaesthetistId)
+      expect(list.dateISO).toBe(slot?.dateISO)
+      expect(list.session).toBe(slot?.session)
+      expect(seen.has(list.slotId), `two Lists in ${list.slotId}`).toBe(false)
+      seen.add(list.slotId)
+      expect(['private', 'public', 'preop']).toContain(list.kind)
+    }
+    // Backdrop history names a Slot before the horizon but no Slot record exists.
+    for (const list of Object.values(seed.schedule.lists).filter(isBackdropList)) {
+      expect(seed.schedule.slots[list.slotId]).toBeUndefined()
+      expect(list.dateISO < horizon.startISO).toBe(true)
+    }
+  })
+
+  it('keeps List-only fields off empty Slots (no state, kind, hospital or surgeon)', () => {
+    for (const slot of slots.filter((s) => !listBySlot.has(s.id))) {
+      for (const key of ['state', 'kind', 'hospitalId', 'surgeonId', 'conflicts']) expect(key in slot, `${slot.id}.${key}`).toBe(false)
+    }
+  })
+
+  it('outside the recorded window, invents nothing: every session is free, painted by the calendar, or holds a projected recurring booking', () => {
+    const leave = new Set(SEED_LEAVE.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
+    const templates = new Set(PERMANENT_LISTS.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
+    const outside = slots.filter((s) => !inWindow(s.dateISO))
+    expect(outside.length).toBeGreaterThan(1000)
+    for (const slot of outside) {
+      const list = listBySlot.get(slot.id)
+      if (list !== undefined) {
+        expect(templates.has(`${slot.anaesthetistId}|${parseISO(slot.dateISO).getDay()}|${slot.session}`), slot.id).toBe(true)
+        expect(list.id).toBe(projectedListId(slot.anaesthetistId, slot.dateISO, slot.session))
+      } else if (slot.status !== 'free') {
+        expect(leave.has(`${slot.anaesthetistId}|${slot.dateISO}|${slot.session}`), slot.id).toBe(true)
       }
     }
   })
 
-  it('uses every status colour somewhere in the horizon', () => {
-    const used = new Set(lists.map((l) => l.statusKey))
+  it('traces the recurring bookings the calendar blocked as clashes (pinned for Phase 31)', () => {
+    const clashes = seedRecurringClashes()
+    for (const c of clashes) {
+      expect(seed.schedule.slots[c.slotId]?.status).not.toBe('free')
+      expect(listBySlot.has(c.slotId)).toBe(false)
+    }
+    expect(clashes.length).toBe(PINNED_CLASHES)
+  })
+
+  it('uses every status colour somewhere in the horizon, through the one derivation', () => {
+    const used = new Set(slots.map((s) => displayStatusKey(s, listBySlot.get(s.id))))
     for (const key of ['private', 'public', 'preop', 'holiday', 'unavailable', 'free']) {
-      expect(used.has(key as List['statusKey']), `status ${key} in use`).toBe(true)
+      expect(used.has(key as DisplayStatusKey), `status ${key} in use`).toBe(true)
     }
   })
 
-  it('derives roughly 80% of surgeon-assigned Lists from Permanent Lists (0.7 to 0.9)', () => {
+  it('derives roughly 80% of surgeon-assigned Lists in the recorded window from recurring bookings (0.7 to 0.9)', () => {
     const templates = new Set(
       PERMANENT_LISTS.filter((t) => t.surgeonId !== null).map(
         (t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}|${t.surgeonId}`,
       ),
     )
-    const surgeonLists = lists.filter((l) => l.surgeonId !== undefined)
+    const surgeonLists = lists.filter((l) => l.surgeonId !== undefined && inWindow(l.dateISO))
     const fromTemplate = surgeonLists.filter((l) =>
       templates.has(`${l.anaesthetistId}|${parseISO(l.dateISO).getDay()}|${l.session}|${l.surgeonId}`),
     )
     const share = fromTemplate.length / surgeonLists.length
-    expect(surgeonLists.length).toBeGreaterThan(500)
+    expect(surgeonLists.length).toBeGreaterThan(150)
     expect(share).toBeGreaterThanOrEqual(0.7)
     expect(share).toBeLessThanOrEqual(0.9)
   })
@@ -177,7 +235,7 @@ describe('the canvas', () => {
     const souterPm = seed.schedule.lists[SEED_LIST_IDS.souterPm21]
     const ruthAm = seed.schedule.lists[SEED_LIST_IDS.rutherfordAm21]
     const ruthPm = seed.schedule.lists[SEED_LIST_IDS.rutherfordPm21]
-    expect(souterAm?.statusKey).toBe('private')
+    expect(souterAm?.kind).toBe('private')
     expect(souterAm?.hospitalId).toBe('H-STG')
     expect(souterAm?.surgeonId).toBe('S-HALE')
     expect(souterPm?.hospitalId).toBe('H-SX')
@@ -186,31 +244,48 @@ describe('the canvas', () => {
     expect(ruthAm?.surgeonId).toBe('S-OKAFOR')
     expect(ruthPm?.hospitalId).toBe('H-FORTE')
     expect(ruthPm?.surgeonId).toBe('S-OKAFOR')
+    // Rutherford's Tue 21 PM keeps its own times, on the Slot.
+    expect(seed.schedule.slots[ruthPm!.slotId]).toMatchObject({ startTime: '13:30', endTime: '17:00' })
 
-    // Fitzgerald's template-derived design days (her Permanent Lists were the
-    // one gap that left these rows Free and contradicting the mockups).
-    const fitzTueAm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-21', 'AM')]
-    const fitzThuAm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-23', 'AM')]
-    const fitzThuPm = seed.schedule.lists[listIdForSlot(ANAE.fitzgerald, '2026-07-23', 'PM')]
-    expect(fitzTueAm?.statusKey).toBe('private')
+    // Fitzgerald's template-derived design days.
+    const fitzTueAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-21', 'AM')]
+    const fitzThuAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM')]
+    const fitzThuPm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'PM')]
+    expect(fitzTueAm?.kind).toBe('private')
     expect(fitzTueAm?.hospitalId).toBe(HOSP.sx)
     expect(fitzTueAm?.surgeonId).toBe(SURG.doyle)
     expect(fitzThuAm?.hospitalId).toBe(HOSP.sx)
     expect(fitzThuAm?.surgeonId).toBe(SURG.patel)
-    expect(fitzThuPm?.statusKey).toBe('preop')
+    expect(fitzThuPm?.kind).toBe('preop')
+
+    // The free design sessions are empty Slots, with their notes on the Slot.
+    const sharmaPm = seed.schedule.slots[slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM')]
+    expect(sharmaPm).toMatchObject({ status: 'free', note: 'Free / open for cover' })
+    expect(listBySlot.has(sharmaPm!.id)).toBe(false)
   })
 
-  it('flags booked Lists on hospital holidays (conflict, never a restatus)', () => {
+  it('flags Lists on hospital holidays (conflict, never a status change)', () => {
     const conflicted = Object.values(seed.schedule.lists).filter(
       (l) => l.conflicts.some((c) => c.kind === 'holiday') && (l.dateISO === '2026-10-26' || l.dateISO === '2026-11-13'),
     )
     expect(conflicted.length).toBeGreaterThan(0)
     for (const list of conflicted) {
       expect(list.hospitalId).toBeDefined()
-      expect(['private', 'public']).toContain(list.statusKey)
+      expect(['private', 'public']).toContain(list.kind)
     }
   })
+
+  it('seeds the schedule settings: four months, AM 07:30 to 12:30, PM 13:00 to 17:30', () => {
+    expect(seed.appSettings.schedule).toEqual({
+      horizonMonths: 4,
+      defaultTimes: { AM: { startTime: '07:30', endTime: '12:30' }, PM: { startTime: '13:00', endTime: '17:30' } },
+    })
+    expect('availability' in seed.masters).toBe(false)
+    expect(seed.counters['availability']).toBeUndefined()
+  })
 })
+
+const PINNED_CLASHES = 18
 
 describe('patients & NHIs', () => {
   const patients = Object.values(seed.masters.patients)

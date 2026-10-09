@@ -217,7 +217,9 @@ Hooks already added:
 
 | Kind | Format | Notes |
 |---|---|---|
-| List | `L-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | From `listIdForSlot`. For example `L-34821-2026-07-21-PM`. |
+| Session (Slot) | `S-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | Catch-up Phase 28: every active anaesthetist's AM and PM session, stored, free by default. Grid blocks, mobile rows, web Lists rows and web availability cells carry `data-slot-id`. The UI never says "slot". |
+| List (seeded or projected) | `L-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | From `projectedListId`: names the session the List was born in (a reassigned List keeps it), never parsed. For example `L-34821-2026-07-21-PM`. Only sessions holding a List have one: a Free session has no `L-` id. |
+| List (runtime) | `LG0001`… | Created by Assign List, Book (phone advice), the post-op addendum and the PWA stand-in. |
 | Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
 | History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. |
 | Attachment | `AT0001`… | Store-allocated. `AT0001` is the seeded theatre-list PDF on Souter Tue 28 AM. |
@@ -311,6 +313,19 @@ Audit.
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
 ## Seed data worth shooting
+
+**Sessions and Lists** (catch-up Phase 28)
+
+- The dashed **Free** blocks ("open for cover" and the like) are empty sessions, not Lists: their note
+  is the session's own. Clicking one opens the empty-session drawer (`[data-shot=admin-slot-drawer]`,
+  still `[data-testid=admin-list-drawer]`) with Assign List, Book (phone advice), Edit times, History.
+- Tue 21 open PM sessions: Sharma (`S-41267-2026-07-21-PM`), Delaney, Hughes, Strand
+  (`S-47733-2026-07-21-PM`); open AM: Hughes. Souter's next free session is Wed 22 PM
+  (`S-34821-2026-07-22-PM`), what the PWA stand-in assigns.
+- The seed records ad hoc Lists and unavailability only inside **2026-07-07 to 2026-08-16**; beyond it
+  every session is Free unless leave or a recurring booking painted it (for example
+  `/admin/day/2026-09-07`).
+- Schedule settings: four months (to Sat 21 Nov 2026), AM 07:30 to 12:30, PM 13:00 to 17:30.
 
 **Pairing preferences and tiers** (catch-up Phase 17; office only, never on mobile, web or the PWA)
 
@@ -436,11 +451,28 @@ the next run raises his $700.00 before GST ($805.00 with GST).
 
 **Admin**
 
-- **List drawer:** click a block on the day grid, for example `text="St George's" >> nth=0`. The
-  drawer is `[data-testid=admin-list-drawer]`, with buttons "Edit list", "Reassign list",
-  "History", "Book (phone advice)" (free slots only), "Open" (a booking) and "Move".
-- **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then "Confirm
-  reassignment". `[data-testid=list-reassignment-overlay]` appears.
+- **Session drawer:** click a block on the day grid, for example `text="St George's" >> nth=0` or
+  `button[data-slot-id="S-41267-2026-07-21-PM"]`. The drawer is `[data-testid=admin-list-drawer]`
+  (with `data-slot-id`, and `data-list-id` when a List is in it). A List: "Edit list", "Reassign
+  list", "History", "Open" (a booking) and "Move". An empty session (`[data-shot=admin-slot-drawer]`):
+  "Assign List", "Book (phone advice)" (free sessions only), "Edit times", "History". After an assign,
+  close it with `[data-testid=admin-list-drawer] >> role=button[name="Close"]` before clicking the grid.
+- **Assign List** (`[data-shot=admin-assign-list]`): select `[data-shot=assign-hospital]` (value
+  `H-STG`) and `select[data-shot=surgeon-picker]` (value `S-HALE`), then "Assign List" (or "Assign
+  anyway" for a not-preferred surgeon).
+- **Find available** (`[data-shot=admin-availability-finder-open]` in the Day header): the sheet
+  `[data-shot=admin-availability-finder]`, session buttons "AM"/"PM", surgeon
+  `[data-shot=finder-surgeon]`, then 17's candidates (`[data-shot=candidates-clear]`,
+  `[data-shot=candidates-not-preferred]`, `[data-candidate=<id>]`). Picking opens Assign List.
+- **Schedule settings:** `/admin/masters?view=scheduleSettings` (`[data-shot=admin-schedule-settings]`):
+  "Edit horizon" (`[data-shot=admin-horizon-months]`, "Months ahead", preview
+  `[data-shot=horizon-preview]`, shortening asks "Confirm and remove N days") and "Edit session times"
+  (`[data-shot=admin-session-times-edit]`).
+- **Edit times** on an empty session: `[data-shot=admin-edit-session-times]`; times in either sheet
+  sit in `[data-shot=session-times]` with "Use default".
+- **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
+  session `select[data-shot=reassign-vacated]` defaults to Free) "Confirm reassignment".
+  `[data-testid=list-reassignment-overlay]` appears.
 - **Admin booking:** "Edit billing setup", "Price override" (placeholders `-10` and "Why the price
   differs") and "Funder allocation".
 - **Review:**
@@ -475,7 +507,15 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 **Admin**
 
-- `admin-list-drawer`, `admin-list-actions`, `admin-right-rail`
+- `admin-list-drawer` (the session drawer, kept for recipes), `admin-list-actions`, `admin-right-rail`
+- `data-shot` (catch-up Phase 28): `admin-slot-drawer`, `admin-assign-list`, `assign-hospital`,
+  `admin-availability-finder-open`, `admin-availability-finder`, `finder-surgeon`, `finder-count`,
+  `admin-schedule-settings`, `admin-session-times`, `admin-session-times-edit`, `admin-horizon-months`,
+  `horizon-preview`, `admin-add-anaesthetist-start`, `admin-day-beyond-horizon`,
+  `admin-edit-session-times`, `session-times`, `reassign-vacated`, `assign-list-pairing-warning`,
+  `admin-phone-advice`. Sessions carry `data-slot-id`; rows and blocks holding a List also carry
+  `data-list-id`. The phase doc's `mobile-lists-assigned` hook is these two attributes on the mobile
+  Lists row.
 - `invoice-list-screen`, `invoice-list-table-shell`, `invoice-detail-screen`,
   `invoice-detail-workspace`, `invoice-info-rail`, `invoice-action-row`
 - `xero-handoff-status`, `xero-accrec-reference`, `xero-accpay-reference`
@@ -594,7 +634,9 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a
-mobile Booking with an open warning, badged as the office stand-in, `pwa-payment-full` and
+mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up
+Phase 28: assigns St George's · Mr T. Hale to Dr Souter's next free session, Wed 22 PM on a fresh
+profile), all badged as the office stand-in, `pwa-payment-full` and
 `pwa-payment-half` on Balances) are in the handset's Demo sheet, not the bar. On a mobile shot,
 use the same `trigger` step (mobile shots hide the Demo chip, as desktop shots hide the bar; the
 step shows it while it runs). "Play the office" is off on a fresh profile, so a submitted List waits
@@ -642,6 +684,12 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 - **The mobile booking's header actions fold away** when `mobile-booking-scroll` is scrolled.
 - **Avoid the PWA More tab's build panel** (build ID, cold-launch ms). It changes on every run
   and breaks determinism.
+- **A Free session has no List id.** Recipes that used a free session's `L-` id (for example
+  `L-41267-2026-07-21-PM`) must use its `data-slot-id` instead. The UI says session, never "slot".
+- **Find available shuffles within a tier** (per opening, from `suggestionSeq`): assert tier order and
+  pick by `[data-candidate=<id>]`, never by position, and start from a fresh Reset.
+- **Past the horizon** (for example `/admin/day/2026-11-24`) the Day view shows
+  `[data-shot=admin-day-beyond-horizon]` instead of a grid.
 - **Stale IDs redirect** instead of showing a blank page. If a shot shows a list page when you
   expected a booking, the ID is wrong.
 

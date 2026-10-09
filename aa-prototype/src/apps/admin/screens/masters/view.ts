@@ -16,6 +16,7 @@ export type MastersView =
   | 'organisations'
   | 'rvgCodes'
   | 'modifierCodes'
+  | 'scheduleSettings'
   | 'listStatuses'
   | 'xeroArchiving'
 
@@ -32,6 +33,7 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'organisations', label: 'Organisations' },
   { view: 'rvgCodes', label: 'RVG codes' },
   { view: 'modifierCodes', label: 'Modifier codes' },
+  { view: 'scheduleSettings', label: 'Schedule settings' },
   { view: 'listStatuses', label: 'List statuses' },
   { view: 'xeroArchiving', label: 'Xero & archiving' },
 ]

@@ -3,8 +3,8 @@ import { addDays, format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { accent, brand, neutral } from '../../../theme/tokens'
 import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../theme/statusColours'
-import type { List, Session } from '../../../domain/types'
-import { useAppStore } from '../../../store'
+import type { Session } from '../../../domain/types'
+import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { initialsOf } from '../../../shared/format'
 import { Panel } from '../components'
@@ -21,8 +21,8 @@ interface GridRow {
   anaesthetistId: string
   name: string
   initials: string
-  am: List | undefined
-  pm: List | undefined
+  am: SlotView | undefined
+  pm: SlotView | undefined
   hasFree: boolean
 }
 
@@ -32,11 +32,17 @@ interface GridRow {
  * (Free shows the count) + name search + inline six-status legend; a 220px name
  * column and AM/PM cell buttons (status bar + two lines). Free cells are dashed
  * with a "Book" affordance that flips to a solid green "Cover requested ✓" once
- * a request is sent (driven by `list.coverRequest`). Every read is session
- * status only (A8) — no booking / patient detail leaks.
+ * a request is sent (driven by the session's cover marker). Every read is
+ * session status only (A8) — no booking / patient detail leaks. Catch-up Phase
+ * 28: rows are the day's roster from the same Slot views every app reads, and
+ * "Free" means an open session (`isOpenSlot`), so a session holding a List is
+ * never offered. Name order, no tiers (US-01.3.6: the office's ranking is
+ * Admin only).
  */
 export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCover }: AvailabilityGridProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  const slotsRecord = useAppStore((s) => s.schedule.slots)
+  const appSettings = useAppStore((s) => s.appSettings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -46,10 +52,13 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   const [query, setQuery] = useState('')
 
   const { rows, freeCount } = useMemo(() => {
-    function slot(aid: string, session: Session): List | undefined {
-      return Object.values(listsRecord).find((l) => l.anaesthetistId === aid && l.dateISO === selectedDate && l.session === session)
+    const schedule = { slots: slotsRecord, lists: listsRecord }
+    const views = slotViewsForDate({ schedule, appSettings }, selectedDate)
+    function slot(aid: string, session: Session): SlotView | undefined {
+      return views.find((v) => v.slot.anaesthetistId === aid && v.slot.session === session)
     }
-    const all: GridRow[] = Object.values(anaesthetists)
+    const open = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
+    const all: GridRow[] = rosterForDate({ schedule, masters: { anaesthetists } }, selectedDate)
       .map((a) => {
         const am = slot(a.registrationNumber, 'AM')
         const pm = slot(a.registrationNumber, 'PM')
@@ -59,13 +68,13 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
           initials: initialsOf(a.name),
           am,
           pm,
-          hasFree: am?.statusKey === 'free' || pm?.statusKey === 'free',
+          hasFree: open(am) || open(pm),
         }
       })
       .sort((x, y) => x.name.localeCompare(y.name))
-    const count = all.reduce((n, r) => n + (r.am?.statusKey === 'free' ? 1 : 0) + (r.pm?.statusKey === 'free' ? 1 : 0), 0)
+    const count = all.reduce((n, r) => n + (open(r.am) ? 1 : 0) + (open(r.pm) ? 1 : 0), 0)
     return { rows: all, freeCount: count }
-  }, [listsRecord, anaesthetists, selectedDate])
+  }, [listsRecord, slotsRecord, appSettings, anaesthetists, selectedDate])
 
   const q = query.trim().toLowerCase()
   const visible = rows
@@ -74,26 +83,29 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
 
   const selLong = format(parseISO(selectedDate), 'EEEE d MMMM')
 
-  function cellLabels(list: List | undefined): { l1: string; l2: string } {
-    if (list === undefined) return { l1: 'No session', l2: '' }
-    if (list.statusKey === 'free') return { l1: list.coverRequest !== undefined ? 'Cover requested' : 'Free', l2: 'Open for booking' }
-    if (list.statusKey === 'holiday') return { l1: 'Annual leave', l2: list.notes ?? '' }
-    if (list.statusKey === 'unavailable') return { l1: 'Not available', l2: list.notes ?? '' }
-    if (list.statusKey === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
+  function cellLabels(view: SlotView | undefined): { l1: string; l2: string } {
+    if (view === undefined) return { l1: 'No session', l2: '' }
+    const list = view.list
+    if (list === undefined) {
+      if (view.slot.status === 'free') return { l1: view.slot.coverRequest !== undefined ? 'Cover requested' : 'Free', l2: 'Open for booking' }
+      if (view.slot.status === 'holiday') return { l1: 'Annual leave', l2: view.slot.note ?? '' }
+      return { l1: 'Not available', l2: view.slot.note ?? '' }
+    }
+    if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
     const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
     const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : (list.notes ?? '')
     return { l1: hospital, l2: surgeon }
   }
 
-  function clickCell(row: GridRow, list: List | undefined, session: Session) {
-    if (list === undefined || list.statusKey !== 'free' || list.coverRequest !== undefined) return
-    const isMine = list.anaesthetistId === anaesthetistId
+  function clickCell(row: GridRow, view: SlotView | undefined, session: Session) {
+    if (view === undefined || !isOpenSlotView(view) || view.slot.coverRequest !== undefined) return
+    const isMine = view.slot.anaesthetistId === anaesthetistId
     onCover({
-      listId: list.id,
+      slotId: view.slot.id,
       personName: isMine ? personaName : row.name,
       slotLabel: `${format(parseISO(selectedDate), 'EEE d MMM')} · ${session}`,
       kind: isMine ? 'offer' : 'request',
-      ...(isMine ? {} : { targetAnaesthetistId: list.anaesthetistId }),
+      ...(isMine ? {} : { targetAnaesthetistId: view.slot.anaesthetistId }),
     })
   }
 
@@ -160,8 +172,8 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
                     {row.anaesthetistId === anaesthetistId && <span style={{ marginLeft: 6, fontSize: 11, color: neutral.mist }}>(you)</span>}
                   </span>
                 </span>
-                <Cell list={row.am} labels={cellLabels(row.am)} onClick={() => clickCell(row, row.am, 'AM')} />
-                <Cell list={row.pm} labels={cellLabels(row.pm)} onClick={() => clickCell(row, row.pm, 'PM')} />
+                <Cell view={row.am} labels={cellLabels(row.am)} onClick={() => clickCell(row, row.am, 'AM')} />
+                <Cell view={row.pm} labels={cellLabels(row.pm)} onClick={() => clickCell(row, row.pm, 'PM')} />
               </div>
             ))}
           </div>
@@ -171,14 +183,14 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   )
 }
 
-function Cell({ list, labels, onClick }: { list: List | undefined; labels: { l1: string; l2: string }; onClick: () => void }) {
-  if (list === undefined) {
+function Cell({ view, labels, onClick }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick: () => void }) {
+  if (view === undefined) {
     return <div style={{ height: 52, borderRadius: 9, background: neutral.sunken, display: 'flex', alignItems: 'center', padding: '0 10px', fontSize: 12, color: neutral.mist }}>No session</div>
   }
-  const c = statusColours[list.statusKey]
-  const isFree = list.statusKey === 'free'
-  const requested = list.coverRequest !== undefined
-  const isUnavailable = list.statusKey === 'unavailable'
+  const c = statusColours[view.displayKey]
+  const isFree = isOpenSlotView(view)
+  const requested = view.slot.coverRequest !== undefined
+  const isUnavailable = view.displayKey === 'unavailable'
   const bg = isUnavailable ? unavailableHatchTint : isFree && requested ? statusColours.free.solid : c.tint
   const tc = isFree && requested ? neutral.surface : c.onTint
   const border = isFree ? (requested ? `1.5px solid ${statusColours.free.solid}` : freeDashedBorder) : '1.5px solid transparent'
@@ -186,6 +198,7 @@ function Cell({ list, labels, onClick }: { list: List | undefined; labels: { l1:
     <button
       type="button"
       onClick={onClick}
+      data-slot-id={view.slot.id}
       disabled={!isFree || requested}
       style={{
         display: 'flex',

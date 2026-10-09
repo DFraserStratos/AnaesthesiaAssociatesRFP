@@ -3,17 +3,18 @@
  * with no behaviour change. The seed's Lists carry only the three states, an
  * assigned List runs ACTIVE → SUBMITTED → AUTHORISED exactly as before, the
  * refusal code is `listNotActive`, and the screens print the state from one
- * label map, with none on an empty free session.
+ * label map. Since Phase 28 an empty session is a Slot with no List, so it
+ * carries no state at all.
  */
 
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { authoriseList, editBooking, submitList } from './lifecycle'
-import { bookingsForList, isEmptyFreeSession } from './selectors'
+import { bookingsForList } from './selectors'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { buildSeed, SEED_LIST_IDS } from '../domain/seed'
 import { LIST_STATE_LABELS } from '../shared/format'
-import type { Booking, ListState } from '../domain/types'
+import type { ListState } from '../domain/types'
 
 const STATES: readonly ListState[] = ['ACTIVE', 'SUBMITTED', 'AUTHORISED']
 
@@ -59,21 +60,13 @@ describe('the List state label', () => {
   })
 })
 
-describe('isEmptyFreeSession', () => {
-  it('is Free availability with no live Booking', () => {
-    const live = { cancellation: undefined } as unknown as Booking
-    const cancelled = { cancellation: { reason: 'x' } } as unknown as Booking
-    expect(isEmptyFreeSession({ statusKey: 'free' }, [])).toBe(true)
-    expect(isEmptyFreeSession({ statusKey: 'free' }, [cancelled])).toBe(true)
-    expect(isEmptyFreeSession({ statusKey: 'free' }, [live])).toBe(false)
-    expect(isEmptyFreeSession({ statusKey: 'private' }, [])).toBe(false)
-  })
-
-  it('finds the seed\'s empty free sessions and not its assigned Lists', () => {
+describe('an empty session carries no state (catch-up Phase 28)', () => {
+  it('a free session is a Slot with no List, so it has no state to print', () => {
     const api = createAppStore()
     const state = api.getState()
-    expect(isEmptyFreeSession(state.schedule.lists[SEED_LIST_IDS.souterPm21]!, bookingsForList(state, SEED_LIST_IDS.souterPm21))).toBe(false)
-    const free = Object.values(state.schedule.lists).filter((l) => isEmptyFreeSession(l, bookingsForList(state, l.id)))
-    expect(free.length).toBeGreaterThan(0)
+    const occupied = new Set(Object.values(state.schedule.lists).map((l) => l.slotId))
+    const empty = Object.values(state.schedule.slots).filter((s) => !occupied.has(s.id))
+    expect(empty.length).toBeGreaterThan(0)
+    for (const slot of empty.slice(0, 50)) expect('state' in slot).toBe(false)
   })
 })

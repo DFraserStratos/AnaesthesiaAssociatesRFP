@@ -1,7 +1,7 @@
 {
   "id": "US-01.2.1",
   "status": "partial",
-  "absentReason": "The mobile app sets each own session to Free or Block only; available for emergency and on leave are not offered. The web app shows own availability in the grid but cannot change it.",
+  "absentReason": "Availability is now the session's own status (one mechanism), but the mobile app still sets each own session to Free or Block only, and the web app cannot change availability: Phase 29 builds the calendar (days off ahead, series, holiday) and the web controls.",
   "shots": [
     {
       "name": "my-availability",
@@ -30,7 +30,39 @@
           "highlight": [
             "[data-shot=availability-mine]"
           ],
-          "caption": "PM blocked while booked: a conflict is flagged and the office notified"
+          "caption": "PM blocked while it holds a List: the List stays, and the office sees a conflict flag"
+        }
+      ]
+    },
+    {
+      "name": "list-session",
+      "app": "admin",
+      "caption": "A session holding a List keeps the List's colour and label when blocked, with the amber flag",
+      "start": "/admin/day/2026-07-21",
+      "setup": [
+        {
+          "goto": "/mobile/availability"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=availability-block-pm]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-34821-2026-07-21-PM\"]"
+          ]
         }
       ]
     },
@@ -44,6 +76,55 @@
           "steps": [],
           "highlight": [
             "[data-shot=availability-row-mine]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "availability-grid-assigned",
+      "app": "web",
+      "caption": "A session the office assigned reads booked, not Free",
+      "start": "/web/availability",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-21"
+        },
+        {
+          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
           ]
         }
       ]

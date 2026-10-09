@@ -1,7 +1,7 @@
 {
   "id": "US-01.4.1",
   "status": "partial",
-  "absentReason": "Reassignment moves the List and its bookings to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.",
+  "absentReason": "Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.",
   "shots": [
     {
       "name": "reassign",
@@ -29,6 +29,33 @@
             "[role=dialog]"
           ],
           "caption": "Choose an anaesthetist whose session is free, listed in tier order"
+        },
+        {
+          "state": "confirm",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[role=dialog] >> text=\"Hughes, Rawiri\""
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "The List moves with its Bookings and history; the vacated session returns to Free unless marked otherwise"
         },
         {
           "state": "done",

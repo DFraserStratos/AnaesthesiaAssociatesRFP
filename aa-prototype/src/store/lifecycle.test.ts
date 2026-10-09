@@ -13,15 +13,11 @@ import {
   editProcedure,
   logListNote,
   reassignBooking,
-  reassignList,
-  requestCover,
-  setAvailability,
   submitList,
 } from './lifecycle'
 import * as lifecycleModule from './lifecycle'
-import { auditForEntity, bookingsForList, listForSlot, proceduresForBooking } from './selectors'
+import { auditForEntity, bookingsForList, proceduresForBooking } from './selectors'
 import { onAppEvent, type AppEvent } from './events'
-import { addHospitalHoliday } from './mastersActions'
 import type { Actor } from './mutate'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
 
@@ -276,104 +272,8 @@ describe('cancelBooking', () => {
   })
 })
 
-describe('reassignList', () => {
-  const WED22 = '2026-07-22'
-
-  function freeTargetOn(api: BoundAppStore, dateISO: string, session: 'AM' | 'PM', exclude: string): string {
-    const state = api.getState()
-    const hit = Object.values(state.schedule.lists).find(
-      (l) =>
-        l.dateISO === dateISO &&
-        l.session === session &&
-        l.statusKey === 'free' &&
-        l.state === 'ACTIVE' &&
-        l.anaesthetistId !== exclude &&
-        bookingsForList(state, l.id).length === 0,
-    )
-    if (hit === undefined) throw new Error('no free target in seed')
-    return hit.anaesthetistId
-  }
-
-  it('moves the list (bookings and audit intact), absorbs the free target, regenerates the vacated slot', () => {
-    const api = store()
-    const sourceId = listForSlot(api.getState(), ANAE.souter, WED22, 'AM')?.id
-    if (sourceId === undefined) throw new Error('no source list')
-    const bookingsBefore = bookingsForList(api.getState(), sourceId).map((c) => c.id)
-    expect(bookingsBefore.length).toBeGreaterThan(0)
-
-    const target = freeTargetOn(api, WED22, 'AM', ANAE.souter)
-    const targetFreeListId = listForSlot(api.getState(), target, WED22, 'AM')?.id
-
-    const outcome = reassignList(api, OFFICE, sourceId, target)
-    expect(outcome.ok).toBe(true)
-    const state = api.getState()
-
-    const moved = state.schedule.lists[sourceId]
-    expect(moved?.anaesthetistId).toBe(target)
-    expect(bookingsForList(state, sourceId).map((c) => c.id)).toEqual(bookingsBefore)
-    expect(targetFreeListId !== undefined && state.schedule.lists[targetFreeListId]).toBeUndefined()
-
-    // Canvas invariant: both anaesthetists still hold exactly 2 lists that day.
-    for (const anae of [ANAE.souter, target]) {
-      const count = Object.values(state.schedule.lists).filter(
-        (l) => l.anaesthetistId === anae && l.dateISO === WED22,
-      ).length
-      expect(count).toBe(2)
-    }
-
-    // The vacated slot regenerated with the default status.
-    const vacated = listForSlot(state, ANAE.souter, WED22, 'AM')
-    expect(vacated?.statusKey).toBe('unavailable')
-    expect(vacated?.state).toBe('ACTIVE')
-
-    const trail = auditForEntity(state, sourceId)
-    expect(trail.at(-1)?.action).toBe('list.reassign')
-    expect(state.audit.some((a) => a.action === 'list.absorb')).toBe(true)
-    expect(state.audit.some((a) => a.action === 'list.regenerate')).toBe(true)
-  })
-
-  it('clears the old anaesthetist availability conflict on the scripted Rutherford to Sharma move', () => {
-    const api = store()
-    const source = listForSlot(api.getState(), ANAE.rutherford, WED22, 'AM')
-    const target = listForSlot(api.getState(), ANAE.sharma, WED22, 'AM')
-    if (source === undefined || target === undefined) throw new Error('scripted S2 slots missing')
-    if (source.hospitalId === undefined) throw new Error('scripted Rutherford List has no hospital')
-
-    expect(source.conflicts.some((conflict) => conflict.kind === 'availability')).toBe(true)
-    expect(target.statusKey).toBe('free')
-    expect(bookingsForList(api.getState(), target.id)).toHaveLength(0)
-
-    // A hospital conflict belongs to the booking and must survive the move.
-    expect(addHospitalHoliday(api, OFFICE, source.hospitalId, WED22, 'Test closure').ok).toBe(true)
-
-    const outcome = reassignList(api, OFFICE, source.id, ANAE.sharma)
-    expect(outcome.ok).toBe(true)
-
-    const state = api.getState()
-    const moved = listForSlot(state, ANAE.sharma, WED22, 'AM')
-    const vacated = listForSlot(state, ANAE.rutherford, WED22, 'AM')
-    expect(moved?.id).toBe(source.id)
-    expect(moved?.conflicts.some((conflict) => conflict.kind === 'availability')).toBe(false)
-    expect(moved?.conflicts.some((conflict) => conflict.kind === 'holiday')).toBe(true)
-    expect(vacated?.statusKey).toBe('unavailable')
-    expect(Object.values(state.schedule.lists).filter(
-      (list) => list.anaesthetistId === ANAE.sharma && list.dateISO === WED22 && list.session === 'AM',
-    )).toHaveLength(1)
-  })
-
-  it('rejects a non-free target and non-office actors', () => {
-    const api = store()
-    const notFree = reassignList(api, OFFICE, SOUTER_AM, ANAE.rutherford)
-    expect(notFree.ok).toBe(false)
-    if (!notFree.ok) expect(notFree.code).toBe('targetNotFree')
-
-    const sourceId = listForSlot(api.getState(), ANAE.souter, WED22, 'AM')?.id
-    if (sourceId === undefined) throw new Error('no source list')
-    const notOffice = reassignList(api, SOUTER, sourceId, freeTargetOn(api, WED22, 'AM', ANAE.souter))
-    expect(notOffice.ok).toBe(false)
-    if (!notOffice.ok) expect(notOffice.code).toBe('officeOnly')
-  })
-})
+// reassignList, setAvailability and requestCover moved to slotActions.ts with
+// the Slot and List split (catch-up Phase 28): see slotActions.test.ts.
 
 describe('reassignBooking', () => {
   it('moves one booking only: neither list restatuses, other bookings untouched, audited at booking level', () => {
@@ -381,8 +281,8 @@ describe('reassignBooking', () => {
     const before = api.getState()
     const pmBookings = bookingsForList(before, SOUTER_PM).map((c) => c.id)
     const amBookings = bookingsForList(before, SOUTER_AM).map((c) => c.id)
-    const pmStatus = before.schedule.lists[SOUTER_PM]?.statusKey
-    const amStatus = before.schedule.lists[SOUTER_AM]?.statusKey
+    const pmStatus = before.schedule.lists[SOUTER_PM]?.kind
+    const amStatus = before.schedule.lists[SOUTER_AM]?.kind
 
     const outcome = reassignBooking(api, SOUTER, ELLISON_BOOKING, SOUTER_AM)
     expect(outcome.ok).toBe(true)
@@ -390,8 +290,8 @@ describe('reassignBooking', () => {
     expect(state.schedule.bookings[ELLISON_BOOKING]?.listId).toBe(SOUTER_AM)
     expect(bookingsForList(state, SOUTER_PM).map((c) => c.id)).toEqual(pmBookings.filter((id) => id !== ELLISON_BOOKING))
     expect(bookingsForList(state, SOUTER_AM).map((c) => c.id).sort()).toEqual([...amBookings, ELLISON_BOOKING].sort())
-    expect(state.schedule.lists[SOUTER_PM]?.statusKey).toBe(pmStatus)
-    expect(state.schedule.lists[SOUTER_AM]?.statusKey).toBe(amStatus)
+    expect(state.schedule.lists[SOUTER_PM]?.kind).toBe(pmStatus)
+    expect(state.schedule.lists[SOUTER_AM]?.kind).toBe(amStatus)
     expect(auditForEntity(state, ELLISON_BOOKING).at(-1)?.action).toBe('booking.reassign')
   })
 
@@ -421,158 +321,6 @@ describe('reassignBooking', () => {
     const toAuthorised = reassignBooking(api, OFFICE, ELLISON_BOOKING, MORRISON_LIST)
     expect(toAuthorised.ok).toBe(false)
     if (!toAuthorised.ok) expect(toAuthorised.code).toBe('listAuthorised')
-  })
-})
-
-describe('setAvailability', () => {
-  const TUE21 = '2026-07-21'
-
-  it('restatuses a truly-Free list and writes the master row', () => {
-    const api = store()
-    const outcome = setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'unavailable', 'Called away')
-    expect(outcome.ok).toBe(true)
-    if (outcome.ok) expect(outcome.value.reconciled).toBe('restatused')
-    const list = listForSlot(api.getState(), ANAE.hughes, TUE21, 'AM')
-    expect(list?.statusKey).toBe('unavailable')
-    expect(list?.notes).toBe('Called away')
-    const row = Object.values(api.getState().masters.availability).find(
-      (a) => a.anaesthetistId === ANAE.hughes && a.dateISO === TUE21 && a.session === 'AM',
-    )
-    expect(row?.kind).toBe('unavailable')
-  })
-
-  it('conflict-flags a booked list instead of silently restatusing', () => {
-    const api = store()
-    const outcome = setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
-    expect(outcome.ok).toBe(true)
-    if (outcome.ok) expect(outcome.value.reconciled).toBe('conflictFlagged')
-    const list = listForSlot(api.getState(), ANAE.souter, TUE21, 'AM')
-    expect(list?.statusKey).toBe('private')
-    expect(list?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
-  })
-
-  it('conflict-flags an empty-but-reserved list (hospital set, no bookings)', () => {
-    const api = store()
-    // Fitzgerald PM on the design day: private, St George's, surgeon TBC, no bookings.
-    const before = listForSlot(api.getState(), ANAE.fitzgerald, TUE21, 'PM')
-    expect(before?.hospitalId).toBeDefined()
-    const outcome = setAvailability(api, OFFICE, ANAE.fitzgerald, TUE21, 'PM', 'unavailable')
-    expect(outcome.ok).toBe(true)
-    if (outcome.ok) expect(outcome.value.reconciled).toBe('conflictFlagged')
-    const after = listForSlot(api.getState(), ANAE.fitzgerald, TUE21, 'PM')
-    expect(after?.statusKey).toBe('private')
-    expect(after?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
-  })
-
-  it("the un-block direction: 'available' restatuses only an empty holiday/unavailable list", () => {
-    const api = store()
-    // Ngata is unavailable (ICU on call) with no booking context on the design day.
-    const outcome = setAvailability(api, OFFICE, ANAE.ngata, TUE21, 'AM', 'available')
-    expect(outcome.ok).toBe(true)
-    if (outcome.ok) expect(outcome.value.reconciled).toBe('restatused')
-    expect(listForSlot(api.getState(), ANAE.ngata, TUE21, 'AM')?.statusKey).toBe('free')
-  })
-
-  it('replaces rather than stacks availability conflicts on repeated toggles', () => {
-    const api = store()
-    // Souter's design-day AM list is booked (private, bookings): every toggle
-    // conflict-flags rather than restatusing, so the flags could pile up.
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'available')
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
-    const list = listForSlot(api.getState(), ANAE.souter, TUE21, 'AM')
-    expect(list?.conflicts.filter((c) => c.kind === 'availability').length).toBe(1)
-  })
-
-  it("un-blocking an empty holiday list back to available clears its availability conflict", () => {
-    const api = store()
-    // Hughes AM is truly free: mark unavailable (restatus), then holiday on the
-    // now-unavailable list conflict-flags, then available restatuses to free.
-    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'unavailable')
-    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'holiday')
-    const flagged = listForSlot(api.getState(), ANAE.hughes, TUE21, 'AM')
-    expect(flagged?.conflicts.some((c) => c.kind === 'availability')).toBe(true)
-    setAvailability(api, OFFICE, ANAE.hughes, TUE21, 'AM', 'available')
-    const cleared = listForSlot(api.getState(), ANAE.hughes, TUE21, 'AM')
-    expect(cleared?.statusKey).toBe('free')
-    expect(cleared?.conflicts.some((c) => c.kind === 'availability')).toBe(false)
-  })
-
-  it('anaesthetists set only their own availability; integrations never do', () => {
-    const api = store()
-    const notOwn = setAvailability(api, SOUTER, ANAE.hughes, TUE21, 'AM', 'holiday')
-    expect(notOwn.ok).toBe(false)
-    if (!notOwn.ok) expect(notOwn.code).toBe('notOwnAvailability')
-
-    const integration = setAvailability(api, INTEGRATION, ANAE.hughes, TUE21, 'AM', 'holiday')
-    expect(integration.ok).toBe(false)
-    if (!integration.ok) expect(integration.code).toBe('integrationForbidden')
-  })
-})
-
-describe('requestCover', () => {
-  const TUE21 = '2026-07-21'
-  const WED22 = '2026-07-22'
-
-  function freeListId(api: BoundAppStore, anaesthetistId: string, dateISO: string, session: 'AM' | 'PM'): string {
-    const list = listForSlot(api.getState(), anaesthetistId, dateISO, session)
-    if (list === undefined) throw new Error('no such slot')
-    return list.id
-  }
-
-  it('records a pending offer on the owner\'s own free session + an audit entry', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.souter, WED22, 'PM') // Souter's own free session
-    const outcome = requestCover(api, SOUTER, listId, 'offer', 'Happy to hand this over')
-    expect(outcome.ok).toBe(true)
-    const list = api.getState().schedule.lists[listId]
-    expect(list?.coverRequest?.kind).toBe('offer')
-    expect(list?.coverRequest?.status).toBe('pending')
-    expect(list?.coverRequest?.message).toBe('Happy to hand this over')
-    expect(api.getState().audit.at(-1)?.action).toBe('list.coverRequest')
-  })
-
-  it('records a request against a colleague\'s free session', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM') // Sharma's free PM
-    const outcome = requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma)
-    expect(outcome.ok).toBe(true)
-    const list = api.getState().schedule.lists[listId]
-    expect(list?.coverRequest?.kind).toBe('request')
-    expect(list?.coverRequest?.targetAnaesthetistId).toBe(ANAE.sharma)
-  })
-
-  it('refuses on a non-free session', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.souter, TUE21, 'AM') // private, all done
-    const outcome = requestCover(api, SOUTER, listId, 'offer')
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('notFree')
-  })
-
-  it('refuses an offer on a session the actor does not own', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM')
-    const outcome = requestCover(api, SOUTER, listId, 'offer')
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('notOwnList')
-  })
-
-  it('refuses a second pending request on the same session', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.sharma, TUE21, 'PM')
-    expect(requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma).ok).toBe(true)
-    const again = requestCover(api, SOUTER, listId, 'request', undefined, ANAE.sharma)
-    expect(again.ok).toBe(false)
-    if (!again.ok) expect(again.code).toBe('alreadyRequested')
-  })
-
-  it('is anaesthetist-only', () => {
-    const api = store()
-    const listId = freeListId(api, ANAE.souter, WED22, 'PM')
-    const outcome = requestCover(api, OFFICE, listId, 'offer')
-    expect(outcome.ok).toBe(false)
-    if (!outcome.ok) expect(outcome.code).toBe('anaesthetistOnly')
   })
 })
 

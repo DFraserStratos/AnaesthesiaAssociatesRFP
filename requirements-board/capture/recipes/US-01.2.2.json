@@ -1,19 +1,16 @@
 {
   "id": "US-01.2.2",
   "status": "partial",
-  "absentReason": "The List status table is shown in master data (key, label, description) but is view only: statuses cannot be added or renamed, and colour is not editable.",
+  "absentReason": "Still view only: statuses cannot be added or renamed and colour is not editable; Phase 29 turns this view into the user-maintained status list.",
   "shots": [
     {
       "name": "list-statuses",
       "app": "admin",
       "caption": "List statuses master data",
-      "start": "/admin/masters",
+      "start": "/admin/masters?view=listStatuses",
       "states": [
         {
           "steps": [
-            {
-              "click": "text=\"List statuses\""
-            },
             {
               "wait": 400
             }

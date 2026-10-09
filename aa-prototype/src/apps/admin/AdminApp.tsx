@@ -2,24 +2,27 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
-import type { List } from '../../domain/types'
 import {
   addDayNote,
   billingAttentionCount,
   integrationAttentionCount,
+  isOpenSlotView,
   openWarnings,
+  rosterForDate,
+  scheduleHorizon,
+  slotViewsForDate,
+  type SlotView,
   useAppStore,
   warningSummaryByList,
   useToday,
   OFFICE_ACTOR,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
-import { ANAESTHETISTS } from '../../domain/seed'
 import { SideNav, type NavSection } from './components/SideNav'
 import { type SortMode } from './components/DayNav'
-import { ListDrawer } from './components/ListDrawer'
+import { SlotDrawer } from './components/SlotDrawer'
 import type { AdminOutletContext } from './outlet'
-import { isBooked, surnameOf } from './util'
+import { surnameOf } from './util'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
@@ -51,7 +54,7 @@ export function AdminApp() {
 
 /**
  * The Admin Web App's LAYOUT: the dark side nav with its badge counts, the
- * day-scoped derivations every day-view child needs, and the List drawer. The
+ * day-scoped derivations every day-view child needs, and the session drawer. The
  * screens are router sub-routes (`/admin/day/:dateISO`, `/admin/review/:listId`,
  * `/admin/invoices/:invoiceId` …) so a refresh, the back button and a shared URL
  * all land on the same screen (Decisions log 2026-07-27). `?sort=az` carries the
@@ -59,6 +62,7 @@ export function AdminApp() {
  */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
@@ -71,7 +75,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const navigate = useNavigate()
   const { pathname, state: navigationState } = useLocation()
   const [params] = useSearchParams()
-  const [drawerListId, setDrawerListId] = useState<string | null>(null)
+  const [drawerSlotId, setDrawerSlotId] = useState<string | null>(null)
+  // Set when Find available opens a session: the drawer starts on Assign List.
+  const [drawerAssign, setDrawerAssign] = useState<{ surgeonId?: string } | undefined>(undefined)
   const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
   const shellRef = useRef<HTMLDivElement>(null)
 
@@ -108,7 +114,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   // Any route change closes the old drawer. A List link may carry a transient
   // target in navigation state: it opens the matching day first, then the
-  // existing drawer, without encoding the overlay in the URL.
+  // drawer on that List's session, without encoding the overlay in the URL.
   useEffect(() => {
     const openListId =
       typeof navigationState === 'object' &&
@@ -117,47 +123,41 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       typeof navigationState.openListId === 'string'
         ? navigationState.openListId
         : null
-    setDrawerListId(openListId)
+    setDrawerSlotId(openListId !== null ? (useAppStore.getState().schedule.lists[openListId]?.slotId ?? null) : null)
+    setDrawerAssign(undefined)
   }, [pathname, navigationState])
 
-  // Roster order = the canonical cast order (matches the Tue-21 mockup 1:1).
-  // NB: Object.values(record) would sort by registration number (numeric-like
-  // keys enumerate ascending), so we drive roster order from the cast array.
+  // The roster is every anaesthetist with a session that day (catch-up Phase
+  // 28, US-01.4.2): the seeded cast order first (the Tue-21 mockup 1:1), then
+  // anaesthetists added in Master data, from their start date.
   const anaesthetists = useMemo(() => {
-    const all = ANAESTHETISTS.map((a) => masters.anaesthetists[a.registrationNumber]).filter(
-      (a): a is NonNullable<typeof a> => a !== undefined,
-    )
+    const all = rosterForDate({ schedule: { slots: slotsRecord }, masters }, selectedDate)
     if (sortMode === 'az') return [...all].sort((a, b) => surnameOf(a.name).localeCompare(surnameOf(b.name)))
     return all
-  }, [masters.anaesthetists, sortMode])
+  }, [slotsRecord, masters, selectedDate, sortMode])
 
-  const dayLists = useMemo(() => Object.values(listsRecord).filter((l) => l.dateISO === selectedDate), [listsRecord, selectedDate])
+  // Built from the two schedule records only, so a Booking edit does not rebuild every session view.
+  const dayViews = useMemo(
+    () => slotViewsForDate({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings }, selectedDate),
+    [slotsRecord, listsRecord, appSettings, selectedDate],
+  )
 
-  const listsByAnaesthetist = useMemo(() => {
-    const map: Record<string, List[]> = {}
-    for (const l of dayLists) (map[l.anaesthetistId] ??= []).push(l)
+  const viewsByAnaesthetist = useMemo(() => {
+    const map: Record<string, SlotView[]> = {}
+    for (const v of dayViews) (map[v.slot.anaesthetistId] ??= []).push(v)
     return map
-  }, [dayLists])
+  }, [dayViews])
 
-  const activeBookingCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const c of Object.values(bookingsRecord)) {
-      if (c.cancellation === undefined) counts[c.listId] = (counts[c.listId] ?? 0) + 1
-    }
-    return counts
-  }, [bookingsRecord])
+  const horizonEndISO = useMemo(() => scheduleHorizon({ clock, appSettings }).endISO, [clock, appSettings])
 
+  // The header line counts Lists as sessions and open sessions as free, read
+  // from the same views the grid paints (no second derivation).
   const summary = useMemo(() => {
-    // A Free list booked via phone-advice (bookings or an assigned hospital) counts
-    // as a session, not free, matching the grid's derived display.
-    const effectivelyBooked = (l: List) =>
-      isBooked(l.statusKey) || (l.statusKey === 'free' && ((activeBookingCounts[l.id] ?? 0) > 0 || l.hospitalId !== undefined))
-    const anaes = new Set(dayLists.map((l) => l.anaesthetistId)).size
-    const sessions = dayLists.filter(effectivelyBooked).length
-    const free = dayLists.filter((l) => l.statusKey === 'free' && !effectivelyBooked(l)).length
-    const submitted = dayLists.filter((l) => l.state === 'SUBMITTED').length
-    return `${anaes} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted`
-  }, [dayLists, activeBookingCounts])
+    const sessions = dayViews.filter((v) => v.list !== undefined).length
+    const free = dayViews.filter(isOpenSlotView).length
+    const submitted = dayViews.filter((v) => v.list?.state === 'SUBMITTED').length
+    return `${anaesthetists.length} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted`
+  }, [dayViews, anaesthetists.length])
 
   // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
   const reviewLists = useMemo(
@@ -204,16 +204,24 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     selectedDate,
     sortMode,
     anaesthetists,
-    listsByAnaesthetist,
+    viewsByAnaesthetist,
+    horizonEndISO,
     masters,
-    activeBookingCounts,
     warningFlags,
     todoRows,
     summary,
     notes,
     reviewRows,
     shellScrollbarWidth,
-    onSelectList: setDrawerListId,
+    onSelectSlot: (slotId) => {
+      setDrawerAssign(undefined)
+      setDrawerSlotId(slotId)
+    },
+    selectedSlotId: drawerSlotId,
+    onAssignFromFinder: (slotId, surgeonId) => {
+      setDrawerAssign(surgeonId !== undefined ? { surgeonId } : {})
+      setDrawerSlotId(slotId)
+    },
     onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE_ACTOR, selectedDate, text, flagged),
   }
 
@@ -241,11 +249,16 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         <Outlet context={context} />
       </div>
 
-      {drawerListId !== null && (
-        <ListDrawer
-          listId={drawerListId}
+      {drawerSlotId !== null && (
+        <SlotDrawer
+          key={`${drawerSlotId}:${drawerAssign !== undefined ? 'assign' : 'view'}`}
+          slotId={drawerSlotId}
           actor={OFFICE_ACTOR}
-          onClose={() => setDrawerListId(null)}
+          {...(drawerAssign !== undefined ? { initialAssign: drawerAssign } : {})}
+          onClose={() => {
+            setDrawerSlotId(null)
+            setDrawerAssign(undefined)
+          }}
           onOpenBooking={(bookingId) => navigate(`/admin/day/${selectedDate}/bookings/${bookingId}`)}
         />
       )}

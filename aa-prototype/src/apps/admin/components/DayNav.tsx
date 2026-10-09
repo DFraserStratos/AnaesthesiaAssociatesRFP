@@ -11,9 +11,13 @@ interface DayNavProps {
   onSort: (mode: SortMode) => void
   onNavigateDate: (dateISO: string) => void
   todayISO: string
+  /** The schedule horizon's last day: the date picker stops there (catch-up Phase 28; FT-01.1). */
+  maxDateISO: string
+  /** Open the office's availability finder for this day (catch-up Phase 28; absent hides the action). */
+  onFindAvailable?: () => void
 }
 
-export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateDate, todayISO }: DayNavProps) {
+export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateDate, todayISO, maxDateISO, onFindAvailable }: DayNavProps) {
   const title = format(parseISO(selectedDateISO), 'EEEE d MMMM yyyy')
   const step = (days: number) => onNavigateDate(format(addDays(parseISO(selectedDateISO), days), 'yyyy-MM-dd'))
   const week = (weeks: number) => onNavigateDate(shiftWeeks(selectedDateISO, weeks))
@@ -26,6 +30,16 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {onFindAvailable !== undefined && (
+          <button
+            type="button"
+            data-shot="admin-availability-finder-open"
+            onClick={onFindAvailable}
+            style={{ height: 36, padding: '0 14px', borderRadius: 10, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Find available
+          </button>
+        )}
         <SortToggle sortMode={sortMode} onSort={onSort} />
         <TextBtn onClick={() => week(-4)}>-4w</TextBtn>
         <TextBtn onClick={() => week(-1)}>-1w</TextBtn>
@@ -43,8 +57,9 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
         <input
           type="date"
           value={selectedDateISO}
+          max={maxDateISO}
           onChange={(e) => e.target.value !== '' && onNavigateDate(e.target.value)}
-          style={{ height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 10px', fontFamily: 'inherit', fontSize: 13, color: neutral.ink }}
+          style={{ height: 36, width: 139, boxSizing: 'border-box', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, padding: '0 10px', fontFamily: 'inherit', fontSize: 13, color: neutral.ink }}
         />
       </div>
     </div>

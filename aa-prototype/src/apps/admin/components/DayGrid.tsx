@@ -8,23 +8,24 @@ import {
   freeDashedBorder,
   type StatusKey,
 } from '../../../theme/statusColours'
-import type { Anaesthetist, List } from '../../../domain/types'
-import type { AppState, ListWarningSummary } from '../../../store'
+import type { Anaesthetist } from '../../../domain/types'
+import type { AppState, ListWarningSummary, SlotView } from '../../../store'
 import { StatusLegend } from '../../../shared'
-import { attentionReasons, blockGeometry, displayStatusKeyForList, isBooked, listSpan, surnameFirst } from '../util'
+import { attentionReasons, blockGeometry, slotSpan, surnameFirst } from '../util'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
-  /** AM/PM lists for the selected date, keyed by anaesthetist id. */
-  listsByAnaesthetist: Record<string, List[]>
+  /**
+   * The selected date's sessions, keyed by anaesthetist id (catch-up Phase 28:
+   * Slot views, so the displayed status is the one `displayStatusKey`: the
+   * List's kind when a List is in the session, its status otherwise).
+   */
+  viewsByAnaesthetist: Record<string, SlotView[]>
   masters: AppState['masters']
-  /** Active (non-cancelled) booking count per list — a Free list that gains bookings
-   *  via the phone-advice path renders as a booked block. */
-  activeBookingCounts: Record<string, number>
   /** Open warnings per List on the selected date (catch-up Phase 15a): the
    *  count and the strongest strength, from `warningSummaryByList`. */
   warningFlags: ReadonlyMap<string, ListWarningSummary>
-  onSelectList: (listId: string) => void
+  onSelectSlot: (slotId: string) => void
 }
 
 const RULER_LABELS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
@@ -33,7 +34,7 @@ const RULER_LABELS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:
 const ATTENTION = semantic.warning.solid
 
 interface Segment {
-  list: List
+  view: SlotView
   start: number
   end: number
 }
@@ -50,30 +51,31 @@ interface DisplaySegment extends Segment {
   warnings?: ListWarningSummary
 }
 
-/** Merge a both-sessions holiday/unavailable pair into one full-day block. */
-function segmentsFor(lists: List[]): Segment[] {
-  const am = lists.find((l) => l.session === 'AM')
-  const pm = lists.find((l) => l.session === 'PM')
+/** Merge a both-sessions holiday/unavailable pair (no List in either) into one full-day block (display only). */
+function segmentsFor(views: SlotView[]): Segment[] {
+  const am = views.find((v) => v.slot.session === 'AM')
+  const pm = views.find((v) => v.slot.session === 'PM')
   if (
     am !== undefined &&
     pm !== undefined &&
-    am.statusKey === pm.statusKey &&
-    (am.statusKey === 'holiday' || am.statusKey === 'unavailable') &&
-    am.conflicts.length === 0 &&
-    pm.conflicts.length === 0
+    am.list === undefined &&
+    pm.list === undefined &&
+    am.slot.status === pm.slot.status &&
+    (am.slot.status === 'holiday' || am.slot.status === 'unavailable')
   ) {
-    return [{ list: am, start: 7, end: 18 }]
+    return [{ view: am, start: 7, end: 18 }]
   }
-  return lists.map((l) => ({ list: l, ...listSpan(l) }))
+  return [...views].sort((a, b) => a.slot.session.localeCompare(b.slot.session)).map((v) => ({ view: v, ...slotSpan(v) }))
 }
 
 /** A note signal is an annotation beyond the subtitle already visible in a block. */
-function hasNoteSignal(list: List, displayKey: StatusKey): boolean {
-  const hasText = list.notes !== undefined && list.notes.trim() !== ''
-  return hasText && isBooked(displayKey) && list.surgeonId !== undefined
+function hasNoteSignal(view: SlotView): boolean {
+  const list = view.list
+  if (list === undefined) return false
+  return list.notes !== undefined && list.notes.trim() !== '' && list.surgeonId !== undefined
 }
 
-export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBookingCounts, warningFlags, onSelectList }: DayGridProps) {
+export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot }: DayGridProps) {
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<StatusKey>>(() => new Set())
   const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
 
@@ -81,24 +83,23 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
     () =>
       anaesthetists.map((anaesthetist) => ({
         anaesthetist,
-        segments: segmentsFor(listsByAnaesthetist[anaesthetist.registrationNumber] ?? []).map(
+        segments: segmentsFor(viewsByAnaesthetist[anaesthetist.registrationNumber] ?? []).map(
           (segment): DisplaySegment => {
-            const hasBookings = (activeBookingCounts[segment.list.id] ?? 0) > 0
-            const displayKey = displayStatusKeyForList(segment.list, hasBookings)
-            const listAttention = attentionReasons(segment.list).length > 0
-            const warnings = warningFlags.get(segment.list.id)
+            const list = segment.view.list
+            const listAttention = list !== undefined && attentionReasons(list).length > 0
+            const warnings = list !== undefined ? warningFlags.get(list.id) : undefined
             return {
               ...segment,
-              displayKey,
+              displayKey: segment.view.displayKey,
               listAttention,
               needsAttention: listAttention || warnings !== undefined,
-              hasNote: hasNoteSignal(segment.list, displayKey),
+              hasNote: hasNoteSignal(segment.view),
               warnings,
             }
           },
         ),
       })),
-    [activeBookingCounts, anaesthetists, listsByAnaesthetist, warningFlags],
+    [anaesthetists, viewsByAnaesthetist, warningFlags],
   )
 
   const filteredRows = useMemo(
@@ -194,7 +195,7 @@ export function DayGrid({ anaesthetists, listsByAnaesthetist, masters, activeBoo
           </span>
           <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: 'repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)' }}>
             {segments.map((seg) => (
-              <GridBlock key={seg.list.id} seg={seg} masters={masters} onClick={() => onSelectList(seg.list.id)} />
+              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} onClick={() => onSelectSlot(seg.view.slot.id)} />
             ))}
           </span>
         </div>
@@ -285,13 +286,12 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
 }
 
 function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: AppState['masters']; onClick: () => void }) {
-  const { list } = seg
-  // A Free list booked via the phone-advice path (bookings added or a hospital
-  // assigned) renders as a booked block, even though its statusKey stays free
-  // (status is reassign/reconcile-owned, not office-editable).
+  const { slot, list } = seg.view
   const { displayKey, listAttention, needsAttention, hasNote: hasNoteSignal, warnings } = seg
   const colour = statusColours[displayKey]
-  const reasons = attentionReasons(list)
+  const reasons = list !== undefined ? attentionReasons(list) : []
+  // The block's note: the List's when a List is in the session, else the session's own.
+  const note = list !== undefined ? list.notes : slot.note
   const geo = blockGeometry(seg.start, seg.end)
 
   const bg = displayKey === 'unavailable' ? unavailableHatchTint : colour.tint
@@ -300,37 +300,38 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
   const outline = warnings?.strongest === 'strong' ? semantic.error.solid : ATTENTION
   const border = displayKey === 'free' ? freeDashedBorder : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
 
-  const hospitalName = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : undefined
-  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
+  const hospitalName = list?.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : undefined
+  const surgeon = list?.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
 
   let l1: string
   let l2: string
-  if (isBooked(displayKey)) {
+  if (list !== undefined) {
     l1 = hospitalName ?? colour.longLabel
     if (surgeon !== undefined) l2 = surgeon.name + (surgeon.specialty !== undefined ? ` · ${surgeon.specialty}` : '')
-    else if (list.notes !== undefined && list.notes.trim() !== '') l2 = list.notes
+    else if (note !== undefined && note.trim() !== '') l2 = note
     else l2 = displayKey === 'private' ? 'Surgeon TBC' : ''
   } else if (displayKey === 'free') {
     l1 = 'Free'
-    l2 = (list.notes ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
+    l2 = (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
     l1 = colour.longLabel
-    l2 = list.notes ?? ''
+    l2 = note ?? ''
   }
 
   // The has-note dot marks a genuine office annotation, not a note already shown
   // as the block's subtitle (template labels, free-cover text).
-  const hasNote = list.notes !== undefined && list.notes.trim() !== ''
-  const noteIsSubtitle = hasNote && l2 === list.notes
+  const hasNote = note !== undefined && note.trim() !== ''
+  const noteIsSubtitle = hasNote && l2 === note
   const showNoteDot = hasNoteSignal && !listAttention
   const warningTip = warnings !== undefined ? `${warnings.open} open warning${warnings.open === 1 ? '' : 's'}` : ''
-  const tooltip = [...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${list.notes}` : ''].filter(Boolean).join(' · ')
+  const tooltip = [...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : ''].filter(Boolean).join(' · ')
 
   return (
     <button
       type="button"
       onClick={onClick}
-      data-list-id={list.id}
+      data-slot-id={slot.id}
+      data-list-id={list?.id}
       data-shot={warnings !== undefined ? 'daygrid-block-warnings' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{

@@ -41,23 +41,26 @@ export const ANAE = {
 /**
  * Distinct unit values $26 to $42 (Souter $26.50 per the mockups' "@ $26.50
  * per unit"); exactly one non-monthly GST period (Whitaker, six monthly).
- * HPI identifiers are fictional.
+ * HPI identifiers are fictional. Start dates (catch-up Phase 28, US-01.1.3)
+ * are staggered joining dates, all before the schedule horizon and the
+ * seeded billing history, so every seeded anaesthetist has Slots on every
+ * horizon day.
  */
 export const ANAESTHETISTS: readonly Anaesthetist[] = [
-  { registrationNumber: ANAE.souter, name: 'Dr Melanie Souter', phone: '021 555 0134', email: 'm.souter@aa-associates.example', unitValue: 26.5, gstPeriod: 'monthly', hpiId: '10SOUM', active: true },
-  { registrationNumber: ANAE.rutherford, name: 'Dr James Rutherford', phone: '021 555 0217', email: 'j.rutherford@aa-associates.example', unitValue: 32, gstPeriod: 'monthly', hpiId: '11RUTJ', active: true },
-  { registrationNumber: ANAE.sharma, name: 'Dr Priya Sharma', phone: '021 555 0342', email: 'p.sharma@aa-associates.example', unitValue: 30, gstPeriod: 'monthly', hpiId: '12SHAP', active: true },
-  { registrationNumber: ANAE.ngata, name: 'Dr Tom Ngata', phone: '021 555 0458', email: 't.ngata@aa-associates.example', unitValue: 28, gstPeriod: 'monthly', hpiId: '13NGAT', active: true },
-  { registrationNumber: ANAE.beaumont, name: 'Dr Sarah Beaumont', phone: '021 555 0563', email: 's.beaumont@aa-associates.example', unitValue: 31, gstPeriod: 'monthly', hpiId: '14BEAS', active: true },
-  { registrationNumber: ANAE.chen, name: 'Dr Alistair Chen', phone: '021 555 0629', email: 'a.chen@aa-associates.example', unitValue: 29.5, gstPeriod: 'monthly', hpiId: '15CHEA', active: true },
-  { registrationNumber: ANAE.ropata, name: 'Dr Hannah Ropata', phone: '021 555 0771', email: 'h.ropata@aa-associates.example', unitValue: 27.5, gstPeriod: 'monthly', hpiId: '16ROPH', active: true },
-  { registrationNumber: ANAE.delaney, name: 'Dr Mark Delaney', phone: '021 555 0808', email: 'm.delaney@aa-associates.example', unitValue: 33, gstPeriod: 'monthly', hpiId: '17DELM', active: true },
-  { registrationNumber: ANAE.fitzgerald, name: 'Dr Emma Fitzgerald', phone: '021 555 0915', email: 'e.fitzgerald@aa-associates.example', unitValue: 30.5, gstPeriod: 'monthly', hpiId: '18FITE', active: true },
-  { registrationNumber: ANAE.hughes, name: 'Dr Rawiri Hughes', phone: '021 555 1046', email: 'r.hughes@aa-associates.example', unitValue: 26, gstPeriod: 'monthly', hpiId: '19HUGR', active: true },
-  { registrationNumber: ANAE.morrison, name: 'Dr Kate Morrison', phone: '021 555 1187', email: 'k.morrison@aa-associates.example', unitValue: 35, gstPeriod: 'monthly', hpiId: '20MORK', active: true },
-  { registrationNumber: ANAE.whitaker, name: 'Dr Ben Whitaker', phone: '021 555 1253', email: 'b.whitaker@aa-associates.example', unitValue: 28.5, gstPeriod: 'sixMonthly', hpiId: '21WHIB', active: true },
-  { registrationNumber: ANAE.ngatai, name: 'Dr Aroha Ngatai', phone: '021 555 1394', email: 'a.ngatai@aa-associates.example', unitValue: 27, gstPeriod: 'monthly', hpiId: '22NGAA', active: true },
-  { registrationNumber: ANAE.strand, name: 'Dr Oliver Strand', phone: '021 555 1420', email: 'o.strand@aa-associates.example', unitValue: 42, gstPeriod: 'monthly', hpiId: '23STRO', active: true },
+  { registrationNumber: ANAE.souter, name: 'Dr Melanie Souter', phone: '021 555 0134', email: 'm.souter@aa-associates.example', unitValue: 26.5, gstPeriod: 'monthly', hpiId: '10SOUM', startDateISO: '2014-02-03', active: true },
+  { registrationNumber: ANAE.rutherford, name: 'Dr James Rutherford', phone: '021 555 0217', email: 'j.rutherford@aa-associates.example', unitValue: 32, gstPeriod: 'monthly', hpiId: '11RUTJ', startDateISO: '2009-03-02', active: true },
+  { registrationNumber: ANAE.sharma, name: 'Dr Priya Sharma', phone: '021 555 0342', email: 'p.sharma@aa-associates.example', unitValue: 30, gstPeriod: 'monthly', hpiId: '12SHAP', startDateISO: '2016-07-04', active: true },
+  { registrationNumber: ANAE.ngata, name: 'Dr Tom Ngata', phone: '021 555 0458', email: 't.ngata@aa-associates.example', unitValue: 28, gstPeriod: 'monthly', hpiId: '13NGAT', startDateISO: '2018-01-15', active: true },
+  { registrationNumber: ANAE.beaumont, name: 'Dr Sarah Beaumont', phone: '021 555 0563', email: 's.beaumont@aa-associates.example', unitValue: 31, gstPeriod: 'monthly', hpiId: '14BEAS', startDateISO: '2011-05-02', active: true },
+  { registrationNumber: ANAE.chen, name: 'Dr Alistair Chen', phone: '021 555 0629', email: 'a.chen@aa-associates.example', unitValue: 29.5, gstPeriod: 'monthly', hpiId: '15CHEA', startDateISO: '2013-09-02', active: true },
+  { registrationNumber: ANAE.ropata, name: 'Dr Hannah Ropata', phone: '021 555 0771', email: 'h.ropata@aa-associates.example', unitValue: 27.5, gstPeriod: 'monthly', hpiId: '16ROPH', startDateISO: '2019-02-04', active: true },
+  { registrationNumber: ANAE.delaney, name: 'Dr Mark Delaney', phone: '021 555 0808', email: 'm.delaney@aa-associates.example', unitValue: 33, gstPeriod: 'monthly', hpiId: '17DELM', startDateISO: '2010-08-02', active: true },
+  { registrationNumber: ANAE.fitzgerald, name: 'Dr Emma Fitzgerald', phone: '021 555 0915', email: 'e.fitzgerald@aa-associates.example', unitValue: 30.5, gstPeriod: 'monthly', hpiId: '18FITE', startDateISO: '2017-03-06', active: true },
+  { registrationNumber: ANAE.hughes, name: 'Dr Rawiri Hughes', phone: '021 555 1046', email: 'r.hughes@aa-associates.example', unitValue: 26, gstPeriod: 'monthly', hpiId: '19HUGR', startDateISO: '2021-01-11', active: true },
+  { registrationNumber: ANAE.morrison, name: 'Dr Kate Morrison', phone: '021 555 1187', email: 'k.morrison@aa-associates.example', unitValue: 35, gstPeriod: 'monthly', hpiId: '20MORK', startDateISO: '2012-04-02', active: true },
+  { registrationNumber: ANAE.whitaker, name: 'Dr Ben Whitaker', phone: '021 555 1253', email: 'b.whitaker@aa-associates.example', unitValue: 28.5, gstPeriod: 'sixMonthly', hpiId: '21WHIB', startDateISO: '2015-10-05', active: true },
+  { registrationNumber: ANAE.ngatai, name: 'Dr Aroha Ngatai', phone: '021 555 1394', email: 'a.ngatai@aa-associates.example', unitValue: 27, gstPeriod: 'monthly', hpiId: '22NGAA', startDateISO: '2022-06-06', active: true },
+  { registrationNumber: ANAE.strand, name: 'Dr Oliver Strand', phone: '021 555 1420', email: 'o.strand@aa-associates.example', unitValue: 42, gstPeriod: 'monthly', hpiId: '23STRO', startDateISO: '2024-02-05', active: true },
 ] as const
 
 // ---------------------------------------------------------------------------

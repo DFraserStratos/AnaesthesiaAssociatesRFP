@@ -1,15 +1,16 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ANAE, listIdForSlot } from '../../../domain/seed'
+import { ANAE } from '../../../domain/seed'
 import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { ReassignListFlow } from './ReassignListFlow'
+import { projectedListId } from '../../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SOURCE_ID = listIdForSlot(ANAE.rutherford, '2026-07-22', 'AM')
+const SOURCE_ID = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
 // Dr Chen's Tue 21 PM Christchurch Eye Surgery List is Ms A. Reid's; Reid has a
 // seeded not-preferred entry with Dr Sharma, who is free that PM (Phase 17).
-const CHEN_PM = listIdForSlot(ANAE.chen, '2026-07-21', 'PM')
+const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
 
 function renderFlow(listId: string, open = true) {
   const list = useAppStore.getState().schedule.lists[listId]!
@@ -101,8 +102,26 @@ describe('ReassignListFlow', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: 'Confirm reassignment anyway' }))
     expect(useAppStore.getState().schedule.lists[CHEN_PM]?.anaesthetistId).toBe(ANAE.sharma)
-    expect(useAppStore.getState().audit.at(-1)?.action).toBe('list.regenerate')
+    // A move, not absorb-and-regenerate (catch-up Phase 28): one reassign plus 17's acknowledgement.
+    expect(useAppStore.getState().audit.slice(-2).map((a) => a.action)).toEqual(['list.reassign', 'list.pairingAcknowledged'])
     expect(useAppStore.getState().audit.some((a) => a.action === 'list.pairingAcknowledged' && a.entityId === CHEN_PM)).toBe(true)
+  })
+
+  it('defaults the vacated session to Free; choosing Unavailable marks it so, with no "regenerated" anywhere (US-01.4.1, OQ-84)', () => {
+    vi.useFakeTimers()
+    const before = useAppStore.getState().schedule.lists[SOURCE_ID]!
+    renderFlow(SOURCE_ID)
+    fireEvent.click(screen.getByRole('button', { name: /Sharma, Priya.*Free AM/ }))
+    const vacated = document.querySelector('select[data-shot="reassign-vacated"]') as HTMLSelectElement
+    expect(vacated.value).toBe('free')
+    expect(screen.getByText(/returns to Free unless you mark it otherwise/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/regenerat|absorb/i)
+    fireEvent.change(vacated, { target: { value: 'unavailable' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm reassignment' }))
+    const after = useAppStore.getState().schedule.lists[SOURCE_ID]!
+    expect(after.id).toBe(before.id)
+    expect(after.anaesthetistId).toBe(ANAE.sharma)
+    expect(useAppStore.getState().schedule.slots[before.slotId]?.status).toBe('unavailable')
   })
 
   it('filters both groups by tier', () => {

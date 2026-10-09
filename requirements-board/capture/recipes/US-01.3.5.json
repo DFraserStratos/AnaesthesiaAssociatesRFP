@@ -1,7 +1,7 @@
 {
   "id": "US-01.3.5",
   "status": "partial",
-  "absentReason": "The warning and the separated group work when the office assigns a List in a session (Edit list, phone advice booking, Permanent List) and when it reassigns a List. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.",
+  "absentReason": "The warning and the separated group work on every office path built so far: Assign List, Book (phone advice), Edit list, the Permanent List sheet, Reassign list and Find available. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.",
   "shots": [
     {
       "name": "edit-list-warning",
@@ -67,6 +67,79 @@
           ],
           "highlight": [
             "[data-shot=reassign-pairing-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "assign-list-warning",
+      "app": "admin",
+      "caption": "Assign List: a not-preferred surgeon is grouped apart and warns, \"Assign anyway\"",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button[data-slot-id=\"S-41267-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+              "value": "S-REID"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "select[data-shot=surgeon-picker]",
+            "[data-shot=assign-list-pairing-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "finder-not-preferred",
+      "app": "admin",
+      "caption": "Find available: with Ms Reid chosen, Dr Sharma sits apart and opens Assign List with the warning",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=admin-availability-finder-open]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-availability-finder] >> role=button[name=\"PM\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[data-shot=finder-surgeon]",
+              "value": "S-REID"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-not-preferred]"
           ]
         }
       ]

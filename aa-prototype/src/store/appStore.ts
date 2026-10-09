@@ -109,7 +109,13 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v20: 2026-10-09 · catch-up Phase 17: surgeons gain `roomId`, `hpiId` (the
+/** v21: 2026-10-09 · catch-up Phase 28: Slot and List split; the canvas is two
+ *  records (`schedule.slots`, every session stored, free by default; Lists only
+ *  where assigned or projected, with `slotId` and `kind`); `masters.availability`
+ *  gone (availability is the Slot's status); schedule settings in
+ *  `appSettings.schedule` (horizon months, default session times); anaesthetists
+ *  have a start date.
+ *  v20: 2026-10-09 · catch-up Phase 17: surgeons gain `roomId`, `hpiId` (the
  *  HPI CPN) and a registration number; `masters.surgeonRooms` and
  *  `masters.surgeonGroups`; hospitals gain `contactEmail`; the new top-level
  *  office-only `officePrivate` slice (pairing preferences, priority tiers);
@@ -166,7 +172,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 20
+export const PERSIST_VERSION = 21
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

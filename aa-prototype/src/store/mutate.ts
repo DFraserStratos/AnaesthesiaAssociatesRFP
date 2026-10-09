@@ -66,8 +66,9 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   billingLine: { prefix: 'BL', pad: 4 },
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
-  availability: { prefix: 'AV', pad: 4 },
   dayNote: { prefix: 'DN', pad: 4 },
+  // Lists created at runtime (assignment, phone advice, the post-op addendum);
+  // projected and seeded Lists keep their `L-<reg>-<date>-<session>` ids.
   list: { prefix: 'LG', pad: 4 },
   hospital: { prefix: 'HN', pad: 3 },
   contract: { prefix: 'CTN', pad: 3 },

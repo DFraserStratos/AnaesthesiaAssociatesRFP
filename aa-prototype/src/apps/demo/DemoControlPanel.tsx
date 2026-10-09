@@ -134,8 +134,9 @@ export function DemoControlPanel() {
 
       <ControlCard icon={CalendarDays} eyebrow="Demo clock" title={`${dateLabel} · ${timeLabel}`}>
         <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-          Advancing past midnight rolls the canvas: new far edge days generate from Permanent Lists
-          with the same deterministic generator the seed uses. Next morning jumps to 08:00 tomorrow;
+          Advancing past midnight rolls the schedule forward: each new far-edge day gets an AM and a PM
+          session for every active anaesthetist, free, with the calendar and the recurring bookings
+          painted on, by the same generator the seed uses. Next morning jumps to 08:00 tomorrow;
           Procedure day jumps forward to the S1 booking's operating day. These advance controls are
           also available from the live clock beside the app switcher.
         </span>
@@ -268,13 +269,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S2',
     title: 'S2 · Office day',
-    blurb: 'Day-dashboard review, a phone-advice booking, an illness reassignment with tier-ordered cover suggestions, and an authorisation.',
+    blurb: 'Day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, Find available, and an authorisation.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          'Reset to the pristine day. In Admin: phone-book Dr Sharma\'s Tue 21 PM Free List; on Wed 22 reassign Dr Rutherford\'s conflicted AM Christchurch Eye Surgery List to Dr Sharma (vacated slot: Unavailable); then authorise Dr Morrison\'s Mon 20 Jul List from the Review queue.',
+          'Reset to the pristine day. In Admin: open Dr Sharma\'s Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; on Wed 22 reassign Dr Rutherford\'s conflicted AM Christchurch Eye Surgery List to Dr Sharma (the vacated session defaults to Free; choose Unavailable); optionally use Find available in the Day header; then authorise Dr Morrison\'s Mon 20 Jul List from the Review queue.',
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },

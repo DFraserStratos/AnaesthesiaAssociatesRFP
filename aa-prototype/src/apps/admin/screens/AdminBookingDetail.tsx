@@ -67,7 +67,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             {primary?.description || 'Operation to capture'} · {hospitalName}
           </div>
         </div>
-        <StatusChip status={list.statusKey} />
+        <StatusChip status={list.kind} />
       </div>
 
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />

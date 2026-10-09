@@ -6,8 +6,20 @@
     {
       "name": "day-grid",
       "app": "admin",
-      "caption": "Every anaesthetist has an AM and a PM List, booked or not",
+      "caption": "Every anaesthetist has an AM and a PM session, booked or not",
       "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "free-by-default",
+      "app": "admin",
+      "caption": "New sessions start free; recurring bookings are painted on",
+      "start": "/admin/day/2026-09-07",
       "states": [
         {
           "steps": [],
@@ -18,7 +30,7 @@
     {
       "name": "my-lists",
       "app": "web",
-      "caption": "My Lists, two per day, including free and leave sessions",
+      "caption": "My sessions, two per day, including free and leave sessions",
       "start": "/web/lists",
       "states": [
         {
@@ -30,7 +42,7 @@
     {
       "name": "my-lists",
       "app": "mobile",
-      "caption": "My Lists, two per day, including free sessions",
+      "caption": "My sessions, two per day, including free sessions",
       "start": "/mobile/lists",
       "states": [
         {

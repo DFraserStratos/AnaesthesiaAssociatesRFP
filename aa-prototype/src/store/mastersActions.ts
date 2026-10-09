@@ -12,13 +12,15 @@ import type {
   GstPeriod,
   HospitalId,
   Hospital,
-  ListStatusKey,
+  ListKind,
   PermanentList,
   Session,
   SurgeonId,
 } from '../domain/types'
-import { enumerateDatesISO, horizonFor } from '../domain/clock'
-import { generateListsForDates, SEED, type CanvasMasters } from '../domain/seed'
+import { LIST_KINDS } from '../domain/types'
+import { isWallTime } from '../domain/slots'
+import { closedHospitalMessage } from '../domain/seed'
+import { anaesthetistCanvasDelta, withGenerated } from './slotActions'
 import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
@@ -241,7 +243,11 @@ export interface AnaesthetistPatch {
   active?: boolean
   /** The HPI CPN, optional on an anaesthetist; a typed one is stored normalised and must be unique across practitioners (Phase 17). */
   hpiId?: string
+  /** The start date (catch-up Phase 28, US-01.1.3): moving it adds or removes Slots from today on. */
+  startDateISO?: string
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
  * Refuse an HPI CPN another practitioner already holds (catch-up Phase 17,
@@ -254,10 +260,16 @@ function hpiCpnClash(state: ReturnType<AppStoreApi['getState']>, hpiId: string, 
 }
 
 /**
- * Edit an anaesthetist's contact / unit value / GST period / active flag.
- * Office-only; audited `anaesthetist.update` (before to after). Changing the
- * unit value re-prices every Type 1 / % Type 2 fee that reads it (the fee path
- * takes the live `unitValue`), demonstrated in the master-data screen.
+ * Edit an anaesthetist's contact / unit value / GST period / active flag /
+ * start date. Office-only; audited `anaesthetist.update` (before to after).
+ * Changing the unit value re-prices every Type 1 / % Type 2 fee that reads it.
+ *
+ * Start date and active (catch-up Phase 28; US-01.1.3 "Once created, the Slots
+ * can be edited freely"; FT-01.1 "every active anaesthetist") add or remove
+ * the anaesthetist's Slots from the demo clock's today on, in the same commit
+ * (`canvas.generate` or `canvas.trim`); nothing before today is touched and no
+ * List is ever deleted: a change that would remove a Slot holding a List is
+ * refused (`listsBeforeStart`, `listsAhead`).
  */
 export function editAnaesthetist(
   api: AppStoreApi,
@@ -277,11 +289,12 @@ export function editAnaesthetist(
     const clash = hpiCpnClash(state, patch.hpiId ?? '', registrationNumber)
     if (clash !== null) return clash
   }
+  if (patch.startDateISO !== undefined && !ISO_DATE.test(patch.startDateISO)) {
+    return refuse('invalidStartDate', 'Choose a valid start date.')
+  }
 
   const next: Anaesthetist = { ...existing, ...patch }
-  mutate(
-    api,
-    actor,
+  const metas: MutationMeta[] = [
     {
       entityType: 'anaesthetist',
       entityId: registrationNumber,
@@ -290,13 +303,57 @@ export function editAnaesthetist(
       after: patch,
       stampBookingId: null,
     },
-    (s) => ({
-      masters: {
-        ...s.masters,
-        anaesthetists: { ...s.masters.anaesthetists, [registrationNumber]: next },
+  ]
+
+  // The canvas follows a start-date or active change, from today on.
+  const canvasChanged = next.startDateISO !== existing.startDateISO || next.active !== existing.active
+  const todayISO = state.clock.todayISO
+  const delta = canvasChanged ? anaesthetistCanvasDelta(state, next, todayISO) : null
+  if (delta !== null && delta.listsInRemoved.length > 0) {
+    const n = delta.listsInRemoved.length
+    const who = `${existing.name} has ${n} ${n === 1 ? 'List' : 'Lists'}`
+    if (!next.active) return refuse('listsAhead', `${who} from today. Reassign ${n === 1 ? 'it' : 'them'} first.`)
+    return refuse('listsBeforeStart', `${who} before that date. Reassign ${n === 1 ? 'it' : 'them'} first.`)
+  }
+  if (delta !== null && delta.add.slots.length > 0) {
+    metas.push({
+      entityType: 'canvas',
+      entityId: registrationNumber,
+      action: 'canvas.generate',
+      after: {
+        slots: delta.add.slots.length,
+        lists: delta.add.lists.length,
+        fromISO: delta.add.slots[0]?.dateISO,
+        toISO: delta.add.slots.at(-1)?.dateISO,
       },
-    }),
-  )
+      stampBookingId: null,
+    })
+  }
+  if (delta !== null && delta.removeSlotIds.length > 0) {
+    metas.push({
+      entityType: 'canvas',
+      entityId: registrationNumber,
+      action: 'canvas.trim',
+      after: { slots: delta.removeSlotIds.length, fromISO: todayISO },
+      stampBookingId: null,
+    })
+  }
+
+  mutate(api, actor, metas, (s) => {
+    let schedule = s.schedule
+    if (delta !== null) {
+      schedule = withGenerated(schedule, delta.add).schedule
+      if (delta.removeSlotIds.length > 0) {
+        const slots = { ...schedule.slots }
+        for (const id of delta.removeSlotIds) delete slots[id]
+        schedule = { ...schedule, slots }
+      }
+    }
+    return {
+      masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [registrationNumber]: next } },
+      schedule,
+    }
+  })
   return ok(undefined)
 }
 
@@ -309,22 +366,24 @@ export interface NewAnaesthetistFields {
   unitValue: number
   gstPeriod: GstPeriod
   hpiId?: string
+  /** Required (US-01.1.3): the anaesthetist's Slots are created from this date. */
+  startDateISO: string
 }
 
 /**
- * Add an anaesthetist AND extend the canvas forward for them (D1: the canvas
- * grows, 2 Lists per anaesthetist per day). A new anaesthetist has no Permanent
- * List, so their forward rows are slot-RNG filled — that is the point: the
- * generator is order-independent, so generating just their slots over
- * `today..horizon.end` reproduces exactly what a fresh full-horizon seed at 85
- * anaesthetists would have produced (Phase 02's slot-hash decision). Audits
- * `anaesthetist.create` + one `canvas.generate` summary, one commit.
+ * Add an anaesthetist AND create their Slots (catch-up Phase 28; US-01.1.3:
+ * "creates their Slots from their start date"): an AM and a PM Slot, all free,
+ * for every horizon day from the later of the start date and the demo clock's
+ * today, through the one generator (a new anaesthetist has no recurring
+ * booking, so nothing is projected). A start date beyond the horizon end
+ * creates none yet: the roll-forward creates them when the horizon reaches it.
+ * Audits `anaesthetist.create` + one `canvas.generate` summary, one commit.
  */
 export function addAnaesthetist(
   api: AppStoreApi,
   actor: Actor,
   fields: NewAnaesthetistFields,
-): Outcome<{ registrationNumber: string; generatedLists: number }> {
+): Outcome<{ registrationNumber: string; generatedSlots: number; generatedLists: number; fromISO: string }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add an anaesthetist.')
   const state = api.getState()
   const reg = fields.registrationNumber.trim()
@@ -337,12 +396,10 @@ export function addAnaesthetist(
   const hpiId = normaliseHpiCpn(fields.hpiId ?? '')
   const clash = hpiCpnClash(state, hpiId)
   if (clash !== null) return clash
+  if (!ISO_DATE.test(fields.startDateISO)) return refuse('invalidStartDate', 'Choose a valid start date.')
 
   const todayISO = state.clock.todayISO
-  const horizon = horizonFor(todayISO)
-  const dates = enumerateDatesISO(todayISO, horizon.endISO)
-  const fromISO = dates[0] ?? todayISO
-  const toISO = dates.at(-1) ?? horizon.endISO
+  const fromISO = fields.startDateISO > todayISO ? fields.startDateISO : todayISO
 
   const anaesthetist: Anaesthetist = {
     registrationNumber: reg,
@@ -352,17 +409,10 @@ export function addAnaesthetist(
     unitValue: fields.unitValue,
     gstPeriod: fields.gstPeriod,
     hpiId,
+    startDateISO: fields.startDateISO,
     active: true,
   }
-
-  const canvasMasters: CanvasMasters = {
-    seed: SEED,
-    anaesthetistIds: [reg],
-    permanentLists: Object.values(state.masters.permanentLists),
-    availability: Object.values(state.masters.availability),
-    holidays: Object.values(state.masters.holidays),
-  }
-  const generated = generateListsForDates(canvasMasters, dates)
+  const { add: generated, toISO } = anaesthetistCanvasDelta(state, anaesthetist, fromISO)
 
   const metas: MutationMeta[] = [
     {
@@ -375,18 +425,14 @@ export function addAnaesthetist(
       entityType: 'canvas',
       entityId: reg,
       action: 'canvas.generate',
-      after: { lists: generated.length, fromISO, toISO },
+      after: { slots: generated.slots.length, lists: generated.lists.length, fromISO, toISO },
     },
   ]
-  mutate(api, actor, metas, (s) => {
-    const lists = { ...s.schedule.lists }
-    for (const list of generated) if (lists[list.id] === undefined) lists[list.id] = list
-    return {
-      masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [reg]: anaesthetist } },
-      schedule: { ...s.schedule, lists },
-    }
-  })
-  return ok({ registrationNumber: reg, generatedLists: generated.length })
+  mutate(api, actor, metas, (s) => ({
+    masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [reg]: anaesthetist } },
+    schedule: withGenerated(s.schedule, generated).schedule,
+  }))
+  return ok({ registrationNumber: reg, generatedSlots: generated.slots.length, generatedLists: generated.lists.length, fromISO })
 }
 
 // ---------------------------------------------------------------------------
@@ -419,7 +465,7 @@ export function addHospitalHoliday(
     return refuse('duplicateHoliday', 'That hospital already has a holiday recorded on that date.')
   }
 
-  const message = `${trimmedName}: the hospital is closed on this date.`
+  const message = closedHospitalMessage(trimmedName)
   const affected = Object.values(state.schedule.lists).filter(
     (l) =>
       l.dateISO === dateISO &&
@@ -469,10 +515,27 @@ export interface NewPermanentListFields {
   anaesthetistId: string
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
   session: Session
-  statusKey: ListStatusKey
+  kind: ListKind
   hospitalId: HospitalId | null
   surgeonId: SurgeonId | null
+  /** Optional template times, written as the Slot's own times when projected; blank follows the default session times. */
+  startTime?: string
+  endTime?: string
   notes?: string
+}
+
+/** Kind and optional template times, checked the same on add and edit (catch-up Phase 28). */
+function templateRefusal(t: { kind?: ListKind; startTime?: string; endTime?: string }): Outcome<never> | null {
+  if (t.kind !== undefined && !(LIST_KINDS as readonly string[]).includes(t.kind)) {
+    return refuse('invalidKind', 'A recurring booking is a private, public or pre-op List.')
+  }
+  for (const v of [t.startTime, t.endTime]) {
+    if (v !== undefined && v !== '' && !isWallTime(v)) return refuse('invalidTime', 'Times are HH:mm, for example 13:30.')
+  }
+  if (t.startTime !== undefined && t.endTime !== undefined && t.startTime !== '' && t.endTime !== '' && !(t.startTime < t.endTime)) {
+    return refuse('invalidTimes', 'The start time must be before the end time.')
+  }
+  return null
 }
 
 /**
@@ -490,6 +553,8 @@ export function addPermanentList(
   if (state.masters.anaesthetists[fields.anaesthetistId] === undefined) {
     return refuse('notFound', 'Anaesthetist not found.')
   }
+  const invalid = templateRefusal(fields)
+  if (invalid !== null) return invalid
 
   const metas: MutationMeta[] = []
   let id = ''
@@ -501,9 +566,11 @@ export function addPermanentList(
       anaesthetistId: fields.anaesthetistId,
       dayOfWeek: fields.dayOfWeek,
       session: fields.session,
-      statusKey: fields.statusKey,
+      kind: fields.kind,
       hospitalId: fields.hospitalId,
       surgeonId: fields.surgeonId,
+      ...(fields.startTime !== undefined && fields.startTime !== '' ? { startTime: fields.startTime } : {}),
+      ...(fields.endTime !== undefined && fields.endTime !== '' ? { endTime: fields.endTime } : {}),
       ...(fields.notes !== undefined && fields.notes.trim() !== '' ? { notes: fields.notes.trim() } : {}),
     }
     metas.push({
@@ -549,8 +616,12 @@ export function editPermanentList(
   if (existing === undefined) return refuse('notFound', 'Permanent list not found.')
 
   const next: PermanentList = { ...existing, ...patch }
-  // notes cleared explicitly when blanked.
+  const invalid = templateRefusal(next)
+  if (invalid !== null) return invalid
+  // notes and template times cleared explicitly when blanked.
   if ('notes' in patch && (patch.notes === undefined || patch.notes.trim() === '')) delete next.notes
+  if ('startTime' in patch && (patch.startTime === undefined || patch.startTime === '')) delete next.startTime
+  if ('endTime' in patch && (patch.endTime === undefined || patch.endTime === '')) delete next.endTime
   const metas: MutationMeta[] = [
     {
       entityType: 'permanentList',

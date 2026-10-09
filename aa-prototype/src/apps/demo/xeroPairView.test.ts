@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { INS, SEED_MARKERS, listIdForSlot, ANAE } from '../../domain/seed'
+import { INS, SEED_MARKERS, ANAE } from '../../domain/seed'
 import { authoriseList, createAppStore, wireBillingRun } from '../../store'
 import type { Actor, AppState } from '../../store'
 import { xeroInvoicePairViews } from './xeroPairView'
+import { projectedListId } from '../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function stagedS3State(): AppState {
   const api = createAppStore()
   const unwire = wireBillingRun(api)
-  const pmListId = listIdForSlot(ANAE.souter, '2026-07-20', 'PM')
+  const pmListId = projectedListId(ANAE.souter, '2026-07-20', 'PM')
   try {
     expect(api.getState().schedule.lists[pmListId]?.state).toBe('SUBMITTED')
     expect(authoriseList(api, OFFICE, pmListId).ok).toBe(true)

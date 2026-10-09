@@ -87,7 +87,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
             {patientName}
           </span>
           <WarningTriangle warnings={warnings} size="sm" />
-          <StatusChip status={list.statusKey} style={{ flex: 'none', padding: '3px 8px' }} />
+          <StatusChip status={list.kind} style={{ flex: 'none', padding: '3px 8px' }} />
         </span>
       </div>
 
@@ -109,7 +109,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
           data-testid="mobile-booking-header-actions"
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
         >
-          <StatusChip status={list.statusKey} />
+          <StatusChip status={list.kind} />
           {!collapsed ? history : null}
         </div>
         <span style={{ minWidth: 0, fontSize: 12, color: neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

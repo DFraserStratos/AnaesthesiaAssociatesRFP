@@ -78,7 +78,7 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack }: Bookin
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 2 }}>
-        <StatusChip status={list.statusKey} />
+        <StatusChip status={list.kind} />
         {history}
       </div>
     </div>

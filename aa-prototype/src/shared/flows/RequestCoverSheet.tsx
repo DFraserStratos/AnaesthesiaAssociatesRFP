@@ -8,7 +8,8 @@ import { useSurface } from '../surface'
 
 interface RequestCoverSheetProps {
   open: boolean
-  listId: string
+  /** The open session (a Slot id; catch-up Phase 28). */
+  slotId: string
   actor: Actor
   kind: 'offer' | 'request'
   /** Whom the sheet concerns (the colleague for a request; the actor for an offer). */
@@ -26,7 +27,7 @@ interface RequestCoverSheetProps {
  */
 export function RequestCoverSheet({
   open,
-  listId,
+  slotId,
   actor,
   kind,
   personName,
@@ -50,7 +51,7 @@ export function RequestCoverSheet({
 
   function send() {
     setError(null)
-    const outcome = requestCover(useAppStore, actor, listId, kind, message, targetAnaesthetistId)
+    const outcome = requestCover(useAppStore, actor, slotId, kind, message, targetAnaesthetistId)
     if (!outcome.ok) {
       setError(outcome.message)
       return

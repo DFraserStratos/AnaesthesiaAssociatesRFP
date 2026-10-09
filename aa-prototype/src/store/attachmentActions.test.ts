@@ -8,10 +8,12 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { addAttachment, removeAttachment } from './attachmentActions'
-import { authoriseList, cancelBooking, editBooking, reassignList, submitList } from './lifecycle'
-import { bookingsForList } from './selectors'
+import { authoriseList, cancelBooking, editBooking, submitList } from './lifecycle'
+import { reassignList } from './slotActions'
+import { bookingsForList, isOpenSlotView, slotViewsForDate } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../domain/seed'
+import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
+import { projectedListId } from '../domain/slots'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -19,7 +21,7 @@ const FILE = { name: 'Consent form', kind: 'pdf' as const, dataUrl: 'data:image/
 
 const ELLISON = SEED_MARKERS['pendingCaptureBooking']?.entityId ?? ''
 const SOUTER_PM = SEED_LIST_IDS.souterPm21
-const TUE28_AM = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
+const TUE28_AM = projectedListId(ANAE.souter, '2026-07-28', 'AM')
 
 function store(): BoundAppStore {
   return createAppStore()
@@ -152,51 +154,23 @@ describe('the rights matrix', () => {
   })
 })
 
-describe('List attachments are booking context on a Free List', () => {
-  it('a Free List holding attachments is not a reassignment target, so they are never absorbed', () => {
+describe('List attachments travel with reassignList (catch-up Phase 28: a move between sessions)', () => {
+  it('a reassigned List keeps its id and attachments; an empty session has no List to hold any', () => {
     const api = store()
     const state = api.getState()
+    // A booked ACTIVE List ahead and a colleague whose same session is open.
+    const views = (d: string) => slotViewsForDate(state, d)
     const source = Object.values(state.schedule.lists).find(
-      (l) => l.state === 'ACTIVE' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO &&
-        Object.values(state.schedule.lists).some((t) => t.dateISO === l.dateISO && t.session === l.session && t.anaesthetistId !== l.anaesthetistId && t.statusKey === 'free' && t.state === 'ACTIVE' && bookingsForList(state, t.id).length === 0),
+      (l) => l.state === 'ACTIVE' && l.dateISO > state.clock.todayISO &&
+        views(l.dateISO).some((v) => v.slot.session === l.session && v.slot.anaesthetistId !== l.anaesthetistId && isOpenSlotView(v)),
     )!
-    const target = Object.values(state.schedule.lists).find((t) => t.dateISO === source.dateISO && t.session === source.session && t.anaesthetistId !== source.anaesthetistId && t.statusKey === 'free' && t.state === 'ACTIVE' && bookingsForList(state, t.id).length === 0)!
-    expect(addAttachment(api, OFFICE, { kind: 'list', id: target.id }, FILE).ok).toBe(true)
-    expect(reassignList(api, OFFICE, source.id, target.anaesthetistId)).toMatchObject({ ok: false, code: 'targetNotFree' })
-    expect(api.getState().schedule.lists[target.id]?.attachments).toHaveLength(1)
-  })
-})
-
-describe('List attachments travel with reassignList', () => {
-  it('a reassigned List keeps its attachments', () => {
-    const api = store()
-    const state = api.getState()
-    // A booked ACTIVE List and a colleague whose same slot is an empty free session (state ACTIVE).
-    const candidates = Object.values(state.schedule.lists).filter(
-      (l) => l.state === 'ACTIVE' && l.statusKey !== 'free' && l.hospitalId !== undefined && l.dateISO > state.clock.todayISO,
-    )
-    let done = false
-    for (const list of candidates) {
-      const target = Object.values(state.schedule.lists).find(
-        (t) =>
-          t.dateISO === list.dateISO &&
-          t.session === list.session &&
-          t.anaesthetistId !== list.anaesthetistId &&
-          t.statusKey === 'free' &&
-          t.state === 'ACTIVE' &&
-          bookingsForList(state, t.id).length === 0,
-      )
-      if (target === undefined) continue
-      expect(addAttachment(api, OFFICE, { kind: 'list', id: list.id }, FILE).ok).toBe(true)
-      const before = api.getState().schedule.lists[list.id]?.attachments
-      const moved = reassignList(api, OFFICE, list.id, target.anaesthetistId)
-      if (!moved.ok) continue
-      const after = api.getState().schedule.lists[list.id]
-      expect(after?.anaesthetistId).toBe(target.anaesthetistId)
-      expect(after?.attachments).toEqual(before)
-      done = true
-      break
-    }
-    expect(done).toBe(true)
+    const target = views(source.dateISO).find((v) => v.slot.session === source.session && v.slot.anaesthetistId !== source.anaesthetistId && isOpenSlotView(v))!
+    expect(addAttachment(api, OFFICE, { kind: 'list', id: source.id }, FILE).ok).toBe(true)
+    const before = api.getState().schedule.lists[source.id]?.attachments
+    expect(reassignList(api, OFFICE, source.id, target.slot.anaesthetistId).ok).toBe(true)
+    const after = api.getState().schedule.lists[source.id]
+    expect(after?.slotId).toBe(target.slot.id)
+    expect(after?.anaesthetistId).toBe(target.slot.anaesthetistId)
+    expect(after?.attachments).toEqual(before)
   })
 })

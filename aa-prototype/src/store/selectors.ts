@@ -23,15 +23,22 @@ import type {
   Patient,
   Procedure,
   ProcedureId,
+  ScheduleSettings,
   Session,
+  Slot,
+  Anaesthetist,
+  DisplayStatusKey,
 } from '../domain/types'
 import type { BookingBillingContext } from '../domain/billing/validateBookingForBilling'
-import { listIdForSlot, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
+import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
+import { displayStatusKey, effectiveSlotTimes, isOpenSlot, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
+import { horizonFor, type Horizon } from '../domain/clock'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFeeHistory, type BctiRecord } from '../domain/billing/bcti'
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
+import { useMemo } from 'react'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
 
@@ -39,26 +46,163 @@ import { clockISO } from './mutate'
 // Plain selectors
 // ---------------------------------------------------------------------------
 
-export function listForSlot(
-  state: AppState,
-  anaesthetistId: string,
-  dateISO: string,
-  session: Session,
-): List | undefined {
-  // Slot-derived ids cover generated Lists; reassignment can move a List (or
-  // regenerate one) whose id no longer encodes its slot, so fall back to scan.
-  const direct = state.schedule.lists[listIdForSlot(anaesthetistId, dateISO, session)]
-  if (
-    direct !== undefined &&
-    direct.anaesthetistId === anaesthetistId &&
-    direct.dateISO === dateISO &&
-    direct.session === session
-  ) {
-    return direct
+// ---------------------------------------------------------------------------
+// Slots and Lists (catch-up Phase 28)
+// ---------------------------------------------------------------------------
+
+/**
+ * A session as every screen reads it: the Slot, the List in it (if any), the
+ * one displayed status (`displayStatusKey`) and the effective times. Mobile,
+ * web, admin and every finder read these same views, so a session looks the
+ * same everywhere (US-01.2.3, US-01.4.2).
+ */
+export interface SlotView {
+  slot: Slot
+  list?: List
+  displayKey: DisplayStatusKey
+  times: EffectiveSlotTimes
+}
+
+/**
+ * The slice the Slot selectors read: the two schedule records and the schedule
+ * settings. Narrow on purpose, so a component passes only what it selected.
+ */
+export interface SlotState {
+  schedule: Pick<AppState['schedule'], 'slots' | 'lists'>
+  appSettings: Pick<AppState['appSettings'], 'schedule'>
+}
+
+const listIndexCache = new WeakMap<object, Map<string, List>>()
+
+/** The List in each Slot, memoised on the `schedule.lists` record reference (a 20,000-Slot grid never scans Lists per cell). */
+export function listIndexBySlot(lists: Readonly<Record<string, List>>): Map<string, List> {
+  const cached = listIndexCache.get(lists)
+  if (cached !== undefined) return cached
+  const index = new Map<string, List>()
+  for (const list of Object.values(lists)) index.set(list.slotId, list)
+  listIndexCache.set(lists, index)
+  return index
+}
+
+interface SlotIndex {
+  byDate: Map<string, Slot[]>
+  byAnaesthetist: Map<string, Slot[]>
+}
+const slotIndexCache = new WeakMap<object, SlotIndex>()
+
+function slotIndex(slots: Readonly<Record<string, Slot>>): SlotIndex {
+  const cached = slotIndexCache.get(slots)
+  if (cached !== undefined) return cached
+  const byDate = new Map<string, Slot[]>()
+  const byAnaesthetist = new Map<string, Slot[]>()
+  for (const slot of Object.values(slots)) {
+    const d = byDate.get(slot.dateISO)
+    if (d === undefined) byDate.set(slot.dateISO, [slot])
+    else d.push(slot)
+    const a = byAnaesthetist.get(slot.anaesthetistId)
+    if (a === undefined) byAnaesthetist.set(slot.anaesthetistId, [slot])
+    else a.push(slot)
   }
-  return Object.values(state.schedule.lists).find(
-    (l) => l.anaesthetistId === anaesthetistId && l.dateISO === dateISO && l.session === session,
-  )
+  const order = (x: Slot, y: Slot) => x.dateISO.localeCompare(y.dateISO) || x.session.localeCompare(y.session)
+  for (const list of byAnaesthetist.values()) list.sort(order)
+  const index = { byDate, byAnaesthetist }
+  slotIndexCache.set(slots, index)
+  return index
+}
+
+/** The Slot for an anaesthetist, day and session, if one exists (before the start date, past the horizon or while inactive there is none). */
+export function slotFor(state: Pick<SlotState, 'schedule'>, anaesthetistId: string, dateISO: string, session: Session): Slot | undefined {
+  return state.schedule.slots[slotIdFor(anaesthetistId, dateISO, session)]
+}
+
+/** The List in a Slot, if any. */
+export function listInSlot(state: Pick<SlotState, 'schedule'>, slotId: string): List | undefined {
+  return listIndexBySlot(state.schedule.lists).get(slotId)
+}
+
+function viewOf(slot: Slot, lists: Map<string, List>, settings: ScheduleSettings): SlotView {
+  const list = lists.get(slot.id)
+  return {
+    slot,
+    ...(list !== undefined ? { list } : {}),
+    displayKey: displayStatusKey(slot, list),
+    times: effectiveSlotTimes(slot, settings),
+  }
+}
+
+/** `isOpenSlot` over a view: free and holding no List. */
+export function isOpenSlotView(view: Pick<SlotView, 'slot' | 'list'>): boolean {
+  return isOpenSlot(view.slot, view.list)
+}
+
+/** One session's view, or undefined when the Slot does not exist. */
+export function slotView(state: SlotState, slotId: string): SlotView | undefined {
+  const slot = state.schedule.slots[slotId]
+  if (slot === undefined) return undefined
+  return viewOf(slot, listIndexBySlot(state.schedule.lists), state.appSettings.schedule)
+}
+
+/** Every session on a day (any order; callers group by anaesthetist). */
+export function slotViewsForDate(state: SlotState, dateISO: string): SlotView[] {
+  const lists = listIndexBySlot(state.schedule.lists)
+  return (slotIndex(state.schedule.slots).byDate.get(dateISO) ?? []).map((slot) => viewOf(slot, lists, state.appSettings.schedule))
+}
+
+/** The open sessions (free, holding no List) on a day and session: what every finder offers. */
+export function openSlotViews(state: SlotState, dateISO: string, session: Session): SlotView[] {
+  return slotViewsForDate(state, dateISO).filter((v) => v.slot.session === session && isOpenSlotView(v))
+}
+
+/** An anaesthetist's sessions from `fromISO` to `toISO` inclusive, in date then session order. */
+export function slotViewsForAnaesthetist(
+  state: SlotState,
+  anaesthetistId: string,
+  fromISO: string,
+  toISO: string,
+): SlotView[] {
+  const lists = listIndexBySlot(state.schedule.lists)
+  return (slotIndex(state.schedule.slots).byAnaesthetist.get(anaesthetistId) ?? [])
+    .filter((slot) => slot.dateISO >= fromISO && slot.dateISO <= toISO)
+    .map((slot) => viewOf(slot, lists, state.appSettings.schedule))
+}
+
+/**
+ * A List's session times: its Slot's effective times, or the settings default
+ * for its session when the List has no Slot record (the pre-horizon backdrop).
+ */
+export function timesForList(state: SlotState, list: Pick<List, 'slotId' | 'session'>): EffectiveSlotTimes {
+  const slot = state.schedule.slots[list.slotId]
+  return effectiveSlotTimes(slot ?? { session: list.session }, state.appSettings.schedule)
+}
+
+
+const SEEDED_ORDER = new Map(ANAESTHETISTS.map((a, i) => [a.registrationNumber, i]))
+const surnameKey = (name: string) => (name.trim().split(/\s+/).at(-1) ?? name).toLowerCase()
+
+/**
+ * The anaesthetists with a session on a day (US-01.4.2, US-01.1.3): every
+ * anaesthetist in the master with a Slot that day, the seeded cast order first
+ * and added ones after by surname. Before their start date, or from today once
+ * inactive, an anaesthetist has no Slot and so no row; past days keep theirs.
+ */
+export function rosterForDate(state: { schedule: Pick<AppState['schedule'], 'slots'>; masters: Pick<AppState['masters'], 'anaesthetists'> }, dateISO: string): Anaesthetist[] {
+  const ids = new Set((slotIndex(state.schedule.slots).byDate.get(dateISO) ?? []).map((s) => s.anaesthetistId))
+  return [...ids]
+    .map((id) => state.masters.anaesthetists[id])
+    .filter((a): a is Anaesthetist => a !== undefined)
+    .sort((a, b) => {
+      const sa = SEEDED_ORDER.get(a.registrationNumber)
+      const sb = SEEDED_ORDER.get(b.registrationNumber)
+      if (sa !== undefined && sb !== undefined) return sa - sb
+      if (sa !== undefined) return -1
+      if (sb !== undefined) return 1
+      return surnameKey(a.name).localeCompare(surnameKey(b.name)) || a.registrationNumber.localeCompare(b.registrationNumber)
+    })
+}
+
+/** The live schedule horizon: the clock's today and the horizon setting (FT-01.1). */
+export function scheduleHorizon(state: Pick<AppState, 'clock' | 'appSettings'>): Horizon {
+  return horizonFor(state.clock.todayISO, state.appSettings.schedule.horizonMonths)
 }
 
 export function listsForDate(state: AppState, dateISO: string): List[] {
@@ -75,19 +219,6 @@ export function bookingsForList(state: Pick<AppState, 'schedule'>, listId: strin
   return Object.values(state.schedule.bookings)
     .filter((c) => c.listId === listId)
     .sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/**
- * An empty free session: Free availability and no live (uncancelled) Booking.
- * It carries a List state in the data until Phase 28 separates Slots from
- * Lists, but it is not an ACTIVE List in the catalogue's sense (no pairing), so
- * the Admin List drawer and the Move booking picker print no state for it
- * (catch-up Phase 15b). One test, so the two surfaces cannot drift. The
- * reassign-list guard (`reassignList`, `ReassignListFlow`) is deliberately
- * stricter: its target must hold no Booking at all, cancelled ones included.
- */
-export function isEmptyFreeSession(list: Pick<List, 'statusKey'>, listBookings: readonly Booking[]): boolean {
-  return list.statusKey === 'free' && listBookings.every((b) => b.cancellation !== undefined)
 }
 
 /** Procedures in Booking order (creation order — the billing ordinal). */
@@ -879,7 +1010,7 @@ export interface EntityCounts {
   rvgCodes: number
   modifierCodes: number
   permanentLists: number
-  availability: number
+  slots: number
   patients: number
   billableParties: number
   lists: number
@@ -899,9 +1030,9 @@ export function entityCounts(state: AppState): EntityCounts {
     rvgCodes: Object.keys(state.masters.rvgCodes).length,
     modifierCodes: Object.keys(state.masters.modifierCodes).length,
     permanentLists: Object.keys(state.masters.permanentLists).length,
-    availability: Object.keys(state.masters.availability).length,
     patients: Object.keys(state.masters.patients).length,
     billableParties: Object.keys(state.masters.billableParties).length,
+    slots: Object.keys(state.schedule.slots).length,
     lists: Object.keys(state.schedule.lists).length,
     bookings: Object.keys(state.schedule.bookings).length,
     procedures: Object.keys(state.schedule.procedures).length,
@@ -1166,4 +1297,23 @@ export function aaFeeInvoicesFor(state: Pick<AppState, 'billing'>, anaesthetistI
 /** Every fee invoice, newest first. Reads the billing mirror only. */
 export function allAaFeeInvoices(state: Pick<AppState, 'billing'>): AaFeeInvoiceRow[] {
   return Object.values(state.billing.aaFeeInvoices).sort(newestFirst).map(aaFeeRow)
+}
+
+/** A List's session times as a hook (stable: selects the records, derives with useMemo). */
+export function useListTimes(list: Pick<List, 'slotId' | 'session'> | undefined): EffectiveSlotTimes | undefined {
+  const slot = useAppStore((s) => (list !== undefined ? s.schedule.slots[list.slotId] : undefined))
+  const settings = useAppStore((s) => s.appSettings.schedule)
+  const session = list?.session
+  return useMemo(
+    () => (session === undefined ? undefined : effectiveSlotTimes(slot ?? { session }, settings)),
+    [slot, settings, session],
+  )
+}
+
+/** A session's view as a hook. */
+export function useSlotView(slotId: string | undefined): SlotView | undefined {
+  const slot = useAppStore((s) => (slotId !== undefined ? s.schedule.slots[slotId] : undefined))
+  const lists = useAppStore((s) => s.schedule.lists)
+  const settings = useAppStore((s) => s.appSettings.schedule)
+  return useMemo(() => (slot === undefined ? undefined : viewOf(slot, listIndexBySlot(lists), settings)), [slot, lists, settings])
 }

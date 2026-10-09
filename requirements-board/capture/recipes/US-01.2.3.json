@@ -6,7 +6,7 @@
     {
       "name": "status-without-bookings",
       "app": "admin",
-      "caption": "Unavailable and holiday Lists with no bookings",
+      "caption": "Unavailable and holiday sessions with no bookings",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
@@ -21,13 +21,135 @@
     {
       "name": "status-without-bookings",
       "app": "web",
-      "caption": "Leave sessions on my Lists with no bookings",
+      "caption": "Leave sessions with no bookings",
       "start": "/web/lists",
       "states": [
         {
           "steps": [],
           "highlight": [
             "tr:has-text(\"Annual leave / back Monday\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list-in-place",
+      "app": "admin",
+      "caption": "A List shows in place of the session's status",
+      "start": "/admin/day/2026-07-21",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-21"
+        },
+        {
+          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list-in-place",
+      "app": "web",
+      "caption": "A List shows in place of the session's status, on the web Lists",
+      "start": "/web/lists",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-22"
+        },
+        {
+          "click": "button[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lists-assigned",
+      "app": "mobile",
+      "caption": "A List shows in place of the session's status, on all three apps",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "trigger": "office-assigns-next-free"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-slot-id=\"S-34821-2026-07-22-PM\"]"
           ]
         }
       ]

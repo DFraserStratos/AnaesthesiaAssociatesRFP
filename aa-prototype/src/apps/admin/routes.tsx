@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { format, parseISO } from 'date-fns'
+import { accent, neutral } from '../../theme/tokens'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
-import { useAppStore, useToday } from '../../store'
+import { listInSlot, useAppStore, useToday } from '../../store'
 import { DayNav } from './components/DayNav'
+import { AvailabilityFinderSheet } from './flows/AvailabilityFinderSheet'
 import { DayGrid } from './components/DayGrid'
 import { RightRail } from './components/RightRail'
 import { AdminBookingDetail } from './screens/AdminBookingDetail'
@@ -42,6 +46,12 @@ export function AdminDayRoute() {
   const ctx = useAdminOutlet()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
+  const [finderOpen, setFinderOpen] = useState(false)
+  // Find available starts on the session of the empty session open in the drawer, else AM.
+  const selectedEmpty = useAppStore((s) =>
+    ctx.selectedSlotId !== null && listInSlot(s, ctx.selectedSlotId) === undefined ? s.schedule.slots[ctx.selectedSlotId] : undefined,
+  )
+  const finderSession = selectedEmpty?.session ?? 'AM'
 
   // A junk date would throw out of `format(parseISO(...))`, so it never reaches
   // the grid — fall back to the demo clock's today.
@@ -51,6 +61,10 @@ export function AdminDayRoute() {
     // Row order is a view preference: replace, so Back is not a sort toggle.
     setParams(mode === 'az' ? { sort: 'az' } : {}, { replace: true })
   }
+
+  // A day past the schedule horizon (reached by +4w or a URL) has no sessions
+  // yet: say so plainly instead of drawing an empty grid (FT-01.1).
+  const beyondHorizon = dateISO > ctx.horizonEndISO
 
   /** Moving day is a navigation step, but it keeps the chosen row order. */
   function goToDay(next: string) {
@@ -62,21 +76,36 @@ export function AdminDayRoute() {
     <>
       <DayNav
         selectedDateISO={dateISO}
-        summary={ctx.summary}
+        summary={beyondHorizon ? 'No sessions: this day is past the schedule horizon' : ctx.summary}
         sortMode={ctx.sortMode}
         onSort={setSort}
         onNavigateDate={goToDay}
         todayISO={ctx.todayISO}
+        maxDateISO={ctx.horizonEndISO}
+        {...(beyondHorizon ? {} : { onFindAvailable: () => setFinderOpen(true) })}
+      />
+      <AvailabilityFinderSheet
+        open={finderOpen}
+        dateISO={dateISO}
+        initialSession={finderSession}
+        onClose={() => setFinderOpen(false)}
+        onPick={(slotId, surgeonId) => {
+          setFinderOpen(false)
+          ctx.onAssignFromFinder(slotId, surgeonId)
+        }}
       />
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <DayGrid
-          anaesthetists={ctx.anaesthetists}
-          listsByAnaesthetist={ctx.listsByAnaesthetist}
-          masters={ctx.masters}
-          activeBookingCounts={ctx.activeBookingCounts}
-          warningFlags={ctx.warningFlags}
-          onSelectList={ctx.onSelectList}
-        />
+        {beyondHorizon ? (
+          <BeyondHorizon endISO={ctx.horizonEndISO} onGoToEnd={() => goToDay(ctx.horizonEndISO)} />
+        ) : (
+          <DayGrid
+            anaesthetists={ctx.anaesthetists}
+            viewsByAnaesthetist={ctx.viewsByAnaesthetist}
+            masters={ctx.masters}
+            warningFlags={ctx.warningFlags}
+            onSelectSlot={ctx.onSelectSlot}
+          />
+        )}
         <RightRail
           monthDateISO={dateISO}
           selectedDateISO={dateISO}
@@ -253,4 +282,40 @@ export function AdminAnaesthetistRecordRoute() {
 
 export function AdminAuditRoute() {
   return <AuditViewer />
+}
+
+/** The Day view's state for a date past the schedule horizon (catch-up Phase 28; FT-01.1). */
+function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () => void }) {
+  return (
+    <div
+      data-shot="admin-day-beyond-horizon"
+      style={{
+        flex: 1,
+        minWidth: 0,
+        background: neutral.surface,
+        border: `1px solid ${neutral.line}`,
+        borderRadius: 14,
+        padding: '40px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        alignItems: 'flex-start',
+        boxShadow: '0 1px 2px rgba(23,35,32,0.05),0 2px 6px rgba(23,35,32,0.05)',
+      }}
+    >
+      <div style={{ fontSize: 16, fontWeight: 600, color: neutral.ink }}>
+        Beyond the schedule horizon, which ends {format(parseISO(endISO), 'EEE d MMM yyyy')}.
+      </div>
+      <div style={{ fontSize: 13, color: neutral.slate, maxWidth: 560, lineHeight: '19px' }}>
+        Sessions are created up to the horizon and roll forward each day. The horizon length is set in Master data, Schedule settings.
+      </div>
+      <button
+        type="button"
+        onClick={onGoToEnd}
+        style={{ marginTop: 6, border: 0, padding: 0, background: 'transparent', color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+      >
+        Go to the last day
+      </button>
+    </div>
+  )
 }

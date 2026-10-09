@@ -46,10 +46,7 @@ export {
   cancelBooking,
   editBooking,
   editProcedure,
-  reassignList,
   reassignBooking,
-  setAvailability,
-  requestCover,
   editList,
   editRefusal,
   getBooking,
@@ -58,6 +55,23 @@ export {
   type ProcedurePatch,
   type ListPatch,
 } from './lifecycle'
+// Slots and Lists (catch-up Phase 28). `placeListOnSlot`, `moveListToSlot` and
+// the generation helpers stay internal to the store.
+export {
+  assignListToSlot,
+  reassignList,
+  setAvailability,
+  setSlotTimes,
+  setSlotDefaultTimes,
+  setHorizonMonths,
+  previewHorizonChange,
+  requestCover,
+  HORIZON_MONTHS_MIN,
+  HORIZON_MONTHS_MAX,
+  type AssignListFields,
+  type SlotTimesPatch,
+  type HorizonChangePreview,
+} from './slotActions'
 export {
   upsertPatient,
   editPatient,
@@ -163,7 +177,13 @@ export {
   clearAllSamples,
   type WarningSample,
 } from './warningSamples'
-export { authoriseAsSimulatedOffice, officeStandInRefusal } from './officeStandIn'
+export {
+  assignNextFreeSlotAsSimulatedOffice,
+  authoriseAsSimulatedOffice,
+  nextOpenSlotFor,
+  officeStandInRefusal,
+  STAND_IN_ASSIGN_CHOICES,
+} from './officeStandIn'
 export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'

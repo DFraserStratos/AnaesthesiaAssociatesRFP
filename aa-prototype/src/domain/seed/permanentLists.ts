@@ -3,13 +3,13 @@
  * Souter's reproduce her design week exactly; the rest are derived from the
  * two design days (Tue 21 and Thu 23 July) plus plausible filler, sized so
  * roughly 80% of surgeon-assigned Lists derive from a Permanent List (the
- * RFP's figure; the remainder are office-assigned ad hoc bookings from the
- * canvas generator's slot RNG).
+ * RFP's figure; the remainder are the office's ad hoc assignments the seed
+ * records in its demo window, `seedRecordedWindow`).
  *
  * dayOfWeek matches Date.getDay(): 1 = Monday ... 5 = Friday.
  */
 
-import type { PermanentList } from '../types'
+import type { ListKind, PermanentList } from '../types'
 import { ANAE, HOSP, SURG } from './cast'
 
 let n = 0
@@ -17,7 +17,7 @@ function pl(
   anaesthetistId: string,
   dayOfWeek: 1 | 2 | 3 | 4 | 5,
   session: 'AM' | 'PM',
-  statusKey: 'private' | 'public' | 'preop',
+  kind: ListKind,
   hospitalId: string | null,
   surgeonId: string | null,
   notes?: string,
@@ -28,9 +28,15 @@ function pl(
     anaesthetistId,
     dayOfWeek,
     session,
-    statusKey,
+    kind,
     hospitalId,
     surgeonId,
+  }
+  // Pre-op clinics run shorter sessions; the projection writes these as the
+  // Slot's own times (catch-up Phase 28; before, the generator hard-coded them).
+  if (kind === 'preop') {
+    row.startTime = session === 'AM' ? '09:00' : '13:00'
+    row.endTime = session === 'AM' ? '12:00' : '17:00'
   }
   if (notes !== undefined) row.notes = notes
   return row

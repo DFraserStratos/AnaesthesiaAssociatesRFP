@@ -130,7 +130,7 @@ short-notice cover.
 ### Goals
 
 - See the entire day across the anaesthetist roster.
-- Find a Free AM or PM slot quickly when a surgeon's room calls.
+- Find a free AM or PM session quickly when a surgeon's room calls (Find available on the Day view).
 - Keep hospital, surgeon, times and Bookings accurate.
 - Reconcile conflicts from anaesthetist availability and hospital holidays.
 - Move one patient Booking when a booking changes.

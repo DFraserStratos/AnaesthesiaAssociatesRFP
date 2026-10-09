@@ -6,7 +6,7 @@
     {
       "name": "assign-free-list",
       "app": "admin",
-      "caption": "Assign a hospital to a free List",
+      "caption": "Assigning a surgeon and hospital turns a free session into a List",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
@@ -20,9 +20,76 @@
             }
           ],
           "highlight": [
+            "[data-shot=admin-slot-drawer]"
+          ],
+          "caption": "A free session: Assign List, Book (phone advice), Edit times and History, and no List state"
+        },
+        {
+          "state": "assign",
+          "steps": [
+            {
+              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+              "value": "S-REID"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-assign-list]"
+          ],
+          "caption": "Assign List: hospital, surgeon (a not-preferred surgeon is grouped apart and warns) and kind"
+        },
+        {
+          "state": "assigned",
+          "steps": [
+            {
+              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+              "value": "H-STG"
+            },
+            {
+              "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+              "value": "S-HALE"
+            },
+            {
+              "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
             "[data-testid=admin-list-drawer]"
           ],
-          "caption": "A free List, with Book (phone advice)"
+          "caption": "The session now holds an ACTIVE List"
         },
         {
           "state": "book",
@@ -40,15 +107,15 @@
               "wait": 400
             },
             {
-              "select": "[role=dialog] select >> nth=0",
-              "value": "Forte Health"
+              "select": "[role=dialog] [data-shot=assign-hospital]",
+              "value": "H-FORTE"
             },
             {
               "wait": 300
             },
             {
-              "select": "[role=dialog] select >> nth=1",
-              "value": "Mr C. Okafor"
+              "select": "[role=dialog] select[data-shot=surgeon-picker]",
+              "value": "S-OKAFOR"
             },
             {
               "wait": 300
@@ -57,7 +124,80 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Booking the free List for a surgeon and hospital"
+          "caption": "Book (phone advice): the surgeon is required, times prefilled 13:00 to 17:30"
+        }
+      ]
+    },
+    {
+      "name": "assigned-row",
+      "app": "web",
+      "caption": "The assigned session on the anaesthetist's web Lists",
+      "start": "/web/lists",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-22"
+        },
+        {
+          "click": "button[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "select": "[data-shot=admin-assign-list] [data-shot=assign-hospital]",
+          "value": "H-STG"
+        },
+        {
+          "select": "[data-shot=admin-assign-list] select[data-shot=surgeon-picker]",
+          "value": "S-HALE"
+        },
+        {
+          "click": "[data-shot=admin-assign-list] >> role=button[name=\"Assign List\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "assigned-row",
+      "app": "mobile",
+      "caption": "The assigned session on the anaesthetist's mobile Lists",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "trigger": "office-assigns-next-free"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+          ]
         }
       ]
     }

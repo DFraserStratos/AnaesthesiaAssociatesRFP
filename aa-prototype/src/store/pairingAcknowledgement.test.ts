@@ -9,16 +9,18 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
-import { editList, reassignList } from './lifecycle'
+import { editList } from './lifecycle'
+import { reassignList } from './slotActions'
 import { addPermanentList, editPermanentList } from './mastersActions'
 import { addPairingPreference, endPairingPreference } from './officePrivate'
-import { ANAE, SURG, listIdForSlot } from '../domain/seed'
+import { ANAE, SURG } from '../domain/seed'
+import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SHARMA: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-const SHARMA_AM = listIdForSlot(ANAE.sharma, '2026-07-21', 'AM')
-const CHEN_PM = listIdForSlot(ANAE.chen, '2026-07-21', 'PM')
-const RUTHERFORD_WED = listIdForSlot(ANAE.rutherford, '2026-07-22', 'AM')
+const SHARMA_AM = projectedListId(ANAE.sharma, '2026-07-21', 'AM')
+const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
+const RUTHERFORD_WED = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
 
 function acks(api: ReturnType<typeof createAppStore>) {
   return api.getState().audit.filter((a) => a.action.endsWith('.pairingAcknowledged'))
@@ -102,7 +104,7 @@ describe('reassignList', () => {
 describe('Permanent Lists', () => {
   it('adding one with a not-preferred usual surgeon acknowledges; editing only when the pairing changes', () => {
     const api = createAppStore()
-    const added = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', statusKey: 'private', hospitalId: null, surgeonId: SURG.reid })
+    const added = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: null, surgeonId: SURG.reid })
     expect(added.ok).toBe(true)
     expect(acks(api).map((a) => a.action)).toEqual(['permanentList.pairingAcknowledged'])
     const id = added.ok ? added.value.id : ''
@@ -111,7 +113,7 @@ describe('Permanent Lists', () => {
     editPermanentList(api, OFFICE, id, { surgeonId: SURG.hale })
     editPermanentList(api, OFFICE, id, { surgeonId: SURG.reid })
     expect(acks(api)).toHaveLength(2)
-    const clear = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'AM', statusKey: 'private', hospitalId: null, surgeonId: SURG.whitford })
+    const clear = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'AM', kind: 'private', hospitalId: null, surgeonId: SURG.whitford })
     expect(clear.ok).toBe(true)
     expect(acks(api)).toHaveLength(2)
   })

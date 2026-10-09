@@ -109,3 +109,23 @@ describe('backfillMerge · AA fee settings (catch-up Phase 16)', () => {
     expect(backfillMerge(fresh as never, persisted).appSettings.aaFee).toEqual(edited)
   })
 })
+
+describe('backfillMerge · schedule settings and Slots (catch-up Phase 28)', () => {
+  it('gives a snapshot from before the schedule settings the seeded record, and keeps a persisted one whole', () => {
+    const fresh = freshAppState()
+    const { schedule: _omit, ...withoutSchedule } = fresh.appSettings
+    void _omit
+    const old = { ...fresh, appSettings: withoutSchedule }
+    expect(backfillMerge(fresh as never, old).appSettings.schedule).toEqual(fresh.appSettings.schedule)
+    const edited = { horizonMonths: 6, defaultTimes: { AM: { startTime: '08:00', endTime: '12:00' }, PM: { startTime: '13:30', endTime: '17:30' } } }
+    const persisted = { ...fresh, appSettings: { ...fresh.appSettings, schedule: edited } }
+    expect(backfillMerge(fresh as never, persisted).appSettings.schedule).toEqual(edited)
+  })
+
+  it('discards a v20 store (Lists that were also empty sessions) and reseeds Slots', () => {
+    expect(PERSIST_VERSION).toBe(21)
+    const fresh = freshAppState()
+    expect(Object.keys(fresh.schedule.slots).length).toBeGreaterThan(0)
+    expect('availability' in fresh.masters).toBe(false)
+  })
+})

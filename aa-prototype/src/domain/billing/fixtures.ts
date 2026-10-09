@@ -23,6 +23,7 @@ export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthet
     unitValue: 30,
     gstPeriod: 'biMonthly',
     hpiId: '91ZBBB',
+    startDateISO: '2015-01-05',
     active: true,
     ...overrides,
   }

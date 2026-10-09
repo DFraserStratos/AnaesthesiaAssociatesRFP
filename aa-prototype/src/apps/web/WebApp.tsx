@@ -73,7 +73,7 @@ export function WebApp() {
       {cover !== null && (
         <RequestCoverSheet
           open
-          listId={cover.listId}
+          slotId={cover.slotId}
           actor={actor}
           kind={cover.kind}
           personName={cover.personName}

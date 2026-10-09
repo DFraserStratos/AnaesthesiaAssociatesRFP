@@ -1,7 +1,7 @@
 {
   "id": "US-01.3.6",
   "status": "partial",
-  "absentReason": "Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker. The availability finder (Phase 28) and Draft List assignment (Phase 31) reuse the same ordering.",
+  "absentReason": "Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker and the Find available sheet on the Day view (Phase 28). Draft List assignment (Phase 31) reuses the same ordering.",
   "shots": [
     {
       "name": "tier-record",
@@ -73,6 +73,34 @@
           "highlight": [
             "[data-shot=tier-filter]",
             "[data-shot=candidates-clear]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "finder-tiers",
+      "app": "admin",
+      "caption": "Find available on the Day view: free anaesthetists by tier, shuffled within a tier, office only",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=admin-availability-finder-open]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-availability-finder] >> role=button[name=\"PM\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-clear]",
+            "[data-shot=tier-filter]"
           ]
         }
       ]

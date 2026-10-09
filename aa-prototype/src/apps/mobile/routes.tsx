@@ -24,7 +24,8 @@ import { useMobileOutlet } from './outlet'
  */
 
 interface OfferTarget {
-  listId: string
+  /** The open session offered (a Slot id). */
+  slotId: string
   slotLabel: string
 }
 
@@ -100,11 +101,11 @@ export function MobileListsRoute() {
   // link wipes, which is the same unreliability, just hidden.
   const popLayer = depth === 2 ? backToList : depth === 1 ? backToLists : undefined
 
-  function offerCover(id: string) {
-    const list = useAppStore.getState().schedule.lists[id]
+  function offerCover(slotId: string) {
+    const slot = useAppStore.getState().schedule.slots[slotId]
     const slotLabel =
-      list !== undefined ? `${format(parseISO(list.dateISO), 'EEE d MMM')} · ${list.session}` : 'Free session'
-    setOffer({ listId: id, slotLabel })
+      slot !== undefined ? `${format(parseISO(slot.dateISO), 'EEE d MMM')} · ${slot.session}` : 'Free session'
+    setOffer({ slotId, slotLabel })
   }
 
   const listsLayers: SlideLayer[] = [
@@ -170,7 +171,7 @@ export function MobileListsRoute() {
       {offer !== null && (
         <RequestCoverSheet
           open
-          listId={offer.listId}
+          slotId={offer.slotId}
           actor={actor}
           kind="offer"
           personName={personaName}

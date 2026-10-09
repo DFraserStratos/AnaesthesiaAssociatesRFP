@@ -131,7 +131,7 @@ describe('hospitals and the anaesthetist HPI CPN', () => {
 
   it("addAnaesthetist refuses a surgeon's HPI CPN and stores a typed one upper-cased", () => {
     const api = createAppStore()
-    const base = { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, gstPeriod: 'monthly' as const }
+    const base = { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, gstPeriod: 'monthly' as const, startDateISO: '2026-07-21' }
     const clash = addAnaesthetist(api, OFFICE, { ...base, hpiId: '47reia' })
     expect(clash.ok ? '' : clash.message).toBe('That HPI CPN already belongs to Ms A. Reid.')
     expect(addAnaesthetist(api, OFFICE, { ...base, hpiId: ' 24newp ' }).ok).toBe(true)

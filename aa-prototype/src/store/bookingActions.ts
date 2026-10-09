@@ -30,7 +30,9 @@ import type { AppStoreApi } from './appStore'
 import { editRefusal, getBooking } from './lifecycle'
 import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
-import { bookingsForList, listForSlot, proceduresForBooking } from './selectors'
+import { listInSlot, proceduresForBooking, slotFor } from './selectors'
+import { isOpenSlot } from '../domain/slots'
+import { placeListOnSlot, withoutCoverRequest } from './slotActions'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -183,11 +185,14 @@ export function createBooking(
  * is a NEW linked Booking (`bookingType: 'postOpAddendum'`, `addendumOfBookingId`) that
  * runs its own capture -> submit -> authorise -> bill cycle.
  *
- * It lands on the original anaesthetist's empty free session for today (state
- * ACTIVE; AM before PM) — an empty List is required because submission is completion-gated
- * for the whole List, so a shared List would block on incomplete siblings or
- * bill them together (same pattern as Phase 06 phone-advice booking). Refused
- * `noOpenSession` when neither of today's sessions is an empty free session (state ACTIVE).
+ * It goes on a NEW List in the original anaesthetist's open session today (AM
+ * before PM): a List of its own, because submission is completion-gated for
+ * the whole List, so a shared List would block on incomplete siblings or bill
+ * them together. The List copies the original List's hospital, surgeon and
+ * kind and is created with the Booking in one commit (catch-up Phase 28:
+ * empty sessions are no longer Lists). INTERIM until Phase 38b replaces the
+ * addendum Booking with an additional invoice. Refused `noOpenSession` when
+ * neither of today's sessions is open.
  * The patient is reused; the billing setup is inherited from the original's
  * first procedure. Audited `booking.create` + `procedure.create`; original untouched.
  */
@@ -210,34 +215,33 @@ export function addPostOpAddendum(
 
   const anaesthetistId = originalList.anaesthetistId
   const todayISO = state.clock.todayISO
-  const candidates = (['AM', 'PM'] as const)
-    .map((session) => listForSlot(state, anaesthetistId, todayISO, session))
-    .filter((l): l is NonNullable<typeof l> => l !== undefined)
-  const target = candidates.find(
-    (l) =>
-      l.state === 'ACTIVE' &&
-      l.statusKey === 'free' &&
-      l.hospitalId === undefined &&
-      l.surgeonId === undefined &&
-      bookingsForList(state, l.id).filter((c) => c.cancellation === undefined).length === 0,
-  )
+  const target = (['AM', 'PM'] as const)
+    .map((session) => slotFor(state, anaesthetistId, todayISO, session))
+    .find((slot) => slot !== undefined && isOpenSlot(slot, listInSlot(state, slot.id)))
   if (target === undefined) {
     return refuse(
       'noOpenSession',
-      "No free, empty session is open today for this anaesthetist to hold the post-op addendum. Free one of today's sessions first.",
+      "No free session today for this anaesthetist to hold the post-op addendum. Free one of today's sessions first.",
     )
   }
-
-  const rights = editRefusal(actor, target)
+  // The new List is ACTIVE and the original anaesthetist's: the usual edit rights apply to it.
+  const rights = editRefusal(actor, { ...originalList, state: 'ACTIVE' })
   if (rights !== null) return rights
 
   const first = proceduresForBooking(state, originalBookingId)[0]
 
   let bookingId = ''
-  const listId = target.id
+  let listId = ''
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    let counters = s.counters
+    const placed = placeListOnSlot(s, s.counters, target, {
+      kind: originalList.kind,
+      ...(originalList.hospitalId !== undefined ? { hospitalId: originalList.hospitalId } : {}),
+      ...(originalList.surgeonId !== undefined ? { surgeonId: originalList.surgeonId } : {}),
+    })
+    listId = placed.list.id
+    metas.push(placed.meta)
+    let counters = placed.counters
     const bookingAlloc = allocateId(counters, 'booking')
     counters = bookingAlloc.counters
     bookingId = bookingAlloc.id
@@ -301,6 +305,9 @@ export function addPostOpAddendum(
     return {
       schedule: {
         ...s.schedule,
+        lists: { ...s.schedule.lists, [listId]: placed.list },
+        // The session is no longer open: any cover marker on it goes, as on assignment.
+        ...(target.coverRequest !== undefined ? { slots: { ...s.schedule.slots, [target.id]: withoutCoverRequest(target) } } : {}),
         bookings: { ...s.schedule.bookings, [bookingId]: booking },
         procedures: { ...s.schedule.procedures, [procedureId]: procedure },
       },

@@ -21,7 +21,11 @@ import { addContractPrice, createContract, deleteContract, editContract, editCon
 import type { Actor } from './mutate'
 import { procedureFee } from '../shared/capture/feeContext'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
-import { ANAE, CONTRACT, HOSP, SEED, SEED_MARKERS, SURG, generateListsForDates } from '../domain/seed'
+import { ANAE, CONTRACT, HOSP, SEED_LEAVE, SEED_MARKERS, SURG, generateCanvasForDates } from '../domain/seed'
+import { slotIdFor } from '../domain/slots'
+import { assignListToSlot, reassignList } from './slotActions'
+import { advanceClockDays } from './clockActions'
+import { rosterForDate } from './selectors'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -42,15 +46,18 @@ const MORRISON_LIST = marker('submittedListMorrison')
 describe('editAnaesthetist', () => {
   it('updates unit value / contact / active and audits before to after', () => {
     const api = createAppStore()
-    const outcome = editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 40, phone: '021 000 0000', active: false })
+    const outcome = editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 40, phone: '021 000 0000' })
     expect(outcome.ok).toBe(true)
     const anae = api.getState().masters.anaesthetists[ANAE.souter]
     expect(anae?.unitValue).toBe(40)
     expect(anae?.phone).toBe('021 000 0000')
-    expect(anae?.active).toBe(false)
     const entry = api.getState().audit.at(-1)
     expect(entry?.action).toBe('anaesthetist.update')
     expect(entry?.entityId).toBe(ANAE.souter)
+    // Souter has Lists ahead, so switching her off is refused until they are reassigned (catch-up Phase 28).
+    const off = editAnaesthetist(api, OFFICE, ANAE.souter, { active: false })
+    expect(off.ok ? '' : off.code).toBe('listsAhead')
+    expect(api.getState().masters.anaesthetists[ANAE.souter]?.active).toBe(true)
   })
 
   it('re-prices a Type 1 fee that reads the anaesthetist unit value', () => {
@@ -82,57 +89,136 @@ describe('editAnaesthetist', () => {
   })
 })
 
-describe('addAnaesthetist', () => {
-  it('adds an anaesthetist and extends the canvas forward, deep-matching a fresh generation', () => {
+describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1.3)', () => {
+  const NEW = { registrationNumber: '99001', name: 'Dr New Person', phone: '021 555 9001', email: 'n.person@aa-associates.example', unitValue: 30, gstPeriod: 'monthly' as const }
+
+  function theirSlots(api: ReturnType<typeof createAppStore>, reg = '99001') {
+    return Object.values(api.getState().schedule.slots).filter((s) => s.anaesthetistId === reg)
+  }
+
+  it('from today: two free Slots per day to the horizon end, deep-matching a fresh generation, audited', () => {
     const api = createAppStore()
     const todayISO = api.getState().clock.todayISO
-    const outcome = addAnaesthetist(api, OFFICE, {
-      registrationNumber: '99001',
-      name: 'Dr New Person',
-      phone: '021 555 9001',
-      email: 'n.person@aa-associates.example',
-      unitValue: 30,
-      gstPeriod: 'monthly',
-    })
+    const outcome = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: todayISO })
     expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
     const state = api.getState()
-    expect(state.masters.anaesthetists['99001']?.name).toBe('Dr New Person')
+    expect(state.masters.anaesthetists['99001']).toMatchObject({ name: 'Dr New Person', startDateISO: todayISO, active: true })
 
-    // 2 Lists per day across their forward horizon (the canvas invariant).
-    const theirs = Object.values(state.schedule.lists).filter((l) => l.anaesthetistId === '99001')
-    const byDate: Record<string, number> = {}
-    for (const l of theirs) byDate[l.dateISO] = (byDate[l.dateISO] ?? 0) + 1
-    expect(theirs.length).toBeGreaterThan(0)
-    expect(Object.values(byDate).every((n) => n === 2)).toBe(true)
+    const slots = theirSlots(api)
+    const dates = enumerateDatesISO(todayISO, horizonFor(todayISO, 4).endISO)
+    expect(slots.length).toBe(dates.length * 2)
+    expect(outcome.value.generatedSlots).toBe(slots.length)
+    expect(outcome.value.fromISO).toBe(todayISO)
+    // A new anaesthetist has no recurring booking: every session is free, and no List is created.
+    expect(slots.every((s) => s.status === 'free')).toBe(true)
+    expect(Object.values(state.schedule.lists).some((l) => l.anaesthetistId === '99001')).toBe(false)
 
-    // Deep-match a fresh full-horizon generation for just this anaesthetist.
-    const dates = enumerateDatesISO(todayISO, horizonFor(todayISO).endISO)
-    const fresh = generateListsForDates(
-      {
-        seed: SEED,
-        anaesthetistIds: ['99001'],
-        permanentLists: Object.values(state.masters.permanentLists),
-        availability: Object.values(state.masters.availability),
-        holidays: Object.values(state.masters.holidays),
-      },
+    const fresh = generateCanvasForDates(
+      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], permanentLists: Object.values(state.masters.permanentLists), leave: SEED_LEAVE, holidays: Object.values(state.masters.holidays) },
       dates,
     )
-    expect(fresh.length).toBe(theirs.length)
-    const stored = new Map(theirs.map((l) => [l.id, l]))
-    for (const f of fresh) expect(stored.get(f.id)).toEqual(f)
+    const stored = new Map(slots.map((s) => [s.id, s]))
+    for (const f of fresh.slots) expect(stored.get(f.id)).toEqual(f)
 
-    // Audited create + one canvas.generate summary.
     const actions = state.audit.slice(-2).map((a) => a.action)
     expect(actions).toEqual(['anaesthetist.create', 'canvas.generate'])
+    expect(state.audit.at(-1)?.after).toMatchObject({ slots: slots.length, lists: 0, fromISO: todayISO })
   })
 
-  it('rejects a duplicate registration number and is office-only', () => {
+  it('from a future date inside the horizon: no Slot before it', () => {
     const api = createAppStore()
-    const dup = addAnaesthetist(api, OFFICE, { registrationNumber: ANAE.souter, name: 'Clash', phone: '', email: '', unitValue: 30, gstPeriod: 'monthly' })
-    expect(dup.ok).toBe(false)
-    if (!dup.ok) expect(dup.code).toBe('duplicateRegistration')
-    const denied = addAnaesthetist(api, SOUTER, { registrationNumber: '90000', name: 'X', phone: '', email: '', unitValue: 30, gstPeriod: 'monthly' })
-    expect(denied.ok).toBe(false)
+    expect(addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' }).ok).toBe(true)
+    const slots = theirSlots(api)
+    expect(slots.length).toBeGreaterThan(0)
+    expect(slots.every((s) => s.dateISO >= '2026-08-03')).toBe(true)
+    expect(slots.some((s) => s.dateISO === '2026-08-03')).toBe(true)
+  })
+
+  it('from a date beyond the horizon: none yet, then the roll-forward creates them when the horizon reaches it', () => {
+    const api = createAppStore()
+    const end = horizonFor(api.getState().clock.todayISO, 4).endISO
+    const outcome = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-23' })
+    expect(end).toBe('2026-11-21')
+    expect(outcome.ok && outcome.value.generatedSlots).toBe(0)
+    expect(theirSlots(api)).toHaveLength(0)
+    advanceClockDays(api, 3)
+    const after = theirSlots(api)
+    expect(after.map((s) => s.dateISO).sort()).toEqual(['2026-11-23', '2026-11-23', '2026-11-24', '2026-11-24'])
+  })
+
+  it('refuses a missing or malformed start date, a duplicate registration number, and is office-only', () => {
+    const api = createAppStore()
+    const bad = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '' })
+    expect(bad.ok ? '' : bad.code).toBe('invalidStartDate')
+    const dup = addAnaesthetist(api, OFFICE, { ...NEW, registrationNumber: ANAE.souter, startDateISO: '2026-07-21' })
+    expect(dup.ok ? '' : dup.code).toBe('duplicateRegistration')
+    expect(addAnaesthetist(api, SOUTER, { ...NEW, startDateISO: '2026-07-21' }).ok).toBe(false)
+  })
+})
+
+describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3, FT-01.1)', () => {
+  const NEW = { registrationNumber: '99002', name: 'Dr Second Person', phone: '', email: '', unitValue: 30, gstPeriod: 'monthly' as const }
+  const slotsOf = (api: ReturnType<typeof createAppStore>) =>
+    Object.values(api.getState().schedule.slots).filter((s) => s.anaesthetistId === '99002')
+
+  it('moving the start date earlier fills the Slots in, later removes the early ones, and nothing before today is touched', () => {
+    const api = createAppStore()
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' })
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-07-29' }).ok).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO === '2026-07-29')).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO < '2026-07-29')).toBe(false)
+    expect(api.getState().audit.at(-1)?.action).toBe('canvas.generate')
+
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-08-05' }).ok).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO < '2026-08-05')).toBe(false)
+    expect(api.getState().audit.at(-1)?.action).toBe('canvas.trim')
+
+    // A start date in the past never creates past Slots (only today on is touched).
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-07-01' }).ok).toBe(true)
+    expect(slotsOf(api).every((s) => s.dateISO >= '2026-07-21')).toBe(true)
+  })
+
+  it('refuses a later start date while a removed session holds a List (listsBeforeStart)', () => {
+    const api = createAppStore()
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' })
+    const slotId = slotIdFor('99002', '2026-08-03', 'AM')
+    expect(assignListToSlot(api, OFFICE, slotId, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
+    const before = api.getState()
+    const out = editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-08-04' })
+    expect(out.ok ? '' : out.code).toBe('listsBeforeStart')
+    expect(out.ok ? '' : out.message).toBe('Dr Second Person has 1 List before that date. Reassign it first.')
+    expect(api.getState().schedule).toBe(before.schedule)
+  })
+
+  it('switching inactive removes the Slots from today on (refused while a List stands); active again brings them back', () => {
+    const api = createAppStore()
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-07-21' })
+    const slotId = slotIdFor('99002', '2026-07-22', 'PM')
+    expect(assignListToSlot(api, OFFICE, slotId, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
+    const refused = editAnaesthetist(api, OFFICE, '99002', { active: false })
+    expect(refused.ok ? '' : refused.code).toBe('listsAhead')
+    expect(refused.ok ? '' : refused.message).toBe('Dr Second Person has 1 List from today. Reassign it first.')
+    expect(api.getState().masters.anaesthetists['99002']?.active).toBe(true)
+
+    const listId = Object.values(api.getState().schedule.lists).find((l) => l.slotId === slotId)!.id
+    expect(reassignList(api, OFFICE, listId, ANAE.souter).ok).toBe(true)
+    expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
+    expect(slotsOf(api)).toHaveLength(0)
+    expect(rosterForDate(api.getState(), '2026-07-22').some((a) => a.registrationNumber === '99002')).toBe(false)
+
+    expect(editAnaesthetist(api, OFFICE, '99002', { active: true }).ok).toBe(true)
+    expect(slotsOf(api).length).toBe(enumerateDatesISO('2026-07-21', '2026-11-21').length * 2)
+  })
+
+  it('an inactive anaesthetist gets no Slots on roll-forward, and keeps past days', () => {
+    const api = createAppStore()
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-07-21' })
+    advanceClockDays(api, 1)
+    expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
+    advanceClockDays(api, 2)
+    // Only Tue 21, the day before today when the switch went off, keeps its two Slots.
+    expect(slotsOf(api).map((s) => s.dateISO)).toEqual(['2026-07-21', '2026-07-21'])
   })
 })
 
@@ -176,7 +262,7 @@ describe('permanent lists', () => {
       anaesthetistId: ANAE.souter,
       dayOfWeek: 3,
       session: 'AM',
-      statusKey: 'private',
+      kind: 'private',
       hospitalId: HOSP.stg,
       surgeonId: SURG.hale,
       notes: 'Wed ortho',
@@ -193,8 +279,21 @@ describe('permanent lists', () => {
 
   it('is office-only', () => {
     const api = createAppStore()
-    const denied = addPermanentList(api, SOUTER, { anaesthetistId: ANAE.souter, dayOfWeek: 1, session: 'AM', statusKey: 'free', hospitalId: null, surgeonId: null })
+    const denied = addPermanentList(api, SOUTER, { anaesthetistId: ANAE.souter, dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: null, surgeonId: null })
     expect(denied.ok).toBe(false)
+  })
+
+  it('takes a kind (private, public or pre-op) and optional times, refusing anything else (catch-up Phase 28)', () => {
+    const api = createAppStore()
+    const base = { anaesthetistId: ANAE.souter, dayOfWeek: 3 as const, session: 'PM' as const, hospitalId: null, surgeonId: null }
+    const free = addPermanentList(api, OFFICE, { ...base, kind: 'free' as never })
+    expect(free.ok ? '' : free.code).toBe('invalidKind')
+    const backwards = addPermanentList(api, OFFICE, { ...base, kind: 'preop', startTime: '15:00', endTime: '14:00' })
+    expect(backwards.ok ? '' : backwards.code).toBe('invalidTimes')
+    const ok = addPermanentList(api, OFFICE, { ...base, kind: 'preop', startTime: '13:30', endTime: '' })
+    expect(ok.ok).toBe(true)
+    if (ok.ok) expect(api.getState().masters.permanentLists[ok.value.id]).toMatchObject({ kind: 'preop', startTime: '13:30' })
+    if (ok.ok) expect(api.getState().masters.permanentLists[ok.value.id]?.endTime).toBeUndefined()
   })
 })
 

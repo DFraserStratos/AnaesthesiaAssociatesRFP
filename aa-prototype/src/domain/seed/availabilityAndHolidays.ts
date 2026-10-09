@@ -1,6 +1,7 @@
 /**
- * Availability master rows (leave and unavailability, reconciled into the
- * canvas by the generator) and hospital holidays (upcoming, feeding Phase 06's
+ * The seed's leave calendar (catch-up Phase 28: was the availability master,
+ * reconciled into the canvas; now generator input only, painted onto the
+ * Slots' status after they are written free) and hospital holidays (upcoming, feeding Phase 06's
  * conflict flags).
  *
  * The design pins: Souter on leave Fri 24 to Sun 26 Jul; Beaumont on leave
@@ -8,38 +9,32 @@
  * Ngata unavailable Tue 21 (ICU on call); Delaney unavailable Thu 23.
  */
 
-import type { AnaesthetistAvailability, HospitalHoliday, Session } from '../types'
+import type { HospitalHoliday, SeedLeaveWindow, Session } from '../types'
 import { enumerateDatesISO } from '../clock'
 import { ANAE, HOSPITALS } from './cast'
 
 const SESSIONS: readonly Session[] = ['AM', 'PM'] as const
 
-let n = 0
 function window(
   anaesthetistId: string,
   fromISO: string,
   toISO: string,
-  kind: 'holiday' | 'unavailable',
+  status: 'holiday' | 'unavailable',
   note: string,
-): AnaesthetistAvailability[] {
-  const rows: AnaesthetistAvailability[] = []
+): SeedLeaveWindow[] {
+  const rows: SeedLeaveWindow[] = []
   for (const dateISO of enumerateDatesISO(fromISO, toISO)) {
-    for (const session of SESSIONS) {
-      n += 1
-      rows.push({
-        id: `AV${String(n).padStart(4, '0')}`,
-        anaesthetistId,
-        dateISO,
-        session,
-        kind,
-        note,
-      })
-    }
+    for (const session of SESSIONS) rows.push({ anaesthetistId, dateISO, session, status, note })
   }
   return rows
 }
 
-export const AVAILABILITY: readonly AnaesthetistAvailability[] = [
+/**
+ * The seed's calendar. Roll-forward and `addAnaesthetist` pass this same
+ * constant, so a far edge they generate deep-equals a fresh seed's. Leave set
+ * at runtime lives on the Slots it covers (Phase 29 owns leave beyond them).
+ */
+export const SEED_LEAVE: readonly SeedLeaveWindow[] = [
   ...window(ANAE.souter, '2026-07-24', '2026-07-26', 'holiday', 'Annual leave / back Monday'),
   ...window(ANAE.beaumont, '2026-07-13', '2026-07-26', 'holiday', 'Annual leave / back Mon 27'),
   ...window(ANAE.ngatai, '2026-07-16', '2026-07-28', 'holiday', 'Annual leave / back Wed 29'),

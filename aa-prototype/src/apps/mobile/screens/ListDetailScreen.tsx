@@ -3,12 +3,12 @@ import { ChevronLeft, Plus } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
-import { removeAttachment, useAppStore, useToday, type Actor } from '../../../store'
+import { removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
-import { sessionTimeRange } from '../../../shared/format'
+import { slotTimeRange } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
 interface ListDetailScreenProps {
@@ -29,6 +29,7 @@ interface BookingRow {
 
 export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBooking }: ListDetailScreenProps) {
   const list = useAppStore((s) => s.schedule.lists[listId])
+  const times = useListTimes(list)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const proceduresRecord = useAppStore((s) => s.schedule.procedures)
   const patients = useAppStore((s) => s.masters.patients)
@@ -93,14 +94,14 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
 
   const hospitalName = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
   const surgeon = list.surgeonId !== undefined ? surgeons[list.surgeonId] : undefined
-  const isPreop = list.statusKey === 'preop'
+  const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
   const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO
   const sublineParts = [
     surgeon?.name,
     surgeon?.specialty,
     dayLabel,
-    sessionTimeRange(list),
+    times !== undefined ? slotTimeRange(times) : undefined,
   ].filter((p): p is string => p !== undefined && p !== '')
   const canEdit = list.state === 'ACTIVE'
   const listAttachments = list.attachments ?? []
@@ -139,7 +140,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
             </div>
             <div style={{ fontSize: 13, color: neutral.slate, marginTop: 4 }}>{sublineParts.join(' · ')}</div>
           </div>
-          <StatusChip status={list.statusKey} style={{ marginTop: 4, flex: 'none' }} />
+          <StatusChip status={list.kind} style={{ marginTop: 4, flex: 'none' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>

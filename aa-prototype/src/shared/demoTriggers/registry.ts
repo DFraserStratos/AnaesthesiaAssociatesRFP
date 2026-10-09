@@ -40,7 +40,10 @@ import {
   sampleRaiseRefusal,
   warningsForBooking,
   armHandoffFault,
+  assignNextFreeSlotAsSimulatedOffice,
   authoriseAsSimulatedOffice,
+  nextOpenSlotFor,
+  STAND_IN_ASSIGN_CHOICES,
   officeStandInRefusal,
   authoriseList,
   editContract,
@@ -52,11 +55,15 @@ import {
   runReconciliationPoll,
   simulateSignInAttempts,
   submitList,
+  slotFor,
+  listInSlot,
   type AppState,
   type AppStoreApi,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
-import { ANAE, CONTRACT, SEED_LIST_IDS, listIdForSlot } from '../../domain/seed'
+import { ANAE, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
+import { projectedListId } from '../../domain/slots'
+import { format, parseISO } from 'date-fns'
 import { roundToCents } from '../../domain/billing/money'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { formatCurrency } from '../format'
@@ -89,7 +96,16 @@ const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as cons
 // ---------------------------------------------------------------------------
 
 /** Stage post-op: Dr Sharma's Tue 14 Jul AM List (Sarah Mitchell's first episode). */
-export const POST_OP_ORIGINAL_LIST_ID = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
+export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+
+/** The List in a surgeon PDF's target session (catch-up Phase 28: a session may hold none). */
+function pdfTargetListId(
+  state: AppState,
+  pdf: { targetList: { anaesthetistId: string; dateISO: string; session: 'AM' | 'PM' } },
+): string | undefined {
+  const slot = slotFor(state, pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+  return slot === undefined ? undefined : listInSlot(state, slot.id)?.id
+}
 
 /** The ingest-PDF sample: the first surgeon PDF's reviewed row R2. */
 function samplePdfRow() {
@@ -420,7 +436,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Booking. It lands on her free Tue 21 PM session.',
+      'Submits and authorises Dr Sharma\'s Tue 14 Jul AM List, so "Add post-op event" can run on its locked Booking. It lands on a new List in her free Tue 21 PM session.',
     screen: 'Admin · Review and Booking detail',
     routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId'],
     surfaces: ['bar'],
@@ -445,7 +461,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message:
-          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its booking and use "Add post-op event"; it lands on her free Tue 21 PM session.',
+          'Done. Dr Sharma\'s Tue 14 Jul list is authorised and locked. In the Admin day view jump to Tue 14, open its booking and use "Add post-op event"; it lands on a new List in her free Tue 21 PM session.',
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
@@ -461,12 +477,17 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     routes: [ADMIN_INTEGRATIONS],
     surfaces: ['bar'],
     when: (_state, ctx) => ctx.published['integrations.tab'] === 'pdfs',
-    disabledReason: () => (samplePdfRow() === undefined ? 'The sample PDF row is not present in this build.' : null),
+    disabledReason: (state) => {
+      const sample = samplePdfRow()
+      if (sample === undefined) return 'The sample PDF row is not present in this build.'
+      return pdfTargetListId(state, sample.pdf) === undefined ? "The PDF's target session has no List" : null
+    },
     run: (api) => {
       const sample = samplePdfRow()
       if (sample === undefined) return { ok: false, message: 'The sample PDF row is not present in this build.' }
       const { pdf, row } = sample
-      const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+      const listId = pdfTargetListId(api.getState(), pdf)
+      if (listId === undefined) return { ok: false, message: "The PDF's target session has no List." }
       const res = ingestPdfRow(api, OFFICE_ACTOR, listId, row)
       return {
         ok: res.ok,
@@ -622,6 +643,36 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => null,
+  },
+  // ── Mobile · Lists: the office assigns a List (catch-up Phase 28) ──────
+  {
+    id: 'office-assigns-next-free',
+    label: 'Office assigns a List to my next free session',
+    description:
+      "Stands in for the office, which has no app on the phone: assigns a List to Dr Souter's earliest free session from today, as Kirsty would with Assign List in Admin. The session then shows as a booked List.",
+    screen: 'Mobile · Lists',
+    routes: ['/mobile/lists'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    choices: (state) =>
+      STAND_IN_ASSIGN_CHOICES.map((c) => ({
+        id: c.id,
+        label: `${state.masters.hospitals[c.hospitalId]?.name ?? c.hospitalId} · ${state.masters.surgeons[c.surgeonId]?.name ?? c.surgeonId}`,
+      })),
+    disabledReason: (state) => (nextOpenSlotFor(state, ANAE.souter) === undefined ? 'No free session before the schedule horizon ends' : null),
+    run: (api, _ctx, choiceId) => {
+      const res = assignNextFreeSlotAsSimulatedOffice(api, ANAE.souter, choiceId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const hospital = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
+      const surgeon = state.masters.surgeons[res.value.surgeonId]?.name ?? res.value.surgeonId
+      return {
+        ok: true,
+        message: `Assigned ${hospital} · ${surgeon} to your ${format(parseISO(res.value.slot.dateISO), 'EEE d MMM')} ${res.value.slot.session} session.`,
+      }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Assign List).',
   },
   // ── Admin · Day, Booking detail and Mobile · Booking: sample warnings ──
   {

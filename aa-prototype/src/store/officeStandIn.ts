@@ -14,7 +14,9 @@ import { handoffListCases, runBillingForList } from './billingRun'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { authoriseList } from './lifecycle'
 import { ok, refuse, type Outcome } from './mutate'
-import { isListBilled } from './selectors'
+import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist } from './selectors'
+import { assignListToSlot } from './slotActions'
+import type { Slot } from '../domain/types'
 
 /** Why the stand-in cannot act on `listId` now, or null: the demo trigger's disabled reason and this guard's refusal. */
 export function officeStandInRefusal(state: Pick<AppState, 'schedule'>, listId: string): string | null {
@@ -45,4 +47,45 @@ export function authoriseAsSimulatedOffice(api: AppStoreApi, listId: string): Ou
   if (!run.ok) return ok({ billed: false })
   handoffListCases(api, listId)
   return ok({ billed: isListBilled(api.getState().schedule.lists[listId] ?? after) })
+}
+
+// ---------------------------------------------------------------------------
+// "Office assigns a List to my next free session" (catch-up Phase 28)
+// ---------------------------------------------------------------------------
+
+/**
+ * The stand-in's three fixed pairings (hospital and surgeon). A seed test
+ * outside the PWA closure pins that none is a not-preferred pairing with the
+ * PWA persona (Dr Souter), so this body never needs to read a preference: it
+ * is in the PWA closure, where the office-private slice may not be named.
+ */
+export const STAND_IN_ASSIGN_CHOICES = [
+  { id: 'stg-hale', hospitalId: 'H-STG', surgeonId: 'S-HALE' },
+  { id: 'sx-patel', hospitalId: 'H-SX', surgeonId: 'S-PATEL' },
+  { id: 'forte-okafor', hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR' },
+] as const
+
+/** The anaesthetist's earliest open session from the demo clock's today to the horizon end, in date then session order. */
+export function nextOpenSlotFor(state: AppState, anaesthetistId: string): Slot | undefined {
+  const horizon = scheduleHorizon(state)
+  return slotViewsForAnaesthetist(state, anaesthetistId, state.clock.todayISO, horizon.endISO).find(isOpenSlotView)?.slot
+}
+
+/**
+ * Stands in for the office on the PWA (which has no Admin app): assigns a
+ * private List to the anaesthetist's next open session, acting as
+ * `OFFICE_SIMULATION_ACTOR` through `assignListToSlot` (which runs its own
+ * office checks). "Today" is the demo clock's today, never the wall clock.
+ */
+export function assignNextFreeSlotAsSimulatedOffice(
+  api: AppStoreApi,
+  anaesthetistId: string,
+  choiceId?: string,
+): Outcome<{ listId: string; slot: Slot; hospitalId: string; surgeonId: string }> {
+  const choice = STAND_IN_ASSIGN_CHOICES.find((c) => c.id === choiceId) ?? STAND_IN_ASSIGN_CHOICES[0]
+  const slot = nextOpenSlotFor(api.getState(), anaesthetistId)
+  if (slot === undefined) return refuse('noOpenSession', 'No free session before the schedule horizon ends')
+  const out = assignListToSlot(api, OFFICE_SIMULATION_ACTOR, slot.id, { hospitalId: choice.hospitalId, surgeonId: choice.surgeonId, kind: 'private' })
+  if (!out.ok) return out
+  return ok({ listId: out.value.listId, slot, hospitalId: choice.hospitalId, surgeonId: choice.surgeonId })
 }

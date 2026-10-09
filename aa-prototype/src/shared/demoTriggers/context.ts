@@ -14,6 +14,11 @@ export interface DemoContextValues {
   'integrationsSim.selectedMessageId': string
   /** Admin · AA fee invoices: the month in the picker (`YYYY-MM`; catch-up Phase 16). */
   'aaFees.month': string
+  /**
+   * Admin · Day: the session open in the drawer (a Slot id; catch-up Phase 28).
+   * Nothing consumes it yet: Phase 30's "Simulate sickness" acts on it.
+   */
+  'adminDay.selectedSlotId': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

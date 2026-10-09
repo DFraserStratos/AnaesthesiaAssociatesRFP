@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
 import { tierFor } from '../../../../domain/pairingPreferences'
 import { useAppStore, type Actor } from '../../../../store'
@@ -29,10 +30,10 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
     <>
       <Header
         title="Anaesthetists"
-        sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one extends the canvas forward."
+        sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         action={<Button variant="secondary" onClick={() => setAdding(true)}>Add anaesthetist</Button>}
       />
-      <Table heads={['Name', 'Reg', 'Tier', 'Unit $', 'GST', 'Phone', 'Active', '']} rightAlign={[7]} shot="masters-anaesthetists">
+      <Table heads={['Name', 'Reg', 'Tier', 'Unit $', 'GST', 'Phone', 'Start date', 'Active', '']} rightAlign={[8]} shot="masters-anaesthetists">
         {rows.map((a) => (
           <tr
             key={a.registrationNumber}
@@ -52,6 +53,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
             <td className="mono" style={rowCellStyle}>{a.unitValue.toFixed(2)}</td>
             <td style={rowCellStyle}>{a.gstPeriod}</td>
             <td style={rowCellStyle}>{a.phone}</td>
+            <td className="mono" style={rowCellStyle}>{format(parseISO(a.startDateISO), 'd MMM yyyy')}</td>
             <td style={rowCellStyle}>{a.active ? 'Yes' : 'No'}</td>
             <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
           </tr>

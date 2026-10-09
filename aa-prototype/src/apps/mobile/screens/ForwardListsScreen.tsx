@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
-import type { Booking, List } from '../../../domain/types'
-import { isListBilled, useAppStore, useToday } from '../../../store'
+import type { Booking, DisplayStatusKey, List } from '../../../domain/types'
+import { isListBilled, slotViewsForAnaesthetist, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
-import { dayHeading, drSurname, sessionStart } from '../../../shared/format'
+import { dayHeading, drSurname } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
@@ -17,7 +17,13 @@ const FILTERS: { key: Filter; label: string }[] = [
 ]
 
 interface Row {
-  list: List
+  /** The session (Slot id), or the List id for a List outside the horizon. */
+  key: string
+  slotId?: string
+  listId?: string
+  dateISO: string
+  sessionOrder: string
+  statusKey: DisplayStatusKey
   variant: 'default' | 'free' | 'holiday'
   session?: string
   time?: string
@@ -32,11 +38,14 @@ interface ForwardListsScreenProps {
   personaName: string
   initials: string
   onOpenList: (listId: string) => void
-  onOfferCover: (listId: string) => void
+  /** Offer an open session (a Slot id) for cover. */
+  onOfferCover: (slotId: string) => void
 }
 
 export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList, onOfferCover }: ForwardListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  const slotsRecord = useAppStore((s) => s.schedule.slots)
+  const appSettings = useAppStore((s) => s.appSettings)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -64,20 +73,19 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
     const mine = Object.values(listsRecord).filter(
       (l) => l.anaesthetistId === anaesthetistId && !isListBilled(l),
     )
+    const schedule = { slots: slotsRecord, lists: listsRecord }
 
     function activeBookings(listId: string): Booking[] {
       return (bookingsByList.get(listId) ?? []).filter((c) => c.cancellation === undefined)
     }
 
-    function inWindow(l: List): boolean {
+    function listInFilter(l: List): boolean {
       if (filter === 'todo') {
         return l.state === 'ACTIVE' && activeBookings(l.id).some((c) => !c.completed)
       }
       // Done = submitted or authorised and still unbilled (an authorised list
       // is still unbilled until Phase 08's run stamps it).
-      if (filter === 'done') return l.state === 'SUBMITTED' || l.state === 'AUTHORISED'
-      if (l.dateISO < todayISO) return false
-      return filter === 'week' ? l.dateISO <= weekEnd : l.dateISO <= monthEnd
+      return l.state === 'SUBMITTED' || l.state === 'AUTHORISED'
     }
 
     function surgeonLine(l: List): string {
@@ -92,41 +100,48 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       return parts.join(' · ')
     }
 
-    function toRow(l: List): Row | null {
+    /**
+     * A session's row, from the one Slot view every app reads (catch-up Phase
+     * 28): a List shows as a booked row in place of the status, so an office
+     * assignment or a phone booking never reads Free here.
+     */
+    function viewRow(v: SlotView): Row | null {
+      if (v.list !== undefined) return isListBilled(v.list) ? null : listRow(v.list)
+      const base = { key: v.slot.id, slotId: v.slot.id, dateISO: v.slot.dateISO, sessionOrder: v.slot.session, statusKey: v.displayKey }
       // Holiday leave row.
-      if (l.statusKey === 'holiday') {
+      if (v.slot.status === 'holiday') {
         return {
-          list: l,
+          ...base,
           variant: 'holiday',
-          title: l.notes ?? 'On leave',
+          title: v.slot.note ?? 'On leave',
           subtitle: 'On leave',
           right: { kind: 'chip', statusKey: 'holiday', label: 'Holiday' },
         }
       }
-      // Free session row → offer cover (or a pending marker).
-      if (l.statusKey === 'free') {
-        const pending = l.coverRequest !== undefined
-        return {
-          list: l,
-          variant: 'free',
-          session: l.session,
-          time: l.startTime,
-          title: 'Free session',
-          subtitle: pending ? 'Cover request sent' : 'Open for bookings or cover',
-          right: pending
-            ? { kind: 'custom', node: <span style={{ fontSize: 12, fontWeight: 600, color: accent.pressed }}>Requested</span> }
-            : { kind: 'offerCover' },
-          onClick: pending ? undefined : () => onOfferCover(l.id),
-        }
-      }
       // Unavailable collapses out of the schedule.
-      if (l.statusKey === 'unavailable') return null
+      if (v.slot.status === 'unavailable') return null
+      // An open session: offer cover (or a pending marker).
+      const pending = v.slot.coverRequest !== undefined
+      return {
+        ...base,
+        variant: 'free',
+        session: v.slot.session,
+        ...(v.times.overridden ? { time: v.times.startTime } : {}),
+        title: 'Free session',
+        subtitle: pending ? 'Cover request sent' : 'Open for bookings or cover',
+        right: pending
+          ? { kind: 'custom', node: <span style={{ fontSize: 12, fontWeight: 600, color: accent.pressed }}>Requested</span> }
+          : { kind: 'offerCover' },
+        onClick: pending ? undefined : () => onOfferCover(v.slot.id),
+      }
+    }
 
+    function listRow(l: List): Row {
       // Booked list (private / public / preop).
       const active = activeBookings(l.id)
       const total = active.length
       const done = active.filter((c) => c.completed).length
-      const isPreop = l.statusKey === 'preop'
+      const isPreop = l.kind === 'preop'
       const hospitalName = l.hospitalId !== undefined ? (hospitals[l.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
       const title = isPreop ? 'Pre-op assessment' : hospitalName
 
@@ -139,7 +154,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         right = { kind: 'toFinish', count: total - done }
         countInSubtitle = true
       } else {
-        right = { kind: 'count', count: total, statusKey: l.statusKey }
+        right = { kind: 'count', count: total, statusKey: l.kind }
       }
 
       const base = isPreop ? 'AA rooms' : surgeonLine(l)
@@ -148,25 +163,32 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')
         : base || undefined
 
-      return { list: l, variant: 'default', session: l.session, time: sessionStart(l), title, subtitle, right, onClick: () => onOpenList(l.id) }
+      const time = timesForList({ schedule, appSettings }, l).startTime
+      return { key: l.id, slotId: l.slotId, listId: l.id, dateISO: l.dateISO, sessionOrder: l.session, statusKey: l.kind, variant: 'default', session: l.session, time, title, subtitle, right, onClick: () => onOpenList(l.id) }
     }
 
-    const rows = mine.filter(inWindow).map(toRow).filter((r): r is Row => r !== null)
+    // Week and Month walk the sessions from today; To-Do and Done are Lists in any date.
+    const rows =
+      filter === 'todo' || filter === 'done'
+        ? mine.filter(listInFilter).map(listRow)
+        : slotViewsForAnaesthetist({ schedule, appSettings }, anaesthetistId, todayISO, filter === 'week' ? weekEnd : monthEnd)
+            .map(viewRow)
+            .filter((r): r is Row => r !== null)
 
     // Group by date, then AM before PM within a date.
     const byDate = new Map<string, Row[]>()
     for (const r of rows) {
-      const arr = byDate.get(r.list.dateISO)
-      if (arr === undefined) byDate.set(r.list.dateISO, [r])
+      const arr = byDate.get(r.dateISO)
+      if (arr === undefined) byDate.set(r.dateISO, [r])
       else arr.push(r)
     }
     return [...byDate.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, dayRows]) => ({
         date,
-        rows: dayRows.sort((a, b) => a.list.session.localeCompare(b.list.session)),
+        rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)),
       }))
-  }, [listsRecord, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
+  }, [listsRecord, slotsRecord, appSettings, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -232,8 +254,8 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {section.rows.map((r) => (
                 <ListRow
-                  key={r.list.id}
-                  statusKey={r.list.statusKey}
+                  key={r.key}
+                  statusKey={r.statusKey}
                   session={r.session}
                   time={r.time}
                   title={r.title}
@@ -241,6 +263,8 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
                   right={r.right}
                   variant={r.variant}
                   onClick={r.onClick}
+                  {...(r.slotId !== undefined ? { slotId: r.slotId } : {})}
+                  {...(r.listId !== undefined ? { listId: r.listId } : {})}
                 />
               ))}
             </div>

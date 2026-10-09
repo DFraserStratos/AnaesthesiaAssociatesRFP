@@ -114,7 +114,8 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await page.waitForTimeout(300)
 
   // S2 Beat 3: Rutherford's availability warning must not follow the booking
-  // when his List moves into Sharma's genuinely Free AM slot.
+  // when his List moves into Sharma's open AM session (catch-up Phase 28: the
+  // List moves between sessions; the vacated one defaults to Free).
   const rutherfordRow = page.getByText('Rutherford, James', { exact: true }).locator('..')
   await rutherfordRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
   await expect(page.getByText('The anaesthetist is now marked unavailable for this session.')).toBeVisible()
@@ -122,7 +123,11 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await expect(page.getByText(/whose .* session is free/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
   await page.getByRole('button', { name: /Sharma, Priya.*Free AM/ }).click()
-  await expect(page.getByText(/Proposed reading/)).toBeVisible()
+  await expect(page.getByText(/returns to Free unless you mark it otherwise/)).toBeVisible()
+  await expect(page.getByText(/Proposed reading|regenerat|absorb/i)).toHaveCount(0)
+  const vacated = page.locator('select[data-shot="reassign-vacated"]')
+  await expect(vacated).toHaveValue('free')
+  await vacated.selectOption('unavailable')
   await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
   await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
   await expect(page.getByTestId('list-reassignment-overlay')).toContainText('List reassigned')
@@ -139,6 +144,13 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await drawer.getByRole('button', { name: 'History', exact: true }).click()
   await expect(page.getByText('List reassigned', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })
+  await page.keyboard.press('Escape')
+  await page.goto('/admin/day/2026-07-22')
+  await page.waitForLoadState('networkidle')
+  // Rutherford's vacated AM session is now Unavailable, an empty session with no List.
+  const vacatedBlock = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
+  await expect(vacatedBlock).toContainText('Unavailable')
+  await expect(vacatedBlock).not.toHaveAttribute('data-list-id', /.+/)
 })
 
 test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
@@ -164,25 +176,37 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
 
-  const sharmaRow = page.getByText('Sharma, Priya', { exact: true }).locator('..')
-  await sharmaRow.getByRole('button').nth(1).click()
-  const editList = page.getByRole('button', { name: 'Edit list', exact: true })
-  const bookPhoneAdvice = page.getByRole('button', { name: 'Book (phone advice)', exact: true })
-  const history = page.getByRole('button', { name: 'History', exact: true })
-  const [editBox, bookBox, historyBox] = await Promise.all([
-    editList.boundingBox(),
+  // Sharma's free Tue 21 PM is an empty session (catch-up Phase 28): its drawer
+  // offers Assign List (the teal primary), then Book (phone advice), Edit times
+  // and History, and prints no List state.
+  await page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]').click()
+  const drawer = page.getByTestId('admin-list-drawer')
+  await expect(drawer).toHaveAttribute('data-slot-id', 'S-41267-2026-07-21-PM')
+  await expect(drawer.getByText(/ACTIVE|DRAFT|\bOpen\b/)).toHaveCount(0)
+  const assignList = drawer.getByRole('button', { name: 'Assign List', exact: true })
+  const bookPhoneAdvice = drawer.getByRole('button', { name: 'Book (phone advice)', exact: true })
+  const editTimes = drawer.getByRole('button', { name: 'Edit times', exact: true })
+  const history = drawer.getByRole('button', { name: 'History', exact: true })
+  const [assignBox, bookBox, timesBox, historyBox] = await Promise.all([
+    assignList.boundingBox(),
     bookPhoneAdvice.boundingBox(),
+    editTimes.boundingBox(),
     history.boundingBox(),
   ])
-  expect(editBox?.y).toBe(bookBox?.y)
-  expect(historyBox?.y).toBe(bookBox?.y)
-  expect(editBox?.x ?? 0).toBeLessThan(historyBox?.x ?? 0)
-  expect(historyBox?.x ?? 0).toBeLessThan(bookBox?.x ?? 0)
-  expect(bookBox?.width ?? 0).toBeGreaterThan(editBox?.width ?? 0)
+  // Assign List, the one primary, on its own full-width row; the rest beneath, on one row.
+  for (const box of [timesBox, historyBox]) expect(box?.y).toBe(bookBox?.y)
+  expect(assignBox?.y ?? 0).toBeLessThan(bookBox?.y ?? 0)
+  expect(assignBox?.width ?? 0).toBeGreaterThan((historyBox?.x ?? 0) + (historyBox?.width ?? 0) - (bookBox?.x ?? 0) - 1)
+  // Assign List is the one teal primary (the design's only action colour).
+  expect(await assignList.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(13, 110, 99)')
+  expect(await bookPhoneAdvice.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe('rgb(13, 110, 99)')
   await page.screenshot({ path: 'visual/shots/a-11-phone-drawer.png', fullPage: true })
   await bookPhoneAdvice.click()
+  // Times prefill from the schedule settings (US-01.1.4): 13:00 to 17:30 for PM.
+  await expect(page.getByLabel('Start', { exact: true })).toHaveValue('13:00')
+  await expect(page.getByLabel('End', { exact: true })).toHaveValue('17:30')
   await page.getByLabel('Hospital').selectOption({ label: "St George's" })
-  await page.getByLabel('Surgeon').selectOption({ label: 'Mr T. Hale' })
+  await page.getByLabel('Surgeon').selectOption('S-HALE')
   await page.getByRole('button', { name: 'Continue to add booking' }).click()
   await expect(page.getByRole('heading', { name: 'Add a booking' })).toBeVisible()
 
@@ -204,6 +228,9 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByText('Demo Patient', { exact: true })).toBeVisible()
+  // The session now holds a Private List (P5 closed): the block reads St George's.
+  await page.keyboard.press('Escape')
+  await expect(page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]')).toContainText("St George's")
 })
 
 test('generic manual-booking lookup still requires an NHI', async ({ page }) => {

@@ -4,15 +4,15 @@
  * (CLAUDE.md copy rule); micro-caps and mono-date shapes match the mockups.
  *
  * Moved from `apps/mobile/format.ts` in Phase 05 so the web lists / dashboard /
- * detail read the same helpers (in particular `sessionTimeRange`, which surfaces
- * each List's ACTUAL office-overridable start/end times — never session
- * defaults). The Monday-anchored week helpers are new for the web dashboard's
- * week strip.
+ * detail read the same helpers (in particular `slotTimeRange`, which renders
+ * a session's effective times: its own where the office set them, else the
+ * schedule settings' default). The Monday-anchored week helpers are new for
+ * the web dashboard's week strip.
  */
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BillingRoute, BookingSource, List, ListState } from '../domain/types'
+import type { BillingRoute, BookingSource, ListState } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -69,18 +69,13 @@ export function ageYears(dobISO: string, todayISO: string): number {
   return differenceInYears(parseISO(todayISO), parseISO(dobISO))
 }
 
-/** A List's session time range, e.g. "13:00 to 17:30", or a session fallback. */
-export function sessionTimeRange(list: List): string {
-  if (list.startTime !== undefined && list.endTime !== undefined) {
-    return `${list.startTime} to ${list.endTime}`
-  }
-  if (list.startTime !== undefined) return list.startTime
-  return list.session === 'AM' ? 'Morning' : 'Afternoon'
-}
-
-/** Just the start time (mono), or the session word. */
-export function sessionStart(list: List): string {
-  return list.startTime ?? (list.session === 'AM' ? 'AM' : 'PM')
+/**
+ * A session's time range, e.g. "13:00 to 17:30" (catch-up Phase 28: the times
+ * are the Slot's, from `effectiveSlotTimes`; the default comes from the
+ * schedule settings, never a fallback here).
+ */
+export function slotTimeRange(times: { startTime: string; endTime: string }): string {
+  return `${times.startTime} to ${times.endTime}`
 }
 
 export interface NhiBadge {
@@ -183,7 +178,8 @@ export function initialsOf(name: string): string {
 /**
  * A List's lifecycle state as the screens print it: the catalogue's names
  * (EP-07, FT-07.1), upper case. One home, so Phase 31 adds DRAFT (a Draft List)
- * in one place. An empty free session prints none (`isEmptyFreeSession`).
+ * in one place. An empty session is a Slot with no List, so it has no state to
+ * print (catch-up Phase 28).
  */
 export const LIST_STATE_LABELS: Record<ListState, string> = {
   ACTIVE: 'ACTIVE',

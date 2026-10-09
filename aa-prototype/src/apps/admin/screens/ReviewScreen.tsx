@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { BillingRoute, Booking, Procedure } from '../../../domain/types'
-import { authoriseList, logListNote, useAppStore, type Actor } from '../../../store'
+import { authoriseList, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee, procedureFee } from '../../../shared/capture'
-import { dayMicroCap, formatCurrency, hhmm, routeLabel, sessionTimeRange } from '../../../shared/format'
+import { dayMicroCap, formatCurrency, hhmm, routeLabel, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
@@ -54,6 +54,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const [error, setError] = useState<string | null>(null)
 
   const list = listsRecord[listId]
+  const times = useListTimes(list)
 
   const rows = useMemo(() => {
     if (list === undefined) return []
@@ -164,7 +165,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
             {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
             {surgeon !== undefined ? ` · ${surgeon.name}` : ''}
             {surgeon?.specialty !== undefined ? ` · ${surgeon.specialty}` : ''}
-            {` · ${dayLabel} · ${sessionTimeRange(list)}`}
+            {` · ${dayLabel}${times !== undefined ? ` · ${slotTimeRange(times)}` : ''}`}
           </div>
         </div>
         <div style={{ display: 'flex', flex: '0 0 auto', flexDirection: 'column', alignItems: 'flex-end', gap: 10, marginLeft: 'auto', maxWidth: '100%' }}>
@@ -194,7 +195,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
             </Button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <StatusChip status={list.statusKey} />
+            <StatusChip status={list.kind} />
             {submitAt !== undefined && !authorised && (
               <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: 999, padding: '4px 10px' }}>
                 Submitted {hhmm(submitAt)}

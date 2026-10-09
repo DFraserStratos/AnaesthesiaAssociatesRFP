@@ -15,6 +15,7 @@ import {
   XeroArchivingView,
 } from './ReferenceViews'
 import { MASTERS_NAV, parseMastersView, type MastersView } from './view'
+import { ScheduleSettingsView } from './ScheduleSettingsView'
 
 interface MasterDataProps {
   actor: Actor
@@ -70,6 +71,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'organisations' && <OrganisationsView />}
         {view === 'rvgCodes' && <RvgCodesView />}
         {view === 'modifierCodes' && <ModifierCodesView />}
+        {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}
         {view === 'listStatuses' && <ListStatusesView />}
         {view === 'xeroArchiving' && <XeroArchivingView actor={actor} />}
       </div>

@@ -12,8 +12,6 @@
 import type {
   Attachment,
   Anaesthetist,
-  AnaesthetistAvailability,
-  AnaesthetistId,
   AuditEntry,
   BillableParty,
   BillingLine,
@@ -29,21 +27,22 @@ import type {
   IsoDate,
   List,
   ListStatus,
-  ListStatusKey,
   ModifierCode,
   Patient,
   PermanentList,
   Procedure,
   RvgCode,
   OfficePrivateSlice,
-  Session,
+  Slot,
   Surgeon,
   SurgeonGroup,
   SurgeonRoom,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { MODIFIER_CODES } from '../billing/modifierCodes'
-import { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
+import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type RecurringClash } from './canvas'
+import { projectedListId } from '../slots'
+import { clearSlot, listInSlotOf, placeList, seedRecordedWindow, setSlot } from './recordedWindow'
 import {
   ANAE,
   ANAESTHETISTS,
@@ -60,7 +59,7 @@ import {
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
 import { PERMANENT_LISTS } from './permanentLists'
-import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
+import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
 import { RVG_CODES } from './rvgCodes'
@@ -73,7 +72,18 @@ import { buildHistory } from './history'
 import { buildSeedAudit } from './audit'
 import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
-export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
+export {
+  canvasAnaesthetists,
+  closedHospitalConflict,
+  closedHospitalMessage,
+  generateCanvasForDates,
+  type CanvasAnaesthetist,
+  type CanvasMasters,
+  type GeneratedCanvas,
+  type RecurringClash,
+} from './canvas'
+export { RECORDED_WINDOW } from './recordedWindow'
+export { SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
 export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS } from './cast'
 export { CONTRACT } from './contracts'
@@ -111,13 +121,18 @@ export interface SeedMasters {
   modifierCodes: Record<string, ModifierCode>
   listStatuses: Record<string, ListStatus>
   permanentLists: Record<string, PermanentList>
-  availability: Record<string, AnaesthetistAvailability>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
   billableParties: Record<string, BillableParty>
 }
 
 export interface SeedSchedule {
+  /**
+   * Every Slot across the horizon (catch-up Phase 28; OQ-64: "every Slot is
+   * created and stored"), keyed by `S-<reg>-<date>-<session>`.
+   */
+  slots: Record<string, Slot>
+  /** Lists only: assigned or projected, each in one Slot (plus the pre-horizon backdrop history). */
   lists: Record<string, List>
   bookings: Record<string, Booking>
   procedures: Record<string, Procedure>
@@ -169,125 +184,76 @@ function byId<T>(items: readonly T[], key: (item: T) => string): Record<string, 
 // Design fixups
 // ---------------------------------------------------------------------------
 
-interface SlotPatch {
-  statusKey?: ListStatusKey
-  hospitalId?: string | null
-  surgeonId?: string | null
-  startTime?: string | null
-  endTime?: string | null
-  notes?: string | null
+interface Canvas {
+  slots: Record<string, Slot>
+  lists: Record<string, List>
 }
 
-function patchSlot(
-  lists: Record<string, List>,
-  anaesthetistId: AnaesthetistId,
-  dateISO: string,
-  session: Session,
-  patch: SlotPatch,
-): void {
-  const id = listIdForSlot(anaesthetistId, dateISO, session)
-  const list = lists[id]
-  if (list === undefined) throw new Error(`fixup references missing slot ${id}`)
-  const next: List = { ...list }
-  if (patch.statusKey !== undefined) next.statusKey = patch.statusKey
-  if (patch.hospitalId !== undefined) {
-    if (patch.hospitalId === null) delete next.hospitalId
-    else next.hospitalId = patch.hospitalId
-  }
-  if (patch.surgeonId !== undefined) {
-    if (patch.surgeonId === null) delete next.surgeonId
-    else next.surgeonId = patch.surgeonId
-  }
-  if (patch.startTime !== undefined) {
-    if (patch.startTime === null) delete next.startTime
-    else next.startTime = patch.startTime
-  }
-  if (patch.endTime !== undefined) {
-    if (patch.endTime === null) delete next.endTime
-    else next.endTime = patch.endTime
-  }
-  if (patch.notes !== undefined) {
-    if (patch.notes === null) delete next.notes
-    else next.notes = patch.notes
-  }
-  lists[id] = next
-}
-
-const FREE: SlotPatch = {
-  statusKey: 'free',
-  hospitalId: null,
-  surgeonId: null,
-  startTime: null,
-  endTime: null,
-  notes: null,
-}
+const HOLIDAYS = HOSPITAL_HOLIDAYS
 
 /** Paint the mockups' content days over the generated canvas. */
-function applyDesignFixups(lists: Record<string, List>): void {
+function applyDesignFixups({ slots, lists }: Canvas): void {
   const TUE21 = DEMO_TODAY
   const WED22 = '2026-07-22'
   const THU23 = '2026-07-23'
+  const times = (startTime: string, endTime: string) => ({ startTime, endTime })
 
-  // --- Tuesday 21 July: the Admin Day slate (statuses from templates and the
-  // availability master already match; pin the design's times, the free
-  // sessions the slot RNG must not book, and the noted rows) ---
-  patchSlot(lists, ANAE.rutherford, TUE21, 'AM', { startTime: '08:00', endTime: '13:00' })
-  patchSlot(lists, ANAE.rutherford, TUE21, 'PM', {
-    statusKey: 'private',
+  // --- Tuesday 21 July: the Admin Day slate (statuses from recurring bookings
+  // and the calendar already match; pin the design's times, the free sessions
+  // and the noted rows) ---
+  setSlot(slots, ANAE.rutherford, TUE21, 'AM', times('08:00', '13:00'))
+  placeList(lists, slots, HOLIDAYS, ANAE.rutherford, TUE21, 'PM', {
+    kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.okafor,
-    startTime: '13:30',
-    endTime: '17:00',
+    ...times('13:30', '17:00'),
   })
-  patchSlot(lists, ANAE.sharma, TUE21, 'AM', { startTime: '07:30', endTime: '12:00' })
-  patchSlot(lists, ANAE.sharma, TUE21, 'PM', { ...FREE, notes: 'Free / open for cover' })
-  patchSlot(lists, ANAE.chen, TUE21, 'AM', { startTime: '08:00', endTime: '12:30' })
-  patchSlot(lists, ANAE.chen, TUE21, 'PM', { startTime: '13:00', endTime: '16:30' })
-  patchSlot(lists, ANAE.delaney, TUE21, 'PM', { ...FREE, notes: 'Free / keep free, on call for ICU tonight' })
-  patchSlot(lists, ANAE.fitzgerald, TUE21, 'PM', {
-    statusKey: 'private',
+  setSlot(slots, ANAE.sharma, TUE21, 'AM', times('07:30', '12:00'))
+  clearSlot(lists, slots, ANAE.sharma, TUE21, 'PM', 'Free / open for cover')
+  setSlot(slots, ANAE.chen, TUE21, 'AM', times('08:00', '12:30'))
+  setSlot(slots, ANAE.chen, TUE21, 'PM', times('13:00', '16:30'))
+  clearSlot(lists, slots, ANAE.delaney, TUE21, 'PM', 'Free / keep free, on call for ICU tonight')
+  placeList(lists, slots, HOLIDAYS, ANAE.fitzgerald, TUE21, 'PM', {
+    kind: 'private',
     hospitalId: HOSP.stg,
     surgeonId: null,
-    startTime: '13:00',
-    endTime: '17:30',
+    ...times('13:00', '17:30'),
     notes: "Surgeon TBC, chasing St George's booking office",
   })
-  patchSlot(lists, ANAE.hughes, TUE21, 'AM', { ...FREE })
-  patchSlot(lists, ANAE.hughes, TUE21, 'PM', { ...FREE })
-  patchSlot(lists, ANAE.morrison, TUE21, 'AM', { startTime: '08:00', endTime: '13:00' })
-  patchSlot(lists, ANAE.morrison, TUE21, 'PM', { startTime: '14:00', endTime: '18:00' })
-  patchSlot(lists, ANAE.whitaker, TUE21, 'PM', { startTime: '13:00', endTime: '17:00' })
-  patchSlot(lists, ANAE.strand, TUE21, 'AM', { startTime: '08:00', endTime: '12:00' })
-  patchSlot(lists, ANAE.strand, TUE21, 'PM', { ...FREE, notes: 'Free / open for cover' })
+  clearSlot(lists, slots, ANAE.hughes, TUE21, 'AM')
+  clearSlot(lists, slots, ANAE.hughes, TUE21, 'PM')
+  setSlot(slots, ANAE.morrison, TUE21, 'AM', times('08:00', '13:00'))
+  setSlot(slots, ANAE.morrison, TUE21, 'PM', times('14:00', '18:00'))
+  setSlot(slots, ANAE.whitaker, TUE21, 'PM', times('13:00', '17:00'))
+  setSlot(slots, ANAE.strand, TUE21, 'AM', times('08:00', '12:00'))
+  clearSlot(lists, slots, ANAE.strand, TUE21, 'PM', 'Free / open for cover')
 
   // --- Souter's design week: Wed 22 PM is free ("Open for cover") ---
-  patchSlot(lists, ANAE.souter, WED22, 'PM', { ...FREE, notes: 'Free / open for cover' })
+  clearSlot(lists, slots, ANAE.souter, WED22, 'PM', 'Free / open for cover')
 
-  // --- Thursday 23 July: the Web Availability grid (template-derived rows
-  // already match; pin the free sessions the slot RNG must not book) ---
-  patchSlot(lists, ANAE.sharma, THU23, 'PM', { ...FREE })
-  patchSlot(lists, ANAE.ngata, THU23, 'AM', { ...FREE })
-  patchSlot(lists, ANAE.chen, THU23, 'PM', { ...FREE })
-  patchSlot(lists, ANAE.hughes, THU23, 'AM', { ...FREE })
-  patchSlot(lists, ANAE.hughes, THU23, 'PM', { ...FREE })
-  patchSlot(lists, ANAE.whitaker, THU23, 'PM', { ...FREE })
-  patchSlot(lists, ANAE.strand, THU23, 'PM', { ...FREE })
+  // --- Thursday 23 July: the Web Availability grid (recurring rows already
+  // match; pin the free sessions) ---
+  clearSlot(lists, slots, ANAE.sharma, THU23, 'PM')
+  clearSlot(lists, slots, ANAE.ngata, THU23, 'AM')
+  clearSlot(lists, slots, ANAE.chen, THU23, 'PM')
+  clearSlot(lists, slots, ANAE.hughes, THU23, 'AM')
+  clearSlot(lists, slots, ANAE.hughes, THU23, 'PM')
+  clearSlot(lists, slots, ANAE.whitaker, THU23, 'PM')
+  clearSlot(lists, slots, ANAE.strand, THU23, 'PM')
 }
 
 /**
  * Phase 06 conflict fixup: seed one holiday-kind and one availability-kind
- * advisory `ListConflict` onto two different BOOKED Wed 22 Jul Lists, so the
- * admin day view's advisory flags are one `>` click from today (Tue 21 stays
- * pristine). Applied after generation so it does not fight the generator's
- * clean-generation rule. Deterministic: the two lowest-id booked Wed-22 Lists
- * with distinct anaesthetists (Souter excluded — she is the mobile persona, her
- * forward view stays clean).
+ * advisory `ListConflict` onto two different Wed 22 Jul Lists, so the admin
+ * day view's advisory flags are one `>` click from today (Tue 21 stays
+ * pristine). Deterministic: the two lowest-id Wed-22 Lists with distinct
+ * anaesthetists (Souter excluded: she is the mobile persona, her forward view
+ * stays clean).
  */
-function applyPhase06Conflicts(lists: Record<string, List>): void {
+function applyPhase06Conflicts({ lists }: Canvas): void {
   const WED22 = '2026-07-22'
-  const isBooked = (k: ListStatusKey) => k === 'private' || k === 'public' || k === 'preop'
   const booked = Object.values(lists)
-    .filter((l) => l.dateISO === WED22 && isBooked(l.statusKey) && l.anaesthetistId !== ANAE.souter)
+    .filter((l) => l.dateISO === WED22 && l.anaesthetistId !== ANAE.souter)
     .sort((a, b) => a.id.localeCompare(b.id))
   const holidayList = booked[0]
   if (holidayList !== undefined) {
@@ -320,31 +286,34 @@ function applyPhase06Conflicts(lists: Record<string, List>): void {
 }
 
 /**
- * Phase 09 scenario slots: paint the three lists the pre-payment and
- * billing-failure exemplars sit on (Souter Fri 24 AM/PM, Ropata Thu 16 AM) as
- * booked private sessions with a hospital + surgeon, so they read coherently in
- * the day grid and monitor. Applied after generation (like the design fixups)
- * and pinned in `bookings.ts` so the filler never books them.
+ * Phase 09 scenario Lists: place the three Lists the prepayment and
+ * billing-failure exemplars sit on (Souter Fri 24 AM and PM, Ropata Thu 16 AM)
+ * as private Lists with a hospital and surgeon, so they read coherently in the
+ * day grid and monitor. Souter's leave starts on Fri 24 in the calendar, but
+ * she works these two sessions: placing a List leaves the Slot free with no
+ * leave note (before Phase 28 the booked List kept the leave note, an
+ * artefact the golden test names). Pinned in `bookings.ts` so the filler
+ * never books them.
  */
-function applyPhase09Slots(lists: Record<string, List>): void {
+function applyPhase09Slots({ slots, lists }: Canvas): void {
   const FRI24 = '2026-07-24'
   const THU16 = '2026-07-16'
-  patchSlot(lists, ANAE.souter, FRI24, 'AM', {
-    statusKey: 'private',
+  placeList(lists, slots, HOLIDAYS, ANAE.souter, FRI24, 'AM', {
+    kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.lim,
     startTime: '09:00',
     endTime: '12:00',
   })
-  patchSlot(lists, ANAE.souter, FRI24, 'PM', {
-    statusKey: 'private',
+  placeList(lists, slots, HOLIDAYS, ANAE.souter, FRI24, 'PM', {
+    kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.nand,
     startTime: '13:00',
     endTime: '15:30',
   })
-  patchSlot(lists, ANAE.ropata, THU16, 'AM', {
-    statusKey: 'private',
+  placeList(lists, slots, HOLIDAYS, ANAE.ropata, THU16, 'AM', {
+    kind: 'private',
     hospitalId: HOSP.stg,
     surgeonId: SURG.hale,
     startTime: '08:00',
@@ -359,10 +328,12 @@ function applyPhase09Slots(lists: Record<string, List>): void {
 interface SeedBuild {
   state: SeedState
   scenario: BookingScenarioIds
+  /** The recurring bookings the seed's generation could not project (Phase 31 makes them Draft Lists). */
+  clashes: RecurringClash[]
 }
 
 /** Dr Souter's Tue 28 Jul AM List (St George's), S1's destination List. */
-const SEED_LIST_ATTACHMENT_LIST_ID = listIdForSlot(ANAE.souter, '2026-07-28', 'AM')
+const SEED_LIST_ATTACHMENT_LIST_ID = projectedListId(ANAE.souter, '2026-07-28', 'AM')
 /** Its seeded attachment: `AT0001`, so the store's counter continues at 2. */
 const SEED_LIST_ATTACHMENT: Attachment = {
   id: 'AT0001',
@@ -373,19 +344,30 @@ const SEED_LIST_ATTACHMENT: Attachment = {
 
 function buildSeedInternal(): SeedBuild {
   const canvasMasters: CanvasMasters = {
+    anaesthetists: canvasAnaesthetists(ANAESTHETISTS),
+    permanentLists: PERMANENT_LISTS,
+    leave: SEED_LEAVE,
+    holidays: HOSPITAL_HOLIDAYS,
+  }
+  const appSettings: AppSettings = { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS }
+  const horizon = horizonFor(DEMO_TODAY, appSettings.schedule.horizonMonths)
+  const generated = generateCanvasForDates(canvasMasters, enumerateDatesISO(horizon.startISO, horizon.endISO))
+  const slots = byId(generated.slots, (s) => s.id)
+  const lists = byId(generated.lists, (l) => l.id)
+  const canvas: Canvas = { slots, lists }
+
+  seedRecordedWindow(lists, slots, {
     seed: SEED,
     anaesthetistIds: ANAESTHETISTS.map((a) => a.registrationNumber),
     permanentLists: PERMANENT_LISTS,
-    availability: AVAILABILITY,
+    leave: SEED_LEAVE,
     holidays: HOSPITAL_HOLIDAYS,
-  }
-  const horizon = horizonFor(DEMO_TODAY)
-  const generated = generateListsForDates(canvasMasters, enumerateDatesISO(horizon.startISO, horizon.endISO))
-  const lists = byId(generated, (l) => l.id)
-
-  applyDesignFixups(lists)
-  applyPhase06Conflicts(lists)
-  applyPhase09Slots(lists)
+  })
+  applyDesignFixups(canvas)
+  applyPhase06Conflicts(canvas)
+  applyPhase09Slots(canvas)
+  // A clash under a Slot a fixup later freed is not a clash any more.
+  const clashes = generated.clashes.filter((c) => slots[c.slotId]?.status !== 'free' && listInSlotOf(lists, c.slotId) === undefined)
 
   const bookingsBuild = buildBookings(SEED, Object.values(lists))
 
@@ -458,12 +440,12 @@ function buildSeedInternal(): SeedBuild {
       modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
       listStatuses: byId(LIST_STATUSES, (s) => s.key),
       permanentLists: byId(PERMANENT_LISTS, (p) => p.id),
-      availability: byId(AVAILABILITY, (a) => a.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
       billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
     },
     schedule: {
+      slots,
       lists,
       bookings: bookingsRec,
       procedures: proceduresRec,
@@ -477,7 +459,7 @@ function buildSeedInternal(): SeedBuild {
       // archive job decrements `activeContacts`. Not ~28k seeded records.
       volumeStory: { invoicesPerYear: 28000, oneTimePct: 99, activeContacts: 9820, softLimit: 10000 },
     },
-    appSettings: { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS },
+    appSettings,
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     officePrivate: buildOfficePrivate(),
@@ -488,7 +470,6 @@ function buildSeedInternal(): SeedBuild {
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
-      availability: AVAILABILITY.length + 1,
       dayNote: DAY_NOTE_NEXT,
       list: 1,
       hospital: 1,
@@ -497,33 +478,33 @@ function buildSeedInternal(): SeedBuild {
     },
   }
 
-  return { state, scenario: bookingsBuild.scenario }
+  return { state, scenario: bookingsBuild.scenario, clashes }
 }
 
-/** Pinned slot-derived list ids the markers and tests reference. */
+/** Pinned seeded List ids (the projected-id form) the markers and tests reference. */
 export const SEED_LIST_IDS = {
-  souterAm21: listIdForSlot(ANAE.souter, DEMO_TODAY, 'AM'),
-  souterPm21: listIdForSlot(ANAE.souter, DEMO_TODAY, 'PM'),
-  rutherfordAm21: listIdForSlot(ANAE.rutherford, DEMO_TODAY, 'AM'),
-  rutherfordPm21: listIdForSlot(ANAE.rutherford, DEMO_TODAY, 'PM'),
-  morrisonMon20: listIdForSlot(ANAE.morrison, '2026-07-20', 'AM'),
-  whitakerFri17: listIdForSlot(ANAE.whitaker, '2026-07-17', 'AM'),
-  souterMon20Am: listIdForSlot(ANAE.souter, '2026-07-20', 'AM'),
-  souterMon20Pm: listIdForSlot(ANAE.souter, '2026-07-20', 'PM'),
+  souterAm21: projectedListId(ANAE.souter, DEMO_TODAY, 'AM'),
+  souterPm21: projectedListId(ANAE.souter, DEMO_TODAY, 'PM'),
+  rutherfordAm21: projectedListId(ANAE.rutherford, DEMO_TODAY, 'AM'),
+  rutherfordPm21: projectedListId(ANAE.rutherford, DEMO_TODAY, 'PM'),
+  morrisonMon20: projectedListId(ANAE.morrison, '2026-07-20', 'AM'),
+  whitakerFri17: projectedListId(ANAE.whitaker, '2026-07-17', 'AM'),
+  souterMon20Am: projectedListId(ANAE.souter, '2026-07-20', 'AM'),
+  souterMon20Pm: projectedListId(ANAE.souter, '2026-07-20', 'PM'),
   // Phase 09: the unpaid pre-payment booking's list, the mixed + full (seeded
   // paid) booking's list, and the multi-booking billing-failure exemplar list.
-  prepaymentUnpaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'AM'),
-  prepaymentPaidList: listIdForSlot(ANAE.souter, '2026-07-24', 'PM'),
-  billingFailure: listIdForSlot(ANAE.ropata, '2026-07-16', 'AM'),
+  prepaymentUnpaidList: projectedListId(ANAE.souter, '2026-07-24', 'AM'),
+  prepaymentPaidList: projectedListId(ANAE.souter, '2026-07-24', 'PM'),
+  billingFailure: projectedListId(ANAE.ropata, '2026-07-16', 'AM'),
   // Phase 11: the SUBMITTED (office-locked) List holding the locked-target
   // integration Booking, the clean S1 create destination, and separate modify
   // targets that keep S1's List uncluttered.
-  integrationLocked: listIdForSlot(ANAE.delaney, '2026-07-17', 'AM'),
-  integrationStgList: listIdForSlot(ANAE.souter, '2026-07-28', 'AM'),
-  integrationModifyStgList: listIdForSlot(ANAE.souter, '2026-08-04', 'AM'),
-  integrationMoveSourceStgList: listIdForSlot(ANAE.souter, '2026-08-03', 'PM'),
-  integrationSxList: listIdForSlot(ANAE.souter, '2026-07-28', 'PM'),
-  integrationCphList: listIdForSlot(ANAE.souter, '2026-07-30', 'AM'),
+  integrationLocked: projectedListId(ANAE.delaney, '2026-07-17', 'AM'),
+  integrationStgList: projectedListId(ANAE.souter, '2026-07-28', 'AM'),
+  integrationModifyStgList: projectedListId(ANAE.souter, '2026-08-04', 'AM'),
+  integrationMoveSourceStgList: projectedListId(ANAE.souter, '2026-08-03', 'PM'),
+  integrationSxList: projectedListId(ANAE.souter, '2026-07-28', 'PM'),
+  integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
 } as const
 
 /**
@@ -540,6 +521,15 @@ const SEED_BUILD: SeedBuild = buildSeedInternal()
 /** The pristine seed state. Deterministic: two calls are deep-equal. */
 export function buildSeed(): SeedState {
   return SEED_BUILD.state
+}
+
+/**
+ * The recurring bookings the seed's generation met on an unavailable or
+ * holiday Slot and did not project (US-01.1.1; OQ-81 part 2). Kept nowhere in
+ * state yet: Phase 31 turns each into a Draft List. A seed test pins the set.
+ */
+export function seedRecurringClashes(): readonly RecurringClash[] {
+  return SEED_BUILD.clashes
 }
 
 /** The earliest non-cancelled Booking on a seeded List (by time, then id). */

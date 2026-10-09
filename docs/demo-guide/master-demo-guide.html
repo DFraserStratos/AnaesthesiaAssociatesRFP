@@ -477,9 +477,11 @@
           &#8594; Procedure(s)
             &#8594; Billing line(s)</pre>
   <ul class="tight">
-    <li>The system creates a rolling four-month canvas with exactly two Lists, AM and PM, for every
-      active anaesthetist every day.</li>
-    <li>Permanent arrangements, availability, hospital, surgeon, status and Bookings are painted onto it.</li>
+    <li>Every active anaesthetist has an AM and a PM session every day from their start date, over a
+      rolling horizon (a setting, four months today). Every session starts Free.</li>
+    <li>The anaesthetist's calendar is the session's status; the office puts a List (hospital, surgeon,
+      Bookings) into a session, or a recurring booking does, and the List then shows in its place. The app
+      says session, never "slot".</li>
     <li>A List is not an employment shift, and a Booking is not a shift application.</li>
     <li>The anaesthetist completes Bookings and submits the whole List; the office checks and authorises it;
       authorisation locks the Bookings and hands the List to the Billing Engine.</li>
@@ -541,7 +543,8 @@
   Simulated events live on their screen: open <strong>Demo actions</strong> in the top bar beside the app
   switcher (it appears only where a screen has one; each entry is badged Demo trigger). On a handset the amber
   <strong>Demo</strong> chip opens the same actions as a sheet, including <strong>Office authorises this
-  List</strong>, badged Office stand-in. The control panel is the index, with an Open screen link per entry.
+  List</strong> and, on Lists, <strong>Office assigns a List to my next free session</strong>, both badged
+  Office stand-in. The control panel is the index, with an Open screen link per entry.
   Grey <span class="chip">Future scope</span> badges mark the HL7 v2 and FHIR tooling (the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, the hospital-message actions): in scope
   today is the St George's and Southern Cross download into a matching screen. <strong>Play the office</strong>
@@ -711,11 +714,12 @@
   </div></details>
 
   <details><summary>3 · Find cover and reassign a whole List</summary><div class="details-body">
-    <p>The anaesthetist offers a Free session or requests cover; the office views Free anaesthetists
-    (in priority-tier order, with any not-preferred pairing grouped apart and warned, never blocked),
-    reassigns the whole List (Bookings and history), the target's empty Free List is absorbed, and a fresh
-    List regenerates in the vacated slot. Free-target, absorb and regenerate is the prototype's proposed
-    reading of an open RFP mechanism. <span class="chip ready">Ready</span></p>
+    <p>The anaesthetist offers a Free session or requests cover; the office views free anaesthetists
+    (Find available, or the Reassign list picker: in priority-tier order, with any not-preferred pairing
+    grouped apart and warned, never blocked) and reassigns the whole List: it moves into the colleague's
+    free session with its Bookings and history, keeping its id, and the vacated session returns to Free
+    unless the office marks it Unavailable or Holiday (US-01.4.1; the default is OQ-84, still open).
+    Nothing about billing is recalculated. <span class="chip ready">Ready</span></p>
   </div></details>
 
   <details><summary>4 · Capture BTM and complete a Booking</summary><div class="details-body">
@@ -893,23 +897,35 @@
     <div class="beat">
       <h4>Beat 1 · read the day</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Day view &#8594; Tue 21 Jul.</li><li>Pause on the day grid.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A rolling four-month canvas: every active anaesthetist has exactly two half-day Lists a day. The office manages the day and handles exceptions rather than inventing every session."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Every active anaesthetist has an AM and a PM session every day, four months ahead, from their start date, whether or not anything is booked. A session is free until the anaesthetist marks it otherwise, and when the office puts a List in it, the List shows instead."</span></div>
+      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label. The dashed Free blocks are empty sessions; the coloured blocks are Lists.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep 13:00–17:00.</li><li>Continue to add booking &#8594; Look up.</li><li>Pause on the populated booking.</li><li>Review &#8594; Save booking &#8594; Done.</li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free session &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep the default times (13:00 to 17:30).</li><li>Continue to add booking &#8594; Look up.</li><li>Pause on the populated booking.</li><li>Review &#8594; Save booking &#8594; Done.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The Free block repaints as booked on the admin grid; the Booking is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The session now holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the availability finders show it as booked.</span></div>
+      <div class="row"><span class="k">Optional</span><span>"Assign List does the same without a patient, for a session booked ahead."</span></div>
       <div class="row"><span class="k">Optional</span><span>On the surgeon picker, show the separate <strong>Not preferred with Dr Sharma</strong> group. If time allows, select <strong>Ms A. Reid</strong> to show the soft amber warning and <strong>Continue anyway</strong>, then return to <strong>Mr T. Hale</strong>. The scripted path is unchanged.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Select Reassign list. The candidates are in tier order with a tier pill on each; Dr Priya Sharma is in the main group with a Preferred pill. Pick her by name, since the order within a tier varies each time the picker opens.</li><li>Sharma, Priya &#8594; Unavailable &#8594; Confirm reassignment.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
-      <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Bookings and audit trail, different from moving one Booking. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Select Reassign list. The candidates are in tier order with a tier pill on each; Dr Priya Sharma is in the main group with a Preferred pill. Pick her by name, since the order within a tier varies each time the picker opens.</li><li>Sharma, Priya. The vacated session defaults to Free; choose Unavailable because Dr Rutherford is ill &#8594; Confirm reassignment.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing about billing is recalculated. It is different from moving one patient Booking."</span></div>
       <div class="row"><span class="k">Say</span><span class="say">"The office's private knowledge is now data: who works well with whom, either way round, and the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on top. Only the office ever sees it."</span></div>
-      <div class="row"><span class="k">Expect</span><span>The picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred pill) and shows no warning for Sharma. Then a brief List reassigned success moment confirms the move before the modal closes. The List and its Bookings move to Sharma, the vacated session regenerates, and History records the reassignment.</span></div>
+      <div class="row"><span class="k">Expect</span><span>The picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred pill) and shows no warning for Sharma. Then a brief List reassigned success moment confirms the move before the modal closes. The List and its Bookings move to Sharma, Dr Rutherford's session shows Unavailable, and History records one reassignment.</span></div>
       <div class="row"><span class="k">Optional</span><span>Use the picker's Filter by tier, or open Dr Alistair Chen's Tue 21 PM Christchurch Eye Surgery List &#8594; Reassign list to show Dr Sharma apart under Not preferred with Ms Reid. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session, which Beat 2 books.</span></div>
+    </div>
+    <div class="beat">
+      <h4>Optional · find who is free</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Day view &#8594; Find available &#8594; PM, then choose Ms A. Reid as the surgeon for the List.</li><li>Pick any row to open that session on Assign List with Ms Reid already chosen; cancel.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"When the office has a List to fill, it sees who is free that session, best-placed tier first and shuffled within a tier so the same person is not always on top, and any pairing a surgeon or anaesthetist has asked to avoid sits apart. Only the office sees this; the anaesthetists' own finders are plain."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The free anaesthetists in tier order with tier pills and the tier filter; with Ms Reid chosen, Dr Sharma (free on Tue 21 PM unless Beat 2 has booked her) sits apart under Not preferred with Ms Reid, still clickable. On Tue 21 run this before Beat 2.</span></div>
+    </div>
+    <div class="beat">
+      <h4>Optional · the schedule is a setting</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Master data &#8594; Schedule settings.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The horizon is a setting, four months as today; default session times are one setting too. Sessions with their own times keep them."</span></div>
     </div>
     <div class="beat">
       <h4>Beat 4 · authorise a submitted List</h4>
@@ -917,7 +933,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Booking and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
     </div>
-    <div class="callout warn">Discovery: whether availability/holiday conflicts are hard constraints or warnings (the prototype uses advisory flags); the exact List-reassignment mechanics; whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only).</div>
+    <div class="callout warn">Discovery: whether availability/holiday conflicts are hard constraints or warnings (the prototype uses advisory flags); what the vacated session shows after a move (OQ-84: the prototype returns it to Free unless the office marks it otherwise); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
@@ -967,7 +983,7 @@
     <div class="beat"><h4>Beat 2 · post-op addendum</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 14 Jul &#8594; Dr Priya Sharma AM &#8594; Sarah Mitchell.</li><li>Demo actions &#8594; Stage post-op scenario &#8594; Run (shown only for this List).</li><li>Select Add post-op event.</li><li>Pause on the new addendum Booking.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A later charge does not reopen the original. The addendum is a new linked Booking with its own submit, authorise and bill cycle; the original stays immutable."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A new addendum Booking; the original stays locked.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A new addendum Booking; the original stays locked. The addendum sits on a List created in Dr Sharma's free Tue 21 PM session (interim until additional invoices replace the addendum).</span></div>
     </div>
     <div class="beat"><h4>Beat 3 · billing failure and retry</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Billing monitor &#8594; Demo actions &#8594; Trigger billing failure &#8594; Run.</li><li>Same screen &#8594; Losa Tuilagi &#8594; Resolve &amp; retry.</li></ul></div>
@@ -1108,6 +1124,13 @@
       record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
       order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
       Whitford prefers to work with Dr Sharma.</li>
+    <li>Sessions and Lists: every active anaesthetist has an AM and a PM session a day from their start
+      date over a configurable horizon (four months); the status is on the session, Free by default, and a
+      List put into it shows in its place; default session times are one setting, sessions can have their
+      own.</li>
+    <li>Find available (Day header): office only; the free anaesthetists for a session in tier order,
+      shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen.</li>
+    <li>The app never says "slot": it says session, AM or PM.</li>
   </ul>
 
   <div class="grid2">
@@ -1153,9 +1176,10 @@
       failed Booking blocks the whole List. The prototype isolates the failed Booking and bills the others.</p></div>
     <div class="card"><h3>4 · Monitoring location</h3><p style="font-size:14px">Admin Web vs a separate
       Billing Engine screen is left open. The prototype places monitoring in Admin Web.</p></div>
-    <div class="card"><h3>5 · List reassignment mechanics</h3><p style="font-size:14px">Reassignment is
-      required; the mechanism is open. Free-target, absorb target, regenerate vacated slot is the
-      prototype's proposal.</p></div>
+    <div class="card"><h3>5 · List reassignment mechanics</h3><p style="font-size:14px">Settled by
+      US-01.4.1: the List moves into the colleague's free session with its id, Bookings and history, and
+      nothing about billing is recalculated. Open (OQ-84): the vacated session's default; the prototype
+      uses Free, with Unavailable or Holiday on request.</p></div>
     <div class="card"><h3>6 · Availability and holiday conflicts</h3><p style="font-size:14px">Hard
       constraints or warnings is left open. The prototype uses advisory conflict flags.</p></div>
     <div class="card"><h3>7 · Split-billing invoice count</h3><p style="font-size:14px">Grouping text says

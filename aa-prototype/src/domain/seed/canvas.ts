@@ -1,174 +1,167 @@
 /**
- * THE canvas generator — the one deterministic source of Lists. The seeder,
- * the clock's roll-forward and the scale test all call this same function.
+ * THE canvas generator (catch-up Phase 28; US-01.1.1, FT-01.1, US-01.1.3;
+ * OQ-81 part 1, settled in the room). The one generation path for the seed,
+ * the clock's roll-forward, a new anaesthetist, a start-date edit, a
+ * reactivation and a horizon extension.
  *
- * For every (anaesthetist x date x session) it builds exactly one List — the
- * canvas invariant of 2 Lists per anaesthetist per day:
- *   1. availability master rows (holiday/unavailable) take the slot cleanly —
- *      at generation time approved leave is already-actioned office knowledge,
- *      so a templated booking under a leave window yields a clean leave List,
- *      never a conflict (conflicts are the RUNTIME `setAvailability` path's
- *      job, when live bookings already exist);
- *   2. otherwise the Permanent List template for that weekday fills the slot;
- *   3. otherwise the slot's own hashed RNG fills it (plenty free, some ad hoc
- *      private bookings, occasional public acute cover and unavailability) —
- *      slot-hashed randomness makes generation order-independent, so rolling
- *      the horizon forward reproduces exactly what a fresh full-horizon seed
- *      would have produced (PROGRESS decision, Phase 02);
- *   4. hospital holidays flag (never restatus) a booked List on that date.
+ * For every ACTIVE anaesthetist, on every date from their start date, it
+ * writes an AM and a PM Slot, in the catalogue's order:
+ *   1. an inactive anaesthetist, or a date before the start date, gets no Slot;
+ *   2. every other Slot is written FREE (EP-01: "each new Slot starts as free");
+ *   3. the anaesthetist's calendar (the seed's leave windows) is painted onto
+ *      the Slot's status and note;
+ *   4. the surgeons' recurring bookings are painted on top: a template on a
+ *      free Slot projects a List (id `projectedListId`, state ACTIVE), and its
+ *      template times become Slot overrides; a template on an unavailable or
+ *      holiday Slot projects nothing and is returned as a clash (Phase 31 turns
+ *      each clash into a Draft List, OQ-81 part 2).
+ * Nothing is invented: no random sessions, on any date (the slot RNG survives
+ * only for the seed's recorded window and filler Bookings). Recurring bookings
+ * keep the weekday-only guard until Phase 30 adds weekend patterns. Hospital
+ * holidays flag a projected List and never change it.
+ *
+ * Pure and order-independent: the same masters and date always yield identical
+ * Slots and Lists, so a roll-forward deep-equals a fresh generation.
  */
 
 import { parseISO } from 'date-fns'
-import type {
-  AnaesthetistAvailability,
-  HospitalHoliday,
-  List,
-  PermanentList,
-  Session,
-  SurgeonId,
-} from '../types'
-import { slotRng } from './slotHash'
-import { HOSP, SURG } from './cast'
+import type { HospitalHoliday, List, ListConflict, PermanentList, SeedLeaveWindow, Session, Slot } from '../types'
+import { projectedListId, slotDatesFor, slotIdFor } from '../slots'
+
+export interface CanvasAnaesthetist {
+  id: string
+  startDateISO: string
+  active: boolean
+}
 
 export interface CanvasMasters {
-  /** The seed constant — part of every slot hash. */
-  seed: number
-  anaesthetistIds: readonly string[]
+  anaesthetists: readonly CanvasAnaesthetist[]
   permanentLists: readonly PermanentList[]
-  availability: readonly AnaesthetistAvailability[]
+  /** The anaesthetists' calendar as generator input (the seed's leave windows). */
+  leave: readonly SeedLeaveWindow[]
   holidays: readonly HospitalHoliday[]
+}
+
+/** A recurring booking that met an unavailable or holiday Slot: not projected, traced for Phase 31. */
+export interface RecurringClash {
+  permanentListId: string
+  slotId: string
+}
+
+export interface GeneratedCanvas {
+  slots: Slot[]
+  lists: List[]
+  clashes: RecurringClash[]
 }
 
 const SESSIONS: readonly Session[] = ['AM', 'PM'] as const
 
-/** Deterministic slot-derived List id. */
-export function listIdForSlot(anaesthetistId: string, dateISO: string, session: Session): string {
-  return `L-${anaesthetistId}-${dateISO}-${session}`
-}
-
-/** Default session times for a generated booked List. */
-function defaultTimes(statusKey: string, session: Session): { startTime: string; endTime: string } | null {
-  if (statusKey === 'preop') {
-    return session === 'AM' ? { startTime: '09:00', endTime: '12:00' } : { startTime: '13:00', endTime: '17:00' }
-  }
-  if (statusKey === 'private' || statusKey === 'public') {
-    return session === 'AM' ? { startTime: '07:30', endTime: '12:30' } : { startTime: '13:00', endTime: '17:30' }
-  }
-  return null
-}
-
-/** Ad hoc booking pools for the slot RNG (CES stays ophthalmic). */
-const ADHOC_HOSPITALS = [HOSP.stg, HOSP.sx, HOSP.forte, HOSP.ces] as const
-const CES_SURGEONS: readonly SurgeonId[] = [SURG.whitford, SURG.reid] as const
-const GENERAL_SURGEONS: readonly SurgeonId[] = [
-  SURG.hale, SURG.patel, SURG.okafor, SURG.lim, SURG.doyle, SURG.tan, SURG.nand, SURG.cameron,
-] as const
-
-function pick<T>(rng: () => number, items: readonly T[]): T {
-  const item = items[Math.floor(rng() * items.length)]
-  if (item === undefined) throw new Error('pick from empty pool')
-  return item
-}
-
 /**
- * Generate the Lists for the given dates — exactly 2 per anaesthetist per day.
- * Pure and order-independent: the same (masters, date, slot) always yields an
- * identical List regardless of which other dates are generated alongside it.
+ * The hospital-holiday conflict a List at a closed hospital carries (the
+ * generator, the seed's `placeList`, `assignListToSlot` and `addHospitalHoliday`
+ * share it). Null when the hospital is open that day.
  */
-export function generateListsForDates(masters: CanvasMasters, datesISO: readonly string[]): List[] {
+export function closedHospitalConflict(
+  list: { hospitalId?: string; dateISO: string },
+  holidays: readonly HospitalHoliday[],
+): ListConflict | null {
+  if (list.hospitalId === undefined) return null
+  const hit = holidays.find((h) => h.dateISO === list.dateISO && h.hospitalId === list.hospitalId)
+  return hit === undefined ? null : { kind: 'holiday', message: closedHospitalMessage(hit.name) }
+}
+
+export function closedHospitalMessage(holidayName: string): string {
+  return `${holidayName}: the hospital is closed on this date.`
+}
+
+/** Generate the Slots, projected Lists and clashes for the given dates. */
+export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonly string[]): GeneratedCanvas {
+  const slots: Slot[] = []
   const lists: List[] = []
+  const clashes: RecurringClash[] = []
 
   // Index the masters once (the scale test runs 85 x full horizon through here).
   const templateBySlot = new Map<string, PermanentList>()
   for (const template of masters.permanentLists) {
     templateBySlot.set(`${template.anaesthetistId}|${template.dayOfWeek}|${template.session}`, template)
   }
-  const availabilityBySlot = new Map<string, AnaesthetistAvailability>()
-  for (const row of masters.availability) {
-    availabilityBySlot.set(`${row.anaesthetistId}|${row.dateISO}|${row.session}`, row)
-  }
+  const leaveBySlot = new Map<string, SeedLeaveWindow>()
+  for (const row of masters.leave) leaveBySlot.set(`${row.anaesthetistId}|${row.dateISO}|${row.session}`, row)
   const holidaysByDate = new Map<string, HospitalHoliday[]>()
   for (const holiday of masters.holidays) {
     const existing = holidaysByDate.get(holiday.dateISO)
     if (existing === undefined) holidaysByDate.set(holiday.dateISO, [holiday])
     else existing.push(holiday)
   }
+  const active = masters.anaesthetists.filter((a) => a.active)
 
   for (const dateISO of datesISO) {
     const dayOfWeek = parseISO(dateISO).getDay()
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
-    for (const anaesthetistId of masters.anaesthetistIds) {
+    for (const anaesthetist of active) {
+      // 1. No Slot before the start date (US-01.1.3).
+      if (slotDatesFor(anaesthetist.startDateISO, [dateISO]).length === 0) continue
       for (const session of SESSIONS) {
-        const list: List = {
-          id: listIdForSlot(anaesthetistId, dateISO, session),
+        // 2. Every Slot starts free.
+        const slot: Slot = {
+          id: slotIdFor(anaesthetist.id, dateISO, session),
+          anaesthetistId: anaesthetist.id,
           dateISO,
-          anaesthetistId,
           session,
-          state: 'ACTIVE',
-          statusKey: 'free',
-          conflicts: [],
+          status: 'free',
         }
 
-        const availability = availabilityBySlot.get(`${anaesthetistId}|${dateISO}|${session}`)
-        const template = templateBySlot.get(`${anaesthetistId}|${dayOfWeek}|${session}`)
+        // 3. The calendar.
+        const leave = leaveBySlot.get(`${anaesthetist.id}|${dateISO}|${session}`)
+        if (leave !== undefined) {
+          slot.status = leave.status
+          if (leave.note !== undefined) slot.note = leave.note
+        }
 
-        if (availability !== undefined && availability.kind !== 'available') {
-          list.statusKey = availability.kind
-          if (availability.note !== undefined) list.notes = availability.note
-        } else if (template !== undefined && !isWeekend) {
-          list.statusKey = template.statusKey
-          if (template.hospitalId !== null) list.hospitalId = template.hospitalId
-          if (template.surgeonId !== null) list.surgeonId = template.surgeonId
-          if (template.notes !== undefined) list.notes = template.notes
-        } else {
-          // RNG fill — each slot hashes its own stream (order-independent).
-          const rng = slotRng(masters.seed, 'fill', anaesthetistId, dateISO, session)
-          const draw = rng()
-          if (isWeekend) {
-            if (draw < 0.08) {
-              list.statusKey = 'unavailable'
-              list.notes = 'Not available'
+        // 4. The recurring bookings, on top.
+        const template = isWeekend ? undefined : templateBySlot.get(`${anaesthetist.id}|${dayOfWeek}|${session}`)
+        if (template !== undefined) {
+          if (slot.status !== 'free') {
+            clashes.push({ permanentListId: template.id, slotId: slot.id })
+          } else {
+            const list: List = {
+              id: projectedListId(anaesthetist.id, dateISO, session),
+              slotId: slot.id,
+              dateISO,
+              anaesthetistId: anaesthetist.id,
+              session,
+              state: 'ACTIVE',
+              kind: template.kind,
+              conflicts: [],
             }
-          } else if (draw < 0.11) {
-            // Office-assigned ad hoc private booking (the non-permanent ~20%
-            // of surgeon assignments).
-            list.statusKey = 'private'
-            const hospitalId = pick(rng, ADHOC_HOSPITALS)
-            list.hospitalId = hospitalId
-            list.surgeonId = hospitalId === HOSP.ces ? pick(rng, CES_SURGEONS) : pick(rng, GENERAL_SURGEONS)
-          } else if (draw < 0.17) {
-            list.statusKey = 'public'
-            list.hospitalId = HOSP.cph
-            list.notes = 'Acute theatre'
-          } else if (draw < 0.22) {
-            list.statusKey = 'unavailable'
-            list.notes = 'Not available'
+            if (template.hospitalId !== null) list.hospitalId = template.hospitalId
+            if (template.surgeonId !== null) list.surgeonId = template.surgeonId
+            if (template.notes !== undefined) list.notes = template.notes
+            if (template.startTime !== undefined) slot.startTime = template.startTime
+            if (template.endTime !== undefined) slot.endTime = template.endTime
+            const conflict = closedHospitalConflict(list, holidaysByDate.get(dateISO) ?? [])
+            if (conflict !== null) list.conflicts.push(conflict)
+            lists.push(list)
           }
         }
 
-        const times = defaultTimes(list.statusKey, session)
-        if (times !== null) {
-          list.startTime = times.startTime
-          list.endTime = times.endTime
-        }
-
-        // Hospital holidays flag booked Lists; they never restatus them.
-        if (list.hospitalId !== undefined) {
-          const holidays = holidaysByDate.get(dateISO)
-          const hit = holidays?.find((h) => h.hospitalId === list.hospitalId)
-          if (hit !== undefined) {
-            list.conflicts.push({
-              kind: 'holiday',
-              message: `${hit.name}: the hospital is closed on this date.`,
-            })
-          }
-        }
-
-        lists.push(list)
+        slots.push(slot)
       }
     }
   }
 
-  return lists
+  return { slots, lists, clashes }
+}
+
+/** The generator's view of the anaesthetist master. */
+export function canvasAnaesthetists(
+  anaesthetists: Readonly<Record<string, { registrationNumber: string; startDateISO: string; active: boolean }>> | readonly { registrationNumber: string; startDateISO: string; active: boolean }[],
+): CanvasAnaesthetist[] {
+  const rows = Array.isArray(anaesthetists) ? anaesthetists : Object.values(anaesthetists)
+  return (rows as readonly { registrationNumber: string; startDateISO: string; active: boolean }[]).map((a) => ({
+    id: a.registrationNumber,
+    startDateISO: a.startDateISO,
+    active: a.active,
+  }))
 }

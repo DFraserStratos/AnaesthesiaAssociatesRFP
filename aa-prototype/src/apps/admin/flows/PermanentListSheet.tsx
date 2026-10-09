@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { radius, semantic } from '../../../theme/tokens'
-import type { ListStatusKey, PermanentList, Session } from '../../../domain/types'
+import { neutral, radius, semantic } from '../../../theme/tokens'
+import type { ListKind, PermanentList, Session } from '../../../domain/types'
 import { addPermanentList, editPermanentList, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, Segmented, TextField } from '../../../shared'
 import { useSurface } from '../../../shared'
@@ -25,7 +25,12 @@ const DAYS: { value: number; label: string }[] = [
   { value: 0, label: 'Sunday' },
 ]
 
-const STATUSES: ListStatusKey[] = ['private', 'public', 'preop', 'holiday', 'unavailable', 'free']
+/** A recurring booking projects a private, public or pre-op List (catch-up Phase 28: free and leave are session statuses, never a template). */
+const KINDS: { value: ListKind; label: string }[] = [
+  { value: 'private', label: 'Private' },
+  { value: 'public', label: 'Public' },
+  { value: 'preop', label: 'Pre-op' },
+]
 
 export function PermanentListSheet({ open, actor, template, onClose }: Props) {
   const { Overlay } = useSurface()
@@ -35,7 +40,9 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
   const [anaesthetistId, setAnaesthetistId] = useState('')
   const [dayOfWeek, setDayOfWeek] = useState(1)
   const [session, setSession] = useState<Session>('AM')
-  const [statusKey, setStatusKey] = useState<ListStatusKey>('private')
+  const [kind, setKind] = useState<ListKind>('private')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [hospitalId, setHospitalId] = useState('')
   const [surgeonId, setSurgeonId] = useState('')
   const [notes, setNotes] = useState('')
@@ -50,7 +57,9 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
     setAnaesthetistId(template?.anaesthetistId ?? '')
     setDayOfWeek(template?.dayOfWeek ?? 1)
     setSession(template?.session ?? 'AM')
-    setStatusKey(template?.statusKey ?? 'private')
+    setKind(template?.kind ?? 'private')
+    setStartTime(template?.startTime ?? '')
+    setEndTime(template?.endTime ?? '')
     setHospitalId(template?.hospitalId ?? '')
     setSurgeonId(template?.surgeonId ?? '')
     setNotes(template?.notes ?? '')
@@ -66,7 +75,9 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
       anaesthetistId,
       dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       session,
-      statusKey,
+      kind,
+      startTime,
+      endTime,
       hospitalId: hospitalId === '' ? null : hospitalId,
       surgeonId: surgeonId === '' ? null : surgeonId,
       notes,
@@ -103,14 +114,20 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
           </select>
         </label>
         <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]} onChange={setSession} />
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Status</FieldLabel>
-          <select value={statusKey} onChange={(e) => setStatusKey(e.target.value as ListStatusKey)} style={selectStyle}>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </label>
+        <Segmented label="Kind of List" value={kind} options={KINDS} onChange={setKind} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Start (optional)</FieldLabel>
+              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={selectStyle} />
+            </label>
+            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>End (optional)</FieldLabel>
+              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={selectStyle} />
+            </label>
+          </div>
+          <span style={{ fontSize: 12, color: neutral.slate }}>Leave blank for the default session times.</span>
+        </div>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Hospital (usual)</FieldLabel>
           <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={selectStyle}>

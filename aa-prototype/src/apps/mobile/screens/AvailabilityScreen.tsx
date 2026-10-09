@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, brand, neutral, radius } from '../../../theme/tokens'
 import { freeDashedBorder, statusColours, unavailableHatchTint, type StatusKey } from '../../../theme/statusColours'
-import type { List, Session } from '../../../domain/types'
-import { setAvailability, useAppStore, useToday, type Actor } from '../../../store'
+import type { Session, SlotStatus } from '../../../domain/types'
+import { isOpenSlotView, rosterForDate, setAvailability, slotViewsForDate, useAppStore, useToday, type Actor, type SlotView } from '../../../store'
 import { MobileHeader } from '../components'
 import { Avatar, DockSpacer } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
@@ -17,7 +17,8 @@ interface AvailabilityScreenProps {
 }
 
 interface CoverTarget {
-  listId: string
+  /** The open session asked about (a Slot id). */
+  slotId: string
   personName: string
   slotLabel: string
   kind: 'offer' | 'request'
@@ -34,6 +35,8 @@ function cellStyle(statusKey: StatusKey): { bg: string; border: string; color: s
 
 export function AvailabilityScreen({ actor, anaesthetistId, initials }: AvailabilityScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  const slotsRecord = useAppStore((s) => s.schedule.slots)
+  const appSettings = useAppStore((s) => s.appSettings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -44,76 +47,88 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
   const [cover, setCover] = useState<CoverTarget | null>(null)
   const [availResult, setAvailResult] = useState<string | null>(null)
 
+  // The same Slot views every app and finder reads (catch-up Phase 28,
+  // US-01.4.2): "free" is an open session (free, holding no List), so a
+  // session the office has assigned is never offered here. Name order, no
+  // tiers (the office's ranking is Admin only, US-01.3.6).
+  const slotState = useMemo(() => ({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings }), [slotsRecord, listsRecord, appSettings])
+
   const days = useMemo(() => {
     const out: { dateISO: string; dow: string; date: string; hasFree: boolean }[] = []
     for (let i = 0; i < 6; i++) {
       const d = format(addDays(parseISO(todayISO), i), 'yyyy-MM-dd')
-      const hasFree = Object.values(listsRecord).some((l) => l.dateISO === d && l.statusKey === 'free')
+      const hasFree = slotViewsForDate(slotState, d).some(isOpenSlotView)
       out.push({ dateISO: d, dow: format(parseISO(d), 'EEE').toUpperCase(), date: format(parseISO(d), 'd'), hasFree })
     }
     return out
-  }, [todayISO, listsRecord])
+  }, [todayISO, slotState])
 
   const model = useMemo(() => {
-    function slot(aid: string, session: Session): List | undefined {
-      return Object.values(listsRecord).find((l) => l.anaesthetistId === aid && l.dateISO === selectedDate && l.session === session)
+    const views = slotViewsForDate(slotState, selectedDate)
+    function slot(aid: string, session: Session): SlotView | undefined {
+      return views.find((v) => v.slot.anaesthetistId === aid && v.slot.session === session)
     }
-    const rows = Object.values(anaesthetists)
+    const rows = rosterForDate({ schedule: slotState.schedule, masters: { anaesthetists } }, selectedDate)
       .filter((a) => a.registrationNumber !== anaesthetistId)
       .map((a) => ({ anaesthetist: a, am: slot(a.registrationNumber, 'AM'), pm: slot(a.registrationNumber, 'PM') }))
       .sort((x, y) => x.anaesthetist.name.localeCompare(y.anaesthetist.name))
-    const freeCount = Object.values(listsRecord).filter((l) => l.dateISO === selectedDate && l.statusKey === 'free').length
+    const freeCount = views.filter(isOpenSlotView).length
     const mine = { am: slot(anaesthetistId, 'AM'), pm: slot(anaesthetistId, 'PM') }
     return { rows, freeCount, mine }
-  }, [listsRecord, anaesthetists, selectedDate, anaesthetistId])
+  }, [slotState, anaesthetists, selectedDate, anaesthetistId])
 
   const selLong = format(parseISO(selectedDate), 'EEE d MMM')
 
-  function cellSubtitle(list: List | undefined): string {
-    if (list === undefined) return ''
-    if (list.statusKey === 'free') return 'Tap to ask'
-    if (list.statusKey === 'holiday') return 'Leave'
-    if (list.statusKey === 'unavailable') return 'Unavailable'
+  function cellSubtitle(view: SlotView | undefined): string {
+    if (view === undefined) return ''
+    const list = view.list
+    if (list === undefined) {
+      if (view.slot.status === 'free') return 'Tap to ask'
+      return view.slot.status === 'holiday' ? 'Leave' : 'Unavailable'
+    }
     const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? '') : 'AA rooms'
     const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : ''
     return [hospital, surgeon].filter(Boolean).join(' · ')
   }
 
-  function cellTitle(list: List | undefined): string {
-    if (list === undefined) return 'No session'
-    if (list.statusKey === 'free') return 'Free'
-    if (list.statusKey === 'holiday') return 'Leave'
-    if (list.statusKey === 'unavailable') return 'Unavailable'
+  function cellTitle(view: SlotView | undefined): string {
+    if (view === undefined) return 'No session'
+    const list = view.list
+    if (list === undefined) {
+      if (view.slot.status === 'free') return 'Free'
+      return view.slot.status === 'holiday' ? 'Leave' : 'Unavailable'
+    }
     return list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Booked') : 'Pre-op'
   }
 
-  function openRequest(list: List, personName: string, session: Session) {
+  function openRequest(view: SlotView, personName: string, session: Session) {
     setCover({
-      listId: list.id,
+      slotId: view.slot.id,
       personName,
       slotLabel: `${selLong} · ${session}`,
       kind: 'request',
-      targetAnaesthetistId: list.anaesthetistId,
+      targetAnaesthetistId: view.slot.anaesthetistId,
     })
   }
 
-  function setMine(session: Session, kind: 'available' | 'unavailable' | 'holiday') {
-    const outcome = setAvailability(useAppStore, actor, anaesthetistId, selectedDate, session, kind)
+  function setMine(session: Session, status: SlotStatus) {
+    const outcome = setAvailability(useAppStore, actor, anaesthetistId, selectedDate, session, status)
     if (!outcome.ok) {
       setAvailResult(outcome.message)
       return
     }
-    const r = outcome.value.reconciled
+    const r = outcome.value.result
     setAvailResult(
-      r === 'restatused'
-        ? `${session} session updated on the canvas.`
+      r === 'updated'
+        ? `${session} session updated.`
         : r === 'conflictFlagged'
-          ? `${session} has bookings; a conflict was flagged and the office notified.`
+          ? `${session} holds a List; the office sees a conflict flag on it.`
           : `${session} unchanged.`,
     )
   }
 
-  const rowsToShow = mode === 'free' ? model.rows.filter((r) => r.am?.statusKey === 'free' || r.pm?.statusKey === 'free') : model.rows
+  const isFreeView = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
+  const rowsToShow = mode === 'free' ? model.rows.filter((r) => isFreeView(r.am) || isFreeView(r.pm)) : model.rows
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -185,15 +200,15 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
             <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>My availability</span>
           </div>
           {(['AM', 'PM'] as const).map((session) => {
-            const list = session === 'AM' ? model.mine.am : model.mine.pm
-            const cs = list !== undefined ? cellStyle(list.statusKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
+            const view = session === 'AM' ? model.mine.am : model.mine.pm
+            const cs = view !== undefined ? cellStyle(view.displayKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
             return (
               <div key={session} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="mono" style={{ width: 28, fontSize: 11, fontWeight: 600, color: neutral.mist }}>{session}</span>
                 <span style={{ flex: 1, minWidth: 0, borderRadius: 10, padding: '8px 10px', background: cs.bg, border: cs.border, color: cs.color, fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {cellTitle(list)}
+                  {cellTitle(view)}
                 </span>
-                <button onClick={() => setMine(session, 'available')} style={miniBtn(statusColours.free.solid)}>Free</button>
+                <button onClick={() => setMine(session, 'free')} style={miniBtn(statusColours.free.solid)}>Free</button>
                 <button data-shot={`availability-block-${session.toLowerCase()}`} onClick={() => setMine(session, 'unavailable')} style={miniBtn(neutral.slate)}>Block</button>
               </div>
             )
@@ -202,7 +217,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
         </div>
 
         {rowsToShow.map((r) => {
-          const anyFree = r.am?.statusKey === 'free' || r.pm?.statusKey === 'free'
+          const anyFree = isFreeView(r.am) || isFreeView(r.pm)
           return (
             <div key={r.anaesthetist.registrationNumber} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 1px 2px rgba(23,35,32,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -214,20 +229,20 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['AM', 'PM'] as const).map((session) => {
-                  const list = session === 'AM' ? r.am : r.pm
-                  const isFree = list?.statusKey === 'free'
-                  const cs = list !== undefined ? cellStyle(list.statusKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
-                  const pending = list?.coverRequest !== undefined
+                  const view = session === 'AM' ? r.am : r.pm
+                  const isFree = isFreeView(view)
+                  const cs = view !== undefined ? cellStyle(view.displayKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
+                  const pending = view?.slot.coverRequest !== undefined
                   return (
                     <button
                       key={session}
-                      onClick={isFree && list !== undefined && !pending ? () => openRequest(list, r.anaesthetist.name, session) : undefined}
+                      onClick={isFree && view !== undefined && !pending ? () => openRequest(view, r.anaesthetist.name, session) : undefined}
                       style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: isFree && !pending ? 'pointer' : 'default', background: cs.bg, border: cs.border }}
                     >
                       <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: cs.color, opacity: 0.7, flex: 'none' }}>{session}</span>
                       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 600, color: cs.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cellTitle(list)}</span>
-                        <span style={{ fontSize: 10.5, color: cs.color, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pending ? 'Cover requested' : cellSubtitle(list)}</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: cs.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cellTitle(view)}</span>
+                        <span style={{ fontSize: 10.5, color: cs.color, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pending ? 'Cover requested' : cellSubtitle(view)}</span>
                       </span>
                     </button>
                   )
@@ -246,7 +261,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
       {cover !== null && (
         <RequestCoverSheet
           open
-          listId={cover.listId}
+          slotId={cover.slotId}
           actor={actor}
           kind={cover.kind}
           personName={cover.personName}

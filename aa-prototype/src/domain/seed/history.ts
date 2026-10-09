@@ -25,6 +25,7 @@
  * state rather than simulated runtime mutations.
  */
 
+import { slotIdFor } from '../slots'
 import type {
   Anaesthetist,
   BillingCase,
@@ -284,13 +285,17 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
     const listId = acc.listKey !== undefined ? ids.list(acc.listKey) : ids.list(n)
     const bookingId = ids.booking(n)
     const procId = ids.procedure(n)
+    const session = acc.session ?? 'AM'
     const list: List = {
       id: listId,
+      // Backdrop history sits before the schedule horizon: it names its Slot
+      // but no Slot record exists (catch-up Phase 28; `isBackdropList`).
+      slotId: slotIdFor(anaesthetistId, acc.serviceISO, session),
       dateISO: acc.serviceISO,
       anaesthetistId,
-      session: acc.session ?? 'AM',
+      session,
       state: 'AUTHORISED',
-      statusKey: 'private',
+      kind: 'private',
       conflicts: [],
       billedAtISO: acc.raisedISO,
       notes: 'Historical billed list.',

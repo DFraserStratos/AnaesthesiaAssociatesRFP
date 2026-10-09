@@ -1,0 +1,146 @@
+/**
+ * The golden canvas (catch-up Phase 28, work item 1). The fixture was captured
+ * from the seed BEFORE the Slot and List split (Phase 17's final seed,
+ * `b7e5feb`), as one row per anaesthetist, day and session:
+ *   - the demo window, 2026-07-07 to 2026-08-16: the displayed status, the
+ *     List's id and state, hospital, surgeon, note, times and conflicts;
+ *   - every seeded Booking's id, List and patient, and every `SEED_LIST_IDS`.
+ * After the split the test maps each Slot and its List back through
+ * `displayStatusKey` and `effectiveSlotTimes` and must reproduce the window
+ * and the Bookings exactly: the split, and the seed's recorded window, kept
+ * every draw, placement and Booking the demo uses.
+ *
+ * The far edge (the last seven horizon days) is the one deliberate change: the
+ * generator stopped inventing sessions (US-01.1.1), so that section was
+ * regenerated once, in Phase 28, and is checked beside a rule (every far-edge
+ * session is free unless the seed calendar or a recurring booking painted it).
+ * A later phase that changes the seed on purpose regenerates the fixture and
+ * says so.
+ */
+
+import { describe, expect, it } from 'vitest'
+import goldenRaw from './__fixtures__/canvas-golden.json?raw'
+import { buildSeed, SEED_LIST_IDS, SEED_LEAVE } from './index'
+import { PERMANENT_LISTS } from './permanentLists'
+import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
+import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../slots'
+import type { List, ListConflict } from '../types'
+
+interface GoldenRow {
+  statusKey: string
+  listId?: string
+  state?: string
+  hospitalId: string | null
+  surgeonId: string | null
+  notes: string | null
+  startTime: string | null
+  endTime: string | null
+  conflicts: ListConflict[]
+}
+
+interface Golden {
+  windowFrom: string
+  windowTo: string
+  window: Record<string, GoldenRow>
+  bookings: { id: string; listId: string; patientId: string }[]
+  seedListIds: Record<string, string>
+  farEdge: Record<string, GoldenRow>
+}
+
+const golden = JSON.parse(goldenRaw) as Golden
+
+/**
+ * Rows the split changed on purpose, each named. Souter's Fri 24 Lists sit on
+ * the first day of her leave window; before the split the booked List kept
+ * the leave note ("Annual leave / back Monday") as its own note, an artefact
+ * of painting a List over a leave row. Now the Slot is free (she works these
+ * sessions) and the List has no note.
+ */
+const DELIBERATE: Record<string, Partial<GoldenRow>> = {
+  '34821|2026-07-24|AM': { notes: null },
+  '34821|2026-07-24|PM': { notes: null },
+}
+
+const seed = buildSeed()
+const listBySlot = new Map<string, List>()
+for (const l of Object.values(seed.schedule.lists)) listBySlot.set(l.slotId, l)
+
+/** The pre-split row shape for one session, read from the split records. */
+function rowFor(key: string, compareTimes: boolean): GoldenRow | undefined {
+  const [anaesthetistId, dateISO, session] = key.split('|') as [string, string, 'AM' | 'PM']
+  const slot = seed.schedule.slots[slotIdFor(anaesthetistId, dateISO, session)]
+  if (slot === undefined) return undefined
+  const list = listBySlot.get(slot.id)
+  const times = effectiveSlotTimes(slot, seed.appSettings.schedule)
+  return {
+    statusKey: displayStatusKey(slot, list),
+    ...(list !== undefined ? { listId: list.id, state: list.state } : {}),
+    hospitalId: list?.hospitalId ?? null,
+    surgeonId: list?.surgeonId ?? null,
+    notes: (list !== undefined ? list.notes : slot.note) ?? null,
+    // Free, unavailable and holiday rows carried no times before the split;
+    // they are compared only where the old List carried them.
+    startTime: compareTimes ? times.startTime : null,
+    endTime: compareTimes ? times.endTime : null,
+    conflicts: list?.conflicts ?? [],
+  }
+}
+
+describe('golden canvas (Phase 28: the split keeps the demo window)', () => {
+  it('reproduces every session in the demo window exactly', () => {
+    const keys = Object.keys(golden.window)
+    expect(keys.length).toBe(14 * 2 * enumerateDatesISO(golden.windowFrom, golden.windowTo).length)
+    const mismatches: string[] = []
+    for (const key of keys) {
+      const expected = { ...golden.window[key], ...DELIBERATE[key] } as GoldenRow
+      const actual = rowFor(key, expected.startTime !== null)
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        mismatches.push(`${key}\n  expected ${JSON.stringify(expected)}\n  actual   ${JSON.stringify(actual)}`)
+      }
+    }
+    expect(mismatches.slice(0, 5).join('\n')).toBe('')
+    expect(mismatches.length).toBe(0)
+  })
+
+  it('reproduces every seeded Booking on the same List and patient', () => {
+    const bookings = Object.values(seed.schedule.bookings)
+      .map((b) => ({ id: b.id, listId: b.listId, patientId: b.patientId }))
+      .sort((a, b) => a.id.localeCompare(b.id))
+    expect(bookings).toEqual(golden.bookings)
+  })
+
+  it('keeps every pinned seed List id, each resolving to a List', () => {
+    expect({ ...SEED_LIST_IDS }).toEqual(golden.seedListIds)
+    for (const id of Object.values(SEED_LIST_IDS)) expect(seed.schedule.lists[id], id).toBeDefined()
+  })
+
+  it('matches the far edge, regenerated once in Phase 28', () => {
+    const mismatches: string[] = []
+    for (const [key, expected] of Object.entries(golden.farEdge)) {
+      const actual = rowFor(key, expected.startTime !== null)
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) mismatches.push(key)
+    }
+    expect(mismatches).toEqual([])
+  })
+
+  it('leaves every far-edge session free unless the calendar or a recurring booking painted it', () => {
+    const horizon = horizonFor(DEMO_TODAY, seed.appSettings.schedule.horizonMonths)
+    const farDates = new Set(enumerateDatesISO(horizon.startISO, horizon.endISO).slice(-7))
+    const leave = new Set(SEED_LEAVE.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
+    const templates = new Set(PERMANENT_LISTS.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
+    let checked = 0
+    for (const slot of Object.values(seed.schedule.slots)) {
+      if (!farDates.has(slot.dateISO)) continue
+      checked++
+      const list = listBySlot.get(slot.id)
+      const dow = new Date(`${slot.dateISO}T00:00:00`).getDay()
+      if (list !== undefined) {
+        expect(templates.has(`${slot.anaesthetistId}|${dow}|${slot.session}`), slot.id).toBe(true)
+        expect(list.id.startsWith('L-'), slot.id).toBe(true)
+      } else if (slot.status !== 'free') {
+        expect(leave.has(`${slot.anaesthetistId}|${slot.dateISO}|${slot.session}`), slot.id).toBe(true)
+      }
+    }
+    expect(checked).toBe(14 * 2 * 7)
+  })
+})

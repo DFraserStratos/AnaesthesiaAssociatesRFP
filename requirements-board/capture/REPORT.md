@@ -6,13 +6,13 @@ Scope: every story plus every feature with no stories (266 items, 266 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 125 | 114 |
-| Partial | 64 | 64 |
+| Captured | 128 | 117 |
+| Partial | 61 | 61 |
 | Absent from the prototype | 68 | 68 |
 | Failed recipe | 0 | 0 |
 | No recipe | 20 | 20 |
 
-425 screenshots. Items per app: admin 121, web 58, mobile 53, simulator 36.
+449 screenshots. Items per app: admin 122, web 59, mobile 55, simulator 36.
 
 ## Failed recipes (0)
 
@@ -89,23 +89,20 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (64)
+## Partial (61)
 
-- **US-01.1.2** Horizon rolls forward daily · The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.
-- **US-01.1.3** New anaesthetist gets a populated canvas · Adding an anaesthetist generates their forward Lists in the store (confirmed on save), but the admin day grid shows only the seeded roster, so the new rows are not visible there.
-- **US-01.1.4** Slot default times · Start and end times can be overridden per List, but the AM and PM defaults (07:30 to 12:30, 13:00 to 17:30) are fixed in code with no admin setting.
-- **US-01.2.1** Anaesthetist sets half-day availability · The mobile app sets each own session to Free or Block only; available for emergency and on leave are not offered. The web app shows own availability in the grid but cannot change it.
-- **US-01.2.2** Slot status master data · The List status table is shown in master data (key, label, description) but is view only: statuses cannot be added or renamed, and colour is not editable.
-- **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · The warning and the separated group work when the office assigns a List in a session (Edit list, phone advice booking, Permanent List) and when it reassigns a List. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.
-- **US-01.3.6** Anaesthetist priority tiers for assignment · Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker. The availability finder (Phase 28) and Draft List assignment (Phase 31) reuse the same ordering.
-- **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List and its bookings to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.
+- **US-01.2.1** Anaesthetist sets half-day availability · Availability is now the session's own status (one mechanism), but the mobile app still sets each own session to Free or Block only, and the web app cannot change availability: Phase 29 builds the calendar (days off ahead, series, holiday) and the web controls.
+- **US-01.2.2** Slot status master data · Still view only: statuses cannot be added or renamed and colour is not editable; Phase 29 turns this view into the user-maintained status list.
+- **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · The warning and the separated group work on every office path built so far: Assign List, Book (phone advice), Edit list, the Permanent List sheet, Reassign list and Find available. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.
+- **US-01.3.6** Anaesthetist priority tiers for assignment · Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker and the Find available sheet on the Day view (Phase 28). Draft List assignment (Phase 31) reuses the same ordering.
+- **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
 - **US-01.4.3** Anaesthetist moves their own List · From the availability view an anaesthetist can ask a colleague to cover a free session, or offer their own free session. Requesting that one of their own booked Lists be swapped to a colleague, and the office confirming that reassignment, are not in the prototype.
 - **US-01.5.2** Conflict flagging · Conflicts are flagged as advisory warnings (hard block versus soft warning is still open, OQ-09). The web app shows no conflict for the anaesthetist.
-- **US-01.5.3** Anaesthetist availability calendar · Availability is set per session on the mobile app, on the List itself, not as a separate calendar independent of Lists (OQ-27). The web app cannot change availability.
+- **US-01.5.3** Anaesthetist availability calendar · Availability is the session's own status (one mechanism, OQ-27), set per session on the mobile app; the calendar (days off ahead, series, single-instance edits) and the web controls are Phase 29.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
 - **US-02.1.2** Match rows to Lists and Bookings · No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Booking instead of duplicating it. There is no option to create a new List or to reject a row.
 - **US-02.1.4** Unmatched queue · There are no hospital download rows, so there is no unmatched-row queue. The analogue shown is the integration message log: messages that cannot be applied (dead-letter, or manual intervention when the target List is already submitted) are retained for the office to fix and reprocess, never dropped.
-- **US-02.3.1** Create or amend a Booking · The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a Free, empty List through the phone-advice booking; there is no way for the office to add a Booking to a List that already has one.
+- **US-02.3.1** Create or amend a Booking · The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a free session through the phone-advice booking, which assigns the List first; there is no way for the office to add a Booking to a List that already has one.
 - **US-02.4.1** Add a Booking manually · Manual entry is built and is the sheet's one way in; the optional 'as given' field kept as the Procedure's source wording is not built yet (Phase 20a)
 - **US-02.5.4** Changes accepted until the procedure · Inbound changes are applied to any ACTIVE List, including today's, so late bookings are supported. The cut-off is List submission rather than session start: a change addressing a submitted List is not applied and parks for manual intervention, as shown.
 - **US-03.1.2** See the Contract on each Procedure · The applied Contract is shown read-only on each procedure of the booking, but not on the List view before the session.
@@ -179,7 +176,7 @@ None.
 - **US-13.8.1** See the team's notifications
 - **US-13.8.2** Notify the team when an anaesthetist moves a List
 
-## Captured (125)
+## Captured (128)
 
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
@@ -193,10 +190,13 @@ None.
 - **FT-13.3** Billing flow monitoring · admin
 - **FT-13.4** Master data management · admin
 - **US-01.1.1** Two Slots per anaesthetist per day · admin, web, mobile
-- **US-01.2.3** Status is independent of bookings · admin, web
+- **US-01.1.2** Horizon rolls forward daily · admin
+- **US-01.1.3** New anaesthetist gets a populated canvas · admin
+- **US-01.1.4** Slot default times · admin
+- **US-01.2.3** Status is independent of bookings · admin, web, mobile
 - **US-01.3.1** Assigned List pairing rule · admin
 - **US-01.3.2** Recurring bookings drive most assignments · admin
-- **US-01.3.3** Manual List assignment · admin
+- **US-01.3.3** Manual List assignment · admin, web, mobile
 - **US-01.3.4** AM and PM can differ · admin, web, mobile
 - **US-01.4.2** Availability finder · admin, web, mobile
 - **US-01.5.1** Hospital holiday calendar · admin

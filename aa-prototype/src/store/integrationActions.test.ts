@@ -26,8 +26,9 @@ import {
   dataQualityItems,
 } from './selectors'
 import type { Actor } from './mutate'
-import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS, listIdForSlot } from '../domain/seed'
+import { ANAE, HOSP, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
 import { APPT, FEED, CPH_NHI_FIX, SURGEON_PDFS } from '../domain/integrations'
+import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -168,7 +169,7 @@ describe('modify events located by correlation ref', () => {
     // The locked target sits on a coherent booked SUBMITTED St George's list.
     const lockedList = api.getState().schedule.lists[before.listId]!
     expect(lockedList.state).toBe('SUBMITTED')
-    expect(lockedList.statusKey).toBe('private')
+    expect(lockedList.kind).toBe('private')
     expect(lockedList.hospitalId).toBe('H-STG')
     const out = processMessage(api, 'MSG-STG-1014')
     expect(out.ok).toBe(true)
@@ -246,7 +247,7 @@ describe('PDF ingestion', () => {
   it('updates an already-booked row (matched by NHI on the target List) instead of duplicating, and creates the new rows', () => {
     const api = store()
     const pdf = SURGEON_PDFS.find((p) => p.id === 'PDF-OKAFOR-0729')!
-    const listId = listIdForSlot(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
+    const listId = projectedListId(pdf.targetList.anaesthetistId, pdf.targetList.dateISO, pdf.targetList.session)
     const before = bookingsForList(api.getState(), listId).length
 
     const [r1, r2, r3] = pdf.rows

@@ -67,17 +67,20 @@ There is no `RETURNED` state.
 
 ### Trigger
 
-- The four-month schedule horizon advances.
-- A new anaesthetist becomes active.
-- A Permanent List or hospital holiday changes.
+- The schedule horizon (a setting, four months today) advances or is changed.
+- A new anaesthetist is added with a start date, or an anaesthetist is switched active or inactive.
+- A Permanent List (recurring booking) or hospital holiday changes.
 
 ### Steps
 
-1. The system ensures every active anaesthetist has exactly two Lists, AM and PM, for every day in
-   the rolling horizon.
-2. Permanent Lists project standing hospital, surgeon and session arrangements onto future Lists.
-3. Anaesthetist availability and hospital holidays are reconciled against the canvas.
-4. Free, unavailable, holiday and booked status is displayed consistently in all apps.
+1. The system ensures every active anaesthetist has an AM and a PM session for every day from their
+   start date to the end of the rolling horizon. Every new session starts Free.
+2. The anaesthetist's calendar (leave, unavailability) is painted onto the session's status.
+3. Permanent Lists (the surgeons' recurring bookings) then project standing hospital and surgeon
+   arrangements as Lists into free sessions; one that meets leave is traced for the office.
+4. The displayed status is the List's kind when a List is in the session, the session's status
+   otherwise: one derivation, so free, unavailable, holiday and booked show the same in all apps and
+   the finders, including after a phone booking.
 5. Conflicts are surfaced without deleting the List.
 
 ### Handoff
@@ -192,7 +195,7 @@ Show a single Booking move and explain that it is different from reassigning an 
 
 **Primary actors:** Anaesthetist and AA scheduling coordinator
 
-**Prototype readiness:** Ready, using the prototype's proposed reassignment mechanics
+**Prototype readiness:** Ready (US-01.4.1: the List moves between sessions)
 
 ### Trigger
 
@@ -201,26 +204,28 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 ### Steps
 
 1. Dr Souter maintains her personal availability or offers a Free session for cover.
-2. The system reconciles that availability against the schedule.
+2. Her availability is the status on her session; a session holding a List gets a conflict flag.
 3. Kirsty sees the conflict or receives the phone call.
 4. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
    not-preferred pairing grouped apart and warned (never blocked).
-5. She selects a Free target session.
-6. She reassigns the whole List, including every Booking and its history, to the replacement
-   anaesthetist.
-7. The target's empty Free List is absorbed.
-8. A fresh List is regenerated in the vacated slot so the fixed two-Lists-per-day canvas remains
-   intact.
+5. She selects a colleague whose session on the same day and session is free (Find available on the
+   Day view, or the Reassign list picker).
+6. The List moves into that session with every Booking and its history; it keeps its id, and nothing
+   about billing is recalculated.
+7. The vacated session returns to Free, unless she marks it Unavailable or Holiday (OQ-84's
+   recommendation, still open).
+8. No List is absorbed or regenerated.
 9. The reassignment is audited.
 
 ### Handoff
 
 The replacement anaesthetist sees the List in their schedule.
 
-### RFP ambiguity
+### Requirement
 
-The RFP requires reassignment but leaves the precise mechanics open. Free-target, absorb and
-regenerate is the prototype's proposed reading, not a settled business rule.
+US-01.4.1 settles the mechanism: change the List's owner, consume the covering anaesthetist's free
+session, and return the vacated session to available (or mark it unavailable if more appropriate).
+What the vacated session shows by default is OQ-84, still open; the prototype uses Free.
 
 ### What not to say
 

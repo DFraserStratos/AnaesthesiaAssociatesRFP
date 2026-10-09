@@ -7,6 +7,7 @@
 
 export * from './types'
 export * from './clock'
+export * from './slots'
 export * from './rng'
 export * from './nhi'
 export * from './nzhis'

@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
 import { statusColours } from '../../../theme/statusColours'
-import type { List } from '../../../domain/types'
-import { isListBilled, useAppStore } from '../../../store'
+import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
 import { StatusChip, StatusLegend } from '../../../shared'
 import { Panel } from '../components'
 
@@ -14,7 +13,7 @@ interface ListsScreenProps {
 }
 
 interface Row {
-  list: List
+  view: SlotView
   description: string
   clickable: boolean
 }
@@ -31,14 +30,17 @@ const dateInputStyle = {
 } as const
 
 /**
- * The Lists table (W2). Date-ranged (default today +4 weeks), Souter's Lists,
- * the 2-per-day rhythm visible, colour-coded rows. From/To read the List's
- * ACTUAL start/end times (`startTime`/`endTime`, incl. office overrides), never
- * hardcoded session defaults. Billed Lists are filtered out (`isListBilled`).
- * A booked row drills into List detail.
+ * The Lists table (W2). Date-ranged (default today +4 weeks), Souter's
+ * sessions, the 2-per-day rhythm visible, colour-coded rows, from the same
+ * Slot views every app reads (catch-up Phase 28): a session holding a List
+ * shows the List (and drills into List detail), an empty one its status.
+ * From/To are a List's session times (its own, or the settings default).
+ * Billed Lists are filtered out (`isListBilled`).
  */
 export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
+  const slotsRecord = useAppStore((s) => s.schedule.slots)
+  const appSettings = useAppStore((s) => s.appSettings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
 
@@ -46,32 +48,29 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
 
   const rows = useMemo(() => {
-    function describe(l: List): string {
-      if (l.statusKey === 'free') return l.notes ?? 'Free / open for cover'
-      if (l.statusKey === 'holiday') return l.notes ?? 'Annual leave'
-      if (l.statusKey === 'unavailable') return l.notes ?? 'Not available'
-      if (l.statusKey === 'preop') return l.notes ?? 'Pre-op assessment clinic · AA rooms'
+    function describe(v: SlotView): string {
+      const l = v.list
+      if (l === undefined) {
+        if (v.slot.status === 'free') return v.slot.note ?? 'Free / open for cover'
+        if (v.slot.status === 'holiday') return v.slot.note ?? 'Annual leave'
+        return v.slot.note ?? 'Not available'
+      }
+      if (l.kind === 'preop') return l.notes ?? 'Pre-op assessment clinic · AA rooms'
       const hospital = l.hospitalId !== undefined ? (hospitals[l.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
       const surgeon = l.surgeonId !== undefined ? surgeons[l.surgeonId] : undefined
       const parts = [hospital, surgeon?.name, surgeon?.specialty].filter((p): p is string => p !== undefined && p !== '')
       return parts.join(' · ')
     }
-    return Object.values(listsRecord)
-      .filter(
-        (l) =>
-          l.anaesthetistId === anaesthetistId &&
-          !isListBilled(l) &&
-          // A cleared date input is unbounded (empty string), not "matches nothing".
-          (fromISO === '' || l.dateISO >= fromISO) &&
-          (toISO === '' || l.dateISO <= toISO),
-      )
-      .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.session.localeCompare(b.session))
-      .map((list): Row => ({
-        list,
-        description: describe(list),
-        clickable: list.statusKey === 'private' || list.statusKey === 'public' || list.statusKey === 'preop',
-      }))
-  }, [listsRecord, hospitals, surgeons, anaesthetistId, fromISO, toISO])
+    // A cleared date input is unbounded (empty string), not "matches nothing".
+    return slotViewsForAnaesthetist(
+      { schedule: { slots: slotsRecord, lists: listsRecord }, appSettings },
+      anaesthetistId,
+      fromISO === '' ? '0000-01-01' : fromISO,
+      toISO === '' ? '9999-12-31' : toISO,
+    )
+      .filter((v) => v.list === undefined || !isListBilled(v.list))
+      .map((view): Row => ({ view, description: describe(view), clickable: view.list !== undefined }))
+  }, [listsRecord, slotsRecord, appSettings, hospitals, surgeons, anaesthetistId, fromISO, toISO])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -118,29 +117,32 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
                 </tr>
               )}
               {rows.map((r) => {
-                const c = statusColours[r.list.statusKey]
+                const { slot, list, displayKey, times } = r.view
+                const c = statusColours[displayKey]
+                const showTimes = list !== undefined || times.overridden
                 return (
                   <tr
-                    key={r.list.id}
-                    onClick={r.clickable ? () => onOpenList(r.list.id) : undefined}
+                    key={slot.id}
+                    data-slot-id={slot.id}
+                    onClick={list !== undefined ? () => onOpenList(list.id) : undefined}
                     style={{
                       borderBottom: `1px solid ${neutral.sunken}`,
                       cursor: r.clickable ? 'pointer' : 'default',
-                      background: r.list.dateISO === todayISO ? neutral.bg : neutral.surface,
+                      background: slot.dateISO === todayISO ? neutral.bg : neutral.surface,
                     }}
                   >
                     <Td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                         <span aria-hidden style={{ width: 3, height: 20, borderRadius: 99, background: c.solid, flex: 'none' }} />
-                        {format(parseISO(r.list.dateISO), 'EEE d MMM')}
-                        {r.list.dateISO === todayISO && <span style={{ fontSize: 11, fontWeight: 600, color: neutral.mist }}>Today</span>}
+                        {format(parseISO(slot.dateISO), 'EEE d MMM')}
+                        {slot.dateISO === todayISO && <span style={{ fontSize: 11, fontWeight: 600, color: neutral.mist }}>Today</span>}
                       </span>
                     </Td>
-                    <Td mono>{r.list.session}</Td>
-                    <Td mono>{r.list.startTime ?? '·'}</Td>
-                    <Td mono>{r.list.endTime ?? '·'}</Td>
+                    <Td mono>{slot.session}</Td>
+                    <Td mono>{showTimes ? times.startTime : '·'}</Td>
+                    <Td mono>{showTimes ? times.endTime : '·'}</Td>
                     <Td>{r.description}</Td>
-                    <Td><StatusChip status={r.list.statusKey} /></Td>
+                    <Td><StatusChip status={displayKey} /></Td>
                   </tr>
                 )
               })}

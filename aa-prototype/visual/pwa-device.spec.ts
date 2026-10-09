@@ -245,3 +245,31 @@ test('the fonts are self-hosted and actually load', async ({ page }) => {
   expect(loaded).toContain('Schibsted Grotesk')
   expect(loaded).toContain('Spline Sans Mono')
 })
+
+test('the office stand-in assigns a List to the next free session, from the Lists Demo sheet (catch-up Phase 28)', async ({ page }) => {
+  await page.goto('/mobile/lists')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  // Dr Souter's next free session from Tue 21 Jul is Wed 22 PM ("Open for cover").
+  const session = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  await page.getByRole('button', { name: 'Month', exact: true }).click()
+  await expect(session).toContainText('Free session')
+
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-office-assigns-next-free"]')
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).toContainText("Assigned St George's · Mr T. Hale to your Wed 22 Jul PM session.")
+  await page.screenshot({ path: 'visual/shots/pwa-07-office-assigns.png' })
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).not.toContainText('Wed 22 Jul PM')
+  await page.keyboard.press('Escape')
+
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Month', exact: true }).click()
+  await expect(session).toHaveAttribute('data-list-id', /^LG\d{4}$/)
+  await expect(session).toContainText("St George's")
+  await page.screenshot({ path: 'visual/shots/pwa-08-assigned-row.png' })
+})

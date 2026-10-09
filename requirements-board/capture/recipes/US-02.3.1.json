@@ -1,7 +1,7 @@
 {
   "id": "US-02.3.1",
   "status": "partial",
-  "absentReason": "The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a Free, empty List through the phone-advice booking; there is no way for the office to add a Booking to a List that already has one.",
+  "absentReason": "The office can amend any Booking (patient, procedure, times, billing setup), each change audited against the user. It can create a Booking only on a free session through the phone-advice booking, which assigns the List first; there is no way for the office to add a Booking to a List that already has one.",
   "shots": [
     {
       "name": "phone-advice-booking",
@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "free-list",
-          "caption": "A Free List offers Book (phone advice)",
+          "caption": "A free session offers Book (phone advice)",
           "steps": [
             {
               "click": "text=\"open for cover\" >> nth=0"
@@ -26,7 +26,7 @@
         },
         {
           "state": "form",
-          "caption": "Phone-advice booking sets the List context, then adds the patient's Booking",
+          "caption": "Phone-advice booking assigns the List for the session, then adds the patient's Booking",
           "steps": [
             {
               "click": "text=\"open for cover\" >> nth=0"

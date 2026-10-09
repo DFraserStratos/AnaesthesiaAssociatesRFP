@@ -10,6 +10,9 @@ import {
   completeBooking,
   editBooking,
   entityCounts,
+  isBackdropList,
+  listIndexBySlot,
+  slotViewsForDate,
   persistedBytes,
   persistStatus,
   STORAGE_BUDGET_BYTES,
@@ -138,28 +141,32 @@ export function DemoData() {
   const persistedSize = persistedBytes()
   const persistence = persistStatus()
 
-  const todaysLists = useMemo(
+  // Today's sessions, from the Slot views every app reads (catch-up Phase 28).
+  const todaysViews = useMemo(
     () =>
-      Object.values(schedule.lists)
-        .filter((l) => l.dateISO === todayISO)
-        .sort((a, b) =>
-          a.anaesthetistId === b.anaesthetistId
-            ? a.session.localeCompare(b.session)
-            : (masters.anaesthetists[a.anaesthetistId]?.name ?? '').localeCompare(
-                masters.anaesthetists[b.anaesthetistId]?.name ?? '',
-              ),
-        ),
-    [schedule.lists, todayISO, masters.anaesthetists],
+      slotViewsForDate(state, todayISO).sort((a, b) =>
+        a.slot.anaesthetistId === b.slot.anaesthetistId
+          ? a.slot.session.localeCompare(b.slot.session)
+          : (masters.anaesthetists[a.slot.anaesthetistId]?.name ?? '').localeCompare(masters.anaesthetists[b.slot.anaesthetistId]?.name ?? ''),
+      ),
+    [state, todayISO, masters.anaesthetists],
   )
 
+  // The canvas invariant: an AM and a PM session today for every active
+  // anaesthetist whose start date has come, and every List in one session.
   const twoPerDayOk = useMemo(() => {
     const byAnae = new Map<string, number>()
-    for (const l of todaysLists) byAnae.set(l.anaesthetistId, (byAnae.get(l.anaesthetistId) ?? 0) + 1)
+    for (const v of todaysViews) byAnae.set(v.slot.anaesthetistId, (byAnae.get(v.slot.anaesthetistId) ?? 0) + 1)
+    const expected = Object.values(masters.anaesthetists).filter((a) => a.active && a.startDateISO <= todayISO)
+    const everyListPlaced = Object.values(schedule.lists).every((l) => isBackdropList(l) || schedule.slots[l.slotId] !== undefined)
+    const oneListPerSlot = listIndexBySlot(schedule.lists).size === Object.keys(schedule.lists).length
     return (
-      byAnae.size === Object.keys(masters.anaesthetists).length &&
-      [...byAnae.values()].every((n) => n === 2)
+      byAnae.size === expected.length &&
+      expected.every((a) => byAnae.get(a.registrationNumber) === 2) &&
+      everyListPlaced &&
+      oneListPerSlot
     )
-  }, [todaysLists, masters.anaesthetists])
+  }, [todaysViews, masters.anaesthetists, schedule.lists, schedule.slots, todayISO])
 
   const bookingCountByList = useMemo(() => {
     const byList = new Map<string, number>()
@@ -316,11 +323,11 @@ export function DemoData() {
 
       {/* Today's canvas */}
       <Panel
-        title="Today's Lists"
+        title="Today's sessions"
         subtitle={
           twoPerDayOk
-            ? 'Canvas invariant holds: exactly 2 Lists per anaesthetist today.'
-            : 'CANVAS INVARIANT BROKEN: an anaesthetist does not have exactly 2 Lists today.'
+            ? 'Canvas invariant holds: an AM and a PM session per active anaesthetist per day from their start date, every List in one session.'
+            : 'CANVAS INVARIANT BROKEN: an active anaesthetist does not have an AM and a PM session today, or a List is not in exactly one session.'
         }
       >
         <div style={{ overflowX: 'auto' }}>
@@ -339,25 +346,25 @@ export function DemoData() {
               </tr>
             </thead>
             <tbody>
-              {todaysLists.map((list) => (
+              {todaysViews.map(({ slot, list, displayKey, times }) => (
                 <tr
-                  key={list.id}
-                  onClick={() => setAuditEntityId(list.id)}
+                  key={slot.id}
+                  onClick={() => setAuditEntityId(list?.id ?? slot.id)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <td style={cellStyle}>{masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId}</td>
-                  <td style={cellStyle}>{list.session}</td>
-                  <td style={cellStyle}><StatusChip status={list.statusKey} /></td>
-                  <td style={cellStyle}>{list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : ''}</td>
-                  <td style={cellStyle}>{list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : ''}</td>
+                  <td style={cellStyle}>{masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId}</td>
+                  <td style={cellStyle}>{slot.session}</td>
+                  <td style={cellStyle}><StatusChip status={displayKey} /></td>
+                  <td style={cellStyle}>{list?.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : ''}</td>
+                  <td style={cellStyle}>{list?.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : ''}</td>
                   <td style={cellStyle} className="mono">
-                    {list.startTime !== undefined ? `${list.startTime} to ${list.endTime ?? ''}` : ''}
+                    {`${times.startTime} to ${times.endTime}`}{times.overridden ? ' (own)' : ''}
                   </td>
-                  <td style={cellStyle} className="mono">{bookingCountByList.get(list.id) ?? 0}</td>
-                  <td style={cellStyle}>{list.state}</td>
+                  <td style={cellStyle} className="mono">{list !== undefined ? (bookingCountByList.get(list.id) ?? 0) : ''}</td>
+                  <td style={cellStyle}>{list?.state ?? ''}</td>
                   <td style={{ ...cellStyle, maxWidth: 260 }}>
-                    {list.notes}
-                    {list.conflicts.map((c, i) => (
+                    {list !== undefined ? list.notes : slot.note}
+                    {(list?.conflicts ?? []).map((c, i) => (
                       <span key={i} style={{ color: semantic.warning.onTint, display: 'block' }}>
                         {c.kind}: {c.message}
                       </span>

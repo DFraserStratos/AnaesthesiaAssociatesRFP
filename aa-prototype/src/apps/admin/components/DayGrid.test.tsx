@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { Anaesthetist, List } from '../../../domain/types'
-import { useAppStore } from '../../../store'
+import type { Anaesthetist, List, ListKind, SlotStatus } from '../../../domain/types'
+import { useAppStore, type SlotView } from '../../../store'
+import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../../../domain/slots'
 import { DayGrid } from './DayGrid'
 
 const DATE = '2026-07-21'
@@ -15,26 +16,27 @@ function anaesthetist(id: string, name: string): Anaesthetist {
     unitValue: 100,
     gstPeriod: 'biMonthly',
     hpiId: `HPI-${id}`,
+    startDateISO: '2020-01-06',
     active: true,
   }
 }
 
-function list(
-  id: string,
-  anaesthetistId: string,
-  statusKey: List['statusKey'],
-  patch: Partial<List> = {},
-): List {
-  return {
-    id,
-    dateISO: DATE,
+/** A session (catch-up Phase 28): a Slot, with a List of `kind` in it or empty with `status`. */
+function view(anaesthetistId: string, contents: { kind: ListKind; id: string; patch?: Partial<List> } | { status: SlotStatus; note?: string }): SlotView {
+  const slot = {
+    id: slotIdFor(anaesthetistId, DATE, 'AM'),
     anaesthetistId,
-    session: 'AM',
-    state: 'ACTIVE',
-    statusKey,
-    conflicts: [],
-    ...patch,
+    dateISO: DATE,
+    session: 'AM' as const,
+    status: 'status' in contents ? contents.status : ('free' as const),
+    ...('note' in contents && contents.note !== undefined ? { note: contents.note } : {}),
   }
+  const list: List | undefined =
+    'kind' in contents
+      ? { id: contents.id, slotId: slot.id, dateISO: DATE, anaesthetistId, session: 'AM', state: 'ACTIVE', kind: contents.kind, conflicts: [], ...contents.patch }
+      : undefined
+  const settings = useAppStore.getState().appSettings.schedule
+  return { slot, ...(list !== undefined ? { list } : {}), displayKey: displayStatusKey(slot, list), times: effectiveSlotTimes(slot, settings) }
 }
 
 function renderGrid() {
@@ -46,24 +48,24 @@ function renderGrid() {
     anaesthetist('A3', 'Dr Cia Gamma'),
     anaesthetist('A4', 'Dr Dia Delta'),
   ]
-  const attention = list('attention', 'A1', 'private')
-  const noted = list('noted', 'A2', 'public', { surgeonId, notes: 'Called hospital' })
-  const prepaid = list('prepaid', 'A3', 'free', { notes: 'Free / open for cover' })
-  const holiday = list('holiday', 'A4', 'holiday', { notes: 'Annual leave' })
+  const hospitalId = Object.keys(masters.hospitals)[0]!
+  const attention = view('A1', { kind: 'private', id: 'attention' })
+  const noted = view('A2', { kind: 'public', id: 'noted', patch: { surgeonId, notes: 'Called hospital' } })
+  const warned = view('A3', { kind: 'public', id: 'warned', patch: { hospitalId } })
+  const holiday = view('A4', { status: 'holiday', note: 'Annual leave' })
 
   return render(
     <DayGrid
       anaesthetists={anaesthetists}
-      listsByAnaesthetist={{
+      viewsByAnaesthetist={{
         A1: [attention],
         A2: [noted],
-        A3: [prepaid],
+        A3: [warned],
         A4: [holiday],
       }}
       masters={masters}
-      activeBookingCounts={{}}
-      warningFlags={new Map([['prepaid', { open: 2, strongest: 'strong' as const }]])}
-      onSelectList={vi.fn()}
+      warningFlags={new Map([['warned', { open: 2, strongest: 'strong' as const }]])}
+      onSelectSlot={vi.fn()}
     />,
   )
 }
@@ -122,7 +124,7 @@ describe('DayGrid filters', () => {
     expect(screen.getByTitle('Note: Called hospital')).toBeInTheDocument()
 
     fireEvent.click(prepaymentFilter)
-    expect(screen.getByRole('button', { name: /open for cover/ })).toBeInTheDocument()
+    expect(container.querySelector('[data-list-id="warned"]')).not.toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
     expect(attentionFilter).toHaveAttribute('aria-pressed', 'false')
@@ -135,11 +137,33 @@ describe('DayGrid filters', () => {
     const { container } = renderGrid()
     const block = container.querySelector('[data-shot="daygrid-block-warnings"]') as HTMLElement
     expect(block).not.toBeNull()
-    expect(block.textContent).toContain('Free')
+    expect(block.getAttribute('data-list-id')).toBe('warned')
     expect(screen.getByRole('img', { name: '2 open warnings' })).toBeInTheDocument()
     // The List-level `!` stays on the surgeon-TBC block only, never on a warning block.
     const tbc = screen.getByRole('button', { name: /Surgeon TBC/ })
     expect(tbc.textContent).toContain('!')
     expect(block.textContent).not.toContain('!')
+  })
+})
+
+describe('DayGrid sessions (catch-up Phase 28)', () => {
+  it('paints an empty free session as Free with its note, keyed and clicked by session', () => {
+    const masters = useAppStore.getState().masters
+    const onSelectSlot = vi.fn()
+    const free = view('A1', { status: 'free', note: 'Free / open for cover' })
+    render(
+      <DayGrid
+        anaesthetists={[anaesthetist('A1', 'Dr Ana Alpha')]}
+        viewsByAnaesthetist={{ A1: [free] }}
+        masters={masters}
+        warningFlags={new Map()}
+        onSelectSlot={onSelectSlot}
+      />,
+    )
+    const block = screen.getByRole('button', { name: /open for cover/ })
+    expect(block).toHaveAttribute('data-slot-id', free.slot.id)
+    expect(block).not.toHaveAttribute('data-list-id')
+    fireEvent.click(block)
+    expect(onSelectSlot).toHaveBeenCalledWith(free.slot.id)
   })
 })

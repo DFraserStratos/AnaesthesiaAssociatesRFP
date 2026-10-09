@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import type { Contract } from '../../../../domain/types'
 import { modifierBandOf } from '../../../../domain/billing'
+import { displayStatusLabel } from '../../../../domain/slots'
 import {
   eligibleArchiveContactIds,
   runArchiveJob,
@@ -111,13 +112,13 @@ function PermanentListsView({ onEdit, onAdd }: { onEdit: (id: string) => void; o
   return (
     <>
       <Header title="Permanent lists" sub="Weekly templates the canvas generates from, including the usual surgeon. Edits apply to future generated days." action={<Button variant="secondary" onClick={onAdd}>Add permanent list</Button>} />
-      <Table heads={['Anaesthetist', 'Day', 'Session', 'Status', 'Hospital', 'Surgeon', '']} rightAlign={[6]}>
+      <Table heads={['Anaesthetist', 'Day', 'Session', 'Kind', 'Hospital', 'Surgeon', '']} rightAlign={[6]}>
         {rows.map((p) => (
           <tr key={p.id}>
             <td style={cellStyle}>{masters.anaesthetists[p.anaesthetistId]?.name ?? p.anaesthetistId}</td>
             <td style={cellStyle}>{DAY_LABELS[p.dayOfWeek]}</td>
             <td style={cellStyle}>{p.session}</td>
-            <td style={cellStyle}>{p.statusKey}</td>
+            <td style={cellStyle}>{displayStatusLabel(p.kind)}</td>
             <td style={cellStyle}>{p.hospitalId !== null ? (masters.hospitals[p.hospitalId]?.name ?? p.hospitalId) : 'AA rooms'}</td>
             <td style={cellStyle}>{p.surgeonId !== null ? (masters.surgeons[p.surgeonId]?.name ?? p.surgeonId) : '·'}</td>
             <EditCell onClick={() => onEdit(p.id)} />
@@ -227,7 +228,7 @@ export function ListStatusesView() {
         {rows.map((s) => (
           <tr key={s.key}>
             <td className="mono" style={cellStyle}>{s.key}</td>
-            <td style={cellStyle}>{s.label}</td>
+            <td style={cellStyle}>{displayStatusLabel(s.key)}</td>
             <td style={cellStyle}>{s.description ?? '·'}</td>
           </tr>
         ))}

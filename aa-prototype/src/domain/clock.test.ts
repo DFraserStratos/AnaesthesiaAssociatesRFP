@@ -7,8 +7,7 @@ import {
   horizonFor,
   INITIAL_CLOCK,
   now,
-  today,
-} from './clock'
+  today, horizonDatesBetween } from './clock'
 
 describe('demo clock state', () => {
   it('starts on DEMO_TODAY at 08:00', () => {
@@ -67,7 +66,20 @@ describe('advanceDays', () => {
 
 describe('horizon helpers (Phase 02 seeder seams)', () => {
   it('spans DEMO_TODAY minus 14 days to plus 4 months', () => {
-    expect(horizonFor(DEMO_TODAY)).toEqual({ startISO: '2026-07-07', endISO: '2026-11-21' })
+    expect(horizonFor(DEMO_TODAY, 4)).toEqual({ startISO: '2026-07-07', endISO: '2026-11-21' })
+  })
+
+  it('takes the horizon setting in months (catch-up Phase 28; FT-01.1)', () => {
+    expect(horizonFor(DEMO_TODAY, 1).endISO).toBe('2026-08-21')
+    expect(horizonFor(DEMO_TODAY, 3).endISO).toBe('2026-10-21')
+    expect(horizonFor(DEMO_TODAY, 12).endISO).toBe('2027-07-21')
+    expect(horizonFor(DEMO_TODAY, 12).startISO).toBe('2026-07-07')
+  })
+
+  it('horizonDatesBetween lists the dates gained after the old end, and none when the end did not move forward', () => {
+    expect(horizonDatesBetween('2026-11-21', '2026-11-24')).toEqual(['2026-11-22', '2026-11-23', '2026-11-24'])
+    expect(horizonDatesBetween('2026-11-21', '2026-11-21')).toEqual([])
+    expect(horizonDatesBetween('2026-11-21', '2026-10-21')).toEqual([])
   })
 
   it('enumerateDatesISO is inclusive of both ends and spans month boundaries', () => {
@@ -80,7 +92,7 @@ describe('horizon helpers (Phase 02 seeder seams)', () => {
   })
 
   it('the full horizon enumerates 138 days', () => {
-    const { startISO, endISO } = horizonFor(DEMO_TODAY)
+    const { startISO, endISO } = horizonFor(DEMO_TODAY, 4)
     const dates = enumerateDatesISO(startISO, endISO)
     expect(dates).toHaveLength(138)
     expect(dates[0]).toBe('2026-07-07')

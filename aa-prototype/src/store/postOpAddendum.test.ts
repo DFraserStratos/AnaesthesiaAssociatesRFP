@@ -1,8 +1,9 @@
 /**
  * Post-op addendum tests (Phase 09; B8).
  *
- * The addendum requires an AUTHORISED (locked) original, lands on the original
- * anaesthetist's empty free session for today (state ACTIVE), leaves the original Booking
+ * The addendum requires an AUTHORISED (locked) original, lands on a NEW List in
+ * the original anaesthetist's open session today (catch-up Phase 28: interim
+ * until Phase 38b), leaves the original Booking
  * byte-for-byte unchanged, and runs its OWN capture -> submit -> authorise ->
  * bill cycle to a separate invoice. Refused `noOpenSession` when no free, empty
  * session is available.
@@ -16,7 +17,8 @@ import { runBillingForList } from './billingRun'
 import { prepaymentStatusFor, proceduresForBooking } from './selectors'
 import type { Actor } from './mutate'
 import type { Invoice } from '../domain/types'
-import { ANAE, listIdForSlot } from '../domain/seed'
+import { ANAE } from '../domain/seed'
+import { projectedListId, slotIdFor } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -24,8 +26,8 @@ function store(): BoundAppStore {
   return createAppStore()
 }
 
-const SHARMA_TUE14 = listIdForSlot(ANAE.sharma, '2026-07-14', 'AM')
-const SHARMA_TUE21_PM = listIdForSlot(ANAE.sharma, '2026-07-21', 'PM')
+const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const SHARMA_TUE21_PM_SLOT = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
 
 function originalOn(api: BoundAppStore, listId: string): string {
   const booking = Object.values(api.getState().schedule.bookings).find((c) => c.listId === listId)
@@ -63,9 +65,18 @@ describe('addPostOpAddendum', () => {
     expect(addendum.addendumOfBookingId).toBe(original)
     expect(addendum.patientId).toBe(api.getState().schedule.bookings[original]!.patientId)
     expect(addendum.completed).toBe(false)
-    // AM is booked (private, has a hospital); the addendum lands on the free PM.
-    expect(listId).toBe(SHARMA_TUE21_PM)
-    expect(api.getState().schedule.lists[listId]!.dateISO).toBe('2026-07-21')
+    // AM holds a List; the addendum lands on a new List created in the open PM
+    // session, copying the original List's hospital, surgeon and kind.
+    const created = api.getState().schedule.lists[listId]!
+    expect(listId.startsWith('LG')).toBe(true)
+    expect(created.slotId).toBe(SHARMA_TUE21_PM_SLOT)
+    expect(created).toMatchObject({ dateISO: '2026-07-21', session: 'PM', anaesthetistId: ANAE.sharma, state: 'ACTIVE' })
+    const originalList = api.getState().schedule.lists[SHARMA_TUE14]!
+    expect(created.kind).toBe(originalList.kind)
+    expect(created.hospitalId).toBe(originalList.hospitalId)
+    expect(created.surgeonId).toBe(originalList.surgeonId)
+    const actions = api.getState().audit.slice(-3).map((a) => a.action)
+    expect(actions).toEqual(['list.create', 'booking.create', 'procedure.create'])
 
     // The original Booking is byte-for-byte unchanged (immutability answer).
     expect(api.getState().schedule.bookings[original]).toEqual(before)

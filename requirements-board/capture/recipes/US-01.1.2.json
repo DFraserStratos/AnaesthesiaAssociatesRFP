@@ -1,12 +1,12 @@
 {
   "id": "US-01.1.2",
-  "status": "partial",
-  "absentReason": "The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "permanent-lists",
       "app": "admin",
-      "caption": "Weekly templates the canvas generates from",
+      "caption": "Recurring bookings (Permanent lists) painted onto each new day as the horizon rolls forward",
       "start": "/admin/masters",
       "states": [
         {
@@ -19,6 +19,56 @@
             }
           ],
           "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "schedule-settings",
+      "app": "admin",
+      "caption": "The schedule horizon: four months, ending on the date shown",
+      "start": "/admin/masters?view=scheduleSettings",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-schedule-settings] table >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "roll-forward",
+      "app": "admin",
+      "caption": "Next day rolls the horizon forward: each new day gets its sessions",
+      "start": "/admin/audit",
+      "setup": [
+        {
+          "goto": "/demo/control"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "role=button[name=\"Next day\"] >> nth=0"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr:has-text(\"Canvas rolled forward\") >> nth=0"
+          ]
         }
       ]
     }

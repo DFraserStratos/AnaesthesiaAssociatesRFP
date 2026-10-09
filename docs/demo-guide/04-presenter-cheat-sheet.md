@@ -175,13 +175,20 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
   record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
   order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
   Whitford prefers to work with Dr Sharma
+- Sessions and Lists: every active anaesthetist has an AM and a PM session a day from their start date
+  over a configurable horizon (four months); the status is on the session, Free by default, and a List
+  put into it shows in its place; default session times are one setting, sessions can have their own
+- Find available (Day header): office only; the free anaesthetists for a session in tier order,
+  shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen; picking one opens
+  Assign List
+- The app never says "slot": it says session, AM or PM
 - Later: billing and integration monitoring
 
 ## Strong phrases to use
 
 - "The List is the unit of availability and approval."
-- "The fixed canvas exists even when there is no activity."
-- "Status, hospital, surgeon and Bookings are painted onto the canvas."
+- "Every session exists even when there is no activity; a List shows in its place when assigned."
+- "The status lives on the session; the List, its hospital, surgeon and Bookings are put into it."
 - "The office handles exceptions; the system removes repetitive work."
 - "The Billing Engine references the Booking; it does not duplicate the scheduling record."
 - "The captured inputs remain reproducible, not just the final total."
@@ -226,7 +233,8 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   control panel is now the index of them, with an **Open screen** link per entry (catch-up Phase 14).
 - On a handset, the amber **Demo** chip opens the same actions as a sheet. Its **Office authorises
   this List** is badged "Office stand-in": the phone has no Admin app, so it plays the office for one
-  submitted List.
+  submitted List. On Lists, **Office assigns a List to my next free session** (also an office
+  stand-in) assigns a List to Dr Souter's earliest free session, which then shows as a booked List.
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
   actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
@@ -278,8 +286,10 @@ Say:
 
 ### 5. List reassignment mechanics
 
-- Reassignment is required.
-- Free-target, absorb target and regenerate vacated slot is the prototype's proposal.
+- Settled by US-01.4.1: the List moves into the colleague's free session, keeping its id, Bookings and
+  history; nothing about billing is recalculated.
+- Open (OQ-84): what the vacated session shows. The prototype returns it to Free, and the office can
+  mark it Unavailable or Holiday instead.
 
 ### 6. Availability and holiday conflicts
 
