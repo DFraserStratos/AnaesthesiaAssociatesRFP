@@ -6,6 +6,7 @@
  * sheets and the cross-links.
  */
 
+import { assigned } from '../../../../test/lists'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -254,7 +255,7 @@ describe('cross-links', () => {
     render(
       <MemoryRouter initialEntries={['/admin/day/2026-07-21']}>
         <SurfaceProvider variant="web">
-          <SlotDrawer slotId={useAppStore.getState().schedule.lists[listId]!.slotId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
+          <SlotDrawer slotId={assigned(useAppStore.getState().schedule.lists[listId]).slotId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
           <LocationProbe />
         </SurfaceProvider>
       </MemoryRouter>,

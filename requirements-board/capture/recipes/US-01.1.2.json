@@ -6,13 +6,13 @@
     {
       "name": "permanent-lists",
       "app": "admin",
-      "caption": "Recurring bookings (Permanent lists) painted onto each new day as the horizon rolls forward",
+      "caption": "Recurring bookings painted onto each new day as the horizon rolls forward",
       "start": "/admin/masters",
       "states": [
         {
           "steps": [
             {
-              "click": "text=\"Permanent lists\""
+              "click": "[data-masters-view=\"recurringBookings\"]"
             },
             {
               "wait": 400

@@ -109,7 +109,15 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v22: 2026-10-09 · catch-up Phase 29: the availability statuses are a
+/** v24: catch-up Phase 31: the DRAFT state; Draft Lists are Lists with no
+ *  anaesthetist (requests and recurring clashes); every List carries a hospital
+ *  and a surgeon; AA rooms is a location (a v23 store reseeds).
+ * v23: 2026-10-09 · catch-up Phase 30: conflicts derived from facts (a cause,
+ *  not a message) and office clears; Wed 22 conflicts re-seeded as real facts
+ *  (Rutherford AM unavailable, the Southern Cross closure HH900); Permanent
+ *  Lists renamed recurring bookings (`masters.recurringBookings`, RCB ids),
+ *  with `List.recurringBookingId` provenance and start, end and retire dates.
+ *  v22: 2026-10-09 · catch-up Phase 29: the availability statuses are a
  *  user-maintained master (`masters.slotStatuses`, was the six-key
  *  `masters.listStatuses`); repeating days off in
  *  `schedule.availabilitySeries`; `Slot.seriesId`; counters `slotStatus` and
@@ -177,7 +185,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 22
+export const PERSIST_VERSION = 24
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

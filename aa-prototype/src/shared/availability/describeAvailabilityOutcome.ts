@@ -22,9 +22,11 @@ function when(fromISO?: string, toISO?: string): string {
 function listLines(outcome: Pick<AvailabilityOutcome, 'flagged' | 'cleared' | 'holdingLists'>): string[] {
   const lines: string[] = []
   const f = outcome.flagged.length
-  if (f > 0) lines.push(`${f} ${plural(f, 'List is', 'Lists are')} flagged on the office's Day view.`)
+  // Catch-up Phase 30: the conflict comes from the one rule; nothing notifies
+  // anyone (Phase 32's return-or-assign and notification pool replace this line).
+  if (f > 0) lines.push(f === 1 ? 'The session has a List; a conflict was flagged for the office.' : `${f} sessions have Lists; a conflict was flagged for the office on each.`)
   const c = outcome.cleared.length
-  if (c > 0) lines.push(`${c} ${plural(c, "List's flag was", "Lists' flags were")} cleared.`)
+  if (c > 0) lines.push(`${c} ${plural(c, "List's conflict was", "Lists' conflicts were")} resolved.`)
   if (f === 0 && c === 0 && outcome.holdingLists > 0) {
     lines.push(`${plural(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place, with nothing flagged.`)
   }

@@ -155,41 +155,6 @@ export function displayStatusLabel(key: DisplayKey, statuses: SlotStatusRecords,
 }
 
 // ---------------------------------------------------------------------------
-// The clash rule, in one place
-// ---------------------------------------------------------------------------
-
-export type AvailabilityClash = 'flag' | 'clear' | 'none'
-
-/**
- * What a session's new status does to the List in it (catch-up Phase 29;
- * US-01.5.3: "for the anaesthetist this is a status, not a List"). Every action
- * that changes the status of an existing Slot (one-off, range, series create or
- * delete, instance edit or delete) calls this, and nothing else decides it:
- * - `'flag'`: a closed status over a List. The List stays in place, untouched,
- *   and carries one availability conflict on the office's Day view (replacing,
- *   never stacking). This is the INTERIM for one settled rule: when an
- *   anaesthetist marks a session that holds a List closed, Phase 32 offers
- *   return to the office (a Draft List) or assign to a colleague (US-01.5.5,
- *   OQ-64 part 3) and replaces this branch.
- * - `'clear'`: a bookable status over a List that carries an availability
- *   conflict: its cause is gone, so the conflict goes.
- * - `'none'`: an empty session, or nothing to change.
- * Generation never reaches this: new Slots get the anaesthetist's calendar
- * (series included) before any recurring booking is painted, so a recurring
- * booking on a closed session is never placed; the generator traces it as a
- * `RecurringClash`, which Phase 31 turns into a Draft List (OQ-81 parts 1 and
- * 2, US-01.5.2).
- */
-export function availabilityClash(
-  list: Pick<List, 'conflicts'> | undefined,
-  newStatus: Pick<SlotStatus, 'bookable'> | undefined,
-): AvailabilityClash {
-  if (list === undefined) return 'none'
-  if (isClosed(newStatus)) return 'flag'
-  return list.conflicts.some((c) => c.kind === 'availability') ? 'clear' : 'none'
-}
-
-// ---------------------------------------------------------------------------
 // The status master's validator
 // ---------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 /**
  * The availability status rules (catch-up Phase 29; US-01.2.1, US-01.2.2):
- * lookups, behaviour by ID, the one clash rule, the master's validator, ranges
+ * lookups, behaviour by ID, the master's validator, ranges
  * and the seed's starting set.
  */
 
@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 import {
   activeStatuses,
   anaesthetistChoices,
-  availabilityClash,
   defaultSlotStatus,
   displayStatusLabel,
   isClosed,
@@ -23,15 +22,13 @@ import {
   validateSlotStatusDraft,
   type SlotStatusDraft,
 } from './slotStatus'
-import { LIST_KINDS, LIST_STATES, STATUS_COLOUR_TOKENS, type List, type SlotStatus } from './types'
+import { LIST_KINDS, LIST_STATES, STATUS_COLOUR_TOKENS, type SlotStatus } from './types'
 import { SEED_SLOT_STATUSES, seedSlotStatusRecords } from './seed'
 
 const seeded = seedSlotStatusRecords()
 const free = seeded[SEED_STATUS.free]!
 const holiday = seeded[SEED_STATUS.holiday]!
 const unavailable = seeded[SEED_STATUS.unavailable]!
-
-const listWith = (conflicts: List['conflicts'] = []): Pick<List, 'conflicts'> => ({ conflicts })
 
 const draft = (over: Partial<SlotStatusDraft> = {}): SlotStatusDraft => ({
   label: 'Public hospital',
@@ -109,31 +106,12 @@ describe('lookups and behaviour by ID', () => {
   })
 })
 
-describe('availabilityClash: the one rule', () => {
-  it('an empty session never clashes', () => {
-    expect(availabilityClash(undefined, unavailable)).toBe('none')
-    expect(availabilityClash(undefined, free)).toBe('none')
-  })
-
-  it('a closed status over a List flags it', () => {
-    expect(availabilityClash(listWith(), unavailable)).toBe('flag')
-    expect(availabilityClash(listWith(), holiday)).toBe('flag')
-  })
-
-  it('a bookable status over a flagged List clears it, over a clean one does nothing', () => {
-    expect(availabilityClash(listWith([{ kind: 'availability', message: 'x' }]), free)).toBe('clear')
-    expect(availabilityClash(listWith([{ kind: 'holiday', message: 'closed' }]), free)).toBe('none')
-    expect(availabilityClash(listWith(), free)).toBe('none')
-  })
-})
-
 describe('US-01.2.2 criterion 1: a rename or recolour changes no rule', () => {
-  it('gives the same open, closed and clash results', () => {
+  it('gives the same open and closed results', () => {
     const renamed: SlotStatus = { ...unavailable, label: 'Blocked', longLabel: 'Blocked out', colour: 'holiday', treatment: 'solid' }
     const records = { ...seeded, unavailable: renamed }
     expect(isClosed(renamed)).toBe(isClosed(unavailable))
     expect(isOpenSlot({ status: 'unavailable' }, undefined, records)).toBe(false)
-    expect(availabilityClash(listWith(), renamed)).toBe(availabilityClash(listWith(), unavailable))
     expect(displayStatusLabel('unavailable', records)).toBe('Blocked')
   })
 })

@@ -5,8 +5,8 @@ import { OFFICE_ACTOR } from './demoActors'
 import { authoriseList } from './lifecycle'
 import { authoriseAsSimulatedOffice } from './officeStandIn'
 import { isListBilled } from './selectors'
-import { ANAE, SEED_LIST_IDS } from '../domain/seed'
-import { assignNextFreeSlotAsSimulatedOffice, nextOpenSlotFor, STAND_IN_ASSIGN_CHOICES } from './officeStandIn'
+import { ANAE, SEED_DRAFT_LIST_IDS, SEED_LIST_IDS } from '../domain/seed'
+import { assignDraftListAsSimulatedOffice, assignNextFreeSlotAsSimulatedOffice, nextOpenSlotFor, STAND_IN_ASSIGN_CHOICES } from './officeStandIn'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { pairingStatus } from '../domain/pairingPreferences'
 import { buildSeed as seedBuild } from '../domain/seed'
@@ -80,5 +80,60 @@ describe('Office assigns a List to my next free session (catch-up Phase 28)', ()
     for (const c of STAND_IN_ASSIGN_CHOICES) expect(pairingStatus(entries, ANAE.souter, c.surgeonId), c.id).not.toBe('NOT_PREFERRED')
     const body = STAND_IN_SOURCE
     expect(body).not.toMatch(/officePrivate|pairingPreferences|priorityTiers/)
+  })
+})
+
+describe('assignDraftListAsSimulatedOffice (catch-up Phase 31; the PWA stand-in for the office)', () => {
+  it('on a fresh seed assigns LD-002 (two Bookings) into Dr Souter\'s Wed 22 PM as the simulated office; it becomes ACTIVE', () => {
+    const api = createAppStore()
+    const res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    expect(res.value).toMatchObject({ listId: SEED_DRAFT_LIST_IDS.forte, logged: false, bookings: 2 })
+    expect(res.value.slot).toMatchObject({ dateISO: '2026-07-22', session: 'PM' })
+    expect(api.getState().schedule.lists[SEED_DRAFT_LIST_IDS.forte]).toMatchObject({ state: 'ACTIVE', anaesthetistId: ANAE.souter })
+    expect(api.getState().audit.find((a) => a.action === 'draftList.assign')).toMatchObject({ who: OFFICE_SIMULATION_ACTOR.who })
+  })
+
+  it('after Phase 28\'s stand-in takes Wed 22 PM, it falls back cleanly (either order works)', () => {
+    const api = createAppStore()
+    expect(assignNextFreeSlotAsSimulatedOffice(api, ANAE.souter).ok).toBe(true)
+    const res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
+    expect(res.ok).toBe(true)
+    if (res.ok) expect(res.value.slot.dateISO > '2026-07-22' || res.value.slot.session === 'AM').toBe(true)
+    const api2 = createAppStore()
+    expect(assignDraftListAsSimulatedOffice(api2, ANAE.souter).ok).toBe(true)
+    expect(assignNextFreeSlotAsSimulatedOffice(api2, ANAE.souter).ok).toBe(true)
+  })
+
+  it('logs a request for the next open session when no waiting one fits, and assigns it', () => {
+    const api = createAppStore()
+    // Run until the waiting requests that fit her sessions are used up.
+    let res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
+    for (let i = 0; i < 10 && res.ok && !res.value.logged; i++) res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
+    expect(res.ok && res.value.logged).toBe(true)
+    if (!res.ok) return
+    expect(api.getState().schedule.lists[res.value.listId]).toMatchObject({ state: 'ACTIVE', anaesthetistId: ANAE.souter, draft: { origin: 'request', by: OFFICE_SIMULATION_ACTOR.who } })
+  })
+
+  it('never picks a not-preferred pairing: Dr Sharma skips Ms Reid\'s LD-003 on her free Mon 27 AM', () => {
+    const api = createAppStore()
+    for (let i = 0; i < 6; i++) {
+      const res = assignDraftListAsSimulatedOffice(api, ANAE.sharma)
+      if (!res.ok) break
+      expect(res.value.listId).not.toBe(SEED_DRAFT_LIST_IDS.eyeSurgery)
+      expect(res.value.surgeonId).not.toBe('S-REID')
+    }
+    expect(api.getState().schedule.lists[SEED_DRAFT_LIST_IDS.eyeSurgery]?.state).toBe('DRAFT')
+  })
+
+  it('refuses with "No free session in the schedule" when the anaesthetist has none', () => {
+    const api = createAppStore()
+    for (let i = 0; i < 400 && nextOpenSlotFor(api.getState(), ANAE.souter) !== undefined; i++) assignNextFreeSlotAsSimulatedOffice(api, ANAE.souter)
+    expect(assignDraftListAsSimulatedOffice(api, ANAE.souter)).toMatchObject({ ok: false, message: 'No free session in the schedule' })
+  })
+
+  it('its body names no preference or tier', () => {
+    expect(STAND_IN_SOURCE).not.toMatch(/officePrivate|pairingPreferences|priorityTiers|notPreferredEntryIds|notPreferredWarning|tierFor|TIER_LABELS|PAIRING_LABELS/)
   })
 })

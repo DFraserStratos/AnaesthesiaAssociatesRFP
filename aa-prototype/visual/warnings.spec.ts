@@ -52,7 +52,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 
   // Clear empties the row; the outline drops with it.
   await todo.getByRole('button', { name: 'Clear' }).click()
-  await expect(todo).toContainText('Nothing needs attention.')
+  await expect(todo).toContainText('No open warnings.')
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(0)
 
   // Samples on the demo day fill the list; clearing them empties it again.

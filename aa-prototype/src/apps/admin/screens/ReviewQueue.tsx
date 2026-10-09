@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { billedLists, invoiceCountsByList, useAppStore } from '../../../store'
 import { dayMicroCap, hhmm } from '../../../shared/format'
+import type { AssignedList } from '../../../domain/types'
 import { cellStyle as adminCell, headCellStyle as adminHead, isInteractiveRowTarget } from '../tableChrome'
 import { listShortLabel, listSourceLabels } from '../util'
 
@@ -47,7 +48,7 @@ export function ReviewQueue({ onOpen, onViewInvoices }: ReviewQueueProps) {
   const submitted = useMemo(
     () =>
       Object.values(listsRecord)
-        .filter((l) => l.state === 'SUBMITTED')
+        .filter((l): l is AssignedList => l.state === 'SUBMITTED')
         .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO))),
     [listsRecord],
   )

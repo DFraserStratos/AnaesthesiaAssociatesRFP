@@ -19,6 +19,10 @@ export interface DemoContextValues {
    * Nothing consumes it yet: Phase 30's "Simulate sickness" acts on it.
    */
   'adminDay.selectedSlotId': string
+  /** Admin · the Draft List open in its drawer (a List id; catch-up Phase 31). */
+  'adminDraftLists.openListId': string
+  /** Admin · Master data: the view in the sub-nav (`?view=`; catch-up Phase 31's "Stage recurring clash"). */
+  'adminMasters.view': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

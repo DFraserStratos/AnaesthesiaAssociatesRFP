@@ -64,6 +64,7 @@ function bookingISO(listDateISO: string, bookingIndex: number): string {
 }
 
 function anaesthetistName(input: SeedAuditInput, list: List): string {
+  if (list.anaesthetistId === undefined) return ''
   return input.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId
 }
 

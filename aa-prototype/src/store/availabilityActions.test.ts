@@ -27,6 +27,8 @@ import { slotIdFor } from '../domain/slots'
 import { instanceKey, type AvailabilitySeriesDraft } from '../domain/availabilitySeries'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
 import { parseISO, getISODay } from 'date-fns'
+import { describeConflict } from '../domain/conflicts'
+import { conflictLookups } from './conflictReconcile'
 
 const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
@@ -73,13 +75,15 @@ describe('setAvailabilityRange (days off ahead)', () => {
     setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'holiday' })
     const after = api.getState().schedule.lists[listId]!
     expect(after.conflicts.filter((c) => c.kind === 'availability')).toHaveLength(1)
-    expect(after.conflicts.find((c) => c.kind === 'availability')?.message).toMatch(/Dr Souter marked this session Holiday\. The List is still in place/)
+    expect(after.conflicts.find((c) => c.kind === 'availability')).toMatchObject({ statusKey: 'holiday', cause: `availability:${after.slotId}:holiday` })
+    const detail = describeConflict(after.conflicts[0]!, after, conflictLookups(api.getState())).detail
+    expect(detail).toMatch(/^Dr Souter is marked .+ for this session\.$/)
+    expect(detail).not.toMatch(/notified|told/i)
     const { conflicts: _a, ...restAfter } = after
     const { conflicts: _b, ...restBefore } = before
     void _a
     void _b
     expect(restAfter).toEqual(restBefore)
-    expect(after.conflicts.some((c) => /notified|told/i.test(c.message))).toBe(false)
   })
 
   it('Free over a booked session flags nothing and clears an earlier availability flag', () => {
@@ -91,7 +95,8 @@ describe('setAvailabilityRange (days off ahead)', () => {
     expect(out.ok && out.value.flagged).toEqual([])
     expect(out.ok && out.value.cleared).toEqual([listId])
     expect(api.getState().schedule.lists[listId]!.conflicts.some((c) => c.kind === 'availability')).toBe(false)
-    expect(audit(api, 'list.conflictCleared')).toHaveLength(1)
+    expect(audit(api, 'list.conflictResolved')).toHaveLength(1)
+    expect(audit(api, 'list.conflictCleared')).toHaveLength(0)
   })
 
   it('refuses, writing nothing: a colleague, an office-only status, a retired or unknown status, past and beyond-horizon dates, a feed, no session', () => {

@@ -2,7 +2,7 @@
  * Phase 06 store guard tests — the four office actions and the day-notes slice:
  * editList (field edits through the edit-rights matrix), setBillingLineAllocation
  * (office-only + conservation), createBillableParty, addDayNote, plus the seeded
- * Tue-21 notes and the Wed-22 advisory-conflict fixup. Isolated non-persisted
+ * Tue-21 notes and the Wed-22 conflicts (real facts since catch-up Phase 30). Isolated non-persisted
  * stores seeded from buildSeed().
  */
 
@@ -23,6 +23,7 @@ import {
 import type { Actor } from './mutate'
 import type { BillingLine } from '../domain/types'
 import { ANAE, SEED_MARKERS } from '../domain/seed'
+import { assigned } from '../test/lists'
 import { DEMO_TODAY } from '../domain/clock'
 import { setSlotTimes } from './slotActions'
 
@@ -71,7 +72,7 @@ function twoFunderLines(api: BoundAppStore): { proc: string; withOverride: Billi
 describe('editList', () => {
   it('office overrides an ACTIVE list session start/end times on its Slot, audited session.times (catch-up Phase 28)', () => {
     const api = store()
-    const before = api.getState().schedule.lists[SOUTER_AM]
+    const before = assigned(api.getState().schedule.lists[SOUTER_AM])
     expect(before?.state).toBe('ACTIVE')
     const r = setSlotTimes(api, OFFICE, before!.slotId, { startTime: '08:30', endTime: '14:15' })
     expect(r.ok).toBe(true)
@@ -275,11 +276,11 @@ describe('seeded day notes', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Wed-22 advisory conflict fixup + submitted-list selectors
+// Wed-22 conflicts (real facts since catch-up Phase 30) + submitted-list selectors
 // ---------------------------------------------------------------------------
 
-describe('Wed-22 advisory conflicts', () => {
-  it('seeds one holiday and one availability conflict on Wed 22, leaving Tue 21 pristine', () => {
+describe('Wed-22 conflicts (real facts since catch-up Phase 30)', () => {
+  it('seeds holiday and availability conflicts on Wed 22, leaving Tue 21 pristine', () => {
     const api = store()
     const wed = listsForDate(api.getState(), WED22)
     const kinds = wed.flatMap((l) => l.conflicts.map((c) => c.kind))

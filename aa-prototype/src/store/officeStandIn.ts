@@ -14,7 +14,9 @@ import { handoffListCases, runBillingForList } from './billingRun'
 import { OFFICE_SIMULATION_ACTOR } from './demoActors'
 import { authoriseList } from './lifecycle'
 import { ok, refuse, type Outcome } from './mutate'
-import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist } from './selectors'
+import { isListBilled, isOpenSlotView, scheduleHorizon, slotViewsForAnaesthetist, waitingDraftLists } from './selectors'
+import { assignDraftList, createDraftList, draftListFitsAnaesthetist, surgeonFitsAnaesthetist } from './draftListActions'
+import { CANNED_DRAFT_LIST_REQUESTS } from '../domain/seed'
 import { assignListToSlot } from './slotActions'
 import type { Slot } from '../domain/types'
 
@@ -88,4 +90,44 @@ export function assignNextFreeSlotAsSimulatedOffice(
   const out = assignListToSlot(api, OFFICE_SIMULATION_ACTOR, slot.id, { hospitalId: choice.hospitalId, surgeonId: choice.surgeonId, kind: 'private' })
   if (!out.ok) return out
   return ok({ listId: out.value.listId, slot, hospitalId: choice.hospitalId, surgeonId: choice.surgeonId })
+}
+
+/**
+ * "Office assigns a Draft List to me" (catch-up Phase 31; PWA parity for the
+ * office's assignment, US-01.6.3): stands in for the office, acting as
+ * `OFFICE_SIMULATION_ACTOR` through `assignDraftList`, so the List becomes
+ * ACTIVE in the anaesthetist's session and the audit is the office's. It
+ * walks the anaesthetist's open sessions from today (the same scan as
+ * `nextOpenSlotFor`) and takes, on the first session some waiting request fits,
+ * the first in the one order; it skips a not-preferred pairing through a
+ * boolean, never reading or naming a preference or a tier (D44). With none,
+ * it logs a request for the next open session from the canned set and
+ * assigns that, so the handset beat never dead-ends.
+ */
+export function assignDraftListAsSimulatedOffice(
+  api: AppStoreApi,
+  anaesthetistId: string,
+): Outcome<{ listId: string; slot: Slot; logged: boolean; hospitalId: string; surgeonId: string; bookings: number }> {
+  const state = api.getState()
+  const horizon = scheduleHorizon(state)
+  const open = slotViewsForAnaesthetist(state, anaesthetistId, state.clock.todayISO, horizon.endISO).filter(isOpenSlotView)
+  if (open.length === 0) return refuse('noOpenSession', 'No free session in the schedule')
+  const waiting = waitingDraftLists(state)
+  for (const v of open) {
+    const fit = waiting.find((l) => l.dateISO === v.slot.dateISO && l.session === v.slot.session && draftListFitsAnaesthetist(state, l.id, anaesthetistId))
+    if (fit === undefined) continue
+    const out = assignDraftList(api, OFFICE_SIMULATION_ACTOR, fit.id, { anaesthetistId })
+    if (!out.ok) return out
+    const bookings = Object.values(api.getState().schedule.bookings).filter((b) => b.listId === fit.id && b.cancellation === undefined).length
+    return ok({ listId: fit.id, slot: v.slot, logged: false, hospitalId: fit.hospitalId, surgeonId: fit.surgeonId, bookings })
+  }
+  // None fits: log a request for the next open session, from a canned pairing that fits, and assign it.
+  const slot = open[0]!.slot
+  const choice = CANNED_DRAFT_LIST_REQUESTS.find((c) => surgeonFitsAnaesthetist(state, anaesthetistId, c.surgeonId))
+  if (choice === undefined) return refuse('noOpenSession', 'No free session in the schedule')
+  const created = createDraftList(api, OFFICE_SIMULATION_ACTOR, { hospitalId: choice.hospitalId, surgeonId: choice.surgeonId, dateISO: slot.dateISO, session: slot.session, kind: 'private', source: choice.source })
+  if (!created.ok) return created
+  const out = assignDraftList(api, OFFICE_SIMULATION_ACTOR, created.value.listId, { anaesthetistId })
+  if (!out.ok) return out
+  return ok({ listId: created.value.listId, slot, logged: true, hospitalId: choice.hospitalId, surgeonId: choice.surgeonId, bookings: 0 })
 }

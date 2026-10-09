@@ -1,14 +1,16 @@
 /**
  * Seed tests — determinism, the canvas invariant, design-day fidelity (the
  * PM booking fees to the cent, Ellison in her pre-capture state), the ~80%
- * permanent-list share of surgeon assignments, marker resolution and the
+ * recurring-booking share of surgeon assignments, marker resolution and the
  * staged scenario states.
  */
 
+import { assigned, assignedLists } from '../../test/lists'
 import { describe, expect, it } from 'vitest'
-import { buildSeed, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, RECORDED_WINDOW, seedRecurringClashes } from './index'
+import { buildSeed, ANAE, HOSP, SURG, SEED_LIST_IDS, SEED_MARKERS, SEED_LEAVE, SEED_SICKNESS, RECORDED_WINDOW, seedRecurringClashes } from './index'
+import { conflictFactsFor, expectedConflicts, holidayIndex } from '../conflicts'
 import { ANAESTHETISTS } from './cast'
-import { PERMANENT_LISTS } from './permanentLists'
+import { RECURRING_BOOKINGS } from './recurringBookings'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
@@ -31,8 +33,7 @@ function proceduresForBooking(state: SeedState, bookingId: string): Procedure[] 
 }
 
 function billingContextFor(state: SeedState, booking: Booking): BookingBillingContext {
-  const list = state.schedule.lists[booking.listId]
-  if (list === undefined) throw new Error(`booking ${booking.id} has no list`)
+  const list = assigned(state.schedule.lists[booking.listId], `booking ${booking.id}`)
   const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) throw new Error(`list ${list.id} has no anaesthetist`)
   const ctx: BookingBillingContext = {
@@ -137,7 +138,8 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)
   const slots = Object.values(seed.schedule.slots)
   // The seeded historical billed Lists (L-HIST-*) sit before the horizon and have no Slot record.
-  const lists = Object.values(seed.schedule.lists).filter((l) => !isBackdropList(l))
+  // Assigned Lists only: a Draft List takes no session (catch-up Phase 31; its own tests are below).
+  const lists = assignedLists(seed.schedule.lists).filter((l) => !isBackdropList(l))
   const listBySlot = new Map(lists.map((l) => [l.slotId, l]))
   const inWindow = (d: string) => d >= RECORDED_WINDOW.fromISO && d <= RECORDED_WINDOW.toISO
 
@@ -170,7 +172,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
       expect(['private', 'public', 'preop']).toContain(list.kind)
     }
     // Backdrop history names a Slot before the horizon but no Slot record exists.
-    for (const list of Object.values(seed.schedule.lists).filter(isBackdropList)) {
+    for (const list of assignedLists(seed.schedule.lists).filter(isBackdropList)) {
       expect(seed.schedule.slots[list.slotId]).toBeUndefined()
       expect(list.dateISO < horizon.startISO).toBe(true)
     }
@@ -184,13 +186,13 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
 
   it('outside the recorded window, invents nothing: every session is free, painted by the calendar, or holds a projected recurring booking', () => {
     const leave = new Set(SEED_LEAVE.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
-    const templates = new Set(PERMANENT_LISTS.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
+    const recurringKeys = new Set(RECURRING_BOOKINGS.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
     const outside = slots.filter((s) => !inWindow(s.dateISO))
     expect(outside.length).toBeGreaterThan(1000)
     for (const slot of outside) {
       const list = listBySlot.get(slot.id)
       if (list !== undefined) {
-        expect(templates.has(`${slot.anaesthetistId}|${parseISO(slot.dateISO).getDay()}|${slot.session}`), slot.id).toBe(true)
+        expect(recurringKeys.has(`${slot.anaesthetistId}|${parseISO(slot.dateISO).getDay()}|${slot.session}`), slot.id).toBe(true)
         expect(list.id).toBe(projectedListId(slot.anaesthetistId, slot.dateISO, slot.session))
       } else if (slot.status !== 'free') {
         expect(leave.has(`${slot.anaesthetistId}|${slot.dateISO}|${slot.session}`), slot.id).toBe(true)
@@ -215,16 +217,16 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   })
 
   it('derives roughly 80% of surgeon-assigned Lists in the recorded window from recurring bookings (0.7 to 0.9)', () => {
-    const templates = new Set(
-      PERMANENT_LISTS.filter((t) => t.surgeonId !== null).map(
+    const recurringKeys = new Set(
+      RECURRING_BOOKINGS.filter((t) => t.surgeonId !== null).map(
         (t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}|${t.surgeonId}`,
       ),
     )
     const surgeonLists = lists.filter((l) => l.surgeonId !== undefined && inWindow(l.dateISO))
-    const fromTemplate = surgeonLists.filter((l) =>
-      templates.has(`${l.anaesthetistId}|${parseISO(l.dateISO).getDay()}|${l.session}|${l.surgeonId}`),
+    const fromRecurring = surgeonLists.filter((l) =>
+      recurringKeys.has(`${l.anaesthetistId}|${parseISO(l.dateISO).getDay()}|${l.session}|${l.surgeonId}`),
     )
-    const share = fromTemplate.length / surgeonLists.length
+    const share = fromRecurring.length / surgeonLists.length
     expect(surgeonLists.length).toBeGreaterThan(150)
     expect(share).toBeGreaterThanOrEqual(0.7)
     expect(share).toBeLessThanOrEqual(0.9)
@@ -233,8 +235,8 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   it('paints the design day: Souter STG/Hale AM and SX/Patel PM, Rutherford all day Forte/Okafor', () => {
     const souterAm = seed.schedule.lists[SEED_LIST_IDS.souterAm21]
     const souterPm = seed.schedule.lists[SEED_LIST_IDS.souterPm21]
-    const ruthAm = seed.schedule.lists[SEED_LIST_IDS.rutherfordAm21]
-    const ruthPm = seed.schedule.lists[SEED_LIST_IDS.rutherfordPm21]
+    const ruthAm = assigned(seed.schedule.lists[SEED_LIST_IDS.rutherfordAm21])
+    const ruthPm = assigned(seed.schedule.lists[SEED_LIST_IDS.rutherfordPm21])
     expect(souterAm?.kind).toBe('private')
     expect(souterAm?.hospitalId).toBe('H-STG')
     expect(souterAm?.surgeonId).toBe('S-HALE')
@@ -247,7 +249,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     // Rutherford's Tue 21 PM keeps its own times, on the Slot.
     expect(seed.schedule.slots[ruthPm!.slotId]).toMatchObject({ startTime: '13:30', endTime: '17:00' })
 
-    // Fitzgerald's template-derived design days.
+    // Fitzgerald's recurring-booking-derived design days.
     const fitzTueAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-21', 'AM')]
     const fitzThuAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM')]
     const fitzThuPm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'PM')]
@@ -286,6 +288,78 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
 })
 
 const PINNED_CLASHES = 18
+
+/**
+ * The seed's conflicts are facts (catch-up Phase 30). Before this phase the
+ * seed flagged 15 Lists: Wed 22 Jul 2 (fabricated messages on Morrison PM and
+ * Rutherford AM), Mon 26 Oct 8 and Fri 13 Nov 5 (Labour Day and Canterbury
+ * Anniversary). After it, the same Lists plus the Southern Cross Wed 22
+ * closure's three others (Ngata PM, Sharma PM, Hughes AM), each with a real
+ * cause: Rutherford's office-recorded sickness and the closure HH900.
+ */
+const FLAGGED_BEFORE_PHASE_30 = [
+  'L-25490-2026-07-22-PM',
+  'L-25490-2026-10-26-AM',
+  'L-27731-2026-10-26-PM',
+  'L-27731-2026-11-13-AM',
+  'L-29104-2026-07-22-AM',
+  'L-29104-2026-10-26-AM',
+  'L-31902-2026-10-26-AM',
+  'L-31902-2026-11-13-AM',
+  'L-34821-2026-10-26-AM',
+  'L-34821-2026-10-26-PM',
+  'L-36208-2026-11-13-AM',
+  'L-38455-2026-11-13-AM',
+  'L-44519-2026-10-26-PM',
+  'L-45178-2026-11-13-AM',
+  'L-46822-2026-10-26-AM',
+]
+const SOUTHERN_CROSS_WED22_ADDITIONS = ['L-38455-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-46822-2026-07-22-AM']
+/** Catch-up Phase 31: Dr Beaumont's Wed 22 recurring clashes at Southern Cross are Draft Lists, and carry HH900 like any List. */
+const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM']
+
+describe('seed conflicts are facts (catch-up Phase 30)', () => {
+  const lists = Object.values(seed.schedule.lists)
+  const holidays = holidayIndex(seed.masters.holidays)
+
+  it('every seeded conflict equals the one rule for its List: no fabricated flag, none missing', () => {
+    for (const list of lists) {
+      const expected = expectedConflicts(list, conflictFactsFor(list, { slots: seed.schedule.slots, statuses: seed.masters.slotStatuses, holidays }))
+      expect(list.conflicts.map(({ raisedAtISO: _r, ...c }) => c), list.id).toEqual(expected)
+    }
+  })
+
+  it('flags the pre-phase set plus the Southern Cross Wed 22 additions, and nothing else', () => {
+    const flagged = lists.filter((l) => l.conflicts.length > 0).map((l) => l.id).sort()
+    expect(flagged).toEqual([...FLAGGED_BEFORE_PHASE_30, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS, ...SOUTHERN_CROSS_WED22_ADDITIONS].sort())
+  })
+
+  it('Rutherford Wed 22 AM: an office-recorded sickness, the List in place (it seeds no Bookings)', () => {
+    const list = assigned(seed.schedule.lists[projectedListId(ANAE.rutherford, '2026-07-22', 'AM')])
+    expect(seed.schedule.slots[list.slotId]).toMatchObject({ status: 'unavailable', note: SEED_SICKNESS.note })
+    expect(list.conflicts).toMatchObject([{ kind: 'availability', statusKey: 'unavailable' }])
+    const recorded = seed.audit.find((a) => a.action === 'session.status' && a.entityId === list.slotId)
+    expect(recorded).toMatchObject({ role: 'office', who: 'Kirsty W.' })
+  })
+
+  it('the Southern Cross Wed 22 closure (HH900) flags every List there that day, Morrison PM included', () => {
+    expect(seed.masters.holidays['HH900']).toMatchObject({ hospitalId: HOSP.sx, dateISO: '2026-07-22' })
+    const sx = lists.filter((l) => l.dateISO === '2026-07-22' && l.hospitalId === HOSP.sx)
+    expect(sx.map((l) => l.id).sort()).toEqual(['L-25490-2026-07-22-PM', ...SOUTHERN_CROSS_WED22_ADDITIONS, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS].sort())
+    for (const l of sx) expect(l.conflicts).toMatchObject([{ kind: 'holiday', holidayId: 'HH900' }])
+  })
+
+  it('keeps Tue 21 and every Souter session pristine', () => {
+    expect(lists.filter((l) => l.dateISO === DEMO_TODAY && l.conflicts.length > 0)).toEqual([])
+    const souterWindow = lists.filter((l) => l.anaesthetistId === ANAE.souter && l.dateISO <= '2026-08-16')
+    expect(souterWindow.filter((l) => l.conflicts.length > 0)).toEqual([])
+  })
+
+  it('projected Lists carry their recurring booking; a hand-placed seed List does not', () => {
+    expect(seed.schedule.lists[SEED_LIST_IDS.souterAm21]?.recurringBookingId).toMatch(/^RCB/)
+    expect(seed.schedule.lists[SEED_LIST_IDS.rutherfordPm21]?.recurringBookingId).toBeUndefined()
+  })
+})
 
 describe('patients & NHIs', () => {
   const patients = Object.values(seed.masters.patients)
@@ -337,9 +411,9 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
   function feeForBooking(bookingId: string): { totals: number[]; unitSums: number[] } {
     const booking = seed.schedule.bookings[bookingId]
     if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
-    const list = seed.schedule.lists[booking.listId]
-    const anaesthetist = list !== undefined ? seed.masters.anaesthetists[list.anaesthetistId] : undefined
-    if (list === undefined || anaesthetist === undefined) throw new Error('missing context')
+    const list = assigned(seed.schedule.lists[booking.listId])
+    const anaesthetist = seed.masters.anaesthetists[list.anaesthetistId]
+    if (anaesthetist === undefined) throw new Error('missing context')
     const procedures = proceduresForBooking(seed, bookingId)
     const totals: number[] = []
     const unitSums: number[] = []
@@ -533,5 +607,113 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
     const ids = Object.keys(seed.schedule.bookings)
     expect(ids.every((id) => /^(BK\d{4}|HBK\d+)$/.test(id))).toBe(true)
     expect(ids.some((id) => id.startsWith('HBK'))).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Draft Lists and the pairing rule (catch-up Phase 31)
+// ---------------------------------------------------------------------------
+
+/** Every seeded Draft List: three requests and the recurring clashes from today on (OQ-81 part 2). */
+const SEEDED_DRAFT_LISTS = [
+  'LD-001',
+  'LD-002',
+  'LD-003',
+  'LD-RCB013-2026-09-15-AM',
+  'LD-RCB014-2026-09-16-PM',
+  'LD-RCB016-2026-07-21-AM',
+  'LD-RCB020-2026-07-22-AM',
+  'LD-RCB021-2026-07-22-PM',
+  'LD-RCB022-2026-07-24-AM',
+  'LD-RCB027-2026-08-25-AM',
+  'LD-RCB028-2026-08-25-PM',
+  'LD-RCB029-2026-08-27-AM',
+  'LD-RCB030-2026-08-27-PM',
+  'LD-RCB044-2026-07-27-PM',
+  'LD-RCB045-2026-07-22-AM',
+]
+
+describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 2)', () => {
+  const all = Object.values(seed.schedule.lists)
+  const drafts = all.filter((l) => l.state === 'DRAFT')
+
+  it('pins the fifteen: three requests and twelve recurring clashes', () => {
+    expect(drafts.map((l) => l.id).sort()).toEqual(SEEDED_DRAFT_LISTS)
+    expect(drafts.filter((l) => l.draft?.origin === 'request')).toHaveLength(3)
+    expect(drafts.filter((l) => l.draft?.origin === 'recurringClash')).toHaveLength(12)
+  })
+
+  it('every Draft List is DRAFT with a hospital and surgeon that resolve and neither anaesthetist nor session; every other List has both', () => {
+    for (const l of all) {
+      expect(seed.masters.hospitals[l.hospitalId], `${l.id} hospital`).toBeDefined()
+      expect(seed.masters.surgeons[l.surgeonId], `${l.id} surgeon`).toBeDefined()
+      if (l.state === 'DRAFT') {
+        expect(l.anaesthetistId, l.id).toBeUndefined()
+        expect(l.slotId, l.id).toBeUndefined()
+        expect(l.draft, l.id).toBeDefined()
+      } else {
+        expect(l.anaesthetistId, l.id).toBeDefined()
+        expect(l.slotId, l.id).toBeDefined()
+      }
+    }
+  })
+
+  it('the requests take no session: Fitzgerald Tue 21 PM and Souter Wed 22 PM are open, and the seed stamps are constants', () => {
+    const open = (a: string, d: string, s: 'AM' | 'PM') => {
+      const slot = seed.schedule.slots[slotIdFor(a, d, s)]!
+      return slot.status === 'free' && !all.some((l) => l.slotId === slot.id)
+    }
+    expect(open(ANAE.fitzgerald, DEMO_TODAY, 'PM')).toBe(true)
+    expect(open(ANAE.souter, '2026-07-22', 'PM')).toBe(true)
+    expect(seed.schedule.lists['LD-001']).toMatchObject({ hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: DEMO_TODAY, session: 'PM', draft: { origin: 'request', source: 'phone', sinceISO: '2026-07-20T15:40:00', by: 'Kirsty W.' } })
+    expect(seed.schedule.lists['LD-003']).toMatchObject({ hospitalId: HOSP.ces, surgeonId: SURG.reid, dateISO: '2026-07-27', session: 'AM', draft: { sinceISO: '2026-07-17T09:50:00' } })
+  })
+
+  it('LD-002 holds two active Bookings with a procedure each, on no prepaid category, and fits Souter\'s open Wed 22 PM', () => {
+    const bookings = Object.values(seed.schedule.bookings).filter((b) => b.listId === 'LD-002')
+    expect(bookings.map((b) => b.id)).toEqual(['BK0160', 'BK0161'])
+    for (const b of bookings) {
+      expect(b.cancellation).toBeUndefined()
+      const procs = proceduresForBooking(seed, b.id)
+      expect(procs).toHaveLength(1)
+      expect(procs[0]).toMatchObject({ billingRoute: 'billableParty', patientPaymentCategory: 'selfFundedPostProcedure' })
+      expect(procs[0]!.rvgBaseCode).toBeDefined()
+    }
+    expect(seed.schedule.lists['LD-002']).toMatchObject({ dateISO: '2026-07-22', session: 'PM', hospitalId: HOSP.forte })
+  })
+
+  it('every recurring booking running on a closed session from today on has exactly one Draft List for it, with no availability conflict; no past day has one', () => {
+    for (const clash of seedRecurringClashes()) {
+      const slot = seed.schedule.slots[clash.slotId]!
+      const matching = drafts.filter((l) => l.draft?.projectedFor?.recurringBookingId === clash.recurringBookingId && l.draft.projectedFor.dateISO === slot.dateISO && l.draft.projectedFor.session === slot.session)
+      expect(matching, clash.slotId).toHaveLength(slot.dateISO >= DEMO_TODAY ? 1 : 0)
+      for (const l of matching) {
+        expect(l.recurringBookingId).toBe(clash.recurringBookingId)
+        expect(l.conflicts.some((c) => c.kind === 'availability')).toBe(false)
+      }
+    }
+    // The closed sessions keep their status: the clash takes no session.
+    expect(seed.schedule.slots[slotIdFor(ANAE.ngata, DEMO_TODAY, 'AM')]?.status).toBe('unavailable')
+  })
+
+  it('the S2 not-preferred beat is reachable: Dr Sharma is open on Thu 23 PM (the canned Reid request) and Mon 27 AM (LD-003)', () => {
+    for (const [d, s] of [['2026-07-23', 'PM'], ['2026-07-27', 'AM']] as const) {
+      const slot = seed.schedule.slots[slotIdFor(ANAE.sharma, d, s)]!
+      expect(slot.status).toBe('free')
+      expect(all.some((l) => l.slotId === slot.id)).toBe(false)
+    }
+  })
+
+  it('the pre-op Lists are at the AA rooms location and the acute Lists name a surgeon; AA rooms is a location, never a hospital feed', () => {
+    const preop = all.filter((l) => l.kind === 'preop' && !isBackdropList(l))
+    expect(preop.length).toBeGreaterThan(0)
+    for (const l of preop) expect(l.hospitalId, l.id).toBe(HOSP.aaRooms)
+    expect(seed.masters.hospitals[HOSP.aaRooms]).toMatchObject({ name: 'AA rooms', locationType: 'aaRooms' })
+    expect(Object.values(seed.masters.hospitals).filter((h) => h.locationType === 'aaRooms')).toHaveLength(1)
+    expect(Object.values(seed.masters.holidays).some((h) => h.hospitalId === HOSP.aaRooms)).toBe(false)
+    for (const rb of Object.values(seed.masters.recurringBookings)) {
+      expect(seed.masters.hospitals[rb.hospitalId], rb.id).toBeDefined()
+      expect(seed.masters.surgeons[rb.surgeonId], rb.id).toBeDefined()
+    }
   })
 })

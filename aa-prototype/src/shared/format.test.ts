@@ -1,7 +1,7 @@
 /** Phase 05 — the Monday-anchored week helpers behind the dashboard week strip. */
 
 import { describe, expect, it } from 'vitest'
-import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf, titledSurname } from './format'
+import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf, titledSurname, waitingLabel, locationName, pairingLine } from './format'
 
 // DEMO_TODAY (2026-07-21) is a Tuesday; its week runs Mon 20 to Sun 26 Jul.
 
@@ -87,5 +87,26 @@ describe('titledSurname', () => {
     expect(titledSurname('Dr Priya Sharma')).toBe('Dr Sharma')
     expect(titledSurname('Mr J. Whitford')).toBe('Mr Whitford')
     expect(titledSurname('Jane Smith')).toBe('Jane Smith')
+  })
+})
+
+describe('Draft List and location formatting (catch-up Phase 31)', () => {
+  it('waitingLabel: minutes under an hour, whole hours under a day, then days and hours', () => {
+    expect(waitingLabel(0)).toBe('0 min')
+    expect(waitingLabel(45)).toBe('45 min')
+    expect(waitingLabel(60)).toBe('1 h')
+    expect(waitingLabel(16 * 60 + 59)).toBe('16 h')
+    expect(waitingLabel(24 * 60)).toBe('1 d')
+    expect(waitingLabel(3 * 24 * 60 + 22 * 60 + 10)).toBe('3 d 22 h')
+  })
+
+  it('locationName and pairingLine read the location record and the surgeon', () => {
+    const masters = {
+      hospitals: { 'H-FORTE': { name: 'Forte Health' }, 'H-AAROOMS': { name: 'AA rooms' } },
+      surgeons: { 'S-NAND': { name: 'Mr V. Nand' } },
+    }
+    expect(locationName('H-AAROOMS', masters.hospitals)).toBe('AA rooms')
+    expect(locationName('H-GONE', masters.hospitals)).toBe('H-GONE')
+    expect(pairingLine({ hospitalId: 'H-FORTE', surgeonId: 'S-NAND' }, masters)).toBe('Forte Health · Mr V. Nand')
   })
 })

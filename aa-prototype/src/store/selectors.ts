@@ -7,10 +7,16 @@
  */
 
 import type {
+  AssignedList,
+  DraftList,
   AaFeeInvoice,
   BillingCase,
   BillingPipelineStatus,
   Booking,
+  RecurringBooking,
+  ConflictClear,
+  HospitalHoliday,
+  ListConflict,
   CounterpartyRef,
   DayNote,
   IntegrationCorrelationRef,
@@ -34,6 +40,10 @@ import type { BookingBillingContext } from '../domain/billing/validateBookingFor
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
+import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
+import { projectAllRecurringBookings, projectRecurringBookingChange, type ProjectionInputs, type ProjectionPlan } from '../domain/recurringBookingProjection'
+import { conflictLookups } from './conflictReconcile'
+import { answeringLists, compareDraftLists, draftListAvailability, isAssignedList, isDraftList, type DraftListAvailability } from '../domain/draftLists'
 import { isSeriesActive, seriesLine as describeSeriesLine } from '../domain/availabilitySeries'
 import { horizonFor, type Horizon } from '../domain/clock'
 import { FEED_META } from '../domain/integrations'
@@ -42,7 +52,7 @@ import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFe
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
-import { getDaysInMonth, parseISO } from 'date-fns'
+import { addDays, format, getDaysInMonth, parseISO } from 'date-fns'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
 
@@ -62,7 +72,8 @@ import { clockISO } from './mutate'
  */
 export interface SlotView {
   slot: Slot
-  list?: List
+  /** The List in the session: always an assigned List (a Draft List has no Slot, so the anaesthetist apps never meet one). */
+  list?: AssignedList
   /** What the session shows: the List's kind, or the Slot's status ID (catch-up Phase 29). */
   displayKey: DisplayKey
   times: EffectiveSlotTimes
@@ -81,14 +92,18 @@ export interface SlotState {
   masters: Pick<AppState['masters'], 'slotStatuses'>
 }
 
-const listIndexCache = new WeakMap<object, Map<string, List>>()
+const listIndexCache = new WeakMap<object, Map<string, AssignedList>>()
 
-/** The List in each Slot, memoised on the `schedule.lists` record reference (a 20,000-Slot grid never scans Lists per cell). */
-export function listIndexBySlot(lists: Readonly<Record<string, List>>): Map<string, List> {
+/**
+ * The List in each Slot, memoised on the `schedule.lists` record reference (a
+ * 20,000-Slot grid never scans Lists per cell). Assigned Lists only: a Draft
+ * List, live or removed, sits in no Slot (catch-up Phase 31).
+ */
+export function listIndexBySlot(lists: Readonly<Record<string, List>>): Map<string, AssignedList> {
   const cached = listIndexCache.get(lists)
   if (cached !== undefined) return cached
-  const index = new Map<string, List>()
-  for (const list of Object.values(lists)) index.set(list.slotId, list)
+  const index = new Map<string, AssignedList>()
+  for (const list of Object.values(lists)) if (list.state !== 'DRAFT') index.set(list.slotId, list)
   listIndexCache.set(lists, index)
   return index
 }
@@ -125,11 +140,11 @@ export function slotFor(state: Pick<SlotState, 'schedule'>, anaesthetistId: stri
 }
 
 /** The List in a Slot, if any. */
-export function listInSlot(state: Pick<SlotState, 'schedule'>, slotId: string): List | undefined {
+export function listInSlot(state: Pick<SlotState, 'schedule'>, slotId: string): AssignedList | undefined {
   return listIndexBySlot(state.schedule.lists).get(slotId)
 }
 
-function viewOf(slot: Slot, lists: Map<string, List>, settings: ScheduleSettings, statuses: SlotStatusRecords): SlotView {
+function viewOf(slot: Slot, lists: Map<string, AssignedList>, settings: ScheduleSettings, statuses: SlotStatusRecords): SlotView {
   const list = lists.get(slot.id)
   return {
     slot,
@@ -181,7 +196,7 @@ export function slotViewsForAnaesthetist(
  * for its session when the List has no Slot record (the pre-horizon backdrop).
  */
 export function timesForList(state: SlotState, list: Pick<List, 'slotId' | 'session'>): EffectiveSlotTimes {
-  const slot = state.schedule.slots[list.slotId]
+  const slot = list.slotId === undefined ? undefined : state.schedule.slots[list.slotId]
   return effectiveSlotTimes(slot ?? { session: list.session }, state.appSettings.schedule)
 }
 
@@ -219,7 +234,7 @@ export interface CalendarSession {
   note?: string
   open: boolean
   /** The List in the session (it shows in place of the status). */
-  list?: { id: string; kind: List['kind']; hospitalName?: string; state: List['state'] }
+  list?: { id: string; kind: List['kind']; hospitalName: string; state: List['state'] }
   /** The series that set the status, with its rule in words. */
   series?: { id: string; line: string }
   /** The List carries an availability flag (the office's Day view shows it). */
@@ -282,9 +297,7 @@ export function availabilityMonthFor(
                 id: v.list.id,
                 kind: v.list.kind,
                 state: v.list.state,
-                ...(v.list.hospitalId !== undefined && state.masters.hospitals[v.list.hospitalId] !== undefined
-                  ? { hospitalName: state.masters.hospitals[v.list.hospitalId]!.name }
-                  : {}),
+                hospitalName: state.masters.hospitals[v.list.hospitalId]?.name ?? v.list.hospitalId,
               },
             }
           : {}),
@@ -314,9 +327,10 @@ export function scheduleHorizon(state: Pick<AppState, 'clock' | 'appSettings'>):
   return horizonFor(state.clock.todayISO, state.appSettings.schedule.horizonMonths)
 }
 
-export function listsForDate(state: AppState, dateISO: string): List[] {
+/** The assigned Lists on a day (Draft Lists have their own selectors). */
+export function listsForDate(state: AppState, dateISO: string): AssignedList[] {
   return Object.values(state.schedule.lists)
-    .filter((l) => l.dateISO === dateISO)
+    .filter((l): l is AssignedList => l.dateISO === dateISO && isAssignedList(l))
     .sort((a, b) =>
       a.anaesthetistId === b.anaesthetistId
         ? a.session.localeCompare(b.session)
@@ -351,9 +365,9 @@ export function dayNotesFor(state: AppState, dateISO: string): DayNote[] {
  * The admin review-queue badge count derives from this rather than a hardcoded
  * figure, so a live submit grows it. Ordered by date then anaesthetist.
  */
-export function submittedLists(state: AppState): List[] {
+export function submittedLists(state: AppState): AssignedList[] {
   return Object.values(state.schedule.lists)
-    .filter((l) => l.state === 'SUBMITTED')
+    .filter((l): l is AssignedList => l.state === 'SUBMITTED')
     .sort((a, b) =>
       a.dateISO === b.dateISO
         ? a.anaesthetistId.localeCompare(b.anaesthetistId)
@@ -387,16 +401,8 @@ export function dashboardFiguresFor(state: AppState, anaesthetistId: string): Da
   return deriveDashboardFigures(seed)
 }
 
-/**
- * Seeded historical backdrop (Phase 10; `seed/history.ts`). These settled
- * L-HIST Lists / HINV invoices exist to populate the ANAESTHETIST money views
- * (receivables aging, GST) — they are NOT live office-pipeline items, so the
- * office surfaces (billing monitor, Invoices table, recently-billed, the demo
- * payment picker) exclude them, while the mirror money selectors include them.
- */
-export function isBackdropList(list: Pick<List, 'id'>): boolean {
-  return list.id.startsWith('L-HIST') || list.id.startsWith('L-RB-')
-}
+/** Seeded historical backdrop Lists: the rule lives in the domain (catch-up Phase 30), re-exported here. */
+export { isBackdropList }
 export function isBackdropInvoice(invoice: Pick<Invoice, 'id'>): boolean {
   // HINV: Dr Souter's seeded history. RBINV: the "Seed a month of BCTIs" demo action (catch-up Phase 16).
   return invoice.id.startsWith('HINV') || invoice.id.startsWith('RBINV')
@@ -667,7 +673,7 @@ export interface MonitorBookingRow {
 }
 export interface MonitorListRow {
   listId: string
-  list: List
+  list: AssignedList
   anaesthetistName: string
   hospitalName?: string
   invoiceCount: number
@@ -691,7 +697,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
   // The seeded historical settled Lists (Phase 10 backdrop for the anaesthetist
   // money views) are NOT live pipeline items — excluded here.
   const lists = Object.values(state.schedule.lists)
-    .filter((l) => l.state === 'AUTHORISED' && !isBackdropList(l))
+    .filter((l): l is AssignedList => l.state === 'AUTHORISED' && !isBackdropList(l))
     .sort((a, b) => {
       const aBilled = a.billedAtISO !== undefined
       const bBilled = b.billedAtISO !== undefined
@@ -819,7 +825,7 @@ export function billingMonitor(state: Pick<AppState, 'schedule' | 'billing' | 'm
       stages,
       bookingRows,
     }
-    const hospitalName = list.hospitalId !== undefined ? state.masters.hospitals[list.hospitalId]?.name : undefined
+    const hospitalName = state.masters.hospitals[list.hospitalId]?.name
     if (hospitalName !== undefined) monitorRow.hospitalName = hospitalName
     return monitorRow
   })
@@ -1094,7 +1100,8 @@ export function counterpartyName(state: Pick<AppState, 'masters'>, ref: Counterp
 /** Assemble the validator context for a Booking from store state. */
 export function billingContextForBooking(state: AppState, booking: Booking): BookingBillingContext | undefined {
   const list = state.schedule.lists[booking.listId]
-  if (list === undefined) return undefined
+  // A Booking on a Draft List has no anaesthetist yet, so no billing context (catch-up Phase 31).
+  if (list === undefined || list.anaesthetistId === undefined) return undefined
   const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) return undefined
   const ctx: BookingBillingContext = {
@@ -1106,7 +1113,7 @@ export function billingContextForBooking(state: AppState, booking: Booking): Boo
     billableParties: state.masters.billableParties,
     billingLines: Object.values(state.schedule.billingLines),
   }
-  if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
+  ctx.surgeonId = list.surgeonId
   return ctx
 }
 
@@ -1118,11 +1125,13 @@ export interface EntityCounts {
   contracts: number
   rvgCodes: number
   modifierCodes: number
-  permanentLists: number
+  recurringBookings: number
   slots: number
   patients: number
   billableParties: number
   lists: number
+  /** Live Draft Lists (catch-up Phase 31). */
+  draftLists: number
   bookings: number
   procedures: number
   billingLines: number
@@ -1138,11 +1147,12 @@ export function entityCounts(state: AppState): EntityCounts {
     contracts: Object.keys(state.masters.contracts).length,
     rvgCodes: Object.keys(state.masters.rvgCodes).length,
     modifierCodes: Object.keys(state.masters.modifierCodes).length,
-    permanentLists: Object.keys(state.masters.permanentLists).length,
+    recurringBookings: Object.keys(state.masters.recurringBookings).length,
     patients: Object.keys(state.masters.patients).length,
     billableParties: Object.keys(state.masters.billableParties).length,
     slots: Object.keys(state.schedule.slots).length,
     lists: Object.keys(state.schedule.lists).length,
+    draftLists: waitingDraftLists(state).length,
     bookings: Object.keys(state.schedule.bookings).length,
     procedures: Object.keys(state.schedule.procedures).length,
     billingLines: Object.keys(state.schedule.billingLines).length,
@@ -1410,7 +1420,7 @@ export function allAaFeeInvoices(state: Pick<AppState, 'billing'>): AaFeeInvoice
 
 /** A List's session times as a hook (stable: selects the records, derives with useMemo). */
 export function useListTimes(list: Pick<List, 'slotId' | 'session'> | undefined): EffectiveSlotTimes | undefined {
-  const slot = useAppStore((s) => (list !== undefined ? s.schedule.slots[list.slotId] : undefined))
+  const slot = useAppStore((s) => (list?.slotId !== undefined ? s.schedule.slots[list.slotId] : undefined))
   const settings = useAppStore((s) => s.appSettings.schedule)
   const session = list?.session
   return useMemo(
@@ -1429,4 +1439,322 @@ export function useSlotView(slotId: string | undefined): SlotView | undefined {
     () => (slot === undefined ? undefined : viewOf(slot, listIndexBySlot(lists), settings, statuses)),
     [slot, lists, settings, statuses],
   )
+}
+
+// ---------------------------------------------------------------------------
+// Conflicts (catch-up Phase 30; US-01.5.2, US-01.5.4)
+// ---------------------------------------------------------------------------
+
+/** The names and records `describeConflict` reads, memoised on the masters and Slot records. */
+export function useConflictLookups(): ConflictLookups {
+  const masters = useAppStore((s) => s.masters)
+  const slots = useAppStore((s) => s.schedule.slots)
+  return useMemo(() => conflictLookups({ masters, schedule: { slots } }), [masters, slots])
+}
+
+// ---------------------------------------------------------------------------
+// Recurring-booking projection inputs (catch-up Phase 30; US-01.3.2)
+// ---------------------------------------------------------------------------
+
+const bookedListCache = new WeakMap<object, Set<string>>()
+
+/** Lists holding any Booking, cancelled ones included (memoised on the Bookings record). */
+export function bookedListIds(bookings: Readonly<Record<string, Booking>>): Set<string> {
+  const cached = bookedListCache.get(bookings)
+  if (cached !== undefined) return cached
+  const ids = new Set<string>()
+  for (const b of Object.values(bookings)) ids.add(b.listId)
+  bookedListCache.set(bookings, ids)
+  return ids
+}
+
+/** The day after the demo clock's today: the first date a recurring-booking change may touch. */
+export function tomorrowISO(state: Pick<AppState, 'clock'>): string {
+  return format(addDays(parseISO(state.clock.todayISO), 1), 'yyyy-MM-dd')
+}
+
+/** What the projection reads, from tomorrow to the far end of the horizon setting. */
+export function projectionInputsFrom(state: Pick<AppState, 'clock' | 'appSettings' | 'schedule' | 'masters'>): ProjectionInputs {
+  return {
+    fromISO: tomorrowISO(state),
+    toISO: scheduleHorizon(state).endISO,
+    slots: state.schedule.slots,
+    lists: state.schedule.lists,
+    listBySlot: listIndexBySlot(state.schedule.lists),
+    bookedListIds: bookedListIds(state.schedule.bookings),
+    movedFrom: movedFromIndex(state.schedule.lists),
+    answered: answeredIndex(state.schedule.lists),
+    statuses: state.masters.slotStatuses,
+  }
+}
+
+const answeredCache = new WeakMap<object, Map<string, List>>()
+
+/** Days a Draft List (or a List assigned from one) answers for (catch-up Phase 31), memoised on the Lists record. */
+function answeredIndex(lists: Readonly<Record<string, List>>): Map<string, List> {
+  const cached = answeredCache.get(lists)
+  if (cached !== undefined) return cached
+  const index = answeringLists(lists)
+  answeredCache.set(lists, index)
+  return index
+}
+
+const movedFromCache = new WeakMap<object, Map<string, string>>()
+
+/** Projected Lists the office moved: `<recurringBookingId>|<original slotId>` to the List's id (memoised on the Lists record). */
+function movedFromIndex(lists: Readonly<Record<string, List>>): Map<string, string> {
+  const cached = movedFromCache.get(lists)
+  if (cached !== undefined) return cached
+  const index = new Map<string, string>()
+  for (const l of Object.values(lists)) if (l.recurringOrigin !== undefined) index.set(`${l.recurringOrigin.recurringBookingId}|${l.recurringOrigin.slotId}`, l.id)
+  movedFromCache.set(lists, index)
+  return index
+}
+
+/**
+ * The plan a retire applies (catch-up Phase 30): removals only, after the last
+ * date the store will use (an earlier end already set wins). The sheet's
+ * confirmation reads the same plan.
+ */
+export function previewRetireRecurringBooking(
+  state: Pick<AppState, 'clock' | 'appSettings' | 'schedule' | 'masters'>,
+  recurringBooking: RecurringBooking,
+  lastDateISO: string,
+): ProjectionPlan {
+  const end = recurringBooking.effectiveToISO !== undefined && recurringBooking.effectiveToISO < lastDateISO ? recurringBooking.effectiveToISO : lastDateISO
+  const plan = projectRecurringBookingChange({ ...projectionInputsFrom(state), before: recurringBooking, after: { ...recurringBooking, effectiveToISO: end } })
+  return { ...plan, create: [], update: [], skipped: [], kept: plan.kept.filter((k) => k.dateISO > end) }
+}
+
+/**
+ * The plan a recurring-booking add (`before` undefined), edit or retire would
+ * apply: the sheet's live preview line reads it, and the action applies the
+ * same plan, so the two cannot disagree.
+ */
+export function previewRecurringBookingChange(
+  state: Pick<AppState, 'clock' | 'appSettings' | 'schedule' | 'masters'>,
+  before: RecurringBooking | undefined,
+  after: RecurringBooking | undefined,
+): ProjectionPlan {
+  return projectRecurringBookingChange({ ...projectionInputsFrom(state), ...(before !== undefined ? { before } : {}), ...(after !== undefined ? { after } : {}) })
+}
+
+/** The view-level "Apply to canvas now" plan (never removes). */
+export function previewApplyAllRecurringBookings(state: Pick<AppState, 'clock' | 'appSettings' | 'schedule' | 'masters'>): ProjectionPlan {
+  return projectAllRecurringBookings({ ...projectionInputsFrom(state), recurringBookings: Object.values(state.masters.recurringBookings) })
+}
+
+/** One conflict on the Conflicts screen (catch-up Phase 30; US-01.5.4). Never names a "slot" in copy. */
+export interface ConflictRow {
+  key: string
+  listId: string
+  /** Absent for a Draft List, which has no Slot (catch-up Phase 31). */
+  slotId?: string
+  dateISO: string
+  session: Session
+  /** Absent for a Draft List (shown as "Unassigned"). */
+  anaesthetistId?: string
+  hospitalId: string
+  surgeonId: string
+  listState: List['state']
+  /** The session's availability status (its fixed ID; the label comes from the master). */
+  statusKey: string
+  /** Bookings not cancelled. */
+  bookingCount: number
+  kind: ListConflict['kind']
+  cause: string
+  reason: ConflictReason
+  detail: string
+  raisedAtISO?: string
+  /** The office's clear, when the row is a cleared conflict. */
+  clear?: ConflictClear
+}
+
+export interface ConflictRowFilter {
+  fromISO?: string
+  toISO?: string
+  reason?: ConflictReason
+  hospitalId?: string
+  anaesthetistId?: string
+  includeCleared?: boolean
+}
+
+const rosterRank = (id: string): number => SEEDED_ORDER.get(id) ?? Number.MAX_SAFE_INTEGER
+
+let conflictRowCache: { lists: object; slots: object; masters: object; bookings: object; rows: ConflictRow[] } | null = null
+
+/** Every live and cleared conflict, sorted by date, session, then roster order (memoised on the records). */
+function allConflictRows(state: Pick<AppState, 'schedule' | 'masters'>): ConflictRow[] {
+  const { lists, slots, bookings } = state.schedule
+  const c = conflictRowCache
+  if (c !== null && c.lists === lists && c.slots === slots && c.masters === state.masters && c.bookings === bookings) return c.rows
+  const lookups = conflictLookups(state)
+  const active = new Map<string, number>()
+  for (const b of Object.values(bookings)) if (b.cancellation === undefined) active.set(b.listId, (active.get(b.listId) ?? 0) + 1)
+  const rows: ConflictRow[] = []
+  for (const list of Object.values(lists)) {
+    if (list.conflicts.length === 0 && (list.conflictClears ?? []).length === 0) continue
+    // A removed Draft List leaves every view but History.
+    if (list.removedAtISO !== undefined) continue
+    const base = {
+      listId: list.id,
+      ...(list.slotId !== undefined ? { slotId: list.slotId } : {}),
+      dateISO: list.dateISO,
+      session: list.session,
+      ...(list.anaesthetistId !== undefined ? { anaesthetistId: list.anaesthetistId } : {}),
+      hospitalId: list.hospitalId,
+      surgeonId: list.surgeonId,
+      listState: list.state,
+      statusKey: list.slotId !== undefined ? (slots[list.slotId]?.status ?? '') : '',
+      bookingCount: active.get(list.id) ?? 0,
+    }
+    for (const conflict of list.conflicts) {
+      const { reason, detail } = describeConflict(conflict, list, lookups)
+      rows.push({ ...base, key: `${list.id}|${conflict.cause}`, kind: conflict.kind, cause: conflict.cause, reason, detail, raisedAtISO: conflict.raisedAtISO })
+    }
+    for (const clear of list.conflictClears ?? []) {
+      const conflict = conflictFromCause(clear.cause)
+      if (conflict === null) continue
+      const { reason, detail } = describeConflict(conflict, list, lookups)
+      rows.push({ ...base, key: `${list.id}|${clear.cause}`, kind: conflict.kind, cause: clear.cause, reason, detail, clear })
+    }
+  }
+  rows.sort(
+    (a, b) =>
+      a.dateISO.localeCompare(b.dateISO) ||
+      a.session.localeCompare(b.session) ||
+      rosterRank(a.anaesthetistId ?? '') - rosterRank(b.anaesthetistId ?? '') ||
+      (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '') ||
+      a.cause.localeCompare(b.cause),
+  )
+  conflictRowCache = { lists, slots, masters: state.masters, bookings, rows }
+  return rows
+}
+
+/** The Conflicts screen's rows: hospital closures and unavailable anaesthetists only (US-01.5.4), filtered. */
+export function conflictRows(state: Pick<AppState, 'schedule' | 'masters'>, filter: ConflictRowFilter = {}): ConflictRow[] {
+  return allConflictRows(state).filter(
+    (r) =>
+      (filter.includeCleared === true || r.clear === undefined) &&
+      (filter.fromISO === undefined || r.dateISO >= filter.fromISO) &&
+      (filter.toISO === undefined || r.dateISO <= filter.toISO) &&
+      (filter.reason === undefined || r.reason === filter.reason) &&
+      (filter.hospitalId === undefined || r.hospitalId === filter.hospitalId) &&
+      (filter.anaesthetistId === undefined || r.anaesthetistId === filter.anaesthetistId),
+  )
+}
+
+/** Live conflicts from a date to the far end of the horizon: the side-nav badge and the To-do line. */
+export function openConflictCount(state: Pick<AppState, 'schedule' | 'masters' | 'clock' | 'appSettings'>, fromISO: string = state.clock.todayISO): number {
+  return conflictRows(state, { fromISO, toISO: scheduleHorizon(state).endISO }).length
+}
+
+export interface HospitalDay {
+  dateISO: string
+  closures: HospitalHoliday[]
+  /** Lists at the hospital that day (backdrop history excluded). */
+  listCount: number
+  /** How many of them carry a live closure conflict (hospital closed). */
+  conflictedCount: number
+}
+
+/** One hospital's month (`YYYY-MM`): closures, Lists and conflicts per day, for the holiday calendar. */
+export function hospitalMonth(state: Pick<AppState, 'schedule' | 'masters'>, hospitalId: string, monthISO: string): HospitalDay[] {
+  const first = parseISO(`${monthISO}-01`)
+  const days = getDaysInMonth(first)
+  const out: HospitalDay[] = []
+  const byDate = new Map<string, { lists: number; conflicted: number }>()
+  for (const l of Object.values(state.schedule.lists)) {
+    if (l.hospitalId !== hospitalId || !l.dateISO.startsWith(monthISO) || isBackdropList(l) || l.removedAtISO !== undefined) continue
+    const e = byDate.get(l.dateISO) ?? { lists: 0, conflicted: 0 }
+    e.lists += 1
+    if (l.conflicts.some((c) => c.kind === 'holiday')) e.conflicted += 1
+    byDate.set(l.dateISO, e)
+  }
+  const holidays = Object.values(state.masters.holidays).filter((h) => h.hospitalId === hospitalId)
+  for (let d = 1; d <= days; d++) {
+    const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
+    const e = byDate.get(dateISO)
+    out.push({
+      dateISO,
+      closures: holidays.filter((h) => h.dateISO === dateISO).sort((a, b) => a.id.localeCompare(b.id)),
+      listCount: e?.lists ?? 0,
+      conflictedCount: e?.conflicted ?? 0,
+    })
+  }
+  return out
+}
+
+
+// ---------------------------------------------------------------------------
+// Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.2, US-13.1.1)
+// ---------------------------------------------------------------------------
+
+const waitingCache = new WeakMap<object, DraftList[]>()
+
+/**
+ * Every live Draft List (not removed), in the one order (`compareDraftLists`,
+ * soonest first; US-01.6.2 "Sorting": nothing waits unnoticed). Memoised on
+ * the `schedule.lists` record. Office surfaces only: no anaesthetist-scoped
+ * selector returns a Draft List (OQ-86 answered no, D46).
+ */
+export function waitingDraftLists(state: { schedule: Pick<AppState['schedule'], 'lists'> }): DraftList[] {
+  const lists = state.schedule.lists
+  const cached = waitingCache.get(lists)
+  if (cached !== undefined) return cached
+  const out = Object.values(lists).filter(isDraftList).sort(compareDraftLists)
+  waitingCache.set(lists, out)
+  return out
+}
+
+/** The live Draft Lists for one day (the Day dashboard's band, US-13.1.1), in the same order. */
+export function draftListsForDate(state: { schedule: Pick<AppState['schedule'], 'lists'> }, dateISO: string): DraftList[] {
+  return waitingDraftLists(state).filter((l) => l.dateISO === dateISO)
+}
+
+/** How many Draft Lists are waiting (the nav badge and the rail card heading). */
+export function waitingDraftListCount(state: { schedule: Pick<AppState['schedule'], 'lists'> }): number {
+  return waitingDraftLists(state).length
+}
+
+/**
+ * The Draft Lists that stopped waiting, newest first, for the page's History:
+ * Lists assigned from a Draft List (they keep their trail) and removed Draft
+ * Lists.
+ */
+export function finishedDraftLists(state: { schedule: Pick<AppState['schedule'], 'lists'> }): List[] {
+  const doneAt = (l: List) => l.draft?.assignedAtISO ?? l.removedAtISO ?? ''
+  return Object.values(state.schedule.lists)
+    .filter((l) => l.draft !== undefined && (l.state !== 'DRAFT' ? l.draft.assignedAtISO !== undefined : l.removedAtISO !== undefined))
+    .sort((a, b) => doneAt(b).localeCompare(doneAt(a)) || a.id.localeCompare(b.id))
+}
+
+/**
+ * Who could take a Draft List, by availability alone (US-01.6.3's note, the
+ * availability finder's reading): the active anaesthetists in roster order,
+ * split into free, not available and occupied. No preference or tier
+ * knowledge: Phase 17's helper ranks it in the Admin sheet.
+ */
+export function draftListAvailabilityFor(
+  state: { schedule: Pick<AppState['schedule'], 'lists' | 'slots'>; masters: Pick<AppState['masters'], 'anaesthetists' | 'slotStatuses'> },
+  listId: string,
+): DraftListAvailability | undefined {
+  const list = state.schedule.lists[listId]
+  if (!isDraftList(list)) return undefined
+  const roster = Object.values(state.masters.anaesthetists).sort((a, b) => rosterRank(a.registrationNumber) - rosterRank(b.registrationNumber) || a.registrationNumber.localeCompare(b.registrationNumber))
+  const listIdBySlot = new Map<string, string>()
+  for (const [slotId, l] of listIndexBySlot(state.schedule.lists)) listIdBySlot.set(slotId, l.id)
+  return draftListAvailability({ list, anaesthetists: roster, slots: state.schedule.slots, listIdBySlot, statuses: state.masters.slotStatuses })
+}
+
+const bookingCountCache = new WeakMap<object, Map<string, number>>()
+
+/** Active (not cancelled) Bookings per List id: the grid's block counts, the band and the rail card (US-13.1.1). */
+export function bookingCountsByList(bookings: Readonly<Record<string, Booking>>): Map<string, number> {
+  const cached = bookingCountCache.get(bookings)
+  if (cached !== undefined) return cached
+  const counts = new Map<string, number>()
+  for (const b of Object.values(bookings)) if (b.cancellation === undefined) counts.set(b.listId, (counts.get(b.listId) ?? 0) + 1)
+  bookingCountCache.set(bookings, counts)
+  return counts
 }

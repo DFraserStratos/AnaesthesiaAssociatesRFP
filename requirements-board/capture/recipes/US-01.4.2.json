@@ -250,6 +250,52 @@
           "caption": "Free sessions only, to find cover fast"
         }
       ]
+    },
+    {
+      "name": "draft-list-finder",
+      "app": "admin",
+      "caption": "The Assign Draft List sheet is the finder's Draft List view",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "state": "everyone",
+          "steps": [
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=draft-list-reach]",
+            "[data-shot=draft-list-candidates]"
+          ],
+          "caption": "Everyone: tier-ordered, with who is free and who is not"
+        },
+        {
+          "state": "free-only",
+          "steps": [
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Free only\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=draft-list-reach]",
+            "[data-shot=draft-list-candidates]"
+          ],
+          "caption": "Free only: just the anaesthetists free that session"
+        }
+      ]
     }
   ]
 }

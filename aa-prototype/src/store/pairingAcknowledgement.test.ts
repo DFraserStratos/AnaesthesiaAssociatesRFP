@@ -11,9 +11,9 @@ import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { editList } from './lifecycle'
 import { reassignList } from './slotActions'
-import { addPermanentList, editPermanentList } from './mastersActions'
+import { addRecurringBooking, editRecurringBooking } from './mastersActions'
 import { addPairingPreference, endPairingPreference } from './officePrivate'
-import { ANAE, SURG } from '../domain/seed'
+import { ANAE, HOSP, SURG } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -101,19 +101,19 @@ describe('reassignList', () => {
   })
 })
 
-describe('Permanent Lists', () => {
+describe('Recurring bookings', () => {
   it('adding one with a not-preferred usual surgeon acknowledges; editing only when the pairing changes', () => {
     const api = createAppStore()
-    const added = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: null, surgeonId: SURG.reid })
+    const added = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.reid })
     expect(added.ok).toBe(true)
-    expect(acks(api).map((a) => a.action)).toEqual(['permanentList.pairingAcknowledged'])
+    expect(acks(api).map((a) => a.action)).toEqual(['recurringBooking.pairingAcknowledged'])
     const id = added.ok ? added.value.id : ''
-    editPermanentList(api, OFFICE, id, { notes: 'Fridays' })
+    editRecurringBooking(api, OFFICE, id, { notes: 'Fridays' })
     expect(acks(api)).toHaveLength(1)
-    editPermanentList(api, OFFICE, id, { surgeonId: SURG.hale })
-    editPermanentList(api, OFFICE, id, { surgeonId: SURG.reid })
+    editRecurringBooking(api, OFFICE, id, { surgeonId: SURG.hale })
+    editRecurringBooking(api, OFFICE, id, { surgeonId: SURG.reid })
     expect(acks(api)).toHaveLength(2)
-    const clear = addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'AM', kind: 'private', hospitalId: null, surgeonId: SURG.whitford })
+    const clear = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'AM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.whitford })
     expect(clear.ok).toBe(true)
     expect(acks(api)).toHaveLength(2)
   })

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ChevronLeft, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import type { BillingRoute, Booking, Procedure } from '../../../domain/types'
+import type { AssignedList, BillingRoute, Booking, Procedure } from '../../../domain/types'
 import { authoriseList, logListNote, useAppStore, useListTimes, type Actor } from '../../../store'
 import { Button, StatusChip, TextArea, useListWarnings, useSurface, WarningTriangle } from '../../../shared'
 import { bookingFee, procedureFee } from '../../../shared/capture'
-import { dayMicroCap, formatCurrency, hhmm, routeLabel, slotTimeRange } from '../../../shared/format'
+import { dayMicroCap, formatCurrency, hhmm, locationName, routeLabel, slotTimeRange } from '../../../shared/format'
 import { HistorySheet } from '../../../shared/booking'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
 import { reviewFlagsForBooking, type ReviewFlag } from '../reviewFlags'
@@ -57,7 +57,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   const times = useListTimes(list)
 
   const rows = useMemo(() => {
-    if (list === undefined) return []
+    if (list === undefined || list.state === 'DRAFT') return []
     const bookings = Object.values(bookingsRecord)
       .filter((c) => c.listId === listId && c.cancellation === undefined)
       .sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? '') || a.id.localeCompare(b.id))
@@ -97,10 +97,11 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   }, [list, listId, bookingsRecord, proceduresRecord, billingLinesRecord, masters])
   const warningsByBooking = useListWarnings(listId)
 
-  if (list === undefined) return null
+  // A Draft List has nothing to review (it can never be submitted).
+  if (list === undefined || list.state === 'DRAFT') return null
   const anaesthetist = masters.anaesthetists[list.anaesthetistId]
-  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
-  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+  const surgeon = masters.surgeons[list.surgeonId]
+  const hospitalName = locationName(list.hospitalId, masters.hospitals)
   const authorised = list.state === 'AUTHORISED'
 
   const listTotals = rows.reduce((acc, r) => ({ units: acc.units + r.totals.units, fee: acc.fee + r.totals.total }), { units: 0, fee: 0 })
@@ -120,7 +121,7 @@ export function ReviewScreen({ listId, actor, onBack, onOpen, onViewInvoices }: 
   // Keep the open list in its former queue position after authorisation so the
   // permanent previous/next controls remain stable while its state changes.
   const queueLists = Object.values(listsRecord)
-    .filter((candidate) => candidate.state === 'SUBMITTED' || candidate.id === listId)
+    .filter((candidate): candidate is AssignedList => candidate.state !== 'DRAFT' && (candidate.state === 'SUBMITTED' || candidate.id === listId))
     .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))
   const queueIndex = queueLists.findIndex((candidate) => candidate.id === listId)
   const previousListId = queueIndex > 0 ? queueLists[queueIndex - 1]?.id : undefined

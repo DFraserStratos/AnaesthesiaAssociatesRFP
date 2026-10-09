@@ -1,6 +1,126 @@
 {
   "id": "US-01.6.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 31 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "assign-draft-list",
+      "app": "admin",
+      "caption": "The office picks only the anaesthetist; the session is set on the Draft List, which then becomes active",
+      "start": "/admin/draft-lists?open=LD-001",
+      "states": [
+        {
+          "state": "drawer",
+          "steps": [
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=draft-list-available]"
+          ],
+          "caption": "A Draft List's drawer: who is free that session, with tier pills"
+        },
+        {
+          "state": "pick",
+          "steps": [
+            {
+              "goto": "/admin/draft-lists"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-assign-draft-list]"
+          ],
+          "caption": "Assign Draft List, Everyone: Free, Not preferred, Not available and Already has a List, tier-ordered"
+        },
+        {
+          "state": "warning",
+          "steps": [
+            {
+              "goto": "/admin/draft-lists"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "trigger": "simulate-incoming-request"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=candidates-not-preferred] [data-candidate=\"41267\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-assign-draft-list]"
+          ],
+          "caption": "Step 2: the warnings stack and the button reads Assign anyway"
+        },
+        {
+          "state": "assigned",
+          "steps": [
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-available] [data-available=\"43015\"] >> role=button[name=/Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-assign-draft-list] >> role=button[name=/^Assign/] >> nth=-1"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-shot=draft-lists-assigned] >> role=button[name=\"Open List\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+          ],
+          "caption": "The List now sits in Dr Fitzgerald's row, and its drawer reads ACTIVE"
+        }
+      ]
+    }
+  ]
 }

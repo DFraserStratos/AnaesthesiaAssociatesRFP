@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { assigned } from '../../../test/lists'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE } from '../../../domain/seed'
-import { freshAppState, useAppStore, type Actor } from '../../../store'
+import { freshAppState, setAvailability, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { ReassignListFlow } from './ReassignListFlow'
 import { projectedListId } from '../../../domain/slots'
@@ -13,7 +14,7 @@ const SOURCE_ID = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
 const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
 
 function renderFlow(listId: string, open = true) {
-  const list = useAppStore.getState().schedule.lists[listId]!
+  const list = assigned(useAppStore.getState().schedule.lists[listId])
   const ui = (isOpen: boolean) => (
     <SurfaceProvider variant="web">
       <ReassignListFlow open={isOpen} list={list} actor={OFFICE} onClose={vi.fn()} onReassigned={vi.fn()} />
@@ -44,7 +45,7 @@ describe('ReassignListFlow', () => {
   it('shows the success fanfare before completing the flow', () => {
     vi.useFakeTimers()
     const onReassigned = vi.fn()
-    const source = useAppStore.getState().schedule.lists[SOURCE_ID]!
+    const source = assigned(useAppStore.getState().schedule.lists[SOURCE_ID])
 
     render(
       <SurfaceProvider variant="web">
@@ -93,8 +94,9 @@ describe('ReassignListFlow', () => {
     expect(apart.map((r) => r.textContent?.includes('Sharma, Priya'))).toEqual([true])
     expect(apart[0]).toHaveTextContent('Not preferred')
     const clear = group(container, 'candidates-clear')
-    expect(clear.map((r) => r.querySelector('span')?.textContent)).toEqual(expect.arrayContaining(['Hughes, Rawiri', 'Delaney, Mark', 'Strand, Oliver']))
-    expect(tiersOf(clear)).toEqual([1, 1, 3])
+    // Fitzgerald's Tue 21 PM is free since catch-up Phase 31 (St George's request is a Draft List).
+    expect(clear.map((r) => r.querySelector('span')?.textContent)).toEqual(expect.arrayContaining(['Hughes, Rawiri', 'Delaney, Mark', 'Strand, Oliver', 'Fitzgerald, Emma']))
+    expect(tiersOf(clear)).toEqual([1, 1, 2, 3])
 
     fireEvent.click(apart[0]!)
     expect(container.querySelector('[data-shot="reassign-pairing-warning"]')).toHaveTextContent(
@@ -107,9 +109,22 @@ describe('ReassignListFlow', () => {
     expect(useAppStore.getState().audit.some((a) => a.action === 'list.pairingAcknowledged' && a.entityId === CHEN_PM)).toBe(true)
   })
 
+  it('from a closed session (the seeded office-recorded sickness) the vacated session defaults to Keep as is (catch-up Phase 30)', () => {
+    renderFlow(SOURCE_ID)
+    // Colleagues whose AM is closed sit apart, collapsed, after the open sessions.
+    expect(document.querySelector('[data-shot="reassign-not-available"]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Sharma, Priya.*Free AM/ }))
+    const vacated = document.querySelector('select[data-shot="reassign-vacated"]') as HTMLSelectElement
+    expect(vacated.value).toBe('unavailable')
+    expect(vacated.selectedOptions[0]?.textContent).toMatch(/^Keep as is/)
+    expect(screen.getByText(/stays Unavailable unless you mark it otherwise/)).toBeInTheDocument()
+  })
+
   it('defaults the vacated session to Free; choosing Unavailable marks it so, with no "regenerated" anywhere (US-01.4.1, OQ-84)', () => {
     vi.useFakeTimers()
-    const before = useAppStore.getState().schedule.lists[SOURCE_ID]!
+    // Free the session first (the seed records it as an office-recorded sickness).
+    setAvailability(useAppStore, { who: 'Kirsty W.', role: 'office', source: 'office' }, ANAE.rutherford, '2026-07-22', 'AM', 'free')
+    const before = assigned(useAppStore.getState().schedule.lists[SOURCE_ID])
     renderFlow(SOURCE_ID)
     fireEvent.click(screen.getByRole('button', { name: /Sharma, Priya.*Free AM/ }))
     const vacated = document.querySelector('select[data-shot="reassign-vacated"]') as HTMLSelectElement
@@ -118,7 +133,7 @@ describe('ReassignListFlow', () => {
     expect(document.body.textContent).not.toMatch(/regenerat|absorb/i)
     fireEvent.change(vacated, { target: { value: 'unavailable' } })
     fireEvent.click(screen.getByRole('button', { name: 'Confirm reassignment' }))
-    const after = useAppStore.getState().schedule.lists[SOURCE_ID]!
+    const after = assigned(useAppStore.getState().schedule.lists[SOURCE_ID])
     expect(after.id).toBe(before.id)
     expect(after.anaesthetistId).toBe(ANAE.sharma)
     expect(useAppStore.getState().schedule.slots[before.slotId]?.status).toBe('unavailable')
@@ -130,7 +145,7 @@ describe('ReassignListFlow', () => {
     expect(tiersOf(group(container, 'candidates-clear'))).toEqual([1, 1])
     expect(group(container, 'candidates-not-preferred')).toEqual([])
     fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 2'))
-    expect(group(container, 'candidates-clear')).toEqual([])
+    expect(tiersOf(group(container, 'candidates-clear'))).toEqual([2])
     expect(group(container, 'candidates-not-preferred')).toHaveLength(1)
   })
 

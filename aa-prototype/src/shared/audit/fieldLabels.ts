@@ -17,6 +17,8 @@
  * module stays pure over the entry it is given.
  */
 
+import { DRAFT_LISTS } from '../scheduleTerms'
+
 export const FIELD_LABELS: Record<string, string> = {
   // --- Booking ----------------------------------------------------------------
   listId: 'List',
@@ -84,6 +86,24 @@ export const FIELD_LABELS: Record<string, string> = {
   startTime: 'Start time',
   endTime: 'End time',
   conflicts: 'Conflicts',
+  // Catch-up Phase 30: conflicts from facts, office clears, recurring-booking provenance and dates.
+  conflictClears: 'Cleared conflicts',
+  cause: 'Cause',
+  detail: 'Detail',
+  change: 'What changed',
+  recurringBookingId: 'Recurring booking',
+  // Catch-up Phase 31: Draft Lists and the location record.
+  draft: 'Draft trail',
+  origin: 'Came from',
+  projectedFor: 'Stands for',
+  removeReason: 'Reason removed',
+  removedAtISO: 'Removed',
+  locationType: 'Location type',
+  fromAnaesthetistId: 'Anaesthetist unavailable',
+  draftListIds: DRAFT_LISTS,
+  draftListsUpdated: `${DRAFT_LISTS} updated`,
+  draftListsRemoved: `${DRAFT_LISTS} removed`,
+
   coverRequest: 'Cover request',
   phoneNotes: 'Phone notes',
   billedAtISO: 'Billed at',

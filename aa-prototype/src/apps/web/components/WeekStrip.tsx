@@ -5,7 +5,7 @@ import { brand, neutral } from '../../../theme/tokens'
 import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
 import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
-import { slotTimeRange, weekDays } from '../../../shared/format'
+import { slotTimeRange, weekDays, locationName } from '../../../shared/format'
 import { Panel } from './Panel'
 
 interface WeekStripProps {
@@ -61,9 +61,10 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
       if (v.open) return { l1: `${status.label} · ${v.slot.session}`, l2: v.slot.note ?? 'Open for cover' }
       return { l1: status.longLabel, l2: v.slot.note ?? '' }
     }
-    if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
-    const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-    const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : (list.notes ?? '')
+    if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
+    const hospital = locationName(list.hospitalId, hospitals)
+    // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
+    const surgeon = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
     return { l1: hospital, l2: `${surgeon}${surgeon !== '' ? ' · ' : ''}${list.session}` }
   }
 

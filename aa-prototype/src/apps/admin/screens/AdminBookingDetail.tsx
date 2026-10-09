@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
+import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
-import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
+import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -42,7 +43,7 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   const badge = nhiBadge(patient?.nhi)
-  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+  const hospitalName = locationName(list.hospitalId, masters.hospitals)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -67,7 +68,11 @@ export function AdminBookingDetail({ bookingId, actor, todayISO, onBack, backLab
             {primary?.description || 'Operation to capture'} · {hospitalName}
           </div>
         </div>
-        <StatusChip status={list.kind} />
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
+          {list.state === 'DRAFT' && <UnassignedPill />}
+          <StatusChip status={list.kind} />
+        </div>
       </div>
 
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} />

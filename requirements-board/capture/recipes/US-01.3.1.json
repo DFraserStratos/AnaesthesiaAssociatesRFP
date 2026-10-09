@@ -6,7 +6,7 @@
     {
       "name": "list-pairing",
       "app": "admin",
-      "caption": "An assigned List has one hospital and one surgeon",
+      "caption": "Every List has exactly one hospital and one surgeon",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
@@ -45,6 +45,50 @@
             "[role=dialog] label:has(select)"
           ],
           "caption": "Edit list: a single hospital and a single surgeon"
+        },
+        {
+          "state": "am-pm",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-list-id=\"L-34821-2026-07-21-AM\"]",
+            "[data-list-id=\"L-34821-2026-07-21-PM\"]"
+          ],
+          "caption": "AM and PM can differ: Dr Souter's morning is St George's with Mr Hale, her afternoon Southern Cross with Ms Patel"
+        },
+        {
+          "state": "incomplete",
+          "steps": [
+            {
+              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Edit list\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "select[data-shot=surgeon-picker]",
+              "value": ""
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=/^Save/]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Edit list refuses to clear the surgeon: Choose the surgeon."
         }
       ]
     }

@@ -8,18 +8,18 @@
  * single-instance edit or delete as an exception, so no later series write,
  * clock roll-forward or horizon extension overwrites it; nothing reads
  * availability from the series, only from Slots. Where a Slot holds a List, the
- * List keeps showing in place of the status and is never edited beyond its
- * availability conflict, which the one clash rule (`availabilityClash`) sets
- * or clears.
+ * List keeps showing in place of the status and is never edited here: its
+ * availability conflict comes from the one rule `mutate()` runs (catch-up
+ * Phase 30, `domain/conflicts.ts`).
  *
  * Each action is one `mutate()`, all or nothing on refusal, with one audit
- * entry plus one per List affected, and timestamps from the demo clock.
+ * entry plus one per List conflict raised or resolved (appended by the
+ * reconcile), and timestamps from the demo clock.
  * Refusals and audit labels say session, never "slot" (OQ-64).
  */
 
-import type { AvailabilitySeries, List, ListConflict, Session, Slot, SlotStatusKey } from '../domain/types'
+import type { AvailabilitySeries, Session, Slot, SlotStatusKey } from '../domain/types'
 import {
-  availabilityClash,
   defaultSlotStatusKey,
   displayStatusLabel,
   isOpenForBooking,
@@ -40,7 +40,7 @@ import {
 } from '../domain/availabilitySeries'
 import type { SeriesCalendarEntry } from '../domain/seed/canvas'
 import { slotIdFor } from '../domain/slots'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type MutationResult, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listIndexBySlot, scheduleHorizon } from './selectors'
 
@@ -129,99 +129,61 @@ export interface SessionWrite {
 
 export interface SessionWriteResult {
   slots: Record<string, Slot>
-  lists: Record<string, List>
   changedSlotIds: string[]
   unchanged: number
   holdingLists: number
-  flagged: string[]
-  cleared: string[]
-  listMetas: MutationMeta[]
 }
 
-function whoMarked(state: Pick<AppState, 'masters'>, actor: Actor, anaesthetistId: string): string {
-  if (actor.role === 'anaesthetist') {
-    const name = state.masters.anaesthetists[anaesthetistId]?.name ?? 'The anaesthetist'
-    const surname = name.trim().split(/\s+/).at(-1) ?? name
-    return name.startsWith('Dr ') ? `Dr ${surname}` : name
-  }
-  return 'The office'
-}
 
 /**
  * Apply session writes inside a mutate recipe: write each Slot's status and
- * note directly, then the one clash rule on any List in it. A closed status
- * over a List flags it once (replacing an earlier availability flag, never
- * stacking) and a bookable one clears that flag; the List's surgeon, hospital,
- * Bookings, times and kind are never touched.
+ * note directly. This is the one place every Slot-status write passes through
+ * (one-off, range, series create or delete, instance edits, the office's
+ * sickness record), so Phase 32 puts its return-or-assign guard here, for an
+ * anaesthetist actor only. It never touches a List: the List in a session
+ * keeps its surgeon, hospital, Bookings, times and kind, and the one conflict
+ * rule in `mutate()` flags it when the status is closed and resolves the flag
+ * when it is bookable again (catch-up Phase 30; the interim for an
+ * anaesthetist until Phase 32, the built reading for the office).
  */
 export function applySessionWrites(
   state: Pick<AppState, 'schedule' | 'masters'>,
-  actor: Actor,
+  _actor: Actor,
   writes: readonly SessionWrite[],
 ): SessionWriteResult {
   const statuses = state.masters.slotStatuses
   const slots = { ...state.schedule.slots }
-  // Lists are copied only when one is flagged or cleared, so an empty
-  // session's write leaves the List record untouched (reference included).
-  let lists: Record<string, List> = state.schedule.lists
-  const writeList = (list: List) => {
-    if (lists === state.schedule.lists) lists = { ...lists }
-    lists[list.id] = list
-  }
   const listBySlot = listIndexBySlot(state.schedule.lists)
-  const result: SessionWriteResult = { slots, lists, changedSlotIds: [], unchanged: 0, holdingLists: 0, flagged: [], cleared: [], listMetas: [] }
+  const result: SessionWriteResult = { slots, changedSlotIds: [], unchanged: 0, holdingLists: 0 }
 
   for (const write of writes) {
     const current = slots[write.slot.id] ?? write.slot
     const note = write.note?.trim() ?? ''
     const nextSeries = write.seriesId === undefined ? current.seriesId : (write.seriesId ?? undefined)
     const status = statusFor(statuses, write.statusKey)
-    const held = listBySlot.get(current.id)
-    const list = held === undefined ? undefined : (lists[held.id] ?? held)
     const statusChanged = current.status !== write.statusKey
-    // The clash rule runs on a status change; a bookable status also clears a
-    // flag left on the List even when the session already carried it.
-    const clash = list === undefined ? 'none' : statusChanged || isOpenForBooking(status) ? availabilityClash(list, status) : 'none'
     const sessionChanged = statusChanged || (current.note ?? '') !== note || current.seriesId !== nextSeries
-    if (!sessionChanged && clash === 'none') {
+    if (!sessionChanged) {
       result.unchanged += 1
       continue
     }
-    if (sessionChanged) {
-      const next: Slot = { ...current, status: write.statusKey }
-      if (note !== '') next.note = note
-      else delete next.note
-      if (nextSeries !== undefined) next.seriesId = nextSeries
-      else delete next.seriesId
-      if (!isOpenForBooking(status)) delete next.coverRequest
-      slots[next.id] = next
-      result.changedSlotIds.push(next.id)
-      if (list !== undefined) result.holdingLists += 1
-    }
-    if (list === undefined) continue
-    if (clash === 'flag') {
-      const label = status?.label ?? 'closed'
-      const message = `${whoMarked(state, actor, current.anaesthetistId)} marked this session ${label}. The List is still in place; reassign it if it needs cover.`
-      const conflict: ListConflict = { kind: 'availability', message }
-      writeList({ ...list, conflicts: [...list.conflicts.filter((c) => c.kind !== 'availability'), conflict] })
-      result.flagged.push(list.id)
-      result.listMetas.push({ entityType: 'list', entityId: list.id, action: 'list.conflict', after: { kind: 'availability', message }, stampBookingId: null })
-    } else if (clash === 'clear') {
-      const removed = list.conflicts.filter((c) => c.kind === 'availability')
-      writeList({ ...list, conflicts: list.conflicts.filter((c) => c.kind !== 'availability') })
-      result.cleared.push(list.id)
-      result.listMetas.push({
-        entityType: 'list',
-        entityId: list.id,
-        action: 'list.conflictCleared',
-        before: { conflicts: removed },
-        after: { kind: 'availability' },
-        stampBookingId: null,
-      })
-    }
+    const next: Slot = { ...current, status: write.statusKey }
+    if (note !== '') next.note = note
+    else delete next.note
+    if (nextSeries !== undefined) next.seriesId = nextSeries
+    else delete next.seriesId
+    if (!isOpenForBooking(status)) delete next.coverRequest
+    slots[next.id] = next
+    result.changedSlotIds.push(next.id)
+    if (listBySlot.has(current.id)) result.holdingLists += 1
   }
-  result.lists = lists
   return result
+}
+
+/** An availability outcome's List counts, from the mutation's conflict result. */
+function conflictCounts(result: MutationResult): Pick<AvailabilityOutcome, 'flagged' | 'cleared'> {
+  const raised = new Set(result.conflictsRaised)
+  return { flagged: [...result.conflictsRaised], cleared: result.conflictsResolved.filter((id) => !raised.has(id)) }
 }
 
 /**
@@ -285,14 +247,12 @@ export function setOneSessionAvailability(
   if (locked !== null) return locked
   const writes: SessionWrite[] = [{ slot, statusKey, ...(note !== undefined ? { note } : {}) }]
   const preview = applySessionWrites(state, actor, writes)
-  if (preview.changedSlotIds.length === 0 && preview.cleared.length === 0) return ok({ result: 'noChange' })
+  if (preview.changedSlotIds.length === 0) return ok({ result: 'noChange' })
 
-  let flagged = false
   const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
+  const mutation = mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     const next = applied.slots[slot.id]
-    flagged = applied.flagged.length > 0
     const labelOf = (key: SlotStatusKey) => displayStatusLabel(key, s.masters.slotStatuses, true)
     if (applied.changedSlotIds.length > 0) {
       metas.push({
@@ -304,11 +264,10 @@ export function setOneSessionAvailability(
         stampBookingId: null,
       })
     }
-    metas.push(...applied.listMetas)
     const series = withEditedExceptions(s.schedule.availabilitySeries, s.schedule.slots, writes, new Set(applied.changedSlotIds))
-    return { schedule: { ...s.schedule, slots: applied.slots, lists: applied.lists, availabilitySeries: series.series } }
+    return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries: series.series } }
   })
-  return ok({ result: flagged ? 'conflictFlagged' : 'updated' })
+  return ok({ result: mutation.conflictsRaised.length > 0 ? 'conflictFlagged' : 'updated' })
 }
 
 // ---------------------------------------------------------------------------
@@ -368,17 +327,15 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
 
   const outcome = emptyOutcome(input.statusKey)
   const preview = applySessionWrites(state, actor, writes)
-  if (preview.changedSlotIds.length === 0 && preview.cleared.length === 0) return ok({ ...outcome, unchanged: preview.unchanged })
+  if (preview.changedSlotIds.length === 0) return ok({ ...outcome, unchanged: preview.unchanged })
 
   const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
+  const mutation = mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     const changed = new Set(applied.changedSlotIds)
     const series = withEditedExceptions(s.schedule.availabilitySeries, s.schedule.slots, writes, changed)
     outcome.set = applied.changedSlotIds.length
     outcome.unchanged = applied.unchanged
-    outcome.flagged = applied.flagged
-    outcome.cleared = applied.cleared
     outcome.holdingLists = applied.holdingLists
     outcome.seriesEdited = series.edited
     const before = writes.map((w) => s.schedule.slots[w.slot.id]).filter((x): x is Slot => x !== undefined)
@@ -402,9 +359,9 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
       },
       stampBookingId: null,
     })
-    metas.push(...applied.listMetas)
-    return { schedule: { ...s.schedule, slots: applied.slots, lists: applied.lists, availabilitySeries: series.series } }
+    return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries: series.series } }
   })
+  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -438,14 +395,12 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
   const writes: SessionWrite[] = [{ slot, statusKey: defaultKey, seriesId: null }]
   const ownerId = slot.seriesId
   const preview = applySessionWrites(state, actor, writes)
-  if (preview.changedSlotIds.length === 0 && preview.cleared.length === 0) return ok({ ...outcome, unchanged: 1 })
+  if (preview.changedSlotIds.length === 0) return ok({ ...outcome, unchanged: 1 })
 
   const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
+  const mutation = mutate(api, actor, metas, (s) => {
     const applied = applySessionWrites(s, actor, writes)
     outcome.set = applied.changedSlotIds.length
-    outcome.flagged = applied.flagged
-    outcome.cleared = applied.cleared
     outcome.holdingLists = applied.holdingLists
     let availabilitySeries = s.schedule.availabilitySeries
     const owner = ownerId === undefined ? undefined : availabilitySeries[ownerId]
@@ -469,9 +424,9 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
       after: { status: defaultKey, statusLabel: displayStatusLabel(defaultKey, s.masters.slotStatuses, true) },
       stampBookingId: null,
     })
-    metas.push(...applied.listMetas)
-    return { schedule: { ...s.schedule, slots: applied.slots, lists: applied.lists, availabilitySeries } }
+    return { schedule: { ...s.schedule, slots: applied.slots, availabilitySeries } }
   })
+  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -486,7 +441,17 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
  * New Slots beyond today's horizon get it as they are generated
  * (`seriesCalendarFor`).
  */
-export function createAvailabilitySeries(api: AppStoreApi, actor: Actor, draft: AvailabilitySeriesDraft): Outcome<AvailabilityOutcome> {
+export function createAvailabilitySeries(
+  api: AppStoreApi,
+  actor: Actor,
+  draft: AvailabilitySeriesDraft,
+  /**
+   * Catch-up Phase 31 (Phase 29's handoff): the office may start a series past
+   * the horizon's far end, which no screen offers; "Stage recurring clash"
+   * uses it so the roll forward paints the day. Office only.
+   */
+  options: { beyondHorizon?: boolean } = {},
+): Outcome<AvailabilityOutcome> {
   const state = api.getState()
   const guard = actorRefusal<AvailabilityOutcome>(state, actor, draft.anaesthetistId)
   if (guard !== null) return guard
@@ -495,7 +460,7 @@ export function createAvailabilitySeries(api: AppStoreApi, actor: Actor, draft: 
   const horizonEndISO = scheduleHorizon(state).endISO
   const issues = validateSeriesDraft(draft, {
     todayISO: state.clock.todayISO,
-    horizonEndISO,
+    horizonEndISO: options.beyondHorizon === true && actor.role === 'office' ? '9999-12-31' : horizonEndISO,
     statuses: state.masters.slotStatuses,
     requireSettable: actor.role === 'anaesthetist',
   })
@@ -503,7 +468,7 @@ export function createAvailabilitySeries(api: AppStoreApi, actor: Actor, draft: 
 
   const outcome = emptyOutcome(draft.statusKey)
   const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
+  const mutation = mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'availabilitySeries')
     const note = draft.note?.trim() ?? ''
     const series: AvailabilitySeries = {
@@ -530,8 +495,6 @@ export function createAvailabilitySeries(api: AppStoreApi, actor: Actor, draft: 
     outcome.unchanged = applied.unchanged
     outcome.leftAsIs = plan.leftAsIs.length
     outcome.holdingLists = applied.holdingLists
-    outcome.flagged = applied.flagged
-    outcome.cleared = applied.cleared
     metas.push({
       entityType: 'anaesthetist',
       entityId: draft.anaesthetistId,
@@ -546,17 +509,16 @@ export function createAvailabilitySeries(api: AppStoreApi, actor: Actor, draft: 
       },
       stampBookingId: null,
     })
-    metas.push(...applied.listMetas)
     return {
       schedule: {
         ...s.schedule,
         slots: applied.slots,
-        lists: applied.lists,
         availabilitySeries: { ...s.schedule.availabilitySeries, [series.id]: series },
       },
       counters: alloc.counters,
     }
   })
+  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 
@@ -579,7 +541,7 @@ export function deleteAvailabilitySeries(api: AppStoreApi, actor: Actor, seriesI
   const outcome = emptyOutcome(defaultKey)
   outcome.seriesId = seriesId
   const metas: MutationMeta[] = []
-  mutate(api, actor, metas, (s) => {
+  const mutation = mutate(api, actor, metas, (s) => {
     const current = s.schedule.availabilitySeries[seriesId] ?? series
     const writes: SessionWrite[] = []
     const keptIds = new Set<string>()
@@ -598,8 +560,6 @@ export function deleteAvailabilitySeries(api: AppStoreApi, actor: Actor, seriesI
     const applied = applySessionWrites(s, actor, writes)
     outcome.set = applied.changedSlotIds.filter((id) => !keptIds.has(id)).length
     outcome.unchanged = keptIds.size
-    outcome.flagged = applied.flagged
-    outcome.cleared = applied.cleared
     outcome.holdingLists = applied.holdingLists
     metas.push({
       entityType: 'anaesthetist',
@@ -609,16 +569,15 @@ export function deleteAvailabilitySeries(api: AppStoreApi, actor: Actor, seriesI
       after: { endedFromISO: todayISO, returnedToDefault: outcome.set, keptAsOneOff: keptIds.size },
       stampBookingId: null,
     })
-    metas.push(...applied.listMetas)
     return {
       schedule: {
         ...s.schedule,
         slots: applied.slots,
-        lists: applied.lists,
         availabilitySeries: { ...s.schedule.availabilitySeries, [seriesId]: { ...current, endedAtISO: clockISO(s.clock) } },
       },
     }
   })
+  Object.assign(outcome, conflictCounts(mutation))
   return ok(outcome)
 }
 

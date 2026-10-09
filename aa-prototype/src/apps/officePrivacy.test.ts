@@ -23,9 +23,9 @@ import { createAppStore } from '../store/appStore'
 import type { Actor } from '../store/mutate'
 import { editList } from '../store/lifecycle'
 import { reassignList } from '../store/slotActions'
-import { addPermanentList } from '../store/mastersActions'
+import { addRecurringBooking } from '../store/mastersActions'
 import { addPairingPreference, endPairingPreference, setPriorityTier } from '../store/officePrivate'
-import { ANAE, SURG } from '../domain/seed'
+import { ANAE, HOSP, SURG } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 
 const SRC = import.meta.glob('../**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
@@ -72,7 +72,7 @@ const ALLOWED: readonly { label: string; test: (p: string) => boolean }[] = [
   { label: 'the office store module', test: (p) => p === 'store/officePrivate.ts' },
   { label: 'the store and its Reset', test: (p) => p === 'store/appStore.ts' || p === 'store/mutate.ts' },
   { label: 'the persist files', test: (p) => p === 'store/persistStorage.ts' },
-  { label: 'the office write paths (acknowledgement)', test: (p) => p === 'store/lifecycle.ts' || p === 'store/mastersActions.ts' || p === 'store/slotActions.ts' },
+  { label: 'the office write paths (acknowledgement)', test: (p) => p === 'store/lifecycle.ts' || p === 'store/mastersActions.ts' || p === 'store/slotActions.ts' || p === 'store/draftListActions.ts' },
   { label: 'the audit labels', test: (p) => p.startsWith('shared/audit/') },
   { label: 'tests', test: (p) => /\.test\.tsx?$/.test(p) },
   { label: 'the Admin app', test: (p) => p.startsWith('apps/admin/') },
@@ -178,7 +178,7 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     expect(body).toMatch(/return \[bookingId, \.\.\.procedureIds, \.\.\.lineIds, \.\.\.removedEntityIds\]/)
   })
 
-  it('every office-private audit entry sits on a List, Permanent List, pairing or anaesthetist, never a Booking', () => {
+  it('every office-private audit entry sits on a List, recurring booking, pairing or anaesthetist, never a Booking', () => {
     const api = createAppStore()
     addPairingPreference(api, OFFICE, { kind: 'PREFERRED', raisedBy: 'ANAESTHETIST', anaesthetistId: ANAE.chen, surgeonId: SURG.lim })
     endPairingPreference(api, OFFICE, 'PP-001')
@@ -186,13 +186,13 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     setPriorityTier(api, OFFICE, ANAE.sharma, 1)
     editList(api, OFFICE, projectedListId(ANAE.sharma, '2026-07-21', 'AM'), { surgeonId: SURG.reid })
     reassignList(api, OFFICE, projectedListId(ANAE.chen, '2026-07-21', 'PM'), ANAE.sharma)
-    addPermanentList(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: null, surgeonId: SURG.reid })
+    addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.reid })
 
     const s = api.getState()
     const privateEntries = s.audit.filter((a) => OFFICE_PRIVATE_AUDIT_ACTIONS.has(a.action))
     expect(new Set(privateEntries.map((a) => a.action))).toEqual(OFFICE_PRIVATE_AUDIT_ACTIONS)
     for (const entry of privateEntries) {
-      expect(['list', 'permanentList', 'pairingPreference', 'anaesthetist']).toContain(entry.entityType)
+      expect(['list', 'recurringBooking', 'pairingPreference', 'anaesthetist']).toContain(entry.entityType)
     }
     const historyIds = new Set([
       ...Object.keys(s.schedule.bookings),

@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BillingRoute, BookingSource } from '../domain/types'
+import type { BillingRoute, BookingSource, Hospital, List, Surgeon } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -177,6 +177,38 @@ export function initialsOf(name: string): string {
 
 /** A List's lifecycle state as the screens print it (its home is `domain/types.ts`). */
 export { LIST_STATE_LABELS } from '../domain/types'
+
+/**
+ * How long a Draft List has waited, from whole minutes (catch-up Phase 31;
+ * US-01.6.2): "45 min" under an hour, "16 h" under a day, then "3 d 22 h"
+ * (dropping "0 h"). The one formatter for every waiting time.
+ */
+export function waitingLabel(minutes: number): string {
+  const m = Math.max(0, Math.floor(minutes))
+  if (m < 60) return `${m} min`
+  const hours = Math.floor(m / 60)
+  if (hours < 24) return `${hours} h`
+  const days = Math.floor(hours / 24)
+  const rest = hours % 24
+  return rest === 0 ? `${days} d` : `${days} d ${rest} h`
+}
+
+/**
+ * A List's location by name (catch-up Phase 31): the hospital, or "AA rooms"
+ * for the pre-op clinic's location record. Every List has one, so there is no
+ * fallback wording; an id missing from the master reads as the id.
+ */
+export function locationName(hospitalId: string, hospitals: Readonly<Record<string, Pick<Hospital, 'name'>>>): string {
+  return hospitals[hospitalId]?.name ?? hospitalId
+}
+
+/** "Forte Health · Mr V. Nand": a List's location and surgeon. */
+export function pairingLine(
+  list: Pick<List, 'hospitalId' | 'surgeonId'>,
+  masters: { hospitals: Readonly<Record<string, Pick<Hospital, 'name'>>>; surgeons: Readonly<Record<string, Pick<Surgeon, 'name'>>> },
+): string {
+  return `${locationName(list.hospitalId, masters.hospitals)} · ${masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}`
+}
 
 /**
  * How a Booking entered the system, as shown on the Booking (DM-39; catch-up

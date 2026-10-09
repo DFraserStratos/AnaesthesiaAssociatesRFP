@@ -46,7 +46,7 @@ Schedule
 
 - The system creates a rolling four-month canvas containing exactly two Lists, AM and PM, for every
   active anaesthetist on every day.
-- Permanent arrangements, availability, hospital, surgeon, status and Bookings are applied to that
+- Recurring bookings, availability, hospital, surgeon, status and Bookings are applied to that
   canvas.
 - A List is not an employment shift and a Booking is not a shift application.
 - The anaesthetist completes Bookings and submits the whole List.

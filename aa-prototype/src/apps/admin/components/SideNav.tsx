@@ -1,8 +1,9 @@
 import { Wordmark } from '../../../shared'
 import { brand, neutral, semantic } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
+import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
+export type NavSection = 'day' | 'draftLists' | 'conflicts' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -19,6 +20,10 @@ interface SideNavProps {
   billingBadge?: number
   /** Integration-monitor attention count (Phase 11; dead-letter + manual intervention) — amber. */
   integrationBadge?: number
+  /** Open conflicts from today to the horizon (catch-up Phase 30; US-01.5.4) — amber. */
+  conflictBadge?: number
+  /** Waiting Draft Lists (catch-up Phase 31; US-01.6.2 "one visible place") — amber, an attention count. */
+  draftListBadge?: number
   onNavigate: (section: NavSection) => void
 }
 
@@ -27,9 +32,11 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadge = 0, conflictBadge = 0, draftListBadge = 0, onNavigate }: SideNavProps) {
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
+    { section: 'draftLists', label: DRAFT_LISTS, badge: draftListBadge, badgeTone: 'warn' },
+    { section: 'conflicts', label: 'Conflicts', badge: conflictBadge, badgeTone: 'warn' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
@@ -73,7 +80,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
             >
               <span>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
-                <span style={{ background: item.badgeTone === 'warn' ? semantic.warning.solid : brand.base, color: '#FFFFFF', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
+                <span data-shot={`nav-badge-${item.section}`} style={{ background: item.badgeTone === 'warn' ? semantic.warning.solid : brand.base, color: '#FFFFFF', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>{item.badge}</span>
               )}
             </button>
           )

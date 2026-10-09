@@ -1,6 +1,115 @@
 {
   "id": "US-01.6.1",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 31 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "new-draft-list",
+      "app": "admin",
+      "caption": "A Draft List needs no anaesthetist, changes nobody's schedule and can hold Bookings",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "state": "form",
+          "steps": [
+            {
+              "click": "role=button[name=/New Draft List/]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=draft-list-hospital]",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=draft-list-surgeon]",
+              "value": "S-REID"
+            },
+            {
+              "fill": "[data-shot=draft-list-date]",
+              "value": "2026-07-23"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-new-draft-list]"
+          ],
+          "caption": "New Draft List: hospital, surgeon, day, session and how it came in"
+        },
+        {
+          "state": "with-booking",
+          "steps": [
+            {
+              "click": "role=button[name=/New Draft List/]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=draft-list-hospital]",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=draft-list-surgeon]",
+              "value": "S-REID"
+            },
+            {
+              "fill": "[data-shot=draft-list-date]",
+              "value": "2026-07-23"
+            },
+            {
+              "click": "[data-shot=admin-new-draft-list] >> role=button[name=/^Save Draft List/]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\")"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=draft-list-add-booking]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Patient name\"]",
+              "value": "Anna Whitcombe"
+            },
+            {
+              "fill": "[role=dialog] input[type=date]",
+              "value": "1971-04-09"
+            },
+            {
+              "fill": "[role=dialog] input[placeholder=\"Operation description\"]",
+              "value": "Cataract extraction, left eye"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save booking\"]"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-draft-list-drawer] >> text=\"Anna Whitcombe\"",
+            "[data-shot=draft-list-add-booking]"
+          ],
+          "caption": "The new Draft List's drawer, after Add Booking"
+        }
+      ]
+    }
+  ]
 }

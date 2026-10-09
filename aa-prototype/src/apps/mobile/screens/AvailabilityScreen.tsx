@@ -9,7 +9,7 @@ import { MobileHeader } from '../components'
 import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { RequestCoverSheet } from '../../../shared/flows'
-import { initialsOf } from '../../../shared/format'
+import { initialsOf, locationName } from '../../../shared/format'
 
 interface AvailabilityScreenProps {
   actor: Actor
@@ -92,8 +92,8 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
     if (view === undefined) return ''
     const list = view.list
     if (list === undefined) return view.open ? 'Tap to ask' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
-    const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? '') : 'AA rooms'
-    const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : ''
+    const hospital = locationName(list.hospitalId, hospitals)
+    const surgeon = surgeons[list.surgeonId]?.name ?? ''
     return [hospital, surgeon].filter(Boolean).join(' · ')
   }
 
@@ -101,7 +101,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
     if (view === undefined) return 'No session'
     const list = view.list
     if (list === undefined) return resolveDisplayStatus(view.slot.status, slotStatuses).label
-    return list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Booked') : 'Pre-op'
+    return list.kind === 'preop' ? 'Pre-op' : locationName(list.hospitalId, hospitals)
   }
 
   function openRequest(view: SlotView, personName: string, session: Session) {

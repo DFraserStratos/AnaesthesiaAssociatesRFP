@@ -5,6 +5,7 @@
  * cover markers, and one status read the same way by every app and finder.
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import {
@@ -40,7 +41,7 @@ import { ANAE, HOSP, SEED_LIST_IDS, SURG, generateCanvasForDates, seedSlotStatus
 import { displayStatusKey, slotIdFor } from '../domain/slots'
 import { isOpenSlot } from '../domain/slotStatus'
 import { enumerateDatesISO } from '../domain/clock'
-import type { PermanentList, SeedLeaveWindow } from '../domain/types'
+import type { RecurringBooking, SeedLeaveWindow } from '../domain/types'
 
 const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
@@ -71,7 +72,7 @@ const assign = (api: BoundAppStore, slotId: string, surgeonId: string = SURG.hal
 // ---------------------------------------------------------------------------
 
 describe('generation: free Slots, then the calendar, then recurring bookings', () => {
-  const template = (over: Partial<PermanentList>): PermanentList => ({
+  const recurring = (over: Partial<RecurringBooking>): RecurringBooking => ({
     id: 'PLX', anaesthetistId: 'A1', dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.stg, surgeonId: SURG.hale, ...over,
   })
   const masters = (over: Partial<CanvasMasters> = {}): CanvasMasters => ({
@@ -80,11 +81,10 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
       { id: 'A2', startDateISO: '2020-01-06', active: false },
       { id: 'A3', startDateISO: '2026-08-05', active: true },
     ],
-    permanentLists: [template({}), template({ id: 'PLY', dayOfWeek: 6 })],
+    recurringBookings: [recurring({}), recurring({ id: 'PLY', dayOfWeek: 6 })],
     leave: [],
     series: [],
     statuses: seedSlotStatusRecords(),
-    holidays: [],
     ...over,
   })
   // Mon 3 Aug to Sun 9 Aug 2026.
@@ -99,31 +99,36 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
     expect(by('A3')).toHaveLength(10)
   })
 
-  it('every Slot is free unless a recurring booking projected a List; weekend templates wait for Phase 30', () => {
+  it('every Slot is free unless a recurring booking projected a List; weekend recurring bookings project too (catch-up Phase 30)', () => {
     const { slots, lists } = generateCanvasForDates(masters(), week)
-    expect(lists).toHaveLength(1)
-    expect(lists[0]).toMatchObject({ id: 'L-A1-2026-08-03-AM', slotId: 'S-A1-2026-08-03-AM', state: 'ACTIVE', kind: 'private' })
+    expect(lists).toHaveLength(2)
+    expect(lists[0]).toMatchObject({ id: 'L-A1-2026-08-03-AM', slotId: 'S-A1-2026-08-03-AM', state: 'ACTIVE', kind: 'private', recurringBookingId: 'PLX' })
+    expect(lists[1]).toMatchObject({ id: 'L-A1-2026-08-08-AM', recurringBookingId: 'PLY' })
     expect(slots.every((s) => s.status === 'free')).toBe(true)
   })
 
   it('the calendar wins: a recurring booking under leave projects no List and is traced as a clash', () => {
     const leave: SeedLeaveWindow[] = [{ anaesthetistId: 'A1', dateISO: '2026-08-03', session: 'AM', status: 'holiday', note: 'Annual leave' }]
     const { slots, lists, clashes } = generateCanvasForDates(masters({ leave }), week)
-    expect(lists).toHaveLength(0)
-    expect(clashes).toEqual([{ permanentListId: 'PLX', slotId: 'S-A1-2026-08-03-AM' }])
+    expect(lists.filter((l) => l.dateISO === '2026-08-03')).toHaveLength(0)
+    expect(clashes).toEqual([{ recurringBookingId: 'PLX', slotId: 'S-A1-2026-08-03-AM' }])
     expect(slots.find((s) => s.id === 'S-A1-2026-08-03-AM')).toMatchObject({ status: 'holiday', note: 'Annual leave' })
   })
 
-  it('template times become the Slot\'s own times; a closed hospital flags the projected List', () => {
-    const { slots, lists } = generateCanvasForDates(
-      masters({
-        permanentLists: [template({ startTime: '09:00', endTime: '12:00' })],
-        holidays: [{ id: 'H1', hospitalId: HOSP.stg, dateISO: '2026-08-03', name: 'Test closure' }],
-      }),
-      week,
-    )
+  it('recurring-booking times become the Slot\'s own times; generation stamps no conflict (the one rule does)', () => {
+    const { slots, lists } = generateCanvasForDates(masters({ recurringBookings: [recurring({ startTime: '09:00', endTime: '12:00' })] }), week)
     expect(slots.find((s) => s.id === 'S-A1-2026-08-03-AM')).toMatchObject({ startTime: '09:00', endTime: '12:00' })
-    expect(lists[0]?.conflicts).toEqual([{ kind: 'holiday', message: 'Test closure: the hospital is closed on this date.' }])
+    expect(lists[0]?.conflicts).toEqual([])
+  })
+
+  it('start and end dates bound a recurring booking; the first running row in id order paints a shared session', () => {
+    const ended = recurring({ id: 'PLA', effectiveToISO: '2026-08-02' })
+    const next = recurring({ id: 'PLB', effectiveFromISO: '2026-08-03', surgeonId: SURG.lim })
+    const { lists } = generateCanvasForDates(masters({ recurringBookings: [next, ended] }), enumerateDatesISO('2026-07-27', '2026-08-03'))
+    expect(lists.map((l) => [l.dateISO, l.recurringBookingId])).toEqual([
+      ['2026-07-27', 'PLA'],
+      ['2026-08-03', 'PLB'],
+    ])
   })
 })
 
@@ -139,7 +144,7 @@ describe('assignListToSlot', () => {
     const out = assign(api, STRAND_PM)
     expect(out.ok).toBe(true)
     if (!out.ok) return
-    const list = api.getState().schedule.lists[out.value.listId]!
+    const list = assigned(api.getState().schedule.lists[out.value.listId])
     expect(list).toMatchObject({ slotId: STRAND_PM, anaesthetistId: ANAE.strand, dateISO: TUE21, session: 'PM', state: 'ACTIVE', kind: 'private', hospitalId: HOSP.stg, surgeonId: SURG.hale })
     expect(list.id).toMatch(/^LG\d{4}$/)
     expect(Object.keys(api.getState().schedule.lists)).toHaveLength(before + 1)
@@ -147,13 +152,12 @@ describe('assignListToSlot', () => {
     expect(api.getState().audit.filter((a) => a.action === 'list.create')).toHaveLength(1)
   })
 
-  it('refuses: not the office, no such session, occupied, not available (interim), hospital or surgeon missing, bad kind', () => {
+  it('refuses: not the office, no such session, occupied, hospital or surgeon missing, bad kind', () => {
     const api = store()
     const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
     expect(code(assignListToSlot(api, SOUTER, STRAND_PM, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }))).toBe('officeOnly')
     expect(code(assign(api, 'S-nope'))).toBe('notFound')
     expect(code(assign(api, slotIdFor(ANAE.souter, TUE21, 'AM')))).toBe('slotOccupied')
-    expect(code(assign(api, slotIdFor(ANAE.ngata, TUE21, 'AM')))).toBe('slotNotAvailable')
     expect(code(assignListToSlot(api, OFFICE, STRAND_PM, { hospitalId: '', surgeonId: SURG.hale, kind: 'private' }))).toBe('hospitalRequired')
     expect(code(assignListToSlot(api, OFFICE, STRAND_PM, { hospitalId: HOSP.stg, surgeonId: '', kind: 'private' }))).toBe('surgeonRequired')
     expect(code(assignListToSlot(api, OFFICE, STRAND_PM, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'free' as never }))).toBe('invalidKind')
@@ -165,7 +169,20 @@ describe('assignListToSlot', () => {
     const slot = openSlotOn(api, '2026-10-26', 'AM')
     const out = assign(api, slot.id)
     expect(out.ok).toBe(true)
-    if (out.ok) expect(api.getState().schedule.lists[out.value.listId]?.conflicts).toEqual([{ kind: 'holiday', message: 'Labour Day: the hospital is closed on this date.' }])
+    if (out.ok) expect(api.getState().schedule.lists[out.value.listId]?.conflicts).toMatchObject([{ kind: 'holiday' }])
+    expect(api.getState().audit.filter((a) => a.action === 'list.conflict')).toHaveLength(1)
+  })
+
+  it('accepts and flags a session marked unavailable (OQ-09 soft warning; catch-up Phase 30 replaced the interim refusal)', () => {
+    const api = store()
+    const ngataAm = slotIdFor(ANAE.ngata, TUE21, 'AM')
+    const out = assign(api, ngataAm)
+    expect(out.ok).toBe(true)
+    if (!out.ok) return
+    const list = assigned(api.getState().schedule.lists[out.value.listId])
+    expect(list.slotId).toBe(ngataAm)
+    expect(list.conflicts).toMatchObject([{ kind: 'availability', slotId: ngataAm }])
+    expect(api.getState().audit.filter((a) => a.action === 'list.conflict' && a.entityId === list.id)).toHaveLength(1)
   })
 
   it('a not-preferred pairing warns, never refuses: the office records one acknowledgement; a preferred or ended pairing records none', () => {
@@ -190,7 +207,7 @@ describe('assignListToSlot', () => {
 describe('the displayed status', () => {
   it('never changes as Bookings are created, completed, cancelled or moved (US-01.2.3)', () => {
     const api = store()
-    const list = api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!
+    const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const keyOf = () => slotView(api.getState(), list.slotId)?.displayKey
     const start = keyOf()
     const created = createBooking(api, OFFICE, list.id, { patient: { name: 'Test Patient', dobISO: '1970-01-01' }, operation: 'Test', billingRoute: 'hospital' })
@@ -201,7 +218,7 @@ describe('the displayed status', () => {
     expect(keyOf()).toBe(start)
     if (created.ok) cancelBooking(api, OFFICE, created.value.bookingId, 'Test')
     expect(keyOf()).toBe(start)
-    const pm = api.getState().schedule.lists[SEED_LIST_IDS.souterPm21]!
+    const pm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterPm21])
     reassignBooking(api, OFFICE, existing.id, pm.id)
     expect(keyOf()).toBe(start)
     expect(slotView(api.getState(), pm.slotId)?.displayKey).toBe(pm.kind)
@@ -211,7 +228,7 @@ describe('the displayed status', () => {
     const api = store()
     expect(setAvailability(api, OFFICE, ANAE.strand, TUE21, 'PM', 'holiday').ok).toBe(true)
     expect(slotView(api.getState(), STRAND_PM)?.displayKey).toBe('holiday')
-    const souterAm = api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!
+    const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const out = setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
     expect(out.ok && out.value.result).toBe('conflictFlagged')
     expect(slotView(api.getState(), souterAm.slotId)?.displayKey).toBe(souterAm.kind)
@@ -256,8 +273,8 @@ describe('setAvailability', () => {
 
   it('marking a session holding a List free writes no conflict; repeated blocks leave at most one', () => {
     const api = store()
-    const list = api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!
-    const conflicts = () => api.getState().schedule.lists[list.id]!.conflicts.filter((c) => c.kind === 'availability')
+    const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
+    const conflicts = () => assigned(api.getState().schedule.lists[list.id]).conflicts.filter((c) => c.kind === 'availability')
     expect(setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'free').ok).toBe(true)
     expect(conflicts()).toHaveLength(0)
     setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'unavailable')
@@ -281,7 +298,7 @@ describe('setAvailability', () => {
 describe('reassignList: the List moves between sessions', () => {
   it('keeps id, Bookings and history; the vacated session returns to Free; no List is created or deleted; own times travel', () => {
     const api = store()
-    const source = api.getState().schedule.lists[SEED_LIST_IDS.rutherfordPm21]!
+    const source = assigned(api.getState().schedule.lists[SEED_LIST_IDS.rutherfordPm21])
     const fromSlot = api.getState().schedule.slots[source.slotId]!
     expect(fromSlot).toMatchObject({ startTime: '13:30', endTime: '17:00' })
     const bookingsBefore = bookingsForList(api.getState(), source.id).map((b) => b.id)
@@ -291,7 +308,7 @@ describe('reassignList: the List moves between sessions', () => {
     const out = reassignList(api, OFFICE, source.id, ANAE.strand)
     expect(out).toEqual({ ok: true, value: { listId: source.id, vacatedSlotId: source.slotId } })
     const s = api.getState()
-    const moved = s.schedule.lists[source.id]!
+    const moved = assigned(s.schedule.lists[source.id])
     expect(moved).toMatchObject({ slotId: STRAND_PM, anaesthetistId: ANAE.strand, dateISO: TUE21, session: 'PM' })
     expect(bookingsForList(s, source.id).map((b) => b.id)).toEqual(bookingsBefore)
     expect(s.audit.filter((a) => a.entityId === source.id).length).toBe(historyBefore + 1)
@@ -305,33 +322,46 @@ describe('reassignList: the List moves between sessions', () => {
 
   it('marks the vacated session Unavailable or Holiday on request, audited session.status', () => {
     const api = store()
-    const source = api.getState().schedule.lists[SEED_LIST_IDS.rutherfordPm21]!
+    const source = assigned(api.getState().schedule.lists[SEED_LIST_IDS.rutherfordPm21])
     expect(reassignList(api, OFFICE, source.id, ANAE.strand, 'unavailable').ok).toBe(true)
     expect(api.getState().schedule.slots[source.slotId]?.status).toBe('unavailable')
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'session.status', entityId: source.slotId, after: { status: 'unavailable' } })
   })
 
-  it('refuses: not the office, an authorised List, the same anaesthetist, no session, a session that is not open', () => {
+  it('refuses: not the office, an authorised List, the same anaesthetist, no session, an occupied session', () => {
     const api = store()
     const id = SEED_LIST_IDS.rutherfordPm21
     const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
     expect(code(reassignList(api, SOUTER, id, ANAE.strand))).toBe('officeOnly')
     expect(code(reassignList(api, OFFICE, id, ANAE.rutherford))).toBe('sameAnaesthetist')
     expect(code(reassignList(api, OFFICE, id, ANAE.souter))).toBe('slotOccupied')
-    // Ngata is unavailable all Tue 21 (ICU on call): not an open session.
-    expect(code(reassignList(api, OFFICE, id, ANAE.ngata))).toBe('targetNotOpen')
     expect(code(reassignList(api, OFFICE, id, 'nobody'))).toBe('notFound')
     expect(code(moveListToSlot(api, OFFICE, id, slotIdFor(ANAE.strand, WED22, 'PM')))).toBe('differentSession')
-    expect(code(moveListToSlot(api, OFFICE, id, api.getState().schedule.lists[id]!.slotId))).toBe('sameSlot')
+    expect(code(moveListToSlot(api, OFFICE, id, assigned(api.getState().schedule.lists[id]).slotId))).toBe('sameSlot')
     const authorised = SEED_LIST_IDS.morrisonMon20
     expect(authoriseList(api, OFFICE, authorised).ok).toBe(true)
     expect(code(reassignList(api, OFFICE, authorised, ANAE.strand))).toBe('listAuthorised')
     expect(api.getState().schedule.lists[id]?.slotId).toBe(slotIdFor(ANAE.rutherford, TUE21, 'PM'))
   })
 
+  it('a reassign onto a closed session is accepted and flagged (OQ-09); moving back to an open one resolves it', () => {
+    const api = store()
+    const id = SEED_LIST_IDS.rutherfordPm21
+    // Ngata is unavailable all Tue 21 (ICU on call).
+    expect(reassignList(api, OFFICE, id, ANAE.ngata).ok).toBe(true)
+    const moved = assigned(api.getState().schedule.lists[id])
+    expect(moved.anaesthetistId).toBe(ANAE.ngata)
+    expect(moved.conflicts).toMatchObject([{ kind: 'availability' }])
+    expect(reassignList(api, OFFICE, id, ANAE.rutherford).ok).toBe(true)
+    expect(assigned(api.getState().schedule.lists[id]).conflicts).toEqual([])
+    expect(api.getState().audit.filter((a) => a.entityId === id).map((a) => a.action)).toEqual(
+      expect.arrayContaining(['list.conflict', 'list.conflictResolved']),
+    )
+  })
+
   it('an office move onto a not-preferred pairing writes one acknowledgement; an anaesthetist\'s own move writes none (US-01.4.5)', () => {
     const api = store()
-    const chenPm = api.getState().schedule.lists[`L-${ANAE.chen}-${TUE21}-PM`]!
+    const chenPm = assigned(api.getState().schedule.lists[`L-${ANAE.chen}-${TUE21}-PM`])
     expect(chenPm.surgeonId).toBe(SURG.reid)
     expect(reassignList(api, OFFICE, chenPm.id, ANAE.sharma).ok).toBe(true)
     expect(api.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
@@ -344,7 +374,7 @@ describe('reassignList: the List moves between sessions', () => {
 
   it('a move recalculates no prepayment, invoice or billing case (US-06.3.5: an honour system)', () => {
     const api = store()
-    const prepaid = api.getState().schedule.lists[SEED_LIST_IDS.prepaymentPaidList]!
+    const prepaid = assigned(api.getState().schedule.lists[SEED_LIST_IDS.prepaymentPaidList])
     const target = openSlotOn(api, prepaid.dateISO, prepaid.session, prepaid.anaesthetistId)
     const billing = api.getState().billing
     const xero = api.getState().xero
@@ -363,7 +393,7 @@ describe('reassignList: the List moves between sessions', () => {
 describe('session times', () => {
   it('a session overrides the default; clearing returns to it; an override survives a default change', () => {
     const api = store()
-    const souterAm = api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!
+    const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const times = (slotId: string) => slotView(api.getState(), slotId)!.times
     expect(times(STRAND_PM)).toEqual({ startTime: '13:00', endTime: '17:30', overridden: false })
     expect(setSlotTimes(api, OFFICE, STRAND_PM, { startTime: '13:15' }).ok).toBe(true)
@@ -451,8 +481,11 @@ describe('the horizon setting', () => {
     expect(api.getState().audit.some((a) => a.action === 'settings.horizon')).toBe(false)
     const out = setHorizonMonths(api, OFFICE, 3)
     expect(out.ok).toBe(true)
-    const entry = api.getState().audit.at(-1)!
+    const entry = api.getState().audit.filter((a) => a.action === 'settings.horizon').at(-1)!
     const after = entry.after as { droppedListIds?: string[]; lists: number }
+    // Dropped Lists that carried a closure conflict audit it as resolved, in the same commit (catch-up Phase 30).
+    const resolved = api.getState().audit.filter((a) => a.action === 'list.conflictResolved')
+    expect(resolved.every((a) => after.droppedListIds?.includes(a.entityId) && (a.after as { change: string }).change === 'listRemoved')).toBe(true)
     expect(after.droppedListIds?.length).toBe(-after.lists)
     expect(after.droppedListIds?.every((id) => id.startsWith('L-'))).toBe(true)
   })
@@ -480,7 +513,7 @@ describe('requestCover on a session', () => {
     expect(requestCover(api, SOUTER, souterPmWed, 'offer', 'Happy to hand this over').ok).toBe(true)
     expect(api.getState().schedule.slots[souterPmWed]?.coverRequest).toMatchObject({ kind: 'offer', status: 'pending', message: 'Happy to hand this over' })
     expect(api.getState().audit.at(-1)?.action).toBe('session.coverRequest')
-    const souterAm = api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!
+    const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     expect(requestCover(api, SOUTER, souterAm.slotId, 'offer')).toMatchObject({ ok: false, code: 'notFree' })
     // An assignment closes the session for cover and clears its marker.
     expect(assign(api, souterPmWed).ok).toBe(true)

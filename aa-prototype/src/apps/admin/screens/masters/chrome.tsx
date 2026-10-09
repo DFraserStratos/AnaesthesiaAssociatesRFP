@@ -8,9 +8,9 @@ export function Header({ title, sub, action }: { title: string; sub?: string; ac
     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
       <div>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{title}</h2>
-        {sub !== undefined && <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: 2 }}>{sub}</div>}
+        {sub !== undefined && <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: 2, maxWidth: 820 }}>{sub}</div>}
       </div>
-      {action}
+      {action !== undefined && <div style={{ flex: 'none', whiteSpace: 'nowrap' }}>{action}</div>}
     </div>
   )
 }

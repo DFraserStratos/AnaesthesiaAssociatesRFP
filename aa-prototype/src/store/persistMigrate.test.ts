@@ -132,7 +132,7 @@ describe('backfillMerge · schedule settings and Slots (catch-up Phase 28)', () 
 
 describe('the availability status master and series (catch-up Phase 29)', () => {
   it('discards a v21 store (the six-key List statuses) and reseeds the status master', () => {
-    expect(PERSIST_VERSION).toBe(22)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(22)
     const fresh = freshAppState()
     expect(Object.keys(fresh.masters.slotStatuses).sort()).toEqual(['free', 'holiday', 'unavailable'])
     expect('listStatuses' in fresh.masters).toBe(false)
@@ -145,5 +145,32 @@ describe('the availability status master and series (catch-up Phase 29)', () => 
     void _omit
     const old = { ...fresh, schedule: withoutSeries }
     expect(backfillMerge(fresh as never, old).schedule.availabilitySeries).toEqual({})
+  })
+})
+
+describe('conflicts from facts and recurring bookings (catch-up Phase 30)', () => {
+  it('discards a v22 store (message conflicts, the old recurring-booking master) and reseeds', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(23)
+    const fresh = freshAppState()
+    expect(Object.keys(fresh.masters.recurringBookings).every((id) => id.startsWith('RCB'))).toBe(true)
+    const flagged = Object.values(fresh.schedule.lists).flatMap((l) => l.conflicts)
+    expect(flagged.length).toBeGreaterThan(0)
+    for (const c of flagged) {
+      expect('message' in c).toBe(false)
+      expect(c.cause).toMatch(/^(holiday|availability):/)
+    }
+  })
+})
+
+describe('Draft Lists and the pairing rule (catch-up Phase 31)', () => {
+  it('discards a v23 store (Lists with no hospital or surgeon, the Surgeon TBC List) and reseeds with every List paired', () => {
+    expect(PERSIST_VERSION).toBe(24)
+    const fresh = freshAppState()
+    for (const l of Object.values(fresh.schedule.lists)) {
+      expect(l.hospitalId, l.id).toBeTruthy()
+      expect(l.surgeonId, l.id).toBeTruthy()
+    }
+    expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(15)
+    expect(fresh.masters.hospitals['H-AAROOMS']).toMatchObject({ locationType: 'aaRooms' })
   })
 })

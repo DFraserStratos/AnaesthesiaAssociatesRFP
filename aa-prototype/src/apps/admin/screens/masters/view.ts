@@ -7,7 +7,7 @@
 export type MastersView =
   | 'anaesthetists'
   | 'contracts'
-  | 'permanentLists'
+  | 'recurringBookings'
   | 'hospitals'
   | 'surgeons'
   | 'surgeonRooms'
@@ -20,11 +20,11 @@ export type MastersView =
   | 'availability-statuses'
   | 'xeroArchiving'
 
-/** Sub-nav order (the phase doc's). "Permanent lists" keeps its label until Phase 30. */
+/** Sub-nav order (the phase doc's). */
 export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'anaesthetists', label: 'Anaesthetists' },
   { view: 'contracts', label: 'Contracts' },
-  { view: 'permanentLists', label: 'Permanent lists' },
+  { view: 'recurringBookings', label: 'Recurring bookings' },
   { view: 'hospitals', label: 'Hospitals & holidays' },
   { view: 'surgeons', label: 'Surgeons' },
   { view: 'surgeonRooms', label: "Surgeons' rooms" },

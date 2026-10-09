@@ -73,9 +73,9 @@ export function AssignListSheet({ open, slotId, actor, initialSurgeonId, onClose
             {surnameFirst(anaesthetistName ?? slot.anaesthetistId)} · {format(parseISO(slot.dateISO), 'EEE d MMM')} · {slot.session}
           </div>
         </div>
-        <div style={{ fontSize: 13, color: neutral.slate }}>Assigning a surgeon and hospital turns this free session into a List.</div>
+        <div style={{ fontSize: 13, color: neutral.slate }}>Assigning a surgeon and hospital turns this session into a List.</div>
 
-        <AssignListFields anaesthetistId={slot.anaesthetistId} dateISO={slot.dateISO} draft={draft} onChange={(next) => { setDraft(next); setError(null) }} />
+        <AssignListFields anaesthetistId={slot.anaesthetistId} slotId={slot.id} dateISO={slot.dateISO} draft={draft} onChange={(next) => { setDraft(next); setError(null) }} />
 
         <FormError message={error} />
         <NotPreferredWarning warning={pairingWarning} shot="assign-list-pairing-warning" />

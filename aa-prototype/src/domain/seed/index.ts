@@ -30,7 +30,7 @@ import type {
   SlotStatus,
   ModifierCode,
   Patient,
-  PermanentList,
+  RecurringBooking,
   Procedure,
   RvgCode,
   OfficePrivateSlice,
@@ -42,8 +42,10 @@ import type {
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { MODIFIER_CODES } from '../billing/modifierCodes'
 import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type RecurringClash } from './canvas'
-import { projectedListId } from '../slots'
-import { isClosedKey } from '../slotStatus'
+import { projectedListId, slotIdFor } from '../slots'
+import { isClosedKey, SEED_STATUS } from '../slotStatus'
+import { reconcileAllConflicts } from '../conflicts'
+import { isAssignedList } from '../draftLists'
 import { clearSlot, listInSlotOf, placeList, seedRecordedWindow, setSlot } from './recordedWindow'
 import {
   ANAE,
@@ -60,7 +62,7 @@ import {
 } from './cast'
 import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
-import { PERMANENT_LISTS } from './permanentLists'
+import { RECURRING_BOOKINGS } from './recurringBookings'
 import { HOSPITAL_HOLIDAYS, SEED_LEAVE } from './availabilityAndHolidays'
 import { BILLABLE_PARTIES, PAT, buildPatients } from './patients'
 import { DAY_NOTES, DAY_NOTE_NEXT } from './dayNotes'
@@ -71,13 +73,12 @@ import type { AppSettings, WarningClearance } from '../warnings/types'
 import { buildBookings, type BookingScenarioIds } from './bookings'
 import { ANAESTHETIST_DASHBOARD, type AnaesthetistDashboardSeed } from './anaesthetistDashboard'
 import { buildHistory } from './history'
+import { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, seedDraftListAudit, seedDraftListBookings, seedRecurringClashDraftLists } from './draftLists'
 import { buildSeedAudit } from './audit'
 import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
 export {
   canvasAnaesthetists,
-  closedHospitalConflict,
-  closedHospitalMessage,
   generateCanvasForDates,
   seriesPaintedCount,
   type CanvasAnaesthetist,
@@ -87,6 +88,7 @@ export {
   type SeriesCalendarEntry,
 } from './canvas'
 export { RECORDED_WINDOW } from './recordedWindow'
+export { SEED_DRAFT_LIST_IDS, SEED_DRAFT_LISTS, SEED_CLASH_RUN_ISO, SEED_CLASH_BY, CANNED_DRAFT_LIST_REQUESTS, CANNED_DAY_DRAFT_LISTS } from './draftLists'
 export { SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
 export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
@@ -130,7 +132,7 @@ export interface SeedMasters {
   modifierCodes: Record<string, ModifierCode>
   /** The availability statuses (catch-up Phase 29; US-01.2.2): a user-maintained master keyed by fixed ID. */
   slotStatuses: Record<string, SlotStatus>
-  permanentLists: Record<string, PermanentList>
+  recurringBookings: Record<string, RecurringBooking>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
   billableParties: Record<string, BillableParty>
@@ -201,8 +203,6 @@ interface Canvas {
   lists: Record<string, List>
 }
 
-const HOLIDAYS = HOSPITAL_HOLIDAYS
-
 /** Paint the mockups' content days over the generated canvas. */
 function applyDesignFixups({ slots, lists }: Canvas): void {
   const TUE21 = DEMO_TODAY
@@ -214,7 +214,7 @@ function applyDesignFixups({ slots, lists }: Canvas): void {
   // and the calendar already match; pin the design's times, the free sessions
   // and the noted rows) ---
   setSlot(slots, ANAE.rutherford, TUE21, 'AM', times('08:00', '13:00'))
-  placeList(lists, slots, HOLIDAYS, ANAE.rutherford, TUE21, 'PM', {
+  placeList(lists, slots, ANAE.rutherford, TUE21, 'PM', {
     kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.okafor,
@@ -225,13 +225,10 @@ function applyDesignFixups({ slots, lists }: Canvas): void {
   setSlot(slots, ANAE.chen, TUE21, 'AM', times('08:00', '12:30'))
   setSlot(slots, ANAE.chen, TUE21, 'PM', times('13:00', '16:30'))
   clearSlot(lists, slots, ANAE.delaney, TUE21, 'PM', 'Free / keep free, on call for ICU tonight')
-  placeList(lists, slots, HOLIDAYS, ANAE.fitzgerald, TUE21, 'PM', {
-    kind: 'private',
-    hospitalId: HOSP.stg,
-    surgeonId: null,
-    ...times('13:00', '17:30'),
-    notes: "Surgeon TBC, chasing St George's booking office",
-  })
+  // Fitzgerald's PM is free (catch-up Phase 31): St George's request, with its
+  // surgeon named, waits as a Draft List (`seed/draftLists.ts`, LD-001), not as
+  // a "Surgeon TBC" List on her row. The catalogue rule wins over the mockup
+  // (US-01.3.1, OQ-44; convention 17's rule 2).
   clearSlot(lists, slots, ANAE.hughes, TUE21, 'AM')
   clearSlot(lists, slots, ANAE.hughes, TUE21, 'PM')
   setSlot(slots, ANAE.morrison, TUE21, 'AM', times('08:00', '13:00'))
@@ -255,46 +252,31 @@ function applyDesignFixups({ slots, lists }: Canvas): void {
 }
 
 /**
- * Phase 06 conflict fixup: seed one holiday-kind and one availability-kind
- * advisory `ListConflict` onto two different Wed 22 Jul Lists, so the admin
- * day view's advisory flags are one `>` click from today (Tue 21 stays
- * pristine). Deterministic: the two lowest-id Wed-22 Lists with distinct
- * anaesthetists (Souter excluded: she is the mobile persona, her forward view
- * stays clean).
+ * The Wed 22 Jul conflicts, as real facts (catch-up Phase 30; replaces Phase
+ * 06's two fabricated messages). Both are flagged by the one rule at the seed's
+ * last step (`reconcileAllConflicts`), so they clear the way live ones do:
+ * - Dr Rutherford phoned in sick for Wed 22 AM and the office recorded it
+ *   (OQ-81 part 3, provisional: a sickness the office records keeps the List
+ *   and its Bookings and is a conflict). His Christchurch Eye Surgery List
+ *   stays in the session. S2 Beat 3 covers it from the Conflicts screen.
+ * - Southern Cross is closed on Wed 22 (`HH900`, in `HOSPITAL_HOLIDAYS`), so
+ *   every List there that day is flagged.
+ * Tue 21 and every Souter session stay untouched.
  */
-function applyPhase06Conflicts({ lists }: Canvas): void {
-  const WED22 = '2026-07-22'
-  const booked = Object.values(lists)
-    .filter((l) => l.dateISO === WED22 && l.anaesthetistId !== ANAE.souter)
-    .sort((a, b) => a.id.localeCompare(b.id))
-  const holidayList = booked[0]
-  if (holidayList !== undefined) {
-    lists[holidayList.id] = {
-      ...holidayList,
-      conflicts: [
-        ...holidayList.conflicts,
-        {
-          kind: 'holiday',
-          message:
-            'This List falls on a hospital holiday closure. Advisory only: confirm the theatre is running or rebook.',
-        },
-      ],
-    }
-  }
-  const availList = booked.find((l) => holidayList !== undefined && l.anaesthetistId !== holidayList.anaesthetistId)
-  if (availList !== undefined) {
-    lists[availList.id] = {
-      ...availList,
-      conflicts: [
-        ...availList.conflicts,
-        {
-          kind: 'availability',
-          message:
-            'The anaesthetist is now marked unavailable for this session. Advisory only: rebook or clear this List.',
-        },
-      ],
-    }
-  }
+export const SEED_SICKNESS = {
+  anaesthetistId: ANAE.rutherford,
+  dateISO: '2026-07-22',
+  session: 'AM' as const,
+  note: 'Unwell, short notice',
+  /** When the office recorded the phone call (before the clock's 08:00 start). */
+  recordedAtISO: `${DEMO_TODAY}T07:40:00`,
+}
+
+function applyWed22Facts({ slots }: Canvas): void {
+  setSlot(slots, SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session, {
+    status: SEED_STATUS.unavailable,
+    note: SEED_SICKNESS.note,
+  })
 }
 
 /**
@@ -310,21 +292,21 @@ function applyPhase06Conflicts({ lists }: Canvas): void {
 function applyPhase09Slots({ slots, lists }: Canvas): void {
   const FRI24 = '2026-07-24'
   const THU16 = '2026-07-16'
-  placeList(lists, slots, HOLIDAYS, ANAE.souter, FRI24, 'AM', {
+  placeList(lists, slots, ANAE.souter, FRI24, 'AM', {
     kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.lim,
     startTime: '09:00',
     endTime: '12:00',
   })
-  placeList(lists, slots, HOLIDAYS, ANAE.souter, FRI24, 'PM', {
+  placeList(lists, slots, ANAE.souter, FRI24, 'PM', {
     kind: 'private',
     hospitalId: HOSP.forte,
     surgeonId: SURG.nand,
     startTime: '13:00',
     endTime: '15:30',
   })
-  placeList(lists, slots, HOLIDAYS, ANAE.ropata, THU16, 'AM', {
+  placeList(lists, slots, ANAE.ropata, THU16, 'AM', {
     kind: 'private',
     hospitalId: HOSP.stg,
     surgeonId: SURG.hale,
@@ -358,11 +340,10 @@ function buildSeedInternal(): SeedBuild {
   const slotStatuses = byId(SEED_SLOT_STATUSES, (s) => s.key)
   const canvasMasters: CanvasMasters = {
     anaesthetists: canvasAnaesthetists(ANAESTHETISTS),
-    permanentLists: PERMANENT_LISTS,
+    recurringBookings: RECURRING_BOOKINGS,
     leave: SEED_LEAVE,
     series: [],
     statuses: slotStatuses,
-    holidays: HOSPITAL_HOLIDAYS,
   }
   const appSettings: AppSettings = { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS }
   const horizon = horizonFor(DEMO_TODAY, appSettings.schedule.horizonMonths)
@@ -374,12 +355,11 @@ function buildSeedInternal(): SeedBuild {
   seedRecordedWindow(lists, slots, {
     seed: SEED,
     anaesthetistIds: ANAESTHETISTS.map((a) => a.registrationNumber),
-    permanentLists: PERMANENT_LISTS,
+    recurringBookings: RECURRING_BOOKINGS,
     leave: SEED_LEAVE,
-    holidays: HOSPITAL_HOLIDAYS,
   })
   applyDesignFixups(canvas)
-  applyPhase06Conflicts(canvas)
+  applyWed22Facts(canvas)
   applyPhase09Slots(canvas)
   // A clash under a Slot a fixup later freed is not a clash any more.
   const clashes = generated.clashes.filter((c) => {
@@ -387,7 +367,7 @@ function buildSeedInternal(): SeedBuild {
     return slot !== undefined && isClosedKey(slotStatuses, slot.status) && listInSlotOf(lists, c.slotId) === undefined
   })
 
-  const bookingsBuild = buildBookings(SEED, Object.values(lists))
+  const bookingsBuild = buildBookings(SEED, Object.values(lists).filter(isAssignedList))
 
   // The seeded SUBMITTED lists awaiting authorisation (past dates — the clock
   // seeds at 08:00, so today's lists are ACTIVE mid-capture): the two Phase-02
@@ -404,7 +384,7 @@ function buildSeedInternal(): SeedBuild {
     SEED_LIST_IDS.integrationLocked,
   ]) {
     const list = lists[id]
-    if (list !== undefined) lists[id] = { ...list, state: 'SUBMITTED' }
+    if (list !== undefined && list.state !== 'DRAFT') lists[id] = { ...list, state: 'SUBMITTED' }
   }
 
   const patients = buildPatients(SEED)
@@ -434,8 +414,40 @@ function buildSeedInternal(): SeedBuild {
   if (theatreList !== undefined) lists[theatreList.id] = { ...theatreList, attachments: [SEED_LIST_ATTACHMENT] }
   for (const [id, c] of Object.entries(history.bookings)) bookingsRec[id] = c
   for (const [id, p] of Object.entries(history.procedures)) proceduresRec[id] = p
+  // Draft Lists (catch-up Phase 31): the office's waiting requests, and every
+  // recurring clash from today on, through the store's own rule. They take no
+  // Slot, so no Slot above changes; LD-002's two Bookings follow every other
+  // seeded Booking, so no id moves.
+  const seededDraftLists = [
+    ...SEED_DRAFT_LISTS,
+    ...seedRecurringClashDraftLists(clashes, slots, RECURRING_BOOKINGS),
+  ]
+  for (const d of seededDraftLists) lists[d.id] = d
+  const draftBookings = seedDraftListBookings(bookingsBuild.next)
+  for (const b of draftBookings.bookings) bookingsRec[b.id] = b
+  for (const p of draftBookings.procedures) proceduresRec[p.id] = p
+  // Conflicts come from facts, by the same rule `mutate()` runs (catch-up Phase 30).
+  // Stamped at the seed clock (08:00), as a live mutation at that moment would be.
+  const reconciled = reconcileAllConflicts(lists, { slots, statuses: slotStatuses, holidays: HOSPITAL_HOLIDAYS }, `${DEMO_TODAY}T08:00:00`)
+  for (const [id, l] of Object.entries(reconciled)) lists[id] = l
+  const sicknessSlot = slots[slotIdFor(SEED_SICKNESS.anaesthetistId, SEED_SICKNESS.dateISO, SEED_SICKNESS.session)]!
   const audit = buildSeedAudit({
-    existing: bookingsBuild.audit,
+    existing: [
+      ...bookingsBuild.audit,
+      ...seedDraftListAudit(seededDraftLists),
+      {
+        id: 'seed-sickness',
+        entityType: 'session',
+        entityId: sicknessSlot.id,
+        who: 'Kirsty W.',
+        role: 'office',
+        source: 'office',
+        action: 'session.status',
+        atISO: SEED_SICKNESS.recordedAtISO,
+        before: { status: SEED_STATUS.free, statusLabel: slotStatuses[SEED_STATUS.free]!.label },
+        after: { status: SEED_STATUS.unavailable, statusLabel: slotStatuses[SEED_STATUS.unavailable]!.label, note: SEED_SICKNESS.note },
+      },
+    ],
     anaesthetists: anaesthetistsRec,
     lists,
     bookings: bookingsRec,
@@ -457,7 +469,7 @@ function buildSeedInternal(): SeedBuild {
       rvgCodes: byId(RVG_CODES, (r) => r.code),
       modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
       slotStatuses,
-      permanentLists: byId(PERMANENT_LISTS, (p) => p.id),
+      recurringBookings: byId(RECURRING_BOOKINGS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
       billableParties: byId(BILLABLE_PARTIES, (b) => b.hiddenInternalId),
@@ -484,8 +496,8 @@ function buildSeedInternal(): SeedBuild {
     officePrivate: buildOfficePrivate(),
     counters: {
       audit: audit.length + 1,
-      booking: bookingsBuild.next.booking,
-      procedure: bookingsBuild.next.procedure,
+      booking: draftBookings.next.booking,
+      procedure: draftBookings.next.procedure,
       billingLine: bookingsBuild.next.billingLine,
       patient: patients.length + 1,
       billableParty: BILLABLE_PARTIES.length + 1,
@@ -597,6 +609,25 @@ export interface SeedMarker {
 
 function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> {
   return {
+    // Catch-up Phase 31: the waiting requests (the recurring clashes are listed by the Draft Lists page).
+    draftListStGeorges: {
+      label: "Draft List: St George's request (Tue 21 PM)",
+      entityType: 'list',
+      entityId: SEED_DRAFT_LIST_IDS.stGeorges,
+      detail: "St George's / Mr Tan, no anaesthetist yet, waiting since Mon 20 15:40 (S2 Beat 1b).",
+    },
+    draftListForte: {
+      label: 'Draft List with Bookings: Forte Health (Wed 22 PM)',
+      entityType: 'list',
+      entityId: SEED_DRAFT_LIST_IDS.forte,
+      detail: "Forte Health / Mr Nand, 2 Bookings before an anaesthetist is assigned; fits Dr Souter's free Wed 22 PM.",
+    },
+    draftListEyeSurgery: {
+      label: 'Draft List, long wait: Christchurch Eye Surgery (Mon 27 AM)',
+      entityType: 'list',
+      entityId: SEED_DRAFT_LIST_IDS.eyeSurgery,
+      detail: 'Christchurch Eye Surgery / Ms Reid, waiting since Fri 17; Dr Sharma is not preferred with Ms Reid.',
+    },
     designDayAmList: {
       label: 'Design day AM list (done, unbilled)',
       entityType: 'list',

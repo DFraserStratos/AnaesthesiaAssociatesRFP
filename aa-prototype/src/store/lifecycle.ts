@@ -16,6 +16,7 @@
 import type { Booking, List, ListPhoneNote, Procedure } from '../domain/types'
 import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
+import { pairingIssues } from '../domain/listPairing'
 import {
   clockISO,
   mutate,
@@ -47,6 +48,8 @@ export function getBooking(state: AppState, bookingId: string): { booking: Booki
  * and patient-edit guards apply the identical role/source/state gate.
  */
 export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
+  // A removed Draft List is History only (US-01.6.4).
+  if (list.removedAtISO !== undefined) return refuse('listRemoved', 'This Draft List was removed.')
   if (list.state === 'AUTHORISED') {
     return refuse('listAuthorised', 'This List is authorised and its Bookings are locked. No edits are possible.')
   }
@@ -60,6 +63,8 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
     return null
   }
   if (actor.role === 'anaesthetist') {
+    // A Draft List is the office's (FT-01.6; OQ-86 answered no): no anaesthetist adds or edits a Booking on one.
+    if (list.state === 'DRAFT') return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
     if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== list.anaesthetistId) {
       return refuse('notOwnList', 'Anaesthetists can only change Bookings on their own Lists.')
     }
@@ -68,7 +73,7 @@ export function editRefusal(actor: Actor, list: List): Outcome<never> | null {
     }
     return null
   }
-  // office / system: ACTIVE and SUBMITTED are editable.
+  // office / system: DRAFT, ACTIVE and SUBMITTED are editable.
   return null
 }
 
@@ -127,6 +132,8 @@ export function completeBooking(api: AppStoreApi, actor: Actor, bookingId: strin
   }
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
+  // Only an ACTIVE List is completed (EP-07): a Booking on a Draft List waits for its anaesthetist.
+  if (list.state === 'DRAFT') return refuse('listNotActive', ASSIGN_FIRST)
   if (booking.completed) return refuse('alreadyCompleted', 'This Booking is already completed.')
 
   const blockers = completionBlockersFor(state, booking)
@@ -203,6 +210,9 @@ export function uncompleteBooking(api: AppStoreApi, actor: Actor, bookingId: str
 // submitList / authoriseList
 // ---------------------------------------------------------------------------
 
+/** The refusal for submitting or authorising a Draft List (catch-up Phase 31). */
+const ASSIGN_FIRST = 'Assign an anaesthetist first.'
+
 /**
  * ACTIVE → SUBMITTED. Completion-gated: every non-cancelled Booking must be
  * marked Completed (validation alone is not enough); a cancelled Booking never
@@ -212,6 +222,8 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
   const state = api.getState()
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
+  // A Draft List (no anaesthetist yet) is never submitted, authorised or billed (EP-07).
+  if (list.state === 'DRAFT') return refuse('listNotActive', ASSIGN_FIRST)
   if (list.state !== 'ACTIVE') {
     return refuse('listNotActive', 'Only an active List can be submitted.')
   }
@@ -264,6 +276,7 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
   const state = api.getState()
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
+  if (list.state === 'DRAFT') return refuse('listNotActive', ASSIGN_FIRST)
   if (list.state !== 'SUBMITTED') {
     return refuse('listNotSubmitted', 'Only a submitted List can be authorised.')
   }
@@ -479,7 +492,9 @@ export function editProcedure(
  * a List's Slot changes only by a move (`reassignList`). The session's times
  * belong to the Slot since Phase 28 (`setSlotTimes`). The office assigns or
  * corrects hospital and surgeon; a `notes` edit is the office's annotation.
- * Clearing a hospital or surgeon is left open until Phase 31's pairing rule.
+ * Neither the hospital nor the surgeon can be cleared: every List has both
+ * (US-01.3.1, catch-up Phase 31's pairing rule, `pairingIssues`). A Draft List
+ * is edited the same way (it is a List).
  */
 export type ListPatch = Partial<Pick<List, 'hospitalId' | 'surgeonId' | 'notes'>>
 
@@ -495,6 +510,12 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
   if (list === undefined) return refuse('notFound', 'List not found.')
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
+  // The one pairing rule (US-01.3.1): a patch may change the hospital or surgeon, never clear either.
+  if (('hospitalId' in patch && (patch.hospitalId ?? '').trim() === '') || ('surgeonId' in patch && (patch.surgeonId ?? '').trim() === '')) {
+    return refuse('pairingRequired', 'A List needs a hospital and a surgeon.')
+  }
+  const issues = pairingIssues({ hospitalId: patch.hospitalId ?? list.hospitalId, surgeonId: patch.surgeonId ?? list.surgeonId }, state.masters)
+  if (issues.length > 0) return refuse('pairingRequired', issues.map((i) => i.message).join(' '), { issues })
 
   const metas: MutationMeta[] = [
     {
@@ -524,16 +545,15 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
     metas,
     (s) => {
       const next: List = { ...list }
-      const setOrDelete = <K extends 'hospitalId' | 'surgeonId' | 'notes'>(
-        key: K,
-        value: List[K] | undefined,
-      ) => {
-        if (value === undefined || value === '') delete next[key]
-        else next[key] = value
+      if (patch.hospitalId !== undefined) next.hospitalId = patch.hospitalId
+      if (patch.surgeonId !== undefined) next.surgeonId = patch.surgeonId
+      if ('notes' in patch) {
+        if (patch.notes === undefined || patch.notes === '') delete next.notes
+        else next.notes = patch.notes
       }
-      if ('hospitalId' in patch) setOrDelete('hospitalId', patch.hospitalId)
-      if ('surgeonId' in patch) setOrDelete('surgeonId', patch.surgeonId)
-      if ('notes' in patch) setOrDelete('notes', patch.notes)
+      // A hand-edited List leaves its recurring booking (catch-up Phase 30,
+      // US-01.3.2): no later projection overwrites or removes it.
+      if (next.hospitalId !== list.hospitalId || next.surgeonId !== list.surgeonId || next.notes !== list.notes) delete next.recurringBookingId
       return { schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: next } } }
     },
   )
@@ -557,7 +577,8 @@ export function reassignBooking(api: AppStoreApi, actor: Actor, bookingId: strin
   if (found === undefined) return refuse('notFound', 'Booking not found.')
   const { booking, list: source } = found
   const target = state.schedule.lists[toListId]
-  if (target === undefined) return refuse('notFound', 'Target List not found.')
+  // A removed Draft List takes no Bookings (it has left every view but History).
+  if (target === undefined || target.removedAtISO !== undefined) return refuse('notFound', 'Target List not found.')
   if (target.id === source.id) return refuse('sameList', 'The Booking is already on that List.')
 
   if (source.state === 'AUTHORISED' || target.state === 'AUTHORISED') {

@@ -1,0 +1,58 @@
+{
+  "id": "FT-07.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "draft-to-active",
+      "app": "admin",
+      "caption": "A Draft List becomes ACTIVE once the office assigns its anaesthetist",
+      "start": "/admin/draft-lists?open=LD-001",
+      "states": [
+        {
+          "state": "draft",
+          "steps": [
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-draft-list-drawer] [data-list-state=DRAFT]",
+            "[data-shot=admin-draft-list-drawer] [data-unassigned=true]"
+          ],
+          "caption": "A Draft List: DRAFT, Unassigned"
+        },
+        {
+          "state": "active",
+          "steps": [
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-available] [data-available=\"43015\"] >> role=button[name=/Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-assign-draft-list] >> role=button[name=/^Assign/] >> nth=-1"
+            },
+            {
+              "wait": 700
+            },
+            {
+              "click": "[data-shot=draft-lists-assigned] >> role=button[name=\"Open List\"]"
+            },
+            {
+              "wait": 800
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] > div:first-child"
+          ],
+          "caption": "The same List once Dr Fitzgerald is assigned: ACTIVE"
+        }
+      ]
+    }
+  ]
+}

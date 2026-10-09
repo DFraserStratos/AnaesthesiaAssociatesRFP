@@ -234,10 +234,11 @@ export function addPostOpAddendum(
   let listId = ''
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
-    const placed = placeListOnSlot(s, s.counters, target, {
+    const placed = placeListOnSlot(s.counters, target, {
+      // The addendum copies the original List's hospital and surgeon, so the pairing rule holds (US-01.3.1).
       kind: originalList.kind,
-      ...(originalList.hospitalId !== undefined ? { hospitalId: originalList.hospitalId } : {}),
-      ...(originalList.surgeonId !== undefined ? { surgeonId: originalList.surgeonId } : {}),
+      hospitalId: originalList.hospitalId,
+      surgeonId: originalList.surgeonId,
     })
     listId = placed.list.id
     metas.push(placed.meta)

@@ -20,7 +20,10 @@ interface SurgeonPickerProps {
   anaesthetistId: string | undefined
   value: string
   onChange: (surgeonId: string) => void
-  /** The empty option's label ("Not assigned", "Not assigned yet", "None"). */
+  /**
+   * The placeholder shown before a surgeon is chosen ("Choose a surgeon"). It
+   * is not a value: every List names its surgeon (US-01.3.1, catch-up Phase 31).
+   */
   emptyLabel: string
   /** Each picker's own option text (default: the name). */
   optionLabel?: (surgeon: Surgeon) => string
@@ -42,7 +45,7 @@ export function SurgeonPicker({ anaesthetistId, value, onChange, emptyLabel, opt
   ))
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} style={style} aria-label={ariaLabel} data-shot="surgeon-picker">
-      <option value="">{emptyLabel}</option>
+      <option value="" disabled>{emptyLabel}</option>
       {notPreferred.length === 0 ? (
         clearOptions
       ) : (

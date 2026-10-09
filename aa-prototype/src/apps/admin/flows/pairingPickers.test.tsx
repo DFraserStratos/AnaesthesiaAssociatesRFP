@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom'
 /**
  * The surgeon pickers on the office's session paths (catch-up Phase 17;
  * US-01.3.5 "Separated", "Still selectable", "Warned"): Edit list and Book
@@ -12,7 +13,7 @@ import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { EditListSheet } from './EditListSheet'
 import { PhoneAdviceBooking } from './PhoneAdviceBooking'
-import { PermanentListSheet } from './PermanentListSheet'
+import { RecurringBookingSheet } from './RecurringBookingSheet'
 import { AssignListSheet } from './AssignListSheet'
 import { projectedListId, slotIdFor } from '../../../domain/slots'
 
@@ -114,10 +115,12 @@ describe('surgeon pickers', () => {
     expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
   })
 
-  it('Permanent List sheet: the usual surgeon regroups for the chosen anaesthetist and "Add anyway" saves', () => {
+  it('Recurring booking sheet: the usual surgeon regroups for the chosen anaesthetist and "Apply anyway" saves', () => {
     render(
       <SurfaceProvider variant="web">
-        <PermanentListSheet open actor={OFFICE} onClose={vi.fn()} />
+        <MemoryRouter>
+          <RecurringBookingSheet open actor={OFFICE} onClose={vi.fn()} />
+        </MemoryRouter>
       </SurfaceProvider>,
     )
     const select = surgeonSelect()
@@ -125,8 +128,11 @@ describe('surgeon pickers', () => {
     fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: ANAE.sharma } })
     expect(Array.from(surgeonSelect().querySelectorAll('optgroup')).map((g) => g.label)).toEqual(['Surgeons', 'Not preferred with Dr Sharma'])
     fireEvent.change(surgeonSelect(), { target: { value: SURG.reid } })
-    expect(screen.getByRole('status')).toHaveTextContent('Ms A. Reid prefers not to work with Dr Priya Sharma.')
-    fireEvent.click(screen.getByRole('button', { name: 'Add anyway' }))
-    expect(useAppStore.getState().audit.filter((a) => a.action === 'permanentList.pairingAcknowledged')).toHaveLength(1)
+    expect(screen.getByText('Ms A. Reid prefers not to work with Dr Priya Sharma.')).toBeInTheDocument()
+    // A recurring booking needs its hospital too (US-01.3.1, catch-up Phase 31).
+    const hospitalSelect = screen.getAllByRole('combobox').find((el) => el.querySelector('option[value="H-FORTE"]') !== null)!
+    fireEvent.change(hospitalSelect, { target: { value: 'H-FORTE' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply anyway' }))
+    expect(useAppStore.getState().audit.filter((a) => a.action === 'recurringBooking.pairingAcknowledged')).toHaveLength(1)
   })
 })

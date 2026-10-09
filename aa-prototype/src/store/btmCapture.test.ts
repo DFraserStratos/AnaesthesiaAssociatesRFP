@@ -6,6 +6,7 @@
  * semantics the "Use seeded value" reset link relies on.
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { advanceClockMinutes } from './clockActions'
@@ -42,9 +43,9 @@ function feeForBooking(api: BoundAppStore, bookingId: string): { totals: number[
   const state = api.getState()
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) throw new Error(`missing booking ${bookingId}`)
-  const list = state.schedule.lists[booking.listId]
-  const anaesthetist = list !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
-  if (list === undefined || anaesthetist === undefined) throw new Error('missing context')
+  const list = assigned(state.schedule.lists[booking.listId])
+  const anaesthetist = state.masters.anaesthetists[list.anaesthetistId]
+  if (anaesthetist === undefined) throw new Error('missing context')
   const totals: number[] = []
   const units: number[] = []
   proceduresForBooking(state, bookingId).forEach((procedure, index) => {
@@ -162,7 +163,7 @@ describe('billedAt disappearance selector (M10 / 3rd review #12)', () => {
     const morrison = SEED_LIST_IDS.morrisonMon20
     const whitaker = SEED_LIST_IDS.whitakerFri17
 
-    expect(isListBilled(api.getState().schedule.lists[morrison]!)).toBe(false)
+    expect(isListBilled(assigned(api.getState().schedule.lists[morrison]))).toBe(false)
 
     // Simulate Phase 08's stamp (the run's own audited write).
     mutate(
@@ -179,14 +180,14 @@ describe('billedAt disappearance selector (M10 / 3rd review #12)', () => {
           ...s.schedule,
           lists: {
             ...s.schedule.lists,
-            [morrison]: { ...s.schedule.lists[morrison]!, billedAtISO: '2026-07-21T09:00:00' },
+            [morrison]: { ...assigned(s.schedule.lists[morrison]), billedAtISO: '2026-07-21T09:00:00' },
           },
         },
       }),
     )
 
-    expect(isListBilled(api.getState().schedule.lists[morrison]!)).toBe(true)
-    expect(isListBilled(api.getState().schedule.lists[whitaker]!)).toBe(false)
+    expect(isListBilled(assigned(api.getState().schedule.lists[morrison]))).toBe(true)
+    expect(isListBilled(assigned(api.getState().schedule.lists[whitaker]))).toBe(false)
   })
 })
 

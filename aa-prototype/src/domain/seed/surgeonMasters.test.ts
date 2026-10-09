@@ -69,13 +69,13 @@ describe('office-private seed', () => {
     expect(pairingStatus(entries, ANAE.hughes, SURG.reid)).toBe('NONE')
   })
 
-  it('no seeded List or Permanent List pairs an active not-preferred pair', () => {
+  it('no seeded List or recurring booking pairs an active not-preferred pair', () => {
     for (const l of Object.values(seed.schedule.lists)) {
-      if (l.surgeonId === undefined) continue
+      // A Draft List has no anaesthetist to pair with (catch-up Phase 31).
+      if (l.anaesthetistId === undefined) continue
       expect(pairingStatus(entries, l.anaesthetistId, l.surgeonId), l.id).not.toBe('NOT_PREFERRED')
     }
-    for (const t of Object.values(seed.masters.permanentLists)) {
-      if (t.surgeonId === null) continue
+    for (const t of Object.values(seed.masters.recurringBookings)) {
       expect(pairingStatus(entries, t.anaesthetistId, t.surgeonId), t.id).not.toBe('NOT_PREFERRED')
     }
   })

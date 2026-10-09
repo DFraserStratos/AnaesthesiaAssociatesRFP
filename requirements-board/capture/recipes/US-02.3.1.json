@@ -14,7 +14,7 @@
           "caption": "A free session offers Book (phone advice)",
           "steps": [
             {
-              "click": "text=\"open for cover\" >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 600
@@ -29,7 +29,7 @@
           "caption": "Phone-advice booking assigns the List for the session, then adds the patient's Booking",
           "steps": [
             {
-              "click": "text=\"open for cover\" >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 600

@@ -5,6 +5,7 @@ import { editList, setSlotTimes, useAppStore, useListTimes, type Actor, type Lis
 import { Button, FieldLabel, TextArea } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
+import { ConflictCallout, useConflictPreview, useHospitalOptionLabel } from '../components/conflicts/ConflictCallout'
 import { SessionTimesFields, timesDraftError, timesPatch, type TimesDraft } from './SessionTimesFields'
 
 interface EditListSheetProps {
@@ -36,12 +37,17 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const times = useListTimes(list)
   const defaultTimes = useAppStore((s) => s.appSettings.schedule.defaultTimes[list.session])
-  const hasSlot = useAppStore((s) => s.schedule.slots[list.slotId] !== undefined)
+  // A Draft List has no session yet, so no session times to edit (catch-up Phase 31).
+  const hasSlot = useAppStore((s) => list.slotId !== undefined && s.schedule.slots[list.slotId] !== undefined)
 
-  const [hospitalId, setHospitalId] = useState(list.hospitalId ?? '')
-  const [surgeonId, setSurgeonId] = useState(list.surgeonId ?? '')
+  const [hospitalId, setHospitalId] = useState(list.hospitalId)
+  const [surgeonId, setSurgeonId] = useState(list.surgeonId)
   // Only a changed surgeon warns, as only a changed pairing is acknowledged.
-  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== (list.surgeonId ?? '') ? surgeonId : undefined)
+  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== list.surgeonId ? surgeonId : undefined)
+  // A new hospital closed that day warns before saving and never blocks (catch-up Phase 30, OQ-09).
+  const hospitalChanged = hospitalId !== list.hospitalId
+  const closures = useConflictPreview(hospitalChanged && hospitalId !== '' ? { dateISO: list.dateISO, hospitalId } : null)
+  const optionLabel = useHospitalOptionLabel(list.dateISO)
   const current = useMemo<TimesDraft>(() => ({ startTime: times?.startTime ?? '', endTime: times?.endTime ?? '' }), [times])
   const [timesDraft, setTimesDraft] = useState<TimesDraft>(current)
   const [notes, setNotes] = useState(list.notes ?? '')
@@ -66,18 +72,17 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
       return
     }
     // The session's times first: a refusal there leaves nothing half-saved.
-    if (hasSlot && (timesDraft.startTime !== current.startTime || timesDraft.endTime !== current.endTime)) {
+    if (hasSlot && list.slotId !== undefined && (timesDraft.startTime !== current.startTime || timesDraft.endTime !== current.endTime)) {
       const timed = setSlotTimes(useAppStore, actor, list.slotId, timesPatch(timesDraft, defaultTimes))
       if (!timed.ok) {
         setError(timed.message)
         return
       }
     }
-    const patch: ListPatch = {
-      hospitalId: hospitalId !== '' ? hospitalId : '',
-      surgeonId: surgeonId !== '' ? surgeonId : '',
-      notes: notes.trim() !== '' ? notes.trim() : '',
-    }
+    // Every List names its hospital and surgeon (US-01.3.1): neither can be cleared.
+    if (hospitalId === '') return setError('Choose the hospital.')
+    if (surgeonId === '') return setError('Choose the surgeon.')
+    const patch: ListPatch = { hospitalId, surgeonId, notes: notes.trim() !== '' ? notes.trim() : '' }
     const outcome = editList(useAppStore, actor, list.id, patch)
     if (!outcome.ok) {
       setError(outcome.message)
@@ -94,9 +99,8 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Hospital</FieldLabel>
           <select value={hospitalId} onChange={(e) => setHospitalId(e.target.value)} style={selectStyle}>
-            <option value="">None (AA rooms / unassigned)</option>
             {Object.values(hospitals).map((h) => (
-              <option key={h.id} value={h.id}>{h.name}</option>
+              <option key={h.id} value={h.id}>{optionLabel(h.id, h.name)}</option>
             ))}
           </select>
         </label>
@@ -107,7 +111,7 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
             anaesthetistId={list.anaesthetistId}
             value={surgeonId}
             onChange={setSurgeonId}
-            emptyLabel="Not assigned"
+            emptyLabel="Choose a surgeon"
             optionLabel={(s) => `${s.name}${s.specialty !== undefined ? ` (${s.specialty})` : ''}`}
             style={selectStyle}
           />
@@ -120,6 +124,8 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
+        {/* Catch-up Phase 30: a hospital closed that day warns, never blocks (OQ-09). */}
+        <ConflictCallout conflicts={closures} anaesthetistId={list.anaesthetistId} hospitalId={hospitalId} shot="edit-list-conflict-warning" />
         {/* Catch-up Phase 17: warn, never block. Only a changed surgeon warns. */}
         <NotPreferredWarning warning={pairingWarning} shot="edit-list-pairing-warning" />
         <Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Save list anyway' : 'Save list'}</Button>

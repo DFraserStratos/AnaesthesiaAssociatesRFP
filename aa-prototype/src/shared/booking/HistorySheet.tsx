@@ -54,7 +54,12 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose }: 
     // top row is therefore the record's LAST change, which is what
     // `lastModifiedBy` / `lastModifiedAt` were stamping but never showing
     // (finding 02.3).
-    return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId)))
+    // A roll forward records its recurring-clash Draft Lists in one batch row (catch-up Phase 31): each one's History shows it.
+    const named = (a: (typeof audit)[number]) => {
+      const listed = (a.after as { draftListIds?: unknown } | undefined)?.draftListIds
+      return Array.isArray(listed) && listed.some((id) => ids.has(id as string))
+    }
+    return sortAuditNewestFirst(audit.filter((a) => ids.has(a.entityId) || named(a)))
   }, [audit, idSet])
 
   return (

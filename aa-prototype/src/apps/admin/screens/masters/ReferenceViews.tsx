@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
-import type { Contract } from '../../../../domain/types'
+import type { Contract, RecurringBooking } from '../../../../domain/types'
 import { modifierBandOf } from '../../../../domain/billing'
-import { LIST_KIND_LABELS } from '../../../../domain/types'
 import {
+  applyRecurringBookingsToCanvas,
   eligibleArchiveContactIds,
   runArchiveJob,
   setArchiveWindowDays,
@@ -12,15 +12,18 @@ import {
   useAppStore,
   type Actor,
 } from '../../../../store'
-import { Button, TextField } from '../../../../shared'
+import { Button, StatusChip, TextField } from '../../../../shared'
+import { shortDay, locationName } from '../../../../shared/format'
+import { applyAllLine } from '../../recurringBookingCopy'
+import { useNavigate } from 'react-router-dom'
 import { ContractEditSheet } from '../../flows/ContractEditSheet'
-import { PermanentListSheet } from '../../flows/PermanentListSheet'
+import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
 import { EditCell, Header, Table } from './chrome'
-import { cellStyle } from './tableStyles'
+import { cellStyle, textActionStyle } from './tableStyles'
 
 /**
  * The Master data views catch-up Phase 17 did not change, moved out of the
- * old single file as they were: contracts, permanent lists, insurers,
+ * old single file as they were: contracts, recurring bookings, insurers,
  * organisations, the code tables, list statuses, and Xero & archiving.
  */
 
@@ -86,44 +89,96 @@ function ContractsView({ onEdit, onNew }: { onEdit: (id: string) => void; onNew:
 }
 
 // ---------------------------------------------------------------------------
-// Permanent lists
+// Recurring bookings
 // ---------------------------------------------------------------------------
 
-export function PermanentListsMaster({ actor }: { actor: Actor }) {
-  const permanentLists = useAppStore((s) => s.masters.permanentLists)
+export function RecurringBookingsMaster({ actor }: { actor: Actor }) {
+  const recurringBookings = useAppStore((s) => s.masters.recurringBookings)
   const [sheet, setSheet] = useState<{ id?: string } | null>(null)
   return (
     <>
-      <PermanentListsView onEdit={(id) => setSheet({ id })} onAdd={() => setSheet({})} />
+      <RecurringBookingsView actor={actor} onEdit={(id) => setSheet({ id })} onAdd={() => setSheet({})} />
       {sheet !== null && (
-        <PermanentListSheet open actor={actor} template={sheet.id !== undefined ? permanentLists[sheet.id] : undefined} onClose={() => setSheet(null)} />
+        <RecurringBookingSheet open actor={actor} recurringBooking={sheet.id !== undefined ? recurringBookings[sheet.id] : undefined} onClose={() => setSheet(null)} />
       )}
     </>
   )
 }
 
-function PermanentListsView({ onEdit, onAdd }: { onEdit: (id: string) => void; onAdd: () => void }) {
+/**
+ * Recurring bookings (US-01.3.2, DM-53; catch-up Phase 30): the standing
+ * arrangements, with when each runs, retired ones muted at the foot, and the
+ * view-level "Apply to canvas now" that re-paints every running arrangement
+ * onto sessions that have come free (it never removes).
+ */
+function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit: (id: string) => void; onAdd: () => void }) {
   const masters = useAppStore((s) => s.masters)
-  const rows = Object.values(masters.permanentLists).sort((a, b) => {
+  const navigate = useNavigate()
+  const [result, setResult] = useState<{ line: string; firstDate?: string } | null>(null)
+  const byName = (a: RecurringBooking, b: RecurringBooking) => {
     const an = masters.anaesthetists[a.anaesthetistId]?.name ?? ''
     const bn = masters.anaesthetists[b.anaesthetistId]?.name ?? ''
-    return an.localeCompare(bn) || a.dayOfWeek - b.dayOfWeek || a.session.localeCompare(b.session)
-  })
+    return an.localeCompare(bn) || ((a.dayOfWeek + 6) % 7) - ((b.dayOfWeek + 6) % 7) || a.session.localeCompare(b.session)
+  }
+  const all = Object.values(masters.recurringBookings)
+  const rows = [...all.filter((r) => r.retiredAtISO === undefined).sort(byName), ...all.filter((r) => r.retiredAtISO !== undefined).sort(byName)]
+
+  function applyAll() {
+    const out = applyRecurringBookingsToCanvas(useAppStore, actor)
+    if (!out.ok) {
+      setResult({ line: out.message })
+      return
+    }
+    setResult({ line: applyAllLine(out.value), ...(out.value.firstAffectedDateISO !== undefined ? { firstDate: out.value.firstAffectedDateISO } : {}) })
+  }
+
+  const runs = (r: RecurringBooking) => {
+    if (r.retiredAtISO !== undefined) return r.effectiveToISO !== undefined ? `Retired, last ${shortDay(r.effectiveToISO)}` : 'Retired'
+    if (r.effectiveFromISO === undefined && r.effectiveToISO === undefined) return 'Ongoing'
+    const from = r.effectiveFromISO !== undefined ? `From ${shortDay(r.effectiveFromISO)}` : ''
+    const to = r.effectiveToISO !== undefined ? `until ${shortDay(r.effectiveToISO)}` : 'ongoing'
+    return from !== '' ? `${from}, ${to}` : `Until ${shortDay(r.effectiveToISO!)}`
+  }
+
   return (
     <>
-      <Header title="Permanent lists" sub="Weekly templates the canvas generates from, including the usual surgeon. Edits apply to future generated days." action={<Button variant="secondary" onClick={onAdd}>Add permanent list</Button>} />
-      <Table heads={['Anaesthetist', 'Day', 'Session', 'Kind', 'Hospital', 'Surgeon', '']} rightAlign={[6]}>
-        {rows.map((p) => (
-          <tr key={p.id}>
-            <td style={cellStyle}>{masters.anaesthetists[p.anaesthetistId]?.name ?? p.anaesthetistId}</td>
-            <td style={cellStyle}>{DAY_LABELS[p.dayOfWeek]}</td>
-            <td style={cellStyle}>{p.session}</td>
-            <td style={cellStyle}>{LIST_KIND_LABELS[p.kind].label}</td>
-            <td style={cellStyle}>{p.hospitalId !== null ? (masters.hospitals[p.hospitalId]?.name ?? p.hospitalId) : 'AA rooms'}</td>
-            <td style={cellStyle}>{p.surgeonId !== null ? (masters.surgeons[p.surgeonId]?.name ?? p.surgeonId) : '·'}</td>
-            <EditCell onClick={() => onEdit(p.id)} />
-          </tr>
-        ))}
+      <Header
+        title="Recurring bookings"
+        sub="Recurring bookings are standing arrangements of hospital, anaesthetist and surgeon on a day and session. Each one creates its Lists across the schedule ahead, before any Bookings (they are not Bookings for a patient). Applying changes the canvas from tomorrow: empty Lists are added or updated, and Lists with Bookings or office edits are left as they are."
+        action={
+          <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
+            <Button variant="secondary" onClick={onAdd}>Add recurring booking</Button>
+            <Button variant="primary" onClick={applyAll}>Apply to canvas now</Button>
+          </div>
+        }
+      />
+      {result !== null && (
+        <div role="status" data-shot="recurring-bookings-apply-result" style={{ background: accent.tint, color: accent.pressed, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <span>{result.line}</span>
+          {result.firstDate !== undefined && (
+            <button type="button" style={{ ...textActionStyle, fontSize: 13, flex: 'none' }} onClick={() => navigate(`/admin/day/${result.firstDate}`)}>
+              Show on day grid
+            </button>
+          )}
+        </div>
+      )}
+      <Table shot="recurring-bookings-table" heads={['Anaesthetist', 'Day', 'Session', 'Kind', 'Hospital', 'Surgeon', 'Runs', '']} rightAlign={[7]}>
+        {rows.map((p) => {
+          const retired = p.retiredAtISO !== undefined
+          const style = retired ? { ...cellStyle, color: neutral.mist } : cellStyle
+          return (
+            <tr key={p.id} data-recurring-booking={p.id} data-retired={retired ? 'true' : undefined} style={retired ? { background: neutral.bg } : undefined}>
+              <td style={style}>{masters.anaesthetists[p.anaesthetistId]?.name ?? p.anaesthetistId}</td>
+              <td style={style}>{DAY_LABELS[p.dayOfWeek]}</td>
+              <td style={style}>{p.session}</td>
+              <td style={style}><span style={{ opacity: retired ? 0.6 : 1 }}><StatusChip status={p.kind} /></span></td>
+              <td style={style}>{locationName(p.hospitalId, masters.hospitals)}</td>
+              <td style={style}>{p.surgeonId !== null ? (masters.surgeons[p.surgeonId]?.name ?? p.surgeonId) : '·'}</td>
+              <td style={style}>{runs(p)}</td>
+              {retired ? <td style={style} /> : <EditCell onClick={() => onEdit(p.id)} />}
+            </tr>
+          )
+        })}
       </Table>
     </>
   )

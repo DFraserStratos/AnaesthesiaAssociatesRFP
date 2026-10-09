@@ -13,10 +13,9 @@
  */
 
 import { parseISO } from 'date-fns'
-import type { HospitalHoliday, List, ListKind, PermanentList, SeedLeaveWindow, Session, Slot, SlotStatusKey, SurgeonId } from '../types'
+import type { AssignedList, List, ListKind, RecurringBooking, SeedLeaveWindow, Session, Slot, SlotStatusKey, SurgeonId } from '../types'
 import { enumerateDatesISO } from '../clock'
 import { projectedListId, slotIdFor } from '../slots'
-import { closedHospitalConflict } from './canvas'
 import { slotRng } from './slotHash'
 import { HOSP, SURG } from './cast'
 
@@ -65,8 +64,9 @@ export function listInSlotOf(lists: Record<string, List>, slotId: string): List 
 
 export interface ListPlacement {
   kind?: ListKind
-  hospitalId?: string | null
-  surgeonId?: string | null
+  /** Required for a new List: every List names a hospital (or AA rooms) and a surgeon (catch-up Phase 31). */
+  hospitalId?: string
+  surgeonId?: string
   notes?: string | null
   startTime?: string | null
   endTime?: string | null
@@ -75,13 +75,12 @@ export interface ListPlacement {
 /**
  * Put a List in a Slot, or patch the List already there (`null` clears a
  * field; times are the Slot's overrides). A new List takes the projected id
- * for the Slot, state ACTIVE, and the closed-hospital conflict; the Slot it
- * goes into becomes free with no note, since the List now shows in its place.
+ * for the Slot and state ACTIVE (conflicts come from the seed's last step,
+ * `reconcileAllConflicts`); the Slot it goes into becomes free with no note, since the List now shows in its place.
  */
 export function placeList(
   lists: Record<string, List>,
   slots: Record<string, Slot>,
-  holidays: readonly HospitalHoliday[],
   anaesthetistId: string,
   dateISO: string,
   session: Session,
@@ -89,11 +88,16 @@ export function placeList(
 ): void {
   const slot = slotAt(slots, anaesthetistId, dateISO, session)
   const existing = listInSlotOf(lists, slot.id)
-  let next: List
+  let next: AssignedList
   if (existing !== undefined) {
+    if (existing.state === 'DRAFT') throw new Error(`placeList found a Draft List in ${slot.id}`)
     next = { ...existing }
   } else {
     if (placement.kind === undefined) throw new Error(`placeList needs a kind for a new List in ${slot.id}`)
+    // Dev assertion (US-01.3.1): a programming error, not a user refusal.
+    if (placement.hospitalId === undefined || placement.surgeonId === undefined) {
+      throw new Error(`placeList needs a hospital and a surgeon for a new List in ${slot.id}`)
+    }
     next = {
       id: projectedListId(anaesthetistId, dateISO, session),
       slotId: slot.id,
@@ -102,21 +106,20 @@ export function placeList(
       session,
       state: 'ACTIVE',
       kind: placement.kind,
+      hospitalId: placement.hospitalId,
+      surgeonId: placement.surgeonId,
       conflicts: [],
     }
     setSlot(slots, anaesthetistId, dateISO, session, { status: 'free', note: null })
   }
   if (placement.kind !== undefined) next.kind = placement.kind
-  for (const key of ['hospitalId', 'surgeonId', 'notes'] as const) {
-    const value = placement[key]
-    if (value === undefined) continue
-    if (value === null) delete next[key]
-    else next[key] = value
-  }
-  if (existing === undefined) {
-    const conflict = closedHospitalConflict(next, holidays)
-    if (conflict !== null) next.conflicts = [conflict]
-  }
+  if (placement.hospitalId !== undefined) next.hospitalId = placement.hospitalId
+  if (placement.surgeonId !== undefined) next.surgeonId = placement.surgeonId
+  if (placement.notes === null) delete next.notes
+  else if (placement.notes !== undefined) next.notes = placement.notes
+  // A recorded change to a projected List is the office's edit: it loses its
+  // recurring-booking provenance, as `editList` does at runtime (catch-up Phase 30).
+  if (existing !== undefined) delete next.recurringBookingId
   lists[next.id] = next
   if (placement.startTime !== undefined || placement.endTime !== undefined) {
     setSlot(slots, anaesthetistId, dateISO, session, {
@@ -156,6 +159,11 @@ const CES_SURGEONS: readonly SurgeonId[] = [SURG.whitford, SURG.reid] as const
 const GENERAL_SURGEONS: readonly SurgeonId[] = [
   SURG.hale, SURG.patel, SURG.okafor, SURG.lim, SURG.doyle, SURG.tan, SURG.nand, SURG.cameron,
 ] as const
+/**
+ * Acute theatre's on-call surgeons (catch-up Phase 31; the pairing rule): each
+ * holds no Contract, sits in no surgeon group and has no pairing preference.
+ */
+const ACUTE_SURGEONS: readonly SurgeonId[] = [SURG.okafor, SURG.patel, SURG.tan] as const
 
 function pick<T>(rng: () => number, items: readonly T[]): T {
   const item = items[Math.floor(rng() * items.length)]
@@ -166,9 +174,8 @@ function pick<T>(rng: () => number, items: readonly T[]): T {
 export interface RecordedWindowInput {
   seed: number
   anaesthetistIds: readonly string[]
-  permanentLists: readonly PermanentList[]
+  recurringBookings: readonly RecurringBooking[]
   leave: readonly SeedLeaveWindow[]
-  holidays: readonly HospitalHoliday[]
 }
 
 /**
@@ -184,7 +191,7 @@ export function seedRecordedWindow(
   slots: Record<string, Slot>,
   input: RecordedWindowInput,
 ): void {
-  const templates = new Set(input.permanentLists.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
+  const recurringKeys = new Set(input.recurringBookings.map((t) => `${t.anaesthetistId}|${t.dayOfWeek}|${t.session}`))
   const leave = new Set(input.leave.map((w) => `${w.anaesthetistId}|${w.dateISO}|${w.session}`))
   for (const dateISO of enumerateDatesISO(RECORDED_WINDOW.fromISO, RECORDED_WINDOW.toISO)) {
     const dayOfWeek = parseISO(dateISO).getDay()
@@ -193,7 +200,7 @@ export function seedRecordedWindow(
       for (const session of ['AM', 'PM'] as const) {
         if (slots[slotIdFor(anaesthetistId, dateISO, session)] === undefined) continue
         if (leave.has(`${anaesthetistId}|${dateISO}|${session}`)) continue
-        if (!isWeekend && templates.has(`${anaesthetistId}|${dayOfWeek}|${session}`)) continue
+        if (!isWeekend && recurringKeys.has(`${anaesthetistId}|${dayOfWeek}|${session}`)) continue
         const rng = slotRng(input.seed, 'fill', anaesthetistId, dateISO, session)
         const draw = rng()
         if (isWeekend) {
@@ -201,11 +208,14 @@ export function seedRecordedWindow(
         } else if (draw < 0.11) {
           const hospitalId = pick(rng, ADHOC_HOSPITALS)
           const surgeonId = hospitalId === HOSP.ces ? pick(rng, CES_SURGEONS) : pick(rng, GENERAL_SURGEONS)
-          placeList(lists, slots, input.holidays, anaesthetistId, dateISO, session, { kind: 'private', hospitalId, surgeonId })
+          placeList(lists, slots, anaesthetistId, dateISO, session, { kind: 'private', hospitalId, surgeonId })
         } else if (draw < 0.17) {
-          placeList(lists, slots, input.holidays, anaesthetistId, dateISO, session, {
+          // The on-call surgeon comes from its own stream (catch-up Phase 31), so
+          // the 'fill' draws, and every other placement and Booking, are unchanged.
+          placeList(lists, slots, anaesthetistId, dateISO, session, {
             kind: 'public',
             hospitalId: HOSP.cph,
+            surgeonId: pick(slotRng(input.seed, 'acute', anaesthetistId, dateISO, session), ACUTE_SURGEONS),
             notes: 'Acute theatre',
           })
         } else if (draw < 0.22) {

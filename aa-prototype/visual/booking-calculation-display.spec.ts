@@ -27,7 +27,7 @@ async function openWebEllison(page: Page): Promise<void> {
 async function openAdminBooking(page: Page): Promise<void> {
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
-  await page.getByText("St George's").first().click()
+  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
 }

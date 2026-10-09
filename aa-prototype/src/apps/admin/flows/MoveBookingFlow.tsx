@@ -3,10 +3,12 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
 import { reassignBooking, useAppStore, type Actor } from '../../../store'
-import { LIST_STATE_LABELS } from '../../../shared/format'
+import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
+import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { Button } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
 import { surnameOf } from '../util'
+import { CONFLICT_REASONS } from '../../../domain/conflicts'
 
 interface MoveBookingFlowProps {
   open: boolean
@@ -37,15 +39,16 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
   const candidates = useMemo(() => {
     if (sourceId === undefined || targetDate === '') return []
     return Object.values(lists)
-      .filter((l) => l.dateISO === targetDate && l.id !== sourceId && l.state !== 'AUTHORISED')
-      .sort((a, b) => (a.anaesthetistId === b.anaesthetistId ? a.session.localeCompare(b.session) : a.anaesthetistId.localeCompare(b.anaesthetistId)))
+      // The office may move a Booking onto a Draft List too (catch-up Phase 31); a removed one is gone.
+      .filter((l) => l.dateISO === targetDate && l.id !== sourceId && l.state !== 'AUTHORISED' && l.removedAtISO === undefined)
+      .sort((a, b) => ((a.anaesthetistId ?? '') === (b.anaesthetistId ?? '') ? a.session.localeCompare(b.session) : (a.anaesthetistId ?? '').localeCompare(b.anaesthetistId ?? '')))
   }, [sourceId, targetDate, lists])
 
   function mismatch(target: List): string | null {
     if (sourceList === undefined) return null
     const reasons: string[] = []
-    if (sourceList.hospitalId !== undefined && target.hospitalId !== undefined && sourceList.hospitalId !== target.hospitalId) reasons.push('different hospital')
-    if (sourceList.surgeonId !== undefined && target.surgeonId !== undefined && sourceList.surgeonId !== target.surgeonId) reasons.push('different surgeon')
+    if (sourceList.hospitalId !== target.hospitalId) reasons.push('different hospital')
+    if (sourceList.surgeonId !== target.surgeonId) reasons.push('different surgeon')
     return reasons.length > 0 ? reasons.join(', ') : null
   }
 
@@ -78,9 +81,9 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflow: 'auto' }}>
           {candidates.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No candidate lists on {targetDate !== '' ? format(parseISO(targetDate), 'd MMM') : 'that day'}.</div>}
           {candidates.map((l) => {
-            const anae = masters.anaesthetists[l.anaesthetistId]
-            const hosp = l.hospitalId !== undefined ? masters.hospitals[l.hospitalId]?.name : 'Unassigned'
-            const surg = l.surgeonId !== undefined ? masters.surgeons[l.surgeonId]?.name : 'No surgeon'
+            const anae = l.anaesthetistId !== undefined ? masters.anaesthetists[l.anaesthetistId] : undefined
+            const hosp = locationName(l.hospitalId, masters.hospitals)
+            const surg = masters.surgeons[l.surgeonId]?.name ?? l.surgeonId
             const flag = mismatch(l)
             return (
               <button
@@ -89,10 +92,16 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
                 onClick={() => move(l)}
                 style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch', textAlign: 'left', padding: '10px 12px', borderRadius: radius.card, border: `1px solid ${neutral.line}`, background: neutral.surface, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · {l.session} · {LIST_STATE_LABELS[l.state]}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{anae !== undefined ? surnameOf(anae.name) : (l.anaesthetistId ?? UNASSIGNED)} · {l.session} · {LIST_STATE_LABELS[l.state]}</span>
                 <span style={{ fontSize: 12, color: neutral.slate }}>{hosp} · {surg}</span>
                 {flag !== null && (
                   <span style={{ fontSize: 11, color: semantic.warning.onTint, fontWeight: 600 }}>Advisory: {flag}. Pairing is not enforced.</span>
+                )}
+                {/* A conflicted target warns before the tap and never blocks (catch-up Phase 30, OQ-09). */}
+                {l.conflicts.length > 0 && (
+                  <span data-shot="move-booking-conflict-warning" style={{ fontSize: 11, color: semantic.warning.onTint, fontWeight: 600 }}>
+                    ! {l.conflicts.map((c) => CONFLICT_REASONS[c.kind]).join(' · ')}. The Booking is accepted and the List stays flagged.
+                  </span>
                 )}
               </button>
             )

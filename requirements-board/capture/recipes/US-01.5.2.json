@@ -1,51 +1,24 @@
 {
   "id": "US-01.5.2",
   "status": "partial",
-  "absentReason": "Conflicts are flagged as advisory warnings (hard block versus soft warning is still open, OQ-09). The web app shows no conflict for the anaesthetist.",
+  "absentReason": "An anaesthetist marking a booked session unavailable is still flagged on the List until Phase 32's return-or-assign.",
   "shots": [
     {
       "name": "holiday-conflict",
       "app": "admin",
       "caption": "Booked List flagged against a hospital closure",
       "start": "/admin/day/2026-07-22",
-      "setup": [
-        {
-          "goto": "/admin/masters"
-        },
-        {
-          "click": "text=\"Hospitals & holidays\""
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "text=\"Add holiday\" >> nth=0"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "fill": "[role=dialog] input[type=date]",
-          "value": "2026-07-22"
-        },
-        {
-          "fill": "input[placeholder=\"e.g. Planned maintenance closure\"]",
-          "value": "Theatre maintenance closure"
-        },
-        {
-          "click": "[role=dialog] >> role=button[name=\"Add holiday\"]"
-        },
-        {
-          "wait": 600
-        }
-      ],
       "states": [
         {
           "state": "grid",
-          "caption": "Booked List flagged on the day grid",
-          "steps": [],
+          "caption": "The List changes colour: amber, with its reason and the \"!\"",
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-day-grid-row=\"34821\"]"
+            "button[data-conflict=\"true\"][data-list-id=\"L-25490-2026-07-22-PM\"]"
           ]
         },
         {
@@ -53,14 +26,14 @@
           "caption": "The flag explains the conflict with the hospital closure",
           "steps": [
             {
-              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
+              "click": "button[data-list-id=\"L-25490-2026-07-22-PM\"]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-testid=admin-list-drawer] div:has(> :text(\"Needs attention\"))"
+            "[data-shot=\"drawer-attention\"]"
           ]
         }
       ]
@@ -68,20 +41,65 @@
     {
       "name": "unavailable-conflict",
       "app": "admin",
-      "caption": "List flagged when the anaesthetist is unavailable",
+      "caption": "A Booking on an unavailable anaesthetist's List is accepted and flagged",
       "start": "/admin/day/2026-07-22",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-day-grid-row=\"29104\"] button >> nth=0"
+              "click": "button[data-list-id=\"L-29104-2026-07-22-AM\"]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-testid=admin-list-drawer] div:has(> :text(\"Needs attention\"))"
+            "[data-shot=\"drawer-attention\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-advice-warning",
+      "app": "admin",
+      "caption": "Booking accepted, List flagged as a conflict",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button[data-slot-id=\"S-38455-2026-07-21-AM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"phone-advice-conflict-warning\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "recurring-clash",
+      "app": "admin",
+      "caption": "A recurring booking on an unavailable session goes to the office as a Draft List",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-draft-list-row]:has-text(\"Southern Cross\"):has-text(\"Beaumont\") >> nth=0"
           ]
         }
       ]

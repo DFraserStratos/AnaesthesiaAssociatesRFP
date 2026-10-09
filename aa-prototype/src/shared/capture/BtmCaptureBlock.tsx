@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { accent, neutral, semantic } from '../../theme/tokens'
-import type { List, Procedure } from '../../domain/types'
+import type { AssignedList, Procedure } from '../../domain/types'
 import type { BillingValidationFailure } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { useSurface } from '../surface'
@@ -31,7 +31,7 @@ const CONTEXT_FIELDS = [
 
 interface BtmCaptureBlockProps {
   procedure: Procedure
-  list: List
+  list: AssignedList
   actor: Actor
   /** 1-based position on the Booking — feeds Type 3 second-procedure pricing. */
   ordinal: number

@@ -70,6 +70,7 @@ view respectively.
 |---|---|
 | Day view | `/admin/day/2026-07-21` (A to Z order: add `?sort=az`) |
 | Booking detail | `/admin/day/2026-07-21/bookings/<bookingId>` |
+| Conflicts | `/admin/conflicts` (filters in the URL, e.g. `?reason=unavailable`, `?cleared=1`) |
 | Review queue | `/admin/review` |
 | One List under review | `/admin/review/<listId>` |
 | Invoices | `/admin/invoices` |
@@ -78,6 +79,8 @@ view respectively.
 | Integration monitor | `/admin/integrations` |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
 | Availability statuses | `/admin/masters?view=availability-statuses` |
+| Recurring bookings | `/admin/masters?view=recurringBookings` |
+| Hospitals & holidays | `/admin/masters?view=hospitals` (List or Calendar) |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |
@@ -174,7 +177,7 @@ interval); the RFP defines the tiers but not the rounding.
 ## S2 · Office day
 
 **Serves:** the office as the operational control tower, exception handling, and the no-Returned-state
-authorisation model. **Time:** 6 to 8 minutes.
+authorisation model. **Time:** 7 to 9 minutes.
 
 **Stage it:** use **Reset → Confirm reset**, then go directly to the Admin app. The day's data is
 already seeded.
@@ -211,12 +214,38 @@ already seeded.
 - **Click:**
   - Go to **Admin Web App → Day view → Tuesday 21 July**.
   - Pause on the day grid.
-- **Say:** "Every active anaesthetist has an AM and a PM session every day, four months ahead, from
+- **Say:** "Every active anaesthetist has two sessions a day, AM and PM, four months ahead, from
   their start date, whether or not anything is booked. A session is free until the anaesthetist marks
-  it otherwise, and when the office puts a List in it, the List shows instead."
+  it otherwise, and when the office puts a List in it, the List shows instead. Requests that arrive
+  before an anaesthetist is found wait here as Draft Lists, flagged unassigned and soonest first, right
+  beside the day, so nothing sits on a pile of paper. When a surgeon's recurring booking lands on a day
+  the anaesthetist has already blocked out, the system makes it a Draft List too, rather than leaving
+  it on someone who will not be there."
 - **Expected:** a legible status-coloured grid; every block carries its label, never colour alone. The
   dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads the three List
-  types, then the availability statuses from master data (the same six labels as before).
+  types, then the availability statuses from master data (the same six labels as before). A Draft Lists
+  card in the right rail and a Draft Lists band above the grid hold Dr Ngata's acute AM (he is
+  unavailable) and St George's PM, Mr S. Tan, waiting 16 h; every List block shows its booking count;
+  the nav shows Draft Lists 15.
+
+### Beat 1b: a List with no anaesthetist yet
+
+- **Click:**
+  - Open the band's **St George's** block, point at **Available that session** and the tier pills, then
+    select **Assign → Dr Emma Fitzgerald** (Free) **→ Assign Draft List**.
+  - Optional, if time allows: **Draft Lists** in the side nav. Show the date order and Dr Beaumont's
+    Wednesday Lists waiting while she is on leave, then open **Forte Health · Mr V. Nand** (2 bookings)
+    to show Bookings already on a Draft List. Or, in Demo actions, **Simulate incoming request**
+    (Christchurch Eye Surgery, Ms A. Reid, Thu 23 Jul PM) **→ Assign**, point at Dr Sharma in **Not
+    preferred with Ms Reid**, and pick a Free anaesthetist instead.
+- **Say:** "A Draft List has its hospital, surgeon, day and session, and can already hold Bookings, but
+  has no anaesthetist and changes nobody's schedule. Only the office assigns it, by picking the
+  anaesthetist; the session is already set. Everyone who could take it is shown, ordered by the
+  office's priority tiers, with any not-preferred pairing set apart. Those warn, and never block, and
+  anaesthetists never see them. Once assigned, it is an active List in that anaesthetist's day. A
+  cancelled request is removed, or its date changed."
+- **Expected:** the band keeps only Dr Ngata's acute AM; Fitzgerald's PM shows St George's, Mr S. Tan;
+  the drawer shows ACTIVE and its History shows the Draft List created and assigned on the same List.
 
 ### Beat 2: a phone-advice booking
 
@@ -239,26 +268,66 @@ already seeded.
 ### Beat 3: illness cover, reassign a whole List
 
 - **Click:**
-  - Go to Wednesday 22 July and open **Dr James Rutherford's AM Christchurch Eye Surgery List**.
-  - Select **Reassign list**. The candidates are in tier order with a tier pill on each; Dr Priya
-    Sharma is in the main group with a **Preferred** pill. Pick her **by name**, since the order within
-    a tier varies each time the picker opens.
-  - Select **Sharma, Priya**. The vacated session defaults to **Free**; choose **Unavailable** because
-    Dr Rutherford is ill, then **Confirm reassignment**.
-  - Pause on the confirmation, then reopen **Sharma AM → History**.
+  - Select **Conflicts** in the side nav (its amber badge counts the open conflicts). Dr James
+    Rutherford's **Wed 22 Jul AM** row reads **Anaesthetist unavailable**: "Dr Rutherford is marked
+    Unavailable for this session. Note: unwell, short notice." He phoned in sick and the office
+    recorded it, so his Christchurch Eye Surgery List is still in place. The four Southern Cross rows
+    below it are a theatre maintenance closure on the same day.
+  - On Rutherford's row select **Reassign**. The candidates are in tier order with a tier pill on
+    each; Dr Priya Sharma is in the main group with a **Preferred** pill. Pick her **by name**, since
+    the order within a tier varies each time the picker opens. Colleagues whose AM is closed sit
+    apart under a collapsed **Not available** group.
+  - The vacated session defaults to **Keep as is (Unavailable)**, because Dr Rutherford is still
+    unwell. Select **Confirm reassignment**.
+  - The row leaves the screen, the badge drops by one, and the line reads "Conflict cleared: Dr Priya
+    Sharma now covers Wed 22 Jul AM." Select **Day** on any Wed 22 row, then open **Sharma AM →
+    History**.
+- **Say:** "A sickness the office records is a conflict, not a crisis. The Bookings stay, the List
+  turns amber, and the office covers it from one screen instead of a printed report."
 - **Say:** "The List moves with its Bookings and history to Dr Sharma; nothing is re-keyed, and nothing
   about billing is recalculated. It is different from moving one patient Booking."
 - **Say:** "The office's private knowledge is now data: who works well with whom, either way round, and
   the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on
   top. Only the office ever sees it."
-- **Expected:** the picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred
-  pill) and shows no warning for Sharma. Then a brief **List reassigned** success moment confirms the
-  move before the modal closes. The List and its Bookings move to Sharma, Dr Rutherford's session shows
-  Unavailable, and History records one reassignment.
+- **Expected:** the Conflicts screen groups Wed 22 Jul, Mon 26 Oct and Fri 13 Nov by date, each row
+  with its reason, anaesthetist, hospital, availability and Booking count. The picker is grouped and
+  tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred pill) and shows no warning for Sharma.
+  A brief **List reassigned** moment confirms the move. On the Day grid the List sits in Sharma's AM
+  with no conflict, Dr Rutherford's AM reads Unavailable, and History records one reassignment.
+  (Rutherford's List carries no Bookings in the seed; Beat 3a shows a sickness on a List with
+  Bookings.)
 - **Optional pointer:** use the picker's **Filter by tier**, or open **Dr Alistair Chen's Tue 21 PM
   Christchurch Eye Surgery List → Reassign list** to show Dr Sharma apart under **Not preferred with
   Ms Reid**. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session,
   which Beat 2 books.
+
+### Optional Beat 3a: a sickness phoned in, and a closure that moves
+
+- **Click:**
+  - On the Day view for Wed 22 Jul, open **Demo actions → Simulate sickness**, choose **Dr Sharma · PM ·
+    Southern Cross** (it has Bookings) and **Run**.
+  - Open **Conflicts**: Sharma's PM now shows **Anaesthetist unavailable** with "(phoned in,
+    simulated)" in the note, its Bookings counted, beside its Southern Cross closure.
+  - Go to **Master data → Hospitals & holidays**, select the **Theatre maintenance closure** pill on
+    Southern Cross and move it to Thu 23 Jul (or **Delete holiday**).
+- **Say:** "The flag follows the facts. Move or delete the closure and its flags clear; the office can
+  also clear one with a note and flag it again later."
+- **Expected:** the result line counts the flags raised and cleared ("Holiday updated. 2 Lists flagged,
+  4 flags cleared."), and the Wed 22 Southern Cross rows leave Conflicts.
+
+### Optional Beat 3b: a recurring booking reaches the canvas at once
+
+- **Click:**
+  - **Master data → Recurring bookings**, then **Edit** on Dr James Rutherford's Monday AM.
+  - Change the usual surgeon; read the preview line ("Applying updates 16 and keeps 1 (with
+    Bookings).").
+  - Select **Apply to canvas now**, then **Show on day grid**.
+  - Optionally **Retire** it with a last date next month.
+- **Say:** "A recurring booking creates its Lists across the schedule ahead before any Bookings exist; a
+  change reaches every future empty List at once and never touches booked work."
+- **Expected:** the result line counts the Lists added, updated and kept, and the Day grid opens on the
+  first changed Monday (Mon 3 Aug) with the new surgeon; Mon 27 Jul, which has Bookings, is unchanged.
+  A retired row sits muted at the foot of the table with its last date.
 
 ### Optional: find who is free
 
@@ -290,8 +359,11 @@ already seeded.
   Authorisation locks every Booking and hands the whole List to the Billing Engine."
 - **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
 
-**Discovery points:** whether availability/holiday conflicts are hard constraints or warnings (the
-prototype uses advisory flags); settled context rather than a question: availability is a status on
+**Discovery points:** settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
+before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
+31), and an anaesthetist who marks a booked session unavailable returns the List to the office or hands
+it to a colleague (Phase 32) (OQ-64, OQ-81); open: short-notice sickness (OQ-81 part 3), shown here as a
+conflict the office records; settled context rather than a question: availability is a status on
 each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64
 answered), and the status values are a list AA maintains, starting from Free, On holiday and
 Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state
@@ -300,7 +372,7 @@ returns it to Free unless the office marks it otherwise); whether monitoring bel
 in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
 preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
 Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their
-tier (the prototype marks it only).
+tier (the prototype marks it only); and the pre-op and acute pairing reading (AA rooms as a location; a named surgeon on pre-op and acute Lists).
 
 ---
 

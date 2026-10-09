@@ -1,4 +1,5 @@
 import { PAIRING_LABELS } from '../../domain/pairingPreferences'
+import { DRAFT_LIST } from '../scheduleTerms'
 
 /**
  * Human labels for the store's audit action codes (A7 presentation).
@@ -49,8 +50,20 @@ export const ACTION_LABELS: Record<string, string> = {
   'list.billed': 'List billed',
   'list.create': 'List assigned',
   'list.reassign': 'List reassigned',
-  'list.conflict': 'Conflict flagged',
-  'list.conflictCleared': 'Conflict cleared',
+  // Conflicts (catch-up Phase 30): raised and resolved by the one rule in
+  // mutate(); cleared and flagged again by the office.
+  'list.conflict': 'Conflict raised',
+  'list.conflictResolved': 'Conflict resolved',
+  'list.conflictCleared': 'Conflict cleared by the office',
+  'list.conflictRestored': 'Conflict flagged again',
+  'list.remove': 'List removed',
+  // Catch-up Phase 31: Draft Lists (the words from the one terms module).
+  'draftList.create': `${DRAFT_LIST} created`,
+  'draftList.assign': `${DRAFT_LIST} assigned`,
+  'draftList.redate': `${DRAFT_LIST} date changed`,
+  'draftList.remove': `${DRAFT_LIST} removed`,
+  'draftList.fromRecurringClash': `${DRAFT_LIST} created from a recurring booking (anaesthetist unavailable)`,
+  'draftList.detach': `List returned to the office as a ${DRAFT_LIST}`,
   'list.phoneNote': 'Phone note logged',
   'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
 
@@ -77,10 +90,14 @@ export const ACTION_LABELS: Record<string, string> = {
   'canvas.trim': 'Sessions removed',
   'settings.scheduleDefaults': 'Default session times changed',
   'settings.horizon': 'Schedule horizon changed',
-  'permanentList.create': 'Permanent list added',
-  'permanentList.update': 'Permanent list updated',
-  'permanentList.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
+  'recurringBooking.create': 'Recurring booking added',
+  'recurringBooking.update': 'Recurring booking updated',
+  'recurringBooking.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
+  'recurringBooking.retire': 'Recurring booking retired',
+  'recurringBooking.apply': 'Recurring bookings applied to the canvas',
   'holiday.create': 'Holiday added',
+  'holiday.update': 'Holiday changed',
+  'holiday.delete': 'Holiday deleted',
   'dayNote.add': 'Day note added',
 
   // --- People & payers -----------------------------------------------------

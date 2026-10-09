@@ -95,24 +95,39 @@ the displayed status is the one pure `displayStatusKey(slot, list)` in `domain/s
 takes no Bookings, read through the Slot views (`slotViewsForDate`, `slotViewsForAnaesthetist`,
 `slotView`) by all three apps and every finder; "free" for a finder is `isOpenSlot` (free and
 holding no List). Generation (`generateCanvasForDates`) writes every Slot free, then paints the
-calendar, then the recurring bookings (a recurring booking under leave is returned as a clash for
-Phase 31) and invents nothing; the seed alone records an ad hoc demo window (2026-07-07 to
+calendar, then the recurring bookings (a recurring booking under leave is returned as a clash,
+which becomes a Draft List) and invents nothing; the seed alone records an ad hoc demo window (2026-07-07 to
 2026-08-16, `seedRecordedWindow`) with the old per-slot draws. The horizon and the default AM and
 PM times are one settings record, `appSettings.schedule`; every horizon reader goes through
 `horizonFor(today, months)` / `scheduleHorizon`. A reassign moves the List between Slots
 (`reassignList` over `moveListToSlot`), keeping its id, Bookings and history. "Slot" is a code
 word: the UI says session, AM or PM.
 
+**The List lifecycle and the Draft List (catch-up Phase 31).** A List's state is `DRAFT`, `ACTIVE`,
+`SUBMITTED` or `AUTHORISED` (EP-07), and `List` is a union on it: an `AssignedList` has its
+anaesthetist and Slot; a `DraftList` (state `DRAFT`) has neither. A Draft List is a List with no
+anaesthetist: its hospital, surgeon, day and session are all required, it may already hold Bookings,
+and it takes no Slot, so creating one changes nobody's schedule. Only the office assigns it
+(`assignDraftList`, choosing the anaesthetist; the session is fixed by its day and session), which
+puts the same List id into that session as `ACTIVE` (`attachListToSlot`); it can also be re-dated or
+removed (soft). A recurring booking that lands on a session already closed becomes a Draft List
+through one rule (`recurringClashDraft`) on every generating path; `detachListToDraft` is Phase 32's
+way back from `ACTIVE`. The pairing rule is one helper, `pairingIssues` (`domain/listPairing.ts`):
+every List names exactly one hospital (or the AA rooms location, `locationType: 'aaRooms'`, never a
+Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA apps.
+
 ## Folder map (`src/`)
 
 - **`domain/`** — pure, no React: `types.ts`, the deterministic `seed/` (Bookings in
   `seed/bookings.ts`; the canvas generator in `seed/canvas.ts`; the recorded demo window in
-  `seed/recordedWindow.ts`), the Slot module `slots.ts`, billing maths (`billing/`, including
+  `seed/recordedWindow.ts`; the seeded Draft Lists in `seed/draftLists.ts`), the Slot module
+  `slots.ts`, the pairing rule `listPairing.ts`, the Draft List rules `draftLists.ts`, billing maths (`billing/`, including
   `validateBookingForBilling.ts`), the advanceable `clock.ts`, NHI/NZHIS validators, and the
   integration message/PDF fixtures (`integrations/`). Fully unit-tested.
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
-  times, default times, the horizon, cover markers), Booking creation (`bookingActions.ts`), Booking and List attachments
+  times, default times, the horizon, cover markers, and the Draft List internals), the Draft List
+  actions (`draftListActions.ts`) and their demo bodies (`draftListDemo.ts`), Booking creation (`bookingActions.ts`), Booking and List attachments
   (`attachmentActions.ts`), patient intake, master-data invariants, the billing run, Xero/payment/payables/archive actions, the
   integration processor, and the live demo clock. Components read and write only through here.
 - **`apps/mobile/`**, **`apps/web/`**, **`apps/admin/`** — the three user-facing apps. Each has the same
@@ -125,7 +140,8 @@ word: the UI says session, AM or PM.
   billing-monitor simulator, the integration simulator, and the seed-data inspector.
 - **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the attachment
   strip and simulated picker in `attachments/`, schedule rows, flows, status chips, the legacy
-  `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output).
+  `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,
+  `scheduleTerms.ts`: every Draft List word, in one place).
 - **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the

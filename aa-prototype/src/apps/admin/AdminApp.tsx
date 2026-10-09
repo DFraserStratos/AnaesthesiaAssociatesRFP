@@ -7,7 +7,11 @@ import {
   billingAttentionCount,
   integrationAttentionCount,
   isOpenSlotView,
+  openConflictCount,
   openWarnings,
+  bookingCountsByList,
+  draftListsForDate,
+  waitingDraftListCount,
   rosterForDate,
   scheduleHorizon,
   slotViewsForDate,
@@ -21,8 +25,12 @@ import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
 import { type SortMode } from './components/DayNav'
 import { SlotDrawer } from './components/SlotDrawer'
+import { DraftListDrawer } from './components/DraftListDrawer'
+import { draftListCount } from '../../shared/scheduleTerms'
 import type { AdminOutletContext } from './outlet'
 import { surnameOf } from './util'
+import { locationName } from '../../shared/format'
+import type { AssignedList } from '../../domain/types'
 import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
@@ -30,7 +38,9 @@ import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 /** Which side-nav section the current URL is in (`/admin` itself is the day view). */
 function sectionForPath(pathname: string): NavSection {
   const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
+  if (head === 'draft-lists') return 'draftLists'
   switch (head) {
+    case 'conflicts':
     case 'review':
     case 'invoices':
     case 'billing':
@@ -76,6 +86,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const { pathname, state: navigationState } = useLocation()
   const [params] = useSearchParams()
   const [drawerSlotId, setDrawerSlotId] = useState<string | null>(null)
+  // A Draft List has no session, so its drawer opens by List id (catch-up Phase 31).
+  const [drawerDraftListId, setDrawerDraftListId] = useState<string | null>(null)
   // Set when Find available opens a session: the drawer starts on Assign List.
   const [drawerAssign, setDrawerAssign] = useState<{ surgeonId?: string } | undefined>(undefined)
   const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
@@ -123,8 +135,14 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       typeof navigationState.openListId === 'string'
         ? navigationState.openListId
         : null
-    setDrawerSlotId(openListId !== null ? (useAppStore.getState().schedule.lists[openListId]?.slotId ?? null) : null)
+    const target = openListId !== null ? useAppStore.getState().schedule.lists[openListId] : undefined
+    setDrawerSlotId(target?.slotId ?? null)
+    // A Draft List opens its own drawer: from navigation state, or `?open=` on the Draft Lists page.
+    const openParam = pathname.startsWith('/admin/draft-lists') ? params.get('open') : null
+    setDrawerDraftListId(target !== undefined && target.state === 'DRAFT' ? target.id : openParam)
     setDrawerAssign(undefined)
+    // The `?open=` param is read on arrival only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, navigationState])
 
   // The roster is every anaesthetist with a session that day (catch-up Phase
@@ -150,20 +168,27 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   const horizonEndISO = useMemo(() => scheduleHorizon({ clock, appSettings }).endISO, [clock, appSettings])
 
+  // The day's Draft Lists (the band) and every List's booking count (US-13.1.1).
+  const dayDraftLists = useMemo(() => draftListsForDate({ schedule: { lists: listsRecord } }, selectedDate), [listsRecord, selectedDate])
+  const bookingCounts = useMemo(() => bookingCountsByList(bookingsRecord), [bookingsRecord])
+  const draftListBadge = useMemo(() => waitingDraftListCount({ schedule: { lists: listsRecord } }), [listsRecord])
+
   // The header line counts Lists as sessions and open sessions as free, read
-  // from the same views the grid paints (no second derivation).
+  // from the same views the grid paints (no second derivation), and the day's
+  // Draft Lists when it has any.
   const summary = useMemo(() => {
     const sessions = dayViews.filter((v) => v.list !== undefined).length
     const free = dayViews.filter(isOpenSlotView).length
     const submitted = dayViews.filter((v) => v.list?.state === 'SUBMITTED').length
-    return `${anaesthetists.length} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted`
-  }, [dayViews, anaesthetists.length])
+    const drafts = dayDraftLists.length > 0 ? ` · ${draftListCount(dayDraftLists.length)}` : ''
+    return `${anaesthetists.length} anaesthetists · ${sessions} sessions · ${free} free · ${submitted} submitted${drafts}`
+  }, [dayViews, anaesthetists.length, dayDraftLists.length])
 
   // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
   const reviewLists = useMemo(
     () =>
       Object.values(listsRecord)
-        .filter((l) => l.state === 'SUBMITTED')
+        .filter((l): l is AssignedList => l.state === 'SUBMITTED')
         .sort((a, b) =>
           a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO),
         ),
@@ -173,7 +198,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     () =>
       reviewLists.map((l) => {
         const anae = masters.anaesthetists[l.anaesthetistId]
-        const hospital = l.hospitalId !== undefined ? masters.hospitals[l.hospitalId]?.name : 'Unassigned'
+        const hospital = locationName(l.hospitalId, masters.hospitals)
         const count = Object.values(bookingsRecord).filter((c) => c.listId === l.id && c.cancellation === undefined).length
         return {
           listId: l.id,
@@ -188,6 +213,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // billing-run failures + Xero handoff faults (Phase 10).
   const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
   const integrationCount = useMemo(() => integrationAttentionCount({ integrations }), [integrations])
+  // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
+  const conflictCount = useMemo(() => openConflictCount({ schedule, masters, clock, appSettings }), [schedule, masters, clock, appSettings])
 
   // The warning routine, read once for the day view (catch-up Phase 15a): the
   // per-List outline on the selected date and every open warning for the
@@ -223,10 +250,26 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       setDrawerSlotId(slotId)
     },
     onAddNote: (text, flagged) => addDayNote(useAppStore, OFFICE_ACTOR, selectedDate, text, flagged),
+    dayDraftLists,
+    bookingCounts,
+    onOpenDraftList: (listId) => {
+      setDrawerSlotId(null)
+      setDrawerDraftListId(listId)
+    },
+    onOpenList: (listId) => openList(listId),
+  }
+
+  /** Open an assigned List on its day, in the session drawer (navigation state carries the target). */
+  function openList(listId: string) {
+    const l = useAppStore.getState().schedule.lists[listId]
+    if (l === undefined) return
+    navigate(`/admin/day/${l.dateISO}`, { state: { openListId: listId } })
   }
 
   const SECTION_PATH: Record<NavSection, string> = {
     day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
+    draftLists: '/admin/draft-lists',
+    conflicts: '/admin/conflicts',
     review: '/admin/review',
     invoices: '/admin/invoices',
     billing: '/admin/billing',
@@ -242,6 +285,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         reviewBadge={reviewLists.length}
         billingBadge={exceptionCount}
         integrationBadge={integrationCount}
+        conflictBadge={conflictCount}
+        draftListBadge={draftListBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 
@@ -249,6 +294,30 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         <Outlet context={context} />
       </div>
 
+      {drawerDraftListId !== null && (
+        <DraftListDrawer
+          key={drawerDraftListId}
+          listId={drawerDraftListId}
+          actor={OFFICE_ACTOR}
+          onClose={() => setDrawerDraftListId(null)}
+          onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
+          onAssigned={(listId, slotId) => {
+            // US-01.6.3 "Becomes active": the same List, now in the anaesthetist's session.
+            setDrawerDraftListId(null)
+            const l = useAppStore.getState().schedule.lists[listId]
+            if (pathname.startsWith('/admin/draft-lists')) {
+              // On the page the row leaves Unassigned and the outcome offers "Open List".
+              navigate(`/admin/draft-lists?assigned=${listId}`, { replace: true })
+            } else if (l !== undefined && (dayMatch === null || l.dateISO !== selectedDate)) {
+              navigate(`/admin/day/${l.dateISO}`, { state: { openListId: l.id } })
+            } else setDrawerSlotId(slotId)
+          }}
+          onOpenList={(listId) => {
+            setDrawerDraftListId(null)
+            openList(listId)
+          }}
+        />
+      )}
       {drawerSlotId !== null && (
         <SlotDrawer
           key={`${drawerSlotId}:${drawerAssign !== undefined ? 'assign' : 'view'}`}

@@ -29,7 +29,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a-02-note.png', fullPage: true })
 
   // Open a booked block → the list drawer.
-  await page.getByText("St George's").first().click()
+  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await page.waitForTimeout(300)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
   const listDrawerLeft = await page.getByTestId('admin-list-drawer').evaluate((element) => element.getBoundingClientRect().left)
@@ -54,7 +54,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   // The billing-setup summary reflects the saved % override.
   await expect(page.getByText(/Adjustment .*10%/).first()).toBeVisible()
 
-  // Back to the day, navigate to Wed 22 for the advisory conflicts.
+  // Back to the day, navigate to Wed 22 for its conflicts (catch-up Phase 30: real facts).
   await page.getByRole('button', { name: 'Day view', exact: true }).first().click()
   await page.waitForTimeout(200)
   await page.getByRole('button', { name: '›', exact: true }).first().click()
@@ -113,21 +113,21 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await page.locator('input[type="date"]').fill('2026-07-22')
   await page.waitForTimeout(300)
 
-  // S2 Beat 3: Rutherford's availability warning must not follow the booking
-  // when his List moves into Sharma's open AM session (catch-up Phase 28: the
-  // List moves between sessions; the vacated one defaults to Free).
+  // S2 Beat 3: Rutherford phoned in sick (the office recorded Wed 22 AM as
+  // Unavailable, catch-up Phase 30). His availability conflict must not follow
+  // the List into Sharma's open AM session; the vacated session keeps its
+  // Unavailable status by default ("Keep as is").
   const rutherfordRow = page.getByText('Rutherford, James', { exact: true }).locator('..')
   await rutherfordRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
-  await expect(page.getByText('The anaesthetist is now marked unavailable for this session.')).toBeVisible()
+  await expect(page.getByText(/Dr Rutherford is marked .+ for this session\. Note: unwell, short notice\./)).toBeVisible()
   await page.getByRole('button', { name: 'Reassign list', exact: true }).click()
   await expect(page.getByText(/whose .* session is free/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
   await page.getByRole('button', { name: /Sharma, Priya.*Free AM/ }).click()
-  await expect(page.getByText(/returns to Free unless you mark it otherwise/)).toBeVisible()
+  await expect(page.getByText(/stays Unavailable unless you mark it otherwise/)).toBeVisible()
   await expect(page.getByText(/Proposed reading|regenerat|absorb/i)).toHaveCount(0)
   const vacated = page.locator('select[data-shot="reassign-vacated"]')
-  await expect(vacated).toHaveValue('free')
-  await vacated.selectOption('unavailable')
+  await expect(vacated).toHaveValue('unavailable')
   await page.screenshot({ path: 'visual/shots/a-08-reassign-confirm.png', fullPage: true })
   await page.getByRole('button', { name: 'Confirm reassignment', exact: true }).click()
   await expect(page.getByTestId('list-reassignment-overlay')).toContainText('List reassigned')
@@ -139,8 +139,8 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await sharmaRow.getByText('Christchurch Eye Surgery', { exact: true }).click()
   const drawer = page.getByTestId('admin-list-drawer')
   await expect(drawer.getByText('Sharma, Priya', { exact: true })).toBeVisible()
-  await expect(drawer.getByText('Needs attention', { exact: true })).toHaveCount(0)
-  await expect(drawer.getByText('The anaesthetist is now marked unavailable for this session.')).toHaveCount(0)
+  await expect(drawer.getByText('Anaesthetist unavailable', { exact: true })).toHaveCount(0)
+  await expect(drawer.getByText(/is marked .+ for this session/)).toHaveCount(0)
   await drawer.getByRole('button', { name: 'History', exact: true }).click()
   await expect(page.getByText('List reassigned', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-10-reassigned.png', fullPage: true })

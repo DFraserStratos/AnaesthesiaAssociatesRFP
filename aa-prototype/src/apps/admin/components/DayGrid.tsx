@@ -1,12 +1,17 @@
 import { useMemo, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic } from '../../../theme/tokens'
-import type { DisplayKey } from '../../../domain/types'
+import type { DisplayKey, DraftList } from '../../../domain/types'
 import { isClosedKey } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
+import { useConflictLookups } from '../../../store'
+import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
 import { attentionReasons, blockGeometry, slotSpan, surnameFirst } from '../util'
+import { DraftListBand } from './DraftListBand'
+import { BookingCount } from './draftLists/DraftListParts'
+import { draftListCount } from '../../../shared/scheduleTerms'
 
 interface DayGridProps {
   anaesthetists: Anaesthetist[]
@@ -21,6 +26,11 @@ interface DayGridProps {
    *  count and the strongest strength, from `warningSummaryByList`. */
   warningFlags: ReadonlyMap<string, ListWarningSummary>
   onSelectSlot: (slotId: string) => void
+  /** Catch-up Phase 31 (US-13.1.1): the day's Draft Lists for the band, in the one order. */
+  draftLists?: readonly DraftList[]
+  /** Active (not cancelled) Bookings per List id: every block's count. */
+  bookingCounts?: ReadonlyMap<string, number>
+  onOpenDraftList?: (listId: string) => void
 }
 
 const RULER_LABELS = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
@@ -34,14 +44,20 @@ interface Segment {
   end: number
 }
 
-type FocusFilter = 'attention' | 'note' | 'warnings'
+type FocusFilter = 'attention' | 'conflicts' | 'note' | 'warnings'
 
 interface DisplaySegment extends Segment {
   displayKey: DisplayKey
-  /** List-level attention (conflicts, surgeon TBC; `attentionReasons`): the amber `!` corner. */
+  /** List-level attention (a live conflict; `attentionReasons`): the amber `!` corner. */
   listAttention: boolean
   /** List-level attention or an open warning on one of its Bookings: the outline. */
   needsAttention: boolean
+  /**
+   * A live conflict (catch-up Phase 30; US-01.5.2 "the List changes colour"):
+   * the block takes the warning tint and border, keeping its kind's left bar
+   * and label.
+   */
+  conflict: boolean
   hasNote: boolean
   warnings?: ListWarningSummary
 }
@@ -63,14 +79,22 @@ function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatu
   return [...views].sort((a, b) => a.slot.session.localeCompare(b.slot.session)).map((v) => ({ view: v, ...slotSpan(v) }))
 }
 
-/** A note signal is an annotation beyond the subtitle already visible in a block. */
+/**
+ * A note signal is an annotation beyond the subtitle already visible in a
+ * block. A public or pre-op List's note is its template label ("Acute theatre",
+ * "Pre-op clinic / AA rooms"), shown as the subtitle, so only a private List's
+ * note signals.
+ */
 function hasNoteSignal(view: SlotView): boolean {
   const list = view.list
   if (list === undefined) return false
-  return list.notes !== undefined && list.notes.trim() !== '' && list.surgeonId !== undefined
+  return list.notes !== undefined && list.notes.trim() !== '' && list.kind === 'private'
 }
 
-export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot }: DayGridProps) {
+const NO_DRAFTS: readonly DraftList[] = []
+const NO_COUNTS: ReadonlyMap<string, number> = new Map()
+
+export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList }: DayGridProps) {
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<DisplayKey>>(() => new Set())
   const slotStatuses = useSlotStatusRecords()
   const legendKeys = useLegendKeys()
@@ -84,11 +108,13 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           (segment): DisplaySegment => {
             const list = segment.view.list
             const listAttention = list !== undefined && attentionReasons(list).length > 0
+            const conflict = list !== undefined && list.conflicts.length > 0
             const warnings = list !== undefined ? warningFlags.get(list.id) : undefined
             return {
               ...segment,
               displayKey: segment.view.displayKey,
               listAttention,
+              conflict,
               needsAttention: listAttention || warnings !== undefined,
               hasNote: hasNoteSignal(segment.view),
               warnings,
@@ -108,6 +134,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           if (focusFilters.size === 0) return true
           return (
             (focusFilters.has('attention') && segment.listAttention) ||
+            (focusFilters.has('conflicts') && segment.conflict) ||
             (focusFilters.has('note') && segment.hasNote) ||
             (focusFilters.has('warnings') && segment.warnings !== undefined)
           )
@@ -170,6 +197,9 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         </span>
       </div>
 
+      {/* The day's Draft Lists, above the anaesthetists on the same ruler; never filtered. */}
+      <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} />
+
       {displayedRows.map(({ anaesthetist, segments }, index) => {
         const inactive = filtered && segments.length === 0
         const startsInactiveGroup = inactive && index === matchingAnaesthetists && matchingAnaesthetists > 0
@@ -192,7 +222,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           </span>
           <span style={{ flex: 1, position: 'relative', height: 44, display: 'block', backgroundImage: 'repeating-linear-gradient(to right,#F1F4F2 0,#F1F4F2 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 9.0909%)' }}>
             {segments.map((seg) => (
-              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} onClick={() => onSelectSlot(seg.view.slot.id)} />
+              <GridBlock key={seg.view.slot.id} seg={seg} masters={masters} bookingCount={seg.view.list !== undefined ? (bookingCounts.get(seg.view.list.id) ?? 0) : undefined} onClick={() => onSelectSlot(seg.view.slot.id)} />
             ))}
           </span>
         </div>
@@ -224,6 +254,12 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
             onClick={() => toggleFocus('attention')}
           />
           <SignalFilterButton
+            label="Conflict"
+            active={focusFilters.has('conflicts')}
+            icon="conflict"
+            onClick={() => toggleFocus('conflicts')}
+          />
+          <SignalFilterButton
             label="Has note"
             active={focusFilters.has('note')}
             icon="note"
@@ -243,13 +279,13 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         )}
       </div>
       <div style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
-        {matchingAnaesthetists} of {rows.length} anaesthetists {matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing {visibleBlocks} of {totalBlocks} blocks. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
+        {matchingAnaesthetists} of {rows.length} anaesthetists {matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing {visibleBlocks} of {totalBlocks} blocks{draftLists.length > 0 ? ` · ${draftListCount(draftLists.length)} unassigned` : ''}. At production scale (~85) this view pages and virtualises (the legacy dashboard's "1 of 3" pager); scale is narrated here, not simulated.
       </div>
     </div>
   )
 }
 
-function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | 'warning' | 'note'; onClick: () => void }) {
+function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | 'conflict' | 'warning' | 'note'; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -270,7 +306,12 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
         cursor: 'pointer',
       }}
     >
-      {icon === 'note' ? (
+      {icon === 'conflict' ? (
+        // The conflict swatch: the block's warning tint and border with its "!" (the legend entry and the filter in one).
+        <span aria-hidden data-shot="daygrid-legend-conflict" style={{ position: 'relative', width: 22, height: 13, borderRadius: 4, boxSizing: 'border-box', background: semantic.warning.tint, border: `1.5px solid ${ATTENTION}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 1 }}>
+          <span style={{ width: 9, height: 9, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        </span>
+      ) : icon === 'note' ? (
         <span aria-hidden style={{ width: 7, height: 7, borderRadius: 99, background: neutral.ink, opacity: 0.55 }} />
       ) : icon === 'warning' ? (
         <span aria-hidden style={{ width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><TriangleAlert size={8} strokeWidth={3} /></span>
@@ -282,33 +323,45 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
   )
 }
 
-function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: AppState['masters']; onClick: () => void }) {
+function GridBlock({ seg, masters, bookingCount, onClick }: { seg: DisplaySegment; masters: AppState['masters']; bookingCount: number | undefined; onClick: () => void }) {
   const { slot, list } = seg.view
-  const { displayKey, listAttention, needsAttention, hasNote: hasNoteSignal, warnings } = seg
+  const { displayKey, listAttention, needsAttention, conflict, hasNote: hasNoteSignal, warnings } = seg
   const resolved = resolveDisplayStatus(displayKey, masters.slotStatuses)
   const colour = resolved.visual
   const isOpenEmpty = list === undefined && seg.view.open
-  const reasons = list !== undefined ? attentionReasons(list) : []
+  const conflictLookups = useConflictLookups()
+  const reasons = list !== undefined ? attentionReasons(list, conflictLookups) : []
   // The block's note: the List's when a List is in the session, else the session's own.
   const note = list !== undefined ? list.notes : slot.note
   const geo = blockGeometry(seg.start, seg.end)
 
-  const bg = colour.blockBackground
+  // A conflicted List takes the warning tint (the design's amber attention
+  // treatment, no new hex); its kind's left bar and label stay.
+  const bg = conflict ? semantic.warning.tint : colour.blockBackground
   // A strong open warning outlines the block in the error red; otherwise any
   // attention (List-level, or a mild warning) is the amber outline (US-13.7.3).
   const outline = warnings?.strongest === 'strong' ? semantic.error.solid : ATTENTION
-  const border = colour.border !== undefined ? colour.border : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
+  const border = conflict ? `1.5px solid ${outline}` : colour.border !== undefined ? colour.border : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
+  const conflictReason = list !== undefined && list.conflicts[0] !== undefined ? CONFLICT_REASONS[list.conflicts[0].kind] : undefined
 
-  const hospitalName = list?.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : undefined
-  const surgeon = list?.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
+  // AA rooms keeps the design's first line, the kind's long label ("Pre-op Assessment"); its name is in the subtitle.
+  const hospitalName = list !== undefined && masters.hospitals[list.hospitalId]?.locationType !== 'aaRooms' ? masters.hospitals[list.hospitalId]?.name : undefined
+  const surgeon = list !== undefined ? masters.surgeons[list.surgeonId] : undefined
+  // Every List names its surgeon (US-01.3.1). A public or pre-op block keeps its template label as the subtitle
+  // ("Acute theatre", "Pre-op clinic / AA rooms") and carries the surgeon in its tooltip, as the design shows.
+  const templateLabel = list !== undefined && list.kind !== 'private' && note !== undefined && note.trim() !== '' ? note : undefined
 
   let l1: string
   let l2: string
-  if (list !== undefined) {
+  if (list !== undefined && conflictReason !== undefined) {
+    // The reason replaces the surgeon line; the surgeon stays in the tooltip and the drawer.
     l1 = hospitalName ?? resolved.longLabel
-    if (surgeon !== undefined) l2 = surgeon.name + (surgeon.specialty !== undefined ? ` · ${surgeon.specialty}` : '')
-    else if (note !== undefined && note.trim() !== '') l2 = note
-    else l2 = displayKey === 'private' ? 'Surgeon TBC' : ''
+    l2 = list.conflicts.length > 1 ? `${conflictReason} +${list.conflicts.length - 1}` : conflictReason
+  } else if (list !== undefined) {
+    l1 = hospitalName ?? resolved.longLabel
+    if (templateLabel !== undefined) l2 = templateLabel
+    else if (surgeon !== undefined) l2 = surgeon.name + (surgeon.specialty !== undefined ? ` · ${surgeon.specialty}` : '')
+    else l2 = note ?? ''
   } else if (isOpenEmpty) {
     l1 = resolved.label
     l2 = (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
@@ -318,12 +371,14 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
   }
 
   // The has-note dot marks a genuine office annotation, not a note already shown
-  // as the block's subtitle (template labels, free-cover text).
+  // as the block's subtitle (recurring-booking notes, free-cover text).
   const hasNote = note !== undefined && note.trim() !== ''
   const noteIsSubtitle = hasNote && l2 === note
   const showNoteDot = hasNoteSignal && !listAttention
   const warningTip = warnings !== undefined ? `${warnings.open} open warning${warnings.open === 1 ? '' : 's'}` : ''
-  const tooltip = [...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : ''].filter(Boolean).join(' · ')
+  const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
+  const countTip = bookingCount !== undefined ? `${bookingCount} booking${bookingCount === 1 ? '' : 's'}` : ''
+  const tooltip = [surgeonTip, ...reasons, warningTip, hasNote && !noteIsSubtitle ? `Note: ${note}` : '', countTip].filter(Boolean).join(' · ')
 
   return (
     <button
@@ -331,7 +386,8 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
       onClick={onClick}
       data-slot-id={slot.id}
       data-list-id={list?.id}
-      data-shot={warnings !== undefined ? 'daygrid-block-warnings' : undefined}
+      data-shot={warnings !== undefined ? 'daygrid-block-warnings' : conflict ? 'daygrid-block-conflict' : undefined}
+      data-conflict={conflict ? 'true' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{
         position: 'absolute',
@@ -356,8 +412,18 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
       }}
     >
       <span style={{ fontSize: 10.5, lineHeight: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint }}>{l1}</span>
-      {l2 !== '' && (
-        <span style={{ fontSize: 9.5, lineHeight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint, opacity: 0.75 }}>{l2}</span>
+      {(l2 !== '' || bookingCount !== undefined) && (
+        // The second line starts with the List's booking count (US-13.1.1): the block's bottom-left corner.
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+          {bookingCount !== undefined && (
+            <span data-shot="daygrid-block-count" data-booking-count={bookingCount} style={{ flex: 'none', minWidth: 14, height: 12, padding: '0 3px', boxSizing: 'border-box', borderRadius: 99, background: 'rgba(255,255,255,0.72)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BookingCount count={bookingCount} style={{ fontSize: 9, lineHeight: '12px', color: bookingCount === 0 ? neutral.mist : colour.onTint }} />
+            </span>
+          )}
+          {l2 !== '' && (
+            <span style={conflict ? { fontSize: 9.5, lineHeight: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: semantic.warning.onTint } : { fontSize: 9.5, lineHeight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint, opacity: 0.75 }}>{l2}</span>
+          )}
+        </span>
       )}
       {listAttention && (
         <span style={{ position: 'absolute', top: 3, right: 3, width: 13, height: 13, borderRadius: 99, background: ATTENTION, color: '#FFFFFF', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>

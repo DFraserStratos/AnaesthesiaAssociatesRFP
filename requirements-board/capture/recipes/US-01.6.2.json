@@ -1,6 +1,26 @@
 {
   "id": "US-01.6.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 31 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "draft-lists",
+      "app": "admin",
+      "caption": "Every Draft List is flagged Unassigned, soonest first, with how long it has waited",
+      "start": "/admin/draft-lists",
+      "states": [
+        { "steps": [{ "wait": 500 }], "highlight": ["[data-shot=draft-lists-table]", "[data-shot=nav-badge-draftLists]"] }
+      ]
+    },
+    {
+      "name": "draft-lists-day",
+      "app": "admin",
+      "caption": "Every Draft List is flagged Unassigned, soonest first, with how long it has waited",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        { "state": "band", "steps": [{ "wait": 400 }], "highlight": ["[data-shot=daygrid-draft-band]"], "caption": "The day's Draft Lists sit in a band above the grid" },
+        { "state": "rail", "steps": [{ "wait": 400 }], "highlight": ["[data-shot=admin-draft-lists-rail]"], "caption": "The Draft Lists card on the day's right rail" }
+      ]
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 {
   "id": "US-01.3.5",
-  "status": "partial",
-  "absentReason": "The warning and the separated group work on every office path built so far: Assign List, Book (phone advice), Edit list, the Permanent List sheet, Reassign list and Find available. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "edit-list-warning",
@@ -141,6 +141,74 @@
           "highlight": [
             "[data-shot=candidates-not-preferred]"
           ]
+        }
+      ]
+    },
+    {
+      "name": "assign-draft-list-not-preferred",
+      "app": "admin",
+      "caption": "A not-preferred pairing is grouped apart and warns on every office path, a Draft List included",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "state": "group",
+          "steps": [
+            {
+              "trigger": "simulate-incoming-request"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-not-preferred]"
+          ],
+          "caption": "Assign Draft List: Dr Sharma sits under Not preferred with Ms Reid, still selectable"
+        },
+        {
+          "state": "warning",
+          "steps": [
+            {
+              "trigger": "simulate-incoming-request"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=candidates-not-preferred] [data-candidate=\"41267\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=assign-draft-list-pairing-warning]"
+          ],
+          "caption": "The warning names the pairing and the side, and the button reads Assign anyway"
         }
       ]
     }

@@ -4,7 +4,7 @@ import { accent, neutral } from '../../../theme/tokens'
 import type { Booking, DisplayKey, List } from '../../../domain/types'
 import { isListBilled, slotViewsForAnaesthetist, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
-import { dayHeading, drSurname } from '../../../shared/format'
+import { dayHeading, drSurname, locationName } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
 import { resolveDisplayStatus } from '../../../shared'
 
@@ -92,7 +92,8 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
 
     function surgeonLine(l: List): string {
       const parts: string[] = []
-      const surgeon = l.surgeonId !== undefined ? surgeons[l.surgeonId] : undefined
+      // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
+      const surgeon = l.kind !== 'private' && l.notes !== undefined ? undefined : surgeons[l.surgeonId]
       if (surgeon !== undefined) {
         parts.push(surgeon.name)
         if (surgeon.specialty !== undefined) parts.push(surgeon.specialty)
@@ -143,7 +144,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
       const total = active.length
       const done = active.filter((c) => c.completed).length
       const isPreop = l.kind === 'preop'
-      const hospitalName = l.hospitalId !== undefined ? (hospitals[l.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+      const hospitalName = locationName(l.hospitalId, hospitals)
       const title = isPreop ? 'Pre-op assessment' : hospitalName
 
       let right: ListRowRight
@@ -158,7 +159,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         right = { kind: 'count', count: total, statusKey: l.kind }
       }
 
-      const base = isPreop ? 'AA rooms' : surgeonLine(l)
+      const base = isPreop ? hospitalName : surgeonLine(l)
       const unit = isPreop ? 'appointments' : 'bookings'
       const subtitle = countInSubtitle
         ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')

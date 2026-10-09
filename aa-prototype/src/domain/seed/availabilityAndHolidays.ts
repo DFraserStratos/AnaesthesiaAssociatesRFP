@@ -11,7 +11,7 @@
 
 import type { HospitalHoliday, SeedLeaveWindow, Session } from '../types'
 import { enumerateDatesISO } from '../clock'
-import { ANAE, HOSPITALS } from './cast'
+import { ANAE, HOSP, HOSPITALS } from './cast'
 
 const SESSIONS: readonly Session[] = ['AM', 'PM'] as const
 
@@ -50,7 +50,15 @@ export const SEED_LEAVE: readonly SeedLeaveWindow[] = [
  * Day Mon 26 Oct; Canterbury Anniversary Fri 13 Nov 2026). Booked Lists at a
  * hospital on its holiday get a conflict flag from the generator.
  */
-export const HOSPITAL_HOLIDAYS: readonly HospitalHoliday[] = HOSPITALS.flatMap((hospital, i) => [
-  { id: `HH${String(i * 2 + 1).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-10-26', name: 'Labour Day' },
-  { id: `HH${String(i * 2 + 2).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-11-13', name: 'Canterbury Anniversary Day' },
-])
+export const HOSPITAL_HOLIDAYS: readonly HospitalHoliday[] = [
+  // Hospitals only: AA rooms (catch-up Phase 31) may take a holiday through the
+  // sheet like any location, but the seed gives it none, so no id moves.
+  ...HOSPITALS.filter((h) => h.locationType === 'hospital').flatMap((hospital, i) => [
+    { id: `HH${String(i * 2 + 1).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-10-26', name: 'Labour Day' },
+    { id: `HH${String(i * 2 + 2).padStart(3, '0')}`, hospitalId: hospital.id, dateISO: '2026-11-13', name: 'Canterbury Anniversary Day' },
+  ]),
+  // Catch-up Phase 30: the seeded holiday conflict on the S2 day, a real
+  // closure behind it (it replaces Phase 06's fabricated message). `HH9xx`
+  // sits outside the runtime `HHN` prefix.
+  { id: 'HH900', hospitalId: HOSP.sx, dateISO: '2026-07-22', name: 'Theatre maintenance closure' },
+]

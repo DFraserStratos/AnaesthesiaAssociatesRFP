@@ -51,7 +51,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   if (invoice === undefined) return null
   const booking = bookingsRecord[invoice.bookingId]
   const list = booking !== undefined ? listsRecord[booking.listId] : undefined
-  const anaesthetist = list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+  const anaesthetist = list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
   const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
   const addressee = counterpartyName({ masters }, invoice.counterparty)
 

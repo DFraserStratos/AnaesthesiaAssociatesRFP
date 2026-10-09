@@ -1,6 +1,134 @@
 {
   "id": "US-01.5.4",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 30 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "conflicts-screen",
+      "app": "admin",
+      "caption": "Closed hospitals and unavailable anaesthetists, Bookings still in place",
+      "start": "/admin/conflicts",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"conflicts-table\"] section >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "conflict-clear",
+      "app": "admin",
+      "caption": "Clear a conflict, with an optional note",
+      "start": "/admin/conflicts",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "tr[data-conflict-row=\"L-25490-2026-07-22-PM\"] >> role=button[name=/^Clear conflict/]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=\"conflict-clear-sheet\"] textarea",
+              "value": "Theatre confirmed running"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "conflict-reassigned",
+      "app": "admin",
+      "caption": "Reassign to an available anaesthetist and the conflict clears",
+      "start": "/admin/conflicts",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "tr[data-conflict-row=\"L-29104-2026-07-22-AM\"] >> role=button[name=/^Reassign,/]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=/Sharma, Priya.*Free AM/]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Confirm reassignment\"]"
+            },
+            {
+              "wait": 900
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"conflicts-confirmation\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "simulate-sickness",
+      "app": "admin",
+      "caption": "A sickness phoned in and recorded by the office shows with its Bookings",
+      "start": "/admin/conflicts",
+      "setup": [
+        {
+          "goto": "/admin/day/2026-07-22"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "trigger": "simulate-sickness",
+          "choice": "L-41267-2026-07-22-PM"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr[data-conflict-row=\"L-41267-2026-07-22-PM\"] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "draft-list-holiday",
+      "app": "admin",
+      "caption": "A recurring clash is a Draft List, not a conflict on the anaesthetist",
+      "start": "/admin/conflicts",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "tr[data-conflict-row^=\"LD-\"]:has-text(\"Southern Cross\") >> nth=0"
+          ]
+        }
+      ]
+    }
+  ]
 }

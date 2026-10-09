@@ -29,7 +29,8 @@ import { usePairingEntries, usePriorityTiers } from './useOfficePairings'
 
 type TierFilter = 'all' | '1' | '2' | '3' | '4'
 
-const FILTER_OPTIONS: { value: TierFilter; label: string }[] = [
+export type { TierFilter }
+export const FILTER_OPTIONS: { value: TierFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   ...TIER_VALUES.map((t) => ({ value: String(t) as TierFilter, label: TIER_LABELS[t] })),
 ]
@@ -104,7 +105,8 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
   )
 }
 
-function Group({ heading, warning, shot, children }: { heading?: string; warning?: boolean; shot: string; children: ReactNode }) {
+/** A headed group of candidate rows (shared with the Draft List picker, catch-up Phase 31). */
+export function Group({ heading, warning, shot, children }: { heading?: string; warning?: boolean; shot: string; children: ReactNode }) {
   return (
     <section data-shot={shot} aria-label={heading ?? 'Suggested'} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {heading !== undefined && (
@@ -118,7 +120,8 @@ function Group({ heading, warning, shot, children }: { heading?: string; warning
   )
 }
 
-function CandidateRow({
+/** One selectable candidate: name, Preferred and Not preferred pills, tier pill, trailing detail. */
+export function CandidateRow({
   candidate,
   name,
   trailing,

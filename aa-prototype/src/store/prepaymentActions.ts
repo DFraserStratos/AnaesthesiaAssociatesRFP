@@ -19,6 +19,7 @@
  * (pre-invoice pre-day, balance at the run).
  */
 
+import { listHospitalFor } from '../domain/listPairing'
 import type { BillingCase, Invoice, InvoiceLine } from '../domain/types'
 import {
   buildPrePaymentInvoiceForBooking,
@@ -87,7 +88,7 @@ export function raisePreProcedureInvoice(
     ...bookingCtx,
     listDateISO: list.dateISO,
     patientId: booking.patientId,
-    ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
+    ...listHospitalFor(list, state.masters.hospitals),
   }
   const built = buildPrePaymentInvoiceForBooking(booking, proceduresForBooking(state, bookingId), buildCtx)
   if (built.kind === 'exception') {

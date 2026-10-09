@@ -24,7 +24,7 @@ import type { Actor } from './mutate'
 import { canvasAnaesthetists, generateCanvasForDates, SEED_LEAVE, SEED_MARKERS, ANAE, type CanvasMasters } from '../domain/seed'
 import { HOSP, SURG, seedSlotStatusRecords } from '../domain/seed'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
-import type { PermanentList, Slot } from '../domain/types'
+import type { RecurringBooking, Slot } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -77,11 +77,10 @@ describe('clock roll-forward', () => {
     expect(newDates.length).toBe(3)
     const masters: CanvasMasters = {
       anaesthetists: canvasAnaesthetists(state.masters.anaesthetists),
-      permanentLists: Object.values(state.masters.permanentLists),
+      recurringBookings: Object.values(state.masters.recurringBookings),
       leave: SEED_LEAVE,
       series: [],
       statuses: state.masters.slotStatuses,
-      holidays: Object.values(state.masters.holidays),
     }
     const fresh = generateCanvasForDates(masters, newDates)
     const byId = <T extends { id: string }>(xs: T[]) => [...xs].sort((a, b) => a.id.localeCompare(b.id))
@@ -198,17 +197,17 @@ describe('reset determinism', () => {
 describe('canvas generator scale (the RFP production scale)', () => {
   it('generates 85 anaesthetists x the full horizon (~23,000 Slots) within 2 seconds, invariants intact', () => {
     const anaesthetistIds = Array.from({ length: 85 }, (_, i) => `A${String(i + 1).padStart(3, '0')}`)
-    const patterns: Array<Pick<PermanentList, 'dayOfWeek' | 'session' | 'kind'> & {
-      hospitalId: string | null
-      surgeonId: string | null
+    const patterns: Array<Pick<RecurringBooking, 'dayOfWeek' | 'session' | 'kind'> & {
+      hospitalId: string
+      surgeonId: string
     }> = [
       { dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.stg, surgeonId: SURG.hale },
-      { dayOfWeek: 2, session: 'AM', kind: 'public', hospitalId: HOSP.cph, surgeonId: null },
+      { dayOfWeek: 2, session: 'AM', kind: 'public', hospitalId: HOSP.cph, surgeonId: SURG.okafor },
       { dayOfWeek: 3, session: 'PM', kind: 'private', hospitalId: HOSP.sx, surgeonId: SURG.patel },
       { dayOfWeek: 4, session: 'AM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.lim },
-      { dayOfWeek: 5, session: 'PM', kind: 'preop', hospitalId: null, surgeonId: null },
+      { dayOfWeek: 5, session: 'PM', kind: 'preop', hospitalId: HOSP.aaRooms, surgeonId: SURG.patel },
     ]
-    const permanentLists: PermanentList[] = anaesthetistIds.flatMap((anaesthetistId, i) =>
+    const recurringBookings: RecurringBooking[] = anaesthetistIds.flatMap((anaesthetistId, i) =>
       patterns.slice(0, 3 + (i % 3)).map((p, j) => ({
         id: `SPL-${anaesthetistId}-${j}`,
         anaesthetistId,
@@ -221,11 +220,10 @@ describe('canvas generator scale (the RFP production scale)', () => {
     )
     const masters: CanvasMasters = {
       anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-01-06', active: true })),
-      permanentLists,
+      recurringBookings,
       leave: [],
       series: [],
       statuses: seedSlotStatusRecords(),
-      holidays: [],
     }
     const horizon = horizonFor('2026-07-21', MONTHS)
     const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import type { CounterpartyRef, List, Procedure } from '../../domain/types'
+import type { AssignedList, CounterpartyRef, Procedure } from '../../domain/types'
+import { billingHospitalId } from '../../domain/listPairing'
 import { setProcedureFunderAllocation, useAppStore, type Actor, type FunderAllocationEntry } from '../../store'
 import { procedureFee } from '../capture'
 import { formatCurrency } from '../format'
@@ -10,7 +11,7 @@ import { useSurface } from '../surface'
 interface FunderAllocationSheetProps {
   open: boolean
   procedure: Procedure
-  list: List
+  list: AssignedList
   /** 1-based position of the procedure on its Booking. */
   ordinal: number
   actor: Actor
@@ -74,7 +75,8 @@ export function FunderAllocationSheet({ open, procedure, list, ordinal, actor, o
     for (const insurer of Object.values(masters.insurers)) {
       opts.push({ key: `insurer:${insurer.id}`, label: `Insurer · ${insurer.name}`, ref: { kind: 'insurer', id: insurer.id } })
     }
-    if (list.hospitalId !== undefined) {
+    // AA rooms is a location, never a funder (catch-up Phase 31).
+    if (billingHospitalId(list.hospitalId, masters.hospitals) !== undefined) {
       const h = masters.hospitals[list.hospitalId]
       if (h !== undefined) opts.push({ key: `hospital:${h.id}`, label: `Hospital · ${h.name}`, ref: { kind: 'hospital', id: h.id } })
     }

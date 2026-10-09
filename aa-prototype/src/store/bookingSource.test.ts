@@ -115,9 +115,13 @@ describe('the seed source rule', () => {
 
   it('follows the rule: feed or correlation is hospitalDownload, Forte and CES are surgeonPdf, else admin', () => {
     for (const b of scenario) {
-      const hospitalId = seed.schedule.lists[b.listId]?.hospitalId
+      const list = seed.schedule.lists[b.listId]
+      const hospitalId = list?.hospitalId
+      // A request the office logged as a Draft List (catch-up Phase 31) is an office entry, wherever it is.
       const expected: BookingSource =
-        b.correlationRef !== undefined || hospitalId === HOSP.stg || hospitalId === HOSP.sx || hospitalId === HOSP.cph
+        list?.state === 'DRAFT'
+          ? 'admin'
+          : b.correlationRef !== undefined || hospitalId === HOSP.stg || hospitalId === HOSP.sx || hospitalId === HOSP.cph
           ? 'hospitalDownload'
           : hospitalId === HOSP.forte || hospitalId === HOSP.ces
             ? 'surgeonPdf'

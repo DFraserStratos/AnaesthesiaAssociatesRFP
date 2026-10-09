@@ -15,7 +15,7 @@ import {
 import { SURGEON_PDFS, FEED_META, type PdfRow, type SurgeonPdf } from '../../../domain/integrations'
 import { validateNhi } from '../../../domain/nhi'
 import { validateEthnicityCode, ETHNICITY_DEMO_SUBSET } from '../../../domain/nzhis'
-import { dayMicroCap } from '../../../shared/format'
+import { dayMicroCap, locationName } from '../../../shared/format'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { cellStyle as adminCell, headCellStyle as adminHead } from '../tableChrome'
@@ -297,7 +297,7 @@ function PdfReview({ pdf, actor, onBack }: { pdf: SurgeonPdf; actor: Actor; onBa
             <select value={targetListId} onChange={(e) => setTargetListId(e.target.value)} style={{ font: 'inherit', fontSize: 12.5, padding: '5px 8px', borderRadius: radius.ctl, border: `1px solid ${neutral.lineStrong}`, background: neutral.surface, color: neutral.ink }}>
               {listOptions.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {dayMicroCap(l.dateISO)} {l.session} · {l.hospitalId !== undefined ? hospitals[l.hospitalId]?.name ?? l.hospitalId : 'Unassigned'}
+                  {dayMicroCap(l.dateISO)} {l.session} · {locationName(l.hospitalId, hospitals)}
                 </option>
               ))}
             </select>

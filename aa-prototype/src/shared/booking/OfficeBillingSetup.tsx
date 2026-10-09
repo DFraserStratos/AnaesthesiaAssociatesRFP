@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import type { List, Procedure } from '../../domain/types'
+import type { AssignedList, Procedure } from '../../domain/types'
 import { billingReferenceMissing } from '../../domain/billing'
 import { useAppStore, type Actor } from '../../store'
 import { Button } from '../ui'
@@ -9,7 +9,7 @@ import { EditBillingSetupSheet, PriceOverrideSheet, FunderAllocationSheet } from
 
 interface OfficeBillingSetupProps {
   procedure: Procedure
-  list: List
+  list: AssignedList
   /** 1-based position on the Booking. */
   ordinal: number
   actor: Actor

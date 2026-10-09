@@ -576,12 +576,12 @@ function bookingEffectLabel(
   patientId: string,
   listId: string,
   patients: Record<string, { name: string }>,
-  lists: Record<string, { anaesthetistId: string; dateISO: string; session: string }>,
+  lists: Record<string, { anaesthetistId?: string; dateISO: string; session: string }>,
   anaesthetists: Record<string, { name: string }>,
 ): string {
   const patient = patients[patientId]?.name ?? patientId
   const list = lists[listId]
-  const who = list !== undefined ? anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId : ''
+  const who = list?.anaesthetistId !== undefined ? anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId : ''
   const when = list !== undefined ? `${list.dateISO} ${list.session}` : ''
   return `Booking ${bookingId} · ${patient} · ${who} ${when}`.trim()
 }

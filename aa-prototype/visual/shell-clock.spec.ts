@@ -5,7 +5,7 @@ test('global demo clock advances live, stays on route and persists across reload
   await page.waitForLoadState('networkidle')
 
   // Enter a routed Booking first: clock use must not interrupt the workflow being presented.
-  await page.getByText("St George's").first().click()
+  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/bookings\/[^/]+$/)
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()

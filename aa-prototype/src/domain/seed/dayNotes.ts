@@ -31,7 +31,7 @@ export const DAY_NOTES: Record<IsoDate, DayNote[]> = {
       atISO: `${DEMO_TODAY}T11:05:00`,
       by: 'Kirsty W.',
       initials: 'KW',
-      text: "Fitzgerald PM surgeon unconfirmed, chasing St George's booking office.",
+      text: "St George's PM request, no anaesthetist yet (Draft List).",
       flagged: true,
     },
   ],

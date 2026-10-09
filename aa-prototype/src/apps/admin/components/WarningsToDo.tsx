@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { clearWarning, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
-import { accent, neutral, radius } from '../../../theme/tokens'
+import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
+import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { drSurname, shortDay } from '../../../shared/format'
+import { UNASSIGNED } from '../../../shared/scheduleTerms'
+import { ConflictDot } from './conflicts/ConflictDot'
 import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
 
 /** Rows shown before "Show all". */
@@ -17,12 +19,20 @@ export function WarningsToDo({
   rows,
   actor,
   onOpenBooking,
+  onOpenConflicts,
 }: {
   rows: readonly OpenWarningRow[]
   actor: Actor
   onOpenBooking: (dateISO: string, bookingId: string) => void
+  /** Opens the Conflicts screen (catch-up Phase 30); without it the conflicts line is not shown. */
+  onOpenConflicts?: () => void
 }) {
   const masters = useAppStore((s) => s.masters)
+  // One summary line for conflicts (catch-up Phase 30): a link to the Conflicts
+  // screen, not a warning. ListConflict stays List-level and out of the
+  // warning routine (15a's ruling), so the card's count is warnings only.
+  const openConflicts = useAppStore((s) => openConflictCount(s))
+  const conflicts = onOpenConflicts !== undefined ? openConflicts : 0
   const [expanded, setExpanded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const shown = expanded ? rows : rows.slice(0, TODO_VISIBLE_ROWS)
@@ -41,12 +51,24 @@ export function WarningsToDo({
           </span>
         )}
       </h2>
-      {rows.length === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing needs attention.</div>}
+      {conflicts > 0 && (
+        <button
+          type="button"
+          data-shot="admin-todo-conflicts"
+          onClick={onOpenConflicts}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: 'none', borderRadius: 10, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer', textAlign: 'left' }}
+        >
+          <ConflictDot />
+          {conflicts} open conflict{conflicts === 1 ? '' : 's'}
+        </button>
+      )}
+      {rows.length === 0 && conflicts === 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing needs attention.</div>}
+      {rows.length === 0 && conflicts > 0 && <div style={{ fontSize: 12.5, color: neutral.mist }}>No open warnings.</div>}
       {shown.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {shown.map((r) => {
             const patient = masters.patients[r.patientId]?.name ?? 'Unknown patient'
-            const anae = masters.anaesthetists[r.anaesthetistId]
+            const anae = r.anaesthetistId !== undefined ? masters.anaesthetists[r.anaesthetistId] : undefined
             const tone = warningTone(r.warning.strength)
             return (
               <li
@@ -60,7 +82,7 @@ export function WarningsToDo({
                 <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <span style={{ fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>{r.warning.text}</span>
                   <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>
-                    {patient} · {anae !== undefined ? drSurname(anae.name) : r.anaesthetistId} · {shortDay(r.dateISO)} {r.session}
+                    {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {r.session}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                     <button

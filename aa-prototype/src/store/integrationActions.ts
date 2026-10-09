@@ -35,6 +35,7 @@ import {
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi, BoundAppStore } from './appStore'
 import { createBooking } from './bookingActions'
+import { pairingRefusal } from './slotActions'
 import { cancelBooking, editBooking, editProcedure, reassignBooking, type BookingPatch } from './lifecycle'
 import { bookingsOnListByNhi, findBookingByCorrelation, listInSlot, proceduresForBooking, slotFor } from './selectors'
 
@@ -151,6 +152,9 @@ function applyEffect(
     if (slot === undefined) return refuse('noTargetList', 'The target session for this booking is outside the schedule. Parked for the office.')
     const list = listInSlot(api.getState(), slot.id)
     if (list === undefined) return refuse('noTargetList', 'The target session has no List yet. Parked for the office.')
+    // The one pairing rule (US-01.3.1): a List without its hospital and surgeon is never written to; the message parks.
+    const incomplete = pairingRefusal(list, api.getState().masters)
+    if (incomplete !== null) return refuse('pairingIncomplete', 'The message has no surgeon for this List. Parked for the office.')
     const outcome = createBooking(api, actor, list.id, {
       patient: {
         ...(parsed.patient.nhi !== undefined ? { nhi: parsed.patient.nhi } : {}),
@@ -177,6 +181,8 @@ function applyEffect(
   }
   const currentList = api.getState().schedule.lists[booking.listId]
   if (currentList === undefined) return refuse('noMatch', 'The matched Booking has no List. Parked for the office.')
+  // A Booking on a Draft List (no anaesthetist yet) is the office's to place: the update parks.
+  if (currentList.state === 'DRAFT') return refuse('noTargetList', 'The matched Booking is on a List with no anaesthetist yet. Parked for the office.')
   // A stale update for an appointment the office already cancelled is not applied
   // (integrations never edit a soft-cancelled Booking); it parks for reconciliation.
   if (booking.cancellation !== undefined) {
@@ -282,6 +288,7 @@ function attemptMessage(api: AppStoreApi, rowId: string): Outcome<{ outcome: str
       result.code === 'listAuthorised' ||
       result.code === 'noMatch' ||
       result.code === 'noTargetList' ||
+      result.code === 'pairingIncomplete' ||
       result.code === 'bookingCancelled'
     ) {
       updateMessageRow(api, actor, rowId, {

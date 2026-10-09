@@ -7,27 +7,23 @@
       "name": "hospital-holidays",
       "app": "admin",
       "caption": "Hospital holiday calendar",
-      "start": "/admin/masters",
+      "start": "/admin/masters?view=hospitals",
       "states": [
         {
           "state": "list",
           "steps": [
             {
-              "click": "text=\"Hospitals & holidays\""
-            },
-            {
               "wait": 400
             }
           ],
-          "highlight": [],
-          "caption": "Each hospital keeps its own closure dates"
+          "highlight": [
+            "[data-shot=\"masters-hospitals\"]"
+          ],
+          "caption": "Each hospital keeps its own closure dates; a closure opens to change or delete"
         },
         {
           "state": "add",
           "steps": [
-            {
-              "click": "text=\"Hospitals & holidays\""
-            },
             {
               "wait": 400
             },
@@ -39,17 +35,69 @@
             },
             {
               "fill": "[role=dialog] input[type=date]",
-              "value": "2026-07-22"
+              "value": "2026-07-28"
             },
             {
               "fill": "input[placeholder=\"e.g. Planned maintenance closure\"]",
-              "value": "Theatre maintenance closure"
+              "value": "Lift out of service"
             }
           ],
           "highlight": [
             "[role=dialog]"
           ],
           "caption": "Add a hospital holiday"
+        },
+        {
+          "state": "calendar",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Calendar\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[aria-label=\"Hospital\"]",
+              "value": "H-SX"
+            },
+            {
+              "click": "role=button[name=\"Next month\"]"
+            },
+            {
+              "click": "role=button[name=\"Next month\"]"
+            },
+            {
+              "click": "role=button[name=\"Next month\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"hospital-calendar\"]"
+          ],
+          "caption": "Each hospital keeps its own closure calendar"
+        },
+        {
+          "state": "edit",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-holiday=\"HH900\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "Edit or delete a closure and its flags clear"
         }
       ]
     }

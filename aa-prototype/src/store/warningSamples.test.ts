@@ -5,6 +5,7 @@
  * registers one).
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { DEMO_TRIGGER_ACTOR, OFFICE_ACTOR } from './demoActors'
@@ -33,7 +34,7 @@ const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
 /** Force a List's state (its Bookings are not complete, so it cannot be submitted for real here). */
 function setListState(api: BoundAppStore, listId: string, state: 'SUBMITTED' | 'AUTHORISED') {
   const s = api.getState()
-  api.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...s.schedule.lists[listId]!, state } } } })
+  api.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [listId]: { ...assigned(s.schedule.lists[listId]), state } } } })
 }
 
 const STAGED_FIELDS = ['billingRoute', 'patientPaymentCategory', 'prepaymentDetail'] as const
@@ -51,7 +52,7 @@ describe('pinned sample targets', () => {
     expect(seed.schedule.bookings[AM_TARGET!]!.listId).toBe(SEED_LIST_IDS.rutherfordAm21)
     expect(seed.schedule.bookings[PM_TARGET!]!.listId).toBe(SEED_LIST_IDS.rutherfordPm21)
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
-      const list = seed.schedule.lists[seed.schedule.bookings[id]!.listId]!
+      const list = assigned(seed.schedule.lists[seed.schedule.bookings[id]!.listId])
       expect(list.dateISO).toBe(DEMO_TODAY)
       expect(list.state).toBe('ACTIVE')
       expect(proceduresForBooking(seed, id).length).toBeGreaterThan(0)

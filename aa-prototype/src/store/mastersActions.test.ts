@@ -1,11 +1,12 @@
 /**
  * Master-data mutation guards (Phase 07): anaesthetist edit/add (+ canvas
- * forward), hospital-holiday add + live reconcile, permanent-list add/edit, and
+ * forward), hospital-holiday add + live reconcile, recurring-booking add/edit, and
  * the contract surface including BOTH halves of the default-Type-1 invariant
  * (delete blocked AND end-date blocked). The creation half (createHospital /
  * setInsurerDirectClaims) stays tested in intake.test.ts.
  */
 
+import { assigned } from '../test/lists'
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { editProcedure } from './lifecycle'
@@ -13,9 +14,9 @@ import { bookingsForList, proceduresForBooking } from './selectors'
 import {
   addAnaesthetist,
   addHospitalHoliday,
-  addPermanentList,
+  addRecurringBooking,
   editAnaesthetist,
-  editPermanentList,
+  editRecurringBooking,
 } from './mastersActions'
 import { addContractPrice, createContract, deleteContract, editContract, editContractPrice } from './contractActions'
 import type { Actor } from './mutate'
@@ -71,7 +72,7 @@ describe('editAnaesthetist', () => {
 
     const feeArgs = () => {
       const s = api.getState()
-      return { procedure: s.schedule.procedures[proc.id]!, list: s.schedule.lists[MORRISON_LIST]!, ordinal: 1, masters: s.masters, billingLines: s.schedule.billingLines }
+      return { procedure: s.schedule.procedures[proc.id]!, list: assigned(s.schedule.lists[MORRISON_LIST]), ordinal: 1, masters: s.masters, billingLines: s.schedule.billingLines }
     }
     const before = procedureFee(feeArgs()).fee.total
     expect(before).toBeGreaterThan(0)
@@ -115,7 +116,7 @@ describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1
     expect(Object.values(state.schedule.lists).some((l) => l.anaesthetistId === '99001')).toBe(false)
 
     const fresh = generateCanvasForDates(
-      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], permanentLists: Object.values(state.masters.permanentLists), leave: SEED_LEAVE, series: [], statuses: state.masters.slotStatuses, holidays: Object.values(state.masters.holidays) },
+      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], recurringBookings: Object.values(state.masters.recurringBookings), leave: SEED_LEAVE, series: [], statuses: state.masters.slotStatuses },
       dates,
     )
     const stored = new Map(slots.map((s) => [s.id, s]))
@@ -255,10 +256,10 @@ describe('addHospitalHoliday', () => {
   })
 })
 
-describe('permanent lists', () => {
-  it('adds a template (incl. usual surgeon) with a runtime PLN id and edits it', () => {
+describe('recurring bookings', () => {
+  it('adds a recurring booking (incl. usual surgeon) with a runtime RCBN id and edits it', () => {
     const api = createAppStore()
-    const add = addPermanentList(api, OFFICE, {
+    const add = addRecurringBooking(api, OFFICE, {
       anaesthetistId: ANAE.souter,
       dayOfWeek: 3,
       session: 'AM',
@@ -269,31 +270,34 @@ describe('permanent lists', () => {
     })
     expect(add.ok).toBe(true)
     if (!add.ok) return
-    expect(add.value.id.startsWith('PLN')).toBe(true)
-    expect(api.getState().masters.permanentLists[add.value.id]?.surgeonId).toBe(SURG.hale)
+    expect(add.value.id.startsWith('RCBN')).toBe(true)
+    expect(api.getState().masters.recurringBookings[add.value.id]?.surgeonId).toBe(SURG.hale)
 
-    expect(editPermanentList(api, OFFICE, add.value.id, { surgeonId: null }).ok).toBe(true)
-    expect(api.getState().masters.permanentLists[add.value.id]?.surgeonId).toBe(null)
-    expect(api.getState().audit.at(-1)?.action).toBe('permanentList.update')
+    // The pairing rule (US-01.3.1, catch-up Phase 31): the surgeon can change, never clear.
+    const cleared = editRecurringBooking(api, OFFICE, add.value.id, { surgeonId: '' })
+    expect(cleared.ok ? '' : cleared.code).toBe('pairingRequired')
+    expect(editRecurringBooking(api, OFFICE, add.value.id, { surgeonId: SURG.patel }).ok).toBe(true)
+    expect(api.getState().masters.recurringBookings[add.value.id]?.surgeonId).toBe(SURG.patel)
+    expect(api.getState().audit.at(-1)?.action).toBe('recurringBooking.update')
   })
 
   it('is office-only', () => {
     const api = createAppStore()
-    const denied = addPermanentList(api, SOUTER, { anaesthetistId: ANAE.souter, dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: null, surgeonId: null })
+    const denied = addRecurringBooking(api, SOUTER, { anaesthetistId: ANAE.souter, dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.stg, surgeonId: SURG.hale })
     expect(denied.ok).toBe(false)
   })
 
   it('takes a kind (private, public or pre-op) and optional times, refusing anything else (catch-up Phase 28)', () => {
     const api = createAppStore()
-    const base = { anaesthetistId: ANAE.souter, dayOfWeek: 3 as const, session: 'PM' as const, hospitalId: null, surgeonId: null }
-    const free = addPermanentList(api, OFFICE, { ...base, kind: 'free' as never })
+    const base = { anaesthetistId: ANAE.souter, dayOfWeek: 3 as const, session: 'PM' as const, hospitalId: HOSP.aaRooms, surgeonId: SURG.patel }
+    const free = addRecurringBooking(api, OFFICE, { ...base, kind: 'free' as never })
     expect(free.ok ? '' : free.code).toBe('invalidKind')
-    const backwards = addPermanentList(api, OFFICE, { ...base, kind: 'preop', startTime: '15:00', endTime: '14:00' })
+    const backwards = addRecurringBooking(api, OFFICE, { ...base, kind: 'preop', startTime: '15:00', endTime: '14:00' })
     expect(backwards.ok ? '' : backwards.code).toBe('invalidTimes')
-    const ok = addPermanentList(api, OFFICE, { ...base, kind: 'preop', startTime: '13:30', endTime: '' })
+    const ok = addRecurringBooking(api, OFFICE, { ...base, kind: 'preop', startTime: '13:30', endTime: '' })
     expect(ok.ok).toBe(true)
-    if (ok.ok) expect(api.getState().masters.permanentLists[ok.value.id]).toMatchObject({ kind: 'preop', startTime: '13:30' })
-    if (ok.ok) expect(api.getState().masters.permanentLists[ok.value.id]?.endTime).toBeUndefined()
+    if (ok.ok) expect(api.getState().masters.recurringBookings[ok.value.id]).toMatchObject({ kind: 'preop', startTime: '13:30' })
+    if (ok.ok) expect(api.getState().masters.recurringBookings[ok.value.id]?.endTime).toBeUndefined()
   })
 })
 

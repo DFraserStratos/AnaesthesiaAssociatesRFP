@@ -58,7 +58,7 @@ Bookings and capture the data AA needs for billing.
 - May see colleagues' session availability, but not their patient details.
 - May not authorise a List, edit master data or use office monitoring.
 
-`DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
+`DRAFT` means a Draft List with no anaesthetist yet; the office assigns it.
 
 ### Pain points the design should solve
 
@@ -134,7 +134,7 @@ short-notice cover.
 - See the entire day across the anaesthetist roster.
 - Find a free AM or PM session quickly when a surgeon's room calls (Find available on the Day view).
 - Keep hospital, surgeon, times and Bookings accurate.
-- Reconcile conflicts from anaesthetist availability and hospital holidays.
+- Reconcile conflicts from anaesthetist availability and hospital holidays on the Conflicts screen.
 - Move one patient Booking when a booking changes.
 - Reassign a whole List when an anaesthetist is unavailable.
 - Preserve Bookings and audit history through every change.
@@ -149,11 +149,12 @@ short-notice cover.
 6. Move a single Booking to a different List for a routine reschedule.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.
 8. Add internal day notes.
-9. Maintain schedule-related master data such as anaesthetists, Permanent Lists and hospital
-   holidays, and surgeons, their rooms and groups, the office's private pairing preferences and the
+9. Maintain schedule-related master data such as anaesthetists, recurring bookings and hospital
+   holidays (adding, editing and deleting closures), and surgeons, their rooms and groups, the office's private pairing preferences and the
    anaesthetists' priority tiers.
 10. Review the audit history when a change needs explanation.
 11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
+12. Assign Draft Lists: Lists with no anaesthetist yet, picked from a grouped, tier-ordered list.
 
 ### Permissions
 
@@ -174,7 +175,7 @@ short-notice cover.
 ### Important model correction
 
 Kirsty does not create every "shift" from scratch. The system creates the fixed AM/PM List canvas.
-Permanent Lists paint recurring arrangements onto it. Kirsty manages assignments, bookings and
+Recurring bookings paint standing arrangements onto it. Kirsty manages assignments, bookings and
 exceptions.
 
 ### RFP anchors

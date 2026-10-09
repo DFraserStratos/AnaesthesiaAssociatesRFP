@@ -136,6 +136,8 @@ export function PhoneAdviceBooking({ open, slotId, actor, onClose, onBooked }: P
           dateISO={slot.dateISO}
           draft={draft}
           withNote={false}
+          slotId={slot.id}
+          subject="Booking"
           onChange={(next) => {
             setDraft(next)
             setError(null)

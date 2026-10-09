@@ -14,6 +14,7 @@ import { type BtmBreakdown, type FeeResult } from '../../domain/billing/fee'
 import { bookingsForList, createAppStore, proceduresForBooking } from '../../store'
 import { procedureFee } from '../../shared/capture/feeContext'
 import { SEED_MARKERS } from '../../domain/seed'
+import { assigned } from '../../test/lists'
 
 const ZERO_BTM: BtmBreakdown = {
   base: { units: 0, source: 'seeded' },
@@ -103,8 +104,7 @@ describe('reviewFlags over seeded data (real calculator)', () => {
     if (marker === undefined) throw new Error('missing designDayPmList marker')
     const listId = marker.entityId
     const s = api.getState()
-    const list = s.schedule.lists[listId]
-    if (list === undefined) throw new Error('no design-day PM list')
+    const list = assigned(s.schedule.lists[listId], 'design-day PM list')
 
     const bookings = bookingsForList(s, listId).map((c) => ({
       booking: c,

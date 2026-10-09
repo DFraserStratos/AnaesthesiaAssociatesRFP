@@ -57,17 +57,30 @@ import {
   submitList,
   slotFor,
   listInSlot,
+  addDraftListForDay,
+  assignDraftListAsSimulatedOffice,
+  cannedRequestDay,
+  dayDraftListRefusal,
+  incomingRequestRefusal,
+  simulateIncomingDraftListRequest,
+  stageRecurringClash,
+  stageableRecurringBookings,
+  stagedAlready,
   type AppState,
   type AppStoreApi,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
-import { ANAE, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
+import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
+import { DRAFT_LIST, DRAFT_LISTS, SOURCE_LABELS } from '../scheduleTerms'
 import { projectedListId } from '../../domain/slots'
+import { SEED_STATUS, statusFor } from '../../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import { roundToCents } from '../../domain/billing/money'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
-import { formatCurrency } from '../format'
+import { drSurname, formatCurrency } from '../format'
+import { isAssignedList } from '../../domain/draftLists'
 import { useDemoTriggerMemory } from './memory'
+import { simulateSickness, sicknessCandidates, sicknessRefusal } from '../../store/demoSimulations'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
 
 // ---------------------------------------------------------------------------
@@ -86,6 +99,16 @@ const INTEGRATIONS_SIM = '/demo/integrations'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 const ADMIN_DAY = '/admin/day/:dateISO'
+const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
+const ADMIN_MASTERS = '/admin/masters'
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+/** "St George's · Mr S. Tan" from the masters. */
+function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
+  return `${state.masters.hospitals[hospitalId]?.name ?? hospitalId} · ${state.masters.surgeons[surgeonId]?.name ?? surgeonId}`
+}
+const dayLabel = (dateISO: string) => format(parseISO(dateISO), 'EEE d MMM')
+const ADMIN_CONFLICTS = '/admin/conflicts'
 const ADMIN_BOOKING = '/admin/day/:dateISO/bookings/:bookingId'
 const MOBILE_BOOKING = '/mobile/lists/:listId/bookings/:bookingId'
 /** Where the sample warnings show (Admin in the bar; the mobile Booking in the bar and the PWA). */
@@ -313,6 +336,16 @@ function photoCaptureDisabledReason(state: AppState, listId: string): string | n
   if (list === undefined) return 'List not found'
   if (list.state !== 'ACTIVE') return 'This List is no longer open for new Bookings'
   return null
+}
+
+
+/** Simulate sickness: the viewed day's Lists (the Day view's date; on Conflicts, today), Lists with Bookings first. */
+function sicknessChoices(state: AppState, ctx: DemoTriggerCtx): { id: string; label: string }[] {
+  const dateISO = ctx.params['dateISO'] ?? state.clock.todayISO
+  return sicknessCandidates(state, dateISO).map((l) => ({
+    id: l.id,
+    label: `${drSurname(state.masters.anaesthetists[l.anaesthetistId]?.name ?? l.anaesthetistId)} · ${l.session} · ${state.masters.hospitals[l.hospitalId]?.name ?? l.hospitalId}`,
+  }))
 }
 
 export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
@@ -673,6 +706,153 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin (Assign List).',
+  },
+  // ── Mobile · Lists: the office assigns a waiting request (catch-up Phase 31) ──
+  {
+    id: 'office-assigns-draft-list',
+    label: `Office assigns a ${DRAFT_LIST} to me`,
+    description:
+      "Stands in for the office on the phone: assigns the waiting request that falls on Dr Souter's soonest open session and fits her, so it shows as a booked List with any Bookings it already holds. If none fits, the office logs a request for her next open session and assigns that.",
+    screen: 'Mobile · Lists',
+    routes: ['/mobile/lists'],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state) => (nextOpenSlotFor(state, ANAE.souter) === undefined ? 'No free session in the schedule' : null),
+    run: (api) => {
+      const res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const when = `${dayLabel(res.value.slot.dateISO)} ${res.value.slot.session}`
+      const what = pairingOf(state, res.value.hospitalId, res.value.surgeonId)
+      // Never names a preference, a tier, a Draft List or a slot (D44, OQ-64).
+      return {
+        ok: true,
+        message: res.value.logged
+          ? `The office logged a request for your ${when} and assigned it: ${what}.`
+          : `The office assigned a waiting request to your ${when}: ${what}, ${res.value.bookings} booking${res.value.bookings === 1 ? '' : 's'}.`,
+      }
+    },
+    indexPath: () => null,
+    indexEmptyReason: `PWA only: the framed build plays the office in Admin (Assign on ${DRAFT_LISTS}).`,
+  },
+  // ── Admin · Day and Conflicts: an office-recorded sickness (catch-up Phase 30) ──
+  {
+    id: 'simulate-sickness',
+    label: 'Simulate sickness',
+    description:
+      "An anaesthetist phones in sick and the office records it: their session on the chosen List is marked unavailable by the office, the List keeps its Bookings, and the conflict shows on the Day view and the Conflicts screen. Provisional reading of OQ-81 part 3.",
+    screen: 'Admin · Day view and Conflicts',
+    routes: [ADMIN_DAY, ADMIN_CONFLICTS],
+    surfaces: ['bar'],
+    choices: (state, ctx) => sicknessChoices(state, ctx),
+    defaultChoice: (state, ctx) => {
+      const slotId = ctx.published['adminDay.selectedSlotId']
+      const held = slotId !== undefined ? listInSlot(state, slotId) : undefined
+      return held !== undefined && sicknessChoices(state, ctx).some((c) => c.id === held.id) ? held.id : undefined
+    },
+    disabledReason: (state, ctx, choiceId) => {
+      const choices = sicknessChoices(state, ctx)
+      if (choices.length === 0) return 'No Lists on this day'
+      return sicknessRefusal(state, choiceId ?? choices[0]!.id)
+    },
+    run: (api, ctx, choiceId) => {
+      const choices = sicknessChoices(api.getState(), ctx)
+      const listId = choiceId ?? choices[0]?.id
+      if (listId === undefined) return { ok: false, message: 'No Lists on this day' }
+      const res = simulateSickness(api, listId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const list = state.schedule.lists[listId]
+      if (!isAssignedList(list)) return { ok: false, message: 'This List has no anaesthetist yet' }
+      const who = drSurname(state.masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId)
+      return {
+        ok: true,
+        message: `${who} recorded as ${statusFor(state.masters.slotStatuses, SEED_STATUS.unavailable)?.label ?? 'unavailable'} for ${format(parseISO(list.dateISO), 'EEE d MMM')} ${list.session}. The List keeps its Bookings and is on the Conflicts screen.`,
+      }
+    },
+    indexPath: () => '/admin/day/2026-07-22',
+  },
+  // ── Admin · Draft Lists: a request arrives from a surgeon's room (catch-up Phase 31) ──
+  {
+    id: 'simulate-incoming-request',
+    label: 'Simulate incoming request',
+    description: `A surgeon's secretary sends a request before an anaesthetist is found: the office logs it as a ${DRAFT_LIST}, with how it came in. It takes its place in date order, waiting from now, with no Bookings yet.`,
+    screen: `Admin · ${DRAFT_LISTS}`,
+    routes: [ADMIN_DRAFT_LISTS],
+    surfaces: ['bar'],
+    choices: (state) =>
+      CANNED_DRAFT_LIST_REQUESTS.map((r) => {
+        const day = cannedRequestDay(state, r.id)!
+        return { id: r.id, label: `${pairingOf(state, r.hospitalId, r.surgeonId)} · ${dayLabel(day.dateISO)} ${day.session} · ${SOURCE_LABELS[r.source]}` }
+      }),
+    disabledReason: (state, _ctx, choiceId) => incomingRequestRefusal(state, choiceId ?? CANNED_DRAFT_LIST_REQUESTS[0].id),
+    run: (api, _ctx, choiceId) => {
+      const id = choiceId ?? CANNED_DRAFT_LIST_REQUESTS[0].id
+      const res = simulateIncomingDraftListRequest(api, id)
+      if (!res.ok) return { ok: false, message: res.message }
+      const r = CANNED_DRAFT_LIST_REQUESTS.find((x) => x.id === id)!
+      return {
+        ok: true,
+        message: `A request came in by ${SOURCE_LABELS[r.source].toLowerCase()}: ${pairingOf(api.getState(), r.hospitalId, r.surgeonId)}, ${dayLabel(res.value.dateISO)} ${res.value.session}. It waits on ${DRAFT_LISTS}, unassigned.`,
+      }
+    },
+    indexPath: () => ADMIN_DRAFT_LISTS,
+  },
+  // ── Admin · Day: a Draft List on the day on screen (catch-up Phase 31) ──
+  {
+    id: 'add-draft-list-for-day',
+    label: `Add ${DRAFT_LIST} for this day`,
+    description: `Logs a ${DRAFT_LIST} for the day in the URL, which shows in the grid's ${DRAFT_LISTS} band and the rail card at once.`,
+    screen: 'Admin · Day view',
+    routes: [ADMIN_DAY],
+    surfaces: ['bar'],
+    choices: (state) => CANNED_DAY_DRAFT_LISTS.map((c) => ({ id: c.id, label: `${c.session} · ${pairingOf(state, c.hospitalId, c.surgeonId)}` })),
+    disabledReason: (state, ctx, choiceId) => dayDraftListRefusal(state, ctx.params['dateISO'] ?? state.clock.todayISO, choiceId ?? CANNED_DAY_DRAFT_LISTS[0].id),
+    run: (api, ctx, choiceId) => {
+      const dateISO = ctx.params['dateISO'] ?? api.getState().clock.todayISO
+      const id = choiceId ?? CANNED_DAY_DRAFT_LISTS[0].id
+      const res = addDraftListForDay(api, dateISO, id)
+      if (!res.ok) return { ok: false, message: res.message }
+      const c = CANNED_DAY_DRAFT_LISTS.find((x) => x.id === id)!
+      return { ok: true, message: `Added a ${DRAFT_LIST} for ${dayLabel(dateISO)} ${c.session}: ${pairingOf(api.getState(), c.hospitalId, c.surgeonId)}. It shows in the band and the rail card.` }
+    },
+    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+  },
+  // ── Admin · Master data, Recurring bookings: the nightly roll meets a blocked-out day (catch-up Phase 31) ──
+  {
+    id: 'stage-recurring-clash',
+    label: 'Stage recurring clash',
+    description: `Marks the chosen recurring booking's anaesthetist Unavailable on its first day past the schedule, as the office. When Next day reaches that day, the recurring booking lands on a closed session and becomes a ${DRAFT_LIST}, not a List flagged on the anaesthetist.`,
+    screen: 'Admin · Master data, Recurring bookings',
+    routes: [ADMIN_MASTERS],
+    surfaces: ['bar'],
+    when: (_state, ctx) => ctx.published['adminMasters.view'] === 'recurringBookings',
+    choices: (state) =>
+      stageableRecurringBookings(state).map(({ rb }) => ({
+        id: rb.id,
+        label: `${drSurname(state.masters.anaesthetists[rb.anaesthetistId]?.name ?? rb.anaesthetistId)} · ${DAY_NAMES[rb.dayOfWeek]} ${rb.session} · ${pairingOf(state, rb.hospitalId, rb.surgeonId)}`,
+      })),
+    disabledReason: (state, _ctx, choiceId) => {
+      const id = choiceId ?? stageableRecurringBookings(state)[0]?.rb.id
+      const rb = id !== undefined ? state.masters.recurringBookings[id] : undefined
+      if (rb === undefined) return 'No recurring booking runs in the next two weeks past the schedule'
+      return stagedAlready(state, rb) ? 'Already staged' : null
+    },
+    run: (api, _ctx, choiceId) => {
+      const id = choiceId ?? stageableRecurringBookings(api.getState())[0]?.rb.id
+      if (id === undefined) return { ok: false, message: 'No recurring booking to stage' }
+      const before = api.getState()
+      const rb = before.masters.recurringBookings[id]!
+      const res = stageRecurringClash(api, id)
+      if (!res.ok) return { ok: false, message: res.message }
+      const who = drSurname(before.masters.anaesthetists[rb.anaesthetistId]?.name ?? rb.anaesthetistId)
+      const presses = res.value.presses === 1 ? 'once' : res.value.presses === 2 ? 'twice' : `${res.value.presses} times`
+      return {
+        ok: true,
+        message: `${who} is marked unavailable for ${dayLabel(res.value.dateISO)} ${res.value.session}. Press Next day ${presses}: when the schedule reaches that day, ${pairingOf(before, rb.hospitalId, rb.surgeonId)} becomes a ${DRAFT_LIST}.`,
+      }
+    },
+    indexPath: () => '/admin/masters?view=recurringBookings',
   },
   // ── Admin · Day, Booking detail and Mobile · Booking: sample warnings ──
   {

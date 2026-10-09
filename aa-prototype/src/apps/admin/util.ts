@@ -6,7 +6,9 @@
 
 import type { Anaesthetist, Hospital, List, Surgeon } from '../../domain/types'
 import type { SlotView } from '../../store'
-import { nameWithoutTitle, surnameOf } from '../../shared/format'
+import { locationName, nameWithoutTitle, surnameOf } from '../../shared/format'
+import { UNASSIGNED } from '../../shared/scheduleTerms'
+import { CONFLICT_REASONS, describeConflict, type ConflictLookups } from '../../domain/conflicts'
 
 /** Grid ruler bounds (07:00 to 18:00 = 11 hours), matching Admin Day.dc.html. */
 export const RULER_START = 7
@@ -60,11 +62,10 @@ export function listShortLabel(
   list: List,
   masters: { anaesthetists: Record<string, Anaesthetist>; hospitals: Record<string, Hospital> },
 ): string {
-  const anae = masters.anaesthetists[list.anaesthetistId]
-  const who = anae !== undefined ? surnameOf(anae.name) : list.anaesthetistId
-  const hospital =
-    list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'Unassigned'
-  return `${who} · ${hospital} ${list.session}`
+  const anae = list.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+  // A Draft List has no anaesthetist: its flag stands in (catch-up Phase 31).
+  const who = anae !== undefined ? surnameOf(anae.name) : (list.anaesthetistId ?? UNASSIGNED)
+  return `${who} · ${locationName(list.hospitalId, masters.hospitals)} ${list.session}`
 }
 
 /**
@@ -77,25 +78,20 @@ export function listSourceLabels(
   list: List,
   masters: { hospitals: Record<string, Hospital>; surgeons: Record<string, Surgeon> },
 ): { primary: string; secondary?: string } {
-  const hospital =
-    list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital unavailable') : 'Unassigned'
-  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : undefined
+  const surgeon = masters.surgeons[list.surgeonId]?.name
   return {
-    primary: `${hospital} · ${list.session}`,
+    primary: `${locationName(list.hospitalId, masters.hospitals)} · ${list.session}`,
     ...(surgeon !== undefined ? { secondary: surgeon } : {}),
   }
 }
 
 /**
- * Why a List block needs the amber attention flag: any reconciliation conflict,
- * or a PRIVATE List with no surgeon assigned yet (the Fitzgerald TBC case).
- * Public / pre-op sessions (acute theatre, clinics) legitimately carry no named
- * surgeon, so they never flag on that basis. An empty array means no flag.
+ * Why a List block needs the amber attention flag: any live conflict (a
+ * cleared one is never stored, catch-up Phase 30). Every List names its
+ * surgeon since catch-up Phase 31 (US-01.3.1), so there is no "surgeon not yet
+ * assigned" flag any more. An empty array means no flag. With `lookups` a
+ * conflict reads as its detail line; without, as its short reason.
  */
-export function attentionReasons(list: List): string[] {
-  const reasons = list.conflicts.map((c) => c.message)
-  if (list.kind === 'private' && list.surgeonId === undefined) {
-    reasons.push('Surgeon not yet assigned')
-  }
-  return reasons
+export function attentionReasons(list: List, lookups?: ConflictLookups): string[] {
+  return list.conflicts.map((c) => (lookups !== undefined ? describeConflict(c, list, lookups).detail : CONFLICT_REASONS[c.kind]))
 }

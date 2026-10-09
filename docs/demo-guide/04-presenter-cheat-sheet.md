@@ -13,7 +13,8 @@
 | Term | Meaning |
 |---|---|
 | Schedule | The rolling four-month calendar |
-| List | One anaesthetist's half-day AM or PM operating session |
+| List | One anaesthetist's half-day AM or PM operating session; every List has exactly one hospital and one surgeon (AA rooms is a location) |
+| Draft List | A List with no anaesthetist yet, state DRAFT; the office assigns it |
 | Booking | One patient appointment inside a List |
 | Procedure | One clinical procedure inside a Booking; each resolves its own billing route |
 | BTM | Base units + Time units + Modifier units |
@@ -27,6 +28,11 @@
 | Claim/sign up for a shift | Request/offer cover; office reassigns the List | Self-service claiming is not specified |
 | Delete Booking | Soft-cancel Booking | History and audit must be retained |
 | Send back to anaesthetist | Resolve by phone; office corrects | There is no Returned state |
+| Surgeon TBC List | Draft List | A List with no anaesthetist yet has a name and a state |
+| Slot | Session (AM or PM) | The app never says slot |
+| Blacklist | Not preferred | The pairing warns and never blocks |
+| Open or DRAFT for an assigned List | Active | DRAFT is only for a Draft List |
+| A List being prepared (for a Draft List) | Draft List | One name for it |
 | Xero calculates the invoice | Billing Engine calculates/issues; Xero provides AR/banking | The RFP explicitly puts the Billing Engine at the centre |
 | ACC route | Contract-holder route with ACC-related context | ACC is not a separate billing route |
 
@@ -168,6 +174,7 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Phone/manual changes
 - Move one Booking
 - Reassign a whole List
+- Draft Lists: Lists with no anaesthetist yet, soonest first; assign one from a grouped, tier-ordered picker
 - Correct billing setup
 - Review and authorise
 - Master data and audit
@@ -221,6 +228,7 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Mobile Lists, Bookings, BTM, completion and submission
 - Web dashboard, Lists, availability and accounts views
 - Admin day view, changes, cover, review, authorisation, masters and audit
+- Draft Lists, including recurring clashes
 - Billing run, invoice documents and billed-List disappearance (Phase 08)
 - Pre-payment, post-op addendum and billing monitor with per-booking isolation and retry (Phase 09)
 - Xero collection/payable pairs, payments, reconciliation poll, payables, live balances and GST (Phase 10)
@@ -294,16 +302,23 @@ Say:
 - Settled by US-01.4.1: the List moves into the colleague's free session, keeping its id, Bookings and
   history; nothing about billing is recalculated.
 - Open (OQ-84): what the vacated session shows. The prototype returns it to Free, and the office can
-  mark it Unavailable or Holiday instead.
+  mark it Unavailable or Holiday instead. From a session already marked unavailable (a recorded
+  sickness) it keeps that status by default ("Keep as is").
 
 ### 6. Availability and holiday conflicts
 
-- The RFP asks whether these are hard constraints or warnings.
-- The prototype uses advisory conflict flags.
-- A bookable status (Free) never conflicts, and clears an earlier availability flag.
-- A closed status on a booked session flags the List on the office's Day view for now. The settled
-  rule (return it to the office or hand it to a colleague, US-01.5.5) is still to be built (Phase 32),
-  so do not demo that path.
+- Answered (OQ-09): a soft warning. Nothing blocks the office; the List is accepted and flagged.
+- A conflict is a List at a closed hospital, or a List (and its Bookings) in a session already marked
+  unavailable, including a sickness the office records when an anaesthetist phones in (provisional:
+  short-notice sickness is still open, OQ-81 part 3).
+- The List changes colour (amber, with its kind's bar and a reason line) and shows on the Conflicts
+  screen across every date.
+- It clears when the clash goes (the closure moved or deleted, the session available again, the List
+  reassigned to an available anaesthetist) or when the office clears it, with an optional note and
+  "Flag again".
+- Not conflicts: a recurring booking landing on an unavailable session becomes a Draft List (Phase 31),
+  and an anaesthetist who marks a booked session unavailable returns the List or hands it on
+  (US-01.5.5, Phase 32). Until 32 that path still flags the List, so do not demo it.
 
 ### 7. Split-billing invoice count
 
@@ -359,8 +374,10 @@ planning and accounts view.
 
 ### "Who creates the shifts?"
 
-The system creates AM and PM Lists on the rolling canvas. Permanent Lists supply recurring defaults.
-Office staff reserve and amend Lists and handle exceptions. "Shift" is not the RFP term.
+The system creates AM and PM sessions on the rolling canvas. Recurring bookings supply recurring
+defaults, painted after the anaesthetist's own calendar. "Apply to canvas now" repopulates the schedule
+ahead after a change, without touching booked Lists. Office staff reserve and amend Lists and handle
+exceptions. "Shift" is not the RFP term.
 
 ### "Can an anaesthetist edit after submission?"
 

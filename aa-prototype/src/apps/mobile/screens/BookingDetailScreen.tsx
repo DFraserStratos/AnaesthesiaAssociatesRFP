@@ -1,8 +1,10 @@
 import { useMemo, type ReactNode } from 'react'
+import { locationName } from '../../../shared/format'
 import { ChevronLeft } from 'lucide-react'
 import { accent, neutral } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Procedure } from '../../../domain/types'
+import { isAssignedList } from '../../../domain/draftLists'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
@@ -59,10 +61,11 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
 
   const warnings = useBookingWarnings(bookingId)
 
-  if (booking === undefined || list === undefined) return null
+  // A Booking on a Draft List is office only (OQ-86).
+  if (booking === undefined || !isAssignedList(list)) return null
   const patient = masters.patients[booking.patientId]
   const patientName = patient?.name ?? 'Unknown patient'
-  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+  const hospitalName = locationName(list.hospitalId, masters.hospitals)
 
   const header = (collapsed: boolean, history: ReactNode) => (
     <div

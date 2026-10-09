@@ -7,7 +7,7 @@ import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../.
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
 import { AddBookingFlow, SubmitListSheet } from '../../../shared/flows'
-import { formatCurrency, slotTimeRange } from '../../../shared/format'
+import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
@@ -55,7 +55,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const [submitSheet, setSubmitSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
 
   const model = useMemo(() => {
-    if (list === undefined) return undefined
+    // A Draft List never reaches an anaesthetist surface (OQ-86 answered no, D46).
+    if (list === undefined || list.state === 'DRAFT') return undefined
     const procsByBooking = new Map<string, Procedure[]>()
     for (const p of Object.values(proceduresRecord)) {
       const bucket = procsByBooking.get(p.bookingId)
@@ -96,8 +97,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
 
   if (list === undefined || model === undefined) return null
 
-  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
+  const hospitalName = locationName(list.hospitalId, masters.hospitals)
+  const surgeon = masters.surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
   const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO

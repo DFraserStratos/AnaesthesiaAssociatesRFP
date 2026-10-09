@@ -23,6 +23,7 @@
  * directly or wire explicitly and unsubscribe.
  */
 
+import { listHospitalFor } from '../domain/listPairing'
 import type { BillingCase, BookingId, Invoice, InvoiceId, InvoiceLine } from '../domain/types'
 import {
   buildInvoicesForBooking,
@@ -100,7 +101,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
       ...bookingCtx,
       listDateISO: list.dateISO,
       patientId: booking.patientId,
-      ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
+      ...listHospitalFor(list, state.masters.hospitals),
       ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
     }
     // Per-booking isolation is absolute: a build error becomes a failed
@@ -303,7 +304,7 @@ export function retryBillingCase(api: AppStoreApi, actor: Actor, caseId: string)
     ...bookingCtx,
     listDateISO: list.dateISO,
     patientId: booking.patientId,
-    ...(list.hospitalId !== undefined ? { listHospitalId: list.hospitalId } : {}),
+    ...listHospitalFor(list, state.masters.hospitals),
     ...(Object.keys(prePaid).length > 0 ? { prePaidByProcedure: prePaid } : {}),
   }
 

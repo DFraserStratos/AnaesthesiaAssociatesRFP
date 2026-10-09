@@ -72,6 +72,18 @@ export {
   type SlotTimesPatch,
   type HorizonChangePreview,
 } from './slotActions'
+// Draft Lists (catch-up Phase 31). `insertDraftList`, `attachListToSlot` and
+// `detachListToDraft` stay internal (slotActions.ts); Phase 32 imports the last directly.
+export {
+  createDraftList,
+  assignDraftList,
+  redateDraftList,
+  removeDraftList,
+  draftListFitsAnaesthetist,
+  surgeonFitsAnaesthetist,
+  type NewDraftListInput,
+  type AssignDraftListResult,
+} from './draftListActions'
 // Availability: days off, repeating days off and the status master (catch-up Phase 29).
 export {
   setAvailabilityRange,
@@ -134,14 +146,24 @@ export {
   editAnaesthetist,
   addAnaesthetist,
   addHospitalHoliday,
-  addPermanentList,
-  editPermanentList,
+  editHospitalHoliday,
+  deleteHospitalHoliday,
+  listsFlaggedByHoliday,
+  addRecurringBooking,
+  editRecurringBooking,
+  retireRecurringBooking,
+  applyRecurringBookingsToCanvas,
   type AnaesthetistPatch,
   type HospitalPatch,
   type NewAnaesthetistFields,
-  type NewPermanentListFields,
-  type PermanentListPatch,
+  type NewRecurringBookingFields,
+  type RecurringBookingApplyResult,
+  type RecurringBookingPatch,
 } from './mastersActions'
+// Conflicts (catch-up Phase 30): the office clear and "Flag again"; raising and
+// resolving is the reconcile inside mutate().
+export { clearListConflict, restoreListConflict } from './conflictActions'
+export { conflictLookups, type MutationResult } from './conflictReconcile'
 // Surgeon master data (catch-up Phase 17). The office-private pairing and tier
 // actions are NOT here: Admin imports `./officePrivate` by path, so the PWA,
 // which imports this barrel, never reaches them (officePrivacy.test.ts).
@@ -195,12 +217,25 @@ export {
   type WarningSample,
 } from './warningSamples'
 export {
+  assignDraftListAsSimulatedOffice,
   assignNextFreeSlotAsSimulatedOffice,
   authoriseAsSimulatedOffice,
   nextOpenSlotFor,
   officeStandInRefusal,
   STAND_IN_ASSIGN_CHOICES,
 } from './officeStandIn'
+export {
+  simulateIncomingDraftListRequest,
+  incomingRequestRefusal,
+  cannedRequestDay,
+  addDraftListForDay,
+  dayDraftListRefusal,
+  stageRecurringClash,
+  stageableRecurringBookings,
+  stagedAlready,
+  firstUnpaintedDay,
+  STAGED_CLASH_NOTE,
+} from './draftListDemo'
 export { simulateSignInAttempts } from './authDemoActions'
 export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll } from './reconciliationPoll'

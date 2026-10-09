@@ -223,7 +223,8 @@ Hooks already added:
 |---|---|---|
 | Session (Slot) | `S-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | Catch-up Phase 28: every active anaesthetist's AM and PM session, stored, free by default. Grid blocks, mobile rows, web Lists rows and web availability cells carry `data-slot-id`. The UI never says "slot". |
 | List (seeded or projected) | `L-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | From `projectedListId`: names the session the List was born in (a reassigned List keeps it), never parsed. For example `L-34821-2026-07-21-PM`. Only sessions holding a List have one: a Free session has no `L-` id. |
-| List (runtime) | `LG0001`… | Created by Assign List, Book (phone advice), the post-op addendum and the PWA stand-in. |
+| List (runtime) | `LG0001`… | Created by Assign List, Book (phone advice), the post-op addendum and the PWA stand-in, and by New Draft List (the Draft List keeps its id when assigned). |
+| Draft List | `LD-001`… (request), `LD-<RCBnnn>-<date>-<session>` (recurring clash) | Seeded Draft Lists (catch-up Phase 31). Unassigned until the office assigns an anaesthetist; runtime ones are `LG####`. |
 | Booking | `BK0001`… | Seed order. `BK0001`..`BK0005` are Souter Tue 21 AM (BK0001 Hemi Walker). `BK0006` Wiremu Tane, `BK0007` Susan Marsh, `BK0008` David Chen, `BK0009` **Margaret Ellison** (pending). Verify with one run. |
 | History Booking | `HBK01`… | The billed history backdrop (Lists `L-HIST-NN`, Procedures `HP`, cases `HBC`). Before catch-up Phase 15 these were `HC01`…. |
 | Attachment | `AT0001`… | Store-allocated. `AT0001` is the seeded theatre-list PDF on Souter Tue 28 AM. |
@@ -274,6 +275,8 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
+| `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
+| `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Filters in the URL: `?reason=closed|unavailable`, `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". |
 | `/admin/invoices` | Invoice list. |
@@ -282,13 +285,14 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `permanentLists`, `hospitals`, `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
 
-The side nav has: Day view, Review queue, Invoices, Billing monitor, Integrations, Master data,
-Audit.
+The side nav has: Day view, Conflicts (amber badge `[data-shot=nav-badge-conflicts]`, catch-up
+Phase 30), Review queue, Invoices, Billing monitor, Integrations, Master data, Audit. Every side-nav
+badge carries `data-shot=nav-badge-<section>`.
 
 **Mobile app** (`src/apps/mobile/`; on :5174 for shots)
 
@@ -385,15 +389,25 @@ shown under "List attachments" on mobile and web and read-only in the Admin List
 **Admin day, Tue 21**
 
 - Rutherford at Forte Health all day.
-- Free sessions: Sharma PM, Hughes AM and PM, Strand PM.
+- Free sessions: Sharma PM, Hughes AM and PM, Strand PM, and Fitzgerald PM (id `43015`, `button[data-slot-id="S-43015-2026-07-21-PM"]`; catch-up Phase 31 made it free, no longer "surgeon TBC").
 - Delaney PM is free with a note.
-- Fitzgerald PM is at St George's with the surgeon TBC and a needs-attention flag.
+- Draft Lists band (`daygrid-draft-band`) on Tue 21: Ngata's acute AM (recurring clash) and St George's PM (request `LD-001`). Header reads "2 Draft Lists"; every block carries a booking count pill (`daygrid-block-count`).
+
+**Draft Lists** (catch-up Phase 31, `/admin/draft-lists`). 15 in the pristine seed, ascending by date. Three request Draft Lists: `LD-001` St George's / Mr S. Tan Tue 21 PM (phone), `LD-002` Forte Health / Mr V. Nand Wed 22 PM (email, 2 Bookings), `LD-003` Christchurch Eye Surgery / Ms A. Reid Mon 27 AM (PDF). The rest are recurring-clash Draft Lists, ids `LD-<RCBnnn>-<date>-<session>` (e.g. `LD-RCB016-2026-07-21-AM`, Ngata Tue 21 AM; Beaumont Southern Cross Wed 22 AM and PM; Ngatai Wed 22 AM and Mon 27 PM). A List's state is DRAFT, ACTIVE, SUBMITTED or AUTHORISED; assigning a Draft List makes it ACTIVE. The Unassigned table is `[data-shot=draft-lists-table]` with rows `[data-draft-list-row=<id>]` (Origin is the 7th column; the Day cell is blank on all but the first row of a day). Demo actions: `simulate-incoming-request` (Draft Lists page; adds a Reid Thu 23 PM request by default), `add-draft-list-for-day` (Day view), `stage-recurring-clash` (Recurring bookings view). Adding Dr Beaumont (`31902`) on Thursday AM with hospital and surgeon on the recurring sheet creates a Draft List. Dr Sharma (`41267`) is not preferred with Ms Reid.
 
 **Wed 22**
 
 - Souter PM is free.
-- There are advisory conflicts.
-- Rutherford AM "is now marked unavailable": the S2 reassign target.
+- Real conflicts (catch-up Phase 30), five Lists, each block `button[data-conflict=true]` in the amber
+  conflict colour:
+  - Rutherford AM (`L-29104-2026-07-22-AM`, Christchurch Eye Surgery, no Bookings): his session is
+    Unavailable, note "Unwell, short notice", recorded by the office (Kirsty W., an audit row at
+    07:40). The S2 reassign target, from the Conflicts screen.
+  - The Southern Cross closure `HH900` "Theatre maintenance closure" flags Morrison PM
+    (`L-25490-2026-07-22-PM`), Ngata PM (1 Booking), Sharma PM (`L-41267-2026-07-22-PM`, 2 Bookings)
+    and Hughes AM.
+- Other seeded conflicts: Labour Day Mon 26 Oct (8 Lists) and Canterbury Anniversary Fri 13 Nov
+  (5 Lists), every hospital closed. 18 open conflicts in all; Tue 21 has none.
 
 **Fri 24:** the prepayment warning (a warning, never a block, since catch-up Phase 15a; no gate, no
 override). AM is unpaid: Annette Riley's Booking (`BK0034`) carries a small warning triangle on its
@@ -554,6 +568,22 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - `review-queue-screen`, `review-queue-table-shell`, `review-queue-recently-billed`
 - `review-detail-screen`, `review-queue-navigation`, `review-detail-table-shell`, `review-btm-value`
 - `list-reassignment-overlay`
+- Conflicts and holidays (`data-shot`, catch-up Phase 30): `daygrid-block-conflict` (a conflicted
+  block; also `data-conflict=true`), `daygrid-legend-conflict` (the "Conflict" legend chip's swatch;
+  the chip is the button named "Conflict"), `drawer-attention` (the drawer's conflict box),
+  `drawer-conflict-cleared`, `drawer-closed-session` (an empty closed session's note),
+  `conflict-clear-sheet`, `conflicts-table`, `conflicts-filters`, `conflicts-count`,
+  `conflicts-confirmation`, `conflicts-empty`, `admin-todo-conflicts` (the To-do card's line),
+  `assign-list-conflict-warning`, `phone-advice-conflict-warning`, `edit-list-conflict-warning`,
+  `reassign-conflict-warning`, `reassign-not-available` (the collapsed group), `move-booking-conflict-warning`,
+  `hospitals-mode`, `hospital-calendar` (cells `button[data-calendar-day=<date>]`), holiday pills
+  `button[data-holiday=<id>]`, `holiday-add-sheet`, `holiday-edit-sheet`, `holiday-delete-confirm`.
+- Recurring bookings (`data-shot`, catch-up Phase 30): `recurring-bookings-table` (rows
+  `tr[data-recurring-booking=<id>]`, retired ones `data-retired=true`, at the foot),
+  `recurring-bookings-apply-result`, `recurring-booking-sheet`, `recurring-booking-preview`,
+  `recurring-booking-result`, `recurring-booking-retire`, `recurring-booking-pairing-warning` (was
+  `permanent-list-pairing-warning`). In the sheet the selects are Anaesthetist, Day of week, Hospital
+  (usual) and Usual surgeon, in that order.
 
 **Simulators**
 
@@ -610,10 +640,12 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Pickers (session 1): `surgeon-picker`, `candidate-picker`, `tier-filter`, `candidates-clear`,
   `candidates-not-preferred` (rows `[data-candidate=<id>]`), and the warnings
   `edit-list-pairing-warning`, `phone-advice-pairing-warning`, `reassign-pairing-warning`,
-  `permanent-list-pairing-warning`.
+  `recurring-booking-pairing-warning` (renamed in catch-up Phase 30).
 - Day grid: every block button carries `data-list-id=<listId>`, so a recipe opens an exact List's
   drawer with `[data-list-id="L-..."]`. The drawer's surgeon is a link (`drawer-surgeon-link`) to the
   profile.
+
+- Draft Lists (catch-up Phase 31): `admin-draft-lists` (page), `admin-draft-list-drawer`, `admin-draft-lists-rail` (Day rail card, with `admin-draft-lists-see-all`), `admin-assign-draft-list` (sheet; becomes `admin-assign-draft-list-not-preferred` when a not-preferred pick is shown; `draft-list-reach`, `draft-list-candidates`, `assign-draft-list-pairing-warning`, `assign-draft-list-closed-warning`, `assign-draft-list-confirm`), `admin-new-draft-list` (`draft-list-hospital`, `draft-list-surgeon`, `draft-list-date`), `admin-redate-draft-list`, `admin-remove-draft-list`, `draft-lists-table`, `draft-lists-history`, `draft-lists-assigned`, `draft-list-available`, `draft-list-add-booking`, `daygrid-draft-band`, `daygrid-block-count`; nav badge `nav-badge-draftLists`. The List drawer's ACTIVE state is plain text in its subtitle, so highlight `[data-testid=admin-list-drawer] > div:first-child`.
 
 **Other hooks**
 
@@ -663,6 +695,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
+| `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: a List id) | Catch-up Phase 30. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)"); the List keeps its Bookings and is flagged. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 
 The PWA-only entries (`office-authorises-list` on a mobile List, `office-clears-warning` on a

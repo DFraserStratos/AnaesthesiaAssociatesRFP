@@ -170,7 +170,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
   // Live validation (ctx assembled as billingContextForBooking does). Failures
   // render per-procedure anchors only after the showValidation latch.
   const failures: BillingValidationFailure[] = useMemo(() => {
-    if (booking === undefined || list === undefined || cancelled) return []
+    // A Booking on a Draft List has no anaesthetist yet, so nothing to validate against (catch-up Phase 31).
+    if (booking === undefined || list === undefined || list.anaesthetistId === undefined || cancelled) return []
     const anaesthetist = masters.anaesthetists[list.anaesthetistId]
     if (anaesthetist === undefined) return []
     const ctx: BookingBillingContext = {
@@ -182,12 +183,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       billableParties: masters.billableParties,
       billingLines: Object.values(billingLinesRecord),
     }
-    if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
+    ctx.surgeonId = list.surgeonId
     return validateBookingForBilling(booking, procedures, ctx)
   }, [booking, list, cancelled, masters, billingLinesRecord, procedures])
 
   const bookingTotals = useMemo(() => {
-    if (list === undefined || procedures.length === 0) return { units: 0, total: 0 }
+    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return { units: 0, total: 0 }
     return bookingFee(procedures, list, masters, billingLinesRecord)
   }, [list, procedures, masters, billingLinesRecord])
 
@@ -206,7 +207,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
       rateLabel: null as string | null,
       overrideNote: null as string | null,
     }
-    if (list === undefined || procedures.length === 0) return empty
+    // A Booking on a Draft List has no anaesthetist to price it yet (catch-up Phase 31).
+    if (list === undefined || list.state === 'DRAFT' || procedures.length === 0) return empty
 
     const views = procedures.map((procedure, index) =>
       procedureFee({ procedure, list, ordinal: index + 1, masters, billingLines: billingLinesRecord }),
@@ -583,7 +585,21 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
     <>
       {/* Outcome / BTM capture — one block per procedure, in Booking order
           (the ordinal feeds Type 3 second-procedure pricing). */}
+      {/* A Booking on a Draft List has no anaesthetist yet, so no fee or capture: its
+          procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
+      {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (
+        <Section label={`Procedures (${procedures.length})`}>
+          {procedures.map((procedure) => (
+            <div key={procedure.id} style={{ fontSize: 14, color: neutral.ink }}>
+              {procedure.description}
+              {procedure.rvgBaseCode !== undefined && <span className="mono" style={{ marginLeft: 8, fontSize: 12, color: neutral.slate }}>{procedure.rvgBaseCode}</span>}
+            </div>
+          ))}
+          <div style={{ fontSize: 12.5, color: neutral.mist }}>The fee shows once an anaesthetist is assigned.</div>
+        </Section>
+      )}
       {!cancelled &&
+        list.state !== 'DRAFT' &&
         procedures.map((procedure, index) => (
           <div key={procedure.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <BtmCaptureBlock
@@ -665,7 +681,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
         capture={capture}
         actions={actions}
         summary={
-          cancelled || procedures.length === 0 || !showBookingTotal
+          // A Booking on a Draft List has no anaesthetist to price or complete it yet (catch-up Phase 31).
+          cancelled || procedures.length === 0 || !showBookingTotal || list?.state === 'DRAFT'
             ? null
             : (action) => (
                 <BookingTotal
@@ -679,7 +696,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header }: BookingD
               )
         }
         completeBar={
-          showBar ? (
+          showBar && list?.state !== 'DRAFT' ? (
             <CompleteBar
               completed={booking.completed}
               canAmend={canEdit}

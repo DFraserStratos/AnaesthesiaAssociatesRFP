@@ -2,23 +2,25 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
+import { bookingCountLabel } from '../../../shared/scheduleTerms'
 import { listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
-import { LIST_STATE_LABELS, slotTimeRange } from '../../../shared/format'
+import { LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
-import { attentionReasons, surnameFirst } from '../util'
+import { surnameFirst } from '../util'
+import { ConflictPanel } from './conflicts/ConflictPanel'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
 import { MoveBookingFlow } from '../flows/MoveBookingFlow'
 import { AssignListSheet } from '../flows/AssignListSheet'
 import { EditSlotTimesSheet } from '../flows/EditSlotTimesSheet'
-import type { List, Slot } from '../../../domain/types'
+import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
 import { surgeonProfilePath } from '../mastersPaths'
@@ -95,7 +97,7 @@ function ListBody({
   onClose,
   onOpenBooking,
 }: {
-  list: List
+  list: AssignedList
   slot: Slot
   times: EffectiveSlotTimes
   actor: Actor
@@ -114,26 +116,25 @@ function ListBody({
     .sort((a, b) => a.id.localeCompare(b.id))
   const activeBookings = bookings.filter((c) => c.cancellation === undefined)
   const anae = masters.anaesthetists[list.anaesthetistId]
-  const hospital = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : 'Unassigned'
-  const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : 'Not assigned'
-  const reasons = attentionReasons(list)
-  // The anaesthetist marked this session with a closed status while it holds a
-  // List: the List stays (with its conflict flag) until Phase 32's return or
-  // assign (US-01.5.5). Say so beside the flag.
-  if (isClosedKey(masters.slotStatuses, slot.status)) {
-    reasons.push(`The session is marked ${displayStatusLabel(slot.status, masters.slotStatuses).toLowerCase()}.`)
-  }
+  const hospital = locationName(list.hospitalId, masters.hospitals)
+  const surgeon = masters.surgeons[list.surgeonId]?.name ?? list.surgeonId
+  const statuses = masters.slotStatuses
+  const sessionClosed = isClosedKey(statuses, slot.status)
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(23,35,32,0.32)', zIndex: 40 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
       <div data-testid="admin-list-drawer" data-slot-id={slot.id} data-list-id={list.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{anae !== undefined ? surnameFirst(anae.name) : list.anaesthetistId}</div>
-            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {LIST_STATE_LABELS[list.state]}</div>
-            <div style={{ marginTop: 8 }}><StatusChip status={list.kind} /></div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>{format(parseISO(list.dateISO), 'EEE d MMM')} · {list.session} · {LIST_STATE_LABELS[list.state]} · {bookingCountLabel(activeBookings.length)}</div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <StatusChip status={list.kind} />
+              {/* The session's own status beside the List's kind when it is closed (catch-up Phase 30). */}
+              {sessionClosed && <StatusChip status={slot.status} />}
+            </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4 }}>
             <X size={20} aria-hidden />
@@ -142,12 +143,7 @@ function ListBody({
 
         {/* Body */}
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {reasons.length > 0 && (
-            <div style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <strong>Needs attention</strong>
-              {reasons.map((r, i) => <span key={i}>{r}</span>)}
-            </div>
-          )}
+          <ConflictPanel list={list} actor={actor} />
 
           <Section label="Session">
             <Row label="Times">
@@ -156,7 +152,7 @@ function ListBody({
             </Row>
             <Row label="Hospital">{hospital}</Row>
             <Row label="Surgeon">
-              {list.surgeonId !== undefined && surgeon !== undefined ? (
+              {masters.surgeons[list.surgeonId] !== undefined ? (
                 <Link
                   to={surgeonProfilePath(list.surgeonId)}
                   onClick={onClose}
@@ -171,6 +167,7 @@ function ListBody({
               )}
             </Row>
             {list.notes !== undefined && list.notes.trim() !== '' && <Row label="Note">{list.notes}</Row>}
+            {list.recurringBookingId !== undefined && <Row label="Source">From a recurring booking</Row>}
           </Section>
 
           <Section label={`Bookings (${activeBookings.length})`}>
@@ -265,7 +262,7 @@ function EmptySessionDrawer({
   const cover = slot.coverRequest
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(23,35,32,0.32)', zIndex: 40 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
       <div data-testid="admin-list-drawer" data-shot="admin-slot-drawer" data-slot-id={slot.id} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: ADMIN_LIST_DRAWER_WIDTH, maxWidth: '100%', background: neutral.surface, zIndex: 41, boxShadow: '-8px 0 24px rgba(23,35,32,0.16)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
@@ -293,21 +290,20 @@ function EmptySessionDrawer({
               No List in this session yet. Assign one to give it a surgeon and hospital, or book a patient straight from a call.
             </div>
           ) : (
-            <div style={{ background: neutral.bg, borderRadius: radius.card, padding: 12, fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
-              This session is marked {displayStatusLabel(slot.status, statuses).toLowerCase()}, so it is not open for a List in this build.
+            // Soft warning only (OQ-09): a List or Booking added here is accepted and flagged.
+            <div data-shot="drawer-closed-session" style={{ background: semantic.warning.tint, color: semantic.warning.onTint, borderRadius: radius.card, padding: 12, fontSize: 13, lineHeight: '19px' }}>
+              This session is marked {displayStatusLabel(slot.status, statuses)}. A List or Booking added here is accepted and flagged as a conflict.
             </div>
           )}
         </div>
 
         {/* The one primary on its own row, the session's other actions beneath. */}
         <div data-testid="admin-list-actions" style={{ padding: 20, borderTop: `1px solid ${neutral.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {open && (
-            <div style={{ display: 'flex' }}>
-              <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
-            </div>
-          )}
+          <div style={{ display: 'flex' }}>
+            <ActionBtn primary onClick={() => setSheet('assign')}>Assign List</ActionBtn>
+          </div>
           <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
-            {open && <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>}
+            <ActionBtn onClick={() => setSheet('phone')}>Book (phone advice)</ActionBtn>
             <ActionBtn onClick={() => setSheet('times')}>Edit times</ActionBtn>
             <ActionBtn onClick={() => setSheet('history')}>History</ActionBtn>
           </div>

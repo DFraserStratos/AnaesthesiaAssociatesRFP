@@ -1,5 +1,5 @@
 import { useOutletContext } from 'react-router-dom'
-import type { Anaesthetist, DayNote } from '../../domain/types'
+import type { Anaesthetist, DayNote, DraftList } from '../../domain/types'
 import type { Actor, AppState, ListWarningSummary, OpenWarningRow, SlotView } from '../../store'
 import type { SortMode } from './components/DayNav'
 
@@ -40,6 +40,14 @@ export interface AdminOutletContext {
   /** Open a session's drawer straight on Assign List, with a surgeon already chosen (Find available). */
   onAssignFromFinder: (slotId: string, surgeonId: string | undefined) => void
   onAddNote: (text: string, flagged: boolean) => void
+  /** The selected day's live Draft Lists, in the one order (the Day grid's band; catch-up Phase 31). */
+  dayDraftLists: readonly DraftList[]
+  /** Active Bookings per List id (every block's count, the band, the rail card). */
+  bookingCounts: ReadonlyMap<string, number>
+  /** Open a Draft List's drawer (it has no session). */
+  onOpenDraftList: (listId: string) => void
+  /** Open an assigned List on its day in the session drawer. */
+  onOpenList: (listId: string) => void
 }
 
 export function useAdminOutlet(): AdminOutletContext {

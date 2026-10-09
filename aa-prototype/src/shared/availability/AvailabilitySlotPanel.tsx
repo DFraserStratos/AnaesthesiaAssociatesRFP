@@ -89,7 +89,7 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <StatusChip status={s.displayKey} />
-                  {s.list !== undefined && <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{s.list.hospitalName ?? 'AA rooms'}</span>}
+                  {s.list !== undefined && <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{s.list.hospitalName}</span>}
                   {s.list !== undefined && isClosedKey(records, s.statusKey) && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: neutral.slate }}>marked <StatusChip status={s.statusKey} /></span>
                   )}

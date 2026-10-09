@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import type { List, SlotStatusKey } from '../../../domain/types'
-import { defaultSlotStatus } from '../../../domain/slotStatus'
-import { openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
+import type { AssignedList, SlotStatusKey } from '../../../domain/types'
+import { defaultSlotStatus, displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
+import { listInSlot, openSlotViews, reassignList, slotFor, useAppStore, type Actor } from '../../../store'
+import { StatusChip } from '../../../shared'
 import { Button } from '../../../shared/ui'
 import { useSlotStatuses } from '../../../shared/status/useSlotStatuses'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
 import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
+import { ConflictCallout, useConflictPreview } from '../components/conflicts/ConflictCallout'
 
 interface ReassignListFlowProps {
   open: boolean
-  list: List
+  list: AssignedList
   actor: Actor
   onClose: () => void
   onReassigned: () => void
@@ -34,6 +36,13 @@ const SUCCESS_DURATION_MS = 1050
  * with the List's surgeon apart), tier-ordered and shuffled within a tier,
  * with a tier filter; a not-preferred target warns on the confirm step and
  * never blocks ("Confirm reassignment anyway").
+ *
+ * Catch-up Phase 30 (US-01.5.4, OQ-09): from a closed session (an
+ * office-recorded sickness) the vacated session defaults to "Keep as is", so
+ * the sick anaesthetist stays unavailable. After the open sessions, a
+ * collapsed "Not available" group offers the colleagues whose session is
+ * closed: picking one warns that the List will be flagged, and confirm stays
+ * enabled.
  */
 export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: ReassignListFlowProps) {
   const { Overlay } = useSurface()
@@ -43,7 +52,11 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   const [targetId, setTargetId] = useState<string | null>(null)
   const statusOptions = useSlotStatuses()
   const defaultStatus = defaultSlotStatus(state.masters.slotStatuses)
-  const [vacatedStatus, setVacatedStatus] = useState<SlotStatusKey>(defaultStatus.key)
+  const sourceSlot = state.schedule.slots[list.slotId]
+  const sourceClosed = sourceSlot !== undefined && isClosedKey(state.masters.slotStatuses, sourceSlot.status)
+  // Keep as is: the vacated session keeps its own closed status (the sick anaesthetist stays unavailable).
+  const initialVacated = sourceClosed && sourceSlot !== undefined ? sourceSlot.status : defaultStatus.key
+  const [vacatedStatus, setVacatedStatus] = useState<SlotStatusKey>(initialVacated)
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const requestKey = useSuggestionKey(list.id, open)
@@ -52,10 +65,10 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   useEffect(() => {
     if (open) {
       setTargetId(null)
-      setVacatedStatus(defaultStatus.key)
+      setVacatedStatus(initialVacated)
       setError(null)
     }
-  }, [open, defaultStatus.key])
+  }, [open, initialVacated])
 
   useEffect(() => {
     if (!showSuccess) return undefined
@@ -72,7 +85,24 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         .map((v) => v.slot.anaesthetistId),
     [state, list.anaesthetistId, list.dateISO, list.session],
   )
+  // Colleagues whose session is closed and empty: offered apart, collapsed (accept and flag).
+  const unavailableSlots = useMemo(
+    () =>
+      Object.values(state.schedule.slots)
+        .filter(
+          (s) =>
+            s.dateISO === list.dateISO &&
+            s.session === list.session &&
+            s.anaesthetistId !== list.anaesthetistId &&
+            isClosedKey(state.masters.slotStatuses, s.status) &&
+            listInSlot(state, s.id) === undefined,
+        )
+        .sort((a, b) => surnameFirst(anaesthetists[a.anaesthetistId]?.name ?? '').localeCompare(surnameFirst(anaesthetists[b.anaesthetistId]?.name ?? ''))),
+    [state, anaesthetists, list.anaesthetistId, list.dateISO, list.session],
+  )
   const target = targetId !== null ? anaesthetists[targetId] : undefined
+  const targetSlot = target !== undefined ? slotFor(state, target.registrationNumber, list.dateISO, list.session) : undefined
+  const targetConflicts = useConflictPreview(targetSlot !== undefined ? { dateISO: list.dateISO, slotId: targetSlot.id } : null).filter((c) => c.kind === 'availability')
   const pairingWarning = useNotPreferredWarning(target?.registrationNumber, list.surgeonId)
   const sourceName = anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId
 
@@ -105,22 +135,47 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
               emptyText={`No anaesthetist has a free ${list.session} session on this day.`}
               trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {list.session} →</span>}
             />
+            {unavailableSlots.length > 0 && (
+              <details data-shot="reassign-not-available" style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
+                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({unavailableSlots.length})</summary>
+                <div style={{ fontSize: 12, color: neutral.mist, margin: '6px 0 4px' }}>Their {list.session} session is marked unavailable. Moving the List there flags it as a conflict.</div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {unavailableSlots.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setTargetId(s.anaesthetistId)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 0', border: 'none', borderTop: `1px solid ${neutral.line}`, background: 'none', fontFamily: 'inherit', fontSize: 14, color: neutral.ink, cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <span>{surnameFirst(anaesthetists[s.anaesthetistId]?.name ?? s.anaesthetistId)}</span>
+                      <StatusChip status={s.status} />
+                    </button>
+                  ))}
+                </div>
+              </details>
+            )}
             <Button variant="secondary" block onClick={onClose}>Cancel</Button>
           </>
         ) : (
           <>
             <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
               The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {list.session} session.
-              {' '}{surnameFirst(sourceName)}'s session returns to {defaultStatus.label} unless you mark it otherwise.
+              {' '}
+              {sourceClosed && sourceSlot !== undefined
+                ? `${surnameFirst(sourceName)}'s session stays ${displayStatusLabel(sourceSlot.status, state.masters.slotStatuses)} unless you mark it otherwise.`
+                : `${surnameFirst(sourceName)}'s session returns to ${defaultStatus.label} unless you mark it otherwise.`}
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Vacated session becomes</span>
               <select data-shot="reassign-vacated" value={vacatedStatus} onChange={(e) => setVacatedStatus(e.target.value)} style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14 }}>
                 {statusOptions.map((o) => (
-                  <option key={o.key} value={o.key}>{o.isDefault === true ? `${o.longLabel} (default)` : o.longLabel}</option>
+                  <option key={o.key} value={o.key}>
+                    {sourceClosed && sourceSlot?.status === o.key ? `Keep as is (${o.longLabel})` : o.isDefault === true ? `${o.longLabel} (default)` : o.longLabel}
+                  </option>
                 ))}
               </select>
             </label>
+            {target !== undefined && <ConflictCallout conflicts={targetConflicts} anaesthetistId={target.registrationNumber} shot="reassign-conflict-warning" />}
             <NotPreferredWarning warning={pairingWarning} shot="reassign-pairing-warning" />
             {error !== null && (
               <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>

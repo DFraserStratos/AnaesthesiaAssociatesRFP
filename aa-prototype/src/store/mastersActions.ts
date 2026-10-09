@@ -12,19 +12,27 @@ import type {
   GstPeriod,
   HospitalId,
   Hospital,
+  HospitalHoliday,
+  List,
   ListKind,
-  PermanentList,
+  RecurringBooking,
   Session,
+  Slot,
   SurgeonId,
 } from '../domain/types'
 import { LIST_KINDS } from '../domain/types'
 import { isWallTime } from '../domain/slots'
-import { closedHospitalMessage, seriesPaintedCount } from '../domain/seed'
-import { anaesthetistCanvasDelta, withGenerated } from './slotActions'
+import { seriesPaintedCount } from '../domain/seed'
+import { anaesthetistCanvasDelta, applyGenerated, clashDraftsInto, pairingRefusal, placeListOnSlot, withoutCoverRequest } from './slotActions'
+import { RECURRING_BOOKING_CHANGED } from '../domain/draftLists'
+import { previewApplyAllRecurringBookings, previewRecurringBookingChange, previewRetireRecurringBooking } from './selectors'
+import { holidayCause } from '../domain/conflicts'
+import { normaliseClash } from '../domain/draftLists'
+import { emptyPlan, firstAffectedDate, type PlanKept, type PlanSkipped, type ProjectedFields, type ProjectionPlan } from '../domain/recurringBookingProjection'
 import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppStoreApi } from './appStore'
+import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import type { AppState, AppStoreApi } from './appStore'
 
 function defaultType1(
   id: string,
@@ -72,7 +80,7 @@ export function createHospital(
   mutate(api, actor, metas, (s) => {
     const hospitalAlloc = allocateId(s.counters, 'hospital')
     const contractAlloc = allocateId(hospitalAlloc.counters, 'contract')
-    hospital = { id: hospitalAlloc.id, name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) }
+    hospital = { id: hospitalAlloc.id, name: trimmed, locationType: 'hospital', ...(email !== '' ? { contactEmail: email } : {}) }
     // Effective from the seed epoch, not today: the protected default is the
     // guaranteed billing fallback and must cover PAST service dates too — a
     // list dated before the hospital's creation still bills (8th review).
@@ -342,8 +350,12 @@ export function editAnaesthetist(
 
   mutate(api, actor, metas, (s) => {
     let schedule = s.schedule
+    let counters = s.counters
     if (delta !== null) {
-      schedule = withGenerated(schedule, delta.add).schedule
+      // An earlier start date or a reactivation generates sessions; recurring clashes on them become Draft Lists (catch-up Phase 31).
+      const applied = applyGenerated(s, delta.add, actor.who, metas)
+      schedule = applied.schedule
+      counters = applied.counters
       if (delta.removeSlotIds.length > 0) {
         const slots = { ...schedule.slots }
         for (const id of delta.removeSlotIds) delete slots[id]
@@ -353,6 +365,7 @@ export function editAnaesthetist(
     return {
       masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [registrationNumber]: next } },
       schedule,
+      counters,
     }
   })
   return ok(undefined)
@@ -429,10 +442,14 @@ export function addAnaesthetist(
       after: { slots: generated.slots.length, lists: generated.lists.length, fromISO, toISO },
     },
   ]
-  mutate(api, actor, metas, (s) => ({
-    masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [reg]: anaesthetist } },
-    schedule: withGenerated(s.schedule, generated).schedule,
-  }))
+  mutate(api, actor, metas, (s) => {
+    const applied = applyGenerated(s, generated, actor.who, metas)
+    return {
+      masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [reg]: anaesthetist } },
+      schedule: applied.schedule,
+      counters: applied.counters,
+    }
+  })
   return ok({ registrationNumber: reg, generatedSlots: generated.slots.length, generatedLists: generated.lists.length, fromISO })
 }
 
@@ -441,13 +458,11 @@ export function addAnaesthetist(
 // ---------------------------------------------------------------------------
 
 /**
- * Add a hospital-holiday master row AND reconcile it onto the already-generated
- * canvas: every booked List at that hospital on that date gains the same
- * `holiday`-kind `ListConflict` the generator would have stamped
- * (`canvas.ts` closed-hospital logic), so the Phase-06 amber conflict flag
- * appears live. Audits `holiday.create` + one `list.conflict` per flagged List
- * (the action name setAvailability already uses for a reconciled conflict),
- * batched in one commit. Future rolled days pick the holiday up at generation.
+ * Add a hospital-holiday master row (US-01.5.1). Conflicts are not stamped
+ * here: the one rule in `mutate()` flags every List at that hospital on that
+ * date in the same commit (`list.conflict` per List), and `flaggedListCount`
+ * comes from its result (catch-up Phase 30). Future rolled days pick the
+ * holiday up the same way.
  */
 export function addHospitalHoliday(
   api: AppStoreApi,
@@ -461,25 +476,17 @@ export function addHospitalHoliday(
   if (state.masters.hospitals[hospitalId] === undefined) return refuse('notFound', 'Hospital not found.')
   const trimmedName = name.trim()
   if (trimmedName === '') return refuse('nameRequired', 'A holiday name is required.')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return refuse('dateRequired', 'A valid date is required.')
+  if (!ISO_DATE.test(dateISO)) return refuse('dateRequired', 'A valid date is required.')
   if (Object.values(state.masters.holidays).some((h) => h.hospitalId === hospitalId && h.dateISO === dateISO)) {
     return refuse('duplicateHoliday', 'That hospital already has a holiday recorded on that date.')
   }
 
-  const message = closedHospitalMessage(trimmedName)
-  const affected = Object.values(state.schedule.lists).filter(
-    (l) =>
-      l.dateISO === dateISO &&
-      l.hospitalId === hospitalId &&
-      !l.conflicts.some((c) => c.kind === 'holiday' && c.message === message),
-  )
-
   const metas: MutationMeta[] = []
   let holidayId = ''
-  mutate(api, actor, metas, (s) => {
+  const result = mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'holiday')
     holidayId = alloc.id
-    const holiday = { id: alloc.id, hospitalId, dateISO, name: trimmedName }
+    const holiday: HospitalHoliday = { id: alloc.id, hospitalId, dateISO, name: trimmedName }
     metas.push({
       entityType: 'holiday',
       entityId: alloc.id,
@@ -487,46 +494,113 @@ export function addHospitalHoliday(
       after: { hospitalId, dateISO, name: trimmedName },
       stampBookingId: null,
     })
-    const lists = { ...s.schedule.lists }
-    for (const l of affected) {
-      lists[l.id] = { ...l, conflicts: [...l.conflicts, { kind: 'holiday' as const, message }] }
-      metas.push({
-        entityType: 'list',
-        entityId: l.id,
-        action: 'list.conflict',
-        after: { kind: 'holiday', message },
-        stampBookingId: null,
-      })
-    }
     return {
       masters: { ...s.masters, holidays: { ...s.masters.holidays, [alloc.id]: holiday } },
-      schedule: { ...s.schedule, lists },
       counters: alloc.counters,
     }
   })
-  return ok({ holidayId, flaggedListCount: affected.length })
+  return ok({ holidayId, flaggedListCount: result.conflictsRaised.length })
+}
+
+/**
+ * Edit a hospital holiday's date or name (US-01.5.1, FT-01.5; catch-up Phase
+ * 30). The hospital is fixed: moving a closure to another hospital is delete
+ * and add. Moving the date resolves the old date's flags and raises the new
+ * date's; a rename only changes the wording (no conflict meta). Audited
+ * `holiday.update` with before and after.
+ */
+export function editHospitalHoliday(
+  api: AppStoreApi,
+  actor: Actor,
+  id: string,
+  patch: { dateISO?: string; name?: string },
+): Outcome<{ flagged: number; resolved: number }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can change a hospital holiday.')
+  const state = api.getState()
+  const existing = state.masters.holidays[id]
+  if (existing === undefined) return refuse('notFound', 'Holiday not found.')
+  const name = patch.name === undefined ? existing.name : patch.name.trim()
+  if (name === '') return refuse('nameRequired', 'A holiday name is required.')
+  const dateISO = patch.dateISO ?? existing.dateISO
+  if (!ISO_DATE.test(dateISO)) return refuse('dateRequired', 'A valid date is required.')
+  if (Object.values(state.masters.holidays).some((h) => h.id !== id && h.hospitalId === existing.hospitalId && h.dateISO === dateISO)) {
+    return refuse('duplicateHoliday', 'That hospital already has a holiday recorded on that date.')
+  }
+  if (name === existing.name && dateISO === existing.dateISO) return ok({ flagged: 0, resolved: 0 })
+
+  const next: HospitalHoliday = { ...existing, name, dateISO }
+  const result = mutate(
+    api,
+    actor,
+    {
+      entityType: 'holiday',
+      entityId: id,
+      action: 'holiday.update',
+      before: { hospitalId: existing.hospitalId, dateISO: existing.dateISO, name: existing.name },
+      after: { hospitalId: existing.hospitalId, dateISO, name },
+      stampBookingId: null,
+    },
+    (s) => ({ masters: { ...s.masters, holidays: { ...s.masters.holidays, [id]: next } } }),
+  )
+  return ok({ flagged: result.conflictsRaised.length, resolved: result.conflictsResolved.length })
+}
+
+/**
+ * Delete a hospital holiday (US-01.5.1; catch-up Phase 30). The row goes (the
+ * audit keeps it as `holiday.delete` with the full before) and the one rule
+ * resolves every flag it caused, including any the office had cleared.
+ */
+export function deleteHospitalHoliday(api: AppStoreApi, actor: Actor, id: string): Outcome<{ resolved: number }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can delete a hospital holiday.')
+  const state = api.getState()
+  const existing = state.masters.holidays[id]
+  if (existing === undefined) return refuse('notFound', 'Holiday not found.')
+  const result = mutate(
+    api,
+    actor,
+    { entityType: 'holiday', entityId: id, action: 'holiday.delete', before: { ...existing }, stampBookingId: null },
+    (s) => {
+      const holidays = { ...s.masters.holidays }
+      delete holidays[id]
+      return { masters: { ...s.masters, holidays } }
+    },
+  )
+  return ok({ resolved: result.conflictsResolved.length })
+}
+
+/** Lists a holiday currently flags (live or cleared), for the delete confirmation's count. */
+export function listsFlaggedByHoliday(state: Pick<AppState, 'schedule'>, holidayId: string): number {
+  const cause = holidayCause(holidayId)
+  return Object.values(state.schedule.lists).filter(
+    (l) => l.conflicts.some((c) => c.cause === cause) || (l.conflictClears ?? []).some((c) => c.cause === cause),
+  ).length
 }
 
 // ---------------------------------------------------------------------------
-// Permanent Lists (weekly templates the canvas generates from)
+// Recurring bookings (the weekly patterns that create the canvas's Lists)
 // ---------------------------------------------------------------------------
 
-/** Fields for a new Permanent List template (incl. the usual-surgeon column). */
-export interface NewPermanentListFields {
+/** Fields for a new recurring booking (incl. the usual-surgeon column). */
+export interface NewRecurringBookingFields {
   anaesthetistId: string
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
   session: Session
   kind: ListKind
-  hospitalId: HospitalId | null
-  surgeonId: SurgeonId | null
-  /** Optional template times, written as the Slot's own times when projected; blank follows the default session times. */
+  /** Required, as on every List it projects (US-01.3.1; catch-up Phase 31). */
+  hospitalId: HospitalId
+  surgeonId: SurgeonId
+  /** Optional session times, written as the Slot's own times when projected; blank follows the default session times. */
   startTime?: string
   endTime?: string
   notes?: string
+  /** First date the arrangement runs (blank: from tomorrow's canvas onwards). */
+  effectiveFromISO?: string
+  /** Last date it runs (blank: ongoing). */
+  effectiveToISO?: string
 }
 
-/** Kind and optional template times, checked the same on add and edit (catch-up Phase 28). */
-function templateRefusal(t: { kind?: ListKind; startTime?: string; endTime?: string }): Outcome<never> | null {
+/** Kind and optional session times, checked the same on add and edit (catch-up Phase 28). */
+function recurringBookingRefusal(t: { kind?: ListKind; startTime?: string; endTime?: string }): Outcome<never> | null {
   if (t.kind !== undefined && !(LIST_KINDS as readonly string[]).includes(t.kind)) {
     return refuse('invalidKind', 'A recurring booking is a private, public or pre-op List.')
   }
@@ -539,30 +613,202 @@ function templateRefusal(t: { kind?: ListKind; startTime?: string; endTime?: str
   return null
 }
 
+/** What a recurring-booking add, edit, retire or the view-level apply did to the canvas. */
+export interface RecurringBookingApplyResult {
+  id?: string
+  created: number
+  updated: number
+  removed: number
+  /** Sessions already closed when the arrangement reached them: each became a Draft List (catch-up Phase 31, OQ-81 part 2). */
+  skipped: PlanSkipped[]
+  /** Empty recurring-clash Draft Lists brought in line with the change, or removed (soft) because no longer covered. */
+  draftListsUpdated: number
+  draftListsRemoved: number
+  /** Lists in covered sessions left as they are, with why. */
+  kept: PlanKept[]
+  /** The first date the canvas changed (for "Show on day grid"). */
+  firstAffectedDateISO?: string
+}
+
+/** Start and end dates, checked the same on add and edit. */
+function rangeRefusal(r: { effectiveFromISO?: string; effectiveToISO?: string }, todayISO: string): Outcome<never> | null {
+  for (const v of [r.effectiveFromISO, r.effectiveToISO]) {
+    if (v !== undefined && !ISO_DATE.test(v)) return refuse('invalidDate', 'Dates are YYYY-MM-DD.')
+  }
+  if (r.effectiveFromISO !== undefined && r.effectiveToISO !== undefined && r.effectiveToISO < r.effectiveFromISO) {
+    return refuse('invalidRange', 'The last date must be on or after the first date.')
+  }
+  if (r.effectiveToISO !== undefined && r.effectiveToISO < todayISO) {
+    return refuse('endInPast', 'The last date cannot be before today.')
+  }
+  return null
+}
+
 /**
- * Add a Permanent List template. Master edit only — it does NOT retro-regenerate
- * the existing canvas (already-generated days keep their Lists); future rolled
- * days pick it up, consistent with the generator. Audited `permanentList.create`.
+ * Apply a projection plan inside a mutate recipe (catch-up Phase 30): created
+ * Lists go through 28's `placeListOnSlot` with their provenance and no
+ * Bookings; updates rewrite only untouched projected Lists; removals delete only
+ * empty projected ACTIVE Lists and leave the session empty and as it was.
+ * Catch-up Phase 31: each skipped session (already closed) becomes a
+ * recurring-clash Draft List through the one rule (OQ-81 part 2); an empty
+ * clash Draft List follows an edit or is soft-removed when no longer covered.
+ * Conflicts on the result come from the one rule in `mutate()`.
  */
-export function addPermanentList(
+function applyPlan(
+  s: AppState,
+  plan: ProjectionPlan,
+  metas: MutationMeta[],
+  actor: Actor,
+  recurringBookings: Readonly<Record<string, RecurringBooking>> = s.masters.recurringBookings,
+): { schedule: AppState['schedule']; counters: Record<string, number> } {
+  let counters = s.counters
+  const slots = { ...s.schedule.slots }
+  const lists = { ...s.schedule.lists }
+  const atISO = clockISO(s.clock)
+  const withTimes = (slot: Slot, f: ProjectedFields): Slot => {
+    const next = withoutCoverRequest({ ...slot })
+    if (f.startTime !== undefined) next.startTime = f.startTime
+    if (f.endTime !== undefined) next.endTime = f.endTime
+    return next
+  }
+  for (const c of plan.create) {
+    const slot = slots[c.slotId]!
+    const placed = placeListOnSlot(counters, slot, c.fields)
+    counters = placed.counters
+    lists[placed.list.id] = { ...placed.list, recurringBookingId: c.recurringBookingId }
+    slots[slot.id] = withTimes(slot, c.fields)
+    metas.push({ ...placed.meta, after: { ...(placed.meta.after as object), source: 'recurringBooking', recurringBookingId: c.recurringBookingId } })
+  }
+  for (const u of plan.update) {
+    const list = lists[u.listId]!
+    const next: List = { ...list, kind: u.fields.kind, hospitalId: u.fields.hospitalId, surgeonId: u.fields.surgeonId }
+    if (u.fields.notes === undefined) delete next.notes
+    else next.notes = u.fields.notes
+    lists[list.id] = next
+    const slot = withTimes(slots[u.slotId]!, u.fields)
+    if (u.resetTimes === true) {
+      if (u.fields.startTime === undefined) delete slot.startTime
+      if (u.fields.endTime === undefined) delete slot.endTime
+    }
+    slots[u.slotId] = slot
+    metas.push({
+      entityType: 'list',
+      entityId: list.id,
+      action: 'list.update',
+      before: { kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId, notes: list.notes ?? null },
+      after: { kind: next.kind, hospitalId: next.hospitalId, surgeonId: next.surgeonId, notes: next.notes ?? null, source: 'recurringBooking' },
+      stampBookingId: null,
+    })
+  }
+  for (const r of plan.remove) {
+    const list = lists[r.listId]!
+    delete lists[r.listId]
+    // The emptied session drops the times the arrangement gave it, as a move's vacated session does.
+    if (r.resetTimes === true && slots[r.slotId] !== undefined) {
+      const slot = { ...slots[r.slotId]! }
+      delete slot.startTime
+      delete slot.endTime
+      slots[r.slotId] = slot
+    }
+    metas.push({
+      entityType: 'list',
+      entityId: list.id,
+      action: 'list.remove',
+      before: { slotId: list.slotId ?? null, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId, recurringBookingId: r.recurringBookingId },
+      stampBookingId: null,
+    })
+  }
+  // Catch-up Phase 31: the recurring clash (OQ-81 part 2), the same rule as generation.
+  const clashes = plan.skipped
+    .map((k) => normaliseClash(k, slots))
+    .filter((c): c is NonNullable<typeof c> => c !== undefined)
+  const drafts = clashDraftsInto(lists, clashes, { recurringBookings, todayISO: s.clock.todayISO, nowISO: atISO, by: actor.who, counters })
+  counters = drafts.counters
+  metas.push(...drafts.metas)
+  for (const u of plan.draftUpdate) {
+    const list = lists[u.listId]!
+    const next: List = { ...list, kind: u.fields.kind, hospitalId: u.fields.hospitalId, surgeonId: u.fields.surgeonId }
+    if (u.fields.notes === undefined) delete next.notes
+    else next.notes = u.fields.notes
+    lists[list.id] = next
+    metas.push({
+      entityType: 'list',
+      entityId: list.id,
+      action: 'list.update',
+      before: { kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId, notes: list.notes ?? null },
+      after: { kind: next.kind, hospitalId: next.hospitalId, surgeonId: next.surgeonId, notes: next.notes ?? null, source: 'recurringBooking' },
+      stampBookingId: null,
+    })
+  }
+  for (const r of plan.draftRemove) {
+    const list = lists[r.listId]!
+    lists[list.id] = { ...list, removedAtISO: atISO, removedBy: actor.who, removeReason: RECURRING_BOOKING_CHANGED, removeCause: 'recurringBookingChanged' }
+    metas.push({
+      entityType: 'list',
+      entityId: list.id,
+      action: 'draftList.remove',
+      before: { state: 'DRAFT', removedAtISO: null },
+      after: { state: 'DRAFT', removedAtISO: atISO, removeReason: RECURRING_BOOKING_CHANGED, recurringBookingId: r.recurringBookingId },
+      stampBookingId: null,
+    })
+  }
+  return { schedule: { ...s.schedule, slots, lists }, counters }
+}
+
+function resultOf(plan: ProjectionPlan, id?: string): RecurringBookingApplyResult {
+  const first = firstAffectedDate(plan)
+  return {
+    ...(id !== undefined ? { id } : {}),
+    created: plan.create.length,
+    updated: plan.update.length,
+    removed: plan.remove.length,
+    skipped: plan.skipped,
+    draftListsUpdated: plan.draftUpdate.length,
+    draftListsRemoved: plan.draftRemove.length,
+    kept: plan.kept,
+    ...(first !== undefined ? { firstAffectedDateISO: first } : {}),
+  }
+}
+
+const planCounts = (plan: ProjectionPlan) => ({
+  created: plan.create.length,
+  updated: plan.update.length,
+  removed: plan.remove.length,
+  kept: plan.kept.length,
+  skipped: plan.skipped.length,
+  draftListsUpdated: plan.draftUpdate.length,
+  draftListsRemoved: plan.draftRemove.length,
+})
+
+/**
+ * Add a recurring booking and paint it over the existing canvas in one
+ * commit (US-01.3.2; catch-up Phase 30): its Lists are created, empty, on
+ * every session it covers from tomorrow to the far end of the horizon setting.
+ * A session already closed is skipped (the anaesthetist's calendar is painted
+ * first, OQ-81 part 1) and counted for Phase 31's Draft List. Audited
+ * `recurringBooking.create` plus a `list.create` per List.
+ */
+export function addRecurringBooking(
   api: AppStoreApi,
   actor: Actor,
-  fields: NewPermanentListFields,
-): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a permanent list.')
+  fields: NewRecurringBookingFields,
+): Outcome<RecurringBookingApplyResult & { id: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a recurring booking.')
   const state = api.getState()
   if (state.masters.anaesthetists[fields.anaesthetistId] === undefined) {
     return refuse('notFound', 'Anaesthetist not found.')
   }
-  const invalid = templateRefusal(fields)
+  const invalid =
+    pairingRefusal(fields, state.masters, 'pairingRequired') ?? recurringBookingRefusal(fields) ?? rangeRefusal(fields, state.clock.todayISO)
   if (invalid !== null) return invalid
 
   const metas: MutationMeta[] = []
   let id = ''
+  let plan = emptyPlan()
   mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'permanentList')
+    const alloc = allocateId(s.counters, 'recurringBooking')
     id = alloc.id
-    const template: PermanentList = {
+    const recurringBooking: RecurringBooking = {
       id: alloc.id,
       anaesthetistId: fields.anaesthetistId,
       dayOfWeek: fields.dayOfWeek,
@@ -573,12 +819,15 @@ export function addPermanentList(
       ...(fields.startTime !== undefined && fields.startTime !== '' ? { startTime: fields.startTime } : {}),
       ...(fields.endTime !== undefined && fields.endTime !== '' ? { endTime: fields.endTime } : {}),
       ...(fields.notes !== undefined && fields.notes.trim() !== '' ? { notes: fields.notes.trim() } : {}),
+      ...(fields.effectiveFromISO !== undefined ? { effectiveFromISO: fields.effectiveFromISO } : {}),
+      ...(fields.effectiveToISO !== undefined ? { effectiveToISO: fields.effectiveToISO } : {}),
     }
+    plan = previewRecurringBookingChange(s, undefined, recurringBooking)
     metas.push({
-      entityType: 'permanentList',
+      entityType: 'recurringBooking',
       entityId: alloc.id,
-      action: 'permanentList.create',
-      after: { anaesthetistId: fields.anaesthetistId, dayOfWeek: fields.dayOfWeek, session: fields.session },
+      action: 'recurringBooking.create',
+      after: { anaesthetistId: fields.anaesthetistId, dayOfWeek: fields.dayOfWeek, session: fields.session, ...planCounts(plan) },
       stampBookingId: null,
     })
     // A not-preferred usual surgeon warns in the sheet and never blocks; going
@@ -586,73 +835,162 @@ export function addPermanentList(
     const ack = pairingAcknowledgement(s.officePrivate.pairingPreferences, fields.anaesthetistId, fields.surgeonId)
     if (ack !== null) {
       metas.push({
-        entityType: 'permanentList',
+        entityType: 'recurringBooking',
         entityId: alloc.id,
-        action: 'permanentList.pairingAcknowledged',
+        action: 'recurringBooking.pairingAcknowledged',
         after: ack,
         stampBookingId: null,
       })
     }
+    const applied = applyPlan({ ...s, counters: alloc.counters }, plan, metas, actor, { ...s.masters.recurringBookings, [alloc.id]: recurringBooking })
     return {
-      masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [alloc.id]: template } },
-      counters: alloc.counters,
+      masters: { ...s.masters, recurringBookings: { ...s.masters.recurringBookings, [alloc.id]: recurringBooking } },
+      schedule: applied.schedule,
+      counters: applied.counters,
     }
   })
-  return ok({ id })
+  return ok({ ...resultOf(plan, id), id })
 }
 
-/** Editable Permanent List fields (the template id is immutable). */
-export type PermanentListPatch = Partial<Omit<PermanentList, 'id'>>
+/** Editable recurring-booking fields (the id is immutable; retire with `retireRecurringBooking`). */
+export type RecurringBookingPatch = Partial<Omit<RecurringBooking, 'id' | 'retiredAtISO'>>
 
-/** Edit a Permanent List template (incl. usual surgeon). Audited `permanentList.update`. */
-export function editPermanentList(
+/**
+ * Edit a recurring booking (incl. usual surgeon) and project the change over
+ * the existing canvas in one commit (US-01.3.2; catch-up Phase 30; this
+ * supersedes Phase 07's "edits apply to future generated days only"): from
+ * tomorrow to the far end of the horizon, its empty projected ACTIVE Lists
+ * follow the new fields, sessions it no longer covers lose them, and newly
+ * covered open sessions gain one. Lists with Bookings, SUBMITTED or AUTHORISED
+ * Lists and Lists the office edited are kept. Audited `recurringBooking.update`.
+ */
+export function editRecurringBooking(
   api: AppStoreApi,
   actor: Actor,
   id: string,
-  patch: PermanentListPatch,
-): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a permanent list.')
+  patch: RecurringBookingPatch,
+): Outcome<RecurringBookingApplyResult & { id: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a recurring booking.')
   const state = api.getState()
-  const existing = state.masters.permanentLists[id]
-  if (existing === undefined) return refuse('notFound', 'Permanent list not found.')
+  const existing = state.masters.recurringBookings[id]
+  if (existing === undefined) return refuse('notFound', 'Recurring booking not found.')
+  if (existing.retiredAtISO !== undefined) return refuse('alreadyRetired', 'This recurring booking is retired.')
 
-  const next: PermanentList = { ...existing, ...patch }
-  const invalid = templateRefusal(next)
+  const next: RecurringBooking = { ...existing, ...patch }
+  // Notes, session times and dates cleared explicitly when blanked.
+  for (const key of ['notes', 'startTime', 'endTime', 'effectiveFromISO', 'effectiveToISO'] as const) {
+    if (key in patch && (patch[key] === undefined || String(patch[key]).trim() === '')) delete next[key]
+  }
+  if (next.notes !== undefined) next.notes = next.notes.trim()
+  // The end-in-past check applies only to a date this edit sets: a row that has
+  // already ended can still be edited (and an unchanged past end is no new claim).
+  const endChanged = 'effectiveToISO' in patch && patch.effectiveToISO !== existing.effectiveToISO
+  const invalid = pairingRefusal(next, state.masters, 'pairingRequired') ?? recurringBookingRefusal(next) ?? rangeRefusal(endChanged ? next : { ...next, effectiveToISO: undefined }, state.clock.todayISO) ?? (next.effectiveFromISO !== undefined && next.effectiveToISO !== undefined && next.effectiveToISO < next.effectiveFromISO ? refuse('invalidRange', 'The last date must be on or after the first date.') : null)
   if (invalid !== null) return invalid
-  // notes and template times cleared explicitly when blanked.
-  if ('notes' in patch && (patch.notes === undefined || patch.notes.trim() === '')) delete next.notes
-  if ('startTime' in patch && (patch.startTime === undefined || patch.startTime === '')) delete next.startTime
-  if ('endTime' in patch && (patch.endTime === undefined || patch.endTime === '')) delete next.endTime
-  const metas: MutationMeta[] = [
-    {
-      entityType: 'permanentList',
-      entityId: id,
-      action: 'permanentList.update',
-      before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof PermanentList]])),
-      after: patch,
-      stampBookingId: null,
-    },
-  ]
+  const metas: MutationMeta[] = []
   // Only a changed pairing records the acknowledgement (a notes-only edit
   // never re-logs it). Phase 17; never a refusal.
   const pairingChanged = next.anaesthetistId !== existing.anaesthetistId || next.surgeonId !== existing.surgeonId
   const ack = pairingChanged ? pairingAcknowledgement(state.officePrivate.pairingPreferences, next.anaesthetistId, next.surgeonId) : null
-  if (ack !== null) {
+  let plan = emptyPlan()
+  mutate(api, actor, metas, (s) => {
+    plan = previewRecurringBookingChange(s, existing, next)
     metas.push({
-      entityType: 'permanentList',
+      entityType: 'recurringBooking',
       entityId: id,
-      action: 'permanentList.pairingAcknowledged',
-      after: ack,
+      action: 'recurringBooking.update',
+      before: Object.fromEntries(Object.keys(patch).map((k) => [k, existing[k as keyof RecurringBooking]])),
+      after: { ...patch, ...planCounts(plan) },
       stampBookingId: null,
     })
+    if (ack !== null) {
+      metas.push({ entityType: 'recurringBooking', entityId: id, action: 'recurringBooking.pairingAcknowledged', after: ack, stampBookingId: null })
+    }
+    const applied = applyPlan(s, plan, metas, actor, { ...s.masters.recurringBookings, [id]: next })
+    return {
+      masters: { ...s.masters, recurringBookings: { ...s.masters.recurringBookings, [id]: next } },
+      schedule: applied.schedule,
+      counters: applied.counters,
+    }
+  })
+  return ok({ ...resultOf(plan, id), id })
+}
+
+/**
+ * Retire a recurring booking (US-01.3.2 "can be retired"; catch-up Phase 30):
+ * its last date becomes `lastDateISO` (default today; never before today) and
+ * it never projects again. Its empty projected Lists after that date go; Lists
+ * with Bookings stay. No hard delete: the row stays in the master, muted, with
+ * its history. Audited `recurringBooking.retire`.
+ */
+export function retireRecurringBooking(
+  api: AppStoreApi,
+  actor: Actor,
+  id: string,
+  lastDateISO?: string,
+): Outcome<RecurringBookingApplyResult & { id: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can retire a recurring booking.')
+  const state = api.getState()
+  const existing = state.masters.recurringBookings[id]
+  if (existing === undefined) return refuse('notFound', 'Recurring booking not found.')
+  if (existing.retiredAtISO !== undefined) return refuse('alreadyRetired', 'This recurring booking is already retired.')
+  const lastDate = lastDateISO ?? state.clock.todayISO
+  if (!ISO_DATE.test(lastDate)) return refuse('invalidDate', 'Choose a valid last date.')
+  if (lastDate < state.clock.todayISO) return refuse('endInPast', 'The last date cannot be before today.')
+  if (existing.effectiveFromISO !== undefined && lastDate < existing.effectiveFromISO) {
+    return refuse('invalidRange', 'The last date must be on or after the first date it runs.')
   }
-  mutate(
-    api,
-    actor,
-    metas,
-    (s) => ({
-      masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [id]: next } },
-    }),
-  )
-  return ok(undefined)
+  const end = existing.effectiveToISO !== undefined && existing.effectiveToISO < lastDate ? existing.effectiveToISO : lastDate
+
+  const metas: MutationMeta[] = []
+  let plan = emptyPlan()
+  mutate(api, actor, metas, (s) => {
+    const next: RecurringBooking = { ...existing, effectiveToISO: end, retiredAtISO: clockISO(s.clock) }
+    // Removals only: retiring never creates or rewrites a List.
+    plan = previewRetireRecurringBooking(s, existing, lastDate)
+    metas.push({
+      entityType: 'recurringBooking',
+      entityId: id,
+      action: 'recurringBooking.retire',
+      before: { effectiveToISO: existing.effectiveToISO ?? null },
+      after: { effectiveToISO: end, ...planCounts(plan) },
+      stampBookingId: null,
+    })
+    const applied = applyPlan(s, plan, metas, actor)
+    return {
+      masters: { ...s.masters, recurringBookings: { ...s.masters.recurringBookings, [id]: next } },
+      schedule: applied.schedule,
+      counters: applied.counters,
+    }
+  })
+  return ok({ ...resultOf(plan, id), id })
+}
+
+/**
+ * The view-level "Apply to canvas now" (US-01.3.2; catch-up Phase 30): every
+ * running recurring booking re-painted onto sessions that have come free since
+ * the last projection (leave cancelled, a List removed, an anaesthetist made
+ * active), and its own untouched Lists brought back in line. It never removes
+ * and never touches a kept List. A second press with nothing to do writes no
+ * List meta (the summary entry still records the press). Audited
+ * `recurringBooking.apply` with the counts.
+ */
+export function applyRecurringBookingsToCanvas(api: AppStoreApi, actor: Actor): Outcome<RecurringBookingApplyResult> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can apply recurring bookings to the canvas.')
+  const metas: MutationMeta[] = []
+  let plan = emptyPlan()
+  mutate(api, actor, metas, (s) => {
+    plan = previewApplyAllRecurringBookings(s)
+    metas.push({
+      entityType: 'recurringBooking',
+      entityId: 'all',
+      action: 'recurringBooking.apply',
+      after: planCounts(plan),
+      stampBookingId: null,
+    })
+    if (plan.create.length === 0 && plan.update.length === 0 && plan.skipped.length === 0 && plan.draftUpdate.length === 0) return {}
+    const applied = applyPlan(s, plan, metas, actor)
+    return { schedule: applied.schedule, counters: applied.counters }
+  })
+  return ok(resultOf(plan))
 }

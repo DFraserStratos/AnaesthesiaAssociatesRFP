@@ -12,9 +12,13 @@
  */
 
 import type {
+  AssignedList,
   CoverRequest,
+  DraftList,
+  DraftOrigin,
   List,
   ListKind,
+  RecurringBooking,
   Session,
   Slot,
   SlotStatusKey,
@@ -23,11 +27,10 @@ import type {
 import { LIST_KINDS } from '../domain/types'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
 import { effectiveSlotTimes, isWallTime, slotDatesFor } from '../domain/slots'
-import { defaultSlotStatusKey, displayStatusLabel, isClosedKey, isOpenSlot, statusFor } from '../domain/slotStatus'
+import { defaultSlotStatusKey, isOpenSlot, statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
   canvasAnaesthetists,
-  closedHospitalConflict,
   generateCanvasForDates,
   seriesPaintedCount,
   SEED_LEAVE,
@@ -35,6 +38,9 @@ import {
   type GeneratedCanvas,
 } from '../domain/seed'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
+import { pairingIssues } from '../domain/listPairing'
+import { answeringLists, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
+import { answeredKey } from '../domain/recurringBookingProjection'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal } from './lifecycle'
@@ -57,44 +63,104 @@ import { instanceKey } from '../domain/availabilitySeries'
 export function canvasMastersFrom(state: Pick<AppState, 'masters' | 'schedule'>, datesISO: readonly string[]): CanvasMasters {
   return {
     anaesthetists: canvasAnaesthetists(state.masters.anaesthetists),
-    permanentLists: Object.values(state.masters.permanentLists),
+    recurringBookings: Object.values(state.masters.recurringBookings),
     // Leave set at runtime already lives on the Slots it covers; the seed's
     // calendar is the generator's input for days it has not generated yet.
     leave: SEED_LEAVE,
     series: seriesCalendarFor(state, datesISO),
     statuses: state.masters.slotStatuses,
-    holidays: Object.values(state.masters.holidays),
   }
 }
 
-/** Add generated Slots and Lists to the schedule, never replacing one that exists. */
+/**
+ * Add generated Slots and Lists to the schedule, never replacing one that
+ * exists. A generated List whose projected id is already taken (a List that
+ * kept its id when it moved, or went back to the office as a Draft List) gets
+ * an `LG####` id instead, and one whose Slot already holds a List is dropped
+ * (catch-up Phase 31): a projection never overwrites a List another record
+ * holds.
+ */
 export function withGenerated(
   schedule: AppState['schedule'],
   generated: Pick<GeneratedCanvas, 'slots' | 'lists'>,
-): { schedule: AppState['schedule']; slots: number; lists: number } {
+  counters: Record<string, number>,
+): { schedule: AppState['schedule']; counters: Record<string, number>; slots: number; lists: number } {
   const slots = { ...schedule.slots }
   const lists = { ...schedule.lists }
   let addedSlots = 0
   let addedLists = 0
+  let nextCounters = counters
   for (const slot of generated.slots) {
     if (slots[slot.id] === undefined) {
       slots[slot.id] = slot
       addedSlots++
     }
   }
+  const occupied = new Set<string>()
+  for (const l of Object.values(lists)) if (l.slotId !== undefined) occupied.add(l.slotId)
+  // A day a Draft List (or a List assigned from one) answers for is never projected again.
+  const answered = answeringLists(lists)
   for (const list of generated.lists) {
-    if (lists[list.id] === undefined && slots[list.slotId] !== undefined) {
-      lists[list.id] = list
-      addedLists++
+    if (list.slotId === undefined || slots[list.slotId] === undefined || occupied.has(list.slotId)) continue
+    if (list.recurringBookingId !== undefined && list.anaesthetistId !== undefined && answered.has(answeredKey(list.recurringBookingId, list.anaesthetistId, list.dateISO, list.session))) continue
+    let placed = list
+    if (lists[list.id] !== undefined) {
+      const alloc = allocateId(nextCounters, 'list')
+      nextCounters = alloc.counters
+      placed = { ...list, id: alloc.id }
     }
+    lists[placed.id] = placed
+    occupied.add(list.slotId)
+    addedLists++
   }
-  return { schedule: { ...schedule, slots, lists }, slots: addedSlots, lists: addedLists }
+  return { schedule: { ...schedule, slots, lists }, counters: nextCounters, slots: addedSlots, lists: addedLists }
+}
+
+/**
+ * Generated canvas days into the schedule, every path alike (roll forward,
+ * horizon extend, a new or reactivated anaesthetist, an earlier start date):
+ * the Slots and projected Lists, then every recurring clash as a Draft List
+ * (OQ-81 part 2) in the same commit. One `draftList.fromRecurringClash` meta
+ * per Draft List, or one batch meta when `batch` names the run.
+ */
+export function applyGenerated(
+  s: AppState,
+  generated: GeneratedCanvas,
+  by: string,
+  metas: MutationMeta[],
+  batch?: { entityType: string; entityId: string },
+): { schedule: AppState['schedule']; counters: Record<string, number>; slots: number; lists: number; draftListIds: string[] } {
+  const added = withGenerated(s.schedule, generated, s.counters)
+  const lists = { ...added.schedule.lists }
+  const clashes = generated.clashes
+    .map((c) => {
+      const slot = added.schedule.slots[c.slotId]
+      return slot === undefined ? undefined : { recurringBookingId: c.recurringBookingId, anaesthetistId: slot.anaesthetistId, dateISO: slot.dateISO, session: slot.session }
+    })
+    .filter((c): c is NormalisedClash => c !== undefined)
+  const drafts = clashDraftsInto(lists, clashes, {
+    recurringBookings: s.masters.recurringBookings,
+    todayISO: s.clock.todayISO,
+    nowISO: clockISO(s.clock),
+    by,
+    counters: added.counters,
+  })
+  if (batch !== undefined && drafts.draftListIds.length > 0) {
+    metas.push({
+      entityType: batch.entityType,
+      entityId: batch.entityId,
+      action: 'draftList.fromRecurringClash',
+      after: { draftListIds: drafts.draftListIds },
+      stampBookingId: null,
+    })
+  } else metas.push(...drafts.metas)
+  return { schedule: { ...added.schedule, lists }, counters: drafts.counters, slots: added.slots, lists: added.lists, draftListIds: drafts.draftListIds }
 }
 
 export interface NewListFields {
   kind: ListKind
-  hospitalId?: string
-  surgeonId?: string
+  hospitalId: string
+  surgeonId: string
   notes?: string
 }
 
@@ -102,18 +168,21 @@ export interface NewListFields {
  * The one place a List is created at runtime (inside a mutate recipe): it
  * allocates `LG####`, puts the List in the Slot (`slotId` plus the
  * denormalised anaesthetist, date and session), starts it ACTIVE (15b's name
- * for an assigned List; DRAFT is Phase 31's, for a List with no anaesthetist),
- * flags a closed hospital, and returns its `list.create` meta. Not exported
+ * for an assigned List; DRAFT is Phase 31's, for a List with no anaesthetist)
+ * and returns its `list.create` meta. Conflicts are not its business: the one
+ * rule in `mutate()` flags a closed hospital or a closed session (catch-up
+ * Phase 30). Not exported
  * from the store's index: callers are the store's own actions.
  */
 export function placeListOnSlot(
-  state: Pick<AppState, 'masters' | 'counters'>,
   counters: Record<string, number>,
   slot: Slot,
   fields: NewListFields,
-): { list: List; counters: Record<string, number>; meta: MutationMeta } {
+): { list: AssignedList; counters: Record<string, number>; meta: MutationMeta } {
+  // Dev assertion (US-01.3.1): callers check the pairing first, so a gap here is a programming error.
+  if (fields.hospitalId === '' || fields.surgeonId === '') throw new Error(`placeListOnSlot needs a hospital and a surgeon (${slot.id})`)
   const alloc = allocateId(counters, 'list')
-  const list: List = {
+  const list: AssignedList = {
     id: alloc.id,
     slotId: slot.id,
     dateISO: slot.dateISO,
@@ -121,13 +190,11 @@ export function placeListOnSlot(
     session: slot.session,
     state: 'ACTIVE',
     kind: fields.kind,
+    hospitalId: fields.hospitalId,
+    surgeonId: fields.surgeonId,
     conflicts: [],
   }
-  if (fields.hospitalId !== undefined && fields.hospitalId !== '') list.hospitalId = fields.hospitalId
-  if (fields.surgeonId !== undefined && fields.surgeonId !== '') list.surgeonId = fields.surgeonId
   if (fields.notes !== undefined && fields.notes.trim() !== '') list.notes = fields.notes.trim()
-  const conflict = closedHospitalConflict(list, Object.values(state.masters.holidays))
-  if (conflict !== null) list.conflicts.push(conflict)
   return {
     list,
     counters: alloc.counters,
@@ -135,12 +202,7 @@ export function placeListOnSlot(
       entityType: 'list',
       entityId: alloc.id,
       action: 'list.create',
-      after: {
-        slotId: slot.id,
-        kind: list.kind,
-        ...(list.hospitalId !== undefined ? { hospitalId: list.hospitalId } : {}),
-        ...(list.surgeonId !== undefined ? { surgeonId: list.surgeonId } : {}),
-      },
+      after: { state: 'ACTIVE', slotId: slot.id, kind: list.kind, hospitalId: list.hospitalId, surgeonId: list.surgeonId },
       stampBookingId: null,
     },
   }
@@ -153,6 +215,173 @@ export function withoutCoverRequest(slot: Slot): Slot {
   delete next.coverRequest
   return next
 }
+
+// ---------------------------------------------------------------------------
+// Draft List internals (catch-up Phase 31; EP-07, FT-01.6, DM-52)
+// ---------------------------------------------------------------------------
+
+/**
+ * The one way a new Draft List record is written (state DRAFT): by
+ * `createDraftList` and by the recurring clash. It never touches
+ * `schedule.slots` or another List (US-01.6.1 "Takes no Slot"). Mutates the
+ * `lists` copy it is given, inside a mutate recipe.
+ */
+export function insertDraftList(lists: Record<string, List>, draft: DraftList): void {
+  if (draft.state !== 'DRAFT' || draft.anaesthetistId !== undefined || draft.slotId !== undefined) {
+    throw new Error(`insertDraftList takes a DRAFT List with no anaesthetist and no session (${draft.id})`)
+  }
+  if (lists[draft.id] !== undefined) throw new Error(`insertDraftList would overwrite ${draft.id}`)
+  lists[draft.id] = draft
+}
+
+/**
+ * Turn recurring clashes into Draft Lists (OQ-81 part 2) through the one rule,
+ * `recurringClashDraft`, skipping a past day and any day already answered
+ * (`answeringLists`: a live clash Draft List, one the office re-dated or
+ * removed, or a List assigned from one), so running it twice never makes a
+ * second one. A derived id taken by a Draft List the recurring booking's own
+ * change removed gets `LG####`. Writes no conflict: a hospital closure that
+ * day comes from the reconcile in `mutate()`; an availability conflict never
+ * can (no Slot; US-01.5.4 AC3).
+ */
+export function clashDraftsInto(
+  lists: Record<string, List>,
+  clashes: readonly NormalisedClash[],
+  ctx: { recurringBookings: Readonly<Record<string, RecurringBooking>>; todayISO: string; nowISO: string; by: string; counters: Record<string, number> },
+): { counters: Record<string, number>; metas: MutationMeta[]; draftListIds: string[] } {
+  let counters = ctx.counters
+  const metas: MutationMeta[] = []
+  const draftListIds: string[] = []
+  if (clashes.length === 0) return { counters, metas, draftListIds }
+  const answered = new Set(answeringLists(lists).keys())
+  for (const clash of clashes) {
+    const rb = ctx.recurringBookings[clash.recurringBookingId]
+    if (rb === undefined) continue
+    const key = answeredKey(clash.recurringBookingId, clash.anaesthetistId, clash.dateISO, clash.session)
+    if (answered.has(key)) continue
+    let draft = recurringClashDraft(clash, rb, ctx.todayISO, ctx.nowISO, ctx.by)
+    if (draft === null) continue
+    if (lists[draft.id] !== undefined) {
+      const alloc = allocateId(counters, 'list')
+      counters = alloc.counters
+      draft = { ...draft, id: alloc.id }
+    }
+    insertDraftList(lists, draft)
+    answered.add(key)
+    draftListIds.push(draft.id)
+    metas.push({
+      entityType: 'list',
+      entityId: draft.id,
+      action: 'draftList.fromRecurringClash',
+      after: {
+        state: 'DRAFT',
+        recurringBookingId: rb.id,
+        dateISO: draft.dateISO,
+        session: draft.session,
+        hospitalId: draft.hospitalId,
+        surgeonId: draft.surgeonId,
+        fromAnaesthetistId: clash.anaesthetistId,
+      },
+      stampBookingId: null,
+    })
+  }
+  return { counters, metas, draftListIds }
+}
+
+/**
+ * The one DRAFT to ACTIVE step (EP-07; US-01.6.3 "Becomes active"): the
+ * Draft List goes into the Slot, taking its anaesthetist (denormalised, as
+ * Phase 28's invariant says) and state ACTIVE. It keeps its id, Bookings,
+ * notes and conflicts; the draft trail is kept with `assignedAtISO`.
+ */
+export function attachListToSlot(list: DraftList, slot: Slot, by: string, atISO: string): AssignedList {
+  const { draft, ...rest } = list
+  return {
+    ...rest,
+    state: 'ACTIVE',
+    slotId: slot.id,
+    anaesthetistId: slot.anaesthetistId,
+    dateISO: slot.dateISO,
+    session: slot.session,
+    draft: { ...draft, assignedAtISO: atISO, assignedBy: by },
+  }
+}
+
+export interface DetachOptions {
+  origin: Extract<DraftOrigin, 'movedToOffice' | 'unavailableReturn'>
+  by: string
+  atISO: string
+  fromAnaesthetistId?: string
+}
+
+/**
+ * The one ACTIVE to DRAFT step (EP-07: "an ACTIVE List that goes back to the
+ * office is DRAFT again"), built here for Phase 32's callers (the anaesthetist
+ * moves or withdraws a List to the office, or returns it when marking a booked
+ * session unavailable; US-01.4.3, US-01.5.5). No screen in Phase 31 calls it.
+ * Refuses a List that is not ACTIVE (`notActive`: a SUBMITTED or AUTHORISED
+ * List never goes back). The List keeps its id, Bookings, notes and holiday
+ * conflicts and its `recurringBookingId`; it leaves its Slot (whose own times
+ * go back to the defaults; its status is whatever the caller set), loses its
+ * availability conflicts, and gets a fresh draft trail. It re-triggers no
+ * prepayment calculation (US-06.3.5, D20). Operates on the schedule passed in,
+ * inside a mutate recipe.
+ */
+export function detachListToDraft(
+  schedule: AppState['schedule'],
+  listId: string,
+  options: DetachOptions,
+): Outcome<{ schedule: AppState['schedule']; list: DraftList; meta: MutationMeta }> {
+  const list = schedule.lists[listId]
+  if (list === undefined) return refuse('notFound', 'List not found.')
+  if (list.state !== 'ACTIVE') return refuse('notActive', 'Only an active List can go back to the office.')
+  const { slotId, anaesthetistId, state: _state, ...rest } = list
+  void _state
+  const draft: DraftList = {
+    ...rest,
+    state: 'DRAFT',
+    conflicts: list.conflicts.filter((c) => c.kind === 'holiday'),
+    draft: {
+      origin: options.origin,
+      sinceISO: options.atISO,
+      by: options.by,
+      fromAnaesthetistId: options.fromAnaesthetistId ?? anaesthetistId,
+      // A List assigned from a clash keeps answering for that recurring booking's day.
+      ...(list.draft?.projectedFor !== undefined
+        ? { projectedFor: { ...list.draft.projectedFor, anaesthetistId: list.draft.projectedFor.anaesthetistId ?? list.draft.fromAnaesthetistId ?? anaesthetistId } }
+        : {}),
+    },
+  }
+  const slots = { ...schedule.slots }
+  const vacated = slots[slotId]
+  if (vacated !== undefined && (vacated.startTime !== undefined || vacated.endTime !== undefined)) {
+    const next = { ...vacated }
+    delete next.startTime
+    delete next.endTime
+    slots[slotId] = next
+  }
+  const meta: MutationMeta = {
+    entityType: 'list',
+    entityId: listId,
+    action: 'draftList.detach',
+    before: { state: 'ACTIVE', anaesthetistId, slotId },
+    after: { state: 'DRAFT', anaesthetistId: null, slotId: null, origin: options.origin },
+    stampBookingId: null,
+  }
+  return ok({ schedule: { ...schedule, slots, lists: { ...schedule.lists, [listId]: draft } }, list: draft, meta })
+}
+
+/** The pairing refusal every List write shares (US-01.3.1): the first issue's message carries the code given. */
+export function pairingRefusal(
+  input: { hospitalId?: string | null; surgeonId?: string | null },
+  masters: Pick<AppState['masters'], 'hospitals' | 'surgeons'>,
+  code = 'pairingIncomplete',
+): Outcome<never> | null {
+  const issues = pairingIssues(input, masters)
+  if (issues.length === 0) return null
+  return refuse(code, issues.map((i) => i.message).join(' '), { issues })
+}
+
 
 // ---------------------------------------------------------------------------
 // assignListToSlot (US-01.3.3)
@@ -168,14 +397,13 @@ export interface AssignListFields {
 /**
  * The office assigns a surgeon and a hospital to an available session, which
  * creates its List (US-01.3.3: "an admin assigns a surgeon and hospital to an
- * available Slot"; anaesthetists do not). A hospital closed that day is
- * flagged on the new List, never blocked. A not-preferred pairing of the
+ * available Slot"; anaesthetists do not). A hospital closed that day, or a
+ * session marked with a closed status, is accepted and flagged by the one
+ * rule in `mutate()`, never refused (OQ-09, US-01.5.2; catch-up Phase 30
+ * replaced 28's interim `slotNotAvailable` refusal). A not-preferred pairing of the
  * surgeon and the session's anaesthetist is never refused: when the actor is
  * the office the same commit records 17's `list.pairingAcknowledged`
  * (US-01.3.5 "every office path", OQ-43); a preferred pairing writes nothing.
- *
- * INTERIM until Phase 30: a closed session (any status not open for bookings)
- * is refused (`slotNotAvailable`); Phase 30 makes it accept-and-flag (US-01.5.2).
  */
 export function assignListToSlot(
   api: AppStoreApi,
@@ -188,22 +416,15 @@ export function assignListToSlot(
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return refuse('notFound', 'Session not found.')
   if (listInSlot(state, slotId) !== undefined) return refuse('slotOccupied', 'This session already holds a List.')
-  if (isClosedKey(state.masters.slotStatuses, slot.status)) {
-    return refuse(
-      'slotNotAvailable',
-      `This session is marked ${displayStatusLabel(slot.status, state.masters.slotStatuses).toLowerCase()}, so it is not open for a List in this build.`,
-    )
-  }
-  if (fields.hospitalId === '') return refuse('hospitalRequired', 'Choose the hospital.')
-  if (state.masters.hospitals[fields.hospitalId] === undefined) return refuse('notFound', 'Hospital not found.')
-  if (fields.surgeonId === '') return refuse('surgeonRequired', 'Choose the surgeon.')
-  if (state.masters.surgeons[fields.surgeonId] === undefined) return refuse('notFound', 'Surgeon not found.')
+  // The one pairing rule (US-01.3.1, catch-up Phase 31): its first issue, with 28's codes.
+  const issue = pairingIssues(fields, state.masters)[0]
+  if (issue !== undefined) return refuse(issue.code === 'hospitalUnknown' || issue.code === 'surgeonUnknown' ? 'notFound' : issue.code, issue.message)
   if (!(LIST_KINDS as readonly string[]).includes(fields.kind)) return refuse('invalidKind', 'Choose private, public or pre-op.')
 
   const metas: MutationMeta[] = []
   let listId = ''
   mutate(api, actor, metas, (s) => {
-    const placed = placeListOnSlot(s, s.counters, slot, fields)
+    const placed = placeListOnSlot(s.counters, slot, fields)
     listId = placed.list.id
     metas.push(placed.meta)
     const ack = pairingAcknowledgement(s.officePrivate.pairingPreferences, slot.anaesthetistId, fields.surgeonId)
@@ -231,8 +452,13 @@ export function assignListToSlot(
  * technical discussion: change the owner reference, consume the covering
  * anaesthetist's Slot, return the vacated Slot to available). The List keeps
  * its id, Bookings, phone notes, attachments and history; its `slotId` and
- * denormalised fields change; availability conflicts drop and holiday
- * conflicts stay; the Slot's own times travel to the target and are cleared
+ * denormalised fields change; it loses its recurring-booking provenance (a
+ * move is an edit, so no projection removes or rewrites it). Conflicts follow
+ * the one rule in `mutate()`: an availability conflict resolves when the
+ * target is open, a holiday conflict stays (the date and hospital move with
+ * the List), and a closed target is accepted and flagged (OQ-09; catch-up
+ * Phase 30 dropped 28's `targetNotOpen` for a closed target; an occupied one
+ * is still refused). The Slot's own times travel to the target and are cleared
  * from the vacated one, which takes `vacatedStatus`.
  *
  * It reads, checks and logs NO pairing preference: Phases 32 and 32a reuse it
@@ -261,6 +487,8 @@ export function moveListToSlot(
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
   if (actor.source === 'integration') return refuse('integrationForbidden', 'A feed cannot move a List.')
+  // A Draft List has no session to move from: the office assigns it (`assignDraftList`).
+  if (list.state === 'DRAFT') return refuse('notAssigned', 'This List has no anaesthetist yet. Assign it instead.')
   if (list.state === 'AUTHORISED') return refuse('listAuthorised', 'An authorised List is locked and cannot be moved.')
   if (actor.role === 'anaesthetist') {
     const rights = editRefusal(actor, list)
@@ -275,14 +503,16 @@ export function moveListToSlot(
     return refuse('differentSession', 'A List moves to the same day and session.')
   }
   if (listInSlot(state, to.id) !== undefined) return refuse('slotOccupied', 'That session already holds a List.')
-  if (isClosedKey(state.masters.slotStatuses, to.status)) return refuse('targetNotOpen', 'That session is not free, so it cannot take the List.')
   const vacatedRecord = statusFor(state.masters.slotStatuses, vacatedStatus)
   if (vacatedRecord === undefined || vacatedRecord.retiredAtISO !== undefined) {
     return refuse('invalidVacatedStatus', 'Choose an availability status in use for the vacated session.')
   }
 
-  const retainedConflicts = list.conflicts.filter((c) => c.kind !== 'availability')
-  const moved: List = { ...list, slotId: to.id, anaesthetistId: to.anaesthetistId, conflicts: retainedConflicts }
+  const moved: AssignedList = { ...list, slotId: to.id, anaesthetistId: to.anaesthetistId }
+  if (list.recurringBookingId !== undefined && list.recurringOrigin === undefined) {
+    moved.recurringOrigin = { recurringBookingId: list.recurringBookingId, slotId: from.id }
+  }
+  delete moved.recurringBookingId
   const target: Slot = withoutCoverRequest({ ...to })
   delete target.startTime
   delete target.endTime
@@ -301,8 +531,8 @@ export function moveListToSlot(
       entityType: 'list',
       entityId: list.id,
       action: 'list.reassign',
-      before: { slotId: from.id, anaesthetistId: list.anaesthetistId, conflicts: list.conflicts },
-      after: { slotId: to.id, anaesthetistId: to.anaesthetistId, conflicts: retainedConflicts },
+      before: { slotId: from.id, anaesthetistId: list.anaesthetistId },
+      after: { slotId: to.id, anaesthetistId: to.anaesthetistId },
       stampBookingId: null,
     },
     ...(options.pairingAcknowledgement !== undefined ? [options.pairingAcknowledgement] : []),
@@ -380,15 +610,16 @@ export function reassignList(
  * (FT-01.2, OQ-27: one mechanism, no second record, nothing reconciled). It
  * never touches the List's kind and reads nothing about Bookings (US-01.2.3).
  * The status is any in-use status of the master (an anaesthetist only one they
- * may set). The write and the clash rule are the range action's
- * (`setOneSessionAvailability`, `availabilityClash`):
+ * may set). The write is the range action's (`setOneSessionAvailability`,
+ * through the shared per-session write `applySessionWrites`):
  *   - an empty session is simply updated;
  *   - a session holding a List marked with a closed status keeps its List and
- *     kind, and the List gets one availability conflict ("replace, never
- *     stack"). INTERIM until Phase 32 offers return to the office or assign to
- *     a colleague (US-01.5.5, the OQ-64 answer);
- *   - a bookable status on a session holding a List writes no conflict and
- *     clears an earlier one (catch-up Phase 29).
+ *     kind, and the one rule in `mutate()` flags it (catch-up Phase 30). For an
+ *     anaesthetist this is the INTERIM until Phase 32 offers return to the
+ *     office or assign to a colleague (US-01.5.5, the OQ-64 answer); for the
+ *     office (a sickness phoned in) it is the built reading (OQ-81 part 3,
+ *     provisional);
+ *   - a bookable status resolves that conflict.
  */
 export function setAvailability(
   api: AppStoreApi,
@@ -442,7 +673,17 @@ export function setSlotTimes(api: AppStoreApi, actor: Actor, slotId: string, pat
       after: { startTime: next.startTime ?? null, endTime: next.endTime ?? null },
       stampBookingId: null,
     },
-    (s) => ({ schedule: { ...s.schedule, slots: { ...s.schedule.slots, [slotId]: next } } }),
+    (s) => {
+      // An office change of a projected List's times is a hand edit: the List
+      // leaves its recurring booking (catch-up Phase 30), so no projection
+      // writes the times back.
+      const held = listInSlot(s, slotId)
+      const lists =
+        held !== undefined && held.recurringBookingId !== undefined
+          ? { ...s.schedule.lists, [held.id]: (({ recurringBookingId: _rb, ...rest }) => rest)(held) }
+          : s.schedule.lists
+      return { schedule: { ...s.schedule, slots: { ...s.schedule.slots, [slotId]: next }, lists } }
+    },
   )
   return ok({ changed: true })
 }
@@ -511,7 +752,7 @@ export function previewHorizonChange(
   if (toEndISO > fromEndISO) {
     return { direction: 'extend', fromEndISO, toEndISO, days: horizonDatesBetween(fromEndISO, toEndISO).length, listsDropped: 0, listsWithBookings: 0 }
   }
-  const beyond = Object.values(state.schedule.lists).filter((l) => l.dateISO > toEndISO)
+  const beyond = Object.values(state.schedule.lists).filter((l) => l.dateISO > toEndISO && l.state !== 'DRAFT')
   const booked = new Set(Object.values(state.schedule.bookings).map((b) => b.listId))
   const withBookings = beyond.filter((l) => booked.has(l.id) || (l.attachments ?? []).length > 0).length
   return {
@@ -557,12 +798,15 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let schedule = s.schedule
+    let counters = s.counters
     if (preview.direction === 'extend') {
       const extendDates = horizonDatesBetween(preview.fromEndISO, preview.toEndISO)
       const generated = generateCanvasForDates(canvasMastersFrom(s, extendDates), extendDates)
-      const added = withGenerated(schedule, generated)
+      // Recurring clashes on the new days become Draft Lists (OQ-81 part 2; FT-01.1 "extending fills them in").
+      const added = applyGenerated(s, generated, actor.who, metas)
       seriesSessions = seriesPaintedCount(generated)
       schedule = added.schedule
+      counters = added.counters
       slotsChanged = added.slots
       listsChanged = added.lists
     } else if (preview.direction === 'shorten') {
@@ -575,7 +819,8 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
         }
       }
       for (const list of Object.values(schedule.lists)) {
-        if (list.dateISO > preview.toEndISO) {
+        // Draft Lists hold no session: the office resolves them, and a removed one stays in History.
+        if (list.dateISO > preview.toEndISO && list.state !== 'DRAFT') {
           delete lists[list.id]
           droppedListIds.push(list.id)
           listsChanged++
@@ -600,7 +845,7 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
       },
       stampBookingId: null,
     })
-    return { schedule, appSettings: { ...s.appSettings, schedule: { ...s.appSettings.schedule, horizonMonths: months } } }
+    return { schedule, counters, appSettings: { ...s.appSettings, schedule: { ...s.appSettings.schedule, horizonMonths: months } } }
   })
   return ok({ ...preview, slots: slotsChanged, lists: listsChanged })
 }
@@ -691,7 +936,7 @@ export function anaesthetistCanvasDelta(
     missing,
   )
   const removed = new Set(removeSlotIds)
-  const listsInRemoved = Object.values(state.schedule.lists).filter((l) => removed.has(l.slotId))
+  const listsInRemoved = Object.values(state.schedule.lists).filter((l) => l.slotId !== undefined && removed.has(l.slotId))
   return { add, removeSlotIds, listsInRemoved, toISO }
 }
 

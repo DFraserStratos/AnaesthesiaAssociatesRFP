@@ -64,7 +64,10 @@ describe('registry shape', () => {
       const path = t.indexPath(state)
       if (path === null) continue
       const published: Partial<DemoContextValues> = t.indexHint?.includes('Surgeon PDFs') === true ? { 'integrations.tab': 'pdfs' } : {}
-      expect(ids(api, path, 'bar', published), `${t.id} at ${path}`).toContain(t.id)
+      // A Master data view rides in `?view=`, which the screen publishes (catch-up Phase 31).
+      const view = new URLSearchParams(path.split('?')[1] ?? '').get('view')
+      if (view !== null) published['adminMasters.view'] = view
+      expect(ids(api, path.split('?')[0]!, 'bar', published), `${t.id} at ${path}`).toContain(t.id)
     }
   })
 
@@ -86,8 +89,17 @@ describe('route scoping', () => {
     expect(ids(api, '/admin/billing')).toEqual(['billing-failure', 'arm-handoff-fault', 'run-reconciliation-poll', 'run-archive-job'])
   })
 
-  it('the Admin day view shows only the sample-warning entries (catch-up Phase 15a)', () => {
-    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toEqual(['raise-sample-warnings', 'clear-sample-warnings'])
+  it('the Admin day view shows the sample-warning entries (15a) and Simulate sickness (catch-up Phase 30)', () => {
+    const onDay = ids(createAppStore(), '/admin/day/2026-07-21')
+    expect(onDay).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings', 'simulate-sickness']))
+  })
+
+  it('Simulate sickness shows on the Day view and Conflicts, bar only, and not on a Booking', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/conflicts')).toContain('simulate-sickness')
+    expect(ids(api, '/admin/day/2026-07-22/bookings/BK0001')).not.toContain('simulate-sickness')
+    const entry = DEMO_TRIGGERS.find((t) => t.id === 'simulate-sickness')!
+    expect(entry.surfaces).toEqual(['bar'])
   })
 
   it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Booking, and nowhere else', () => {

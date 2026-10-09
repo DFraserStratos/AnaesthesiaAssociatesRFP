@@ -5,7 +5,7 @@ import { accent, brand, neutral } from '../../../theme/tokens'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
 import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
-import { initialsOf } from '../../../shared/format'
+import { initialsOf, locationName } from '../../../shared/format'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
 import type { CoverTarget } from '../types'
@@ -93,10 +93,10 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
       if (view.open) return { l1: view.slot.coverRequest !== undefined ? 'Cover requested' : status.label, l2: 'Open for booking' }
       return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
-    if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
-    const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-    const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : (list.notes ?? '')
-    return { l1: hospital, l2: surgeon }
+    if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
+    // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
+    const l2 = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
+    return { l1: locationName(list.hospitalId, hospitals), l2 }
   }
 
   function clickCell(row: GridRow, view: SlotView | undefined, session: Session) {

@@ -55,7 +55,8 @@ ACTIVE -> SUBMITTED -> AUTHORISED
 | `SUBMITTED` | View only | View and edit | Do not apply updates | Anaesthetist has handed the whole List to office |
 | `AUTHORISED` | Locked | Locked | Do not apply updates | Office has approved it for billing |
 
-`DRAFT` now means a Draft List with no anaesthetist yet; Draft Lists are not in this build.
+A List's state is `DRAFT` (a Draft List, no anaesthetist yet), `ACTIVE`, `SUBMITTED` or `AUTHORISED`; a
+session's availability is separate.
 
 There is no `RETURNED` state.
 
@@ -69,7 +70,7 @@ There is no `RETURNED` state.
 
 - The schedule horizon (a setting, four months today) advances or is changed.
 - A new anaesthetist is added with a start date, or an anaesthetist is switched active or inactive.
-- A Permanent List (recurring booking) or hospital holiday changes.
+- A recurring booking or hospital holiday changes.
 
 ### Steps
 
@@ -79,12 +80,15 @@ There is no `RETURNED` state.
    the session's status; nothing is reconciled, because the calendar sets the session's status directly.
    The statuses are a list in master data (Free, On holiday, Unavailable to start), next to the fixed
    List types.
-3. Permanent Lists (the surgeons' recurring bookings) then project standing hospital and surgeon
-   arrangements as Lists into free sessions; one that meets leave is traced for the office.
+3. Recurring bookings (the surgeons' standing arrangements) then project their Lists, empty, into
+   free sessions, after the anaesthetist's calendar: a session already closed is not painted: a recurring booking that lands on a day the anaesthetist has
+   already blocked out becomes a Draft List for the office, since the calendar is painted first. A change to a recurring booking reapplies at once through "Apply to canvas
+   now", from tomorrow to the horizon's far end, never touching a List with Bookings or office edits.
 4. The displayed status is the List's kind when a List is in the session, the session's status
    otherwise: one derivation, so free, unavailable, holiday and booked show the same in all apps and
    the finders, including after a phone booking.
-5. Conflicts are surfaced without deleting the List.
+5. Conflicts (a closed hospital, or a List in a session marked unavailable) are surfaced without
+   deleting the List; they clear when the clash goes or the office clears them.
 
 ### Handoff
 
@@ -118,7 +122,7 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 
 ### Triggers
 
-- A Permanent List creates the recurring pairing.
+- A recurring booking creates the standing pairing.
 - A surgeon's room calls AA for an ad-hoc List.
 - A hospital sends a new booking or update.
 - A surgeon's room emails a PDF List.
@@ -137,6 +141,8 @@ HL7/FHIR and surgeon-PDF ingestion paths (Phase 11) are all built.
 ### Manual fallback paths
 
 - **Phone advice:** Kirsty creates the booking in Admin.
+- **No anaesthetist yet:** a request with no anaesthetist yet becomes a Draft List, which can take
+  Bookings before it is assigned.
 - **Mobile/web manual Booking:** Dr Souter enters the missing Booking and its advised billing route.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
 - **PDF:** the office reviews extracted rows, corrects a mistyped NHI, and ingests them (deduped by
@@ -178,6 +184,8 @@ A hospital, surgeon, patient or anaesthetist reports a change.
 6. For a cancellation, she records a reason and soft-cancels the Booking.
 7. Cancelled Bookings remain visible for history but do not block submission or enter billing.
 8. She can add an internal day note for colleagues.
+9. She plans the day from the Draft Lists rail card and band, soonest first. The assign picker is
+   grouped and tier-ordered, and every List block shows its booking count.
 
 ### Handoff
 
@@ -211,7 +219,8 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 2. Her availability is the status on her session, set directly; a session holding a List marked
    unavailable keeps its List and gets a conflict flag on the office's Day view (until Phase 32's
    return-or-assign choice).
-3. Kirsty sees the conflict or receives the phone call.
+3. Kirsty sees the conflict on the Conflicts screen, or receives the phone call and records the
+   sickness.
 4. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
    not-preferred pairing grouped apart and warned (never blocked).
 5. She selects a colleague whose session on the same day and session is free (Find available on the
@@ -529,7 +538,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 | Workflow | Ready now | Built in |
 |---|---:|---|
-| Fixed canvas and Permanent Lists | Yes | Phase 02 |
+| Fixed canvas and recurring bookings | Yes | Phase 02 |
 | Manual phone booking and office changes | Yes | Phase 06 |
 | Mobile/web manual Booking creation | Yes | Phases 03 to 05 |
 | Cover request and office List reassignment | Yes | Phases 03, 06 |

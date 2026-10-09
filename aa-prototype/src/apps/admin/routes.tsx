@@ -19,6 +19,8 @@ import { MasterData } from './screens/masters/MasterData'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
+import { ConflictsScreen } from './screens/ConflictsScreen'
+import { DraftListsScreen } from './screens/DraftListsScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { useAdminOutlet } from './outlet'
 
@@ -104,6 +106,9 @@ export function AdminDayRoute() {
             masters={ctx.masters}
             warningFlags={ctx.warningFlags}
             onSelectSlot={ctx.onSelectSlot}
+            draftLists={ctx.dayDraftLists}
+            bookingCounts={ctx.bookingCounts}
+            onOpenDraftList={ctx.onOpenDraftList}
           />
         )}
         <RightRail
@@ -119,6 +124,9 @@ export function AdminDayRoute() {
           todoRows={ctx.todoRows}
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
+          onOpenConflicts={() => navigate('/admin/conflicts')}
+          onOpenDraftList={ctx.onOpenDraftList}
+          onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
         />
       </div>
     </>
@@ -225,6 +233,22 @@ export function AdminInvoicesRoute() {
 // ---------------------------------------------------------------------------
 // The single-screen sections
 // ---------------------------------------------------------------------------
+
+/** Every conflict across dates (catch-up Phase 30; US-01.5.4). A Draft List's row opens its drawer (catch-up Phase 31). */
+export function AdminConflictsRoute() {
+  const { actor, onSelectSlot, onOpenDraftList } = useAdminOutlet()
+  return <ConflictsScreen actor={actor} onOpenSession={onSelectSlot} onOpenDraftList={onOpenDraftList} />
+}
+
+/**
+ * Draft Lists, the one place (catch-up Phase 31; US-01.6.2) — `/admin/draft-lists`
+ * (`?tab=history`; `?open=<listId>` opens that Draft List's drawer on arrival,
+ * read by the layout).
+ */
+export function AdminDraftListsRoute() {
+  const { actor, onOpenDraftList, onOpenList } = useAdminOutlet()
+  return <DraftListsScreen actor={actor} onOpenDraftList={onOpenDraftList} onOpenList={onOpenList} />
+}
 
 export function AdminBillingRoute() {
   const { actor } = useAdminOutlet()

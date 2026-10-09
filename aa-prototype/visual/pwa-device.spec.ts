@@ -273,3 +273,30 @@ test('the office stand-in assigns a List to the next free session, from the List
   await expect(session).toContainText("St George's")
   await page.screenshot({ path: 'visual/shots/pwa-08-assigned-row.png' })
 })
+
+test('the office stand-in assigns a waiting request to Dr Souter, from the Lists Demo sheet (catch-up Phase 31)', async ({ page }) => {
+  await page.goto('/mobile/lists')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-office-assigns-draft-list"]')
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: 'Run' }).click()
+  const status = row.getByRole('status')
+  await expect(status).toContainText('The office assigned a waiting request to your Wed 22 Jul PM: Forte Health · Mr V. Nand, 2 bookings.')
+  const text = (await status.textContent()) ?? ''
+  expect(/Draft List|slot|preferred|tier/i.test(text)).toBe(false)
+  await page.screenshot({ path: 'visual/shots/pwa-09-office-assigns-draft.png' })
+  await page.keyboard.press('Escape')
+
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: 'Month', exact: true }).click()
+  const session = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  await expect(session).toHaveAttribute('data-list-id', 'LD-002')
+  await expect(session).toContainText('Forte Health')
+  // No Draft List shows on any PWA screen.
+  expect(/Draft List|Unassigned/.test(await page.locator('body').innerText())).toBe(false)
+  await page.screenshot({ path: 'visual/shots/pwa-10-draft-assigned-row.png' })
+})

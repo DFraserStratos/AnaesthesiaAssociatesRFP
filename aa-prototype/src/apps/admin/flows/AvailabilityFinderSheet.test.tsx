@@ -40,10 +40,10 @@ describe('AvailabilityFinderSheet', () => {
 
   it('lists exactly the anaesthetists with an open PM session, in tier order', () => {
     const { container } = renderFinder()
-    // The seed's open Tue 21 PM sessions: Sharma, Delaney, Hughes and Strand.
+    // The seed's open Tue 21 PM sessions: Sharma, Delaney, Hughes, Strand and (since catch-up Phase 31) Fitzgerald.
     const clear = rows(container, 'candidates-clear')
-    expect(new Set(ids(clear))).toEqual(new Set([ANAE.sharma, ANAE.delaney, ANAE.hughes, ANAE.strand]))
-    expect(screen.getByText('4 anaesthetists free this PM')).toBeInTheDocument()
+    expect(new Set(ids(clear))).toEqual(new Set([ANAE.sharma, ANAE.delaney, ANAE.hughes, ANAE.strand, ANAE.fitzgerald]))
+    expect(screen.getByText('5 anaesthetists free this PM')).toBeInTheDocument()
     expect(tiers(clear)).toEqual([...tiers(clear)].sort((a, b) => a - b))
     expect(rows(container, 'candidates-not-preferred')).toEqual([])
   })
@@ -52,7 +52,7 @@ describe('AvailabilityFinderSheet', () => {
     expect(assignListToSlot(useAppStore, OFFICE, slotIdFor(ANAE.strand, TUE21, 'PM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
     expect(setAvailability(useAppStore, OFFICE, ANAE.delaney, TUE21, 'PM', 'unavailable').ok).toBe(true)
     const { container } = renderFinder()
-    expect(screen.getByText('2 anaesthetists free this PM')).toBeInTheDocument()
+    expect(screen.getByText('3 anaesthetists free this PM')).toBeInTheDocument()
     const listed = ids(rows(container, 'candidates-clear'))
     expect(listed).not.toContain(ANAE.strand)
     expect(listed).not.toContain(ANAE.delaney)

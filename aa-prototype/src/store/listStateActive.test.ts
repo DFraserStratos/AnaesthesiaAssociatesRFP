@@ -19,10 +19,13 @@ import type { ListState } from '../domain/types'
 const STATES: readonly ListState[] = ['ACTIVE', 'SUBMITTED', 'AUTHORISED']
 
 describe('the seed', () => {
-  it('stamps every List ACTIVE, SUBMITTED or AUTHORISED', () => {
+  it('stamps every List with an anaesthetist ACTIVE, SUBMITTED or AUTHORISED, and only a Draft List DRAFT (catch-up Phase 31)', () => {
     const lists = Object.values(buildSeed().schedule.lists)
     expect(lists.length).toBeGreaterThan(1000)
-    for (const l of lists) expect(STATES, l.id).toContain(l.state)
+    for (const l of lists) {
+      if (l.anaesthetistId === undefined) expect(l.state, l.id).toBe('DRAFT')
+      else expect(STATES, l.id).toContain(l.state)
+    }
   })
 })
 
@@ -56,7 +59,7 @@ describe('the lifecycle under its new name', () => {
 
 describe('the List state label', () => {
   it('prints the catalogue names, one per state in the union', () => {
-    expect(LIST_STATE_LABELS).toEqual({ ACTIVE: 'ACTIVE', SUBMITTED: 'SUBMITTED', AUTHORISED: 'AUTHORISED' })
+    expect(LIST_STATE_LABELS).toEqual({ DRAFT: 'DRAFT', ACTIVE: 'ACTIVE', SUBMITTED: 'SUBMITTED', AUTHORISED: 'AUTHORISED' })
   })
 })
 

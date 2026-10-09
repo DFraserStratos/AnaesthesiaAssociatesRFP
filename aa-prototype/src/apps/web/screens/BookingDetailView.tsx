@@ -5,7 +5,7 @@ import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { BookingDetailBody } from '../../../shared/booking'
-import { ageYears, formatDob, nhiBadge } from '../../../shared/format'
+import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 
 interface BookingDetailViewProps {
   bookingId: string
@@ -47,7 +47,7 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack }: Bookin
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   const badge = nhiBadge(patient?.nhi)
-  const hospitalName = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
+  const hospitalName = locationName(list.hospitalId, masters.hospitals)
 
   const header = (_collapsed: boolean, history: React.ReactNode) => (
     <div

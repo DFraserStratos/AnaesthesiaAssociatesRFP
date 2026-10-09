@@ -16,7 +16,7 @@ import type {
   BookingCancellation,
   BookingSource,
   IntegrationCorrelationRef,
-  List,
+  AssignedList,
   Procedure,
 } from '../types'
 import { APPT, FEED } from '../integrations'
@@ -137,16 +137,17 @@ const PDF_HOSPITALS: ReadonlySet<string> = new Set([HOSP.forte, HOSP.ces])
  * as phoned in or added by the anaesthetist (none is seeded today); (2) a
  * Booking with a correlation ref, or on a feed hospital's List, came from the
  * hospital download; (3) one at a surgeon-PDF hospital came from the surgeon's
- * PDF; (4) anything else (a List with no hospital) is an office entry.
+ * PDF; (4) anything else (a List at AA rooms, or any other location) is an office entry.
  */
-function seedSourceFor(booking: Booking, list: List | undefined): BookingSource {
+function seedSourceFor(booking: Booking, list: AssignedList | undefined): BookingSource {
   const hospitalId = list?.hospitalId
   if (booking.correlationRef !== undefined || (hospitalId !== undefined && FEED_HOSPITALS.has(hospitalId))) return 'hospitalDownload'
   if (hospitalId !== undefined && PDF_HOSPITALS.has(hospitalId)) return 'surgeonPdf'
   return 'admin'
 }
 
-export function buildBookings(seed: number, lists: readonly List[]): BookingsBuild {
+/** Seeds Bookings on assigned Lists only (catch-up Phase 31: Draft Lists join the seed after this step). */
+export function buildBookings(seed: number, lists: readonly AssignedList[]): BookingsBuild {
   const listById = new Map(lists.map((l) => [l.id, l]))
   const bookings: Booking[] = []
   const procedures: Procedure[] = []
@@ -1128,7 +1129,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
       : a.dateISO.localeCompare(b.dateISO),
   )
 
-  function fillList(list: List, count: number, capture: 'past' | 'today' | 'future', rng: () => number): void {
+  function fillList(list: AssignedList, count: number, capture: 'past' | 'today' | 'future', rng: () => number): void {
     const sessionStart = list.session === 'AM' ? 7 * 60 + 45 : 13 * 60 + 5
     let cursor = sessionStart
     for (let i = 0; i < count; i++) {
@@ -1175,7 +1176,8 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
         spec.patientPaymentCategory = 'selfFundedPostProcedure'
       } else {
         spec.billingRoute = 'hospital'
-        const hospitalId = list.hospitalId ?? HOSP.stg
+        // AA rooms is never a Contract holder (catch-up Phase 31): it falls back as no hospital did.
+        const hospitalId = list.hospitalId === HOSP.aaRooms ? HOSP.stg : list.hospitalId
         spec.governingContractId = DEFAULT_CONTRACT_BY_HOSPITAL[hospitalId] ?? CONTRACT.stgDefault
         spec.billingReference = `${REF_PREFIX[hospitalId] ?? 'SG'}-2026-${4000 + procN}`
       }
@@ -1183,7 +1185,7 @@ export function buildBookings(seed: number, lists: readonly List[]): BookingsBui
     }
   }
 
-  const bookable = (list: List): boolean =>
+  const bookable = (list: AssignedList): boolean =>
     (list.kind === 'private' || list.kind === 'public') && !pinnedListIds.has(list.id)
 
   let pastBudget = 50

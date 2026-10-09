@@ -27,17 +27,17 @@ describe('describeAvailabilityOutcome', () => {
     expect(describeAvailabilityOutcome(outcome({ unchanged: 2 }), { kind: 'range', statusLabel: 'Free' })).toBe('Already Free. Nothing changed.')
   })
 
-  it('says a List is flagged on the office\'s Day view, never that anyone was told', () => {
+  it('says a conflict was flagged for the office, never that anyone was told (catch-up Phase 30)', () => {
     expect(clean(describeAvailabilityOutcome(outcome({ set: 1, flagged: ['L1'], holdingLists: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21' })))
-      .toBe("1 session set to Unavailable on Tue 21 Jul. 1 List is flagged on the office's Day view.")
-    expect(describeAvailabilityOutcome(outcome({ set: 2, flagged: ['L1', 'L2'] }), { kind: 'range', statusLabel: 'Unavailable' })).toContain("2 Lists are flagged on the office's Day view.")
+      .toBe('1 session set to Unavailable on Tue 21 Jul. The session has a List; a conflict was flagged for the office.')
+    expect(describeAvailabilityOutcome(outcome({ set: 2, flagged: ['L1', 'L2'] }), { kind: 'range', statusLabel: 'Unavailable' })).toContain('2 sessions have Lists; a conflict was flagged for the office on each.')
   })
 
-  it('a bookable status over a List: nothing flagged, a flag cleared', () => {
+  it('a bookable status over a List: nothing flagged, a conflict resolved', () => {
     expect(describeAvailabilityOutcome(outcome({ set: 1, holdingLists: 1 }), { kind: 'range', statusLabel: 'Free', fromISO: '2026-07-21' }))
       .toBe('1 session set to Free on Tue 21 Jul. The List stays in place, with nothing flagged.')
     expect(describeAvailabilityOutcome(outcome({ set: 1, cleared: ['L1'], holdingLists: 1 }), { kind: 'range', statusLabel: 'Free' }))
-      .toBe("1 session set to Free. 1 List's flag was cleared.")
+      .toBe("1 session set to Free. 1 List's conflict was resolved.")
   })
 
   it('a series and its deletion', () => {

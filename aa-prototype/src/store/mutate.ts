@@ -18,6 +18,9 @@ import type { ActorRole, AuditEntry, AuditSource, BookingId } from '../domain/ty
 import { buildSeed, buildSeedBillingSlice, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
+
+export type { MutationResult } from './conflictReconcile'
 
 // ---------------------------------------------------------------------------
 // Actors & outcomes
@@ -83,7 +86,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   surgeonRoom: { prefix: 'RMN', pad: 3 },
   surgeonGroup: { prefix: 'SGN', pad: 3 },
   pairingPreference: { prefix: 'PPN', pad: 3 },
-  permanentList: { prefix: 'PLN', pad: 3 },
+  // Catch-up Phase 30 (DM-53): seeded rows are RCB###; RB is Phase 16's BCTI-history namespace.
+  recurringBooking: { prefix: 'RCBN', pad: 3 },
   holiday: { prefix: 'HHN', pad: 3 },
   // Billing run (Phase 08). `invoiceNumber` is the human-facing remittance
   // key (unique, RFP), separate from the invoice's entity id. The year is
@@ -169,27 +173,35 @@ function deriveStampBookingId(meta: MutationMeta, schedule: AppState['schedule']
 }
 
 /**
- * Apply a domain mutation: recipe patch + audit append + Booking stamp, one
- * `setState` commit. `metas` may be a single entry or several (e.g. List
- * reassignment audits the move, the absorb and the regenerate together).
+ * Apply a domain mutation: recipe patch + conflict reconcile + audit append +
+ * Booking stamp, one `setState` commit. `metas` may be a single entry or
+ * several (e.g. List reassignment audits the move and the vacated session
+ * together). The conflict reconcile (catch-up Phase 30,
+ * `conflictReconcile.ts`) re-runs the one conflict rule over every List whose
+ * facts the patch touched and appends its `list.conflict` /
+ * `list.conflictResolved` metas to the same commit; the result says which
+ * Lists gained or lost a conflict, so actions can report counts.
  */
 export function mutate(
   api: AppStoreApi,
   actor: Actor,
   metas: MutationMeta | readonly MutationMeta[],
   recipe: (state: AppState) => DomainPatch,
-): void {
+): MutationResult {
   const state = api.getState()
-  const patch = recipe(state)
+  const recipePatch = recipe(state)
   const atISO = clockISO(state.clock)
-  const metaList = Array.isArray(metas) ? (metas as readonly MutationMeta[]) : [metas as MutationMeta]
+  const recipeMetas = Array.isArray(metas) ? (metas as readonly MutationMeta[]) : [metas as MutationMeta]
   // Convention 7: no mutation without an audit entry. Callers that build their
   // metas in the recipe pass an array the recipe pushes into, so this is
   // checked after `recipe(state)` has run — an empty list is a programming
   // error (a raw write with zero audit entries and zero lastModified stamps).
-  if (metaList.length === 0) {
+  if (recipeMetas.length === 0) {
     throw new Error('mutate() requires at least one audit meta (convention 7: no mutation without an audit entry)')
   }
+  const reconciled = reconcileConflictsInPatch(state, recipePatch, atISO)
+  const patch = reconciled.patch
+  const metaList = reconciled.metas.length === 0 ? recipeMetas : [...recipeMetas, ...reconciled.metas]
 
   let counters = patch.counters ?? state.counters
   const entries: AuditEntry[] = []
@@ -233,6 +245,7 @@ export function mutate(
     counters,
     audit: [...state.audit, ...entries],
   })
+  return reconciled.result
 }
 
 /**

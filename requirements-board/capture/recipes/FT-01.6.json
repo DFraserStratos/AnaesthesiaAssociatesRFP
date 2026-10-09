@@ -1,0 +1,19 @@
+{
+  "id": "FT-01.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "draft-list-origins",
+      "app": "admin",
+      "caption": "Draft Lists from a surgeon's room request and from a recurring booking on an unavailable day",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "steps": [{ "wait": 500 }],
+          "highlight": ["[data-shot=draft-lists-table] th:nth-child(7)", "[data-draft-list-row] td:nth-child(7)"]
+        }
+      ]
+    }
+  ]
+}

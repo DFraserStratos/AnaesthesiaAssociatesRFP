@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
+import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { accent, neutral } from '../../../../theme/tokens'
 import type { Actor } from '../../../../store'
 import { AnaesthetistsView } from './AnaesthetistsView'
@@ -9,7 +10,7 @@ import {
   InsurersView,
   ModifierCodesView,
   OrganisationsView,
-  PermanentListsMaster,
+  RecurringBookingsMaster,
   RvgCodesView,
   XeroArchivingView,
 } from './ReferenceViews'
@@ -29,6 +30,7 @@ interface MasterDataProps {
 export function MasterData({ actor }: MasterDataProps) {
   const [params, setParams] = useSearchParams()
   const view = parseMastersView(params.get('view'))
+  useDemoTriggerContext('adminMasters.view', view)
 
   function select(next: MastersView) {
     setParams((prev) => {
@@ -62,7 +64,7 @@ export function MasterData({ actor }: MasterDataProps) {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
         {view === 'contracts' && <ContractsMaster actor={actor} />}
-        {view === 'permanentLists' && <PermanentListsMaster actor={actor} />}
+        {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}
         {view === 'surgeons' && <SurgeonsView actor={actor} />}
         {view === 'surgeonRooms' && <SurgeonRoomsView actor={actor} />}

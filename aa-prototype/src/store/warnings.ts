@@ -99,7 +99,8 @@ export interface OpenWarningRow {
   dateISO: string
   session: 'AM' | 'PM'
   patientId: string
-  anaesthetistId: string
+  /** Absent for a Booking on a Draft List (shown as "Unassigned"). */
+  anaesthetistId?: string
   scheduledTime?: string
 }
 
@@ -124,7 +125,7 @@ export function openWarnings(state: WarningState, rules: readonly WarningRule[] 
         dateISO: facts.list.dateISO,
         session: facts.list.session,
         patientId: booking.patientId,
-        anaesthetistId: facts.list.anaesthetistId,
+        ...(facts.list.anaesthetistId !== undefined ? { anaesthetistId: facts.list.anaesthetistId } : {}),
         scheduledTime: booking.scheduledTime,
       })
     }

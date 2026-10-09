@@ -170,7 +170,7 @@ test('admin: a booking opened from the day drawer is a URL under its day', async
 
   // Open a booked block → the List drawer (a transient overlay, deliberately
   // NOT in the URL), then a booking from it → a routed screen under the day.
-  await page.getByText("St George's").first().click()
+  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/bookings\/[^/]+$/)

@@ -173,7 +173,7 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
   const resolved = useDisplayStatus(session?.displayKey ?? '')
   if (session === undefined) return <span aria-hidden style={{ height: 34, borderRadius: 7, background: neutral.sunken }} />
   const v = resolved.visual
-  const line2 = session.list !== undefined ? (session.list.hospitalName ?? 'AA rooms') : (session.series?.line ?? session.note ?? '')
+  const line2 = session.list !== undefined ? session.list.hospitalName : (session.series?.line ?? session.note ?? '')
   return (
     <span
       data-slot-id={session.slotId}

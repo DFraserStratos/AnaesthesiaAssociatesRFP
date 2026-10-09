@@ -191,7 +191,7 @@ export function handoffCase(api: AppStoreApi, caseId: string): Outcome<HandoffRe
   if (invoice === undefined) return refuse('noInvoice', 'The case invoice was not found.')
   const booking = state.schedule.bookings[theCase.bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-  const anaesthetist = list !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
+  const anaesthetist = list?.anaesthetistId !== undefined ? state.masters.anaesthetists[list.anaesthetistId] : undefined
   if (anaesthetist === undefined) {
     return refuse('noAnaesthetist', 'Could not resolve the anaesthetist payee for this case.')
   }

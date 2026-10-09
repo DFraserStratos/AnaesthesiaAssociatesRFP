@@ -13,13 +13,14 @@
  *     lines are never fee inputs).
  */
 
-import type { BillingLine, Contract, List, Procedure, RvgCode } from '../../domain/types'
+import type { AssignedList, BillingLine, Contract, Procedure, RvgCode } from '../../domain/types'
 import { feeFor, type FeeContext, type FeeResult } from '../../domain/billing/fee'
 import type { AppState } from '../../store'
 
 export interface ProcedureFeeArgs {
   procedure: Procedure
-  list: List
+  /** The List's anaesthetist prices the fee, so only an assigned List (a Draft List has none yet). */
+  list: AssignedList
   /** 1-based position of the procedure on its Booking. */
   ordinal: number
   masters: AppState['masters']
@@ -56,7 +57,7 @@ export function procedureFee({ procedure, list, ordinal, masters, billingLines }
   }
   if (contract !== undefined) ctx.contract = contract
   if (baseCode !== undefined) ctx.baseCode = baseCode
-  if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
+  ctx.surgeonId = list.surgeonId
 
   const view: ProcedureFeeView = { fee: feeFor(procedure, ctx), nonRvgLines }
   if (baseCode !== undefined) view.baseCode = baseCode
@@ -73,7 +74,7 @@ export interface BookingFeeTotals {
  *  billable units and fee across the Booking's procedures in Booking order. */
 export function bookingFee(
   procedures: readonly Procedure[],
-  list: List,
+  list: AssignedList,
   masters: AppState['masters'],
   billingLines: Record<string, BillingLine>,
 ): BookingFeeTotals {

@@ -27,8 +27,9 @@
  */
 
 import { format, parseISO } from 'date-fns'
-import type { AuditEntry, BookingSource } from '../../domain/types'
-import { BOOKING_SOURCE_LABELS, formatCurrency } from '../format'
+import type { AuditEntry, BookingSource, DraftOrigin, ListState, RequestSource } from '../../domain/types'
+import { BOOKING_SOURCE_LABELS, LIST_STATE_LABELS, formatCurrency } from '../format'
+import { ORIGIN_LABELS, SOURCE_LABELS, UNASSIGNED } from '../scheduleTerms'
 import { fieldLabel } from './fieldLabels'
 import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
 
@@ -184,6 +185,8 @@ function withReason(head: string, reason: unknown): string {
  * as English instead of a brace dump.
  */
 export function formatAuditValue(key: string, value: unknown): string {
+  // A List with no anaesthetist is a Draft List: its flag, not "not set" (catch-up Phase 31).
+  if ((value === undefined || value === null) && key === 'anaesthetistId') return UNASSIGNED
   if (value === undefined || value === null) return NOT_SET
   if (typeof value === 'boolean') return value ? 'yes' : 'no'
   if (typeof value === 'number') {
@@ -195,6 +198,9 @@ export function formatAuditValue(key: string, value: unknown): string {
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
     if (key === 'source' && Object.hasOwn(BOOKING_SOURCE_LABELS, value)) return BOOKING_SOURCE_LABELS[value as BookingSource]
+    if (key === 'source' && Object.hasOwn(SOURCE_LABELS, value)) return SOURCE_LABELS[value as RequestSource]
+    if (key === 'origin' && Object.hasOwn(ORIGIN_LABELS, value)) return ORIGIN_LABELS[value as DraftOrigin]
+    if (key === 'state' && Object.hasOwn(LIST_STATE_LABELS, value)) return LIST_STATE_LABELS[value as ListState]
     // Pairing words from the one label set (catch-up Phase 17).
     if (key === 'kind' && Object.hasOwn(PAIRING_LABELS.kind, value)) return PAIRING_LABELS.kind[value as keyof typeof PAIRING_LABELS.kind]
     if (key === 'raisedBy' && Object.hasOwn(PAIRING_LABELS.side, value)) return PAIRING_LABELS.side[value as keyof typeof PAIRING_LABELS.side]

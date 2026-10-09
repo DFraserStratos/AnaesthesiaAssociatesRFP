@@ -2,6 +2,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
 import { useAppStore } from '../../store'
+import { isAssignedList } from '../../domain/draftLists'
 import { mondayOf, shiftWeeks } from '../../shared/format'
 import {
   AccountsScreen,
@@ -82,7 +83,8 @@ export function WebListDetailRoute() {
   const { listId = '' } = useParams()
   const { actor, todayISO } = useWebOutlet()
   const navigate = useNavigate()
-  const exists = useAppStore((s) => s.schedule.lists[listId] !== undefined)
+  // A Draft List is office only (OQ-86): not found here.
+  const exists = useAppStore((s) => isAssignedList(s.schedule.lists[listId]))
 
   return (
     <RequireEntity exists={exists}>
@@ -101,7 +103,10 @@ export function WebBookingDetailRoute() {
   const { listId = '', bookingId = '' } = useParams()
   const { actor, todayISO } = useWebOutlet()
   const navigate = useNavigate()
-  const exists = useAppStore((s) => s.schedule.bookings[bookingId] !== undefined)
+  const exists = useAppStore((s) => {
+    const booking = s.schedule.bookings[bookingId]
+    return booking !== undefined && isAssignedList(s.schedule.lists[booking.listId])
+  })
   const backToList = () => navigate(`/web/lists/${listId}`)
 
   return (

@@ -1,7 +1,7 @@
 {
   "id": "US-01.3.6",
-  "status": "partial",
-  "absentReason": "Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker and the Find available sheet on the Day view (Phase 28). Draft List assignment (Phase 31) reuses the same ordering.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "tier-record",
@@ -101,6 +101,40 @@
           "highlight": [
             "[data-shot=candidates-clear]",
             "[data-shot=tier-filter]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "draft-list-tiers",
+      "app": "admin",
+      "caption": "Who can fill a Draft List, ordered by tier and shuffled within a tier, seen only by the office",
+      "start": "/admin/draft-lists",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=/^Assign/]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=draft-list-reach] >> role=button[name=\"Everyone\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=tier-filter] >> role=button[name=\"Tier 2\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=tier-filter]",
+            "[data-shot=candidates-clear]"
           ]
         }
       ]

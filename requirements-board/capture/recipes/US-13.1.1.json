@@ -6,21 +6,24 @@
     {
       "name": "day-view",
       "app": "admin",
-      "caption": "One-day view of every anaesthetist's AM and PM Lists",
+      "caption": "One-day view of every anaesthetist's Lists, Draft Lists and booking counts",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
           "state": "day",
           "steps": [],
-          "highlight": [],
-          "caption": "One-day view of every anaesthetist's AM and PM Lists, with hospital, surgeon and status"
+          "highlight": [
+            "[data-shot=daygrid-draft-band]",
+            "[data-shot=daygrid-block-count] >> nth=0"
+          ],
+          "caption": "One-day view of every anaesthetist's Lists, Draft Lists and booking counts"
         },
         {
           "state": "drill-down",
           "caption": "Drill into a List to see its session and Bookings",
           "steps": [
             {
-              "click": "text=\"Southern Cross\" >> nth=0"
+              "click": "[data-list-id=\"L-34821-2026-07-21-PM\"]"
             },
             {
               "wait": 600

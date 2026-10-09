@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { locationName } from '../../../shared/format'
 import { addDays, format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
 import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
@@ -51,9 +52,10 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
     function describe(v: SlotView): string {
       const l = v.list
       if (l === undefined) return emptySessionLine(v.slot, v.open, slotStatuses)
-      if (l.kind === 'preop') return l.notes ?? 'Pre-op assessment clinic · AA rooms'
-      const hospital = l.hospitalId !== undefined ? (hospitals[l.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-      const surgeon = l.surgeonId !== undefined ? surgeons[l.surgeonId] : undefined
+      const location = locationName(l.hospitalId, hospitals)
+      if (l.kind === 'preop') return l.notes ?? `Pre-op assessment clinic · ${location}`
+      const hospital = location
+      const surgeon = surgeons[l.surgeonId]
       const parts = [hospital, surgeon?.name, surgeon?.specialty].filter((p): p is string => p !== undefined && p !== '')
       return parts.join(' · ')
     }

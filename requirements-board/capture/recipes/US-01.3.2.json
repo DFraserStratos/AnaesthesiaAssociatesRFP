@@ -6,33 +6,29 @@
     {
       "name": "permanent-lists",
       "app": "admin",
-      "caption": "Permanent lists",
-      "start": "/admin/masters",
+      "caption": "Recurring bookings: hospital, day, anaesthetist, session and surgeon",
+      "start": "/admin/masters?view=recurringBookings",
       "states": [
         {
           "state": "table",
           "steps": [
             {
-              "click": "text=\"Permanent lists\""
-            },
-            {
               "wait": 400
             }
           ],
-          "highlight": [],
+          "highlight": [
+            "[data-shot=\"recurring-bookings-table\"]"
+          ],
           "caption": "Recurring bookings: hospital, day, anaesthetist, session and surgeon"
         },
         {
           "state": "add",
           "steps": [
             {
-              "click": "text=\"Permanent lists\""
+              "wait": 300
             },
             {
-              "wait": 400
-            },
-            {
-              "click": "role=button[name=\"Add permanent list\"]"
+              "click": "role=button[name=\"Add recurring booking\"]"
             },
             {
               "wait": 400
@@ -41,7 +37,195 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Add a recurring booking"
+          "caption": "Add a recurring booking: a pattern of Lists, not a Booking for a patient"
+        },
+        {
+          "state": "apply",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr[data-recurring-booking]:has-text(\"James Rutherford\"):has-text(\"Mon\") >> role=button[name=\"Edit\"] >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=3",
+              "value": "S-LIM"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-sheet\"] >> role=button[name=/Apply/]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"recurring-booking-result\"]"
+          ],
+          "caption": "Apply to canvas now: future empty Lists follow at once; Lists with Bookings are kept"
+        },
+        {
+          "state": "retired",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "tr[data-recurring-booking]:has-text(\"James Rutherford\"):has-text(\"Mon\") >> role=button[name=\"Edit\"] >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-sheet\"] >> role=button[name=\"Retire\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-retire\"] >> role=button[name=\"Retire\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Done\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "tr[data-retired=\"true\"]"
+            }
+          ],
+          "highlight": [
+            "tr[data-retired=\"true\"]"
+          ],
+          "caption": "A retired recurring booking stays in the master, muted, with its last date"
+        },
+        {
+          "state": "incomplete",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Add recurring booking\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=0",
+              "value": "31902"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=1",
+              "value": "4"
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-sheet\"] >> role=button[name=/Apply/]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ],
+          "caption": "A recurring booking needs a hospital and a surgeon: the pairing rule refuses it without them"
+        },
+        {
+          "state": "clash",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Add recurring booking\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=0",
+              "value": "31902"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=1",
+              "value": "4"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=2",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=3",
+              "value": "S-REID"
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-sheet\"] >> role=button[name=/Apply/]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"recurring-booking-result\"]"
+          ],
+          "caption": "A recurring booking on a day the anaesthetist is away becomes a Draft List"
+        },
+        {
+          "state": "clash-row",
+          "steps": [
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Add recurring booking\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=0",
+              "value": "31902"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=1",
+              "value": "4"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=2",
+              "value": "H-CES"
+            },
+            {
+              "select": "[data-shot=\"recurring-booking-sheet\"] select >> nth=3",
+              "value": "S-REID"
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-sheet\"] >> role=button[name=/Apply/]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=\"recurring-booking-draft-lists\"]"
+            },
+            {
+              "wait": 700
+            }
+          ],
+          "highlight": [
+            "[data-draft-list-row]:has-text(\"Thu 23 Jul\")"
+          ],
+          "caption": "The Draft Lists row: Recurring booking, Dr Beaumont unavailable"
         }
       ]
     }

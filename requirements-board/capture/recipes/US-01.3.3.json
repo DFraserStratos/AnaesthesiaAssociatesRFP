@@ -6,14 +6,14 @@
     {
       "name": "assign-free-list",
       "app": "admin",
-      "caption": "Assigning a surgeon and hospital turns a free session into a List",
+      "caption": "Booking a free session needs a hospital and a surgeon",
       "start": "/admin/day/2026-07-21",
       "states": [
         {
           "state": "drawer",
           "steps": [
             {
-              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 400
@@ -28,7 +28,7 @@
           "state": "assign",
           "steps": [
             {
-              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 400
@@ -57,10 +57,37 @@
           "caption": "Assign List: hospital, surgeon (a not-preferred surgeon is grouped apart and warns) and kind"
         },
         {
+          "state": "preop",
+          "steps": [
+            {
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=admin-slot-drawer] >> role=button[name=\"Assign List\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=admin-assign-list] >> role=button[name=\"Pre-op\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-assign-list]"
+          ],
+          "caption": "Assign List offers Pre-op, which defaults the location to AA rooms"
+        },
+        {
           "state": "assigned",
           "steps": [
             {
-              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 400
@@ -95,7 +122,7 @@
           "state": "book",
           "steps": [
             {
-              "click": "[data-day-grid-row] button:has-text(\"open for cover\") >> nth=0"
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
             },
             {
               "wait": 400

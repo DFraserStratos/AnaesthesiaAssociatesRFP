@@ -109,7 +109,7 @@ export const OFFICE_PRIVATE_AUDIT_ACTIONS: ReadonlySet<string> = new Set([
   'pairing.end',
   'anaesthetist.tierSet',
   'list.pairingAcknowledged',
-  'permanentList.pairingAcknowledged',
+  'recurringBooking.pairingAcknowledged',
 ])
 
 // ---------------------------------------------------------------------------
@@ -175,7 +175,7 @@ export function notPreferredEntryIds(
 /**
  * What an office write path records, in the same commit, when it goes ahead
  * with a not-preferred pairing (`list.pairingAcknowledged`,
- * `permanentList.pairingAcknowledged`). Null when the pair has no active
+ * `recurringBooking.pairingAcknowledged`). Null when the pair has no active
  * not-preferred entry (a preferred pairing records nothing). The caller
  * decides whether the pairing actually changed and whether the actor is the
  * office; an anaesthetist's own write never calls this (US-01.4.5).

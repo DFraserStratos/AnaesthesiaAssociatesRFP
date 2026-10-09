@@ -30,6 +30,7 @@ import type {
 } from '../types'
 import { buildPrePaymentInvoiceForBooking, type InvoiceBuildContext } from '../billing/invoiceBuild'
 import { xeroIndividualContactName } from '../xeroContact'
+import { billingHospitalId } from '../listPairing'
 import { buildHistory } from './history'
 import { buildSeedAaFeeHistory } from './aaFee'
 import type { SeedState } from './index'
@@ -86,7 +87,7 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
   const booking = seed.schedule.bookings[bookingId]
   if (booking === undefined) return undefined
   const list = seed.schedule.lists[booking.listId]
-  if (list === undefined) return undefined
+  if (list === undefined || list.anaesthetistId === undefined) return undefined
   const anaesthetist = seed.masters.anaesthetists[list.anaesthetistId]
   if (anaesthetist === undefined) return undefined
   const ctx: InvoiceBuildContext = {
@@ -100,8 +101,10 @@ function contextFor(seed: SeedState, bookingId: string): InvoiceBuildContext | u
     listDateISO: list.dateISO,
     patientId: booking.patientId,
   }
-  if (list.surgeonId !== undefined) ctx.surgeonId = list.surgeonId
-  if (list.hospitalId !== undefined) ctx.listHospitalId = list.hospitalId
+  ctx.surgeonId = list.surgeonId
+  // AA rooms is a location, never a Contract holder (catch-up Phase 31).
+  const listHospitalId = billingHospitalId(list.hospitalId, seed.masters.hospitals)
+  if (listHospitalId !== undefined) ctx.listHospitalId = listHospitalId
   return ctx
 }
 

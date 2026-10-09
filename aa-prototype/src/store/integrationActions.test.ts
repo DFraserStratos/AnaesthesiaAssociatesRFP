@@ -288,3 +288,17 @@ describe('feed mapping edit is audited and office-only', () => {
     expect(stgFeeds[0]!.transport).toBe('hl7v2')
   })
 })
+
+describe('the pairing rule on the feed (catch-up Phase 31; US-01.3.1)', () => {
+  it('a message whose target List has no surgeon parks for the office and writes nothing', () => {
+    const api = store()
+    const target = api.getState().schedule.lists[STG_LIST]!
+    // Force the impossible state the rule guards against (no store path can write it).
+    api.setState({ schedule: { ...api.getState().schedule, lists: { ...api.getState().schedule.lists, [STG_LIST]: { ...target, surgeonId: '' } } } })
+    const before = bookingsForList(api.getState(), STG_LIST).length
+    const out = processMessage(api, 'MSG-STG-1001')
+    expect(out.ok && out.value.outcome).toBe('manualIntervention')
+    expect(rowFor(api, 'MSG-STG-1001')?.failureReason).toBe('The message has no surgeon for this List. Parked for the office.')
+    expect(bookingsForList(api.getState(), STG_LIST)).toHaveLength(before)
+  })
+})

@@ -44,7 +44,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         const list = booking !== undefined ? schedule.lists[booking.listId] : undefined
         const patient = booking !== undefined ? masters.patients[booking.patientId] : undefined
         const anaesthetist =
-          list !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
+          list?.anaesthetistId !== undefined ? masters.anaesthetists[list.anaesthetistId] : undefined
         const source = list !== undefined ? listSourceLabels(list, masters) : undefined
         return { invoice, booking, list, patient, anaesthetist, source }
       }),

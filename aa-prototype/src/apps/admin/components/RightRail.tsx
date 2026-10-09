@@ -4,6 +4,7 @@ import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
 import { WarningsToDo } from './WarningsToDo'
+import { DraftListsCard } from './draftLists/DraftListsCard'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 
 interface ReviewRow {
@@ -27,16 +28,24 @@ interface RightRailProps {
   todoRows: readonly OpenWarningRow[]
   actor: Actor
   onOpenBooking: (dateISO: string, bookingId: string) => void
+  onOpenConflicts?: () => void
+  /** Catch-up Phase 31: open a Draft List's drawer, and the Draft Lists page. */
+  onOpenDraftList?: (listId: string) => void
+  onSeeAllDraftLists?: () => void
 }
 
 export function RightRail(props: RightRailProps) {
   return (
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
-      {/* The to-do list sits directly under the calendar. Phase 31's Draft
-          Lists and Phase 32's shared notification pool stack below it, as
-          further cards in this column, without moving it. */}
-      <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} />
+      {/* The to-do list sits directly under the calendar, then the Draft Lists
+          (catch-up Phase 31); Phase 32's shared notification pool takes the
+          next place, under the Draft Lists, without moving either. */}
+      <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
+      {props.onOpenDraftList !== undefined && props.onSeeAllDraftLists !== undefined && (
+        <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />
+      )}
+      {/* Phase 32: the shared notification pool goes here. */}
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />
     </div>

@@ -23,7 +23,7 @@ import { generateCanvasForDates, seriesPaintedCount } from '../domain/seed'
 import { mutate, resetDomainState, type Actor, type MutationMeta } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { emitAppEvent } from './events'
-import { canvasMastersFrom, withGenerated } from './slotActions'
+import { applyGenerated, canvasMastersFrom } from './slotActions'
 
 const DEMO_ACTOR: Actor = { who: 'Demo control', role: 'system', source: 'demo' }
 
@@ -33,7 +33,12 @@ function seriesCount(slots: Parameters<typeof seriesPaintedCount>[0]['slots']): 
   return n > 0 ? { seriesSessions: n } : {}
 }
 
-/** Generate and append the Slots and Lists for canvas days gained by a clock change. */
+/**
+ * Generate and append the Slots and Lists for canvas days gained by a clock
+ * change. A recurring booking that lands on a session already marked closed
+ * becomes a Draft List in the same commit (catch-up Phase 31; OQ-81 part 2),
+ * with one batch meta for the roll.
+ */
 function rollCanvasForward(api: AppStoreApi, previousTodayISO: string, todayISO: string): void {
   const months = api.getState().appSettings.schedule.horizonMonths
   const newDates = horizonDatesBetween(horizonFor(previousTodayISO, months).endISO, horizonFor(todayISO, months).endISO)
@@ -53,7 +58,11 @@ function rollCanvasForward(api: AppStoreApi, previousTodayISO: string, todayISO:
     },
   }))
 
-  mutate(api, DEMO_ACTOR, metas, (s) => ({ schedule: withGenerated(s.schedule, generated).schedule }))
+  const last = newDates[newDates.length - 1]!
+  mutate(api, DEMO_ACTOR, metas, (s) => {
+    const applied = applyGenerated(s, generated, DEMO_ACTOR.who, metas, { entityType: 'canvas', entityId: last })
+    return { schedule: applied.schedule, counters: applied.counters }
+  })
 }
 
 function applyClock(api: AppStoreApi, next: DemoClockState): void {

@@ -47,34 +47,35 @@ export type InvoiceId = string
 export type Session = 'AM' | 'PM'
 
 /**
- * List lifecycle (EP-07, FT-07.1; PROGRESS convention 6 as amended in catch-up
- * Phase 15b, no Returned state). The catalogue's states are DRAFT (a Draft
- * List with no anaesthetist yet; added in Phase 31), ACTIVE, SUBMITTED and
- * AUTHORISED. ACTIVE was called DRAFT until 7 October 2026, so 'DRAFT' stays out
- * of the union until it returns with its new meaning. Since Phase 28 an empty
- * session is a Slot with no List, so it carries no state at all; every List
- * created by assignment or projection starts ACTIVE.
+ * List lifecycle (EP-07, FT-07.1, AR-22; PROGRESS convention 6 as amended in
+ * catch-up Phases 15b and 31, no Returned state). DRAFT is a Draft List: no
+ * anaesthetist and no Slot yet (catch-up Phase 31). ACTIVE is a List with all
+ * five of its pairing (anaesthetist, surgeon, hospital, day and session), where
+ * the anaesthetist completes Bookings and submits. A List set up with its
+ * anaesthetist starts ACTIVE; assigning a Draft List makes it ACTIVE; an ACTIVE
+ * List that goes back to the office is DRAFT again (`detachListToDraft`). An
+ * empty session is a Slot with no List, so it carries no state at all.
  */
-export type ListState = 'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'
+export type ListState = 'DRAFT' | 'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'
+
+/** The states of a List with an anaesthetist and a Slot. */
+export type AssignedListState = Exclude<ListState, 'DRAFT'>
 
 /**
- * The List's states as a value list (EP-07, FT-07.1), for the availability
- * status validator's guard: a Slot status may never be named after a List's
- * state (US-01.2.2 since 2026-10-07). Exhaustive over `ListState`, so Phase 31's
- * DRAFT joins it the moment the union gains it.
- */
-/**
  * A List's lifecycle state as the screens print it: the catalogue's names
- * (EP-07, FT-07.1), upper case. One home (moved here from `shared/format.ts`
- * in catch-up Phase 29 so the availability status validator can read it), so
- * Phase 31 adds DRAFT (a Draft List) in one place. An empty session is a Slot
- * with no List, so it has no state to print.
+ * (EP-07, FT-07.1), upper case. One home (read by the availability status
+ * validator, which refuses a status named after a List state, and re-exported
+ * by `shared/format.ts`). DRAFT is shown only on a Draft List, beside its
+ * "Unassigned" flag (`shared/scheduleTerms.ts`); no assigned List is ever
+ * labelled DRAFT or "Open". An empty session has no state to print.
  */
 export const LIST_STATE_LABELS: Record<ListState, string> = {
+  DRAFT: 'DRAFT',
   ACTIVE: 'ACTIVE',
   SUBMITTED: 'SUBMITTED',
   AUTHORISED: 'AUTHORISED',
 }
+/** The List's states as a value list (EP-07), for the status validator's guard. */
 export const LIST_STATES = Object.keys(LIST_STATE_LABELS) as ListState[]
 
 /**
@@ -235,9 +236,18 @@ export interface Anaesthetist {
 
 export type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
 
+/**
+ * Where a List is held (catch-up Phase 31; US-01.3.1): a hospital, or AA's own
+ * rooms. The pre-op clinic is held at AA rooms, which is a location, not a
+ * hospital: never a Contract holder, a hospital feed or a sync target.
+ */
+export type LocationType = 'hospital' | 'aaRooms'
+
 export interface Hospital {
   id: HospitalId
   name: string
+  /** A hospital or AA's own rooms (the pre-op clinic's location). */
+  locationType: LocationType
   /** Contact email for booking updates (US-13.4.1). Optional: a newly added hospital may not have one yet. */
   contactEmail?: string
 }
@@ -423,10 +433,37 @@ export interface ContractPrice {
 // The canvas: Lists & Bookings
 // ---------------------------------------------------------------------------
 
-/** A conflict flagged onto a List (availability or a closed hospital; advisory, never a block). */
+/**
+ * A conflict on a List (catch-up Phase 30; US-01.5.2, US-01.5.4; OQ-09 soft
+ * warning, never a block). Derived from facts, never stamped: a List conflicts
+ * when its hospital is closed on its date (`holiday`) or its Slot's status is
+ * closed (`availability`). `domain/conflicts.ts` holds the rule and the
+ * wording; `mutate()` reconciles every List whose facts a mutation touched,
+ * so renaming a holiday or a status changes the text with no write.
+ * `cause` is the stable key a clear is matched on:
+ * `holiday:<holidayId>` or `availability:<slotId>:<statusKey>`.
+ */
 export interface ListConflict {
   kind: 'availability' | 'holiday'
-  message: string
+  cause: string
+  raisedAtISO: IsoDateTime
+  holidayId?: string
+  slotId?: SlotId
+  /** The Slot status's fixed ID (Phase 29), never its label. */
+  statusKey?: SlotStatusKey
+}
+
+/**
+ * The office clearing a conflict (catch-up Phase 30; US-01.5.4). It holds only
+ * while its cause stands: when the cause goes the clear is dropped, so a clash
+ * that comes back flags again. No reason is required (OQ-09).
+ */
+export interface ConflictClear {
+  cause: string
+  by: string
+  role: ActorRole
+  atISO: IsoDateTime
+  note?: string
 }
 
 /**
@@ -497,26 +534,83 @@ export interface Slot {
   seriesId?: SeriesId
 }
 
+/** Where a Draft List came from (catch-up Phase 31; FT-01.6, AR-22 `draft-arises`). */
+export type DraftOrigin =
+  /** The office logs a surgeon's room request (phone, email, PDF). */
+  | 'request'
+  /** A recurring booking on a session already marked closed (OQ-81 part 2). */
+  | 'recurringClash'
+  /** An anaesthetist moves or withdraws their List to the office (Phase 32, US-01.4.3). */
+  | 'movedToOffice'
+  /** They mark a booked session unavailable and return the List (Phase 32, US-01.5.5). */
+  | 'unavailableReturn'
+  /** A matching-screen row (Phase 33, US-02.1.2). */
+  | 'hospitalRow'
+
+/** How a request reached the office (origin `request` only). */
+export type RequestSource = 'phone' | 'email' | 'pdf' | 'other'
+
 /**
- * A List (catch-up Phase 28): created only when the office assigns one or a
- * recurring booking projects one, put into exactly one Slot, and holding
- * Bookings. `anaesthetistId`, `dateISO` and `session` are denormalised copies
- * of its Slot's, written only by the store actions that set `slotId`, and
- * checked by an invariant test.
+ * A Draft List's trail (catch-up Phase 31): where it came from, since when and
+ * by whom. Kept after assignment (with `assignedAtISO`), so the List's history
+ * shows the time it waited.
  */
-export interface List {
+export interface DraftTrail {
+  origin: DraftOrigin
+  /** Origin `request` only. */
+  source?: RequestSource
+  /** Created, or returned to the office: the waiting time runs from here. */
+  sinceISO: IsoDateTime
+  /** `actor.who`. */
+  by: string
+  /** `recurringClash` (the recurring booking's anaesthetist), `movedToOffice`, `unavailableReturn`. */
+  fromAnaesthetistId?: AnaesthetistId
+  /**
+   * `recurringClash` only: the recurring booking, day and session it stands
+   * for. Never changed by a re-date, so the recurring booking never makes a
+   * second one for that day.
+   */
+  projectedFor?: {
+    recurringBookingId: string
+    dateISO: IsoDate
+    session: Session
+    /** The recurring booking's anaesthetist, kept when a List assigned from a clash goes back to the office (otherwise `fromAnaesthetistId`). */
+    anaesthetistId?: AnaesthetistId
+  }
+  /** Set on assignment; the trail is kept. */
+  assignedAtISO?: IsoDateTime
+  assignedBy?: string
+}
+
+/**
+ * The fields every List has, Draft Lists included. Every List has exactly one
+ * hospital (or AA rooms) and one surgeon (US-01.3.1, EP-01; catch-up Phase 31
+ * made both required).
+ */
+export interface ListBase {
   id: ListId
-  /** The Slot the List is in. Backdrop history Lists (`L-HIST`, `L-RB-`) predate the horizon and have no Slot record. */
-  slotId: SlotId
   dateISO: IsoDate
-  anaesthetistId: AnaesthetistId
   session: Session
-  state: ListState
   /** Private, public or pre-op (outside the catalogue's model; see `ListKind`). */
   kind: ListKind
-  hospitalId?: HospitalId
-  surgeonId?: SurgeonId
+  hospitalId: HospitalId
+  surgeonId: SurgeonId
   conflicts: ListConflict[]
+  /** Office clears of a live conflict (catch-up Phase 30); absent reads as none. */
+  conflictClears?: ConflictClear[]
+  /**
+   * Provenance (catch-up Phase 30; US-01.3.2): the recurring booking that
+   * projected this List (or, for a recurring-clash Draft List, that it stands
+   * for). An office edit of the projected fields removes it, so a hand-edited
+   * List is never overwritten by a recurring booking.
+   */
+  recurringBookingId?: string
+  /**
+   * Where a projected List came from before the office moved it (catch-up
+   * Phase 30): its recurring booking and original session, so the projection
+   * never paints a second List for that date in the session it left.
+   */
+  recurringOrigin?: { recurringBookingId: string; slotId: SlotId }
   /** Office-logged phone-call notes (Phase 07 review); never a return channel. */
   phoneNotes?: ListPhoneNote[]
   /**
@@ -533,7 +627,55 @@ export interface List {
    * and it travels with the List when the List is reassigned.
    */
   attachments?: Attachment[]
+  /** Present on a Draft List, and kept after it is assigned (catch-up Phase 31). */
+  draft?: DraftTrail
+  /** A removed Draft List (US-01.6.4): soft, audited; it stays DRAFT and leaves every view but History. */
+  removedAtISO?: IsoDateTime
+  removedBy?: string
+  removeReason?: string
+  /**
+   * Who took it away: the office, or a change to the recurring booking it came
+   * from. Only the second stops it answering for its day (`answeringLists`);
+   * the reason is display text the office can type.
+   */
+  removeCause?: 'office' | 'recurringBookingChanged'
 }
+
+/**
+ * A List with its anaesthetist (catch-up Phase 28; EP-01, FT-07.1): created
+ * when the office assigns one, a recurring booking projects one or a Draft
+ * List is assigned, put into exactly one Slot, and holding Bookings. It has
+ * exactly one surgeon, one anaesthetist and one hospital, plus the day and
+ * session of its Slot; with all five it is ACTIVE. `anaesthetistId`, `dateISO`
+ * and `session` are denormalised copies of its Slot's, written only by the
+ * store actions that set `slotId`, and checked by an invariant test.
+ */
+export interface AssignedList extends ListBase {
+  state: AssignedListState
+  anaesthetistId: AnaesthetistId
+  /** The Slot the List is in. Backdrop history Lists (`L-HIST`, `L-RB-`) predate the horizon and have no Slot record. */
+  slotId: SlotId
+}
+
+/**
+ * A Draft List (catch-up Phase 31; FT-01.6, US-01.6.1 to US-01.6.4, OQ-44
+ * answered): a List in state DRAFT with no anaesthetist and no Slot, so
+ * creating one changes nobody's schedule. Its hospital, surgeon, day and
+ * session are all required, and it may already hold Bookings. It is never
+ * offered to anaesthetists and is assigned only by the office (OQ-86 answered
+ * no, D46: no Draft List reaches any anaesthetist surface, ever); assigning it
+ * makes it ACTIVE in the session its day and session fix, keeping its id. A
+ * cancelled or unfilled one is removed (soft) or re-dated. A recurring-clash
+ * Draft List keeps its recurring booking's id as provenance.
+ */
+export interface DraftList extends ListBase {
+  state: 'DRAFT'
+  anaesthetistId?: undefined
+  slotId?: undefined
+  draft: DraftTrail
+}
+
+export type List = AssignedList | DraftList
 
 /**
  * Correlation key for integration-created bookings (6th review #1): HL7 SCH-2
@@ -782,28 +924,33 @@ export interface ModifierCode {
 // ---------------------------------------------------------------------------
 
 /**
- * Permanent List — the weekly template the canvas generates from.
- * `surgeonId` is nullable: the RFP says surgeon assignment is "usually
- * (approximately 80%) defined in the anaesthetist's Permanent List", though its
- * principle-6 field list omits surgeon (reading recorded in REQUIREMENTS §11).
- * `hospitalId` is nullable too (Phase 02): a recurring pre-op assessment
- * session runs at AA's own rooms, not a hospital.
+ * Recurring booking (DM-53, US-01.3.2; catch-up Phase 30 renamed the
+ * Permanent List): the standing intersection of a hospital, an anaesthetist
+ * and a surgeon on a day of the week and a session. A pattern of Lists, not a
+ * Booking for one patient. It always names a hospital (or AA rooms) and a
+ * surgeon (US-01.3.1, catch-up Phase 31), because it projects Lists.
  */
-export interface PermanentList {
+export interface RecurringBooking {
   id: string
-  hospitalId: HospitalId | null
+  hospitalId: HospitalId
   anaesthetistId: AnaesthetistId
   /** 0 = Sunday … 6 = Saturday (matches `Date.getDay()`). */
   dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
   session: Session
-  surgeonId: SurgeonId | null
+  surgeonId: SurgeonId
   /** The kind of List the projection creates (catch-up Phase 28: was `statusKey`). */
   kind: ListKind
-  /** Optional template times, written as Slot overrides by the projection (e.g. pre-op 09:00 to 12:00). */
+  /** Optional session times, written as Slot overrides by the projection (e.g. pre-op 09:00 to 12:00). */
   startTime?: WallTime
   endTime?: WallTime
   /** Display label the generated List carries as its note (e.g. "Acute theatre"). */
   notes?: string
+  /** First date the arrangement runs (catch-up Phase 30); absent means from the start of the canvas. */
+  effectiveFromISO?: IsoDate
+  /** Last date the arrangement runs; absent means ongoing. A retire sets it. */
+  effectiveToISO?: IsoDate
+  /** Set by `retireRecurringBooking`: the row stays in the master for its history and never projects again. */
+  retiredAtISO?: IsoDateTime
 }
 
 /**

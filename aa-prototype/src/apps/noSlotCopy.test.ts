@@ -58,3 +58,16 @@ describe('no "slot" in app copy (OQ-64)', () => {
     expect(hits).toEqual([])
   })
 })
+
+describe('no pairing fallback in app copy (catch-up Phase 31; US-01.3.1)', () => {
+  it('no "Surgeon TBC", "Not assigned" or AA rooms fallback: every List names its hospital and surgeon', () => {
+    const hits: string[] = []
+    for (const [file, source] of Object.entries(UI)) {
+      if (file.includes('.test.')) continue
+      for (const s of readableStrings(source)) {
+        if (/Surgeon TBC|Not assigned|None \(AA rooms|^AA rooms$|Surgeon not yet assigned/.test(s)) hits.push(`${file}: ${s}`)
+      }
+    }
+    expect(hits).toEqual([])
+  })
+})

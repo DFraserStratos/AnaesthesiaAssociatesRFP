@@ -20,6 +20,7 @@ import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, type DemoTrigger } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
+import { DRAFT_LIST, DRAFT_LISTS } from '../../shared/scheduleTerms'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
 
@@ -275,7 +276,7 @@ const SCENARIOS: readonly Scenario[] = [
       return {
         ok: true,
         message:
-          'Reset to the pristine day. In Admin: open Dr Sharma\'s Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; on Wed 22 reassign Dr Rutherford\'s conflicted AM Christchurch Eye Surgery List to Dr Sharma (the vacated session defaults to Free; choose Unavailable); optionally use Find available in the Day header; then authorise Dr Morrison\'s Mon 20 Jul List from the Review queue.',
+          `Reset to the pristine day. In Admin: assign the St George's ${DRAFT_LIST} to Dr Fitzgerald; optionally show Dr Beaumont's recurring Lists waiting as ${DRAFT_LISTS} while she is on leave, open Forte Health to show Bookings on a ${DRAFT_LIST}, or simulate an incoming request to show the not-preferred group and the tier order. Then open Dr Sharma's Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; from Conflicts, reassign Dr Rutherford's Wed 22 AM Christchurch Eye Surgery List (he phoned in sick) to Dr Sharma (vacated session kept Unavailable); optionally use Find available in the Day header; then authorise Dr Morrison's Mon 20 Jul List from the Review queue.`,
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },

@@ -3,12 +3,13 @@ import { ChevronLeft, Plus } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import type { Booking } from '../../../domain/types'
+import { isAssignedList } from '../../../domain/draftLists'
 import { removeAttachment, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
 import { SubmitListSheet } from '../../../shared/flows'
-import { slotTimeRange } from '../../../shared/format'
+import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
 interface ListDetailScreenProps {
@@ -90,10 +91,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
 
   const warningsByBooking = useListWarnings(listId)
 
-  if (list === undefined || model === undefined) return null
+  // A Draft List is office only (OQ-86): nothing to show an anaesthetist.
+  if (!isAssignedList(list) || model === undefined) return null
 
-  const hospitalName = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
-  const surgeon = list.surgeonId !== undefined ? surgeons[list.surgeonId] : undefined
+  const hospitalName = locationName(list.hospitalId, hospitals)
+  const surgeon = surgeons[list.surgeonId]
   const isPreop = list.kind === 'preop'
   const title = isPreop ? 'Pre-op assessment' : hospitalName
   const dayLabel = list.dateISO === todayISO ? 'Today' : list.dateISO

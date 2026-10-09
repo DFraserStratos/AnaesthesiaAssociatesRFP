@@ -1,9 +1,12 @@
+import { CONFLICT_REASONS } from '../../domain/conflicts'
 import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import { StatusChip } from '../../shared'
 import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
+import { UNASSIGNED } from '../../shared/scheduleTerms'
+import { locationName } from '../../shared/format'
 import {
   authoriseList,
   cancelBooking,
@@ -158,8 +161,10 @@ export function DemoData() {
     const byAnae = new Map<string, number>()
     for (const v of todaysViews) byAnae.set(v.slot.anaesthetistId, (byAnae.get(v.slot.anaesthetistId) ?? 0) + 1)
     const expected = Object.values(masters.anaesthetists).filter((a) => a.active && a.startDateISO <= todayISO)
-    const everyListPlaced = Object.values(schedule.lists).every((l) => isBackdropList(l) || schedule.slots[l.slotId] !== undefined)
-    const oneListPerSlot = listIndexBySlot(schedule.lists).size === Object.keys(schedule.lists).length
+    // A Draft List takes no session (catch-up Phase 31); every other List sits in one.
+    const assigned = Object.values(schedule.lists).filter((l) => l.state !== 'DRAFT')
+    const everyListPlaced = assigned.every((l) => isBackdropList(l) || (l.slotId !== undefined && schedule.slots[l.slotId] !== undefined))
+    const oneListPerSlot = listIndexBySlot(schedule.lists).size === assigned.length
     return (
       byAnae.size === expected.length &&
       expected.every((a) => byAnae.get(a.registrationNumber) === 2) &&
@@ -185,8 +190,8 @@ export function DemoData() {
   )
 
   const stateCounts = useMemo(() => {
-    const out: Record<ListState, number> = { ACTIVE: 0, SUBMITTED: 0, AUTHORISED: 0 }
-    for (const l of Object.values(schedule.lists)) out[l.state] += 1
+    const out: Record<ListState, number> = { DRAFT: 0, ACTIVE: 0, SUBMITTED: 0, AUTHORISED: 0 }
+    for (const l of Object.values(schedule.lists)) if (l.removedAtISO === undefined) out[l.state] += 1
     return out
   }, [schedule.lists])
 
@@ -238,9 +243,8 @@ export function DemoData() {
   function describeList(listId: string): string {
     const list = schedule.lists[listId]
     if (list === undefined) return listId
-    const who = masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId
-    const hosp = list.hospitalId !== undefined ? (masters.hospitals[list.hospitalId]?.name ?? '') : ''
-    return `${list.dateISO} ${list.session} · ${who}${hosp !== '' ? ` · ${hosp}` : ''} · ${list.state}`
+    const who = list.anaesthetistId !== undefined ? (masters.anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId) : UNASSIGNED
+    return `${list.dateISO} ${list.session} · ${who} · ${locationName(list.hospitalId, masters.hospitals)} · ${list.state}`
   }
 
   function describeBooking(bookingId: string): string {
@@ -355,8 +359,8 @@ export function DemoData() {
                   <td style={cellStyle}>{masters.anaesthetists[slot.anaesthetistId]?.name ?? slot.anaesthetistId}</td>
                   <td style={cellStyle}>{slot.session}</td>
                   <td style={cellStyle}><StatusChip status={displayKey} /></td>
-                  <td style={cellStyle}>{list?.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : ''}</td>
-                  <td style={cellStyle}>{list?.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : ''}</td>
+                  <td style={cellStyle}>{list !== undefined ? locationName(list.hospitalId, masters.hospitals) : ''}</td>
+                  <td style={cellStyle}>{list !== undefined ? (masters.surgeons[list.surgeonId]?.name ?? list.surgeonId) : ''}</td>
                   <td style={cellStyle} className="mono">
                     {`${times.startTime} to ${times.endTime}`}{times.overridden ? ' (own)' : ''}
                   </td>
@@ -364,11 +368,17 @@ export function DemoData() {
                   <td style={cellStyle}>{list?.state ?? ''}</td>
                   <td style={{ ...cellStyle, maxWidth: 260 }}>
                     {list !== undefined ? list.notes : slot.note}
-                    {(list?.conflicts ?? []).map((c, i) => (
-                      <span key={i} style={{ color: semantic.warning.onTint, display: 'block' }}>
-                        {c.kind}: {c.message}
+                    {(list?.conflicts ?? []).map((c) => (
+                      <span key={c.cause} style={{ color: semantic.warning.onTint, display: 'block' }}>
+                        {CONFLICT_REASONS[c.kind]} ({c.cause})
                       </span>
                     ))}
+                    {(list?.conflictClears ?? []).map((c) => (
+                      <span key={c.cause} style={{ color: neutral.mist, display: 'block' }}>
+                        Cleared by {c.by} ({c.cause}){c.note !== undefined ? `: ${c.note}` : ''}
+                      </span>
+                    ))}
+                    {list?.recurringBookingId !== undefined && <span style={{ color: neutral.mist, display: 'block' }}>From {list.recurringBookingId}</span>}
                   </td>
                 </tr>
               ))}
@@ -504,10 +514,10 @@ export function DemoData() {
       {/* Lifecycle filters */}
       <Panel
         title="Lifecycle states"
-        subtitle={`ACTIVE ${stateCounts.ACTIVE.toLocaleString()} · SUBMITTED ${stateCounts.SUBMITTED} · AUTHORISED ${stateCounts.AUTHORISED}`}
+        subtitle={`DRAFT ${stateCounts.DRAFT} · ACTIVE ${stateCounts.ACTIVE.toLocaleString()} · SUBMITTED ${stateCounts.SUBMITTED} · AUTHORISED ${stateCounts.AUTHORISED}`}
       >
         <div style={{ display: 'flex', gap: 8 }}>
-          {(['ALL', 'SUBMITTED', 'AUTHORISED', 'ACTIVE'] as const).map((f) => (
+          {(['ALL', 'DRAFT', 'SUBMITTED', 'AUTHORISED', 'ACTIVE'] as const).map((f) => (
             <button
               key={f}
               type="button"

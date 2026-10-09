@@ -33,6 +33,8 @@ import {
   AdminSurgeonProfileRoute,
   AdminAnaesthetistRecordRoute,
   AdminReviewQueueRoute,
+  AdminConflictsRoute,
+  AdminDraftListsRoute,
   AdminReviewRoute,
 } from './apps/admin/routes'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
@@ -102,6 +104,8 @@ export function AppRouter() {
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
+            <Route path="conflicts" element={<AdminConflictsRoute />} />
+            <Route path="draft-lists" element={<AdminDraftListsRoute />} />
             <Route path="review">
               <Route index element={<AdminReviewQueueRoute />} />
               <Route path=":listId" element={<AdminReviewRoute />} />

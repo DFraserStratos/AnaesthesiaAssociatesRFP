@@ -150,14 +150,19 @@ export const HOSP = {
   forte: 'H-FORTE',
   ces: 'H-CES',
   cph: 'H-CPH',
+  /** AA's own rooms: the pre-op clinic's location, never a Contract holder (catch-up Phase 31). */
+  aaRooms: 'H-AAROOMS',
 } as const
 
 export const HOSPITALS: readonly Hospital[] = [
-  { id: HOSP.stg, name: "St George's", contactEmail: 'bookings@stgeorges.example' },
-  { id: HOSP.sx, name: 'Southern Cross', contactEmail: 'theatre.bookings@southerncross.example' },
-  { id: HOSP.forte, name: 'Forte Health', contactEmail: 'bookings@fortehealth.example' },
-  { id: HOSP.ces, name: 'Christchurch Eye Surgery', contactEmail: 'bookings@chcheyesurgery.example' },
-  { id: HOSP.cph, name: 'Christchurch Public', contactEmail: 'theatre.bookings@chchpublic.example' },
+  { id: HOSP.stg, name: "St George's", locationType: 'hospital', contactEmail: 'bookings@stgeorges.example' },
+  { id: HOSP.sx, name: 'Southern Cross', locationType: 'hospital', contactEmail: 'theatre.bookings@southerncross.example' },
+  { id: HOSP.forte, name: 'Forte Health', locationType: 'hospital', contactEmail: 'bookings@fortehealth.example' },
+  { id: HOSP.ces, name: 'Christchurch Eye Surgery', locationType: 'hospital', contactEmail: 'bookings@chcheyesurgery.example' },
+  { id: HOSP.cph, name: 'Christchurch Public', locationType: 'hospital', contactEmail: 'theatre.bookings@chchpublic.example' },
+  // Catch-up Phase 31 (US-01.3.1): the pre-op clinic's location record. A
+  // location, not a hospital: never a Contract holder, a feed or a sync target.
+  { id: HOSP.aaRooms, name: 'AA rooms', locationType: 'aaRooms', contactEmail: 'rooms@aa.example' },
 ] as const
 
 export const INS = {

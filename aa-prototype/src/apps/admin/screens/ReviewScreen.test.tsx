@@ -1,14 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { assigned } from '../../../test/lists'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SurfaceProvider } from '../../../shared'
 import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { ReviewScreen } from './ReviewScreen'
+import type { AssignedList } from '../../../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function submittedListIds() {
   return Object.values(useAppStore.getState().schedule.lists)
-    .filter((list) => list.state === 'SUBMITTED')
+    .filter((list): list is AssignedList => list.state === 'SUBMITTED')
     .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))
     .map((list) => list.id)
 }
@@ -54,7 +56,7 @@ describe('review queue detail navigation', () => {
         ...state.schedule,
         lists: {
           ...state.schedule.lists,
-          [firstListId]: { ...state.schedule.lists[firstListId]!, state: 'AUTHORISED' },
+          [firstListId]: { ...assigned(state.schedule.lists[firstListId]), state: 'AUTHORISED' },
         },
       },
     }))
