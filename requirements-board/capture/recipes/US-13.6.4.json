@@ -1,0 +1,56 @@
+{
+  "id": "US-13.6.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "preferred-profile",
+      "app": "admin",
+      "caption": "The office sees who works well together as well as who does not",
+      "start": "/admin/masters/anaesthetists/41267",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=pairing-section]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-pairing-group=PREFERRED]",
+            "[data-pairing-group=NOT_PREFERRED]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "preferred-picker",
+      "app": "admin",
+      "caption": "Reassigning Mr Whitford's List: Dr Sharma carries a Preferred pill",
+      "start": "/admin/day/2026-07-22",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-29104-2026-07-22-AM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-clear] [data-candidate=\"41267\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

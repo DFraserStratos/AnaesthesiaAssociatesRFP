@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { neutral } from '../../theme/tokens'
+import { accent, neutral } from '../../theme/tokens'
 
 /**
  * Shared table cell styles for the admin data screens (review, master data,
@@ -33,4 +33,17 @@ export function headCellStyle(compact = false): CSSProperties {
 /** Keep links and buttons inside a clickable table row in charge of their own action. */
 export function isInteractiveRowTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest('a, button, input, select, textarea') !== null
+}
+
+/** A teal text action inside a table, card or sheet ("Edit", "End", "Open record"). */
+export const textActionStyle: CSSProperties = {
+  border: 'none',
+  background: 'none',
+  color: accent.base,
+  fontFamily: 'inherit',
+  fontSize: 12.5,
+  fontWeight: 600,
+  cursor: 'pointer',
+  padding: 0,
+  textDecoration: 'none',
 }

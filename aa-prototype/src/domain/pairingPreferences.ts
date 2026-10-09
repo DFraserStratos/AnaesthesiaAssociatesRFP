@@ -45,12 +45,25 @@ export const PAIRING_LABELS = {
   /** The verb phrase of the side sentence, per kind. */
   verb: { NOT_PREFERRED: 'prefers not to work with', PREFERRED: 'prefers to work with' } as Record<PairingKind, string>,
   /** The picker's separate group: "Not preferred with Dr Sharma". */
-  notPreferredWith: (name: string): string => `Not preferred with ${name}`,
+  notPreferredWith: (name: string): string => `${PAIRING_LABELS.kind.NOT_PREFERRED} with ${name}`,
   /** Option suffix in a native select: "Ms A. Reid · not preferred". */
   optionSuffix: (kind: PairingKind): string => ` · ${PAIRING_LABELS.kind[kind].toLowerCase()}`,
   /** The warning when both sides have an active not-preferred entry. */
   bothAsked: (anaesthetistName: string, surgeonName: string): string =>
     `${anaesthetistName} and ${surgeonName} have each asked not to be paired.`,
+  /** The one line under the section title on both profiles. */
+  privacyNote: 'Private to the office. Anaesthetists never see these.',
+  /** The add sheet's side choices: "Ms A. Reid asked", or "The anaesthetist asked". */
+  asked: (name: string): string => `${name} asked`,
+  otherSideAsked: { SURGEON: 'The surgeon asked', ANAESTHETIST: 'The anaesthetist asked' } as Record<PairingSide, string>,
+  /** A counterpart disabled in the add sheet: "already not preferred on this side". */
+  alreadyOnSide: (kind: PairingKind): string => `already ${PAIRING_LABELS.kind[kind].toLowerCase()} on this side`,
+  /** The one mist line for an empty group on a profile. */
+  emptyGroup: 'None recorded.',
+  ended: 'Ended entries',
+  add: 'Add pairing',
+  end: 'End',
+  noReason: 'No reason recorded',
 } as const
 
 export const TIER_VALUES: readonly PriorityTier[] = [1, 2, 3, 4] as const
@@ -175,6 +188,58 @@ export function pairingAcknowledgement(
   const ids = notPreferredEntryIds(entries, anaesthetistId, surgeonId)
   if (ids.length === 0 || anaesthetistId === undefined || surgeonId === undefined || surgeonId === null) return null
   return { anaesthetistId, surgeonId, pairingPreferenceIds: ids }
+}
+
+// ---------------------------------------------------------------------------
+// Profiles (the surgeon profile and the Admin anaesthetist record)
+// ---------------------------------------------------------------------------
+
+/** Whose profile: one surgeon or one anaesthetist. */
+export type PairingSubject = { surgeonId: SurgeonId } | { anaesthetistId: AnaesthetistId }
+
+function concerns(entry: PairingPreference, subject: PairingSubject): boolean {
+  return 'surgeonId' in subject ? entry.surgeonId === subject.surgeonId : entry.anaesthetistId === subject.anaesthetistId
+}
+
+/**
+ * One profile's entries (US-13.6.3 "shows on both profiles"): the active ones
+ * split by kind in the stable order, and the ended ones, most recently ended
+ * first.
+ */
+export function pairingsOnProfile(
+  entries: PairingEntries,
+  subject: PairingSubject,
+): { notPreferred: PairingPreference[]; preferred: PairingPreference[]; ended: PairingPreference[] } {
+  const mine = listOf(entries).filter((e) => concerns(e, subject))
+  const active = mine.filter(isActivePairing).sort(comparePairings)
+  return {
+    notPreferred: active.filter((e) => e.kind === 'NOT_PREFERRED'),
+    preferred: active.filter((e) => e.kind === 'PREFERRED'),
+    ended: mine
+      .filter((e) => !isActivePairing(e))
+      .sort((a, b) => (b.endedAtISO ?? '').localeCompare(a.endedAtISO ?? '') || a.id.localeCompare(b.id)),
+  }
+}
+
+/** Active entries per kind on one profile (the Surgeons table's counts). */
+export function pairingCounts(entries: PairingEntries, subject: PairingSubject): Record<PairingKind, number> {
+  const counts: Record<PairingKind, number> = { NOT_PREFERRED: 0, PREFERRED: 0 }
+  for (const e of listOf(entries)) if (isActivePairing(e) && concerns(e, subject)) counts[e.kind] += 1
+  return counts
+}
+
+/**
+ * The active entry, of either kind, for a pair on one side, or undefined.
+ * The add sheet disables a counterpart that has one (the store refuses a
+ * same-side duplicate or contradiction); the other side stays open.
+ */
+export function activeEntryOnSide(
+  entries: PairingEntries,
+  anaesthetistId: AnaesthetistId,
+  surgeonId: SurgeonId,
+  side: PairingSide,
+): PairingPreference | undefined {
+  return pairingsFor(entries, anaesthetistId, surgeonId).find((e) => e.raisedBy === side)
 }
 
 // ---------------------------------------------------------------------------

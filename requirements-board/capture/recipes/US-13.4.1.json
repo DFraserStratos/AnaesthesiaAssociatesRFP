@@ -1,7 +1,7 @@
 {
   "id": "US-13.4.1",
   "status": "partial",
-  "absentReason": "Anaesthetists, Contracts, Permanent Lists and hospitals with their holiday calendars are editable. Surgeons, insurers, organisations, RVG codes, modifier codes and list statuses are view only. There are no surgeon groups or RVG groups, and public holidays are held per hospital with no separate master calendar.",
+  "absentReason": "Anaesthetists, Contracts, Permanent Lists, hospitals (with a contact email) and their holiday calendars, surgeons, surgeons' rooms and surgeon groups are editable. Insurers, organisations, RVG codes, modifier codes and list statuses are view only. There are no RVG groups, and public holidays are held per hospital with no separate master calendar.",
   "shots": [
     {
       "name": "master-data",
@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "anaesthetists",
-          "caption": "Master data, anaesthetists with editable unit value, GST period and active flag",
+          "caption": "Master data, anaesthetists with their priority tier, editable unit value, GST period and active flag",
           "steps": [],
           "highlight": []
         },
@@ -43,7 +43,7 @@
         },
         {
           "state": "hospitals-holidays",
-          "caption": "Master data, hospitals and their holiday calendars",
+          "caption": "Master data, hospitals with their contact email and holiday calendars",
           "steps": [
             {
               "click": "role=button[name=\"Hospitals & holidays\"]"
@@ -56,10 +56,36 @@
         },
         {
           "state": "surgeons",
-          "caption": "Master data, surgeons (view only)",
+          "caption": "Master data, surgeons with their room, HPI CPN and pairing counts, editable",
           "steps": [
             {
-              "click": "role=button[name=\"Surgeons\"]"
+              "click": "[data-masters-view=surgeons]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "surgeon-rooms",
+          "caption": "Master data, surgeons' rooms with contact email, phone and surgeons",
+          "steps": [
+            {
+              "click": "[data-masters-view=surgeonRooms]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "surgeon-groups",
+          "caption": "Master data, surgeon groups and their members",
+          "steps": [
+            {
+              "click": "[data-masters-view=surgeonGroups]"
             },
             {
               "wait": 500

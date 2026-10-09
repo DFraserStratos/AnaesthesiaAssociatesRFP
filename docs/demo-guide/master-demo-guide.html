@@ -593,7 +593,10 @@
       <p style="font-size:14px;color:var(--slate)">Office. Needs the whole day across the roster. Coordinates
       standing arrangements, ad-hoc bookings, hospital changes, cancellations and short-notice cover.</p>
       <p style="font-size:13px">The one-day dashboard is the control tower: move one Booking for a routine
-      reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.</p>
+      reschedule, reassign a whole List for illness cover, preserving Bookings and audit through every change.
+      Maintains schedule-related master data such as anaesthetists, Permanent Lists and hospital holidays,
+      and surgeons, their rooms and groups, the office's private pairing preferences and the anaesthetists'
+      priority tiers.</p>
     </div>
     <div class="card">
       <span class="eyebrow">Primary persona 4</span>
@@ -688,6 +691,10 @@
     <p>The system ensures every active anaesthetist has two Lists a day across the rolling horizon;
     Permanent Lists project standing arrangements; availability and hospital holidays are reconciled;
     conflicts surface without deleting the List. <span class="chip ready">Ready</span></p>
+    <p>In Admin, the office also maintains surgeons (each keyed on their HPI CPN), surgeons' rooms, surgeon
+    groups, hospital contact emails, and its private pairing preferences and anaesthetist priority tiers.
+    Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
+    warning.</p>
   </div></details>
 
   <details><summary>1 · Reserve a List and populate patient Bookings</summary><div class="details-body">
@@ -704,7 +711,8 @@
   </div></details>
 
   <details><summary>3 · Find cover and reassign a whole List</summary><div class="details-body">
-    <p>The anaesthetist offers a Free session or requests cover; the office views Free anaesthetists,
+    <p>The anaesthetist offers a Free session or requests cover; the office views Free anaesthetists
+    (in priority-tier order, with any not-preferred pairing grouped apart and warned, never blocked),
     reassigns the whole List (Bookings and history), the target's empty Free List is absorbed, and a fresh
     List regenerates in the vacated slot. Free-target, absorb and regenerate is the prototype's proposed
     reading of an open RFP mechanism. <span class="chip ready">Ready</span></p>
@@ -831,7 +839,9 @@
       <tr><td>One invoice document</td><td><code>/admin/invoices/&lt;invoiceId&gt;</code></td></tr>
       <tr><td>Billing monitor</td><td><code>/admin/billing</code></td></tr>
       <tr><td>Integration monitor</td><td><code>/admin/integrations</code></td></tr>
-      <tr><td>Master data</td><td><code>/admin/masters</code></td></tr>
+      <tr><td>Master data</td><td><code>/admin/masters</code> (one view: <code>?view=surgeons</code>, <code>?view=surgeonRooms</code>, <code>?view=anaesthetists</code>)</td></tr>
+      <tr><td>Surgeon profile</td><td><code>/admin/masters/surgeons/&lt;surgeonId&gt;</code> (Ms A. Reid: <code>S-REID</code>)</td></tr>
+      <tr><td>Anaesthetist record</td><td><code>/admin/masters/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Priya Sharma: <code>41267</code>)</td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
     </table></div>
     <p style="font-size:14px">The demo surfaces are <code>/demo/control</code>,
@@ -891,12 +901,15 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Open Dr Priya Sharma's Tue 21 PM Free List &#8594; Book (phone advice).</li><li>Choose St George's Hospital and Mr T. Hale; keep 13:00–17:00.</li><li>Continue to add booking &#8594; Look up.</li><li>Pause on the populated booking.</li><li>Review &#8594; Save booking &#8594; Done.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Phone and PDF stay first-class channels. The design improves those fallbacks rather than pretending they disappear."</span></div>
       <div class="row"><span class="k">Expect</span><span>The lookup fills the complete booking and leaves it editable. The Free block repaints as booked on the admin grid; the Booking is on the List. The anaesthetist's own views still label the session Free, an open polish item to name honestly if asked.</span></div>
+      <div class="row"><span class="k">Optional</span><span>On the surgeon picker, show the separate <strong>Not preferred with Dr Sharma</strong> group. If time allows, select <strong>Ms A. Reid</strong> to show the soft amber warning and <strong>Continue anyway</strong>, then return to <strong>Mr T. Hale</strong>. The scripted path is unchanged.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 3 · illness cover, reassign a whole List</h4>
-      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Reassign list &#8594; Dr Priya Sharma &#8594; Unavailable &#8594; Confirm reassignment.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Go to Wed 22 Jul and open Dr James Rutherford's AM Christchurch Eye Surgery List.</li><li>Select Reassign list. The candidates are in tier order with a tier pill on each; Dr Priya Sharma is in the main group with a Preferred pill. Pick her by name, since the order within a tier varies each time the picker opens.</li><li>Sharma, Priya &#8594; Unavailable &#8594; Confirm reassignment.</li><li>Pause on the confirmation, then reopen Sharma AM &#8594; History.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"A whole-List reassignment preserves the Bookings and audit trail, different from moving one Booking. Free-target, absorb and regenerate is the prototype's proposal for keeping the fixed canvas intact."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A brief List reassigned success moment appears before the modal closes. The List and Bookings move; the vacated slot regenerates; the change is audited.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The office's private knowledge is now data: who works well with whom, either way round, and the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on top. Only the office ever sees it."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred pill) and shows no warning for Sharma. Then a brief List reassigned success moment confirms the move before the modal closes. The List and its Bookings move to Sharma, the vacated session regenerates, and History records the reassignment.</span></div>
+      <div class="row"><span class="k">Optional</span><span>Use the picker's Filter by tier, or open Dr Alistair Chen's Tue 21 PM Christchurch Eye Surgery List &#8594; Reassign list to show Dr Sharma apart under Not preferred with Ms Reid. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session, which Beat 2 books.</span></div>
     </div>
     <div class="beat">
       <h4>Beat 4 · authorise a submitted List</h4>
@@ -904,7 +917,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Booking and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
     </div>
-    <div class="callout warn">Discovery: hard vs advisory availability/holiday conflicts (prototype uses advisory flags); the exact reassignment mechanics; and monitoring location (prototype places it in Admin Web).</div>
+    <div class="callout warn">Discovery: whether availability/holiday conflicts are hard constraints or warnings (the prototype uses advisory flags); the exact List-reassignment mechanics; whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
@@ -1085,6 +1098,16 @@
     <li>The apps read the Billing Engine's mirror, never Xero directly.</li>
     <li>Outstanding balances are flat individual payable rows, not a Booking-level rollup and not amounts the
       anaesthetist personally owes.</li>
+  </ul>
+
+  <h2>Surgeons, pairings and tiers</h2>
+  <ul>
+    <li>Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
+      sits in one surgeons' room with its contact email and phone, and surgeons can belong to groups.</li>
+    <li>Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
+      record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
+      order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
+      Whitford prefers to work with Dr Sharma.</li>
   </ul>
 
   <div class="grid2">

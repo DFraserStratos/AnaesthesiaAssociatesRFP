@@ -11,7 +11,9 @@ import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
 import { AaFeesScreen } from './screens/AaFeesScreen'
 import { IntegrationMonitorScreen } from './screens/IntegrationMonitorScreen'
 import { InvoicesScreen } from './screens/InvoicesScreen'
-import { MasterData } from './screens/MasterData'
+import { MasterData } from './screens/masters/MasterData'
+import { SurgeonProfile } from './screens/SurgeonProfile'
+import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { useAdminOutlet } from './outlet'
@@ -217,8 +219,36 @@ export function AdminIntegrationsRoute() {
 }
 
 export function AdminMastersRoute() {
-  const { actor, todayISO } = useAdminOutlet()
-  return <MasterData actor={actor} todayISO={todayISO} />
+  const { actor } = useAdminOutlet()
+  return <MasterData actor={actor} />
+}
+
+// ---------------------------------------------------------------------------
+// Master data pages — `/admin/masters/surgeons/:surgeonId`,
+// `/admin/masters/anaesthetists/:anaesthetistId` (catch-up Phase 17). An
+// unknown id falls back to `/admin/masters`.
+// ---------------------------------------------------------------------------
+
+export function AdminSurgeonProfileRoute() {
+  const { surgeonId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.surgeons[surgeonId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <SurgeonProfile key={surgeonId} surgeonId={surgeonId} actor={actor} />
+    </RequireEntity>
+  )
+}
+
+export function AdminAnaesthetistRecordRoute() {
+  const { anaesthetistId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.anaesthetists[anaesthetistId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <AnaesthetistRecord key={anaesthetistId} anaesthetistId={anaesthetistId} actor={actor} />
+    </RequireEntity>
+  )
 }
 
 export function AdminAuditRoute() {

@@ -1,0 +1,81 @@
+{
+  "id": "US-01.3.6",
+  "status": "partial",
+  "absentReason": "Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker. The availability finder (Phase 28) and Draft List assignment (Phase 31) reuse the same ordering.",
+  "shots": [
+    {
+      "name": "tier-record",
+      "app": "admin",
+      "caption": "The priority tier on the anaesthetist's record, seen only by the office",
+      "start": "/admin/masters/anaesthetists/41267",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=tier-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tier-order",
+      "app": "admin",
+      "caption": "Cover suggestions ordered by tier, shuffled within a tier, seen only by the office",
+      "start": "/admin/day/2026-07-22",
+      "states": [
+        {
+          "state": "order",
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-29104-2026-07-22-AM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-clear]"
+          ]
+        },
+        {
+          "state": "filter",
+          "caption": "The same picker filtered to Tier 1",
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-29104-2026-07-22-AM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=tier-filter] >> role=button[name=\"Tier 1\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=tier-filter]",
+            "[data-shot=candidates-clear]"
+          ]
+        }
+      ]
+    }
+  ]
+}

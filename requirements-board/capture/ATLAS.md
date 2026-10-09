@@ -205,7 +205,13 @@ Hooks already added:
 - **Anaesthetist, web and mobile:** Dr Melanie Souter, initials MS, anaesthetist ID `34821`.
 - **Admin, and every `/demo/*` page:** Kirsty W., office staff.
 - **Other registration numbers:** Rutherford 29104, Ropata 39560, Delaney 27731, Morrison 25490,
-  Whitaker 36208.
+  Whitaker 36208, Sharma 41267, Chen 45178, Hughes 46822, Strand 47733, Ngata 38455.
+- **Surgeons** (catch-up Phase 17): `S-HALE` Mr T. Hale, `S-REID` Ms A. Reid, `S-WHITFORD` Mr J. Whitford
+  (see the seed for the rest). HPI CPNs `40HALT` to `49CAMH` (Reid `47REIA`); Dr Sharma's own HPI CPN is
+  `12SHAP`. Rooms `RM-RICC` (Hale), `RM-MERI` Merivale Eye Rooms (Whitford, Reid), `RM-AVON`,
+  `RM-FEND`, `RM-PAPA`. Groups `SG-COS` Canterbury Orthopaedic Surgeons (Hale), `SG-EYE` Christchurch
+  Eye Surgeons (Whitford, Reid). Runtime ids: surgeons `SN001`, rooms `RMN001`, groups `SGN001`,
+  pairing entries `PPN001`.
 
 **IDs**
 
@@ -269,7 +275,9 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. Tabs include Contracts and "Hospitals & holidays". |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `permanentLists`, `hospitals`, `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `listStatuses`, `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
+| `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
+| `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
 
 The side nav has: Day view, Review queue, Invoices, Billing monitor, Integrations, Master data,
@@ -303,6 +311,23 @@ Audit.
 | `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
 
 ## Seed data worth shooting
+
+**Pairing preferences and tiers** (catch-up Phase 17; office only, never on mobile, web or the PWA)
+
+- `PP-001`: Ms A. Reid prefers not to work with Dr Priya Sharma (not preferred, surgeon's side,
+  "Surgeon's preference", added 10 Mar 2026).
+- `PP-002`: Dr Rawiri Hughes prefers not to work with Ms A. Reid (anaesthetist's side), ended 12 May
+  2026 ("Resolved with the surgeon's rooms"): under "Ended entries" on Reid's profile.
+- `PP-003`: Mr J. Whitford prefers to work with Dr Priya Sharma (preferred, surgeon's side).
+- `PP-004`: Dr Tom Ngata prefers to work with Ms H. Cameron (preferred, anaesthetist's side).
+- Tiers: Tier 1 Souter, Rutherford, Morrison, Delaney, Strand; Tier 2 Sharma, Chen, Fitzgerald; Tier 3
+  Ngata, Beaumont, Hughes; no entry (Tier 4) Ropata, Whitaker, Ngatai.
+- Pickers: Reassign list from Dr Chen's Tue 21 PM (`L-45178-2026-07-21-PM`, Ms Reid) puts Sharma under
+  "Not preferred with Ms Reid" (open only; never confirm in a recipe, it uses Sharma's S2 Free PM);
+  Dr Rutherford's Wed 22 AM (`L-29104-2026-07-22-AM`, Mr Whitford) shows six candidates in tier order,
+  Sharma with a Preferred pill. Edit list on Sharma's Tue 21 AM (`L-41267-2026-07-21-AM`) with
+  `S-REID` selected shows the warning. Within a tier the order is shuffled per opening (seeded), so
+  pick a candidate by `[data-candidate=<id>]` or name, never by position.
 
 **Souter, Tue 21 PM** (`L-34821-2026-07-21-PM`, "Southern Cross" on the mobile lists home)
 
@@ -428,7 +453,14 @@ the next run raises his $700.00 before GST ($805.00 with GST).
   - `input[type=date]` accepts a fill.
   - Mini calendar days are named like "Wednesday 22 July 2026".
 - **Invoice:** "Email invoice" shows "Simulated send"; "Print".
-- **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name").
+- **Master data:** "Edit", "Save changes", and "Add hospital" (field "Hospital name", then the
+  optional "Contact email"). Catch-up Phase 17 sheets: "Add surgeon" / a surgeon row's "Edit" /
+  profile "Edit details" (`surgeon-edit-sheet`), "Add room" / "Edit <room name>"
+  (`surgeon-room-sheet`), "Add group" / "Edit <group name>" (`surgeon-group-sheet`), a hospital's
+  "Edit <hospital name>" (`edit-hospital-sheet`), "Add pairing" (`pairing-add-sheet`), a pairing
+  row's "End" (`pairing-end-sheet`, confirm "End pairing"). The anaesthetist Edit sheet has an
+  "Open record" link. A table row (anaesthetist or surgeon) opens its page; the "Edit" link in it
+  does not.
 
 **Shell** (these controls sit in the harness bar, which is hidden in shots, so they can't be
 clicked; use the matching `/demo/control` buttons in `setup` instead. The "Demo actions" menu is
@@ -489,6 +521,27 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 - `procedure-header`, `booking-calculation`, `time-capture-track`, `time-action-slider`,
   `completion-overlay`, `dock-spacer`
+
+**`data-shot` hooks for surgeons, pairings and tiers** (catch-up Phase 17; Admin only)
+
+- Master data tables: `masters-anaesthetists` (rows `tr[data-anaesthetist=<id>]`, tier pills
+  `[data-tier=1..4]`), `masters-surgeons` (rows `tr[data-surgeon=<id>]`), `masters-surgeon-rooms`
+  (`tr[data-room=<id>]`), `masters-surgeon-groups` (`tr[data-group=<id>]`), `masters-hospitals`
+  (cards `[data-hospital=<id>]`).
+- Pages: `surgeon-profile`, `surgeon-hpi-chip`, `surgeon-identifiers`, `surgeon-room-card`,
+  `surgeon-groups`; `anaesthetist-record`, `anaesthetist-hpi-chip`, `anaesthetist-details`,
+  `tier-card`.
+- Pairing section: `pairing-section`, groups `[data-pairing-group=NOT_PREFERRED|PREFERRED]`, rows
+  `[data-pairing=<entryId>]`, `pairing-ended` (a `<details>`: click `[data-shot=pairing-ended] >
+  summary` to open), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's
+  option is disabled with `data-taken`), `pairing-preview`, `pairing-end-sheet`.
+- Pickers (session 1): `surgeon-picker`, `candidate-picker`, `tier-filter`, `candidates-clear`,
+  `candidates-not-preferred` (rows `[data-candidate=<id>]`), and the warnings
+  `edit-list-pairing-warning`, `phone-advice-pairing-warning`, `reassign-pairing-warning`,
+  `permanent-list-pairing-warning`.
+- Day grid: every block button carries `data-list-id=<listId>`, so a recipe opens an exact List's
+  drawer with `[data-list-id="L-..."]`. The drawer's surgeon is a link (`drawer-surgeon-link`) to the
+  profile.
 
 **Other hooks**
 

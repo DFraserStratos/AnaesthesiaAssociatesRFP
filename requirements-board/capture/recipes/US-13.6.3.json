@@ -1,6 +1,111 @@
 {
   "id": "US-13.6.3",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 17 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "pairings-surgeon",
+      "app": "admin",
+      "caption": "A private record, either way round, on both profiles; it informs the office and never blocks",
+      "start": "/admin/masters/surgeons/S-REID",
+      "states": [
+        {
+          "state": "active",
+          "caption": "Ms A. Reid prefers not to work with Dr Priya Sharma, private to the office",
+          "steps": [
+            {
+              "scroll": "[data-shot=pairing-section]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-pairing-group=NOT_PREFERRED]"
+          ]
+        },
+        {
+          "state": "ended",
+          "caption": "An ended entry, the anaesthetist's side, kept with who ended it, when and why",
+          "steps": [
+            {
+              "click": "[data-shot=pairing-ended] > summary"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "scroll": "[data-shot=pairing-ended]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=pairing-ended]"
+          ]
+        },
+        {
+          "state": "add",
+          "caption": "Recording a pairing: which kind and which side asked; Dr Sharma is already recorded on the surgeon's side",
+          "steps": [
+            {
+              "click": "role=button[name=\"Add pairing\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pairings-anaesthetist",
+      "app": "admin",
+      "caption": "The same entry from Dr Sharma's side, on her Admin record",
+      "start": "/admin/masters/anaesthetists/41267",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=pairing-section]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-pairing-group=NOT_PREFERRED]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reassign-apart",
+      "app": "admin",
+      "caption": "Reassigning Ms Reid's List: Dr Sharma is grouped apart, still selectable",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-45178-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=candidates-not-preferred]"
+          ]
+        }
+      ]
+    }
+  ]
 }

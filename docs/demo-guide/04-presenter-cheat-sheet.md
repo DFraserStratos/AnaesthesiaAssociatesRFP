@@ -169,6 +169,12 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Correct billing setup
 - Review and authorise
 - Master data and audit
+- Surgeon profiles: the HPI CPN is each surgeon's unique index (not the patient's NHI), each surgeon
+  sits in one surgeons' room with its contact email and phone, and surgeons can belong to groups
+- Pairing preferences and priority tiers: kept on both the surgeon profile and the anaesthetist
+  record, admin only; a not-preferred pairing warns and never blocks; cover suggestions run in tier
+  order, shuffled within a tier; seeded: Ms A. Reid prefers not to work with Dr Sharma, and Mr J.
+  Whitford prefers to work with Dr Sharma
 - Later: billing and integration monitoring
 
 ## Strong phrases to use

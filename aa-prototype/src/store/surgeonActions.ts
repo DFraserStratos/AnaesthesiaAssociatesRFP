@@ -213,6 +213,25 @@ export function editSurgeonGroup(api: AppStoreApi, actor: Actor, groupId: string
   const cleaned = cleanGroupFields(state, fields)
   if (!cleaned.ok) return cleaned
   const next: SurgeonGroup = { id: groupId, ...cleaned.value }
+  // Only the fields that changed are audited (members compared as a set); no change writes nothing.
+  const before: Record<string, unknown> = {}
+  const after: Record<string, unknown> = {}
+  if (next.name !== existing.name) {
+    before.name = existing.name
+    after.name = next.name
+  }
+  if ((next.description ?? '') !== (existing.description ?? '')) {
+    before.description = existing.description ?? ''
+    after.description = next.description ?? ''
+  }
+  const sameMembers =
+    next.memberSurgeonIds.length === existing.memberSurgeonIds.length &&
+    next.memberSurgeonIds.every((id) => existing.memberSurgeonIds.includes(id))
+  if (!sameMembers) {
+    before.memberSurgeonIds = existing.memberSurgeonIds
+    after.memberSurgeonIds = next.memberSurgeonIds
+  }
+  if (Object.keys(after).length === 0) return ok(undefined)
   mutate(
     api,
     actor,
@@ -220,8 +239,8 @@ export function editSurgeonGroup(api: AppStoreApi, actor: Actor, groupId: string
       entityType: 'surgeonGroup',
       entityId: groupId,
       action: 'surgeonGroup.update',
-      before: { name: existing.name, description: existing.description ?? '', memberSurgeonIds: existing.memberSurgeonIds },
-      after: { name: next.name, description: next.description ?? '', memberSurgeonIds: next.memberSurgeonIds },
+      before,
+      after,
       stampBookingId: null,
     },
     (s) => ({ masters: { ...s.masters, surgeonGroups: { ...s.masters.surgeonGroups, [groupId]: next } } }),

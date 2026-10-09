@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
@@ -14,6 +15,7 @@ import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
 import { MoveBookingFlow } from '../flows/MoveBookingFlow'
 import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
+import { surgeonProfilePath } from '../mastersPaths'
 
 interface ListDrawerProps {
   listId: string
@@ -70,7 +72,21 @@ export function ListDrawer({ listId, actor, onClose, onOpenBooking }: ListDrawer
           <Section label="Session">
             <Row label="Times">{sessionTimeRange(list)}</Row>
             <Row label="Hospital">{hospital}</Row>
-            <Row label="Surgeon">{surgeon}</Row>
+            <Row label="Surgeon">
+              {list.surgeonId !== undefined && surgeon !== undefined ? (
+                <Link
+                  to={surgeonProfilePath(list.surgeonId)}
+                  onClick={onClose}
+                  data-shot="drawer-surgeon-link"
+                  className="aa-table-entity-link"
+                  style={{ color: accent.base }}
+                >
+                  <span className="aa-table-entity-link-title">{surgeon}</span>
+                </Link>
+              ) : (
+                surgeon
+              )}
+            </Row>
             {list.notes !== undefined && list.notes.trim() !== '' && <Row label="Note">{list.notes}</Row>}
           </Section>
 

@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { neutral, radius } from '../../theme/tokens'
+import { useId, type CSSProperties, type ReactNode } from 'react'
+import { neutral, radius, semantic } from '../../theme/tokens'
 import { SlidingSegmentedControl } from './SlidingSegmentedControl'
 
 export function FieldLabel({ children }: { children: ReactNode }) {
@@ -30,21 +30,38 @@ interface TextFieldProps {
   placeholder?: string
   type?: 'text' | 'date' | 'email' | 'tel'
   mono?: boolean
+  /** One mist line under the field, tied to it with aria-describedby. */
+  hint?: string
 }
 
-export function TextField({ label, value, onChange, placeholder, type = 'text', mono }: TextFieldProps) {
+export function TextField({ label, value, onChange, placeholder, type = 'text', mono, hint }: TextFieldProps) {
+  const hintId = useId()
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <FieldLabel>{label}</FieldLabel>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={mono === true ? 'mono' : undefined}
-        style={controlStyle}
-      />
-    </label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <FieldLabel>{label}</FieldLabel>
+        <input
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          aria-describedby={hint !== undefined ? hintId : undefined}
+          className={mono === true ? 'mono' : undefined}
+          style={controlStyle}
+        />
+      </label>
+      {hint !== undefined && <div id={hintId} style={{ fontSize: 12, color: neutral.mist }}>{hint}</div>}
+    </div>
+  )
+}
+
+/** A refused save, in plain words: the error-tint box the sheets share. Nothing when there is no message. */
+export function FormError({ message }: { message: string | null }) {
+  if (message === null) return null
+  return (
+    <div role="alert" style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>
+      {message}
+    </div>
   )
 }
 

@@ -74,7 +74,9 @@ view respectively.
 | One invoice document | `/admin/invoices/<invoiceId>` |
 | Billing monitor | `/admin/billing` |
 | Integration monitor | `/admin/integrations` |
-| Master data | `/admin/masters` |
+| Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
+| Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
+| Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |
 
 The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`. The
@@ -198,18 +200,33 @@ already seeded.
   repaints as booked on the admin day grid and the new Booking sits on that List (open the block's drawer
   to see it). The anaesthetist's own web and mobile views still label the session Free for now; if
   asked, name that honestly as an open polish item on the phone-booking path.
+- **Optional pointer:** on the surgeon picker, show the separate **Not preferred with Dr Sharma** group.
+  If time allows, select **Ms A. Reid** to show the soft amber warning and **Continue anyway**, then
+  return to **Mr T. Hale**. The scripted path is unchanged.
 
 ### Beat 3: illness cover, reassign a whole List
 
 - **Click:**
   - Go to Wednesday 22 July and open **Dr James Rutherford's AM Christchurch Eye Surgery List**.
-  - Select **Reassign list → Dr Priya Sharma → Unavailable → Confirm reassignment**.
+  - Select **Reassign list**. The candidates are in tier order with a tier pill on each; Dr Priya
+    Sharma is in the main group with a **Preferred** pill. Pick her **by name**, since the order within
+    a tier varies each time the picker opens.
+  - Select **Sharma, Priya → Unavailable → Confirm reassignment**.
   - Pause on the confirmation, then reopen **Sharma AM → History**.
 - **Say:** "A whole-List reassignment preserves the Bookings and audit trail. It is different from moving
   one patient Booking. The free-target, absorb and regenerate mechanics are the prototype's proposal for
   keeping the fixed canvas intact."
-- **Expected:** a brief **List reassigned** success moment confirms the move before the modal closes.
-  The List and its Bookings move to Sharma, the vacated slot regenerates, and History records the reassignment.
+- **Say:** "The office's private knowledge is now data: who works well with whom, either way round, and
+  the directors' priority tiers. It orders the suggestions, shuffled within a tier so no one is always on
+  top. Only the office ever sees it."
+- **Expected:** the picker is grouped and tier-ordered (Tier 1 first, Sharma at Tier 2 with a Preferred
+  pill) and shows no warning for Sharma. Then a brief **List reassigned** success moment confirms the
+  move before the modal closes. The List and its Bookings move to Sharma, the vacated session
+  regenerates, and History records the reassignment.
+- **Optional pointer:** use the picker's **Filter by tier**, or open **Dr Alistair Chen's Tue 21 PM
+  Christchurch Eye Surgery List → Reassign list** to show Dr Sharma apart under **Not preferred with
+  Ms Reid**. Open that picker only; never confirm it, because it uses Sharma's Tue 21 PM Free session,
+  which Beat 2 books.
 
 ### Beat 4: authorise a submitted List
 
@@ -222,8 +239,11 @@ already seeded.
 - **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
 
 **Discovery points:** whether availability/holiday conflicts are hard constraints or warnings (the
-prototype uses advisory flags); the exact List-reassignment mechanics; and whether monitoring belongs
-in Admin Web or a separate surface (the prototype places it in Admin Web).
+prototype uses advisory flags); the exact List-reassignment mechanics; whether monitoring belongs
+in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
+preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to
+Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their
+tier (the prototype marks it only).
 
 ---
 

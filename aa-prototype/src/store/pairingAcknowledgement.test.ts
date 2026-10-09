@@ -56,7 +56,7 @@ describe('editList', () => {
     addPairingPreference(api, OFFICE, { kind: 'NOT_PREFERRED', raisedBy: 'ANAESTHETIST', anaesthetistId: ANAE.sharma, surgeonId: SURG.reid })
     editList(api, OFFICE, SHARMA_AM, { surgeonId: SURG.reid })
     expect(acks(api)).toHaveLength(1)
-    expect((acks(api)[0]?.after as { pairingPreferenceIds: string[] }).pairingPreferenceIds).toEqual(['PP-001', 'PPN001'])
+    expect(acks(api)[0]?.after).toMatchObject({ pairingPreferenceIds: ['PP-001', 'PPN001'] })
   })
 
   it('an anaesthetist-side entry acknowledges like a surgeon-side one', () => {

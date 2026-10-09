@@ -714,3 +714,29 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
     display: none;
   }
 }
+
+/* A <details> disclosure with a turning chevron (catch-up Phase 17: the
+   pairing section's "Ended entries"). */
+.aa-disclosure::-webkit-details-marker {
+  display: none;
+}
+
+.aa-disclosure-chevron {
+  transition: transform 160ms ease-out;
+}
+
+details[open] > .aa-disclosure .aa-disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.aa-disclosure:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aa-disclosure-chevron {
+    transition: none;
+  }
+}

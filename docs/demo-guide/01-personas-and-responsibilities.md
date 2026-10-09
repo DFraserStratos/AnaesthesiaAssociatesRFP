@@ -148,7 +148,8 @@ short-notice cover.
 7. Find a Free replacement anaesthetist and reassign the entire List for illness cover.
 8. Add internal day notes.
 9. Maintain schedule-related master data such as anaesthetists, Permanent Lists and hospital
-   holidays.
+   holidays, and surgeons, their rooms and groups, the office's private pairing preferences and the
+   anaesthetists' priority tiers.
 10. Review the audit history when a change needs explanation.
 11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
 

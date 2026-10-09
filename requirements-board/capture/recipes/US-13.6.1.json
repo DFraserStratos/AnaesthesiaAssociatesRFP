@@ -1,6 +1,59 @@
 {
   "id": "US-13.6.1",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 17 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeons-rooms",
+      "app": "admin",
+      "caption": "Each room holds its contact email, phone and surgeons",
+      "start": "/admin/masters?view=surgeonRooms",
+      "states": [
+        {
+          "state": "table",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=masters-surgeon-rooms]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Editing a room's contact email and phone; a surgeon joins a room from their own record",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit Merivale Eye Rooms\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "room-card",
+      "app": "admin",
+      "caption": "The room's contacts on the surgeon's profile, with Mr J. Whitford in the same room",
+      "start": "/admin/masters/surgeons/S-REID",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-room-card]"
+          ]
+        }
+      ]
+    }
+  ]
 }

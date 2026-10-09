@@ -88,6 +88,17 @@ describe("surgeons' rooms and groups", () => {
     expect(api.getState().audit.at(-1)?.action).toBe('surgeonGroup.update')
     expect(api.getState().masters.organisations['O-COS']).toBeDefined()
   })
+
+  it('editSurgeonGroup audits only what changed (members as a set), and an unchanged save writes nothing', () => {
+    const api = createAppStore()
+    const g = api.getState().masters.surgeonGroups['SG-EYE']!
+    const before = api.getState().audit.length
+    const same = { name: g.name, description: g.description, memberSurgeonIds: [...g.memberSurgeonIds].reverse() }
+    expect(editSurgeonGroup(api, OFFICE, 'SG-EYE', same).ok).toBe(true)
+    expect(api.getState().audit.length).toBe(before)
+    expect(editSurgeonGroup(api, OFFICE, 'SG-EYE', { ...same, description: 'Eye surgeons at one hospital' }).ok).toBe(true)
+    expect(api.getState().audit.at(-1)?.after).toEqual({ description: 'Eye surgeons at one hospital' })
+  })
 })
 
 describe('hospitals and the anaesthetist HPI CPN', () => {
@@ -106,6 +117,16 @@ describe('hospitals and the anaesthetist HPI CPN', () => {
     expect(editHospital(api, OFFICE, HOSP.stg, { contactEmail: 'nope' }).ok).toBe(false)
     expect(editHospital(api, OFFICE, HOSP.stg, { name: 'Southern Cross' }).ok).toBe(false)
     expect(editHospital(api, SOUTER, HOSP.stg, { contactEmail: '' }).ok).toBe(false)
+  })
+
+  it('editHospital audits only what changed, and an unchanged save writes nothing', () => {
+    const api = createAppStore()
+    const before = api.getState().audit.length
+    const h = api.getState().masters.hospitals[HOSP.stg]!
+    expect(editHospital(api, OFFICE, HOSP.stg, { name: h.name, contactEmail: h.contactEmail ?? '' }).ok).toBe(true)
+    expect(api.getState().audit.length).toBe(before)
+    expect(editHospital(api, OFFICE, HOSP.stg, { name: h.name, contactEmail: 'theatre@stgeorges.example' }).ok).toBe(true)
+    expect(api.getState().audit.at(-1)?.after).toEqual({ contactEmail: 'theatre@stgeorges.example' })
   })
 
   it("addAnaesthetist refuses a surgeon's HPI CPN and stores a typed one upper-cased", () => {

@@ -3,11 +3,14 @@ import {
   DEFAULT_PRIORITY_TIER,
   PAIRING_LABELS,
   TIER_LABELS,
+  activeEntryOnSide,
   activePairings,
   groupSurgeonsForAnaesthetist,
   notPreferredEntryIds,
   notPreferredWarning,
   pairingAcknowledgement,
+  pairingCounts,
+  pairingsOnProfile,
   pairingSentence,
   pairingStatus,
   pairingsFor,
@@ -219,6 +222,14 @@ describe('the one label set', () => {
       PAIRING_LABELS.optionSuffix('NOT_PREFERRED'),
       PAIRING_LABELS.optionSuffix('PREFERRED'),
       PAIRING_LABELS.bothAsked('Dr Priya Sharma', 'Ms A. Reid'),
+      PAIRING_LABELS.privacyNote,
+      PAIRING_LABELS.asked('Ms A. Reid'),
+      ...Object.values(PAIRING_LABELS.otherSideAsked),
+      PAIRING_LABELS.alreadyOnSide('NOT_PREFERRED'),
+      PAIRING_LABELS.emptyGroup,
+      PAIRING_LABELS.ended,
+      PAIRING_LABELS.add,
+      PAIRING_LABELS.noReason,
       ...Object.values(TIER_LABELS),
       pairingSentence('NOT_PREFERRED', 'SURGEON', 'Dr Priya Sharma', 'Ms A. Reid'),
       pairingSentence('PREFERRED', 'ANAESTHETIST', 'Dr Priya Sharma', 'Mr J. Whitford'),
@@ -238,5 +249,37 @@ describe('the one label set', () => {
     expect(pairingSentence('NOT_PREFERRED', 'ANAESTHETIST', 'Dr Priya Sharma', 'Ms A. Reid')).toBe('Dr Priya Sharma prefers not to work with Ms A. Reid')
     expect(pairingSentence('PREFERRED', 'SURGEON', 'Dr Priya Sharma', 'Mr J. Whitford')).toBe('Mr J. Whitford prefers to work with Dr Priya Sharma')
     expect(pairingSentence('PREFERRED', 'ANAESTHETIST', 'Dr Priya Sharma', 'Mr J. Whitford')).toBe('Dr Priya Sharma prefers to work with Mr J. Whitford')
+  })
+})
+
+describe('profiles', () => {
+  const ENDED_LATER = entry({ id: 'P5', anaesthetistId: 'A3', endedAtISO: '2026-06-01T09:00:00', endedBy: 'Kirsty W.' })
+  const all = [SURGEON_SIDE, ANAE_SIDE, ENDED, PREFERRED, ENDED_LATER]
+
+  it('splits one surgeon profile into active not preferred, preferred and ended (latest end first)', () => {
+    const p = pairingsOnProfile(all, { surgeonId: 'REID' })
+    expect(p.notPreferred.map((e) => e.id)).toEqual(['P1', 'P2'])
+    expect(p.preferred).toEqual([])
+    expect(p.ended.map((e) => e.id)).toEqual(['P5', 'P3'])
+  })
+
+  it('shows the same entries from the anaesthetist side', () => {
+    const p = pairingsOnProfile(all, { anaesthetistId: 'A1' })
+    expect(p.notPreferred.map((e) => e.id)).toEqual(['P1', 'P2'])
+    expect(p.preferred.map((e) => e.id)).toEqual(['P4'])
+    expect(p.ended).toEqual([])
+  })
+
+  it('counts active entries per kind, never ended ones', () => {
+    expect(pairingCounts(all, { surgeonId: 'REID' })).toEqual({ NOT_PREFERRED: 2, PREFERRED: 0 })
+    expect(pairingCounts(all, { surgeonId: 'WHIT' })).toEqual({ NOT_PREFERRED: 0, PREFERRED: 1 })
+    expect(pairingCounts(all, { surgeonId: 'HALE' })).toEqual({ NOT_PREFERRED: 0, PREFERRED: 0 })
+  })
+
+  it('finds the active entry on one side only (the add sheet disables that counterpart)', () => {
+    expect(activeEntryOnSide([SURGEON_SIDE], 'A1', 'REID', 'SURGEON')?.id).toBe('P1')
+    expect(activeEntryOnSide([SURGEON_SIDE], 'A1', 'REID', 'ANAESTHETIST')).toBeUndefined()
+    expect(activeEntryOnSide([ENDED], 'A2', 'REID', 'ANAESTHETIST')).toBeUndefined()
+    expect(activeEntryOnSide([PREFERRED], 'A1', 'WHIT', 'SURGEON')?.kind).toBe('PREFERRED')
   })
 })

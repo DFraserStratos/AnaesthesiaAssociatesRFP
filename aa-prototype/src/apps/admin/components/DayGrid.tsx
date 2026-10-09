@@ -330,6 +330,7 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
     <button
       type="button"
       onClick={onClick}
+      data-list-id={list.id}
       data-shot={warnings !== undefined ? 'daygrid-block-warnings' : undefined}
       title={tooltip !== '' ? tooltip : undefined}
       style={{

@@ -160,10 +160,11 @@ export function drSurname(name: string): string {
  * Keep the leading title and the surname: "Ms A. Reid" -> "Ms Reid",
  * "Dr Priya Sharma" -> "Dr Sharma". Surgeons carry Mr / Ms titles, so the
  * Dr-only short form would mislabel them (Phase 17 pairing group headings).
+ * A name with no title stays whole ("Jane Smith"): no title is invented.
  */
 export function titledSurname(name: string): string {
   const match = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i.exec(name.trim())
-  if (match === null) return drSurname(name)
+  if (match === null) return name.trim()
   const parts = name.trim().slice(match[0].length).split(/\s+/).filter((p) => p !== '')
   const surname = parts[parts.length - 1]
   return surname === undefined ? name : `${match[1]} ${surname}`

@@ -28,7 +28,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Choose an anaesthetist whose session is free"
+          "caption": "Choose an anaesthetist whose session is free, listed in tier order"
         },
         {
           "state": "done",

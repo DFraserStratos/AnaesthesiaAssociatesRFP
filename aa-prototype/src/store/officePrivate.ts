@@ -16,7 +16,7 @@ import {
   PAIRING_LABELS,
   comparePairings,
   isPriorityTier,
-  pairingsFor,
+  activeEntryOnSide,
   tierFor,
   tierLabel,
 } from '../domain/pairingPreferences'
@@ -44,7 +44,7 @@ export interface NewPairingFields {
  */
 export function addPairingPreference(api: AppStoreApi, actor: Actor, fields: NewPairingFields): Outcome<{ id: string }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can record a pairing preference.')
-  if (!KINDS.includes(fields.kind)) return refuse('invalidKind', 'Choose Not preferred or Preferred.')
+  if (!KINDS.includes(fields.kind)) return refuse('invalidKind', `Choose ${PAIRING_LABELS.kind.NOT_PREFERRED} or ${PAIRING_LABELS.kind.PREFERRED}.`)
   if (!SIDES.includes(fields.raisedBy)) return refuse('invalidSide', 'Choose which side asked.')
   const state = api.getState()
   const anaesthetist = state.masters.anaesthetists[fields.anaesthetistId]
@@ -52,21 +52,14 @@ export function addPairingPreference(api: AppStoreApi, actor: Actor, fields: New
   const surgeon = state.masters.surgeons[fields.surgeonId]
   if (surgeon === undefined) return refuse('notFound', 'Surgeon not found.')
 
-  const sameSide = pairingsFor(state.officePrivate.pairingPreferences, fields.anaesthetistId, fields.surgeonId).filter(
-    (e) => e.raisedBy === fields.raisedBy,
-  )
-  const asker = fields.raisedBy === 'SURGEON' ? surgeon.name : anaesthetist.name
-  const other = fields.raisedBy === 'SURGEON' ? anaesthetist.name : surgeon.name
-  const duplicate = sameSide.find((e) => e.kind === fields.kind)
-  if (duplicate !== undefined) {
-    return refuse('duplicatePairing', `${asker} already has a ${PAIRING_LABELS.kind[fields.kind]} entry with ${other}.`)
-  }
-  const contradiction = sameSide.find((e) => e.kind !== fields.kind)
-  if (contradiction !== undefined) {
-    return refuse(
-      'contradictoryPairing',
-      `${asker} already has a ${PAIRING_LABELS.kind[contradiction.kind]} entry with ${other}. End it first.`,
-    )
+  // The same-side rule is the add sheet's (one helper): a duplicate or a contradiction on this side is refused.
+  const existing = activeEntryOnSide(state.officePrivate.pairingPreferences, fields.anaesthetistId, fields.surgeonId, fields.raisedBy)
+  if (existing !== undefined) {
+    const asker = fields.raisedBy === 'SURGEON' ? surgeon.name : anaesthetist.name
+    const other = fields.raisedBy === 'SURGEON' ? anaesthetist.name : surgeon.name
+    return existing.kind === fields.kind
+      ? refuse('duplicatePairing', `${asker} already has a ${PAIRING_LABELS.kind[fields.kind]} entry with ${other}.`)
+      : refuse('contradictoryPairing', `${asker} already has a ${PAIRING_LABELS.kind[existing.kind]} entry with ${other}. End it first.`)
   }
 
   const reason = fields.reason?.trim() ?? ''

@@ -1,6 +1,75 @@
 {
   "id": "US-01.3.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 17 builds this.",
-  "shots": []
+  "status": "partial",
+  "absentReason": "The warning and the separated group work when the office assigns a List in a session (Edit list, phone advice booking, Permanent List) and when it reassigns a List. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.",
+  "shots": [
+    {
+      "name": "edit-list-warning",
+      "app": "admin",
+      "caption": "A not-preferred pairing is grouped apart and warns the office, it never blocks",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-41267-2026-07-21-AM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Edit list\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "select[data-shot=surgeon-picker]",
+              "value": "S-REID"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "select[data-shot=surgeon-picker]",
+            "[data-shot=edit-list-pairing-warning]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reassign-warning",
+      "app": "admin",
+      "caption": "Choosing Dr Sharma for Ms Reid's List: the warning and \"Confirm reassignment anyway\"",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-list-id=\"L-45178-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Reassign list\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=candidates-not-preferred] [data-candidate=\"41267\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=reassign-pairing-warning]"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -30,14 +30,19 @@ export function TierPill({ tier }: { tier: PriorityTier }) {
   )
 }
 
-export function PreferredPill() {
-  return <span style={{ ...PILL, background: accent.tint, color: accent.pressed }}>{PAIRING_LABELS.kind.PREFERRED}</span>
+/** With a `count`, the pill reads "2 Preferred" (the Surgeons table's counts). */
+function counted(count: number | undefined, label: string): string {
+  return count === undefined ? label : `${count} ${label}`
 }
 
-export function NotPreferredPill() {
+export function PreferredPill({ count }: { count?: number } = {}) {
+  return <span style={{ ...PILL, background: accent.tint, color: accent.pressed }}>{counted(count, PAIRING_LABELS.kind.PREFERRED)}</span>
+}
+
+export function NotPreferredPill({ count }: { count?: number } = {}) {
   return (
     <span style={{ ...PILL, background: neutral.surface, color: semantic.warning.onTint, border: `1px solid ${semantic.warning.solid}` }}>
-      {PAIRING_LABELS.kind.NOT_PREFERRED}
+      {counted(count, PAIRING_LABELS.kind.NOT_PREFERRED)}
     </span>
   )
 }

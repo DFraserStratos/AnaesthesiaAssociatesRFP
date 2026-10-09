@@ -1,7 +1,7 @@
 /** Phase 05 — the Monday-anchored week helpers behind the dashboard week strip. */
 
 import { describe, expect, it } from 'vitest'
-import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf } from './format'
+import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, surnameOf, titledSurname } from './format'
 
 // DEMO_TODAY (2026-07-21) is a Tuesday; its week runs Mon 20 to Sun 26 Jul.
 
@@ -78,5 +78,14 @@ describe('initialsOf', () => {
     expect(initialsOf('Dr James Rutherford')).toBe('JR')
     expect(initialsOf('Souter')).toBe('S')
     expect(initialsOf('')).toBe('')
+  })
+})
+
+describe('titledSurname', () => {
+  it('keeps the title and the surname, and invents no title', () => {
+    expect(titledSurname('Ms A. Reid')).toBe('Ms Reid')
+    expect(titledSurname('Dr Priya Sharma')).toBe('Dr Sharma')
+    expect(titledSurname('Mr J. Whitford')).toBe('Mr Whitford')
+    expect(titledSurname('Jane Smith')).toBe('Jane Smith')
   })
 })

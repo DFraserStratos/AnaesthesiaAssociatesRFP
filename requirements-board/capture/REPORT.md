@@ -6,21 +6,20 @@ Scope: every story plus every feature with no stories (266 items, 266 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 121 | 110 |
-| Partial | 62 | 62 |
-| Absent from the prototype | 72 | 72 |
+| Captured | 125 | 114 |
+| Partial | 64 | 64 |
+| Absent from the prototype | 68 | 68 |
 | Failed recipe | 0 | 0 |
-| No recipe | 22 | 22 |
+| No recipe | 20 | 20 |
 
-405 screenshots. Items per app: admin 115, web 58, mobile 53, simulator 36.
+425 screenshots. Items per app: admin 121, web 58, mobile 53, simulator 36.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the prototype (72)
+## Absent from the prototype (68)
 
-- **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · Not built yet: catch-up Phase 17 builds this.
 - **US-01.4.5** No preference warning when an anaesthetist moves their own List · Not built yet: catch-up Phase 32 builds this.
 - **US-01.4.6** The List's anaesthetist did its procedures · Not built yet: catch-up Phase 32 builds this.
 - **US-01.5.4** Availability conflict dashboard · Not built yet: catch-up Phase 30 builds this.
@@ -84,22 +83,21 @@ None.
 - **US-13.2.3** Per-anaesthetist balance · No per-anaesthetist ledger view for the office. Each anaesthetist sees their own balances in the Anaesthetist app (web Accounts, mobile Balances), but the Admin app has no equivalent. Searched apps/admin for balance and receivable views.
 - **US-13.4.2** Clean-cut start, not a full migration · Not built yet: catch-up Phase 42 builds this.
 - **US-13.4.3** Reference data loaded from controlled spreadsheets · Not built yet: catch-up Phase 42 builds this.
-- **US-13.6.1** Surgeons' rooms master record · Not built yet: catch-up Phase 17 builds this.
-- **US-13.6.2** Surgeon profile · Not built yet: catch-up Phase 17 builds this.
-- **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · Not built yet: catch-up Phase 17 builds this.
 - **US-13.7.4** Warning and check-step settings · Future: out of the current scope, so not planned in the catch-up.
 - **US-14.6.1** Feeds from the other Christchurch providers · Not planned: Future Work, in no catch-up phase.
 - **US-14.6.2** Automatic matching and updates · Not planned: Future Work, in no catch-up phase.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (62)
+## Partial (64)
 
 - **US-01.1.2** Horizon rolls forward daily · The canvas is pre-generated from Permanent Lists, but the daily roll-forward of the horizon is a background job that has no screen in the prototype.
 - **US-01.1.3** New anaesthetist gets a populated canvas · Adding an anaesthetist generates their forward Lists in the store (confirmed on save), but the admin day grid shows only the seeded roster, so the new rows are not visible there.
 - **US-01.1.4** Slot default times · Start and end times can be overridden per List, but the AM and PM defaults (07:30 to 12:30, 13:00 to 17:30) are fixed in code with no admin setting.
 - **US-01.2.1** Anaesthetist sets half-day availability · The mobile app sets each own session to Free or Block only; available for emergency and on leave are not offered. The web app shows own availability in the grid but cannot change it.
 - **US-01.2.2** Slot status master data · The List status table is shown in master data (key, label, description) but is view only: statuses cannot be added or renamed, and colour is not editable.
+- **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · The warning and the separated group work when the office assigns a List in a session (Edit list, phone advice booking, Permanent List) and when it reassigns a List. Assigning a Draft List does not exist yet; Phase 31 builds that picker and adds its shot.
+- **US-01.3.6** Anaesthetist priority tiers for assignment · Tiers are set on the anaesthetist record and order, shuffle and filter the office's Reassign list picker. The availability finder (Phase 28) and Draft List assignment (Phase 31) reuse the same ordering.
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List and its bookings to a colleague with a free session; the preserved status history and audit trail are shown elsewhere (Audit), not on this flow.
 - **US-01.4.3** Anaesthetist moves their own List · From the availability view an anaesthetist can ask a colleague to cover a free session, or offer their own free session. Requesting that one of their own booked Lists be swapped to a colleague, and the office confirming that reassignment, are not in the prototype.
 - **US-01.5.2** Conflict flagging · Conflicts are flagged as advisory warnings (hard block versus soft warning is still open, OQ-09). The web app shows no conflict for the anaesthetist.
@@ -153,14 +151,13 @@ None.
 - **US-11.3.3** Follow-up tools · An invoice can be emailed from the invoice document, but once sent there is no re-send, and there is no way to record follow-up actions against a patient's outstanding items.
 - **US-12.1.1** Dollar value per unit · Each anaesthetist's dollar value per unit is held and editable, but only by the office in admin Master data. The anaesthetist cannot set it in the mobile or web app.
 - **US-12.1.2** GST period · The GST period is held on the anaesthetist but set by the office in admin Master data, not by the anaesthetist. The web GST view defaults to it and can be switched for viewing only; the mobile app shows the current month only.
-- **US-13.4.1** Maintain reference tables · Anaesthetists, Contracts, Permanent Lists and hospitals with their holiday calendars are editable. Surgeons, insurers, organisations, RVG codes, modifier codes and list statuses are view only. There are no surgeon groups or RVG groups, and public holidays are held per hospital with no separate master calendar.
+- **US-13.4.1** Maintain reference tables · Anaesthetists, Contracts, Permanent Lists, hospitals (with a contact email) and their holiday calendars, surgeons, surgeons' rooms and surgeon groups are editable. Insurers, organisations, RVG codes, modifier codes and list statuses are view only. There are no RVG groups, and public holidays are held per hospital with no separate master calendar.
 - **US-13.7.1** Warning routine · One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21), a prepaid procedure with no price on the anaesthetist's own Contract (27) and a paying patient with a balance (40).
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (22)
+## No recipe (20)
 
-- **US-01.3.6** Anaesthetist priority tiers for assignment
 - **US-01.4.7** Anaesthetist moves a single Booking
 - **US-01.5.5** Mark unavailable while holding a List
 - **US-02.3.4** Update email templates per kind of change
@@ -179,11 +176,10 @@ None.
 - **US-08.6.5** Credit note option on additional invoices
 - **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-13.5.3** Sign in to the anaesthetist app
-- **US-13.6.4** Preferred pairings
 - **US-13.8.1** See the team's notifications
 - **US-13.8.2** Notify the team when an anaesthetist moves a List
 
-## Captured (121)
+## Captured (125)
 
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-04.1** Contract catalogue · admin
@@ -297,6 +293,10 @@ None.
 - **US-13.3.2** Manual intervention · admin
 - **US-13.5.1** Role-based access · admin, simulator
 - **US-13.5.2** Audit trail of all actions · admin
+- **US-13.6.1** Surgeons' rooms master record · admin
+- **US-13.6.2** Surgeon profile · admin
+- **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · admin
+- **US-13.6.4** Preferred pairings · admin
 - **US-13.7.2** Warnings on the dashboard to-do list · admin
 - **US-13.7.3** Warning flag on a Booking · mobile, web, admin
 - **US-14.1.1** Parse SIU messages · simulator, admin

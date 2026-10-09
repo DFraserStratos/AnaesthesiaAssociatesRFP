@@ -8,7 +8,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANAE, SURG, listIdForSlot } from '../../../domain/seed'
-import { freshAppState, useAppStore, type Actor } from '../../../store'
+import { editList, freshAppState, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared/surface'
 import { EditListSheet } from './EditListSheet'
 import { PhoneAdviceBooking } from './PhoneAdviceBooking'
@@ -52,6 +52,19 @@ describe('surgeon pickers', () => {
     expect(onClose).toHaveBeenCalled()
     expect(useAppStore.getState().schedule.lists[SHARMA_AM]?.surgeonId).toBe(SURG.reid)
     expect(useAppStore.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')).toHaveLength(1)
+  })
+
+  it('Book (phone advice): a List already paired with Reid does not warn again, as nothing new is acknowledged', () => {
+    expect(editList(useAppStore, OFFICE, SHARMA_PM, { surgeonId: SURG.reid }).ok).toBe(true)
+    const list = useAppStore.getState().schedule.lists[SHARMA_PM]!
+    render(
+      <SurfaceProvider variant="web">
+        <PhoneAdviceBooking open list={list} actor={OFFICE} onClose={vi.fn()} onBooked={vi.fn()} />
+      </SurfaceProvider>,
+    )
+    fireEvent.change(surgeonSelect(), { target: { value: SURG.reid } })
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Continue to add booking' })).toBeInTheDocument()
   })
 
   it('Book (phone advice): Reid warns with "Continue anyway"; Hale (the S2 path) never does', () => {

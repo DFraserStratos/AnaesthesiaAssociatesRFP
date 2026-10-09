@@ -29,6 +29,8 @@ import {
   AdminIntegrationsRoute,
   AdminInvoicesRoute,
   AdminMastersRoute,
+  AdminSurgeonProfileRoute,
+  AdminAnaesthetistRecordRoute,
   AdminReviewQueueRoute,
   AdminReviewRoute,
 } from './apps/admin/routes'
@@ -60,7 +62,9 @@ function RootRedirect() {
  *
  * `:listId` / `:bookingId` / `:invoiceId` are nested one segment deep under the
  * collection they belong to so `RequireEntity`'s route-relative `..` fallback
- * lands on that collection.
+ * lands on that collection. The Master data pages (`surgeons/:surgeonId`,
+ * `anaesthetists/:anaesthetistId`) are each ONE child route of `masters`, so
+ * an unknown id falls back to `/admin/masters`.
  */
 export function AppRouter() {
   return (
@@ -110,7 +114,11 @@ export function AppRouter() {
               <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
             </Route>
             <Route path="integrations" element={<AdminIntegrationsRoute />} />
-            <Route path="masters" element={<AdminMastersRoute />} />
+            <Route path="masters">
+              <Route index element={<AdminMastersRoute />} />
+              <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
+              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistRecordRoute />} />
+            </Route>
             <Route path="audit" element={<AdminAuditRoute />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>

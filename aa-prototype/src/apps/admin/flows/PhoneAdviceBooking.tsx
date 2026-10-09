@@ -52,7 +52,8 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
   const [step, setStep] = useState<'context' | 'booking'>('context')
   const [hospitalId, setHospitalId] = useState('')
   const [surgeonId, setSurgeonId] = useState('')
-  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId)
+  // Only a changed surgeon warns, as only a changed pairing is acknowledged (as in Edit list).
+  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== (list.surgeonId ?? '') ? surgeonId : undefined)
   const [startTime, setStartTime] = useState(list.session === 'AM' ? '08:00' : '13:00')
   const [endTime, setEndTime] = useState(list.session === 'AM' ? '12:00' : '17:00')
   const [error, setError] = useState<string | null>(null)

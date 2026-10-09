@@ -1,6 +1,62 @@
 {
   "id": "US-13.6.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 17 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "surgeons-table",
+      "app": "admin",
+      "caption": "Surgeons with their room, HPI CPN and pairing counts",
+      "start": "/admin/masters?view=surgeons",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=masters-surgeons]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "surgeon-profile",
+      "app": "admin",
+      "caption": "One identified record per surgeon, keyed on the HPI CPN, with private pairings only the office sees",
+      "start": "/admin/masters/surgeons/S-REID",
+      "states": [
+        {
+          "state": "profile",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=surgeon-hpi-chip]",
+            "[data-shot=surgeon-identifiers]",
+            "[data-shot=surgeon-room-card]",
+            "[data-shot=surgeon-groups]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Editing the surgeon: the HPI CPN is required, the registration number is for information",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit details\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
 }

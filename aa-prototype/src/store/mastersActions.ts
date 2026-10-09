@@ -130,18 +130,24 @@ export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: Hospita
     if (Object.values(state.masters.hospitals).some((h) => h.id !== hospitalId && h.name === name)) {
       return refuse('duplicateName', 'A hospital with that name already exists.')
     }
-    next.name = name
-    clean.name = name
+    if (name !== existing.name) {
+      next.name = name
+      clean.name = name
+    }
   }
   if (patch.contactEmail !== undefined) {
     const email = patch.contactEmail.trim()
     if (email !== '' && !isPlausibleEmail(email)) {
       return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
     }
-    if (email === '') delete next.contactEmail
-    else next.contactEmail = email
-    clean.contactEmail = email
+    if (email !== (existing.contactEmail ?? '')) {
+      if (email === '') delete next.contactEmail
+      else next.contactEmail = email
+      clean.contactEmail = email
+    }
   }
+  // Only the fields that changed are audited; a save that changes nothing writes nothing.
+  if (Object.keys(clean).length === 0) return ok(undefined)
   mutate(
     api,
     actor,

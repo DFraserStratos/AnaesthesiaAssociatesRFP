@@ -84,6 +84,13 @@ There is no `RETURNED` state.
 
 The office receives a stable schedule on which it can paint assignments and patient Bookings.
 
+### Master data the office keeps
+
+In Admin, the office also maintains surgeons (each keyed on their HPI CPN), surgeons' rooms, surgeon
+groups, hospital contact emails, and its private pairing preferences and anaesthetist priority tiers.
+Anaesthetists never see preferences or tiers, and an anaesthetist handing on their own List gets no
+warning.
+
 ### Demo point
 
 Open the Admin Day View and show the repeated AM/PM rhythm, including one full-day booking represented
@@ -196,7 +203,8 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 1. Dr Souter maintains her personal availability or offers a Free session for cover.
 2. The system reconciles that availability against the schedule.
 3. Kirsty sees the conflict or receives the phone call.
-4. She views Free anaesthetists at the required AM/PM granularity.
+4. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
+   not-preferred pairing grouped apart and warned (never blocked).
 5. She selects a Free target session.
 6. She reassigns the whole List, including every Booking and its history, to the replacement
    anaesthetist.
