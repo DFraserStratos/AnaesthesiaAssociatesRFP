@@ -35,8 +35,11 @@ import type {
   PermanentList,
   Procedure,
   RvgCode,
+  OfficePrivateSlice,
   Session,
   Surgeon,
+  SurgeonGroup,
+  SurgeonRoom,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { MODIFIER_CODES } from '../billing/modifierCodes'
@@ -51,7 +54,10 @@ import {
   ORGANISATIONS,
   SURG,
   SURGEONS,
+  SURGEON_GROUPS,
+  SURGEON_ROOMS,
 } from './cast'
+import { buildOfficePrivate } from './officePrivate'
 import { CONTRACT, CONTRACTS, CONTRACT_PRICES } from './contracts'
 import { PERMANENT_LISTS } from './permanentLists'
 import { AVAILABILITY, HOSPITAL_HOLIDAYS } from './availabilityAndHolidays'
@@ -69,7 +75,7 @@ import { SAMPLE_THEATRE_LIST } from '../../assets/sampleAttachments'
 
 export { generateListsForDates, listIdForSlot, type CanvasMasters } from './canvas'
 export { slotRng, hashStringToSeed } from './slotHash'
-export { ANAE, HOSP, INS, SURG, ORG, ANAESTHETISTS } from './cast'
+export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS } from './cast'
 export { CONTRACT } from './contracts'
 export { BP, PAT } from './patients'
 export {
@@ -92,6 +98,10 @@ export const SEED = 20260721
 export interface SeedMasters {
   anaesthetists: Record<string, Anaesthetist>
   surgeons: Record<string, Surgeon>
+  /** Surgeons' rooms (catch-up Phase 17, US-13.6.1); members derived from `Surgeon.roomId`. */
+  surgeonRooms: Record<string, SurgeonRoom>
+  /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
+  surgeonGroups: Record<string, SurgeonGroup>
   hospitals: Record<string, Hospital>
   insurers: Record<string, Insurer>
   organisations: Record<string, ContractHolderOrganisation>
@@ -139,6 +149,12 @@ export interface SeedState {
   dashboards: Record<string, AnaesthetistDashboardSeed>
   /** Per-day internal office notes (Phase 06), keyed by calendar date. */
   dayNotes: Record<IsoDate, DayNote[]>
+  /**
+   * Pairing preferences and priority tiers (catch-up Phase 17). OFFICE ONLY:
+   * see `OfficePrivateSlice` and `src/apps/officePrivacy.test.ts`. A top-level
+   * slice, not inside `masters`, so `masters` stays safe for any screen.
+   */
+  officePrivate: OfficePrivateSlice
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -431,6 +447,8 @@ function buildSeedInternal(): SeedBuild {
     masters: {
       anaesthetists: anaesthetistsRec,
       surgeons: surgeonsRec,
+      surgeonRooms: byId(SURGEON_ROOMS, (r) => r.id),
+      surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       insurers: byId(INSURERS, (i) => i.id),
       organisations: organisationsRec,
@@ -462,6 +480,7 @@ function buildSeedInternal(): SeedBuild {
     appSettings: { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS },
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
+    officePrivate: buildOfficePrivate(),
     counters: {
       audit: audit.length + 1,
       booking: bookingsBuild.next.booking,

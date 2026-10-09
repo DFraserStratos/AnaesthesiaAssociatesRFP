@@ -76,6 +76,14 @@ export interface IntegrationsSlice {
 
 export interface ShellSlice {
   currentApp: AppId
+  /**
+   * Office candidate-picker request counter (catch-up Phase 17): bumped each
+   * time an office picker opens, zeroed by Reset. The picker's shuffle key is
+   * `listId + ':' + suggestionSeq`, so reopening reshuffles within a tier and
+   * a fresh Reset replays the same orders (never Math.random, never the
+   * clock). UI state, not a domain mutation, so not audited.
+   */
+  suggestionSeq: number
 }
 
 export interface AppState extends SeedState {
@@ -88,6 +96,8 @@ export interface AppState extends SeedState {
 
 export interface AppActions {
   setCurrentApp: (app: AppId) => void
+  /** Bump `shell.suggestionSeq` and return the new value (one office picker opening). */
+  nextSuggestionSeq: () => number
 }
 
 export type AppStore = AppState & AppActions
@@ -99,7 +109,12 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v19: 2026-10-09 · catch-up Phase 16 step 2: AA fee settings in
+/** v20: 2026-10-09 · catch-up Phase 17: surgeons gain `roomId`, `hpiId` (the
+ *  HPI CPN) and a registration number; `masters.surgeonRooms` and
+ *  `masters.surgeonGroups`; hospitals gain `contactEmail`; the new top-level
+ *  office-only `officePrivate` slice (pairing preferences, priority tiers);
+ *  `shell.suggestionSeq`.
+ *  v19: 2026-10-09 · catch-up Phase 16 step 2: AA fee settings in
  *  `appSettings.aaFee` (a labelled sample schedule, ex GST), the
  *  `billing.aaFeeInvoices` map with Dr Souter's seeded May and June fee
  *  invoices and their `aaFee` ACCRECs (and the paid one's payment).
@@ -151,7 +166,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 19
+export const PERSIST_VERSION = 20
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }
@@ -191,7 +206,7 @@ export function freshAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    shell: { currentApp: 'mobile' },
+    shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }
 }
 
@@ -238,10 +253,15 @@ export interface CreateAppStoreOptions {
 }
 
 export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppStore {
-  const initializer: StateCreator<AppStore> = (set) => ({
+  const initializer: StateCreator<AppStore> = (set, get) => ({
     ...freshAppState(),
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
+    nextSuggestionSeq: () => {
+      const next = (get().shell.suggestionSeq ?? 0) + 1
+      set((state) => ({ shell: { ...state.shell, suggestionSeq: next } }))
+      return next
+    },
   })
 
   if (options.persisted === true) {

@@ -6,6 +6,7 @@ import { Button } from '../../../shared/ui'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
+import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 
 interface ReassignListFlowProps {
   open: boolean
@@ -30,6 +31,12 @@ const SUCCESS_DURATION_MS = 1050
  * (default Unavailable). The mechanism (free target absorbed, vacated slot
  * regenerated) is the prototype's PROPOSED reading of the RFP's open question
  * (REQUIREMENTS §11) — stated as replaceable in the help copy.
+ *
+ * Catch-up Phase 17 (US-01.3.5, US-01.3.6, the office's move): the free
+ * candidates come through `AnaesthetistCandidates`, grouped (not preferred
+ * with the List's surgeon apart), tier-ordered and shuffled within a tier,
+ * with a tier filter; a not-preferred target warns on the confirm step and
+ * never blocks ("Confirm reassignment anyway").
  */
 export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: ReassignListFlowProps) {
   const { Overlay } = useSurface()
@@ -40,6 +47,15 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   const [vacatedStatus, setVacatedStatus] = useState<ListStatusKey>('unavailable')
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const requestKey = useSuggestionKey(list.id, open)
+
+  // Every opening starts on the picker (a reopened picker reshuffles within a tier).
+  useEffect(() => {
+    if (open) {
+      setTargetId(null)
+      setError(null)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!showSuccess) return undefined
@@ -54,7 +70,9 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
       .filter(({ slot }) => slot !== undefined && slot.statusKey === 'free' && slot.state === 'ACTIVE' && bookingsForList(state, slot.id).length === 0)
   }, [anaesthetists, list.anaesthetistId, list.dateISO, list.session, state])
 
+  const candidateIds = useMemo(() => freeTargets.map(({ anae }) => anae.registrationNumber), [freeTargets])
   const target = targetId !== null ? anaesthetists[targetId] : undefined
+  const pairingWarning = useNotPreferredWarning(target?.registrationNumber, list.surgeonId)
   const sourceName = anaesthetists[list.anaesthetistId]?.name ?? list.anaesthetistId
 
   function confirm() {
@@ -76,32 +94,26 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         {targetId === null ? (
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>
-              Choose an anaesthetist whose {list.session} session is free. Only genuinely free sessions can absorb this list.
+              Choose an anaesthetist whose {list.session} session is free, listed in tier order. Only genuinely free sessions can absorb this list.
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflow: 'auto' }}>
-              {freeTargets.length === 0 && <div style={{ fontSize: 13, color: neutral.mist }}>No anaesthetist has a free {list.session} session on this day.</div>}
-              {freeTargets.map(({ anae }) => (
-                <button
-                  key={anae.registrationNumber}
-                  type="button"
-                  onClick={() => setTargetId(anae.registrationNumber)}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: radius.card, border: `1px solid ${neutral.line}`, background: neutral.surface, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 600, color: neutral.ink }}>{surnameFirst(anae.name)}</span>
-                  <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {list.session} →</span>
-                </button>
-              ))}
-            </div>
+            <AnaesthetistCandidates
+              candidates={candidateIds}
+              surgeonId={list.surgeonId}
+              requestKey={requestKey}
+              onPick={setTargetId}
+              emptyText={`No anaesthetist has a free ${list.session} session on this day.`}
+              trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {list.session} →</span>}
+            />
             <Button variant="secondary" block onClick={onClose}>Cancel</Button>
           </>
         ) : (
           <>
             <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
               {surnameFirst(target?.name ?? '')}'s free {list.session} becomes this list (bookings, status and audit intact).
-              {' '}{surnameFirst(sourceName)}'s {list.session} slot regenerates as the status below.
+              {' '}{surnameFirst(sourceName)}'s {list.session} session becomes the status below.
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Vacated slot becomes</span>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Vacated session becomes</span>
               <select value={vacatedStatus} onChange={(e) => setVacatedStatus(e.target.value as ListStatusKey)} style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14 }}>
                 {VACATED_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -109,14 +121,15 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
               </select>
             </label>
             <div style={{ fontSize: 11, color: neutral.mist, lineHeight: '16px' }}>
-              Proposed reading: the RFP leaves the precise reassignment mechanism open. This prototype absorbs the target's free slot and regenerates the vacated one, keeping two sessions per anaesthetist. This mechanism is replaceable.
+              Proposed reading: the RFP leaves the precise reassignment mechanism open. This prototype absorbs the target's free session and regenerates the vacated one, keeping two sessions per anaesthetist. This mechanism is replaceable.
             </div>
+            <NotPreferredWarning warning={pairingWarning} shot="reassign-pairing-warning" />
             {error !== null && (
               <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="secondary" onClick={() => setTargetId(null)}>Back</Button>
-              <Button variant="primary" block onClick={confirm}>Confirm reassignment</Button>
+              <Button variant="primary" block onClick={confirm}>{pairingWarning !== null ? 'Confirm reassignment anyway' : 'Confirm reassignment'}</Button>
             </div>
           </>
         )}

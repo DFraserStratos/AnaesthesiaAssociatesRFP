@@ -156,6 +156,19 @@ export function drSurname(name: string): string {
   return surname === '' ? name : `Dr ${surname}`
 }
 
+/**
+ * Keep the leading title and the surname: "Ms A. Reid" -> "Ms Reid",
+ * "Dr Priya Sharma" -> "Dr Sharma". Surgeons carry Mr / Ms titles, so the
+ * Dr-only short form would mislabel them (Phase 17 pairing group headings).
+ */
+export function titledSurname(name: string): string {
+  const match = /^(Dr|Mr|Ms|Mrs|Miss|Prof)\.?\s+/i.exec(name.trim())
+  if (match === null) return drSurname(name)
+  const parts = name.trim().slice(match[0].length).split(/\s+/).filter((p) => p !== '')
+  const surname = parts[parts.length - 1]
+  return surname === undefined ? name : `${match[1]} ${surname}`
+}
+
 /** "Dr Melanie Souter" -> "MS" (avatar / grid initials, at most two letters). */
 export function initialsOf(name: string): string {
   return nameWithoutTitle(name)

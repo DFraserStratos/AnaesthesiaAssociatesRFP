@@ -98,6 +98,7 @@ export { createBillableParty, type BillablePartyDetails } from './billablePartyA
 export { addDayNote, initialsFor } from './dayNoteActions'
 export {
   createHospital,
+  editHospital,
   setInsurerDirectClaims,
   editAnaesthetist,
   addAnaesthetist,
@@ -105,10 +106,25 @@ export {
   addPermanentList,
   editPermanentList,
   type AnaesthetistPatch,
+  type HospitalPatch,
   type NewAnaesthetistFields,
   type NewPermanentListFields,
   type PermanentListPatch,
 } from './mastersActions'
+// Surgeon master data (catch-up Phase 17). The office-private pairing and tier
+// actions are NOT here: Admin imports `./officePrivate` by path, so the PWA,
+// which imports this barrel, never reaches them (officePrivacy.test.ts).
+export {
+  createSurgeon,
+  editSurgeon,
+  createSurgeonRoom,
+  editSurgeonRoom,
+  createSurgeonGroup,
+  editSurgeonGroup,
+  type SurgeonFields,
+  type SurgeonRoomFields,
+  type SurgeonGroupFields,
+} from './surgeonActions'
 export {
   createContract,
   editContract,

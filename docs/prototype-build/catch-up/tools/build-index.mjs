@@ -56,15 +56,17 @@ const sessionsOf = (s) => {
   return m ? Number(m[0]) : 0;
 };
 
-// ["14","15","16","19"] -> "14 to 16, 19"
+// ["14","15","15a","16","19"] -> "14 to 16, 19": runs of three or more in plan order (lettered
+// phases included) collapse to "first to last".
+const phaseOrder = (n) => (plan.phases ?? []).findIndex((p) => p.num === String(n));
 const compressNums = (list) => {
-  const nums = [...new Set(list.map(Number))].sort((a, b) => a - b);
+  const nums = [...new Set(list.map(String))].sort((a, b) => phaseOrder(a) - phaseOrder(b));
   const parts = [];
   for (let i = 0; i < nums.length; ) {
     let j = i;
-    while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++;
+    while (j + 1 < nums.length && phaseOrder(nums[j]) >= 0 && phaseOrder(nums[j + 1]) === phaseOrder(nums[j]) + 1) j++;
     if (j - i >= 2) parts.push(`${nums[i]} to ${nums[j]}`);
-    else for (let k = i; k <= j; k++) parts.push(String(nums[k]));
+    else for (let k = i; k <= j; k++) parts.push(nums[k]);
     i = j + 1;
   }
   return parts.join(', ');
@@ -72,7 +74,7 @@ const compressNums = (list) => {
 
 const phaseLinks = (nums) =>
   [...new Set(nums)]
-    .sort((a, b) => Number(a) - Number(b))
+    .sort((a, b) => phaseOrder(a) - phaseOrder(b))
     .map((n) => `<a href="#phase-${esc(n)}">${esc(n)}</a>`)
     .join(', ');
 
@@ -93,6 +95,21 @@ const phases = plan.phases ?? [];
 // (now Matches, or a delta or finding no longer reported): those were delivered, not lost.
 const progressMd = readText('../PROGRESS.md') ?? '';
 const builtPhases = new Set([...progressMd.matchAll(/^\|\s*(\d{2}[a-z]?)\s*\|[^|\n]*\|\s*DONE\s*\|/gim)].map((m) => m[1]));
+// Phase status: PROGRESS.md's status table (DONE with its date, IN PROGRESS) wins; status.json
+// (optional, beside plan.json) marks a phase in progress before its PROGRESS row exists and names
+// what runs next: { "in_progress": ["17"], "next": { "phases": ["28"], "note": "..." } }.
+const statusJson = readText('status.json') ? readJson('status.json') : {};
+const doneDate = new Map(
+  [...progressMd.matchAll(/^\|\s*(\d{2}[a-z]?)\s*\|[^|\n]*\|\s*DONE\s*\|\s*([^|\n]*?)\s*\|/gim)].map((m) => [m[1], m[2]]),
+);
+const progressWip = [...progressMd.matchAll(/^\|\s*(\d{2}[a-z]?)\s*\|[^|\n]*\|\s*IN PROGRESS\s*\|/gim)].map((m) => m[1]);
+const phaseNums = new Set((plan.phases ?? []).map((p) => p.num));
+const statusOf = (num) =>
+  doneDate.has(num) ? 'done' : progressWip.includes(num) || (statusJson.in_progress ?? []).includes(num) ? 'wip' : null;
+const nextPhases = (statusJson.next?.phases ?? []).filter((n) => phaseNums.has(n) && !statusOf(n));
+for (const n of [...(statusJson.in_progress ?? []), ...(statusJson.next?.phases ?? [])])
+  if (!phaseNums.has(n)) warn(`status.json names phase ${n}, which is not in plan.json`);
+
 const phasesCovering = new Map(); // item id -> [phase num]
 for (const p of phases) {
   for (const id of p.covers ?? []) {
@@ -199,6 +216,9 @@ const shortCommit = String(plan.commit ?? gaps.catalogue_commit ?? '').slice(0, 
 const generated = gaps.generated ?? '';
 const firstNum = phases[0]?.num ?? '';
 const lastNum = phases[phases.length - 1]?.num ?? '';
+const donePhases = phases.filter((p) => statusOf(p.num) === 'done');
+const wipPhases = phases.filter((p) => statusOf(p.num) === 'wip');
+const doneSessions = donePhases.reduce((n, p) => n + sessionsOf(p.est_sessions), 0);
 
 const hero = `
 <header class="hero">
@@ -214,8 +234,35 @@ const hero = `
     <div class="stat"><b>${esc(counts.Missing ?? 0)}</b><span>missing</span></div>
     <div class="stat"><b>${esc(phases.length)}</b><span>phases (${esc(firstNum)} to ${esc(lastNum)})</span></div>
     <div class="stat"><b>${esc(totalSessions)}</b><span>est. sessions</span></div>
+    <div class="stat"><b>${esc(donePhases.length)}</b><span>phases done</span></div>
   </div>
 </header>`;
+
+const statusTag = (num) => {
+  const s = statusOf(num);
+  if (s === 'done') return `<span class="tag done" title="Done ${esc(doneDate.get(num))}">Done</span>`;
+  if (s === 'wip') return '<span class="tag wip">In progress</span>';
+  if (nextPhases.includes(num)) return '<span class="tag nxt">Up next</span>';
+  return '';
+};
+
+const progressSection = `
+<section class="prose">
+  <h2>Where the build is</h2>
+  <div class="rule"></div>
+  <div class="pstrip" aria-hidden="true">${phases
+    .map((p) => {
+      const s = statusOf(p.num) ?? (nextPhases.includes(p.num) ? 'nxt' : 'todo');
+      return `<a class="pcell ${s}" href="#phase-${esc(p.num)}" title="${esc(`${p.num} ${p.title}`)}">${esc(p.num)}</a>`;
+    })
+    .join('')}</div>
+  <ul class="pstate">
+    <li><span class="tag done">Done</span> ${donePhases.length ? donePhases.map((p) => `<a href="#phase-${esc(p.num)}">${esc(p.num)}</a> ${esc(p.title)} <span class="when">${esc(doneDate.get(p.num))}</span>`).join('; ') : 'none yet'}</li>
+    <li><span class="tag wip">In progress</span> ${wipPhases.length ? wipPhases.map((p) => `<a href="#phase-${esc(p.num)}">${esc(p.num)}</a> ${esc(p.title)}`).join('; ') : 'none'}</li>
+    ${nextPhases.length ? `<li><span class="tag nxt">Up next</span> ${nextPhases.map((n) => `<a href="#phase-${esc(n)}">${esc(n)}</a>`).join(', ')}${statusJson.next?.note ? `. ${esc(statusJson.next.note)}` : ''}</li>` : ''}
+  </ul>
+  <p class="note">Status comes from the status table in <code>PROGRESS.md</code> (and <code>status.json</code> for a phase whose row is not written yet). ${esc(doneSessions)} of ${esc(totalSessions)} estimated sessions are done.</p>
+</section>`;
 
 const themesSection = `
 <section class="prose">
@@ -293,7 +340,7 @@ const flow = trackOrder
   .map((t) => {
     const nodes = phases
       .filter((p) => p.track === t)
-      .map((p) => `<a class="fnode" href="#phase-${esc(p.num)}">${esc(p.num)} ${esc(p.title)}</a>`)
+      .map((p) => `<a class="fnode ${statusOf(p.num) ?? ''}" href="#phase-${esc(p.num)}">${statusOf(p.num) === 'done' ? '&#10003; ' : ''}${esc(p.num)} ${esc(p.title)}</a>`)
       .join(' &rarr; ');
     return `<span class="fpar">${esc(t.toLowerCase())}:</span> ${nodes}`;
   })
@@ -343,7 +390,7 @@ const tableRows = phases
   .map((p) => {
     const tr = trackOf(p.track);
     const after = (p.depends_on ?? []).length ? compressNums(p.depends_on) : 'Start here';
-    return `      <tr><td><a href="#phase-${esc(p.num)}">${esc(p.num)}</a></td><td><b>${esc(p.title)}</b><div class="read">${esc(p.delivers)}</div></td><td><span class="tag ${tr.tag}">${esc(p.track)}</span></td><td>${esc(sessionsOf(p.est_sessions) || p.est_sessions)}</td><td class="read">${esc(after)}</td><td class="n">${esc((p.covers ?? []).length)}</td></tr>`;
+    return `      <tr class="${statusOf(p.num) ?? ''}"><td><a href="#phase-${esc(p.num)}">${esc(p.num)}</a></td><td><b>${esc(p.title)}</b> ${statusTag(p.num)}<div class="read">${esc(p.delivers)}</div></td><td><span class="tag ${tr.tag}">${esc(p.track)}</span></td><td>${esc(sessionsOf(p.est_sessions) || p.est_sessions)}</td><td class="read">${esc(after)}</td><td class="n">${esc((p.covers ?? []).length)}</td></tr>`;
   })
   .join('\n');
 
@@ -375,12 +422,13 @@ const articles = phases
     const oqs = p.blocked_by_oqs ?? [];
     const triggers = p.demo_triggers ?? [];
     return `
-<article class="phase ${tr.cls}" id="phase-${esc(p.num)}">
+<article class="phase ${tr.cls}${statusOf(p.num) ? ` is-${statusOf(p.num)}` : ''}" id="phase-${esc(p.num)}">
   <div class="phase-head">
     <span class="pnum">${esc(p.num)}</span>
     <div class="phase-title">
       <h3>${esc(p.title)}</h3>
       <div class="badges">
+        ${statusOf(p.num) === 'done' ? `<span class="badge done">Done ${esc(doneDate.get(p.num))}</span>` : statusOf(p.num) === 'wip' ? '<span class="badge wip">In progress</span>' : nextPhases.includes(p.num) ? '<span class="badge nxt">Up next</span>' : ''}
         <span class="badge trk">${esc(p.track)}</span>
         <span class="badge dep">${esc(after)}</span>
         <span class="badge est">${esc(p.est_sessions)}</span>
@@ -409,13 +457,13 @@ ${(p.checks ?? []).map((c) => `      <li>${esc(c)}</li>`).join('\n')}
   </details>
   ${
     prompt
-      ? `<div class="prompt-wrap">
+      ? `${statusOf(p.num) === 'done' ? '<details class="ran"><summary>Kick-off prompt (already run)</summary>' : ''}<div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-${esc(p.num)}">Copy</button>
     </div>
     <pre id="prompt-${esc(p.num)}">${esc(prompt.trim())}</pre>
-  </div>`
+  </div>${statusOf(p.num) === 'done' ? '</details>' : ''}`
       : `<div class="callout"><p><strong>Kick-off prompt missing.</strong> Expected <code>${esc(p.prompt_file ?? '')}</code>.</p></div>`
   }
 </article>`;
@@ -478,7 +526,7 @@ a { color:var(--rust); }
 h1 { font:900 clamp(40px,6vw,72px)/0.98 'Fraunces',serif; letter-spacing:-.015em; margin:0 0 10px; }
 h1 em { font-style:italic; font-weight:300; color:var(--rust); }
 .hero-sub { max-width:760px; font-size:18px; color:var(--ink-2); margin:16px 0 0; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
 .stat { padding:16px 20px 12px; border-right:1.5px solid var(--ink); }
 .stat:last-child { border-right:none; }
 .stat b { display:block; font:700 30px/1 'Fraunces',serif; }
@@ -586,6 +634,27 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
 .oqs { font:600 11.5px var(--mono); color:var(--ink-3); margin:0 0 12px; }
 .defects.ms li { border-left-color:var(--green); }
 .defects li .it { margin-left:6px; vertical-align:middle; }
+/* phase status */
+.tag.done, .badge.done { background:var(--green-soft); color:var(--green); }
+.tag.wip, .badge.wip { background:var(--amber-soft); color:var(--amber); }
+.tag.nxt, .badge.nxt { background:var(--card); color:var(--ink-2); border:1px dashed var(--ink-3); }
+.pstrip { display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:4px; max-width:850px; margin:8px 0 18px; }
+.pcell { font:600 11px/1 var(--mono); text-align:center; padding:9px 0; border-radius:3px; text-decoration:none; color:var(--ink-3); background:var(--paper-2); border:1px solid var(--line); }
+.pcell.done { background:var(--green); border-color:var(--green); color:#fff; }
+.pcell.wip { background:var(--amber); border-color:var(--amber); color:#fff; }
+.pcell.nxt { background:var(--card); border:1px dashed var(--ink-2); color:var(--ink); }
+.pcell:hover { outline:2px solid var(--ink); }
+ul.pstate { list-style:none; padding:0; margin:0; max-width:850px; }
+ul.pstate li { margin:0 0 10px; font-size:14.5px; color:var(--ink-2); }
+ul.pstate .tag { margin-right:8px; }
+ul.pstate .when { font:600 11px var(--mono); color:var(--ink-3); white-space:nowrap; }
+.scorecard tr.done td { background:#f9f8f2; }
+.scorecard tr.done td b { color:var(--ink-2); }
+.flow .fnode.done { background:var(--green-soft); color:var(--green); }
+.flow .fnode.wip { background:var(--amber-soft); color:var(--amber); }
+.phase.is-done { opacity:.82; }
+.phase.is-wip { box-shadow:0 0 0 3px var(--amber-soft); }
+details.ran { margin:0; }
 @media (max-width:640px) { .wrap { padding:0 16px 80px; } .phase { padding:18px 16px; } .phase-head { gap:12px; } .pnum { font-size:34px; min-width:44px; } }`;
 
 const COPY_SCRIPT = `document.querySelectorAll('.copy').forEach(function (b) {
@@ -616,6 +685,7 @@ ${EXTRA_CSS}
 <!-- Generated by docs/prototype-build/catch-up/tools/build-index.mjs. Do not edit by hand: edit plan.json, gaps.json or the phase prompt files and re-run it. -->
 <div class="wrap">
 ${hero}
+${progressSection}
 ${themesSection}
 ${glanceSection}
 ${howSection}

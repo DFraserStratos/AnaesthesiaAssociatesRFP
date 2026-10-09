@@ -1,0 +1,7 @@
+{
+  "in_progress": ["17"],
+  "next": {
+    "phases": ["28", "29", "30", "31", "32"],
+    "note": "The Schedule track runs after 17, ahead of the Contracts track (18 to 25), while the pricing requirements settle. Schedule and Contracts are independent until 33"
+  }
+}

@@ -30,6 +30,7 @@ import { format, parseISO } from 'date-fns'
 import type { AuditEntry, BookingSource } from '../../domain/types'
 import { BOOKING_SOURCE_LABELS, formatCurrency } from '../format'
 import { fieldLabel } from './fieldLabels'
+import { PAIRING_LABELS, isPriorityTier, tierLabel } from '../../domain/pairingPreferences'
 
 /** A key present in the patch but holding no value. */
 export const NOT_SET = 'not set'
@@ -186,6 +187,7 @@ export function formatAuditValue(key: string, value: unknown): string {
   if (value === undefined || value === null) return NOT_SET
   if (typeof value === 'boolean') return value ? 'yes' : 'no'
   if (typeof value === 'number') {
+    if (key === 'tier' && isPriorityTier(value)) return tierLabel(value)
     return MONEY_KEYS.has(key) ? formatCurrency(value) : String(value)
   }
   if (typeof value === 'string') {
@@ -193,6 +195,9 @@ export function formatAuditValue(key: string, value: unknown): string {
     if (DATE_TIME.test(value)) return format(parseISO(value), 'd MMM HH:mm')
     if (DATE_ONLY.test(value)) return format(parseISO(value), 'd MMM yyyy')
     if (key === 'source' && Object.hasOwn(BOOKING_SOURCE_LABELS, value)) return BOOKING_SOURCE_LABELS[value as BookingSource]
+    // Pairing words from the one label set (catch-up Phase 17).
+    if (key === 'kind' && Object.hasOwn(PAIRING_LABELS.kind, value)) return PAIRING_LABELS.kind[value as keyof typeof PAIRING_LABELS.kind]
+    if (key === 'raisedBy' && Object.hasOwn(PAIRING_LABELS.side, value)) return PAIRING_LABELS.side[value as keyof typeof PAIRING_LABELS.side]
     return value
   }
   if (Array.isArray(value)) {

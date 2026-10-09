@@ -6,6 +6,7 @@ import { editList, useAppStore, type Actor, type ListPatch } from '../../../stor
 import { Button, FieldLabel } from '../../../shared/ui'
 import { AddBookingFlow } from '../../../shared/flows'
 import { useSurface } from '../../../shared/surface'
+import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 
 interface PhoneAdviceBookingProps {
   open: boolean
@@ -47,11 +48,11 @@ const PHONE_ADVICE_LOOKUP_PREFILL = {
 export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: PhoneAdviceBookingProps) {
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
-  const surgeons = useAppStore((s) => s.masters.surgeons)
 
   const [step, setStep] = useState<'context' | 'booking'>('context')
   const [hospitalId, setHospitalId] = useState('')
   const [surgeonId, setSurgeonId] = useState('')
+  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId)
   const [startTime, setStartTime] = useState(list.session === 'AM' ? '08:00' : '13:00')
   const [endTime, setEndTime] = useState(list.session === 'AM' ? '12:00' : '17:00')
   const [error, setError] = useState<string | null>(null)
@@ -125,12 +126,7 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Surgeon</FieldLabel>
-          <select value={surgeonId} onChange={(e) => setSurgeonId(e.target.value)} style={selectStyle}>
-            <option value="">Not assigned yet</option>
-            {Object.values(surgeons).map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <SurgeonPicker anaesthetistId={list.anaesthetistId} value={surgeonId} onChange={setSurgeonId} emptyLabel="Not assigned yet" style={selectStyle} />
         </label>
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -147,7 +143,10 @@ export function PhoneAdviceBooking({ open, list, actor, onClose, onBooked }: Pho
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="primary" block onClick={continueToBooking}>Continue to add booking</Button>
+        {/* Catch-up Phase 17: warn, never block; the acknowledgement lands with
+            the List context in onBookingCreated, so an abandoned flow writes none. */}
+        <NotPreferredWarning warning={pairingWarning} shot="phone-advice-pairing-warning" />
+        <Button variant="primary" block onClick={continueToBooking}>{pairingWarning !== null ? 'Continue anyway' : 'Continue to add booking'}</Button>
       </div>
     </Overlay>
   )

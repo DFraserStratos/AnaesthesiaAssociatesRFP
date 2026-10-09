@@ -12,6 +12,8 @@ import type {
   Insurer,
   ListStatus,
   Surgeon,
+  SurgeonGroup,
+  SurgeonRoom,
 } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -75,17 +77,64 @@ export const SURG = {
   cameron: 'S-CAMERON',
 } as const
 
+/**
+ * Surgeons' rooms (catch-up Phase 17, US-13.6.1). Fictional names, `.example`
+ * emails and 03 555 phones. A room's surgeons are derived from
+ * `Surgeon.roomId`; every room has at least one.
+ */
+export const ROOM = {
+  riccarton: 'RM-RICC',
+  merivale: 'RM-MERI',
+  avonside: 'RM-AVON',
+  fendalton: 'RM-FEND',
+  papanui: 'RM-PAPA',
+} as const
+
+export const SURGEON_ROOMS: readonly SurgeonRoom[] = [
+  { id: ROOM.riccarton, name: 'Riccarton Orthopaedic Rooms', contactEmail: 'reception@riccartonortho.example', phone: '03 555 0141' },
+  { id: ROOM.merivale, name: 'Merivale Eye Rooms', contactEmail: 'bookings@merivaleeye.example', phone: '03 555 0172' },
+  { id: ROOM.avonside, name: 'Avonside Surgical Rooms', contactEmail: 'admin@avonsidesurgical.example', phone: '03 555 0118' },
+  { id: ROOM.fendalton, name: 'Fendalton Specialist Rooms', contactEmail: 'rooms@fendaltonspecialists.example', phone: '03 555 0193' },
+  { id: ROOM.papanui, name: 'Papanui Specialist Rooms', contactEmail: 'reception@papanuispecialists.example', phone: '03 555 0127' },
+] as const
+
+/**
+ * Every surgeon carries a room, a fictional HPI CPN (`NNAAAA`, 40 to 49, so
+ * none clashes with the anaesthetists' 10 to 23) and a fictional NZ medical
+ * registration number held for information. The canvas's pick arrays
+ * (`CES_SURGEONS`, `GENERAL_SURGEONS`) read only the ids, so these fields move
+ * no List (canvasFingerprint.test.ts).
+ */
 export const SURGEONS: readonly Surgeon[] = [
-  { id: SURG.hale, name: 'Mr T. Hale', specialty: 'Orthopaedics' },
-  { id: SURG.patel, name: 'Ms K. Patel', specialty: 'General surgery' },
-  { id: SURG.whitford, name: 'Mr J. Whitford', specialty: 'Ophthalmology' },
-  { id: SURG.okafor, name: 'Mr C. Okafor', specialty: 'General surgery' },
-  { id: SURG.lim, name: 'Ms G. Lim', specialty: 'Plastics' },
-  { id: SURG.doyle, name: 'Mr P. Doyle', specialty: 'General surgery' },
-  { id: SURG.tan, name: 'Mr S. Tan', specialty: 'Urology' },
-  { id: SURG.reid, name: 'Ms A. Reid', specialty: 'Ophthalmology' },
-  { id: SURG.nand, name: 'Mr V. Nand', specialty: 'ENT' },
-  { id: SURG.cameron, name: 'Ms H. Cameron', specialty: 'Gynaecology' },
+  { id: SURG.hale, name: 'Mr T. Hale', specialty: 'Orthopaedics', roomId: ROOM.riccarton, hpiId: '40HALT', medicalRegistrationNumber: '70412' },
+  { id: SURG.patel, name: 'Ms K. Patel', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '41PATK', medicalRegistrationNumber: '71588' },
+  { id: SURG.whitford, name: 'Mr J. Whitford', specialty: 'Ophthalmology', roomId: ROOM.merivale, hpiId: '42WHIJ', medicalRegistrationNumber: '72905' },
+  { id: SURG.okafor, name: 'Mr C. Okafor', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '43OKAC', medicalRegistrationNumber: '73318' },
+  { id: SURG.lim, name: 'Ms G. Lim', specialty: 'Plastics', roomId: ROOM.fendalton, hpiId: '44LIMG', medicalRegistrationNumber: '74071' },
+  { id: SURG.doyle, name: 'Mr P. Doyle', specialty: 'General surgery', roomId: ROOM.avonside, hpiId: '45DOYP', medicalRegistrationNumber: '75264' },
+  { id: SURG.tan, name: 'Mr S. Tan', specialty: 'Urology', roomId: ROOM.papanui, hpiId: '46TANS', medicalRegistrationNumber: '76630' },
+  { id: SURG.reid, name: 'Ms A. Reid', specialty: 'Ophthalmology', roomId: ROOM.merivale, hpiId: '47REIA', medicalRegistrationNumber: '77149' },
+  { id: SURG.nand, name: 'Mr V. Nand', specialty: 'ENT', roomId: ROOM.fendalton, hpiId: '48NANV', medicalRegistrationNumber: '78852' },
+  { id: SURG.cameron, name: 'Ms H. Cameron', specialty: 'Gynaecology', roomId: ROOM.papanui, hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
+] as const
+
+/**
+ * Surgeon groups (US-13.4.1), a master beside `ORGANISATIONS` (left untouched
+ * for Phase 18, whose COS rooms holder links to `SG-COS`).
+ */
+export const SURGEON_GROUPS: readonly SurgeonGroup[] = [
+  {
+    id: 'SG-COS',
+    name: 'Canterbury Orthopaedic Surgeons',
+    description: 'Orthopaedic group; holds an externally held ACC contract.',
+    memberSurgeonIds: [SURG.hale],
+  },
+  {
+    id: 'SG-EYE',
+    name: 'Christchurch Eye Surgeons',
+    description: 'The eye surgeons who operate at Christchurch Eye Surgery.',
+    memberSurgeonIds: [SURG.whitford, SURG.reid],
+  },
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -101,11 +150,11 @@ export const HOSP = {
 } as const
 
 export const HOSPITALS: readonly Hospital[] = [
-  { id: HOSP.stg, name: "St George's" },
-  { id: HOSP.sx, name: 'Southern Cross' },
-  { id: HOSP.forte, name: 'Forte Health' },
-  { id: HOSP.ces, name: 'Christchurch Eye Surgery' },
-  { id: HOSP.cph, name: 'Christchurch Public' },
+  { id: HOSP.stg, name: "St George's", contactEmail: 'bookings@stgeorges.example' },
+  { id: HOSP.sx, name: 'Southern Cross', contactEmail: 'theatre.bookings@southerncross.example' },
+  { id: HOSP.forte, name: 'Forte Health', contactEmail: 'bookings@fortehealth.example' },
+  { id: HOSP.ces, name: 'Christchurch Eye Surgery', contactEmail: 'bookings@chcheyesurgery.example' },
+  { id: HOSP.cph, name: 'Christchurch Public', contactEmail: 'theatre.bookings@chchpublic.example' },
 ] as const
 
 export const INS = {

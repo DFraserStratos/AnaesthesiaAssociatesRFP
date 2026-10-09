@@ -27,6 +27,7 @@ Catalogue snapshot: `60e2d1e` (2026-10-08).
 | `analysis/domain-model-delta.md` | DM-nn: structural differences between the catalogue's model and the prototype's. |
 | `analysis/reverse-check.md` | RV-nn: retired or superseded behaviour the prototype still has, and old Decisions-log rulings the catalogue now overrides. |
 | `plan.json` | The phase outline as data (feeds `index.html`). |
+| `status.json` | Optional build status for `index.html`: a phase in progress before its `PROGRESS.md` row exists, and what runs next. `PROGRESS.md`'s status table wins once it has the row. |
 | `tools/` | The scripts and workflows that produced all of the above. |
 
 ## How it was made

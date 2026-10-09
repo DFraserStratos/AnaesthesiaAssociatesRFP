@@ -1,3 +1,5 @@
+import { PAIRING_LABELS } from '../../domain/pairingPreferences'
+
 /**
  * Human labels for the store's audit action codes (A7 presentation).
  *
@@ -52,12 +54,14 @@ export const ACTION_LABELS: Record<string, string> = {
   'list.conflict': 'Conflict flagged',
   'list.coverRequest': 'Cover requested',
   'list.phoneNote': 'Phone note logged',
+  'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
 
   // --- Canvas & scheduling masters ----------------------------------------
   'canvas.generate': 'Canvas generated',
   'canvas.rollForward': 'Canvas rolled forward',
   'permanentList.create': 'Permanent list added',
   'permanentList.update': 'Permanent list updated',
+  'permanentList.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
   'holiday.create': 'Holiday added',
   'dayNote.add': 'Day note added',
 
@@ -70,6 +74,17 @@ export const ACTION_LABELS: Record<string, string> = {
   'anaesthetist.create': 'Anaesthetist added',
   'anaesthetist.update': 'Anaesthetist updated',
   'hospital.create': 'Hospital added',
+  'hospital.update': 'Hospital updated',
+  'surgeon.create': 'Surgeon added',
+  'surgeon.update': 'Surgeon updated',
+  'surgeonRoom.create': "Surgeons' room added",
+  'surgeonRoom.update': "Surgeons' room updated",
+  'surgeonGroup.create': 'Surgeon group added',
+  'surgeonGroup.update': 'Surgeon group updated',
+  // Office-private (catch-up Phase 17): only Admin histories read these.
+  'pairing.add': `${PAIRING_LABELS.entry} added`,
+  'pairing.end': `${PAIRING_LABELS.entry} ended`,
+  'anaesthetist.tierSet': 'Priority tier changed',
   'insurer.update': 'Insurer updated',
 
   // --- Contracts -----------------------------------------------------------

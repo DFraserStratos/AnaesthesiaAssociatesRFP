@@ -19,6 +19,8 @@ import type {
 } from '../domain/types'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
 import { generateListsForDates, SEED, type CanvasMasters } from '../domain/seed'
+import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
+import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
 
@@ -46,6 +48,7 @@ export function createHospital(
   api: AppStoreApi,
   actor: Actor,
   name: string,
+  contactEmail?: string,
 ): Outcome<{ hospital: Hospital; defaultContract: Contract }> {
   if (actor.role !== 'office') {
     return refuse('officeOnly', 'Only the office can add a hospital.')
@@ -56,6 +59,10 @@ export function createHospital(
   if (Object.values(state.masters.hospitals).some((h) => h.name === trimmed)) {
     return refuse('duplicateName', 'A hospital with that name already exists.')
   }
+  const email = contactEmail?.trim() ?? ''
+  if (email !== '' && !isPlausibleEmail(email)) {
+    return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
+  }
 
   let hospital: Hospital | undefined
   let contract: Contract | undefined
@@ -63,7 +70,7 @@ export function createHospital(
   mutate(api, actor, metas, (s) => {
     const hospitalAlloc = allocateId(s.counters, 'hospital')
     const contractAlloc = allocateId(hospitalAlloc.counters, 'contract')
-    hospital = { id: hospitalAlloc.id, name: trimmed }
+    hospital = { id: hospitalAlloc.id, name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) }
     // Effective from the seed epoch, not today: the protected default is the
     // guaranteed billing fallback and must cover PAST service dates too — a
     // list dated before the hospital's creation still bills (8th review).
@@ -75,7 +82,7 @@ export function createHospital(
       '2020-01-01',
     )
     metas.push(
-      { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed } },
+      { entityType: 'hospital', entityId: hospital.id, action: 'hospital.create', after: { name: trimmed, ...(email !== '' ? { contactEmail: email } : {}) } },
       {
         entityType: 'contract',
         entityId: contract.id,
@@ -97,6 +104,58 @@ export function createHospital(
     return refuse('createFailed', 'The hospital could not be created.')
   }
   return ok({ hospital, defaultContract: contract })
+}
+
+/** Editable hospital fields (catch-up Phase 17). Blank `contactEmail` clears it. */
+export interface HospitalPatch {
+  name?: string
+  contactEmail?: string
+}
+
+/**
+ * Edit a hospital's name or contact email (US-13.4.1: "hospitals, each with a
+ * contact email for booking updates"). Office-only; refuses a blank or
+ * duplicate name and an implausible email. Audited `hospital.update`.
+ */
+export function editHospital(api: AppStoreApi, actor: Actor, hospitalId: HospitalId, patch: HospitalPatch): Outcome {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a hospital.')
+  const state = api.getState()
+  const existing = state.masters.hospitals[hospitalId]
+  if (existing === undefined) return refuse('notFound', 'Hospital not found.')
+  const next: Hospital = { ...existing }
+  const clean: HospitalPatch = {}
+  if (patch.name !== undefined) {
+    const name = patch.name.trim()
+    if (name === '') return refuse('nameRequired', 'A hospital name is required.')
+    if (Object.values(state.masters.hospitals).some((h) => h.id !== hospitalId && h.name === name)) {
+      return refuse('duplicateName', 'A hospital with that name already exists.')
+    }
+    next.name = name
+    clean.name = name
+  }
+  if (patch.contactEmail !== undefined) {
+    const email = patch.contactEmail.trim()
+    if (email !== '' && !isPlausibleEmail(email)) {
+      return refuse('invalidEmail', 'That contact email does not look right. Use the form name@example.co.nz.')
+    }
+    if (email === '') delete next.contactEmail
+    else next.contactEmail = email
+    clean.contactEmail = email
+  }
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'hospital',
+      entityId: hospitalId,
+      action: 'hospital.update',
+      before: Object.fromEntries(Object.keys(clean).map((k) => [k, existing[k as keyof Hospital] ?? ''])),
+      after: clean,
+      stampBookingId: null,
+    },
+    (s) => ({ masters: { ...s.masters, hospitals: { ...s.masters.hospitals, [hospitalId]: next } } }),
+  )
+  return ok(undefined)
 }
 
 export function setInsurerDirectClaims(
@@ -174,6 +233,18 @@ export interface AnaesthetistPatch {
   email?: string
   gstPeriod?: GstPeriod
   active?: boolean
+  /** The HPI CPN, optional on an anaesthetist; a typed one is stored normalised and must be unique across practitioners (Phase 17). */
+  hpiId?: string
+}
+
+/**
+ * Refuse an HPI CPN another practitioner already holds (catch-up Phase 17,
+ * OQ-52): the identifier is unique across surgeons and anaesthetists
+ * whichever record is saved first. Blank never clashes.
+ */
+function hpiCpnClash(state: ReturnType<AppStoreApi['getState']>, hpiId: string, anaesthetistId?: string): Outcome<never> | null {
+  const holder = hpiCpnHolder(state.masters, hpiId, anaesthetistId !== undefined ? { anaesthetistId } : undefined)
+  return holder === null ? null : refuse('duplicateHpiCpn', `That HPI CPN already belongs to ${holder.name}.`)
 }
 
 /**
@@ -194,6 +265,11 @@ export function editAnaesthetist(
   if (existing === undefined) return refuse('notFound', 'Anaesthetist not found.')
   if (patch.unitValue !== undefined && !(patch.unitValue > 0)) {
     return refuse('invalidUnitValue', 'The unit value must be greater than zero.')
+  }
+  if (patch.hpiId !== undefined) {
+    patch = { ...patch, hpiId: normaliseHpiCpn(patch.hpiId) }
+    const clash = hpiCpnClash(state, patch.hpiId ?? '', registrationNumber)
+    if (clash !== null) return clash
   }
 
   const next: Anaesthetist = { ...existing, ...patch }
@@ -252,6 +328,9 @@ export function addAnaesthetist(
     return refuse('duplicateRegistration', 'That registration number is already in use.')
   }
   if (!(fields.unitValue > 0)) return refuse('invalidUnitValue', 'The unit value must be greater than zero.')
+  const hpiId = normaliseHpiCpn(fields.hpiId ?? '')
+  const clash = hpiCpnClash(state, hpiId)
+  if (clash !== null) return clash
 
   const todayISO = state.clock.todayISO
   const horizon = horizonFor(todayISO)
@@ -266,7 +345,7 @@ export function addAnaesthetist(
     email: fields.email.trim(),
     unitValue: fields.unitValue,
     gstPeriod: fields.gstPeriod,
-    hpiId: fields.hpiId?.trim() ?? '',
+    hpiId,
     active: true,
   }
 
@@ -428,6 +507,18 @@ export function addPermanentList(
       after: { anaesthetistId: fields.anaesthetistId, dayOfWeek: fields.dayOfWeek, session: fields.session },
       stampBookingId: null,
     })
+    // A not-preferred usual surgeon warns in the sheet and never blocks; going
+    // ahead records the acknowledgement in the same commit (Phase 17).
+    const ack = pairingAcknowledgement(s.officePrivate.pairingPreferences, fields.anaesthetistId, fields.surgeonId)
+    if (ack !== null) {
+      metas.push({
+        entityType: 'permanentList',
+        entityId: alloc.id,
+        action: 'permanentList.pairingAcknowledged',
+        after: ack,
+        stampBookingId: null,
+      })
+    }
     return {
       masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [alloc.id]: template } },
       counters: alloc.counters,
@@ -454,9 +545,7 @@ export function editPermanentList(
   const next: PermanentList = { ...existing, ...patch }
   // notes cleared explicitly when blanked.
   if ('notes' in patch && (patch.notes === undefined || patch.notes.trim() === '')) delete next.notes
-  mutate(
-    api,
-    actor,
+  const metas: MutationMeta[] = [
     {
       entityType: 'permanentList',
       entityId: id,
@@ -465,6 +554,24 @@ export function editPermanentList(
       after: patch,
       stampBookingId: null,
     },
+  ]
+  // Only a changed pairing records the acknowledgement (a notes-only edit
+  // never re-logs it). Phase 17; never a refusal.
+  const pairingChanged = next.anaesthetistId !== existing.anaesthetistId || next.surgeonId !== existing.surgeonId
+  const ack = pairingChanged ? pairingAcknowledgement(state.officePrivate.pairingPreferences, next.anaesthetistId, next.surgeonId) : null
+  if (ack !== null) {
+    metas.push({
+      entityType: 'permanentList',
+      entityId: id,
+      action: 'permanentList.pairingAcknowledged',
+      after: ack,
+      stampBookingId: null,
+    })
+  }
+  mutate(
+    api,
+    actor,
+    metas,
     (s) => ({
       masters: { ...s.masters, permanentLists: { ...s.masters.permanentLists, [id]: next } },
     }),

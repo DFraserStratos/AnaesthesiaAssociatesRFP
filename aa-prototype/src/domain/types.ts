@@ -32,6 +32,9 @@ export type BillablePartyId = string
 export type AnaesthetistId = string
 export type HospitalId = string
 export type SurgeonId = string
+export type SurgeonRoomId = string
+export type SurgeonGroupId = string
+export type PairingPreferenceId = string
 export type InsurerId = string
 export type OrganisationId = string
 export type ContractId = string
@@ -153,7 +156,12 @@ export interface Anaesthetist {
   email: string
   unitValue: number
   gstPeriod: GstPeriod
-  /** HPI practitioner identifier (6th review #11; FHIR Practitioner). */
+  /**
+   * The HPI CPN (Health Provider Index Common Person Number, e.g. `12ABCD`;
+   * OQ-52): one identifier, unique across every practitioner, surgeons
+   * included. Optional on an anaesthetist ("where available", US-12.1.4), so
+   * blank is allowed here; a typed one is stored normalised (Phase 17).
+   */
   hpiId: string
   active: boolean
 }
@@ -163,12 +171,91 @@ export type GstPeriod = 'monthly' | 'biMonthly' | 'sixMonthly'
 export interface Hospital {
   id: HospitalId
   name: string
+  /** Contact email for booking updates (US-13.4.1). Optional: a newly added hospital may not have one yet. */
+  contactEmail?: string
 }
 
+/**
+ * Surgeon master (FT-13.6, US-13.6.2; catch-up Phase 17). `id` (`S-HALE`)
+ * stays the record key so no List or Contract is re-keyed; `hpiId` is the
+ * surgeon's unique index.
+ */
 export interface Surgeon {
   id: SurgeonId
   name: string
   specialty?: string
+  /** The surgeon's room (US-13.6.1: one room per surgeon). The room's surgeons are derived from this field, never stored on the room. */
+  roomId: SurgeonRoomId
+  /**
+   * The HPI CPN: the Health Provider Index Common Person Number, the
+   * surgeon's unique index (OQ-52), unique across every practitioner
+   * (surgeons and anaesthetists). Stored trimmed and upper-cased. A
+   * practitioner identifier, never the patient's NHI.
+   */
+  hpiId: string
+  /** NZ medical registration number, held for information only. */
+  medicalRegistrationNumber?: string
+}
+
+/** A surgeons' room (US-13.6.1): the practice that books with AA, with its contacts. */
+export interface SurgeonRoom {
+  id: SurgeonRoomId
+  name: string
+  contactEmail: string
+  phone: string
+}
+
+/** A named group of surgeons (US-13.4.1), beside `organisations`; Phase 18's holders may link to it. */
+export interface SurgeonGroup {
+  id: SurgeonGroupId
+  name: string
+  description?: string
+  memberSurgeonIds: SurgeonId[]
+}
+
+// ---------------------------------------------------------------------------
+// Office-private: pairing preferences and priority tiers (catch-up Phase 17)
+// ---------------------------------------------------------------------------
+
+/** Not preferred (formerly the blacklist) or preferred (US-13.6.3, US-13.6.4). Names are OQ-102's, in one label set. */
+export type PairingKind = 'NOT_PREFERRED' | 'PREFERRED'
+/** Which side asked for the entry (US-13.6.3 "says which side asked"). */
+export type PairingSide = 'SURGEON' | 'ANAESTHETIST'
+
+/**
+ * One private pairing preference between one surgeon and one anaesthetist
+ * (DM-54). Recorded and ended by the office only; active while `endedAtISO`
+ * is absent. Ending never deletes, so the history is kept.
+ */
+export interface PairingPreference {
+  id: PairingPreferenceId
+  kind: PairingKind
+  raisedBy: PairingSide
+  anaesthetistId: AnaesthetistId
+  surgeonId: SurgeonId
+  reason?: string
+  addedAtISO: IsoDateTime
+  addedBy: string
+  endedAtISO?: IsoDateTime
+  endedBy?: string
+  endReason?: string
+}
+
+/** Admin-only priority tier (US-01.3.6): 1 is the highest, 4 the default for an anaesthetist with no entry. */
+export type PriorityTier = 1 | 2 | 3 | 4
+
+/**
+ * The office-only state slice (OQ-43, D44; US-01.3.6 "Admin only"). Pairing
+ * preferences and priority tiers live here, NOT in `masters` and NOT on the
+ * `Anaesthetist` record, because `masters` reaches the anaesthetist apps.
+ * Only the Admin app and the store's office write paths read it, through
+ * `store/officePrivate.ts` (not re-exported from the store barrel) and
+ * `domain/pairingPreferences.ts`; `src/apps/officePrivacy.test.ts` enforces it.
+ */
+export interface OfficePrivateSlice {
+  pairingPreferences: Record<PairingPreferenceId, PairingPreference>
+  /** Keyed by anaesthetist id; an anaesthetist with no entry is at the default tier. */
+  priorityTiers: Record<AnaesthetistId, PriorityTier>
 }
 
 export interface Insurer {

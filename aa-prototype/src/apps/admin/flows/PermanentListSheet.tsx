@@ -5,6 +5,7 @@ import { addPermanentList, editPermanentList, useAppStore, type Actor } from '..
 import { Button, FieldLabel, Segmented, TextField } from '../../../shared'
 import { useSurface } from '../../../shared'
 import { selectControlStyle as selectStyle } from './fieldChrome'
+import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 
 interface Props {
   open: boolean
@@ -30,7 +31,6 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
   const { Overlay } = useSurface()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
-  const surgeons = useAppStore((s) => s.masters.surgeons)
 
   const [anaesthetistId, setAnaesthetistId] = useState('')
   const [dayOfWeek, setDayOfWeek] = useState(1)
@@ -40,6 +40,10 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
   const [surgeonId, setSurgeonId] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Catch-up Phase 17: a not-preferred usual surgeon warns and never blocks;
+  // on an edit, only a changed pairing warns (as only it is acknowledged).
+  const pairingChanged = template === undefined || anaesthetistId !== template.anaesthetistId || surgeonId !== (template.surgeonId ?? '')
+  const pairingWarning = useNotPreferredWarning(anaesthetistId !== '' ? anaesthetistId : undefined, pairingChanged ? surgeonId : undefined)
 
   useEffect(() => {
     if (!open) return
@@ -118,18 +122,16 @@ export function PermanentListSheet({ open, actor, template, onClose }: Props) {
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Usual surgeon</FieldLabel>
-          <select value={surgeonId} onChange={(e) => setSurgeonId(e.target.value)} style={selectStyle}>
-            <option value="">None</option>
-            {Object.values(surgeons).map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <SurgeonPicker anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} onChange={setSurgeonId} emptyLabel="None" style={selectStyle} />
         </label>
         <TextField label="Display note (optional)" value={notes} onChange={setNotes} placeholder="e.g. Elective ortho" />
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="primary" block onClick={save}>{template !== undefined ? 'Save changes' : 'Add permanent list'}</Button>
+        <NotPreferredWarning warning={pairingWarning} shot="permanent-list-pairing-warning" />
+        <Button variant="primary" block onClick={save}>
+          {pairingWarning !== null ? (template !== undefined ? 'Save anyway' : 'Add anyway') : template !== undefined ? 'Save changes' : 'Add permanent list'}
+        </Button>
       </div>
     </Overlay>
   )

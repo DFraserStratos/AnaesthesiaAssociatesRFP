@@ -4,6 +4,7 @@ import type { List } from '../../../domain/types'
 import { editList, useAppStore, type Actor, type ListPatch } from '../../../store'
 import { Button, FieldLabel, TextArea } from '../../../shared/ui'
 import { useSurface } from '../../../shared/surface'
+import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
 
 interface EditListSheetProps {
   open: boolean
@@ -31,10 +32,11 @@ const selectStyle = {
 export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps) {
   const { Overlay } = useSurface()
   const hospitals = useAppStore((s) => s.masters.hospitals)
-  const surgeons = useAppStore((s) => s.masters.surgeons)
 
   const [hospitalId, setHospitalId] = useState(list.hospitalId ?? '')
   const [surgeonId, setSurgeonId] = useState(list.surgeonId ?? '')
+  // Only a changed surgeon warns, as only a changed pairing is acknowledged.
+  const pairingWarning = useNotPreferredWarning(list.anaesthetistId, surgeonId !== (list.surgeonId ?? '') ? surgeonId : undefined)
   const [startTime, setStartTime] = useState(list.startTime ?? '')
   const [endTime, setEndTime] = useState(list.endTime ?? '')
   const [notes, setNotes] = useState(list.notes ?? '')
@@ -85,12 +87,14 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <FieldLabel>Surgeon</FieldLabel>
-          <select value={surgeonId} onChange={(e) => setSurgeonId(e.target.value)} style={selectStyle}>
-            <option value="">Not assigned</option>
-            {Object.values(surgeons).map((s) => (
-              <option key={s.id} value={s.id}>{s.name}{s.specialty !== undefined ? ` (${s.specialty})` : ''}</option>
-            ))}
-          </select>
+          <SurgeonPicker
+            anaesthetistId={list.anaesthetistId}
+            value={surgeonId}
+            onChange={setSurgeonId}
+            emptyLabel="Not assigned"
+            optionLabel={(s) => `${s.name}${s.specialty !== undefined ? ` (${s.specialty})` : ''}`}
+            style={selectStyle}
+          />
         </label>
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -109,7 +113,9 @@ export function EditListSheet({ open, list, actor, onClose }: EditListSheetProps
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}
-        <Button variant="primary" block onClick={save}>Save list</Button>
+        {/* Catch-up Phase 17: warn, never block. Only a changed surgeon warns. */}
+        <NotPreferredWarning warning={pairingWarning} shot="edit-list-pairing-warning" />
+        <Button variant="primary" block onClick={save}>{pairingWarning !== null ? 'Save list anyway' : 'Save list'}</Button>
       </div>
     </Overlay>
   )

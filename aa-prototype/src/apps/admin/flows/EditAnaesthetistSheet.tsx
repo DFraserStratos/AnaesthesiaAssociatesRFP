@@ -58,7 +58,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose }: Pr
     <Overlay open={open} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{anaesthetist.name}</div>
-        <div className="mono" style={{ fontSize: 12, color: neutral.mist }}>Registration {anaesthetist.registrationNumber} · HPI {anaesthetist.hpiId || 'not set'}</div>
+        <div className="mono" style={{ fontSize: 12, color: neutral.mist }}>Registration {anaesthetist.registrationNumber} · HPI CPN {anaesthetist.hpiId || 'not set'}</div>
         <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />

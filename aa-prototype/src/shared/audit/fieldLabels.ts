@@ -121,9 +121,27 @@ export const FIELD_LABELS: Record<string, string> = {
   registrationNumber: 'Registration number',
   unitValue: 'Unit value',
   gstPeriod: 'GST period',
-  hpiId: 'HPI id',
+  // OQ-52: one identifier for surgeons and anaesthetists alike (catch-up Phase 17).
+  hpiId: 'HPI CPN',
   active: 'Active',
   acceptsDirectClaims: 'Accepts direct claims',
+
+  // --- Surgeons, rooms, groups, hospitals (catch-up Phase 17) ---------------
+  contactEmail: 'Contact email',
+  specialty: 'Specialty',
+  roomId: "Surgeons' room",
+  medicalRegistrationNumber: 'NZ medical registration number',
+  memberSurgeonIds: 'Members',
+
+  // --- Pairing preferences and tiers (office only, catch-up Phase 17) ------
+  raisedBy: 'Asked by',
+  addedAtISO: 'Added',
+  addedBy: 'Added by',
+  endedAtISO: 'Ended',
+  endedBy: 'Ended by',
+  endReason: 'End reason',
+  tier: 'Priority tier',
+  pairingPreferenceIds: 'Pairing preferences',
 
   // --- Billing line --------------------------------------------------------
   procedureId: 'Procedure',

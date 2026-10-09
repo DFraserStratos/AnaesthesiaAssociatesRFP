@@ -74,6 +74,11 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
   // allocation can never collide with a seeded master row (Phase 07).
   contractPrice: { prefix: 'CPN', pad: 3 },
+  // Catch-up Phase 17: distinct from the seed's S-, RM-, SG- and PP- ids.
+  surgeon: { prefix: 'SN', pad: 3 },
+  surgeonRoom: { prefix: 'RMN', pad: 3 },
+  surgeonGroup: { prefix: 'SGN', pad: 3 },
+  pairingPreference: { prefix: 'PPN', pad: 3 },
   permanentList: { prefix: 'PLN', pad: 3 },
   holiday: { prefix: 'HHN', pad: 3 },
   // Billing run (Phase 08). `invoiceNumber` is the human-facing remittance
@@ -135,7 +140,16 @@ export interface MutationMeta {
 export type DomainPatch = Partial<
   Pick<
     AppState,
-    'masters' | 'schedule' | 'settings' | 'appSettings' | 'counters' | 'billing' | 'xero' | 'integrations' | 'dayNotes'
+    | 'masters'
+    | 'schedule'
+    | 'settings'
+    | 'appSettings'
+    | 'counters'
+    | 'billing'
+    | 'xero'
+    | 'integrations'
+    | 'dayNotes'
+    | 'officePrivate'
   >
 >
 
@@ -236,6 +250,7 @@ export function resetDomainState(api: AppStoreApi): void {
     settings: seed.settings,
     appSettings: seed.appSettings,
     dayNotes: seed.dayNotes,
+    officePrivate: seed.officePrivate,
     counters: seedBilling.counters,
     billing: {
       invoices: seedBilling.invoices,
@@ -247,5 +262,9 @@ export function resetDomainState(api: AppStoreApi): void {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
+    // The shell slice survives a Reset, except the office picker counter
+    // (catch-up Phase 17): zeroing it makes a fresh Reset replay the same
+    // within-tier orders.
+    shell: { ...api.getState().shell, suggestionSeq: 0 },
   })
 }

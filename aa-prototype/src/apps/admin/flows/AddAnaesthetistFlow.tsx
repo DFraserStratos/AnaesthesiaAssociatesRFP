@@ -69,7 +69,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono />
         <Segmented label="GST period" value={gstPeriod} options={GST_OPTIONS} onChange={setGstPeriod} />
-        <TextField label="HPI id (optional)" value={hpiId} onChange={setHpiId} />
+        <TextField label="HPI CPN (optional)" value={hpiId} onChange={setHpiId} />
         {error !== null && (
           <div style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13 }}>{error}</div>
         )}

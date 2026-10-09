@@ -27,7 +27,7 @@ a { color:var(--rust); }
 h1 { font:900 clamp(40px,6vw,72px)/0.98 'Fraunces',serif; letter-spacing:-.015em; margin:0 0 10px; }
 h1 em { font-style:italic; font-weight:300; color:var(--rust); }
 .hero-sub { max-width:760px; font-size:18px; color:var(--ink-2); margin:16px 0 0; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); border:1.5px solid var(--ink); margin:34px 0 0; background:var(--card); }
 .stat { padding:16px 20px 12px; border-right:1.5px solid var(--ink); }
 .stat:last-child { border-right:none; }
 .stat b { display:block; font:700 30px/1 'Fraunces',serif; }
@@ -134,6 +134,27 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
 .oqs { font:600 11.5px var(--mono); color:var(--ink-3); margin:0 0 12px; }
 .defects.ms li { border-left-color:var(--green); }
 .defects li .it { margin-left:6px; vertical-align:middle; }
+/* phase status */
+.tag.done, .badge.done { background:var(--green-soft); color:var(--green); }
+.tag.wip, .badge.wip { background:var(--amber-soft); color:var(--amber); }
+.tag.nxt, .badge.nxt { background:var(--card); color:var(--ink-2); border:1px dashed var(--ink-3); }
+.pstrip { display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:4px; max-width:850px; margin:8px 0 18px; }
+.pcell { font:600 11px/1 var(--mono); text-align:center; padding:9px 0; border-radius:3px; text-decoration:none; color:var(--ink-3); background:var(--paper-2); border:1px solid var(--line); }
+.pcell.done { background:var(--green); border-color:var(--green); color:#fff; }
+.pcell.wip { background:var(--amber); border-color:var(--amber); color:#fff; }
+.pcell.nxt { background:var(--card); border:1px dashed var(--ink-2); color:var(--ink); }
+.pcell:hover { outline:2px solid var(--ink); }
+ul.pstate { list-style:none; padding:0; margin:0; max-width:850px; }
+ul.pstate li { margin:0 0 10px; font-size:14.5px; color:var(--ink-2); }
+ul.pstate .tag { margin-right:8px; }
+ul.pstate .when { font:600 11px var(--mono); color:var(--ink-3); white-space:nowrap; }
+.scorecard tr.done td { background:#f9f8f2; }
+.scorecard tr.done td b { color:var(--ink-2); }
+.flow .fnode.done { background:var(--green-soft); color:var(--green); }
+.flow .fnode.wip { background:var(--amber-soft); color:var(--amber); }
+.phase.is-done { opacity:.82; }
+.phase.is-wip { box-shadow:0 0 0 3px var(--amber-soft); }
+details.ran { margin:0; }
 @media (max-width:640px) { .wrap { padding:0 16px 80px; } .phase { padding:18px 16px; } .phase-head { gap:12px; } .pnum { font-size:34px; min-width:44px; } }
 </style>
 </head>
@@ -154,8 +175,21 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
     <div class="stat"><b>40</b><span>missing</span></div>
     <div class="stat"><b>43</b><span>phases (14 to 44)</span></div>
     <div class="stat"><b>77</b><span>est. sessions</span></div>
+    <div class="stat"><b>5</b><span>phases done</span></div>
   </div>
 </header>
+
+<section class="prose">
+  <h2>Where the build is</h2>
+  <div class="rule"></div>
+  <div class="pstrip" aria-hidden="true"><a class="pcell done" href="#phase-14" title="14 Screen-contextual demo triggers">14</a><a class="pcell done" href="#phase-15" title="15 Card becomes Booking">15</a><a class="pcell done" href="#phase-15a" title="15a Warnings and the to-do list">15a</a><a class="pcell done" href="#phase-15b" title="15b Copy and photo capture out, and DRAFT becomes ACTIVE">15b</a><a class="pcell done" href="#phase-16" title="16 AA fee as its own monthly invoice">16</a><a class="pcell wip" href="#phase-17" title="17 Surgeons, rooms, pairing preferences and priority tiers">17</a><a class="pcell todo" href="#phase-18" title="18 Contract holders and dated Contracts">18</a><a class="pcell todo" href="#phase-19" title="19 RVG groups, procedures and the two-tab picker">19</a><a class="pcell todo" href="#phase-19a" title="19a Contract lines and the starting-units resolver">19a</a><a class="pcell todo" href="#phase-19b" title="19b Modifiers: the RVG table, locked age and included modifiers, explanations">19b</a><a class="pcell todo" href="#phase-20" title="20 One Contract per Procedure">20</a><a class="pcell todo" href="#phase-20a" title="20a Source wording and the three-part Procedure stack">20a</a><a class="pcell todo" href="#phase-21" title="21 Payer on the Booking, who is billed, and completeness">21</a><a class="pcell todo" href="#phase-22" title="22 Invoice presentation, delivery and the split">22</a><a class="pcell todo" href="#phase-23" title="23 Primary Procedure, multi-procedure rule and combination Contracts">23</a><a class="pcell todo" href="#phase-24" title="24 Price precedence, fixed rate and discount, and the anaesthetist adjustment">24</a><a class="pcell todo" href="#phase-25" title="25 Contract versions and the AUTHORISED lock">25</a><a class="pcell todo" href="#phase-26" title="26 Prepaid settings and anaesthetist profile">26</a><a class="pcell todo" href="#phase-27" title="27 Prepayment lifecycle">27</a><a class="pcell nxt" href="#phase-28" title="28 Slot and List split">28</a><a class="pcell nxt" href="#phase-29" title="29 Availability calendar and status master">29</a><a class="pcell nxt" href="#phase-30" title="30 Conflicts, holidays and the conflict dashboard">30</a><a class="pcell nxt" href="#phase-31" title="31 Draft Lists and the day dashboard">31</a><a class="pcell nxt" href="#phase-32" title="32 Anaesthetist moves their own List, and the notification pool">32</a><a class="pcell todo" href="#phase-32a" title="32a Anaesthetist moves a single Booking">32a</a><a class="pcell todo" href="#phase-33" title="33 Hospital download and the matching screen">33</a><a class="pcell todo" href="#phase-34" title="34 Hospital sync, manual sheets and the S1 rebuild">34</a><a class="pcell todo" href="#phase-35" title="35 Explicit save and the update email">35</a><a class="pcell todo" href="#phase-36" title="36 Internal ledger and balance views">36</a><a class="pcell todo" href="#phase-37" title="37 Xero mirror resilience and the processing monitor">37</a><a class="pcell todo" href="#phase-38" title="38 Web accounts, outstanding list and GST schedule">38</a><a class="pcell todo" href="#phase-38a" title="38a The anaesthetist&#39;s main view, archive and search">38a</a><a class="pcell todo" href="#phase-38b" title="38b Events on a Procedure and the additional invoice">38b</a><a class="pcell todo" href="#phase-39" title="39 Credit notes, credit-and-rebill and the combined split">39</a><a class="pcell todo" href="#phase-39a" title="39a Payment runs: the weekly cycle, BCTI approval, netting and remittance">39a</a><a class="pcell todo" href="#phase-39b" title="39b Pre-op and post-op events">39b</a><a class="pcell todo" href="#phase-40" title="40 Patients: missing NHI, balance warning, patient view">40</a><a class="pcell todo" href="#phase-40a" title="40a NHI lookup and identity standards">40a</a><a class="pcell todo" href="#phase-41" title="41 Prepayment letters, settlement by hand, trust account and refunds">41</a><a class="pcell todo" href="#phase-42" title="42 Reference data and controlled loads">42</a><a class="pcell todo" href="#phase-43" title="43 Scale and privacy">43</a><a class="pcell todo" href="#phase-43a" title="43a Sign-in and ease of use: simple anaesthetist screens and point-of-need help">43a</a><a class="pcell todo" href="#phase-44" title="44 Demo guide rewrite and final sweep">44</a></div>
+  <ul class="pstate">
+    <li><span class="tag done">Done</span> <a href="#phase-14">14</a> Screen-contextual demo triggers <span class="when">2026-10-02</span>; <a href="#phase-15">15</a> Card becomes Booking <span class="when">2026-10-02</span>; <a href="#phase-15a">15a</a> Warnings and the to-do list <span class="when">2026-10-09</span>; <a href="#phase-15b">15b</a> Copy and photo capture out, and DRAFT becomes ACTIVE <span class="when">2026-10-09</span>; <a href="#phase-16">16</a> AA fee as its own monthly invoice <span class="when">2026-10-09</span></li>
+    <li><span class="tag wip">In progress</span> <a href="#phase-17">17</a> Surgeons, rooms, pairing preferences and priority tiers</li>
+    <li><span class="tag nxt">Up next</span> <a href="#phase-28">28</a>, <a href="#phase-29">29</a>, <a href="#phase-30">30</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>. The Schedule track runs after 17, ahead of the Contracts track (18 to 25), while the pricing requirements settle. Schedule and Contracts are independent until 33</li>
+  </ul>
+  <p class="note">Status comes from the status table in <code>PROGRESS.md</code> (and <code>status.json</code> for a phase whose row is not written yet). 9 of 77 estimated sessions are done.</p>
+</section>
 
 <section class="prose">
   <h2>What changed since the prototype</h2>
@@ -166,27 +200,27 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
     <li>
       <div class="th-head"><b>Contract decides price and payer</b></div>
       <p>Route and Type 1/2/3 replaced by one Contract per Procedure with holder pays-AA rule, single No contract (RVG), dated versions, lines, AA code, snapshot at AUTHORISED. XL, foundation for pricing/billing/prepayment.</p>
-      <p class="th-meta">20 items · built in phases <a href="#phase-18">18</a>, <a href="#phase-20">20</a>, <a href="#phase-19a">19a</a>, <a href="#phase-21">21</a>, <a href="#phase-25">25</a></p>
+      <p class="th-meta">20 items · built in phases <a href="#phase-18">18</a>, <a href="#phase-19a">19a</a>, <a href="#phase-20">20</a>, <a href="#phase-21">21</a>, <a href="#phase-25">25</a></p>
     </li>
     <li>
       <div class="th-head"><b>Procedure master and capture rework</b></div>
       <p>Procedure master, RVG group hierarchy, two-tab picker, modifier records with explanations, ASA as ordinary modifier, locked age/included modifiers, real RVG values, rate x time removed, source wording kept. XL, shared BtmCaptureBlock lands on all three apps.</p>
-      <p class="th-meta">22 items · built in phases <a href="#phase-19">19</a>, <a href="#phase-19b">19b</a>, <a href="#phase-20">20</a>, <a href="#phase-39b">39b</a>, <a href="#phase-20a">20a</a>, <a href="#phase-19a">19a</a>, <a href="#phase-24">24</a></p>
+      <p class="th-meta">22 items · built in phases <a href="#phase-19">19</a>, <a href="#phase-19a">19a</a>, <a href="#phase-19b">19b</a>, <a href="#phase-20">20</a>, <a href="#phase-20a">20a</a>, <a href="#phase-24">24</a>, <a href="#phase-39b">39b</a></p>
     </li>
     <li>
       <div class="th-head"><b>Pricing precedence and adjustment gating</b><span class="tag e">L</span></div>
       <p>Anaesthetist adjustment gated to No contract and first-party Contracts, separate office override, independent fixed rate and discount, no-charge invoice, modifier split above four units. L.</p>
-      <p class="th-meta">14 items · built in phases <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-19a">19a</a></p>
+      <p class="th-meta">14 items · built in phases <a href="#phase-19a">19a</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a></p>
     </li>
     <li>
       <div class="th-head"><b>Slot, Draft List and List lifecycle</b><span class="tag e">XL</span></div>
       <p>Optional anaesthetist on List, DRAFT/ACTIVE rename, Draft List admin page and creation paths, statuses as master data, return-or-assign on mark-unavailable, anaesthetist moves own List, tiers and private pairings. XL, structural first.</p>
-      <p class="th-meta">30 items · built in phases <a href="#phase-17">17</a>, <a href="#phase-28">28</a>, <a href="#phase-29">29</a>, <a href="#phase-30">30</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>, <a href="#phase-32a">32a</a>, <a href="#phase-15b">15b</a></p>
+      <p class="th-meta">30 items · built in phases <a href="#phase-15b">15b</a>, <a href="#phase-17">17</a>, <a href="#phase-28">28</a>, <a href="#phase-29">29</a>, <a href="#phase-30">30</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>, <a href="#phase-32a">32a</a></p>
     </li>
     <li>
       <div class="th-head"><b>Hospital intake via matching screen</b></div>
       <p>Staged import rows, per-row admin decision, field-difference approval, unmatched queue; nothing auto-applies. HL7/FHIR/dead-letter tooling is Future and should be demoted. L shared build.</p>
-      <p class="th-meta">15 items · built in phases <a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a>, <a href="#phase-20a">20a</a></p>
+      <p class="th-meta">15 items · built in phases <a href="#phase-20a">20a</a>, <a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a></p>
     </li>
     <li>
       <div class="th-head"><b>Prepayment replaced</b><span class="tag e">XL</span></div>
@@ -196,7 +230,7 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
     <li>
       <div class="th-head"><b>Ledger payable, credit notes, additional invoices, payment cycle</b></div>
       <p>Promote payable into ledger, remove 5% fee netting, credit-and-rebill, additional invoices and events, weekly payment cycle and approval, cash-basis GST. XL combined; do fee un-netting once.</p>
-      <p class="th-meta">22 items · built in phases <a href="#phase-39">39</a>, <a href="#phase-38b">38b</a>, <a href="#phase-22">22</a>, <a href="#phase-39a">39a</a>, <a href="#phase-16">16</a>, <a href="#phase-36">36</a>, <a href="#phase-38">38</a></p>
+      <p class="th-meta">22 items · built in phases <a href="#phase-16">16</a>, <a href="#phase-22">22</a>, <a href="#phase-36">36</a>, <a href="#phase-38">38</a>, <a href="#phase-38b">38b</a>, <a href="#phase-39">39</a>, <a href="#phase-39a">39a</a></p>
     </li>
     <li>
       <div class="th-head"><b>Admin oversight: warnings, notifications, NHI, balances</b></div>
@@ -206,12 +240,12 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
     <li>
       <div class="th-head"><b>Past work and anaesthetist app polish</b></div>
       <p>Archive/search and scroll-back for billed Lists, prepaid amount display, source/Contract stack on booking screens. M.</p>
-      <p class="th-meta">8 items · built in phases <a href="#phase-38a">38a</a>, <a href="#phase-27">27</a>, <a href="#phase-20a">20a</a>, <a href="#phase-20">20</a>, <a href="#phase-21">21</a></p>
+      <p class="th-meta">8 items · built in phases <a href="#phase-20">20</a>, <a href="#phase-20a">20a</a>, <a href="#phase-21">21</a>, <a href="#phase-27">27</a>, <a href="#phase-38a">38a</a></p>
     </li>
     <li>
       <div class="th-head"><b>Remove or hide superseded features</b></div>
       <p>Copy a Booking, photo capture, Surgeon PDF tab, automated hospital changes, dashboard Productivity and Leave, ACC review flag; badge or hide Future-scope tooling.</p>
-      <p class="th-meta">10 items · built in phases <a href="#phase-15">15</a>, <a href="#phase-18">18</a>, <a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a>, <a href="#phase-38">38</a>, <a href="#phase-39">39</a>, <a href="#phase-15b">15b</a>, <a href="#phase-44">44</a></p>
+      <p class="th-meta">10 items · built in phases <a href="#phase-15">15</a>, <a href="#phase-15b">15b</a>, <a href="#phase-18">18</a>, <a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a>, <a href="#phase-38">38</a>, <a href="#phase-39">39</a>, <a href="#phase-44">44</a></p>
     </li>
   </ol>
 </section>
@@ -230,35 +264,35 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
         <td class="barcell"><div class="bar"><span class="v-con" style="width:29.41%" title="Contradicts: 10"></span><span class="v-par" style="width:47.06%" title="Partial: 16"></span><span class="v-mis" style="width:17.65%" title="Missing: 6"></span><span class="v-mat" style="width:5.88%" title="Matches: 2"></span></div></td>
         <td class="n">10</td><td class="n">16</td><td class="n">6</td><td class="n">2</td><td class="n"></td>
         <td class="n"><b>34</b></td>
-        <td class="read"><a href="#phase-17">17</a>, <a href="#phase-28">28</a>, <a href="#phase-29">29</a>, <a href="#phase-30">30</a>, <a href="#phase-31">31</a>, <a href="#phase-32a">32a</a>, <a href="#phase-32">32</a></td>
+        <td class="read"><a href="#phase-17">17</a>, <a href="#phase-28">28</a>, <a href="#phase-29">29</a>, <a href="#phase-30">30</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>, <a href="#phase-32a">32a</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-02"><b>EP-02</b></a> Booking intake and change handling<div class="read"><a href="epics/EP-02.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-02.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:33.33%" title="Contradicts: 6"></span><span class="v-par" style="width:38.89%" title="Partial: 7"></span><span class="v-mis" style="width:11.11%" title="Missing: 2"></span><span class="v-mat" style="width:16.67%" title="Matches: 3"></span></div></td>
         <td class="n">6</td><td class="n">7</td><td class="n">2</td><td class="n">3</td><td class="n"></td>
         <td class="n"><b>18</b></td>
-        <td class="read"><a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a>, <a href="#phase-20a">20a</a></td>
+        <td class="read"><a href="#phase-20a">20a</a>, <a href="#phase-33">33</a>, <a href="#phase-34">34</a>, <a href="#phase-35">35</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-03"><b>EP-03</b></a> Booking and Procedure capture (anaesthetist)<div class="read"><a href="epics/EP-03.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-03.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:33.33%" title="Contradicts: 11"></span><span class="v-par" style="width:36.36%" title="Partial: 12"></span><span class="v-mis" style="width:6.06%" title="Missing: 2"></span><span class="v-mat" style="width:18.18%" title="Matches: 6"></span><span class="v-grp" style="width:6.06%" title="Grouping: 2"></span></div></td>
         <td class="n">11</td><td class="n">12</td><td class="n">2</td><td class="n">6</td><td class="n">2</td>
         <td class="n"><b>33</b></td>
-        <td class="read"><a href="#phase-19b">19b</a>, <a href="#phase-15">15</a>, <a href="#phase-20">20</a>, <a href="#phase-21">21</a>, <a href="#phase-24">24</a>, <a href="#phase-39b">39b</a>, <a href="#phase-20a">20a</a>, <a href="#phase-23">23</a>, <a href="#phase-27">27</a>, <a href="#phase-29">29</a>, <a href="#phase-40">40</a>, <a href="#phase-38a">38a</a>, <a href="#phase-38b">38b</a></td>
+        <td class="read"><a href="#phase-15">15</a>, <a href="#phase-19b">19b</a>, <a href="#phase-20">20</a>, <a href="#phase-20a">20a</a>, <a href="#phase-21">21</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-27">27</a>, <a href="#phase-29">29</a>, <a href="#phase-38a">38a</a>, <a href="#phase-38b">38b</a>, <a href="#phase-39b">39b</a>, <a href="#phase-40">40</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-04"><b>EP-04</b></a> Contracts<div class="read"><a href="epics/EP-04.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-04.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:38.10%" title="Contradicts: 8"></span><span class="v-par" style="width:52.38%" title="Partial: 11"></span><span class="v-mis" style="width:9.52%" title="Missing: 2"></span></div></td>
         <td class="n">8</td><td class="n">11</td><td class="n">2</td><td class="n"></td><td class="n"></td>
         <td class="n"><b>21</b></td>
-        <td class="read"><a href="#phase-18">18</a>, <a href="#phase-20">20</a>, <a href="#phase-19a">19a</a>, <a href="#phase-22">22</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-25">25</a></td>
+        <td class="read"><a href="#phase-18">18</a>, <a href="#phase-19a">19a</a>, <a href="#phase-20">20</a>, <a href="#phase-22">22</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-25">25</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-05"><b>EP-05</b></a> RVG master data and fee calculation rules<div class="read"><a href="epics/EP-05.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-05.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:30.43%" title="Contradicts: 7"></span><span class="v-par" style="width:30.43%" title="Partial: 7"></span><span class="v-mis" style="width:4.35%" title="Missing: 1"></span><span class="v-mat" style="width:30.43%" title="Matches: 7"></span><span class="v-grp" style="width:4.35%" title="Grouping: 1"></span></div></td>
         <td class="n">7</td><td class="n">7</td><td class="n">1</td><td class="n">7</td><td class="n">1</td>
         <td class="n"><b>23</b></td>
-        <td class="read"><a href="#phase-19">19</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-19b">19b</a>, <a href="#phase-19a">19a</a>, <a href="#phase-39b">39b</a></td>
+        <td class="read"><a href="#phase-19">19</a>, <a href="#phase-19a">19a</a>, <a href="#phase-19b">19b</a>, <a href="#phase-23">23</a>, <a href="#phase-24">24</a>, <a href="#phase-39b">39b</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-06"><b>EP-06</b></a> Prepayment<div class="read"><a href="epics/EP-06.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-06.md">requirement</a></div></td>
@@ -272,14 +306,14 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
         <td class="barcell"><div class="bar"><span class="v-con" style="width:15.38%" title="Contradicts: 2"></span><span class="v-par" style="width:46.15%" title="Partial: 6"></span><span class="v-mat" style="width:23.08%" title="Matches: 3"></span><span class="v-grp" style="width:15.38%" title="Grouping: 2"></span></div></td>
         <td class="n">2</td><td class="n">6</td><td class="n"></td><td class="n">3</td><td class="n">2</td>
         <td class="n"><b>13</b></td>
-        <td class="read"><a href="#phase-31">31</a>, <a href="#phase-38a">38a</a>, <a href="#phase-21">21</a>, <a href="#phase-25">25</a></td>
+        <td class="read"><a href="#phase-21">21</a>, <a href="#phase-25">25</a>, <a href="#phase-31">31</a>, <a href="#phase-38a">38a</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-08"><b>EP-08</b></a> Billing/Invoice Engine and internal ledger<div class="read"><a href="epics/EP-08.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-08.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:20.69%" title="Contradicts: 6"></span><span class="v-par" style="width:34.48%" title="Partial: 10"></span><span class="v-mis" style="width:17.24%" title="Missing: 5"></span><span class="v-mat" style="width:27.59%" title="Matches: 8"></span></div></td>
         <td class="n">6</td><td class="n">10</td><td class="n">5</td><td class="n">8</td><td class="n"></td>
         <td class="n"><b>29</b></td>
-        <td class="read"><a href="#phase-21">21</a>, <a href="#phase-22">22</a>, <a href="#phase-25">25</a>, <a href="#phase-27">27</a>, <a href="#phase-36">36</a>, <a href="#phase-39">39</a>, <a href="#phase-38b">38b</a></td>
+        <td class="read"><a href="#phase-21">21</a>, <a href="#phase-22">22</a>, <a href="#phase-25">25</a>, <a href="#phase-27">27</a>, <a href="#phase-36">36</a>, <a href="#phase-38b">38b</a>, <a href="#phase-39">39</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-09"><b>EP-09</b></a> Xero integration<div class="read"><a href="epics/EP-09.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-09.md">requirement</a></div></td>
@@ -293,7 +327,7 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
         <td class="barcell"><div class="bar"><span class="v-con" style="width:33.33%" title="Contradicts: 5"></span><span class="v-par" style="width:13.33%" title="Partial: 2"></span><span class="v-mis" style="width:26.67%" title="Missing: 4"></span><span class="v-mat" style="width:26.67%" title="Matches: 4"></span></div></td>
         <td class="n">5</td><td class="n">2</td><td class="n">4</td><td class="n">4</td><td class="n"></td>
         <td class="n"><b>15</b></td>
-        <td class="read"><a href="#phase-16">16</a>, <a href="#phase-39a">39a</a>, <a href="#phase-37">37</a></td>
+        <td class="read"><a href="#phase-16">16</a>, <a href="#phase-37">37</a>, <a href="#phase-39a">39a</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-11"><b>EP-11</b></a> Patients and billable parties<div class="read"><a href="epics/EP-11.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-11.md">requirement</a></div></td>
@@ -314,21 +348,21 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
         <td class="barcell"><div class="bar"><span class="v-par" style="width:40.00%" title="Partial: 12"></span><span class="v-mis" style="width:30.00%" title="Missing: 9"></span><span class="v-mat" style="width:20.00%" title="Matches: 6"></span><span class="v-grp" style="width:10.00%" title="Grouping: 3"></span></div></td>
         <td class="n"></td><td class="n">12</td><td class="n">9</td><td class="n">6</td><td class="n">3</td>
         <td class="n"><b>30</b></td>
-        <td class="read"><a href="#phase-14">14</a>, <a href="#phase-17">17</a>, <a href="#phase-15a">15a</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>, <a href="#phase-36">36</a>, <a href="#phase-37">37</a>, <a href="#phase-39">39</a>, <a href="#phase-40">40</a>, <a href="#phase-42">42</a>, <a href="#phase-43a">43a</a></td>
+        <td class="read"><a href="#phase-14">14</a>, <a href="#phase-15a">15a</a>, <a href="#phase-17">17</a>, <a href="#phase-31">31</a>, <a href="#phase-32">32</a>, <a href="#phase-36">36</a>, <a href="#phase-37">37</a>, <a href="#phase-39">39</a>, <a href="#phase-40">40</a>, <a href="#phase-42">42</a>, <a href="#phase-43a">43a</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-14"><b>EP-14</b></a> Health systems integration<div class="read"><a href="epics/EP-14.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-14.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-par" style="width:75.00%" title="Partial: 3"></span><span class="v-grp" style="width:25.00%" title="Grouping: 1"></span></div></td>
         <td class="n"></td><td class="n">3</td><td class="n"></td><td class="n"></td><td class="n">1</td>
         <td class="n"><b>4</b></td>
-        <td class="read"><a href="#phase-40a">40a</a>, <a href="#phase-34">34</a></td>
+        <td class="read"><a href="#phase-34">34</a>, <a href="#phase-40a">40a</a></td>
       </tr>
       <tr>
         <td><a href="GAP-ANALYSIS.md#ep-15"><b>EP-15</b></a> Non-functional requirements<div class="read"><a href="epics/EP-15.md">gap detail</a> · <a href="../../../requirements-board/requirements/stories/EP-15.md">requirement</a></div></td>
         <td class="barcell"><div class="bar"><span class="v-con" style="width:14.29%" title="Contradicts: 1"></span><span class="v-par" style="width:57.14%" title="Partial: 4"></span><span class="v-mat" style="width:14.29%" title="Matches: 1"></span><span class="v-grp" style="width:14.29%" title="Grouping: 1"></span></div></td>
         <td class="n">1</td><td class="n">4</td><td class="n"></td><td class="n">1</td><td class="n">1</td>
         <td class="n"><b>7</b></td>
-        <td class="read"><a href="#phase-43a">43a</a>, <a href="#phase-25">25</a>, <a href="#phase-29">29</a>, <a href="#phase-43">43</a></td>
+        <td class="read"><a href="#phase-25">25</a>, <a href="#phase-29">29</a>, <a href="#phase-43">43</a>, <a href="#phase-43a">43a</a></td>
       </tr>
       <tr class="tot">
         <td><b>Total</b></td>
@@ -360,18 +394,18 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
     <p><strong>The checklists are the contract.</strong> Each phase ends with a short manual test checklist. The agent runs it itself in the running app and reports each item with evidence; nothing is handed to the owner per phase. Each PROGRESS entry ends with a "For the owner's review" list, and Phase 44 gathers them into one list for a single review once every catch-up phase is done.</p>
   </div>
   <div class="flow">
-    <span class="fpar">foundations:</span> <a class="fnode" href="#phase-14">14 Screen-contextual demo triggers</a> &rarr; <a class="fnode" href="#phase-15">15 Card becomes Booking</a> &rarr; <a class="fnode" href="#phase-15a">15a Warnings and the to-do list</a> &rarr; <a class="fnode" href="#phase-15b">15b Copy and photo capture out, and DRAFT becomes ACTIVE</a><br>
-    <span class="fpar">money:</span> <a class="fnode" href="#phase-16">16 AA fee as its own monthly invoice</a> &rarr; <a class="fnode" href="#phase-36">36 Internal ledger and balance views</a> &rarr; <a class="fnode" href="#phase-37">37 Xero mirror resilience and the processing monitor</a> &rarr; <a class="fnode" href="#phase-38">38 Web accounts, outstanding list and GST schedule</a> &rarr; <a class="fnode" href="#phase-38b">38b Events on a Procedure and the additional invoice</a> &rarr; <a class="fnode" href="#phase-39">39 Credit notes, credit-and-rebill and the combined split</a> &rarr; <a class="fnode" href="#phase-39a">39a Payment runs: the weekly cycle, BCTI approval, netting and remittance</a><br>
-    <span class="fpar">master data:</span> <a class="fnode" href="#phase-17">17 Surgeons, rooms, pairing preferences and priority tiers</a> &rarr; <a class="fnode" href="#phase-42">42 Reference data and controlled loads</a><br>
-    <span class="fpar">contracts:</span> <a class="fnode" href="#phase-18">18 Contract holders and dated Contracts</a> &rarr; <a class="fnode" href="#phase-19">19 RVG groups, procedures and the two-tab picker</a> &rarr; <a class="fnode" href="#phase-19a">19a Contract lines and the starting-units resolver</a> &rarr; <a class="fnode" href="#phase-19b">19b Modifiers: the RVG table, locked age and included modifiers, explanations</a> &rarr; <a class="fnode" href="#phase-20">20 One Contract per Procedure</a> &rarr; <a class="fnode" href="#phase-20a">20a Source wording and the three-part Procedure stack</a> &rarr; <a class="fnode" href="#phase-21">21 Payer on the Booking, who is billed, and completeness</a> &rarr; <a class="fnode" href="#phase-23">23 Primary Procedure, multi-procedure rule and combination Contracts</a> &rarr; <a class="fnode" href="#phase-24">24 Price precedence, fixed rate and discount, and the anaesthetist adjustment</a> &rarr; <a class="fnode" href="#phase-25">25 Contract versions and the AUTHORISED lock</a><br>
-    <span class="fpar">billing:</span> <a class="fnode" href="#phase-22">22 Invoice presentation, delivery and the split</a><br>
-    <span class="fpar">prepayment:</span> <a class="fnode" href="#phase-26">26 Prepaid settings and anaesthetist profile</a> &rarr; <a class="fnode" href="#phase-27">27 Prepayment lifecycle</a> &rarr; <a class="fnode" href="#phase-41">41 Prepayment letters, settlement by hand, trust account and refunds</a><br>
-    <span class="fpar">schedule:</span> <a class="fnode" href="#phase-28">28 Slot and List split</a> &rarr; <a class="fnode" href="#phase-29">29 Availability calendar and status master</a> &rarr; <a class="fnode" href="#phase-30">30 Conflicts, holidays and the conflict dashboard</a> &rarr; <a class="fnode" href="#phase-31">31 Draft Lists and the day dashboard</a> &rarr; <a class="fnode" href="#phase-32">32 Anaesthetist moves their own List, and the notification pool</a> &rarr; <a class="fnode" href="#phase-32a">32a Anaesthetist moves a single Booking</a><br>
-    <span class="fpar">intake:</span> <a class="fnode" href="#phase-33">33 Hospital download and the matching screen</a> &rarr; <a class="fnode" href="#phase-34">34 Hospital sync, manual sheets and the S1 rebuild</a> &rarr; <a class="fnode" href="#phase-35">35 Explicit save and the update email</a><br>
-    <span class="fpar">capture:</span> <a class="fnode" href="#phase-38a">38a The anaesthetist&#39;s main view, archive and search</a> &rarr; <a class="fnode" href="#phase-39b">39b Pre-op and post-op events</a><br>
-    <span class="fpar">patients:</span> <a class="fnode" href="#phase-40">40 Patients: missing NHI, balance warning, patient view</a> &rarr; <a class="fnode" href="#phase-40a">40a NHI lookup and identity standards</a><br>
-    <span class="fpar">nfr:</span> <a class="fnode" href="#phase-43">43 Scale and privacy</a> &rarr; <a class="fnode" href="#phase-43a">43a Sign-in and ease of use: simple anaesthetist screens and point-of-need help</a><br>
-    <span class="fpar">demo:</span> <a class="fnode" href="#phase-44">44 Demo guide rewrite and final sweep</a>
+    <span class="fpar">foundations:</span> <a class="fnode done" href="#phase-14">&#10003; 14 Screen-contextual demo triggers</a> &rarr; <a class="fnode done" href="#phase-15">&#10003; 15 Card becomes Booking</a> &rarr; <a class="fnode done" href="#phase-15a">&#10003; 15a Warnings and the to-do list</a> &rarr; <a class="fnode done" href="#phase-15b">&#10003; 15b Copy and photo capture out, and DRAFT becomes ACTIVE</a><br>
+    <span class="fpar">money:</span> <a class="fnode done" href="#phase-16">&#10003; 16 AA fee as its own monthly invoice</a> &rarr; <a class="fnode " href="#phase-36">36 Internal ledger and balance views</a> &rarr; <a class="fnode " href="#phase-37">37 Xero mirror resilience and the processing monitor</a> &rarr; <a class="fnode " href="#phase-38">38 Web accounts, outstanding list and GST schedule</a> &rarr; <a class="fnode " href="#phase-38b">38b Events on a Procedure and the additional invoice</a> &rarr; <a class="fnode " href="#phase-39">39 Credit notes, credit-and-rebill and the combined split</a> &rarr; <a class="fnode " href="#phase-39a">39a Payment runs: the weekly cycle, BCTI approval, netting and remittance</a><br>
+    <span class="fpar">master data:</span> <a class="fnode wip" href="#phase-17">17 Surgeons, rooms, pairing preferences and priority tiers</a> &rarr; <a class="fnode " href="#phase-42">42 Reference data and controlled loads</a><br>
+    <span class="fpar">contracts:</span> <a class="fnode " href="#phase-18">18 Contract holders and dated Contracts</a> &rarr; <a class="fnode " href="#phase-19">19 RVG groups, procedures and the two-tab picker</a> &rarr; <a class="fnode " href="#phase-19a">19a Contract lines and the starting-units resolver</a> &rarr; <a class="fnode " href="#phase-19b">19b Modifiers: the RVG table, locked age and included modifiers, explanations</a> &rarr; <a class="fnode " href="#phase-20">20 One Contract per Procedure</a> &rarr; <a class="fnode " href="#phase-20a">20a Source wording and the three-part Procedure stack</a> &rarr; <a class="fnode " href="#phase-21">21 Payer on the Booking, who is billed, and completeness</a> &rarr; <a class="fnode " href="#phase-23">23 Primary Procedure, multi-procedure rule and combination Contracts</a> &rarr; <a class="fnode " href="#phase-24">24 Price precedence, fixed rate and discount, and the anaesthetist adjustment</a> &rarr; <a class="fnode " href="#phase-25">25 Contract versions and the AUTHORISED lock</a><br>
+    <span class="fpar">billing:</span> <a class="fnode " href="#phase-22">22 Invoice presentation, delivery and the split</a><br>
+    <span class="fpar">prepayment:</span> <a class="fnode " href="#phase-26">26 Prepaid settings and anaesthetist profile</a> &rarr; <a class="fnode " href="#phase-27">27 Prepayment lifecycle</a> &rarr; <a class="fnode " href="#phase-41">41 Prepayment letters, settlement by hand, trust account and refunds</a><br>
+    <span class="fpar">schedule:</span> <a class="fnode " href="#phase-28">28 Slot and List split</a> &rarr; <a class="fnode " href="#phase-29">29 Availability calendar and status master</a> &rarr; <a class="fnode " href="#phase-30">30 Conflicts, holidays and the conflict dashboard</a> &rarr; <a class="fnode " href="#phase-31">31 Draft Lists and the day dashboard</a> &rarr; <a class="fnode " href="#phase-32">32 Anaesthetist moves their own List, and the notification pool</a> &rarr; <a class="fnode " href="#phase-32a">32a Anaesthetist moves a single Booking</a><br>
+    <span class="fpar">intake:</span> <a class="fnode " href="#phase-33">33 Hospital download and the matching screen</a> &rarr; <a class="fnode " href="#phase-34">34 Hospital sync, manual sheets and the S1 rebuild</a> &rarr; <a class="fnode " href="#phase-35">35 Explicit save and the update email</a><br>
+    <span class="fpar">capture:</span> <a class="fnode " href="#phase-38a">38a The anaesthetist&#39;s main view, archive and search</a> &rarr; <a class="fnode " href="#phase-39b">39b Pre-op and post-op events</a><br>
+    <span class="fpar">patients:</span> <a class="fnode " href="#phase-40">40 Patients: missing NHI, balance warning, patient view</a> &rarr; <a class="fnode " href="#phase-40a">40a NHI lookup and identity standards</a><br>
+    <span class="fpar">nfr:</span> <a class="fnode " href="#phase-43">43 Scale and privacy</a> &rarr; <a class="fnode " href="#phase-43a">43a Sign-in and ease of use: simple anaesthetist screens and point-of-need help</a><br>
+    <span class="fpar">demo:</span> <a class="fnode " href="#phase-44">44 Demo guide rewrite and final sweep</a>
   </div>
 </section>
 
@@ -399,49 +433,49 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
   <table class="scorecard">
     <thead><tr><th>#</th><th>Phase and what it delivers</th><th>Track</th><th>Sessions</th><th>After</th><th class="n">Items</th></tr></thead>
     <tbody>
-      <tr><td><a href="#phase-14">14</a></td><td><b>Screen-contextual demo triggers</b><div class="read">A route-scoped &#39;Demo actions&#39; menu in the harness bar and a PWA demo-actions sheet, with every existing Control Panel trigger re-homed to its screen, a context hook, &#39;Office authorises this List&#39; on the PWA, and interim Future-scope badges</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">Start here</td><td class="n">1</td></tr>
-      <tr><td><a href="#phase-15">15</a></td><td><b>Card becomes Booking</b><div class="read">Card becomes Booking everywhere. Adds List attachments and an optional Booking source; Copy makes a skeleton-only new Booking</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">Start here</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-15a">15a</a></td><td><b>Warnings and the to-do list</b><div class="read">One pure warning routine with Warning records on the Booking (session 1, built, with the prepayment gate replaced by a warning). A to-do list on the Admin dashboard with Clear, a warning triangle on Bookings in all three apps, the warning visible on opening a Booking, the Day view outline down to the Booking, and no confirm step at submit</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">14, 15</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-15b">15b</a></td><td><b>Copy and photo capture out, and DRAFT becomes ACTIVE</b><div class="read">Copy a Booking removed from all three apps, the store, the seed and the guide. Photo capture out of the Add a booking chooser, kept at most as a badged Future-scope demo. The List state DRAFT renamed ACTIVE everywhere, with no behaviour change. The superseded Copy and DRAFT rulings recorded</div></td><td><span class="tag e">Foundations</span></td><td>1</td><td class="read">NaN</td><td class="n">2</td></tr>
-      <tr><td><a href="#phase-16">16</a></td><td><b>AA fee as its own monthly invoice</b><div class="read">The payable is the gross amount. AA fee settings and a monthly run that raises one AA-FEE invoice per anaesthetist (fixed items plus a per-BCTI charge, counted by one pure function), shown in Admin and web Accounts. Xero pairs carry number and reference, and Xero holds no patient names, only the hidden ID</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">NaN</td><td class="n">10</td></tr>
-      <tr><td><a href="#phase-17">17</a></td><td><b>Surgeons, rooms, pairing preferences and priority tiers</b><div class="read">Surgeon profile with HPI CPN, surgeons&#39; rooms with contacts, surgeon groups and a hospital contact email. Private two-way pairing preferences (not preferred, preferred) and an admin-only priority tier, never seen by anaesthetists. One shared helper giving the office a soft not-preferred warning, a separate group and tier ordering when it assigns or moves a List</div></td><td><span class="tag f">Master data</span></td><td>2</td><td class="read">14, 15</td><td class="n">9</td></tr>
-      <tr><td><a href="#phase-18">18</a></td><td><b>Contract holders and dated Contracts</b><div class="read">A contract-holder master (third or first party, holder is billed, billable party, anaesthetist). Contracts as dated versions with a new-version flow, a short AA code, composite search and active and holder filters, office-only editing. One stored No contract (RVG) replacing the per-hospital and per-insurer default Type 1s. Type 1/2/3 gone as categories with every fee unchanged; the ACC review flag gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">17</td><td class="n">12</td></tr>
-      <tr><td><a href="#phase-19">19</a></td><td><b>RVG groups, procedures and the two-tab picker</b><div class="read">RVG groups under body sections (base and modifier units, starting figure and range) plus AA&#39;s own, and a curated procedure list with a general procedure per group, office-maintained and audited. A two-tab picker (Procedures, RVG codes) on mobile, web and Admin. Any base-unit value accepted, with an after-procedure office warning when out of range</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">NaN, 18</td><td class="n">6</td></tr>
-      <tr><td><a href="#phase-19a">19a</a></td><td><b>Contract lines and the starting-units resolver</b><div class="read">Contract lines (one per procedure: fixed price, fixed rate, fixed discount, base and modifier units, holder code) replacing ContractPrice and the Type 2 terms, with no ordinal key. The anaesthetists&#39; own fixed-price Contracts, kept by the office. The line, procedure, RVG group resolver with each value&#39;s layer, and RVG time tiers held as data</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">18, 19</td><td class="n">7</td></tr>
-      <tr><td><a href="#phase-19b">19b</a></td><td><b>Modifiers: the RVG table, locked age and included modifiers, explanations</b><div class="read">The modifier master seeded from the NZSA RVG 2021 table plus AA&#39;s own. Modifiers as itemised records on the Procedure, each optional one with a short explanation asked for when it is claimed. Age (A1, A2) and the included P1 on every Neurosurgery and Spine code applied and locked. The ASA card and its seeding, absorbed-modifier refusals and procedure-default pre-fill gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">NaN</td><td class="n">9</td></tr>
-      <tr><td><a href="#phase-20">20</a></td><td><b>One Contract per Procedure</b><div class="read">Billing route, the payment category (everywhere, replaced by an interim office-set prepayment flag) and the Procedure&#39;s insurer removed. Exactly one Contract per Procedure, mandatory at setup, with a &#39;Needs a Contract&#39; list and no hospital default. One picker after the two tabs: No contract (RVG) first, then fitting Contracts under holder headings with composite search, and the RVG-code route to the lines across a group. The anaesthetist may change the procedure or Contract until submit, flagged at review</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">NaN</td><td class="n">12</td></tr>
-      <tr><td><a href="#phase-20a">20a</a></td><td><b>Source wording and the three-part Procedure stack</b><div class="read">Each Procedure keeps the text as received from every intake path, never overwritten, with an optional &#39;as given&#39; on manual entry. Every booking screen in both apps shows each Procedure as source wording, then procedure and RVG code, then the Contract (name, holder, who is invoiced, pricing basis with figure). Demo wording seeded from AR-35</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">20</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-21">21</a></td><td><b>Payer on the Booking, who is billed, and completeness</b><div class="read">A payer on every Booking, prefilled from the patient and editable to a guardian; who is billed decided by the Contract&#39;s holder or that payer; the guardian override gone. An insurance indication with a review warning, a child-payer warning, holder references, and completion needing a procedure, a Contract, the references and modifier explanations. Review shows the stack, the payer and the warnings</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">NaN</td><td class="n">14</td></tr>
-      <tr><td><a href="#phase-22">22</a></td><td><b>Invoice presentation, delivery and the split</b><div class="read">Invoices issued in the anaesthetist&#39;s name with AA as agent. Contract-driven layout, delivery and GST, prices held ex GST; the run sends to email or portal. A Split button on a Procedure&#39;s Contract line with typed $ or % shares replaces funderOverride. Provisional BCTI wording on the ACCPAY, one per receivable invoice</div></td><td><span class="tag a">Billing</span></td><td>1</td><td class="read">21</td><td class="n">8</td></tr>
-      <tr><td><a href="#phase-23">23</a></td><td><b>Primary Procedure, multi-procedure rule and combination Contracts</b><div class="read">Exactly one primary Procedure, with &#39;Make primary&#39; on every surface and the feed. The RVG default multi-procedure rule for calculated Procedures with the 3/2/2 modifier split, and no per-Contract rules. Combination Contracts with a line under each parent procedure, offered with the singles</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">NaN, 22</td><td class="n">7</td></tr>
-      <tr><td><a href="#phase-24">24</a></td><td><b>Price precedence, fixed rate and discount, and the anaesthetist adjustment</b><div class="read">One price precedence with a recorded price source and engine rejections: office override, the anaesthetist&#39;s typed price on adjustable Contracts only, the line&#39;s fixed price as the whole price, then BTM x the fixed rate or the anaesthetist&#39;s unit value less a locked fixed discount. The anaesthetist adjustment on No contract (RVG) and their own Contracts only; third-party prices read-only. The hourly rate x time line and Method 3 gate gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">23</td><td class="n">13</td></tr>
-      <tr><td><a href="#phase-25">25</a></td><td><b>Contract versions and the AUTHORISED lock</b><div class="read">A pricing snapshot per Procedure written at authorise (procedure, Contract version, resolved values and layers, BTM, rate and discount, price and source, payer or billable party, payee). The engine prices only from it. Versions listed with their invoices. &#39;Regenerate from locked data&#39; and a re-based billing-failure beat</div></td><td><span class="tag a">Contracts</span></td><td>1</td><td class="read">NaN, 22 to 24</td><td class="n">8</td></tr>
-      <tr><td><a href="#phase-26">26</a></td><td><b>Prepaid settings and anaesthetist profile</b><div class="read">An anaesthetist profile on mobile and web: unit value, GST period, HPI CPN, GST number, bank details and a prepaid tick list of procedures and whole RVG groups with each fixed price from their own Contract. Admin can edit it on the anaesthetist&#39;s behalf</div></td><td><span class="tag d">Prepayment</span></td><td>1</td><td class="read">NaN, 20</td><td class="n">7</td></tr>
-      <tr><td><a href="#phase-27">27</a></td><td><b>Prepayment lifecycle</b><div class="read">Prepayment derived from the prepaid set for a payer who is a person. The amount is the anaesthetist&#39;s own fixed price, in full, shown to them; a missing price warns the office. The invoice generated at setup with its ledger pair and draft Xero pair, and sent on admin approval. A prepaid Procedure priced at the prepaid amount, locked, with nothing left to bill. Part-paid tracking, an escalating warning, and re-checks on a change of Procedures, Contract or payer, never on a move</div></td><td><span class="tag d">Prepayment</span></td><td>2</td><td class="read">NaN, 21, 25, 26</td><td class="n">12</td></tr>
-      <tr><td><a href="#phase-28">28</a></td><td><b>Slot and List split</b><div class="read">A Slot record for every active anaesthetist&#39;s session across a configurable horizon, free by default, holding availability and default times. A List with its own id, created on assignment and shown in place of the status. Status independent of bookings in all three apps and the finders, the admin finder ordered by tier with not-preferred pairings apart. Added anaesthetists on the Admin Day grid. Reassign moves a List between Slots</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">NaN, 17</td><td class="n">11</td></tr>
-      <tr><td><a href="#phase-29">29</a></td><td><b>Availability calendar and status master</b><div class="read">Availability kept from a calendar on mobile and web, with series and single-instance edits. Web parity. Slot statuses become a user-maintained master list with fixed IDs, editable labels and colours, separate from the List&#39;s state</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">28</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-30">30</a></td><td><b>Conflicts, holidays and the conflict dashboard</b><div class="read">Conflicts raised on every path, with a List colour change and clearing. Holidays can be edited and deleted. A cross-date conflict dashboard. Permanent Lists become recurring bookings, retirable, and repopulating the canvas when edited</div></td><td><span class="tag b">Schedule</span></td><td>1</td><td class="read">29</td><td class="n">6</td></tr>
-      <tr><td><a href="#phase-31">31</a></td><td><b>Draft Lists and the day dashboard</b><div class="read">The DRAFT state: Draft Lists with hospital, surgeon, day and session required, able to hold Bookings, flagged &#39;unassigned&#39; with waiting time in one date-sorted place, assigned by the office only with the preference and tier helper, becoming ACTIVE, removed or re-dated. A recurring booking on an unavailable session becomes a Draft List. The pairing rule is enforced. The Day dashboard shows Draft Lists and booking counts</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">17, 30</td><td class="n">13</td></tr>
-      <tr><td><a href="#phase-32">32</a></td><td><b>Anaesthetist moves their own List, and the notification pool</b><div class="read">An anaesthetist returns their own List to the office (it goes back to DRAFT) or moves it into a colleague&#39;s free session, at once, with no preference warning, also when they mark a booked session unavailable. No prepayment re-check. Every move posts to a shared notification pool in the Admin App. The cover-request marker is gone</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">29, 31</td><td class="n">10</td></tr>
-      <tr><td><a href="#phase-32a">32a</a></td><td><b>Anaesthetist moves a single Booking</b><div class="read">An anaesthetist moves a single Booking to a colleague found by search, only onto an available session, landing on the colleague&#39;s List (created if needed), with the payable following the anaesthetist who does it, no prepayment re-check and a pool notification</div></td><td><span class="tag b">Schedule</span></td><td>1</td><td class="read">32</td><td class="n">4</td></tr>
-      <tr><td><a href="#phase-33">33</a></td><td><b>Hospital download and the matching screen</b><div class="read">Imported rows, each showing its procedure text as received, are matched, used to create a Booking, a List or a Draft List, or rejected, with field differences and change types; a later update is matched by date, surgeon, location and session and approved. An unmatched queue. No automated decisions. Created Bookings keep the wording and wait for the office to set their Contract</div></td><td><span class="tag b">Intake</span></td><td>2</td><td class="read">NaN, 31</td><td class="n">10</td></tr>
-      <tr><td><a href="#phase-34">34</a></td><td><b>Hospital sync, manual sheets and the S1 rebuild</b><div class="read">Sync from the two integrated hospitals into the matching queue. Manual-provider sheets with a demo auto-match toggle. The HL7/FHIR tooling and surgeon PDF ingest demoted to Future scope, and S1 rebuilt around sync, match, the source wording and the office&#39;s Contract choice</div></td><td><span class="tag b">Intake</span></td><td>1</td><td class="read">33</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-35">35</a></td><td><b>Explicit save and the update email</b><div class="read">Admin draft-then-save with change sets and as-at history. An on-demand update email picked from the change history, from per-kind templates, to the rooms or the hospital, including from a List-move notification; manual only. Add a Booking to a booked List with an optional &#39;as given&#39;, and fuller admin editing</div></td><td><span class="tag b">Intake</span></td><td>2</td><td class="read">17, 25, 32, 33</td><td class="n">7</td></tr>
-      <tr><td><a href="#phase-36">36</a></td><td><b>Internal ledger and balance views</b><div class="read">BillingCase promoted to linked receivable and payable legs as the system of record, one payable leg per receivable. An Admin Ledger screen (whole ledger and per anaesthetist) with an imbalance indicator</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">16, 22, 25, 27</td><td class="n">8</td></tr>
-      <tr><td><a href="#phase-37">37</a></td><td><b>Xero mirror resilience and the processing monitor</b><div class="read">Disbursement detected from Xero. Bulk hospital remittance left in Xero. An outage queue with backoff. Voids made in Xero are flagged. A processing monitor grouped by anaesthetist with sorting, filtering, a problems-only view and &#39;Open in Review&#39; on Lists awaiting approval</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36</td><td class="n">4</td></tr>
-      <tr><td><a href="#phase-38">38</a></td><td><b>Web accounts, outstanding list and GST schedule</b><div class="read">A ledger-backed financial position with the Productivity and Leave panels removed. A flat outstanding list with no ageing. A cash-basis GST schedule with a balance check</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36</td><td class="n">9</td></tr>
-      <tr><td><a href="#phase-38a">38a</a></td><td><b>The anaesthetist&#39;s main view, archive and search</b><div class="read">The main view on mobile, web and the PWA starts at today, with earlier un-invoiced Lists reached by scrolling back and submitted ones marked; invoiced Lists leave it. A calendar archive that jumps to any past day and drills to List, Booking and Procedure, invoiced work included, and a search for Bookings by NHI or patient name</div></td><td><span class="tag e">Capture</span></td><td>2</td><td class="read">28, 38</td><td class="n">6</td></tr>
-      <tr><td><a href="#phase-38b">38b</a></td><td><b>Events on a Procedure and the additional invoice</b><div class="read">The event element on a Procedure with one standard review step and next-run invoicing, and the events list on every Procedure in all three apps. A free-form additional invoice to any party, raised by the office or by the anaesthetist on their own Procedure, recorded as an event, replaces the addendum Booking</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36, NaN</td><td class="n">6</td></tr>
-      <tr><td><a href="#phase-39">39</a></td><td><b>Credit notes, credit-and-rebill and the combined split</b><div class="read">A credit note option to any party, for the office and for the anaesthetist on their own Procedure, credit in full and rebill from a copy of the original&#39;s lines, and a combined Procedure split by credit then per-component invoices that equal the credit, each reversing the ledger, the payable and Xero, with a negative invoice to an anaesthetist already paid. Credits recorded as events; credit notes audited</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">23, NaN</td><td class="n">8</td></tr>
-      <tr><td><a href="#phase-39a">39a</a></td><td><b>Payment runs: the weekly cycle, BCTI approval, netting and remittance</b><div class="read">A weekly ISO-week payment cycle (Friday close, Monday checks, Tuesday schedule, anomalies rolled forward) with an approve-for-payment step for the period&#39;s BCTIs, negative invoices netted per anaesthetist, and a remittance advice in Admin and web Accounts</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">37, 39</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-39b">39b</a></td><td><b>Pre-op and post-op events</b><div class="read">Pre-op and post-op events on a Procedure from mobile, web and Admin (date, time or fixed fee, invoice tick, billable party), as new kinds on 38b&#39;s element: on the Procedure&#39;s invoice before approval or invoiced in the next run after it, through one review step, shown in the Procedure&#39;s events list. The ACC pre-op assessment as a fixed-fee pre-op event. Billing lines with their own date and preset types</div></td><td><span class="tag e">Capture</span></td><td>2</td><td class="read">24, NaN</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-40">40</a></td><td><b>Patients: missing NHI, balance warning, patient view</b><div class="read">A patient record with invoices, follow-up actions and re-send. A missing-NHI problem list with attach and merge, and an authorise guard. A mild or strong warning at booking when the patient paying owes money, a mild one for a credit balance, and one admin-editable threshold</div></td><td><span class="tag d">Patients</span></td><td>2</td><td class="read">NaN, 34, 36, 39</td><td class="n">9</td></tr>
-      <tr><td><a href="#phase-40a">40a</a></td><td><b>NHI lookup and identity standards</b><div class="read">NHI lookup with validation at entry, Hub states with a manual fallback, a purpose statement and refresh from the register, on the 2026-10-08 add-booking forms (ACTIVE Lists, the two-tab picker, the payer on the Booking). HPI CPN shown consistently</div></td><td><span class="tag d">Patients</span></td><td>1</td><td class="read">26, 40</td><td class="n">2</td></tr>
-      <tr><td><a href="#phase-41">41</a></td><td><b>Prepayment letters, settlement by hand, trust account and refunds</b><div class="read">Prepayment letters stating the prepaid amount as the price, and reminders. Settlement with nothing automatic: by-hand additional invoices and credit notes on a prepaid Procedure, with a part credit of a prepayment allowed. A provisional trust account holding prepayments until the procedure, refund on cancellation, only the payable&#39;s payee repointed when a prepaid Booking moves, and a fresh prepayment at the new anaesthetist&#39;s own price on rebooking</div></td><td><span class="tag d">Prepayment</span></td><td>2</td><td class="read">27, NaN, 39</td><td class="n">9</td></tr>
-      <tr><td><a href="#phase-42">42</a></td><td><b>Reference data and controlled loads</b><div class="read">Every master editable, including hospitals, insurers, recurring bookings and public holidays. A spreadsheet loader with row validation for RVG groups and procedures, contract holders, Contracts and lines, modifiers and calendars, with no Contract schedule upload. A clean-cut go-live demo</div></td><td><span class="tag f">Master data</span></td><td>2</td><td class="read">17 to 19, NaN, 29, 30</td><td class="n">5</td></tr>
-      <tr><td><a href="#phase-43">43</a></td><td><b>Scale and privacy</b><div class="read">A full-scale in-memory dataset with timings, generated in the 2026-10-08 shapes (recurring bookings, holder-fit Contracts or No contract (RVG), a payer on every Booking), a restricted raw-row view, an NHI leak scan and a synthetic-data badge</div></td><td><span class="tag f">NFR</span></td><td>2</td><td class="read">34, 36, 37, 42</td><td class="n">2</td></tr>
-      <tr><td><a href="#phase-43a">43a</a></td><td><b>Sign-in and ease of use: simple anaesthetist screens and point-of-need help</b><div class="read">A simulated PWA sign-in with sign-out. Anaesthetist screens free of office-only Contract complexity while keeping the three-part stack and the price fields the catalogue gives them, and point-of-need help on the three operational screens with a first-run hint per app</div></td><td><span class="tag f">NFR</span></td><td>1</td><td class="read">NaN, 21, 24, 31</td><td class="n">2</td></tr>
-      <tr><td><a href="#phase-44">44</a></td><td><b>Demo guide rewrite and final sweep</b><div class="read">S1 to S5 rewritten, Control Panel jumps rebuilt, stale copy and superseded vocabulary swept, master guide regenerated, trigger and PWA-parity audit, one owner review list, PROGRESS entry written</div></td><td><span class="tag e">Demo</span></td><td>2</td><td class="read">14, 15, NaN, 16 to 43</td><td class="n">1</td></tr>
+      <tr class="done"><td><a href="#phase-14">14</a></td><td><b>Screen-contextual demo triggers</b> <span class="tag done" title="Done 2026-10-02">Done</span><div class="read">A route-scoped &#39;Demo actions&#39; menu in the harness bar and a PWA demo-actions sheet, with every existing Control Panel trigger re-homed to its screen, a context hook, &#39;Office authorises this List&#39; on the PWA, and interim Future-scope badges</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">Start here</td><td class="n">1</td></tr>
+      <tr class="done"><td><a href="#phase-15">15</a></td><td><b>Card becomes Booking</b> <span class="tag done" title="Done 2026-10-02">Done</span><div class="read">Card becomes Booking everywhere. Adds List attachments and an optional Booking source; Copy makes a skeleton-only new Booking</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">Start here</td><td class="n">5</td></tr>
+      <tr class="done"><td><a href="#phase-15a">15a</a></td><td><b>Warnings and the to-do list</b> <span class="tag done" title="Done 2026-10-09">Done</span><div class="read">One pure warning routine with Warning records on the Booking (session 1, built, with the prepayment gate replaced by a warning). A to-do list on the Admin dashboard with Clear, a warning triangle on Bookings in all three apps, the warning visible on opening a Booking, the Day view outline down to the Booking, and no confirm step at submit</div></td><td><span class="tag e">Foundations</span></td><td>2</td><td class="read">14, 15</td><td class="n">5</td></tr>
+      <tr class="done"><td><a href="#phase-15b">15b</a></td><td><b>Copy and photo capture out, and DRAFT becomes ACTIVE</b> <span class="tag done" title="Done 2026-10-09">Done</span><div class="read">Copy a Booking removed from all three apps, the store, the seed and the guide. Photo capture out of the Add a booking chooser, kept at most as a badged Future-scope demo. The List state DRAFT renamed ACTIVE everywhere, with no behaviour change. The superseded Copy and DRAFT rulings recorded</div></td><td><span class="tag e">Foundations</span></td><td>1</td><td class="read">15a</td><td class="n">2</td></tr>
+      <tr class="done"><td><a href="#phase-16">16</a></td><td><b>AA fee as its own monthly invoice</b> <span class="tag done" title="Done 2026-10-09">Done</span><div class="read">The payable is the gross amount. AA fee settings and a monthly run that raises one AA-FEE invoice per anaesthetist (fixed items plus a per-BCTI charge, counted by one pure function), shown in Admin and web Accounts. Xero pairs carry number and reference, and Xero holds no patient names, only the hidden ID</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">15a, 15b</td><td class="n">10</td></tr>
+      <tr class="wip"><td><a href="#phase-17">17</a></td><td><b>Surgeons, rooms, pairing preferences and priority tiers</b> <span class="tag wip">In progress</span><div class="read">Surgeon profile with HPI CPN, surgeons&#39; rooms with contacts, surgeon groups and a hospital contact email. Private two-way pairing preferences (not preferred, preferred) and an admin-only priority tier, never seen by anaesthetists. One shared helper giving the office a soft not-preferred warning, a separate group and tier ordering when it assigns or moves a List</div></td><td><span class="tag f">Master data</span></td><td>2</td><td class="read">14, 15</td><td class="n">9</td></tr>
+      <tr class=""><td><a href="#phase-18">18</a></td><td><b>Contract holders and dated Contracts</b> <div class="read">A contract-holder master (third or first party, holder is billed, billable party, anaesthetist). Contracts as dated versions with a new-version flow, a short AA code, composite search and active and holder filters, office-only editing. One stored No contract (RVG) replacing the per-hospital and per-insurer default Type 1s. Type 1/2/3 gone as categories with every fee unchanged; the ACC review flag gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">17</td><td class="n">12</td></tr>
+      <tr class=""><td><a href="#phase-19">19</a></td><td><b>RVG groups, procedures and the two-tab picker</b> <div class="read">RVG groups under body sections (base and modifier units, starting figure and range) plus AA&#39;s own, and a curated procedure list with a general procedure per group, office-maintained and audited. A two-tab picker (Procedures, RVG codes) on mobile, web and Admin. Any base-unit value accepted, with an after-procedure office warning when out of range</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">15a, 18</td><td class="n">6</td></tr>
+      <tr class=""><td><a href="#phase-19a">19a</a></td><td><b>Contract lines and the starting-units resolver</b> <div class="read">Contract lines (one per procedure: fixed price, fixed rate, fixed discount, base and modifier units, holder code) replacing ContractPrice and the Type 2 terms, with no ordinal key. The anaesthetists&#39; own fixed-price Contracts, kept by the office. The line, procedure, RVG group resolver with each value&#39;s layer, and RVG time tiers held as data</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">18, 19</td><td class="n">7</td></tr>
+      <tr class=""><td><a href="#phase-19b">19b</a></td><td><b>Modifiers: the RVG table, locked age and included modifiers, explanations</b> <div class="read">The modifier master seeded from the NZSA RVG 2021 table plus AA&#39;s own. Modifiers as itemised records on the Procedure, each optional one with a short explanation asked for when it is claimed. Age (A1, A2) and the included P1 on every Neurosurgery and Spine code applied and locked. The ASA card and its seeding, absorbed-modifier refusals and procedure-default pre-fill gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">19a</td><td class="n">9</td></tr>
+      <tr class=""><td><a href="#phase-20">20</a></td><td><b>One Contract per Procedure</b> <div class="read">Billing route, the payment category (everywhere, replaced by an interim office-set prepayment flag) and the Procedure&#39;s insurer removed. Exactly one Contract per Procedure, mandatory at setup, with a &#39;Needs a Contract&#39; list and no hospital default. One picker after the two tabs: No contract (RVG) first, then fitting Contracts under holder headings with composite search, and the RVG-code route to the lines across a group. The anaesthetist may change the procedure or Contract until submit, flagged at review</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">19a, 19b</td><td class="n">12</td></tr>
+      <tr class=""><td><a href="#phase-20a">20a</a></td><td><b>Source wording and the three-part Procedure stack</b> <div class="read">Each Procedure keeps the text as received from every intake path, never overwritten, with an optional &#39;as given&#39; on manual entry. Every booking screen in both apps shows each Procedure as source wording, then procedure and RVG code, then the Contract (name, holder, who is invoiced, pricing basis with figure). Demo wording seeded from AR-35</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">20</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-21">21</a></td><td><b>Payer on the Booking, who is billed, and completeness</b> <div class="read">A payer on every Booking, prefilled from the patient and editable to a guardian; who is billed decided by the Contract&#39;s holder or that payer; the guardian override gone. An insurance indication with a review warning, a child-payer warning, holder references, and completion needing a procedure, a Contract, the references and modifier explanations. Review shows the stack, the payer and the warnings</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">15a, 20a</td><td class="n">14</td></tr>
+      <tr class=""><td><a href="#phase-22">22</a></td><td><b>Invoice presentation, delivery and the split</b> <div class="read">Invoices issued in the anaesthetist&#39;s name with AA as agent. Contract-driven layout, delivery and GST, prices held ex GST; the run sends to email or portal. A Split button on a Procedure&#39;s Contract line with typed $ or % shares replaces funderOverride. Provisional BCTI wording on the ACCPAY, one per receivable invoice</div></td><td><span class="tag a">Billing</span></td><td>1</td><td class="read">21</td><td class="n">8</td></tr>
+      <tr class=""><td><a href="#phase-23">23</a></td><td><b>Primary Procedure, multi-procedure rule and combination Contracts</b> <div class="read">Exactly one primary Procedure, with &#39;Make primary&#39; on every surface and the feed. The RVG default multi-procedure rule for calculated Procedures with the 3/2/2 modifier split, and no per-Contract rules. Combination Contracts with a line under each parent procedure, offered with the singles</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">19b, 22</td><td class="n">7</td></tr>
+      <tr class=""><td><a href="#phase-24">24</a></td><td><b>Price precedence, fixed rate and discount, and the anaesthetist adjustment</b> <div class="read">One price precedence with a recorded price source and engine rejections: office override, the anaesthetist&#39;s typed price on adjustable Contracts only, the line&#39;s fixed price as the whole price, then BTM x the fixed rate or the anaesthetist&#39;s unit value less a locked fixed discount. The anaesthetist adjustment on No contract (RVG) and their own Contracts only; third-party prices read-only. The hourly rate x time line and Method 3 gate gone</div></td><td><span class="tag a">Contracts</span></td><td>2</td><td class="read">23</td><td class="n">13</td></tr>
+      <tr class=""><td><a href="#phase-25">25</a></td><td><b>Contract versions and the AUTHORISED lock</b> <div class="read">A pricing snapshot per Procedure written at authorise (procedure, Contract version, resolved values and layers, BTM, rate and discount, price and source, payer or billable party, payee). The engine prices only from it. Versions listed with their invoices. &#39;Regenerate from locked data&#39; and a re-based billing-failure beat</div></td><td><span class="tag a">Contracts</span></td><td>1</td><td class="read">19a, 22 to 24</td><td class="n">8</td></tr>
+      <tr class=""><td><a href="#phase-26">26</a></td><td><b>Prepaid settings and anaesthetist profile</b> <div class="read">An anaesthetist profile on mobile and web: unit value, GST period, HPI CPN, GST number, bank details and a prepaid tick list of procedures and whole RVG groups with each fixed price from their own Contract. Admin can edit it on the anaesthetist&#39;s behalf</div></td><td><span class="tag d">Prepayment</span></td><td>1</td><td class="read">19a, 20</td><td class="n">7</td></tr>
+      <tr class=""><td><a href="#phase-27">27</a></td><td><b>Prepayment lifecycle</b> <div class="read">Prepayment derived from the prepaid set for a payer who is a person. The amount is the anaesthetist&#39;s own fixed price, in full, shown to them; a missing price warns the office. The invoice generated at setup with its ledger pair and draft Xero pair, and sent on admin approval. A prepaid Procedure priced at the prepaid amount, locked, with nothing left to bill. Part-paid tracking, an escalating warning, and re-checks on a change of Procedures, Contract or payer, never on a move</div></td><td><span class="tag d">Prepayment</span></td><td>2</td><td class="read">15a, 21, 25, 26</td><td class="n">12</td></tr>
+      <tr class=""><td><a href="#phase-28">28</a></td><td><b>Slot and List split</b> <span class="tag nxt">Up next</span><div class="read">A Slot record for every active anaesthetist&#39;s session across a configurable horizon, free by default, holding availability and default times. A List with its own id, created on assignment and shown in place of the status. Status independent of bookings in all three apps and the finders, the admin finder ordered by tier with not-preferred pairings apart. Added anaesthetists on the Admin Day grid. Reassign moves a List between Slots</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">15b, 17</td><td class="n">11</td></tr>
+      <tr class=""><td><a href="#phase-29">29</a></td><td><b>Availability calendar and status master</b> <span class="tag nxt">Up next</span><div class="read">Availability kept from a calendar on mobile and web, with series and single-instance edits. Web parity. Slot statuses become a user-maintained master list with fixed IDs, editable labels and colours, separate from the List&#39;s state</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">28</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-30">30</a></td><td><b>Conflicts, holidays and the conflict dashboard</b> <span class="tag nxt">Up next</span><div class="read">Conflicts raised on every path, with a List colour change and clearing. Holidays can be edited and deleted. A cross-date conflict dashboard. Permanent Lists become recurring bookings, retirable, and repopulating the canvas when edited</div></td><td><span class="tag b">Schedule</span></td><td>1</td><td class="read">29</td><td class="n">6</td></tr>
+      <tr class=""><td><a href="#phase-31">31</a></td><td><b>Draft Lists and the day dashboard</b> <span class="tag nxt">Up next</span><div class="read">The DRAFT state: Draft Lists with hospital, surgeon, day and session required, able to hold Bookings, flagged &#39;unassigned&#39; with waiting time in one date-sorted place, assigned by the office only with the preference and tier helper, becoming ACTIVE, removed or re-dated. A recurring booking on an unavailable session becomes a Draft List. The pairing rule is enforced. The Day dashboard shows Draft Lists and booking counts</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">17, 30</td><td class="n">13</td></tr>
+      <tr class=""><td><a href="#phase-32">32</a></td><td><b>Anaesthetist moves their own List, and the notification pool</b> <span class="tag nxt">Up next</span><div class="read">An anaesthetist returns their own List to the office (it goes back to DRAFT) or moves it into a colleague&#39;s free session, at once, with no preference warning, also when they mark a booked session unavailable. No prepayment re-check. Every move posts to a shared notification pool in the Admin App. The cover-request marker is gone</div></td><td><span class="tag b">Schedule</span></td><td>2</td><td class="read">29, 31</td><td class="n">10</td></tr>
+      <tr class=""><td><a href="#phase-32a">32a</a></td><td><b>Anaesthetist moves a single Booking</b> <div class="read">An anaesthetist moves a single Booking to a colleague found by search, only onto an available session, landing on the colleague&#39;s List (created if needed), with the payable following the anaesthetist who does it, no prepayment re-check and a pool notification</div></td><td><span class="tag b">Schedule</span></td><td>1</td><td class="read">32</td><td class="n">4</td></tr>
+      <tr class=""><td><a href="#phase-33">33</a></td><td><b>Hospital download and the matching screen</b> <div class="read">Imported rows, each showing its procedure text as received, are matched, used to create a Booking, a List or a Draft List, or rejected, with field differences and change types; a later update is matched by date, surgeon, location and session and approved. An unmatched queue. No automated decisions. Created Bookings keep the wording and wait for the office to set their Contract</div></td><td><span class="tag b">Intake</span></td><td>2</td><td class="read">20a, 31</td><td class="n">10</td></tr>
+      <tr class=""><td><a href="#phase-34">34</a></td><td><b>Hospital sync, manual sheets and the S1 rebuild</b> <div class="read">Sync from the two integrated hospitals into the matching queue. Manual-provider sheets with a demo auto-match toggle. The HL7/FHIR tooling and surgeon PDF ingest demoted to Future scope, and S1 rebuilt around sync, match, the source wording and the office&#39;s Contract choice</div></td><td><span class="tag b">Intake</span></td><td>1</td><td class="read">33</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-35">35</a></td><td><b>Explicit save and the update email</b> <div class="read">Admin draft-then-save with change sets and as-at history. An on-demand update email picked from the change history, from per-kind templates, to the rooms or the hospital, including from a List-move notification; manual only. Add a Booking to a booked List with an optional &#39;as given&#39;, and fuller admin editing</div></td><td><span class="tag b">Intake</span></td><td>2</td><td class="read">17, 25, 32, 33</td><td class="n">7</td></tr>
+      <tr class=""><td><a href="#phase-36">36</a></td><td><b>Internal ledger and balance views</b> <div class="read">BillingCase promoted to linked receivable and payable legs as the system of record, one payable leg per receivable. An Admin Ledger screen (whole ledger and per anaesthetist) with an imbalance indicator</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">16, 22, 25, 27</td><td class="n">8</td></tr>
+      <tr class=""><td><a href="#phase-37">37</a></td><td><b>Xero mirror resilience and the processing monitor</b> <div class="read">Disbursement detected from Xero. Bulk hospital remittance left in Xero. An outage queue with backoff. Voids made in Xero are flagged. A processing monitor grouped by anaesthetist with sorting, filtering, a problems-only view and &#39;Open in Review&#39; on Lists awaiting approval</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36</td><td class="n">4</td></tr>
+      <tr class=""><td><a href="#phase-38">38</a></td><td><b>Web accounts, outstanding list and GST schedule</b> <div class="read">A ledger-backed financial position with the Productivity and Leave panels removed. A flat outstanding list with no ageing. A cash-basis GST schedule with a balance check</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36</td><td class="n">9</td></tr>
+      <tr class=""><td><a href="#phase-38a">38a</a></td><td><b>The anaesthetist&#39;s main view, archive and search</b> <div class="read">The main view on mobile, web and the PWA starts at today, with earlier un-invoiced Lists reached by scrolling back and submitted ones marked; invoiced Lists leave it. A calendar archive that jumps to any past day and drills to List, Booking and Procedure, invoiced work included, and a search for Bookings by NHI or patient name</div></td><td><span class="tag e">Capture</span></td><td>2</td><td class="read">28, 38</td><td class="n">6</td></tr>
+      <tr class=""><td><a href="#phase-38b">38b</a></td><td><b>Events on a Procedure and the additional invoice</b> <div class="read">The event element on a Procedure with one standard review step and next-run invoicing, and the events list on every Procedure in all three apps. A free-form additional invoice to any party, raised by the office or by the anaesthetist on their own Procedure, recorded as an event, replaces the addendum Booking</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">36, 38a</td><td class="n">6</td></tr>
+      <tr class=""><td><a href="#phase-39">39</a></td><td><b>Credit notes, credit-and-rebill and the combined split</b> <div class="read">A credit note option to any party, for the office and for the anaesthetist on their own Procedure, credit in full and rebill from a copy of the original&#39;s lines, and a combined Procedure split by credit then per-component invoices that equal the credit, each reversing the ledger, the payable and Xero, with a negative invoice to an anaesthetist already paid. Credits recorded as events; credit notes audited</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">23, 38b</td><td class="n">8</td></tr>
+      <tr class=""><td><a href="#phase-39a">39a</a></td><td><b>Payment runs: the weekly cycle, BCTI approval, netting and remittance</b> <div class="read">A weekly ISO-week payment cycle (Friday close, Monday checks, Tuesday schedule, anomalies rolled forward) with an approve-for-payment step for the period&#39;s BCTIs, negative invoices netted per anaesthetist, and a remittance advice in Admin and web Accounts</div></td><td><span class="tag c">Money</span></td><td>2</td><td class="read">37, 39</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-39b">39b</a></td><td><b>Pre-op and post-op events</b> <div class="read">Pre-op and post-op events on a Procedure from mobile, web and Admin (date, time or fixed fee, invoice tick, billable party), as new kinds on 38b&#39;s element: on the Procedure&#39;s invoice before approval or invoiced in the next run after it, through one review step, shown in the Procedure&#39;s events list. The ACC pre-op assessment as a fixed-fee pre-op event. Billing lines with their own date and preset types</div></td><td><span class="tag e">Capture</span></td><td>2</td><td class="read">24, 38a, 38b</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-40">40</a></td><td><b>Patients: missing NHI, balance warning, patient view</b> <div class="read">A patient record with invoices, follow-up actions and re-send. A missing-NHI problem list with attach and merge, and an authorise guard. A mild or strong warning at booking when the patient paying owes money, a mild one for a credit balance, and one admin-editable threshold</div></td><td><span class="tag d">Patients</span></td><td>2</td><td class="read">15a, 34, 36, 39</td><td class="n">9</td></tr>
+      <tr class=""><td><a href="#phase-40a">40a</a></td><td><b>NHI lookup and identity standards</b> <div class="read">NHI lookup with validation at entry, Hub states with a manual fallback, a purpose statement and refresh from the register, on the 2026-10-08 add-booking forms (ACTIVE Lists, the two-tab picker, the payer on the Booking). HPI CPN shown consistently</div></td><td><span class="tag d">Patients</span></td><td>1</td><td class="read">26, 40</td><td class="n">2</td></tr>
+      <tr class=""><td><a href="#phase-41">41</a></td><td><b>Prepayment letters, settlement by hand, trust account and refunds</b> <div class="read">Prepayment letters stating the prepaid amount as the price, and reminders. Settlement with nothing automatic: by-hand additional invoices and credit notes on a prepaid Procedure, with a part credit of a prepayment allowed. A provisional trust account holding prepayments until the procedure, refund on cancellation, only the payable&#39;s payee repointed when a prepaid Booking moves, and a fresh prepayment at the new anaesthetist&#39;s own price on rebooking</div></td><td><span class="tag d">Prepayment</span></td><td>2</td><td class="read">27, 32a, 39, 39a</td><td class="n">9</td></tr>
+      <tr class=""><td><a href="#phase-42">42</a></td><td><b>Reference data and controlled loads</b> <div class="read">Every master editable, including hospitals, insurers, recurring bookings and public holidays. A spreadsheet loader with row validation for RVG groups and procedures, contract holders, Contracts and lines, modifiers and calendars, with no Contract schedule upload. A clean-cut go-live demo</div></td><td><span class="tag f">Master data</span></td><td>2</td><td class="read">17 to 19b, 29, 30</td><td class="n">5</td></tr>
+      <tr class=""><td><a href="#phase-43">43</a></td><td><b>Scale and privacy</b> <div class="read">A full-scale in-memory dataset with timings, generated in the 2026-10-08 shapes (recurring bookings, holder-fit Contracts or No contract (RVG), a payer on every Booking), a restricted raw-row view, an NHI leak scan and a synthetic-data badge</div></td><td><span class="tag f">NFR</span></td><td>2</td><td class="read">34, 36, 37, 42</td><td class="n">2</td></tr>
+      <tr class=""><td><a href="#phase-43a">43a</a></td><td><b>Sign-in and ease of use: simple anaesthetist screens and point-of-need help</b> <div class="read">A simulated PWA sign-in with sign-out. Anaesthetist screens free of office-only Contract complexity while keeping the three-part stack and the price fields the catalogue gives them, and point-of-need help on the three operational screens with a first-run hint per app</div></td><td><span class="tag f">NFR</span></td><td>1</td><td class="read">20a, 21, 24, 31, 39b</td><td class="n">2</td></tr>
+      <tr class=""><td><a href="#phase-44">44</a></td><td><b>Demo guide rewrite and final sweep</b> <div class="read">S1 to S5 rewritten, Control Panel jumps rebuilt, stale copy and superseded vocabulary swept, master guide regenerated, trigger and PWA-parity audit, one owner review list, PROGRESS entry written</div></td><td><span class="tag e">Demo</span></td><td>2</td><td class="read">14 to 43a</td><td class="n">1</td></tr>
     </tbody>
   </table>
   </div>
@@ -452,12 +486,13 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
   <div class="rule"></div>
   <div class="legend"><span><i class="v-con"></i>Contradicts</span><span><i class="v-par"></i>Partial</span><span><i class="v-mis"></i>Missing</span><span><i class="v-mat"></i>Matches</span><span><i class="v-grp"></i>Grouping</span><span><i class="v-dm"></i>Data model (DM)</span><span><i class="v-rv"></i>Reverse check (RV)</span></div>
 
-<article class="phase setup" id="phase-14">
+<article class="phase setup is-done" id="phase-14">
   <div class="phase-head">
     <span class="pnum">14</span>
     <div class="phase-title">
       <h3>Screen-contextual demo triggers</h3>
       <div class="badges">
+        <span class="badge done">Done 2026-10-02</span>
         <span class="badge trk">Foundations</span>
         <span class="badge dep">Start here</span>
         <span class="badge est">2 sessions</span>
@@ -483,7 +518,7 @@ ol.themes li p { margin:6px 0; font-size:14.5px; color:var(--ink-2); }
       <li>&#39;Simulate sign-in attempts&#39; adds five labelled audit rows through mutate() only: provisioning, Admin sign-in with MFA, failed sign-in, self-service reset and mobile social login. Future-scope badges show on the simulator and on the Messages and Feed config tabs. The S1 caveat is in place. build, build:pwa, vitest, shots and verify:board are all green, and the 4 specs, 18 recipes and ATLAS are updated.</li>
     </ul>
   </details>
-  <div class="prompt-wrap">
+  <details class="ran"><summary>Kick-off prompt (already run)</summary><div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-14">Copy</button>
@@ -525,15 +560,16 @@ When done:
 - Give me short, clear notes: what moved where, what is new, anything deferred and why.
 
 Phase goal: every demo action on the screen it belongs to, in the harness bar and on a handset, with the Control Panel as the index, the office stand-in replacing auto-authorise, and HL7/FHIR honestly badged Future scope.</pre>
-  </div>
+  </div></details>
 </article>
 
-<article class="phase setup" id="phase-15">
+<article class="phase setup is-done" id="phase-15">
   <div class="phase-head">
     <span class="pnum">15</span>
     <div class="phase-title">
       <h3>Card becomes Booking</h3>
       <div class="badges">
+        <span class="badge done">Done 2026-10-02</span>
         <span class="badge trk">Foundations</span>
         <span class="badge dep">Start here</span>
         <span class="badge est">2 sessions</span>
@@ -563,7 +599,7 @@ Phase goal: every demo action on the screen it belongs to, in the harness bar an
       <li>Prompt suits a fresh agent: reading order, drift check against 501b0b8, plan-mode stop, binding rules, closing report</li>
     </ul>
   </details>
-  <div class="prompt-wrap">
+  <details class="ran"><summary>Kick-off prompt (already run)</summary><div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-15">Copy</button>
@@ -651,15 +687,16 @@ When done:
 - Give me short, clear notes, ending with the &quot;For the owner&#39;s review&quot; list (also in the PROGRESS entry).
 
 Phase goal: Booking replaces Card across the whole prototype. Attachments sit on a Booking or a whole List, a Booking can show an optional source, and Copy makes a skeleton-only new Booking with its own primary Procedure.</pre>
-  </div>
+  </div></details>
 </article>
 
-<article class="phase setup" id="phase-15a">
+<article class="phase setup is-done" id="phase-15a">
   <div class="phase-head">
     <span class="pnum">15a</span>
     <div class="phase-title">
       <h3>Warnings and the to-do list</h3>
       <div class="badges">
+        <span class="badge done">Done 2026-10-09</span>
         <span class="badge trk">Foundations</span>
         <span class="badge dep">After phases 14, 15</span>
         <span class="badge est">2 sessions</span>
@@ -689,7 +726,7 @@ Phase goal: Booking replaces Card across the whole prototype. Attachments sit on
       <li>(8) Pass. The frontend-design bullet is in &#39;While working:&#39;.</li>
     </ul>
   </details>
-  <div class="prompt-wrap">
+  <details class="ran"><summary>Kick-off prompt (already run)</summary><div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-15a">Copy</button>
@@ -739,17 +776,18 @@ When done:
 - Give me short, clear notes on what changed, anything deferred and why, ending with the &quot;For the owner&#39;s review&quot; list (also in the PROGRESS entry).
 
 Phase goal: one pure warning routine with Warning records on the Booking that never block (built in session 1, with the prepayment gate replaced by a warning), a to-do list on the Admin dashboard with Clear, a small warning triangle on Bookings in all three apps, the warning visible on opening a Booking, the Day view outline down to the Booking, and no confirm step at submit.</pre>
-  </div>
+  </div></details>
 </article>
 
-<article class="phase setup" id="phase-15b">
+<article class="phase setup is-done" id="phase-15b">
   <div class="phase-head">
     <span class="pnum">15b</span>
     <div class="phase-title">
       <h3>Copy and photo capture out, and DRAFT becomes ACTIVE</h3>
       <div class="badges">
+        <span class="badge done">Done 2026-10-09</span>
         <span class="badge trk">Foundations</span>
-        <span class="badge dep">After phase NaN</span>
+        <span class="badge dep">After phase 15a</span>
         <span class="badge est">1 session</span>
         <a class="badge doc" href="phases/phase-15b-copy-and-photo-removal.md">plan doc &nearr;</a>
         <span class="badge dep">2 items covered</span>
@@ -777,7 +815,7 @@ Phase goal: one pure warning routine with Warning records on the Booking that ne
       <li>(8) frontend-design bullet present in prompt &#39;While working:&#39;.</li>
     </ul>
   </details>
-  <div class="prompt-wrap">
+  <details class="ran"><summary>Kick-off prompt (already run)</summary><div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-15b">Copy</button>
@@ -820,17 +858,18 @@ When done:
 - Give me short, clear notes on what changed, anything deferred and why, ending with the &quot;For the owner&#39;s review&quot; list (also in the PROGRESS entry).
 
 Phase goal: Copy a Booking removed from all three apps, the store, the seed and the guide, with Add another procedure the only way to add a Procedure for the same patient; photo capture out of the Add a booking sheet, which opens straight on the manual form, kept at most as a badged Future-scope demo; the List state DRAFT renamed ACTIVE everywhere, with no behaviour change; the superseded Copy and DRAFT rulings recorded.</pre>
-  </div>
+  </div></details>
 </article>
 
-<article class="phase trackC" id="phase-16">
+<article class="phase trackC is-done" id="phase-16">
   <div class="phase-head">
     <span class="pnum">16</span>
     <div class="phase-title">
       <h3>AA fee as its own monthly invoice</h3>
       <div class="badges">
+        <span class="badge done">Done 2026-10-09</span>
         <span class="badge trk">Money</span>
-        <span class="badge dep">After phases NaN</span>
+        <span class="badge dep">After phases 15a, 15b</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-16-aa-fee-invoice.md">plan doc &nearr;</a>
         <span class="badge dep">10 items covered</span>
@@ -858,7 +897,7 @@ Phase goal: Copy a Booking removed from all three apps, the store, the seed and 
       <li>(8) The frontend-design bullet is in the prompt&#39;s While working section.</li>
     </ul>
   </details>
-  <div class="prompt-wrap">
+  <details class="ran"><summary>Kick-off prompt (already run)</summary><div class="prompt-wrap">
     <div class="prompt-bar">
       <span>Kick-off prompt - paste into a fresh Claude Code session</span>
       <button class="copy" data-target="prompt-16">Copy</button>
@@ -906,15 +945,16 @@ When done:
 - Do not commit. Give me short, clear notes on what changed, ending with the &quot;For the owner&#39;s review&quot; list (also in the PROGRESS entry).
 
 Phase goal: the payable is the gross amount and a part payment releases exactly what was received; AA&#39;s fee is a monthly AA-FEE invoice to each anaesthetist built from Admin fee settings (fixed items plus a per-BCTI charge for BCTIs paid that month, counted by one pure function, held ex GST with GST at the foot), always separate and never netted, visible paid or unpaid in Admin and web Accounts; Xero records carry InvoiceNumber and Reference, and Xero holds no personal information: patient and individual-payer contacts carry only the hidden ID.</pre>
-  </div>
+  </div></details>
 </article>
 
-<article class="phase trackE" id="phase-17">
+<article class="phase trackE is-wip" id="phase-17">
   <div class="phase-head">
     <span class="pnum">17</span>
     <div class="phase-title">
       <h3>Surgeons, rooms, pairing preferences and priority tiers</h3>
       <div class="badges">
+        <span class="badge wip">In progress</span>
         <span class="badge trk">Master data</span>
         <span class="badge dep">After phases 14, 15</span>
         <span class="badge est">2 sessions</span>
@@ -1022,6 +1062,7 @@ Phase goal: surgeons become real master data, keyed on one HPI CPN, with a profi
     <div class="phase-title">
       <h3>Contract holders and dated Contracts</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
         <span class="badge dep">After phase 17</span>
         <span class="badge est">2 sessions</span>
@@ -1112,8 +1153,9 @@ Phase goal: a contract-holder master (third or first party, holder is billed, bi
     <div class="phase-title">
       <h3>RVG groups, procedures and the two-tab picker</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phases NaN, 18</span>
+        <span class="badge dep">After phases 15a, 18</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-19-rvg-and-procedure-masters.md">plan doc &nearr;</a>
         <span class="badge dep">6 items covered</span>
@@ -1214,6 +1256,7 @@ Phase goal: replace the flat RVG code table and the free-text procedure with the
     <div class="phase-title">
       <h3>Contract lines and the starting-units resolver</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
         <span class="badge dep">After phases 18, 19</span>
         <span class="badge est">2 sessions</span>
@@ -1318,8 +1361,9 @@ Phase goal: Contract terms live on Contract lines, one per procedure, carrying o
     <div class="phase-title">
       <h3>Modifiers: the RVG table, locked age and included modifiers, explanations</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phase NaN</span>
+        <span class="badge dep">After phase 19a</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-19b-modifiers.md">plan doc &nearr;</a>
         <span class="badge dep">9 items covered</span>
@@ -1412,8 +1456,9 @@ Phase goal: rebuild modifiers to the catalogue. The modifier master is the NZSA 
     <div class="phase-title">
       <h3>One Contract per Procedure</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phases NaN</span>
+        <span class="badge dep">After phases 19a, 19b</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-20-one-contract-per-procedure.md">plan doc &nearr;</a>
         <span class="badge dep">12 items covered</span>
@@ -1491,6 +1536,7 @@ Phase goal: pricing becomes one decision. The billing route, the payment categor
     <div class="phase-title">
       <h3>Source wording and the three-part Procedure stack</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
         <span class="badge dep">After phase 20</span>
         <span class="badge est">2 sessions</span>
@@ -1582,8 +1628,9 @@ Phase goal: each Procedure keeps the procedure text exactly as received from eve
     <div class="phase-title">
       <h3>Payer on the Booking, who is billed, and completeness</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phases NaN</span>
+        <span class="badge dep">After phases 15a, 20a</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-21-billable-party-and-required-inputs.md">plan doc &nearr;</a>
         <span class="badge dep">14 items covered</span>
@@ -1679,6 +1726,7 @@ Phase goal: each Procedure&#39;s Contract decides who is billed (its holder when
     <div class="phase-title">
       <h3>Invoice presentation, delivery and the split</h3>
       <div class="badges">
+        
         <span class="badge trk">Billing</span>
         <span class="badge dep">After phase 21</span>
         <span class="badge est">1 session</span>
@@ -1768,8 +1816,9 @@ Phase goal: every invoice is issued in the anaesthetist&#39;s name with AA as ag
     <div class="phase-title">
       <h3>Primary Procedure, multi-procedure rule and combination Contracts</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phases NaN, 22</span>
+        <span class="badge dep">After phases 19b, 22</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-23-primary-procedure-and-multi-procedure-rule.md">plan doc &nearr;</a>
         <span class="badge dep">7 items covered</span>
@@ -1879,6 +1928,7 @@ Phase goal: every Booking has exactly one primary Procedure, listed first, that 
     <div class="phase-title">
       <h3>Price precedence, fixed rate and discount, and the anaesthetist adjustment</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
         <span class="badge dep">After phase 23</span>
         <span class="badge est">2 sessions</span>
@@ -1981,8 +2031,9 @@ Phase goal: every Procedure is priced by one precedence in one place, with its p
     <div class="phase-title">
       <h3>Contract versions and the AUTHORISED lock</h3>
       <div class="badges">
+        
         <span class="badge trk">Contracts</span>
-        <span class="badge dep">After phases NaN, 22 to 24</span>
+        <span class="badge dep">After phases 19a, 22 to 24</span>
         <span class="badge est">1 session</span>
         <a class="badge doc" href="phases/phase-25-contract-lock-at-authorised.md">plan doc &nearr;</a>
         <span class="badge dep">8 items covered</span>
@@ -2092,8 +2143,9 @@ Phase goal: at authorise, every Procedure gets a pricing snapshot (AR-29&#39;s l
     <div class="phase-title">
       <h3>Prepaid settings and anaesthetist profile</h3>
       <div class="badges">
+        
         <span class="badge trk">Prepayment</span>
-        <span class="badge dep">After phases NaN, 20</span>
+        <span class="badge dep">After phases 19a, 20</span>
         <span class="badge est">1 session</span>
         <a class="badge doc" href="phases/phase-26-prepaid-settings-and-profile.md">plan doc &nearr;</a>
         <span class="badge dep">7 items covered</span>
@@ -2201,8 +2253,9 @@ Phase goal: give each anaesthetist a profile they own on mobile and web (rate pe
     <div class="phase-title">
       <h3>Prepayment lifecycle</h3>
       <div class="badges">
+        
         <span class="badge trk">Prepayment</span>
-        <span class="badge dep">After phases NaN, 21, 25, 26</span>
+        <span class="badge dep">After phases 15a, 21, 25, 26</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-27-prepayment-lifecycle.md">plan doc &nearr;</a>
         <span class="badge dep">12 items covered</span>
@@ -2280,8 +2333,9 @@ Phase goal: prepayment is derived by the engine from the anaesthetist&#39;s prep
     <div class="phase-title">
       <h3>Slot and List split</h3>
       <div class="badges">
+        <span class="badge nxt">Up next</span>
         <span class="badge trk">Schedule</span>
-        <span class="badge dep">After phases NaN, 17</span>
+        <span class="badge dep">After phases 15b, 17</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-28-slot-list-split.md">plan doc &nearr;</a>
         <span class="badge dep">11 items covered</span>
@@ -2395,6 +2449,7 @@ Phase goal: the canvas becomes Slots and Lists. Every active anaesthetist has an
     <div class="phase-title">
       <h3>Availability calendar and status master</h3>
       <div class="badges">
+        <span class="badge nxt">Up next</span>
         <span class="badge trk">Schedule</span>
         <span class="badge dep">After phase 28</span>
         <span class="badge est">2 sessions</span>
@@ -2510,6 +2565,7 @@ Phase goal: anaesthetists keep their sessions&#39; availability from a calendar 
     <div class="phase-title">
       <h3>Conflicts, holidays and the conflict dashboard</h3>
       <div class="badges">
+        <span class="badge nxt">Up next</span>
         <span class="badge trk">Schedule</span>
         <span class="badge dep">After phase 29</span>
         <span class="badge est">1 session</span>
@@ -2622,6 +2678,7 @@ Phase goal: every path that puts a List or a Booking on a closed hospital day or
     <div class="phase-title">
       <h3>Draft Lists and the day dashboard</h3>
       <div class="badges">
+        <span class="badge nxt">Up next</span>
         <span class="badge trk">Schedule</span>
         <span class="badge dep">After phases 17, 30</span>
         <span class="badge est">2 sessions</span>
@@ -2813,6 +2870,7 @@ Phase goal: a List with no anaesthetist is a Draft List, the first state (DRAFT)
     <div class="phase-title">
       <h3>Anaesthetist moves their own List, and the notification pool</h3>
       <div class="badges">
+        <span class="badge nxt">Up next</span>
         <span class="badge trk">Schedule</span>
         <span class="badge dep">After phases 29, 31</span>
         <span class="badge est">2 sessions</span>
@@ -2978,6 +3036,7 @@ Phase goal: an anaesthetist moves one of her own ACTIVE Lists, at once and with 
     <div class="phase-title">
       <h3>Anaesthetist moves a single Booking</h3>
       <div class="badges">
+        
         <span class="badge trk">Schedule</span>
         <span class="badge dep">After phase 32</span>
         <span class="badge est">1 session</span>
@@ -3082,8 +3141,9 @@ Phase goal: an anaesthetist moves one Booking as well as a whole List. From the 
     <div class="phase-title">
       <h3>Hospital download and the matching screen</h3>
       <div class="badges">
+        
         <span class="badge trk">Intake</span>
-        <span class="badge dep">After phases NaN, 31</span>
+        <span class="badge dep">After phases 20a, 31</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-33-hospital-matching-screen.md">plan doc &nearr;</a>
         <span class="badge dep">10 items covered</span>
@@ -3191,6 +3251,7 @@ Phase goal: imported hospital bookings and feed messages land as rows on an Admi
     <div class="phase-title">
       <h3>Hospital sync, manual sheets and the S1 rebuild</h3>
       <div class="badges">
+        
         <span class="badge trk">Intake</span>
         <span class="badge dep">After phase 33</span>
         <span class="badge est">1 session</span>
@@ -3292,6 +3353,7 @@ Phase goal: rows from St George&#39;s and Southern Cross, and only they, arrive 
     <div class="phase-title">
       <h3>Explicit save and the update email</h3>
       <div class="badges">
+        
         <span class="badge trk">Intake</span>
         <span class="badge dep">After phases 17, 25, 32, 33</span>
         <span class="badge est">2 sessions</span>
@@ -3402,6 +3464,7 @@ Phase goal: Admin Booking editing becomes draft-then-save, with one change set p
     <div class="phase-title">
       <h3>Internal ledger and balance views</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
         <span class="badge dep">After phases 16, 22, 25, 27</span>
         <span class="badge est">2 sessions</span>
@@ -3500,6 +3563,7 @@ Phase goal: BillingCase becomes a ledger pair with linked receivable and payable
     <div class="phase-title">
       <h3>Xero mirror resilience and the processing monitor</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
         <span class="badge dep">After phase 36</span>
         <span class="badge est">2 sessions</span>
@@ -3584,6 +3648,7 @@ Phase goal: the engine detects disbursements from Xero instead of performing the
     <div class="phase-title">
       <h3>Web accounts, outstanding list and GST schedule</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
         <span class="badge dep">After phase 36</span>
         <span class="badge est">2 sessions</span>
@@ -3684,6 +3749,7 @@ Phase goal: the web dashboard shows the anaesthetist&#39;s real financial positi
     <div class="phase-title">
       <h3>The anaesthetist&#39;s main view, archive and search</h3>
       <div class="badges">
+        
         <span class="badge trk">Capture</span>
         <span class="badge dep">After phases 28, 38</span>
         <span class="badge est">2 sessions</span>
@@ -3771,8 +3837,9 @@ Phase goal: the anaesthetist&#39;s main view on mobile, web and the PWA starts a
     <div class="phase-title">
       <h3>Events on a Procedure and the additional invoice</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
-        <span class="badge dep">After phases 36, NaN</span>
+        <span class="badge dep">After phases 36, 38a</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-38b-events-and-additional-invoices.md">plan doc &nearr;</a>
         <span class="badge dep">6 items covered</span>
@@ -3869,8 +3936,9 @@ Phase goal: &quot;event&quot; becomes the one element for everything recorded ag
     <div class="phase-title">
       <h3>Credit notes, credit-and-rebill and the combined split</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
-        <span class="badge dep">After phases 23, NaN</span>
+        <span class="badge dep">After phases 23, 38b</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-39-additional-invoices-and-credit.md">plan doc &nearr;</a>
         <span class="badge dep">8 items covered</span>
@@ -3978,6 +4046,7 @@ Phase goal: the office, and the anaesthetist on their own Procedure, can credit 
     <div class="phase-title">
       <h3>Payment runs: the weekly cycle, BCTI approval, netting and remittance</h3>
       <div class="badges">
+        
         <span class="badge trk">Money</span>
         <span class="badge dep">After phases 37, 39</span>
         <span class="badge est">2 sessions</span>
@@ -4068,8 +4137,9 @@ Phase goal: payments to anaesthetists run on a weekly cycle named by its ISO wee
     <div class="phase-title">
       <h3>Pre-op and post-op events</h3>
       <div class="badges">
+        
         <span class="badge trk">Capture</span>
-        <span class="badge dep">After phases 24, NaN</span>
+        <span class="badge dep">After phases 24, 38a, 38b</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-39b-pre-and-post-op-events.md">plan doc &nearr;</a>
         <span class="badge dep">5 items covered</span>
@@ -4160,8 +4230,9 @@ Phase goal: the anaesthetist, or the office on request, adds pre-op and post-op 
     <div class="phase-title">
       <h3>Patients: missing NHI, balance warning, patient view</h3>
       <div class="badges">
+        
         <span class="badge trk">Patients</span>
-        <span class="badge dep">After phases NaN, 34, 36, 39</span>
+        <span class="badge dep">After phases 15a, 34, 36, 39</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-40-patients-and-alerts.md">plan doc &nearr;</a>
         <span class="badge dep">9 items covered</span>
@@ -4270,6 +4341,7 @@ Phase goal: Admin gets a patient record, found by search, keyed on the system&#3
     <div class="phase-title">
       <h3>NHI lookup and identity standards</h3>
       <div class="badges">
+        
         <span class="badge trk">Patients</span>
         <span class="badge dep">After phases 26, 40</span>
         <span class="badge est">1 session</span>
@@ -4369,8 +4441,9 @@ Phase goal: on every add-booking flow (mobile, web and Admin phone advice, on th
     <div class="phase-title">
       <h3>Prepayment letters, settlement by hand, trust account and refunds</h3>
       <div class="badges">
+        
         <span class="badge trk">Prepayment</span>
-        <span class="badge dep">After phases 27, NaN, 39</span>
+        <span class="badge dep">After phases 27, 32a, 39, 39a</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-41-prepayment-followup-credits-refunds.md">plan doc &nearr;</a>
         <span class="badge dep">9 items covered</span>
@@ -4448,8 +4521,9 @@ Phase goal: the prepayment story is finished: standard letters that state the pr
     <div class="phase-title">
       <h3>Reference data and controlled loads</h3>
       <div class="badges">
+        
         <span class="badge trk">Master data</span>
-        <span class="badge dep">After phases 17 to 19, NaN, 29, 30</span>
+        <span class="badge dep">After phases 17 to 19b, 29, 30</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-42-reference-data-and-loads.md">plan doc &nearr;</a>
         <span class="badge dep">5 items covered</span>
@@ -4562,6 +4636,7 @@ Phase goal: every master is maintained by hand in Admin Master data in one consi
     <div class="phase-title">
       <h3>Scale and privacy</h3>
       <div class="badges">
+        
         <span class="badge trk">NFR</span>
         <span class="badge dep">After phases 34, 36, 37, 42</span>
         <span class="badge est">2 sessions</span>
@@ -4649,8 +4724,9 @@ Phase goal: a presenter can load the whole practice (85 anaesthetists, about 20,
     <div class="phase-title">
       <h3>Sign-in and ease of use: simple anaesthetist screens and point-of-need help</h3>
       <div class="badges">
+        
         <span class="badge trk">NFR</span>
-        <span class="badge dep">After phases NaN, 21, 24, 31</span>
+        <span class="badge dep">After phases 20a, 21, 24, 31, 39b</span>
         <span class="badge est">1 session</span>
         <a class="badge doc" href="phases/phase-43a-ease-of-use.md">plan doc &nearr;</a>
         <span class="badge dep">2 items covered</span>
@@ -4736,8 +4812,9 @@ Phase goal: an anaesthetist signs in to the PWA with their account (simulated, p
     <div class="phase-title">
       <h3>Demo guide rewrite and final sweep</h3>
       <div class="badges">
+        
         <span class="badge trk">Demo</span>
-        <span class="badge dep">After phases 14, 15, NaN, 16 to 43</span>
+        <span class="badge dep">After phases 14 to 43a</span>
         <span class="badge est">2 sessions</span>
         <a class="badge doc" href="phases/phase-44-demo-guide-rewrite.md">plan doc &nearr;</a>
         <span class="badge dep">1 item covered</span>

@@ -15,6 +15,7 @@
 
 import type { Booking, CoverRequest, List, ListPhoneNote, ListStatusKey, Procedure, Session } from '../domain/types'
 import { validateBookingForBilling } from '../domain/billing/validateBookingForBilling'
+import { pairingAcknowledgement } from '../domain/pairingPreferences'
 import {
   allocateId,
   clockISO,
@@ -496,9 +497,7 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
   const rights = editRefusal(actor, list)
   if (rights !== null) return rights
 
-  mutate(
-    api,
-    actor,
+  const metas: MutationMeta[] = [
     {
       entityType: 'list',
       entityId: listId,
@@ -507,6 +506,23 @@ export function editList(api: AppStoreApi, actor: Actor, listId: string, patch: 
       after: patch,
       stampBookingId: null,
     },
+  ]
+  // Catch-up Phase 17 (US-01.3.5): an office surgeon change onto a
+  // not-preferred pairing is never refused; going ahead records the
+  // acknowledgement in the same commit. Only the office: an anaesthetist's
+  // own edit never reads, checks or logs preferences (US-01.4.5, OQ-43).
+  const surgeonChanged = 'surgeonId' in patch && (patch.surgeonId ?? '') !== '' && patch.surgeonId !== list.surgeonId
+  if (actor.role === 'office' && surgeonChanged) {
+    const ack = pairingAcknowledgement(state.officePrivate.pairingPreferences, list.anaesthetistId, patch.surgeonId)
+    if (ack !== null) {
+      metas.push({ entityType: 'list', entityId: listId, action: 'list.pairingAcknowledged', after: ack, stampBookingId: null })
+    }
+  }
+
+  mutate(
+    api,
+    actor,
+    metas,
     (s) => {
       const next: List = { ...list }
       const setOrDelete = <K extends 'hospitalId' | 'surgeonId' | 'startTime' | 'endTime' | 'notes'>(
@@ -598,6 +614,12 @@ export function reassignList(
       before: { statusKey: target.statusKey },
     },
   ]
+  // Catch-up Phase 17 (US-01.3.5, the office's move): a not-preferred target
+  // is warned in the picker and never refused; going ahead records it.
+  const ack = pairingAcknowledgement(state.officePrivate.pairingPreferences, toAnaesthetistId, source.surgeonId)
+  if (ack !== null) {
+    metas.push({ entityType: 'list', entityId: source.id, action: 'list.pairingAcknowledged', after: ack })
+  }
 
   let regeneratedListId = ''
   mutate(api, actor, metas, (s) => {
