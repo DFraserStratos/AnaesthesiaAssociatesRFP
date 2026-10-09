@@ -13,7 +13,7 @@
  */
 
 import { parseISO } from 'date-fns'
-import type { HospitalHoliday, List, ListKind, PermanentList, SeedLeaveWindow, Session, Slot, SlotStatus, SurgeonId } from '../types'
+import type { HospitalHoliday, List, ListKind, PermanentList, SeedLeaveWindow, Session, Slot, SlotStatusKey, SurgeonId } from '../types'
 import { enumerateDatesISO } from '../clock'
 import { projectedListId, slotIdFor } from '../slots'
 import { closedHospitalConflict } from './canvas'
@@ -28,7 +28,7 @@ export const RECORDED_WINDOW = { fromISO: '2026-07-07', toISO: '2026-08-16' } as
 // ---------------------------------------------------------------------------
 
 export interface SlotPatch {
-  status?: SlotStatus
+  status?: SlotStatusKey
   note?: string | null
   startTime?: string | null
   endTime?: string | null

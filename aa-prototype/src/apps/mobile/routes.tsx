@@ -7,6 +7,7 @@ import { useDemoTriggerMemory } from '../../shared/demoTriggers/memory'
 import { SlideStack, type SlideLayer } from './components'
 import {
   AvailabilityScreen,
+  MyAvailabilityCalendarScreen,
   BalancesScreen,
   BookingDetailScreen,
   ForwardListsScreen,
@@ -14,7 +15,10 @@ import {
   MoreScreen,
 } from './screens'
 import { LegacyBookingRedirect, legacyBookingPath } from '../../shared/legacy'
-import { listsStackLocation } from './navigation'
+import { availabilityStackLocation, listsStackLocation } from './navigation'
+import { useAnaesthetistStatusChoices, useSurface } from '../../shared'
+import { AvailabilityEditor } from '../../shared/availability'
+import { SEED_STATUS } from '../../domain/slotStatus'
 import { useMobileOutlet } from './outlet'
 
 /**
@@ -188,9 +192,83 @@ export function MobileListsRoute() {
 // The other three tabs
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Availability — `/mobile/availability/*` (catch-up Phase 29): Find cover, then
+// My calendar slid in at `/mobile/availability/calendar`; a day's sessions and
+// the form in one bottom sheet.
+// ---------------------------------------------------------------------------
+
+interface AvailabilitySheet {
+  fromISO: string
+  /** "Add days off": open on the form, preset. */
+  addDaysOff?: boolean
+}
+
 export function MobileAvailabilityRoute() {
   const { actor, anaesthetistId, initials } = useMobileOutlet()
-  return <AvailabilityScreen actor={actor} anaesthetistId={anaesthetistId} initials={initials} />
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const { depth } = availabilityStackLocation(pathname)
+  const [sheet, setSheet] = useState<AvailabilitySheet | null>(null)
+  const { Overlay } = useSurface()
+  // "Add days off" opens on On holiday (its fixed ID) while it is offered, else the first closed choice.
+  const choices = useAnaesthetistStatusChoices()
+  const presetStatus = (choices.find((s) => s.key === SEED_STATUS.holiday) ?? choices.find((s) => !s.bookable))?.key
+  // Seen once, the calendar stays mounted so it can slide out when popped.
+  const seenCalendar = useRef(false)
+  if (depth === 1) seenCalendar.current = true
+
+  const backToFindCover = () => navigate('/mobile/availability', { replace: true })
+
+  const layers: SlideLayer[] = [
+    {
+      key: 'availability',
+      mounted: true,
+      node: (
+        <AvailabilityScreen
+          actor={actor}
+          anaesthetistId={anaesthetistId}
+          initials={initials}
+          onChangeDay={(dateISO) => setSheet({ fromISO: dateISO })}
+          onOpenCalendar={() => navigate('/mobile/availability/calendar')}
+        />
+      ),
+    },
+    {
+      key: 'calendar',
+      mounted: seenCalendar.current,
+      node: (
+        <MyAvailabilityCalendarScreen
+          actor={actor}
+          anaesthetistId={anaesthetistId}
+          onBack={backToFindCover}
+          onOpenDay={(dateISO) => setSheet({ fromISO: dateISO })}
+          onAddDaysOff={(fromISO) => setSheet({ fromISO, addDaysOff: true })}
+        />
+      ),
+    },
+  ]
+
+  return (
+    <>
+      <SlideStack layers={layers} depth={depth} onPop={depth === 1 ? backToFindCover : undefined} />
+      <Overlay open={sheet !== null} onClose={() => setSheet(null)}>
+        {sheet !== null && (
+          <AvailabilityEditor
+            key={`${sheet.fromISO}-${sheet.addDaysOff === true ? 'add' : 'day'}`}
+            actor={actor}
+            anaesthetistId={anaesthetistId}
+            fromISO={sheet.fromISO}
+            {...(sheet.addDaysOff === true
+              ? { formPreset: { sessions: 'both' as const, span: 'week' as const, ...(presetStatus !== undefined ? { statusKey: presetStatus } : {}) } }
+              : {})}
+            shot="mobile-availability-sheet"
+            onDone={() => setSheet(null)}
+          />
+        )}
+      </Overlay>
+    </>
+  )
 }
 
 export function MobileBalancesRoute() {

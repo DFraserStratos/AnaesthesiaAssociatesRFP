@@ -10,7 +10,7 @@
  * UI says session, AM or PM, and never "slot" (OQ-64).
  */
 
-import type { DisplayStatusKey, List, ScheduleSettings, Session, Slot } from './types'
+import type { DisplayKey, List, ScheduleSettings, Session, Slot } from './types'
 import { DEFAULT_HORIZON_MONTHS } from './clock'
 
 /**
@@ -48,30 +48,12 @@ export function projectedListId(anaesthetistId: string, dateISO: string, session
  * THE displayed status of a session, in all three apps and every finder: the
  * List's kind when a List is in the Slot (the List shows in place of the
  * status, US-01.2.3 and FT-01.2), the Slot's own status otherwise. It takes no
- * Bookings, so the status can never be derived from booking activity.
+ * Bookings, so the status can never be derived from booking activity. The
+ * labels, colours and "open" test live with the status master in
+ * `domain/slotStatus.ts` (`displayStatusLabel`, `isOpenSlot`; catch-up Phase 29).
  */
-export function displayStatusKey(slot: Pick<Slot, 'status'>, list: Pick<List, 'kind'> | undefined): DisplayStatusKey {
+export function displayStatusKey(slot: Pick<Slot, 'status'>, list: Pick<List, 'kind'> | undefined): DisplayKey {
   return list !== undefined ? list.kind : slot.status
-}
-
-const DISPLAY_STATUS_LABELS: Record<DisplayStatusKey, string> = {
-  private: 'Private',
-  public: 'Public',
-  preop: 'Pre-op',
-  holiday: 'Holiday',
-  unavailable: 'Unavailable',
-  free: 'Free',
-}
-
-/**
- * The one label lookup for a displayed status: the session drawer, the List
- * statuses view and the refusals read it. Phase 29 points the Slot statuses at
- * the user-maintained status master here; the status chips and legend still
- * read the theme's labels, and the anaesthetist screens' descriptive copy
- * ("Annual leave", "Not available") is theirs, for Phase 29 to re-point.
- */
-export function displayStatusLabel(key: DisplayStatusKey): string {
-  return DISPLAY_STATUS_LABELS[key]
 }
 
 export interface EffectiveSlotTimes {
@@ -97,15 +79,6 @@ export function effectiveSlotTimes(
     endTime: slot.endTime ?? defaults.endTime,
     overridden,
   }
-}
-
-/**
- * Open for a List or cover (US-01.4.2): the Slot's status is free and no List
- * is in it. The finders, cover chips and "Free only" filters all mean this, so
- * a session holding a List is never offered as free.
- */
-export function isOpenSlot(slot: Pick<Slot, 'status'>, list: Pick<List, 'id'> | undefined): boolean {
-  return slot.status === 'free' && list === undefined
 }
 
 /** The dates on or after an anaesthetist's start date (US-01.1.3). */

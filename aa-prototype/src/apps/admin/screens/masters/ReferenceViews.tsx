@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import type { Contract } from '../../../../domain/types'
 import { modifierBandOf } from '../../../../domain/billing'
-import { displayStatusLabel } from '../../../../domain/slots'
+import { LIST_KIND_LABELS } from '../../../../domain/types'
 import {
   eligibleArchiveContactIds,
   runArchiveJob,
@@ -118,7 +118,7 @@ function PermanentListsView({ onEdit, onAdd }: { onEdit: (id: string) => void; o
             <td style={cellStyle}>{masters.anaesthetists[p.anaesthetistId]?.name ?? p.anaesthetistId}</td>
             <td style={cellStyle}>{DAY_LABELS[p.dayOfWeek]}</td>
             <td style={cellStyle}>{p.session}</td>
-            <td style={cellStyle}>{displayStatusLabel(p.kind)}</td>
+            <td style={cellStyle}>{LIST_KIND_LABELS[p.kind].label}</td>
             <td style={cellStyle}>{p.hospitalId !== null ? (masters.hospitals[p.hospitalId]?.name ?? p.hospitalId) : 'AA rooms'}</td>
             <td style={cellStyle}>{p.surgeonId !== null ? (masters.surgeons[p.surgeonId]?.name ?? p.surgeonId) : '·'}</td>
             <EditCell onClick={() => onEdit(p.id)} />
@@ -211,25 +211,6 @@ export function ModifierCodesView() {
             <td style={cellStyle}>{modifierBandOf(m.code) !== undefined ? 'Pick one' : 'Adds on top'}</td>
             <td className="mono" style={{ ...cellStyle, textAlign: 'right' }}>{m.units}</td>
             <td style={cellStyle}>{m.description}</td>
-          </tr>
-        ))}
-      </Table>
-    </>
-  )
-}
-
-export function ListStatusesView() {
-  const listStatuses = useAppStore((s) => s.masters.listStatuses)
-  const rows = Object.values(listStatuses)
-  return (
-    <>
-      <Header title="List statuses" sub="A fixed enumerated set (view only) shared by every app's status legend." />
-      <Table heads={['Key', 'Label', 'Description']}>
-        {rows.map((s) => (
-          <tr key={s.key}>
-            <td className="mono" style={cellStyle}>{s.key}</td>
-            <td style={cellStyle}>{displayStatusLabel(s.key)}</td>
-            <td style={cellStyle}>{s.description ?? '·'}</td>
           </tr>
         ))}
       </Table>

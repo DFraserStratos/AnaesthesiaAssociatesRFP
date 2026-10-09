@@ -123,9 +123,27 @@ describe('backfillMerge · schedule settings and Slots (catch-up Phase 28)', () 
   })
 
   it('discards a v20 store (Lists that were also empty sessions) and reseeds Slots', () => {
-    expect(PERSIST_VERSION).toBe(21)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(21)
     const fresh = freshAppState()
     expect(Object.keys(fresh.schedule.slots).length).toBeGreaterThan(0)
     expect('availability' in fresh.masters).toBe(false)
+  })
+})
+
+describe('the availability status master and series (catch-up Phase 29)', () => {
+  it('discards a v21 store (the six-key List statuses) and reseeds the status master', () => {
+    expect(PERSIST_VERSION).toBe(22)
+    const fresh = freshAppState()
+    expect(Object.keys(fresh.masters.slotStatuses).sort()).toEqual(['free', 'holiday', 'unavailable'])
+    expect('listStatuses' in fresh.masters).toBe(false)
+    expect(fresh.schedule.availabilitySeries).toEqual({})
+  })
+
+  it('backfills an empty series record into a current-version store saved without it', () => {
+    const fresh = freshAppState()
+    const { availabilitySeries: _omit, ...withoutSeries } = fresh.schedule
+    void _omit
+    const old = { ...fresh, schedule: withoutSeries }
+    expect(backfillMerge(fresh as never, old).schedule.availabilitySeries).toEqual({})
   })
 })

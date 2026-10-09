@@ -138,8 +138,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   // Built from the two schedule records only, so a Booking edit does not rebuild every session view.
   const dayViews = useMemo(
-    () => slotViewsForDate({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings }, selectedDate),
-    [slotsRecord, listsRecord, appSettings, selectedDate],
+    () => slotViewsForDate({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings, masters: { slotStatuses: masters.slotStatuses } }, selectedDate),
+    [slotsRecord, listsRecord, appSettings, masters.slotStatuses, selectedDate],
   )
 
   const viewsByAnaesthetist = useMemo(() => {

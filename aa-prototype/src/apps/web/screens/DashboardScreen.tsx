@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { accent, neutral, semantic } from '../../../theme/tokens'
-import { statusColours } from '../../../theme/statusColours'
+import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Session, Slot } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
 import { isOpenSlotView, openSlotViews, receivablesAgingFor, scheduleHorizon, slotViewsForAnaesthetist, useAppStore } from '../../../store'
 import { drSurname, formatCurrency } from '../../../shared/format'
+import { useDefaultStatus } from '../../../shared'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
 import type { CoverTarget } from '../types'
@@ -26,7 +27,7 @@ interface DashboardScreenProps {
 const AGING_ROWS: { key: AgingBucketKey; label: string; color: string; opacity: number }[] = [
   { key: 'current', label: 'Current', color: accent.base, opacity: 1 },
   { key: 'd31_60', label: '31 to 60 d', color: accent.base, opacity: 0.55 },
-  { key: 'd61_90', label: '61 to 90 d', color: statusColours.preop.solid, opacity: 1 },
+  { key: 'd61_90', label: '61 to 90 d', color: STATUS_PALETTE.preop.solid, opacity: 1 },
   { key: 'd90plus', label: '90 d +', color: semantic.error.solid, opacity: 1 },
 ]
 
@@ -59,7 +60,9 @@ export function DashboardScreen({
   const appSettings = useAppStore((s) => s.appSettings)
   const clock = useAppStore((s) => s.clock)
   // The same Slot views every app and finder reads (catch-up Phase 28).
-  const slotState = useMemo(() => ({ schedule, appSettings }), [schedule, appSettings])
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
+  const openVisual = useDefaultStatus().visual
+  const slotState = useMemo(() => ({ schedule, appSettings, masters: { slotStatuses } }), [schedule, appSettings, slotStatuses])
 
   const figures = useDashboardFigures(anaesthetistId)
   // Receivables aging now derives from the billing mirror (Phase 10; W1/W4).
@@ -262,7 +265,7 @@ export function DashboardScreen({
             {figures !== undefined && figures.leave.length > 0 ? (
               figures.leave.map((l, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: neutral.bg, borderRadius: 10 }}>
-                  <span style={{ width: 4, height: 34, borderRadius: 99, background: statusColours.holiday.solid, flex: 'none' }} />
+                  <span style={{ width: 4, height: 34, borderRadius: 99, background: STATUS_PALETTE.holiday.solid, flex: 'none' }} />
                   <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 14, fontWeight: 600 }}>{leaveRange(l.fromISO, l.toISO)}</span>
                     <span style={{ fontSize: 12, color: neutral.slate }}>{l.label}</span>
@@ -314,11 +317,11 @@ export function DashboardScreen({
                           padding: '5px 11px',
                           borderRadius: 999,
                           border: 'none',
-                          background: statusColours.free.tint,
+                          background: openVisual.tint,
                           fontFamily: 'inherit',
                           fontSize: 12,
                           fontWeight: 600,
-                          color: statusColours.free.onTint,
+                          color: openVisual.onTint,
                           cursor: requested ? 'default' : 'pointer',
                           opacity: requested ? 0.7 : 1,
                         }}

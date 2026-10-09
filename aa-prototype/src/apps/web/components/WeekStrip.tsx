@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { brand, neutral } from '../../../theme/tokens'
-import { freeDashedBorder, statusColours } from '../../../theme/statusColours'
+import { resolveDisplayStatus, useDisplayStatus } from '../../../shared'
 import type { Session } from '../../../domain/types'
 import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
 import { slotTimeRange, weekDays } from '../../../shared/format'
@@ -20,7 +20,7 @@ interface WeekStripProps {
 
 /**
  * The dashboard week strip (Web Dashboard mockup): 7 Monday-anchored columns,
- * each with the anaesthetist's AM/PM sessions colour-coded via `statusColours`,
+ * each with the anaesthetist's AM/PM sessions colour-coded via the status master,
  * from the same Slot views every app reads (catch-up Phase 28). A session
  * holding a List shows the List (hospital / surgeon and its session times,
  * office overrides included) and clicks through to List detail; an empty
@@ -33,6 +33,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   const appSettings = useAppStore((s) => s.appSettings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const days = useMemo(() => weekDays(weekAnchorISO), [weekAnchorISO])
   const views = useMemo(() => {
@@ -40,11 +41,11 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     const first = days[0]
     const last = days[days.length - 1]
     if (first === undefined || last === undefined) return out
-    for (const v of slotViewsForAnaesthetist({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings }, anaesthetistId, first, last)) {
+    for (const v of slotViewsForAnaesthetist({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings, masters: { slotStatuses } }, anaesthetistId, first, last)) {
       out.set(`${v.slot.dateISO}|${v.slot.session}`, v)
     }
     return out
-  }, [days, slotsRecord, listsRecord, appSettings, anaesthetistId])
+  }, [days, slotsRecord, listsRecord, appSettings, slotStatuses, anaesthetistId])
 
   function slotFor(dateISO: string, session: Session): SlotView | undefined {
     // Billed lists vanish from the anaesthetist's forward views (M10), matching
@@ -56,9 +57,9 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   function labels(v: SlotView): { l1: string; l2: string } {
     const list = v.list
     if (list === undefined) {
-      if (v.slot.status === 'free') return { l1: `Free · ${v.slot.session}`, l2: v.slot.note ?? 'Open for cover' }
-      if (v.slot.status === 'holiday') return { l1: v.slot.note ?? 'On leave', l2: 'Annual leave' }
-      return { l1: 'Unavailable', l2: v.slot.note ?? '' }
+      const status = resolveDisplayStatus(v.slot.status, slotStatuses)
+      if (v.open) return { l1: `${status.label} · ${v.slot.session}`, l2: v.slot.note ?? 'Open for cover' }
+      return { l1: status.longLabel, l2: v.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
     const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
@@ -81,7 +82,9 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
           const isToday = dateISO === todayISO
           const am = slotFor(dateISO, 'AM')
           const pm = slotFor(dateISO, 'PM')
-          const mergedHoliday = am?.displayKey === 'holiday' && pm?.displayKey === 'holiday'
+          // A whole day under one closed status (a day off) reads as one tall block.
+          const mergedHoliday =
+            am !== undefined && pm !== undefined && am.list === undefined && pm.list === undefined && !am.open && am.slot.status === pm.slot.status
           return (
             <div
               key={dateISO}
@@ -165,14 +168,15 @@ function Block({
   tall?: boolean
 }) {
   const height = tall === true ? 110 : 52
+  const resolved = useDisplayStatus(view?.displayKey ?? '')
   if (view === undefined || labels === undefined) {
     return <div style={{ height, borderRadius: 8, background: neutral.sunken }} aria-hidden />
   }
   const list = view.list
-  const c = statusColours[view.displayKey]
-  const isFree = view.displayKey === 'free'
+  const c = resolved.visual
+  const isFree = c.treatment === 'dashed'
   const bg = c.tint
-  const timeRange = view.displayKey === 'holiday' || view.displayKey === 'unavailable' ? undefined : slotTimeRange(view.times)
+  const timeRange = list === undefined && !view.open ? undefined : slotTimeRange(view.times)
   // Only a List opens; an empty session has nothing to open.
   const Tag = list !== undefined ? 'button' : 'div'
   return (
@@ -183,8 +187,8 @@ function Block({
         height,
         borderRadius: 8,
         background: bg,
-        border: isFree ? freeDashedBorder : 'none',
-        borderLeft: isFree ? freeDashedBorder : `3px solid ${c.solid}`,
+        border: isFree ? c.border : 'none',
+        borderLeft: isFree ? c.border : `3px solid ${c.solid}`,
         padding: isFree ? '6px 8px' : '7px 9px',
         boxSizing: 'border-box',
         textAlign: 'left',

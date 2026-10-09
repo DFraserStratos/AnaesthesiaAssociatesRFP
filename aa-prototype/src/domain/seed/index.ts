@@ -26,7 +26,8 @@ import type {
   Insurer,
   IsoDate,
   List,
-  ListStatus,
+  AvailabilitySeries,
+  SlotStatus,
   ModifierCode,
   Patient,
   PermanentList,
@@ -42,6 +43,7 @@ import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { MODIFIER_CODES } from '../billing/modifierCodes'
 import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type RecurringClash } from './canvas'
 import { projectedListId } from '../slots'
+import { isClosedKey } from '../slotStatus'
 import { clearSlot, listInSlotOf, placeList, seedRecordedWindow, setSlot } from './recordedWindow'
 import {
   ANAE,
@@ -49,7 +51,7 @@ import {
   HOSP,
   HOSPITALS,
   INSURERS,
-  LIST_STATUSES,
+  SEED_SLOT_STATUSES,
   ORGANISATIONS,
   SURG,
   SURGEONS,
@@ -77,15 +79,22 @@ export {
   closedHospitalConflict,
   closedHospitalMessage,
   generateCanvasForDates,
+  seriesPaintedCount,
   type CanvasAnaesthetist,
   type CanvasMasters,
   type GeneratedCanvas,
   type RecurringClash,
+  type SeriesCalendarEntry,
 } from './canvas'
 export { RECORDED_WINDOW } from './recordedWindow'
 export { SEED_LEAVE } from './availabilityAndHolidays'
 export { slotRng, hashStringToSeed } from './slotHash'
-export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS } from './cast'
+export { ANAE, HOSP, INS, SURG, ORG, ROOM, ANAESTHETISTS, SEED_SLOT_STATUSES } from './cast'
+
+/** The seeded availability statuses keyed by ID (generator input for tests and tools). */
+export function seedSlotStatusRecords(): Record<string, SlotStatus> {
+  return Object.fromEntries(SEED_SLOT_STATUSES.map((s) => [s.key, s]))
+}
 export { CONTRACT } from './contracts'
 export { BP, PAT } from './patients'
 export {
@@ -119,7 +128,8 @@ export interface SeedMasters {
   contractPrices: Record<string, ContractPrice>
   rvgCodes: Record<string, RvgCode>
   modifierCodes: Record<string, ModifierCode>
-  listStatuses: Record<string, ListStatus>
+  /** The availability statuses (catch-up Phase 29; US-01.2.2): a user-maintained master keyed by fixed ID. */
+  slotStatuses: Record<string, SlotStatus>
   permanentLists: Record<string, PermanentList>
   holidays: Record<string, HospitalHoliday>
   patients: Record<string, Patient>
@@ -143,6 +153,8 @@ export interface SeedSchedule {
    * an AUTHORISED List has locked. Empty at seed.
    */
   warningClearances: Record<string, WarningClearance>
+  /** Repeating days off (catch-up Phase 29; US-01.5.3): rules that write their Slots. None is seeded. */
+  availabilitySeries: Record<string, AvailabilitySeries>
 }
 
 export interface SeedState {
@@ -343,10 +355,13 @@ const SEED_LIST_ATTACHMENT: Attachment = {
 }
 
 function buildSeedInternal(): SeedBuild {
+  const slotStatuses = byId(SEED_SLOT_STATUSES, (s) => s.key)
   const canvasMasters: CanvasMasters = {
     anaesthetists: canvasAnaesthetists(ANAESTHETISTS),
     permanentLists: PERMANENT_LISTS,
     leave: SEED_LEAVE,
+    series: [],
+    statuses: slotStatuses,
     holidays: HOSPITAL_HOLIDAYS,
   }
   const appSettings: AppSettings = { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS }
@@ -367,7 +382,10 @@ function buildSeedInternal(): SeedBuild {
   applyPhase06Conflicts(canvas)
   applyPhase09Slots(canvas)
   // A clash under a Slot a fixup later freed is not a clash any more.
-  const clashes = generated.clashes.filter((c) => slots[c.slotId]?.status !== 'free' && listInSlotOf(lists, c.slotId) === undefined)
+  const clashes = generated.clashes.filter((c) => {
+    const slot = slots[c.slotId]
+    return slot !== undefined && isClosedKey(slotStatuses, slot.status) && listInSlotOf(lists, c.slotId) === undefined
+  })
 
   const bookingsBuild = buildBookings(SEED, Object.values(lists))
 
@@ -438,7 +456,7 @@ function buildSeedInternal(): SeedBuild {
       contractPrices: byId(CONTRACT_PRICES, (p) => p.id),
       rvgCodes: byId(RVG_CODES, (r) => r.code),
       modifierCodes: byId(MODIFIER_CODES, (m) => m.code),
-      listStatuses: byId(LIST_STATUSES, (s) => s.key),
+      slotStatuses,
       permanentLists: byId(PERMANENT_LISTS, (p) => p.id),
       holidays: byId(HOSPITAL_HOLIDAYS, (h) => h.id),
       patients: patientsRec,
@@ -451,6 +469,7 @@ function buildSeedInternal(): SeedBuild {
       procedures: proceduresRec,
       billingLines: billingLinesRec,
       warningClearances: {},
+      availabilitySeries: {},
     },
     audit,
     settings: {
@@ -475,6 +494,8 @@ function buildSeedInternal(): SeedBuild {
       hospital: 1,
       contract: 1,
       attachment: 2,
+      slotStatus: 1,
+      availabilitySeries: 1,
     },
   }
 

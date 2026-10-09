@@ -19,7 +19,7 @@ import type {
 } from '../domain/types'
 import { LIST_KINDS } from '../domain/types'
 import { isWallTime } from '../domain/slots'
-import { closedHospitalMessage } from '../domain/seed'
+import { closedHospitalMessage, seriesPaintedCount } from '../domain/seed'
 import { anaesthetistCanvasDelta, withGenerated } from './slotActions'
 import { hpiCpnHolder, isPlausibleEmail, normaliseHpiCpn } from '../domain/surgeons'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
@@ -325,6 +325,7 @@ export function editAnaesthetist(
         lists: delta.add.lists.length,
         fromISO: delta.add.slots[0]?.dateISO,
         toISO: delta.add.slots.at(-1)?.dateISO,
+        ...(seriesPaintedCount(delta.add) > 0 ? { seriesSessions: seriesPaintedCount(delta.add) } : {}),
       },
       stampBookingId: null,
     })

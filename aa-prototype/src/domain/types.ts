@@ -58,35 +58,50 @@ export type Session = 'AM' | 'PM'
 export type ListState = 'ACTIVE' | 'SUBMITTED' | 'AUTHORISED'
 
 /**
- * The six displayed-status keys (catch-up Phase 28: was `ListStatusKey`). MUST
- * stay string-identical to the theme's `StatusKey` (`src/theme/statusColours.ts`)
- * — parity is asserted in `statusKeyParity.test.ts`; the domain stays
- * self-contained (no theme import). A displayed status is derived, never
- * stored: the List's kind when a List is in the Slot, the Slot's status
- * otherwise (`displayStatusKey` in `domain/slots.ts`). The Slot statuses plus
- * the List kinds are exactly these six.
+ * The List's states as a value list (EP-07, FT-07.1), for the availability
+ * status validator's guard: a Slot status may never be named after a List's
+ * state (US-01.2.2 since 2026-10-07). Exhaustive over `ListState`, so Phase 31's
+ * DRAFT joins it the moment the union gains it.
  */
-export const DISPLAY_STATUS_KEYS = [
-  'private',
-  'public',
-  'preop',
-  'holiday',
-  'unavailable',
-  'free',
-] as const
-export type DisplayStatusKey = (typeof DISPLAY_STATUS_KEYS)[number]
+/**
+ * A List's lifecycle state as the screens print it: the catalogue's names
+ * (EP-07, FT-07.1), upper case. One home (moved here from `shared/format.ts`
+ * in catch-up Phase 29 so the availability status validator can read it), so
+ * Phase 31 adds DRAFT (a Draft List) in one place. An empty session is a Slot
+ * with no List, so it has no state to print.
+ */
+export const LIST_STATE_LABELS: Record<ListState, string> = {
+  ACTIVE: 'ACTIVE',
+  SUBMITTED: 'SUBMITTED',
+  AUTHORISED: 'AUTHORISED',
+}
+export const LIST_STATES = Object.keys(LIST_STATE_LABELS) as ListState[]
 
 /**
- * A Slot's status (catch-up Phase 28; FT-01.2, US-01.2.1; OQ-17, OQ-27 and
- * OQ-64, answered). The status belongs to the Slot, is free by default and is
- * the one mechanism the anaesthetist's calendar edits: there is no second
- * availability record reconciled into Lists. These are the starting values
- * the OQ-64 answer settled "for now"; Phase 29 turns the set into a
- * user-maintained master list (US-01.2.2), so every reader goes through the
- * one label lookup (`displayStatusLabel`).
+ * The design's six status colour tokens (Design Language §02: `status/private`,
+ * `status/public`, `status/preop`, `status/holiday`, `status/unavailable`,
+ * `status/free`). This is the PALETTE an availability status or a List kind
+ * picks its colour from, not a vocabulary of statuses: an admin-added status
+ * reuses one of these and its label tells it apart. Parity with the theme's
+ * `STATUS_PALETTE` is asserted in `statusTokenParity.test.ts`; the domain never
+ * imports the theme.
  */
-export const SLOT_STATUSES = ['free', 'unavailable', 'holiday'] as const
-export type SlotStatus = (typeof SLOT_STATUSES)[number]
+export const STATUS_COLOUR_TOKENS = ['private', 'public', 'preop', 'holiday', 'unavailable', 'free'] as const
+export type StatusColourToken = (typeof STATUS_COLOUR_TOKENS)[number]
+
+/** Block fill treatment (Design Language §02): solid, hatched (Unavailable) or dashed (Free). */
+export const STATUS_TREATMENTS = ['solid', 'hatched', 'dashed'] as const
+export type StatusTreatment = (typeof STATUS_TREATMENTS)[number]
+
+/**
+ * A Slot status's fixed internal ID (catch-up Phase 29; US-01.2.2, OQ-64
+ * answered). Rules, Slots and series store and compare this, never a label.
+ * Seeded statuses keep the values Phase 28 stored (`free`, `holiday`,
+ * `unavailable`); a status an admin adds gets a generated `ST####` ID. The
+ * store validates a key against the status master, not the type. Literal keys
+ * appear only in `domain/slotStatus.ts` and the seed.
+ */
+export type SlotStatusKey = string
 
 /**
  * A List's kind (catch-up Phase 28). The catalogue models no List kind
@@ -96,6 +111,21 @@ export type SlotStatus = (typeof SLOT_STATUSES)[number]
  */
 export const LIST_KINDS = ['private', 'public', 'preop'] as const
 export type ListKind = (typeof LIST_KINDS)[number]
+
+/** The List kinds' fixed labels (chip, then long label); not master data (catch-up Phase 29). */
+export const LIST_KIND_LABELS: Record<ListKind, { label: string; longLabel: string }> = {
+  private: { label: 'Private', longLabel: 'Private' },
+  public: { label: 'Public', longLabel: 'Public' },
+  preop: { label: 'Pre-op', longLabel: 'Pre-op Assessment' },
+}
+
+/**
+ * What a session shows (catch-up Phase 29: one display key space): the List's
+ * kind when a List is in the Slot, otherwise the Slot's status ID unchanged.
+ * No status ID can equal a List kind (seeded IDs are availability words,
+ * generated ones `ST####`), so the space cannot collide. Never a List state.
+ */
+export type DisplayKey = ListKind | SlotStatusKey
 
 /** Who performed an action (audit + cancellation records). */
 export type ActorRole = 'anaesthetist' | 'office' | 'system'
@@ -443,8 +473,11 @@ export interface Slot {
   anaesthetistId: AnaesthetistId
   dateISO: IsoDate
   session: Session
-  /** Free by default; the one availability mechanism (FT-01.2). */
-  status: SlotStatus
+  /**
+   * The availability status's fixed ID (`masters.slotStatuses`): the default
+   * (Free) until changed; the one availability mechanism (FT-01.2).
+   */
+  status: SlotStatusKey
   /** The session's note (for example "open for cover" or a leave reason). */
   note?: string
   /**
@@ -456,6 +489,12 @@ export interface Slot {
   endTime?: WallTime
   /** A pending cover offer/request on an open Slot (Phase 03). Phase 32 removes it. */
   coverRequest?: CoverRequest
+  /**
+   * The availability series that set this Slot's status (catch-up Phase 29;
+   * US-01.5.3). A pointer, not a second status: the Slot's own `status` is the
+   * only thing anything reads.
+   */
+  seriesId?: SeriesId
 }
 
 /**
@@ -777,7 +816,7 @@ export interface SeedLeaveWindow {
   anaesthetistId: AnaesthetistId
   dateISO: IsoDate
   session: Session
-  status: Exclude<SlotStatus, 'free'>
+  status: SlotStatusKey
   note?: string
 }
 
@@ -798,11 +837,63 @@ export interface HospitalHoliday {
   name: string
 }
 
-/** List-status master row (keyed by the shared six-status key). */
-export interface ListStatus {
-  key: DisplayStatusKey
+/**
+ * An availability status (catch-up Phase 29; US-01.2.2, OQ-64 answered): one
+ * row of the user-maintained master `masters.slotStatuses`, availability
+ * values only. Never a List's state (DRAFT, ACTIVE, SUBMITTED, AUTHORISED).
+ */
+export interface SlotStatus {
+  /** Fixed internal ID that rules read: seeded `free`/`holiday`/`unavailable`, added `ST####`. Never edited. */
+  key: SlotStatusKey
+  /** Chip label, at most 16 characters. */
   label: string
-  description?: string
+  /** Headers and pickers, at most 32 characters. */
+  longLabel: string
+  /** What the status means (legend and editor). */
+  description: string
+  /** One of the design's six tokens, never a free hex. */
+  colour: StatusColourToken
+  treatment: StatusTreatment
+  /** Open for bookings: the office may place a List and the finders count it as free. */
+  bookable: boolean
+  anaesthetistCanSet: boolean
+  /** The status every new session takes and a cleared one returns to (exactly one, bookable). */
+  isDefault?: true
+  order: number
+  retiredAtISO?: IsoDateTime
+}
+
+/** Monday first, ISO numbering (1 = Monday ... 7 = Sunday). */
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+export type SeriesId = string
+
+/** One instance of a series changed or deleted on its own, keyed `<dateISO>-<AM|PM>`. */
+export type SeriesException =
+  | { kind: 'deleted' }
+  | { kind: 'edited'; statusKey: SlotStatusKey; note?: string }
+
+/**
+ * Repeating days off (catch-up Phase 29; US-01.5.3: "recurring days off are a
+ * rule on the calendar"). A rule plus exceptions that writes the status onto
+ * its Slots; nothing reads availability from it, only from Slots.
+ */
+export interface AvailabilitySeries {
+  id: SeriesId
+  anaesthetistId: AnaesthetistId
+  statusKey: SlotStatusKey
+  sessions: 'AM' | 'PM' | 'both'
+  note?: string
+  /** Monday first, at least one. */
+  weekdays: Weekday[]
+  everyWeeks: 1 | 2 | 3 | 4
+  startISO: IsoDate
+  /** No until date: the series runs with the horizon. */
+  untilISO?: IsoDate
+  exceptions: Record<string, SeriesException>
+  createdAtISO: IsoDateTime
+  /** A deleted series is ended, not removed, so audit and history still read. */
+  endedAtISO?: IsoDateTime
 }
 
 // ---------------------------------------------------------------------------

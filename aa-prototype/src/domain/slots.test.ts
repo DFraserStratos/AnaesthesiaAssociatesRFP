@@ -8,15 +8,18 @@ import { describe, expect, it } from 'vitest'
 import {
   defaultScheduleSettings,
   displayStatusKey,
-  displayStatusLabel,
   effectiveSlotTimes,
-  isOpenSlot,
   isWallTime,
   projectedListId,
   slotDatesFor,
   slotIdFor,
 } from './slots'
-import { LIST_KINDS, SLOT_STATUSES, type ScheduleSettings } from './types'
+import { LIST_KINDS, type ScheduleSettings } from './types'
+import { displayStatusLabel, isOpenSlot, SEED_STATUS } from './slotStatus'
+import { seedSlotStatusRecords } from './seed'
+
+const SLOT_STATUSES = Object.values(SEED_STATUS)
+const statuses = seedSlotStatusRecords()
 
 describe('displayStatusKey (US-01.2.3: a List shows in place of the status; no Bookings in)', () => {
   it('an empty Slot shows its own status', () => {
@@ -34,10 +37,11 @@ describe('displayStatusKey (US-01.2.3: a List shows in place of the status; no B
   })
 
   it('labels every key through the one lookup', () => {
-    expect(displayStatusLabel('free')).toBe('Free')
-    expect(displayStatusLabel('unavailable')).toBe('Unavailable')
-    expect(displayStatusLabel('holiday')).toBe('Holiday')
-    expect(displayStatusLabel('preop')).toBe('Pre-op')
+    expect(displayStatusLabel('free', statuses)).toBe('Free')
+    expect(displayStatusLabel('unavailable', statuses)).toBe('Unavailable')
+    expect(displayStatusLabel('holiday', statuses)).toBe('Holiday')
+    expect(displayStatusLabel('holiday', statuses, true)).toBe('On holiday')
+    expect(displayStatusLabel('preop', statuses)).toBe('Pre-op')
   })
 })
 
@@ -61,11 +65,11 @@ describe('effectiveSlotTimes (US-01.1.4)', () => {
 })
 
 describe('isOpenSlot (US-01.4.2)', () => {
-  it('is free and holding no List', () => {
-    expect(isOpenSlot({ status: 'free' }, undefined)).toBe(true)
-    expect(isOpenSlot({ status: 'free' }, { id: 'LG0001' })).toBe(false)
-    expect(isOpenSlot({ status: 'unavailable' }, undefined)).toBe(false)
-    expect(isOpenSlot({ status: 'holiday' }, undefined)).toBe(false)
+  it('is open for bookings and holding no List', () => {
+    expect(isOpenSlot({ status: 'free' }, undefined, statuses)).toBe(true)
+    expect(isOpenSlot({ status: 'free' }, { id: 'LG0001' }, statuses)).toBe(false)
+    expect(isOpenSlot({ status: 'unavailable' }, undefined, statuses)).toBe(false)
+    expect(isOpenSlot({ status: 'holiday' }, undefined, statuses)).toBe(false)
   })
 })
 

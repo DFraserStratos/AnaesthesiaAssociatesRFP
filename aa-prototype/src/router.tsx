@@ -7,6 +7,7 @@ import { AdminApp } from './apps/admin/AdminApp'
 import {
   WebAccountsRoute,
   WebAvailabilityRoute,
+  WebMyAvailabilityRoute,
   WebBookingDetailRoute,
   WebDashboardRoute,
   WebListDetailRoute,
@@ -85,6 +86,7 @@ export function AppRouter() {
               </Route>
             </Route>
             <Route path="availability" element={<WebAvailabilityRoute />} />
+            <Route path="availability/mine" element={<WebMyAvailabilityRoute />} />
             <Route path="accounts">
               <Route index element={<Navigate to="overdue" replace />} />
               <Route path=":subTab" element={<WebAccountsRoute />} />
@@ -131,7 +133,7 @@ export function AppRouter() {
             {/* One splat route, not sibling routes per layer: the slide stack
                 keeps every layer mounted so push AND pop animate. */}
             <Route path="lists/*" element={<MobileListsRoute />} />
-            <Route path="availability" element={<MobileAvailabilityRoute />} />
+            <Route path="availability/*" element={<MobileAvailabilityRoute />} />
             <Route path="balances" element={<MobileBalancesRoute />} />
             <Route path="more" element={<MobileMoreRoute />} />
             <Route path="*" element={<Navigate to="/mobile" replace />} />

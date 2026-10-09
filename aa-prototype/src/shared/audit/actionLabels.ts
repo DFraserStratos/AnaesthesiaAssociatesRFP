@@ -50,6 +50,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'list.create': 'List assigned',
   'list.reassign': 'List reassigned',
   'list.conflict': 'Conflict flagged',
+  'list.conflictCleared': 'Conflict cleared',
   'list.phoneNote': 'Phone note logged',
   'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
 
@@ -58,6 +59,17 @@ export const ACTION_LABELS: Record<string, string> = {
   'session.status': 'Availability set',
   'session.times': 'Session times changed',
   'session.coverRequest': 'Cover requested',
+
+  // --- Availability (catch-up Phase 29): days off, repeating days off and the
+  // availability status master. No code or label says "slot" (OQ-64). --------
+  'availability.setRange': 'Availability set',
+  'availability.cleared': 'Day off removed',
+  'availability.seriesCreated': 'Repeating days off added',
+  'availability.seriesDeleted': 'Repeating days off deleted',
+  'availabilityStatus.create': 'Availability status added',
+  'availabilityStatus.update': 'Availability status updated',
+  'availabilityStatus.retire': 'Availability status retired',
+  'availabilityStatus.restore': 'Availability status restored',
 
   // --- Canvas & scheduling masters ----------------------------------------
   'canvas.generate': 'Canvas generated',

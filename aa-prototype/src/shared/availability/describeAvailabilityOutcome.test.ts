@@ -1,0 +1,55 @@
+/**
+ * The availability result line (catch-up Phase 29): only what happened, no
+ * "notified", no dashes, no "slot".
+ */
+
+import { describe, expect, it } from 'vitest'
+import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
+import type { AvailabilityOutcome } from '../../store'
+
+const outcome = (over: Partial<AvailabilityOutcome> = {}): AvailabilityOutcome => ({
+  set: 0, unchanged: 0, flagged: [], cleared: [], seriesEdited: 0, leftAsIs: 0, holdingLists: 0, statusKey: 'holiday', ...over,
+})
+
+const clean = (line: string) => {
+  expect(line).not.toMatch(/[–—]/)
+  expect(line).not.toMatch(/slot/i)
+  expect(line).not.toMatch(/notif|told/i)
+  return line
+}
+
+describe('describeAvailabilityOutcome', () => {
+  it('a range: the count, the status and the dates', () => {
+    expect(clean(describeAvailabilityOutcome(outcome({ set: 10 }), { kind: 'range', statusLabel: 'On holiday', fromISO: '2026-07-24', toISO: '2026-08-07' })))
+      .toBe('10 sessions set to On holiday, 24 Jul to 7 Aug.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21', toISO: '2026-07-21' }))
+      .toBe('1 session set to Unavailable on Tue 21 Jul.')
+    expect(describeAvailabilityOutcome(outcome({ unchanged: 2 }), { kind: 'range', statusLabel: 'Free' })).toBe('Already Free. Nothing changed.')
+  })
+
+  it('says a List is flagged on the office\'s Day view, never that anyone was told', () => {
+    expect(clean(describeAvailabilityOutcome(outcome({ set: 1, flagged: ['L1'], holdingLists: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21' })))
+      .toBe("1 session set to Unavailable on Tue 21 Jul. 1 List is flagged on the office's Day view.")
+    expect(describeAvailabilityOutcome(outcome({ set: 2, flagged: ['L1', 'L2'] }), { kind: 'range', statusLabel: 'Unavailable' })).toContain("2 Lists are flagged on the office's Day view.")
+  })
+
+  it('a bookable status over a List: nothing flagged, a flag cleared', () => {
+    expect(describeAvailabilityOutcome(outcome({ set: 1, holdingLists: 1 }), { kind: 'range', statusLabel: 'Free', fromISO: '2026-07-21' }))
+      .toBe('1 session set to Free on Tue 21 Jul. The List stays in place, with nothing flagged.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1, cleared: ['L1'], holdingLists: 1 }), { kind: 'range', statusLabel: 'Free' }))
+      .toBe("1 session set to Free. 1 List's flag was cleared.")
+  })
+
+  it('a series and its deletion', () => {
+    expect(clean(describeAvailabilityOutcome(outcome({ set: 9, leftAsIs: 1 }), { kind: 'series', statusLabel: 'Unavailable', seriesLine: 'Unavailable, Friday PM, every 2 weeks, no end date' })))
+      .toBe('Series saved: Unavailable, Friday PM, every 2 weeks, no end date. 9 sessions set, 1 already set left as it is.')
+    expect(describeAvailabilityOutcome(outcome({ set: 8, unchanged: 1 }), { kind: 'seriesDeleted', statusLabel: 'Free' }))
+      .toBe('Series deleted. 8 sessions back to Free, 1 changed day kept.')
+  })
+
+  it('a removal, and an instance deleted from its series', () => {
+    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-08-21' })).toBe('Back to Free on Fri 21 Aug.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1, seriesEdited: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-08-21' }))
+      .toBe('Back to Free on Fri 21 Aug. It is no longer part of the series.')
+  })
+})

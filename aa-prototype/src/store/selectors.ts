@@ -27,11 +27,14 @@ import type {
   Session,
   Slot,
   Anaesthetist,
-  DisplayStatusKey,
+  DisplayKey,
+  SlotStatusKey,
 } from '../domain/types'
 import type { BookingBillingContext } from '../domain/billing/validateBookingForBilling'
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
-import { displayStatusKey, effectiveSlotTimes, isOpenSlot, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
+import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
+import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
+import { isSeriesActive, seriesLine as describeSeriesLine } from '../domain/availabilitySeries'
 import { horizonFor, type Horizon } from '../domain/clock'
 import { FEED_META } from '../domain/integrations'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -39,6 +42,7 @@ import { BCTI_COUNT_RULE, bctiFeeHistory, bctiRecordsFrom, bctisFor, type BctiFe
 import { aaFeeFixedTotal, aaFeeFor } from '../domain/billing/aaFee'
 import { bucketForAgingDays, epochDayOf, type AgingBucketKey } from '../domain/dateDays'
 import { useMemo } from 'react'
+import { getDaysInMonth, parseISO } from 'date-fns'
 import { useAppStore, type AppState } from './appStore'
 import { clockISO } from './mutate'
 
@@ -59,8 +63,11 @@ import { clockISO } from './mutate'
 export interface SlotView {
   slot: Slot
   list?: List
-  displayKey: DisplayStatusKey
+  /** What the session shows: the List's kind, or the Slot's status ID (catch-up Phase 29). */
+  displayKey: DisplayKey
   times: EffectiveSlotTimes
+  /** Open for a List or cover: no List and a status open for bookings (`isOpenSlot`). */
+  open: boolean
 }
 
 /**
@@ -70,6 +77,8 @@ export interface SlotView {
 export interface SlotState {
   schedule: Pick<AppState['schedule'], 'slots' | 'lists'>
   appSettings: Pick<AppState['appSettings'], 'schedule'>
+  /** The availability status master: what counts as open reads it (catch-up Phase 29). */
+  masters: Pick<AppState['masters'], 'slotStatuses'>
 }
 
 const listIndexCache = new WeakMap<object, Map<string, List>>()
@@ -120,32 +129,33 @@ export function listInSlot(state: Pick<SlotState, 'schedule'>, slotId: string): 
   return listIndexBySlot(state.schedule.lists).get(slotId)
 }
 
-function viewOf(slot: Slot, lists: Map<string, List>, settings: ScheduleSettings): SlotView {
+function viewOf(slot: Slot, lists: Map<string, List>, settings: ScheduleSettings, statuses: SlotStatusRecords): SlotView {
   const list = lists.get(slot.id)
   return {
     slot,
     ...(list !== undefined ? { list } : {}),
     displayKey: displayStatusKey(slot, list),
     times: effectiveSlotTimes(slot, settings),
+    open: isOpenSlot(slot, list, statuses),
   }
 }
 
-/** `isOpenSlot` over a view: free and holding no List. */
-export function isOpenSlotView(view: Pick<SlotView, 'slot' | 'list'>): boolean {
-  return isOpenSlot(view.slot, view.list)
+/** `isOpenSlot` over a view: open for bookings and holding no List. */
+export function isOpenSlotView(view: Pick<SlotView, 'open'>): boolean {
+  return view.open
 }
 
 /** One session's view, or undefined when the Slot does not exist. */
 export function slotView(state: SlotState, slotId: string): SlotView | undefined {
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return undefined
-  return viewOf(slot, listIndexBySlot(state.schedule.lists), state.appSettings.schedule)
+  return viewOf(slot, listIndexBySlot(state.schedule.lists), state.appSettings.schedule, state.masters.slotStatuses)
 }
 
 /** Every session on a day (any order; callers group by anaesthetist). */
 export function slotViewsForDate(state: SlotState, dateISO: string): SlotView[] {
   const lists = listIndexBySlot(state.schedule.lists)
-  return (slotIndex(state.schedule.slots).byDate.get(dateISO) ?? []).map((slot) => viewOf(slot, lists, state.appSettings.schedule))
+  return (slotIndex(state.schedule.slots).byDate.get(dateISO) ?? []).map((slot) => viewOf(slot, lists, state.appSettings.schedule, state.masters.slotStatuses))
 }
 
 /** The open sessions (free, holding no List) on a day and session: what every finder offers. */
@@ -163,7 +173,7 @@ export function slotViewsForAnaesthetist(
   const lists = listIndexBySlot(state.schedule.lists)
   return (slotIndex(state.schedule.slots).byAnaesthetist.get(anaesthetistId) ?? [])
     .filter((slot) => slot.dateISO >= fromISO && slot.dateISO <= toISO)
-    .map((slot) => viewOf(slot, lists, state.appSettings.schedule))
+    .map((slot) => viewOf(slot, lists, state.appSettings.schedule, state.masters.slotStatuses))
 }
 
 /**
@@ -198,6 +208,105 @@ export function rosterForDate(state: { schedule: Pick<AppState['schedule'], 'slo
       if (sb !== undefined) return 1
       return surnameKey(a.name).localeCompare(surnameKey(b.name)) || a.registrationNumber.localeCompare(b.registrationNumber)
     })
+}
+
+/** One session as the availability calendars show it (catch-up Phase 29). */
+export interface CalendarSession {
+  slotId: string
+  session: Session
+  statusKey: SlotStatusKey
+  displayKey: DisplayKey
+  note?: string
+  open: boolean
+  /** The List in the session (it shows in place of the status). */
+  list?: { id: string; kind: List['kind']; hospitalName?: string; state: List['state'] }
+  /** The series that set the status, with its rule in words. */
+  series?: { id: string; line: string }
+  /** The List carries an availability flag (the office's Day view shows it). */
+  conflict: boolean
+}
+
+export interface CalendarDay {
+  dateISO: string
+  AM?: CalendarSession
+  PM?: CalendarSession
+}
+
+/**
+ * An anaesthetist's sessions for every date of a month (`yyyy-MM`), for the
+ * mobile and web availability calendars (catch-up Phase 29; US-01.5.3). It
+ * reads Slots only (the series only for its description), so the calendar
+ * shows exactly what every other view shows.
+ */
+export function availabilityMonthFor(
+  state: SlotState & {
+    schedule: Pick<AppState['schedule'], 'availabilitySeries'>
+    masters: Pick<AppState['masters'], 'slotStatuses' | 'hospitals'>
+  },
+  anaesthetistId: string,
+  monthISO: string,
+): CalendarDay[] {
+  const first = parseISO(`${monthISO}-01`)
+  const days = getDaysInMonth(first)
+  const fromISO = `${monthISO}-01`
+  const toISO = `${monthISO}-${String(days).padStart(2, '0')}`
+  const byKey = new Map(slotViewsForAnaesthetist(state, anaesthetistId, fromISO, toISO).map((v) => [`${v.slot.dateISO}|${v.slot.session}`, v]))
+  const lines = new Map<string, string>()
+  const seriesLine = (id: string): string | undefined => {
+    const cached = lines.get(id)
+    if (cached !== undefined) return cached
+    const series = state.schedule.availabilitySeries[id]
+    if (series === undefined) return undefined
+    const line = describeSeriesLine(series, state.masters.slotStatuses)
+    lines.set(id, line)
+    return line
+  }
+  const out: CalendarDay[] = []
+  for (let d = 1; d <= days; d++) {
+    const dateISO = `${monthISO}-${String(d).padStart(2, '0')}`
+    const day: CalendarDay = { dateISO }
+    for (const session of ['AM', 'PM'] as const) {
+      const v = byKey.get(`${dateISO}|${session}`)
+      if (v === undefined) continue
+      const line = v.slot.seriesId !== undefined ? seriesLine(v.slot.seriesId) : undefined
+      day[session] = {
+        slotId: v.slot.id,
+        session,
+        statusKey: v.slot.status,
+        displayKey: v.displayKey,
+        ...(v.slot.note !== undefined ? { note: v.slot.note } : {}),
+        open: v.open,
+        ...(v.list !== undefined
+          ? {
+              list: {
+                id: v.list.id,
+                kind: v.list.kind,
+                state: v.list.state,
+                ...(v.list.hospitalId !== undefined && state.masters.hospitals[v.list.hospitalId] !== undefined
+                  ? { hospitalName: state.masters.hospitals[v.list.hospitalId]!.name }
+                  : {}),
+              },
+            }
+          : {}),
+        ...(v.slot.seriesId !== undefined && line !== undefined ? { series: { id: v.slot.seriesId, line } } : {}),
+        conflict: v.list?.conflicts.some((c) => c.kind === 'availability') ?? false,
+      }
+    }
+    out.push(day)
+  }
+  return out
+}
+
+/** An anaesthetist's active series, with their rules in words (the calendars' "Your series"). */
+export function activeSeriesFor(
+  state: { schedule: Pick<AppState['schedule'], 'availabilitySeries'>; masters: Pick<AppState['masters'], 'slotStatuses'> },
+  anaesthetistId: string,
+  todayISO: string,
+): { id: string; line: string }[] {
+  return Object.values(state.schedule.availabilitySeries)
+    .filter((s) => s.anaesthetistId === anaesthetistId && isSeriesActive(s, todayISO))
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((s) => ({ id: s.id, line: describeSeriesLine(s, state.masters.slotStatuses) }))
 }
 
 /** The live schedule horizon: the clock's today and the horizon setting (FT-01.1). */
@@ -1315,5 +1424,9 @@ export function useSlotView(slotId: string | undefined): SlotView | undefined {
   const slot = useAppStore((s) => (slotId !== undefined ? s.schedule.slots[slotId] : undefined))
   const lists = useAppStore((s) => s.schedule.lists)
   const settings = useAppStore((s) => s.appSettings.schedule)
-  return useMemo(() => (slot === undefined ? undefined : viewOf(slot, listIndexBySlot(lists), settings)), [slot, lists, settings])
+  const statuses = useAppStore((s) => s.masters.slotStatuses)
+  return useMemo(
+    () => (slot === undefined ? undefined : viewOf(slot, listIndexBySlot(lists), settings, statuses)),
+    [slot, lists, settings, statuses],
+  )
 }

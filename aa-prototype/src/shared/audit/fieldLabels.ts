@@ -208,6 +208,27 @@ export const FIELD_LABELS: Record<string, string> = {
   mfa: 'MFA check',
   provider: 'Sign-in provider',
   credentialsVisibleToAdmin: 'Credentials visible to admin',
+  // --- Availability (catch-up Phase 29) -----------------------------------------
+  sessions: 'Sessions',
+  statuses: 'Sessions by status',
+  set: 'Sessions set',
+  seriesInstancesEdited: 'Repeating days changed on their own',
+  seriesSessions: 'Sessions from repeating days off',
+  seriesId: 'Repeating days off',
+  rule: 'Repeats',
+  leftAsIs: 'Sessions left as they were',
+  endedFromISO: 'Ended from',
+  returnedToDefault: 'Sessions returned to the default',
+  keptAsOneOff: 'Changed days kept',
+  sessionsCarrying: 'Sessions from today carrying it',
+  longLabel: 'Long label',
+  colour: 'Colour',
+  treatment: 'Fill',
+  bookable: 'Open for bookings',
+  anaesthetistCanSet: 'Anaesthetists can set',
+  defaultStatus: 'Default for new sessions',
+  previousDefault: 'Previous default',
+  retiredAtISO: 'Retired',
 }
 
 /**

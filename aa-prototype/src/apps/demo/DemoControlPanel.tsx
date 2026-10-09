@@ -269,7 +269,7 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S2',
     title: 'S2 · Office day',
-    blurb: 'Day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, Find available, and an authorisation.',
+    blurb: 'An optional opening on days off, repeating days off and the availability status list, then day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, Find available, and an authorisation.',
     run: () => {
       resetDemo(useAppStore)
       return {

@@ -31,7 +31,7 @@ import { editRefusal, getBooking } from './lifecycle'
 import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
-import { isOpenSlot } from '../domain/slots'
+import { isOpenSlot } from '../domain/slotStatus'
 import { placeListOnSlot, withoutCoverRequest } from './slotActions'
 
 // ---------------------------------------------------------------------------
@@ -217,7 +217,7 @@ export function addPostOpAddendum(
   const todayISO = state.clock.todayISO
   const target = (['AM', 'PM'] as const)
     .map((session) => slotFor(state, anaesthetistId, todayISO, session))
-    .find((slot) => slot !== undefined && isOpenSlot(slot, listInSlot(state, slot.id)))
+    .find((slot) => slot !== undefined && isOpenSlot(slot, listInSlot(state, slot.id), state.masters.slotStatuses))
   if (target === undefined) {
     return refuse(
       'noOpenSession',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
-import { statusColours } from '../../theme/statusColours'
+import { useDefaultStatus } from '../status/useSlotStatuses'
 import { requestCover, useAppStore, type Actor } from '../../store'
 import { drSurname } from '../format'
 import { Button, TextArea, TickBadge } from '../ui'
@@ -37,6 +37,7 @@ export function RequestCoverSheet({
   onSent,
 }: RequestCoverSheetProps) {
   const { Overlay } = useSurface()
+  const openVisual = useDefaultStatus().visual
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -72,9 +73,9 @@ export function RequestCoverSheet({
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span
               aria-hidden
-              style={{ width: 44, height: 44, borderRadius: 999, background: statusColours.free.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+              style={{ width: 44, height: 44, borderRadius: 999, background: openVisual.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
             >
-              <span style={{ width: 12, height: 12, borderRadius: 4, background: statusColours.free.solid }} />
+              <span style={{ width: 12, height: 12, borderRadius: 4, background: openVisual.solid }} />
             </span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: 18, fontWeight: 700 }}>{kind === 'offer' ? 'Offer cover' : personName}</span>

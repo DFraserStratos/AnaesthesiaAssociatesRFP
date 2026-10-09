@@ -2,3 +2,4 @@
 export { WebNav, type WebTab } from './WebNav'
 export { Panel } from './Panel'
 export { WeekStrip } from './WeekStrip'
+export { AvailabilityPageSwitch } from './AvailabilityPageSwitch'

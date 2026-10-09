@@ -85,27 +85,6 @@
           ]
         }
       ]
-    },
-    {
-      "name": "unavailable-conflict",
-      "app": "mobile",
-      "caption": "Blocking a booked session flags a conflict",
-      "start": "/mobile/availability",
-      "states": [
-        {
-          "steps": [
-            {
-              "click": "[data-shot=availability-block-pm]"
-            },
-            {
-              "wait": 600
-            }
-          ],
-          "highlight": [
-            "[data-shot=availability-mine]"
-          ]
-        }
-      ]
     }
   ]
 }

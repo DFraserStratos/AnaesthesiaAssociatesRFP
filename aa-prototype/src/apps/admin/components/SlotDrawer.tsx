@@ -6,7 +6,7 @@ import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
-import { displayStatusLabel } from '../../../domain/slots'
+import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
 import { LIST_STATE_LABELS, slotTimeRange } from '../../../shared/format'
@@ -117,10 +117,12 @@ function ListBody({
   const hospital = list.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : 'Unassigned'
   const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : 'Not assigned'
   const reasons = attentionReasons(list)
-  // The anaesthetist marked this session unavailable or holiday while it holds
-  // a List: the List stays (with its conflict flag) until Phase 32's return or
+  // The anaesthetist marked this session with a closed status while it holds a
+  // List: the List stays (with its conflict flag) until Phase 32's return or
   // assign (US-01.5.5). Say so beside the flag.
-  if (slot.status !== 'free') reasons.push(`The session is marked ${displayStatusLabel(slot.status).toLowerCase()}.`)
+  if (isClosedKey(masters.slotStatuses, slot.status)) {
+    reasons.push(`The session is marked ${displayStatusLabel(slot.status, masters.slotStatuses).toLowerCase()}.`)
+  }
 
   return (
     <>
@@ -258,7 +260,8 @@ function EmptySessionDrawer({
   onClose: () => void
 }) {
   const anae = useAppStore((s) => s.masters.anaesthetists[slot.anaesthetistId])
-  const open = slot.status === 'free'
+  const statuses = useAppStore((s) => s.masters.slotStatuses)
+  const open = !isClosedKey(statuses, slot.status)
   const cover = slot.coverRequest
   return (
     <>
@@ -277,7 +280,7 @@ function EmptySessionDrawer({
 
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Section label="Session">
-            <Row label="Status">{displayStatusLabel(slot.status)}</Row>
+            <Row label="Status">{displayStatusLabel(slot.status, statuses, true)}</Row>
             <Row label="Times">
               {slotTimeRange(times)}
               <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
@@ -291,7 +294,7 @@ function EmptySessionDrawer({
             </div>
           ) : (
             <div style={{ background: neutral.bg, borderRadius: radius.card, padding: 12, fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
-              This session is marked {displayStatusLabel(slot.status).toLowerCase()}, so it is not open for a List in this build.
+              This session is marked {displayStatusLabel(slot.status, statuses).toLowerCase()}, so it is not open for a List in this build.
             </div>
           )}
         </div>

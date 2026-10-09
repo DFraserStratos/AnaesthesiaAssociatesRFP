@@ -70,6 +70,9 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // Lists created at runtime (assignment, phone advice, the post-op addendum);
   // projected and seeded Lists keep their `L-<reg>-<date>-<session>` ids.
   list: { prefix: 'LG', pad: 4 },
+  // Availability statuses an admin adds and repeating days off (catch-up Phase 29).
+  slotStatus: { prefix: 'ST', pad: 4 },
+  availabilitySeries: { prefix: 'AS', pad: 4 },
   hospital: { prefix: 'HN', pad: 3 },
   contract: { prefix: 'CTN', pad: 3 },
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an

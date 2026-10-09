@@ -1,35 +1,150 @@
 {
   "id": "US-01.5.3",
-  "status": "partial",
-  "absentReason": "Availability is the session's own status (one mechanism, OQ-27), set per session on the mobile app; the calendar (days off ahead, series, single-instance edits) and the web controls are Phase 29.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "my-availability",
       "app": "mobile",
-      "caption": "My availability, set per session",
-      "start": "/mobile/availability",
+      "caption": "Days off marked weeks ahead, a repeating series, and one instance changed or deleted",
+      "start": "/mobile/availability/calendar",
       "states": [
         {
-          "state": "before",
-          "steps": [],
-          "highlight": [
-            "[data-shot=availability-mine]"
-          ]
-        },
-        {
-          "state": "blocked",
+          "state": "month",
+          "caption": "My calendar, AM over PM for every day to the schedule horizon",
           "steps": [
             {
-              "click": "[data-shot=availability-block-pm]"
-            },
-            {
-              "wait": 600
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=availability-mine]"
+            "[data-shot=mobile-availability-grid]"
+          ]
+        },
+        {
+          "state": "series-sheet",
+          "caption": "A repeating series: Unavailable, Friday PM, every 2 weeks",
+          "steps": [
+            {
+              "click": "[data-shot=mobile-add-days-off]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [data-status-choice=unavailable]"
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [role=group][aria-label=\"Sessions\"] >> role=button[name=\"PM\"]"
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [role=group][aria-label=\"Repeat\"] >> role=button[name=\"Every 2 weeks\"]"
+            },
+            {
+              "fill": "[data-shot=mobile-availability-sheet] input[type=date] >> nth=0",
+              "value": "2026-08-14"
+            },
+            {
+              "wait": 300
+            }
           ],
-          "caption": "PM blocked while it holds a List: the List stays, flagged as a conflict for the office"
+          "highlight": [
+            "[data-shot=mobile-availability-sheet]"
+          ]
+        },
+        {
+          "state": "instance",
+          "caption": "One instance of the series: change this one, delete this one, or delete the series",
+          "steps": [
+            {
+              "click": "[data-shot=mobile-add-days-off]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [data-status-choice=unavailable]"
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [role=group][aria-label=\"Sessions\"] >> role=button[name=\"PM\"]"
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] [role=group][aria-label=\"Repeat\"] >> role=button[name=\"Every 2 weeks\"]"
+            },
+            {
+              "fill": "[data-shot=mobile-availability-sheet] input[type=date] >> nth=0",
+              "value": "2026-08-14"
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] >> role=button[name=\"Save\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=mobile-availability-sheet] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Next month\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "button[data-date=\"2026-08-28\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-availability-sheet]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "my-availability",
+      "app": "web",
+      "caption": "The web calendar with the anaesthetist's repeating days off",
+      "start": "/web/availability/mine?date=2026-08-14",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=web-availability-rail] >> role=button[name=\"Change both sessions\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=web-availability-rail] [data-status-choice=unavailable]"
+            },
+            {
+              "click": "[data-shot=web-availability-rail] [role=group][aria-label=\"Sessions\"] >> role=button[name=\"PM\"]"
+            },
+            {
+              "click": "[data-shot=web-availability-rail] [role=group][aria-label=\"Repeat\"] >> role=button[name=\"Every 2 weeks\"]"
+            },
+            {
+              "click": "[data-shot=web-availability-rail] >> role=button[name=\"Save\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Next month\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-availability-series]"
+          ]
         }
       ]
     }

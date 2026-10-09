@@ -76,7 +76,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/mobile" element={<MobileApp host={MobileViewport} moreExtra={<PwaDemoPanel />} />}>
           <Route index element={<Navigate to="lists" replace />} />
           <Route path="lists/*" element={<MobileListsRoute />} />
-          <Route path="availability" element={<MobileAvailabilityRoute />} />
+          <Route path="availability/*" element={<MobileAvailabilityRoute />} />
           <Route path="balances" element={<MobileBalancesRoute />} />
           <Route path="more" element={<MobileMoreRoute />} />
           <Route path="*" element={<Navigate to="/mobile/lists" replace />} />

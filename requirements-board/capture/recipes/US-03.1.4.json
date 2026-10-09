@@ -31,6 +31,38 @@
           "highlight": []
         }
       ]
+    },
+    {
+      "name": "my-availability",
+      "app": "mobile",
+      "caption": "The same availability calendar on web and on mobile",
+      "start": "/mobile/availability/calendar",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "my-availability",
+      "app": "web",
+      "caption": "The same availability calendar on web and on mobile",
+      "start": "/web/availability/mine",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
     }
   ]
 }

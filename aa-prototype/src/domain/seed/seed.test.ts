@@ -14,7 +14,7 @@ import { validateNhi } from '../nhi'
 import { lookupNhi } from '../nzhis'
 import { feeFor } from '../billing/fee'
 import { validateBookingForBilling, type BookingBillingContext } from '../billing/validateBookingForBilling'
-import type { Booking, DisplayStatusKey, List, Procedure } from '../types'
+import type { Booking, List, Procedure } from '../types'
 import type { SeedState } from './index'
 import { parseISO } from 'date-fns'
 import { displayStatusKey, projectedListId, slotIdFor } from '../slots'
@@ -210,7 +210,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   it('uses every status colour somewhere in the horizon, through the one derivation', () => {
     const used = new Set(slots.map((s) => displayStatusKey(s, listBySlot.get(s.id))))
     for (const key of ['private', 'public', 'preop', 'holiday', 'unavailable', 'free']) {
-      expect(used.has(key as DisplayStatusKey), `status ${key} in use`).toBe(true)
+      expect(used.has(key), `status ${key} in use`).toBe(true)
     }
   })
 

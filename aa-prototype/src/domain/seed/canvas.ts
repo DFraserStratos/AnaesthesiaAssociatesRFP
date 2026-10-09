@@ -8,13 +8,16 @@
  * writes an AM and a PM Slot, in the catalogue's order:
  *   1. an inactive anaesthetist, or a date before the start date, gets no Slot;
  *   2. every other Slot is written FREE (EP-01: "each new Slot starts as free");
- *   3. the anaesthetist's calendar (the seed's leave windows) is painted onto
- *      the Slot's status and note;
- *   4. the surgeons' recurring bookings are painted on top: a template on a
- *      free Slot projects a List (id `projectedListId`, state ACTIVE), and its
- *      template times become Slot overrides; a template on an unavailable or
- *      holiday Slot projects nothing and is returned as a clash (Phase 31 turns
- *      each clash into a Draft List, OQ-81 part 2).
+ *   3. the anaesthetist's calendar is painted onto the Slot's status and note:
+ *      the seed's leave windows, then the active availability series
+ *      (catch-up Phase 29), which fill only a Slot still at the default status
+ *      and mark it with their `seriesId`;
+ *   4. the surgeons' recurring bookings are painted on top: a template on an
+ *      open Slot projects a List (id `projectedListId`, state ACTIVE), and its
+ *      template times become Slot overrides; a template on a closed Slot (any
+ *      status not open for bookings, `isClosed` over the status master)
+ *      projects nothing and is returned as a clash (Phase 31 turns each clash
+ *      into a Draft List, OQ-81 part 2).
  * Nothing is invented: no random sessions, on any date (the slot RNG survives
  * only for the seed's recorded window and filler Bookings). Recurring bookings
  * keep the weekday-only guard until Phase 30 adds weekend patterns. Hospital
@@ -25,8 +28,9 @@
  */
 
 import { parseISO } from 'date-fns'
-import type { HospitalHoliday, List, ListConflict, PermanentList, SeedLeaveWindow, Session, Slot } from '../types'
+import type { HospitalHoliday, List, ListConflict, PermanentList, SeedLeaveWindow, Session, Slot, SlotStatusKey } from '../types'
 import { projectedListId, slotDatesFor, slotIdFor } from '../slots'
+import { defaultSlotStatusKey, isClosedKey, type SlotStatusRecords } from '../slotStatus'
 
 export interface CanvasAnaesthetist {
   id: string
@@ -39,10 +43,33 @@ export interface CanvasMasters {
   permanentLists: readonly PermanentList[]
   /** The anaesthetists' calendar as generator input (the seed's leave windows). */
   leave: readonly SeedLeaveWindow[]
+  /**
+   * The active availability series' instances on the dates being generated
+   * (catch-up Phase 29: `seriesCalendarFor`), painted after `leave` with the
+   * series fill rule. Empty for the seed (no series is seeded).
+   */
+  series: readonly SeriesCalendarEntry[]
+  /** The status master: the default status and the closed test read it, never a literal. */
+  statuses: SlotStatusRecords
   holidays: readonly HospitalHoliday[]
 }
 
-/** A recurring booking that met an unavailable or holiday Slot: not projected, traced for Phase 31. */
+/** One series instance as calendar input (an `edited` exception carries its own status; a `deleted` one is absent). */
+export interface SeriesCalendarEntry {
+  anaesthetistId: string
+  dateISO: string
+  session: Session
+  status: SlotStatusKey
+  note?: string
+  seriesId: string
+}
+
+/** How many sessions the series painted in a generation (for the generate audit entries). */
+export function seriesPaintedCount(generated: Pick<GeneratedCanvas, 'slots'>): number {
+  return generated.slots.filter((s) => s.seriesId !== undefined).length
+}
+
+/** A recurring booking that met a closed Slot: not projected, traced for Phase 31. */
 export interface RecurringClash {
   permanentListId: string
   slotId: string
@@ -87,6 +114,12 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
   }
   const leaveBySlot = new Map<string, SeedLeaveWindow>()
   for (const row of masters.leave) leaveBySlot.set(`${row.anaesthetistId}|${row.dateISO}|${row.session}`, row)
+  const seriesBySlot = new Map<string, SeriesCalendarEntry>()
+  for (const row of masters.series) {
+    const key = `${row.anaesthetistId}|${row.dateISO}|${row.session}`
+    if (!seriesBySlot.has(key)) seriesBySlot.set(key, row)
+  }
+  const defaultKey = defaultSlotStatusKey(masters.statuses)
   const holidaysByDate = new Map<string, HospitalHoliday[]>()
   for (const holiday of masters.holidays) {
     const existing = holidaysByDate.get(holiday.dateISO)
@@ -103,26 +136,34 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
       // 1. No Slot before the start date (US-01.1.3).
       if (slotDatesFor(anaesthetist.startDateISO, [dateISO]).length === 0) continue
       for (const session of SESSIONS) {
-        // 2. Every Slot starts free.
+        // 2. Every Slot starts at the default status (Free).
         const slot: Slot = {
           id: slotIdFor(anaesthetist.id, dateISO, session),
           anaesthetistId: anaesthetist.id,
           dateISO,
           session,
-          status: 'free',
+          status: defaultKey,
         }
 
-        // 3. The calendar.
-        const leave = leaveBySlot.get(`${anaesthetist.id}|${dateISO}|${session}`)
+        // 3. The calendar: the seed's leave, then the series (only onto a Slot
+        // still at the default status, so a series never overwrites leave).
+        const calendarKey = `${anaesthetist.id}|${dateISO}|${session}`
+        const leave = leaveBySlot.get(calendarKey)
         if (leave !== undefined) {
           slot.status = leave.status
           if (leave.note !== undefined) slot.note = leave.note
+        }
+        const instance = seriesBySlot.get(calendarKey)
+        if (instance !== undefined && slot.status === defaultKey) {
+          slot.status = instance.status
+          if (instance.note !== undefined) slot.note = instance.note
+          slot.seriesId = instance.seriesId
         }
 
         // 4. The recurring bookings, on top.
         const template = isWeekend ? undefined : templateBySlot.get(`${anaesthetist.id}|${dayOfWeek}|${session}`)
         if (template !== undefined) {
-          if (slot.status !== 'free') {
+          if (isClosedKey(masters.statuses, slot.status)) {
             clashes.push({ permanentListId: template.id, slotId: slot.id })
           } else {
             const list: List = {

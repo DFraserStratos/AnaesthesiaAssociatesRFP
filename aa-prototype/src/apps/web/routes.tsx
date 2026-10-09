@@ -6,6 +6,7 @@ import { mondayOf, shiftWeeks } from '../../shared/format'
 import {
   AccountsScreen,
   AvailabilityGrid,
+  MyAvailabilityCalendar,
   BookingDetailView,
   DashboardScreen,
   ListDetailView,
@@ -124,6 +125,14 @@ export function WebAvailabilityRoute() {
       onCover={onCover}
     />
   )
+}
+
+/** My availability (catch-up Phase 29): `/web/availability/mine`, `?date=` opens a day. */
+export function WebMyAvailabilityRoute() {
+  const { actor, anaesthetistId } = useWebOutlet()
+  const [params] = useSearchParams()
+  const date = params.get('date') ?? undefined
+  return <MyAvailabilityCalendar key={date ?? 'none'} actor={actor} anaesthetistId={anaesthetistId} {...(date !== undefined ? { initialDateISO: date } : {})} />
 }
 
 // ---------------------------------------------------------------------------

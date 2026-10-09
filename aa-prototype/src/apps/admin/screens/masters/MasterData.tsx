@@ -7,7 +7,6 @@ import { SurgeonGroupsView, SurgeonRoomsView, SurgeonsView } from './SurgeonsVie
 import {
   ContractsMaster,
   InsurersView,
-  ListStatusesView,
   ModifierCodesView,
   OrganisationsView,
   PermanentListsMaster,
@@ -16,6 +15,7 @@ import {
 } from './ReferenceViews'
 import { MASTERS_NAV, parseMastersView, type MastersView } from './view'
 import { ScheduleSettingsView } from './ScheduleSettingsView'
+import { AvailabilityStatusesView } from './AvailabilityStatusesView'
 
 interface MasterDataProps {
   actor: Actor
@@ -72,7 +72,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'rvgCodes' && <RvgCodesView />}
         {view === 'modifierCodes' && <ModifierCodesView />}
         {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}
-        {view === 'listStatuses' && <ListStatusesView />}
+        {view === 'availability-statuses' && <AvailabilityStatusesView actor={actor} />}
         {view === 'xeroArchiving' && <XeroArchivingView actor={actor} />}
       </div>
     </div>

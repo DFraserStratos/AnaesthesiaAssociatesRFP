@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Check, ChevronLeft, Plus } from 'lucide-react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import { statusColours } from '../../../theme/statusColours'
+import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
 import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
@@ -180,7 +180,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                   >
                     <Td mono>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: 99, background: statusColours[list.kind].solid, flex: 'none' }} />
+                        <span aria-hidden style={{ width: 3, height: 26, borderRadius: 99, background: STATUS_PALETTE[list.kind].solid, flex: 'none' }} />
                         {r.time}
                       </span>
                     </Td>

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
-import type { Booking, DisplayStatusKey, List } from '../../../domain/types'
+import type { Booking, DisplayKey, List } from '../../../domain/types'
 import { isListBilled, slotViewsForAnaesthetist, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
 import { dayHeading, drSurname } from '../../../shared/format'
 import { DockSpacer } from '../../../shared/ui/DockSpacer'
+import { resolveDisplayStatus } from '../../../shared'
 
 type Filter = 'week' | 'month' | 'todo' | 'done'
 
@@ -23,8 +24,8 @@ interface Row {
   listId?: string
   dateISO: string
   sessionOrder: string
-  statusKey: DisplayStatusKey
-  variant: 'default' | 'free' | 'holiday'
+  statusKey: DisplayKey
+  variant: 'default' | 'open' | 'closed'
   session?: string
   time?: string
   title: string
@@ -46,6 +47,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -108,26 +110,25 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
     function viewRow(v: SlotView): Row | null {
       if (v.list !== undefined) return isListBilled(v.list) ? null : listRow(v.list)
       const base = { key: v.slot.id, slotId: v.slot.id, dateISO: v.slot.dateISO, sessionOrder: v.slot.session, statusKey: v.displayKey }
-      // Holiday leave row.
-      if (v.slot.status === 'holiday') {
+      // A day off (any closed status): its own row, labelled from the status master.
+      if (!v.open) {
+        const status = resolveDisplayStatus(v.slot.status, slotStatuses)
         return {
           ...base,
-          variant: 'holiday',
-          title: v.slot.note ?? 'On leave',
-          subtitle: 'On leave',
-          right: { kind: 'chip', statusKey: 'holiday', label: 'Holiday' },
+          variant: 'closed',
+          title: v.slot.note ?? status.longLabel,
+          subtitle: status.longLabel,
+          right: { kind: 'chip', statusKey: v.slot.status, label: status.label },
         }
       }
-      // Unavailable collapses out of the schedule.
-      if (v.slot.status === 'unavailable') return null
       // An open session: offer cover (or a pending marker).
       const pending = v.slot.coverRequest !== undefined
       return {
         ...base,
-        variant: 'free',
+        variant: 'open',
         session: v.slot.session,
         ...(v.times.overridden ? { time: v.times.startTime } : {}),
-        title: 'Free session',
+        title: `${resolveDisplayStatus(v.slot.status, slotStatuses).label} session`,
         subtitle: pending ? 'Cover request sent' : 'Open for bookings or cover',
         right: pending
           ? { kind: 'custom', node: <span style={{ fontSize: 12, fontWeight: 600, color: accent.pressed }}>Requested</span> }
@@ -163,7 +164,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         ? [base, `${total} ${total === 1 ? unit.replace(/s$/, '') : unit}`].filter(Boolean).join(' · ')
         : base || undefined
 
-      const time = timesForList({ schedule, appSettings }, l).startTime
+      const time = timesForList({ schedule, appSettings, masters: { slotStatuses } }, l).startTime
       return { key: l.id, slotId: l.slotId, listId: l.id, dateISO: l.dateISO, sessionOrder: l.session, statusKey: l.kind, variant: 'default', session: l.session, time, title, subtitle, right, onClick: () => onOpenList(l.id) }
     }
 
@@ -171,7 +172,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
     const rows =
       filter === 'todo' || filter === 'done'
         ? mine.filter(listInFilter).map(listRow)
-        : slotViewsForAnaesthetist({ schedule, appSettings }, anaesthetistId, todayISO, filter === 'week' ? weekEnd : monthEnd)
+        : slotViewsForAnaesthetist({ schedule, appSettings, masters: { slotStatuses } }, anaesthetistId, todayISO, filter === 'week' ? weekEnd : monthEnd)
             .map(viewRow)
             .filter((r): r is Row => r !== null)
 
@@ -188,7 +189,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         date,
         rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)),
       }))
-  }, [listsRecord, slotsRecord, appSettings, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
+  }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

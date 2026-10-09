@@ -22,7 +22,7 @@ const IMPORT_LEAD = /(?:from\s+|import\s*\(\s*|require\s*\(\s*)/
 /** Any relative import reaching the store or domain layer, at any depth. */
 const FORBIDDEN_RELATIVE = new RegExp(IMPORT_LEAD.source + `['"](?:\\.\\.\\/)+(store|domain)(?:\\/|['"])`)
 
-// Prose in these files legitimately NAMES statusColours / semantic (to say it
+// Prose in these files legitimately NAMES statusColours / STATUS_PALETTE / semantic (to say it
 // never uses them); strip comments so only real code is inspected.
 const stripComments = (src: string): string =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
@@ -46,7 +46,7 @@ describe('gradient lab isolation', () => {
   it('references no status / semantic colour tokens', () => {
     for (const file of files) {
       const code = stripComments(SOURCES[file] ?? '')
-      expect(/statusColours/.test(code), `${file} must not use statusColours`).toBe(false)
+      expect(/statusColours|STATUS_PALETTE|resolveStatusVisual/.test(code), `${file} must not use the status palette`).toBe(false)
       expect(/semantic\./.test(code), `${file} must not use the semantic status triples`).toBe(false)
     }
   })

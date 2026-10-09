@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { Anaesthetist, List, ListKind, SlotStatus } from '../../../domain/types'
+import type { Anaesthetist, List, ListKind, SlotStatusKey } from '../../../domain/types'
+import { isOpenSlot } from '../../../domain/slotStatus'
 import { useAppStore, type SlotView } from '../../../store'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../../../domain/slots'
 import { DayGrid } from './DayGrid'
@@ -22,13 +23,13 @@ function anaesthetist(id: string, name: string): Anaesthetist {
 }
 
 /** A session (catch-up Phase 28): a Slot, with a List of `kind` in it or empty with `status`. */
-function view(anaesthetistId: string, contents: { kind: ListKind; id: string; patch?: Partial<List> } | { status: SlotStatus; note?: string }): SlotView {
+function view(anaesthetistId: string, contents: { kind: ListKind; id: string; patch?: Partial<List> } | { status: SlotStatusKey; note?: string }): SlotView {
   const slot = {
     id: slotIdFor(anaesthetistId, DATE, 'AM'),
     anaesthetistId,
     dateISO: DATE,
     session: 'AM' as const,
-    status: 'status' in contents ? contents.status : ('free' as const),
+    status: 'status' in contents ? contents.status : 'free',
     ...('note' in contents && contents.note !== undefined ? { note: contents.note } : {}),
   }
   const list: List | undefined =
@@ -36,7 +37,8 @@ function view(anaesthetistId: string, contents: { kind: ListKind; id: string; pa
       ? { id: contents.id, slotId: slot.id, dateISO: DATE, anaesthetistId, session: 'AM', state: 'ACTIVE', kind: contents.kind, conflicts: [], ...contents.patch }
       : undefined
   const settings = useAppStore.getState().appSettings.schedule
-  return { slot, ...(list !== undefined ? { list } : {}), displayKey: displayStatusKey(slot, list), times: effectiveSlotTimes(slot, settings) }
+  const statuses = useAppStore.getState().masters.slotStatuses
+  return { slot, ...(list !== undefined ? { list } : {}), displayKey: displayStatusKey(slot, list), times: effectiveSlotTimes(slot, settings), open: isOpenSlot(slot, list, statuses) }
 }
 
 function renderGrid() {

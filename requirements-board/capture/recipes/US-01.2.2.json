@@ -1,22 +1,76 @@
 {
   "id": "US-01.2.2",
-  "status": "partial",
-  "absentReason": "Still view only: statuses cannot be added or renamed and colour is not editable; Phase 29 turns this view into the user-maintained status list.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "list-statuses",
       "app": "admin",
-      "caption": "List statuses master data",
-      "start": "/admin/masters?view=listStatuses",
+      "caption": "Admins add, rename and recolour availability statuses without code; rules read each status's fixed ID, and a List's state is kept apart",
+      "start": "/admin/masters?view=availability-statuses",
       "states": [
         {
+          "state": "table",
+          "caption": "Availability statuses: live chips, the fixed ID, open for bookings, anaesthetists can set, default, in use; no List state",
           "steps": [
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "table"
+            "[data-shot=admin-availability-statuses]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Edit a status: the ID read only, labels, six colour tokens, fill and a live preview",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit Unavailable\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=status-sheet-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-availability-status-sheet]"
+          ]
+        },
+        {
+          "state": "renamed",
+          "caption": "Unavailable renamed Blocked: every view shows the new label, and rules behave as before",
+          "steps": [
+            {
+              "click": "role=button[name=\"Edit Unavailable\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=admin-availability-status-sheet] input >> nth=0",
+              "value": "Blocked"
+            },
+            {
+              "click": "role=button[name=\"Save changes\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[role=group][aria-label=\"Status filters\"]"
           ]
         }
       ]

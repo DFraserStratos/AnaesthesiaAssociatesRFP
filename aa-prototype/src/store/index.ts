@@ -72,6 +72,23 @@ export {
   type SlotTimesPatch,
   type HorizonChangePreview,
 } from './slotActions'
+// Availability: days off, repeating days off and the status master (catch-up Phase 29).
+export {
+  setAvailabilityRange,
+  clearAvailability,
+  createAvailabilitySeries,
+  deleteAvailabilitySeries,
+  type AvailabilityOutcome,
+  type AvailabilityRangeInput,
+} from './availabilityActions'
+export {
+  addSlotStatus,
+  editSlotStatus,
+  retireSlotStatus,
+  restoreSlotStatus,
+  reorderSlotStatus,
+  futureSessionsWithStatus,
+} from './slotStatusActions'
 export {
   upsertPatient,
   editPatient,

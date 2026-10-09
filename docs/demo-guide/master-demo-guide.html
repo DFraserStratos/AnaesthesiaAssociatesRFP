@@ -692,7 +692,8 @@
 
   <details><summary>0 · Create and maintain the schedule canvas</summary><div class="details-body">
     <p>The system ensures every active anaesthetist has two Lists a day across the rolling horizon;
-    Permanent Lists project standing arrangements; availability and hospital holidays are reconciled;
+    Permanent Lists project standing arrangements; the anaesthetist's calendar (days off and repeating
+    days off) sets each session's status directly, nothing reconciled; hospital holidays flag Lists;
     conflicts surface without deleting the List. <span class="chip ready">Ready</span></p>
     <p>In Admin, the office also maintains surgeons (each keyed on their HPI CPN), surgeons' rooms, surgeon
     groups, hospital contact emails, and its private pairing preferences and anaesthetist priority tiers.
@@ -819,7 +820,8 @@
       <tr><td>Forward Lists</td><td><code>/mobile/lists</code></td></tr>
       <tr><td>List detail</td><td><code>/mobile/lists/&lt;listId&gt;</code></td></tr>
       <tr><td>Booking detail</td><td><code>/mobile/lists/&lt;listId&gt;/bookings/&lt;bookingId&gt;</code></td></tr>
-      <tr><td>Availability</td><td><code>/mobile/availability</code></td></tr>
+      <tr><td>Availability (Find cover)</td><td><code>/mobile/availability</code></td></tr>
+      <tr><td>My calendar</td><td><code>/mobile/availability/calendar</code></td></tr>
       <tr><td>Balances</td><td><code>/mobile/balances</code></td></tr>
       <tr><td>More</td><td><code>/mobile/more</code></td></tr>
     </table></div>
@@ -829,7 +831,8 @@
       <tr><td>Lists table</td><td><code>/web/lists</code></td></tr>
       <tr><td>List detail</td><td><code>/web/lists/&lt;listId&gt;</code></td></tr>
       <tr><td>Booking detail</td><td><code>/web/lists/&lt;listId&gt;/bookings/&lt;bookingId&gt;</code></td></tr>
-      <tr><td>Availability grid</td><td><code>/web/availability</code></td></tr>
+      <tr><td>Availability grid (Find cover)</td><td><code>/web/availability</code></td></tr>
+      <tr><td>My availability</td><td><code>/web/availability/mine</code> (one day: <code>?date=2026-08-14</code>)</td></tr>
       <tr><td>Accounts, outstanding</td><td><code>/web/accounts/overdue</code></td></tr>
       <tr><td>Accounts, GST activity</td><td><code>/web/accounts/gst</code></td></tr>
     </table></div>
@@ -844,6 +847,7 @@
       <tr><td>Billing monitor</td><td><code>/admin/billing</code></td></tr>
       <tr><td>Integration monitor</td><td><code>/admin/integrations</code></td></tr>
       <tr><td>Master data</td><td><code>/admin/masters</code> (one view: <code>?view=surgeons</code>, <code>?view=surgeonRooms</code>, <code>?view=anaesthetists</code>)</td></tr>
+      <tr><td>Availability statuses</td><td><code>/admin/masters?view=availability-statuses</code></td></tr>
       <tr><td>Surgeon profile</td><td><code>/admin/masters/surgeons/&lt;surgeonId&gt;</code> (Ms A. Reid: <code>S-REID</code>)</td></tr>
       <tr><td>Anaesthetist record</td><td><code>/admin/masters/anaesthetists/&lt;anaesthetistId&gt;</code> (Dr Priya Sharma: <code>41267</code>)</td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code></td></tr>
@@ -895,10 +899,17 @@
       <span class="stage">Stage it: Reset &#8594; Confirm reset. Go directly to Admin; the seed already holds every prerequisite.</span>
     </div>
     <div class="beat">
+      <h4>Optional opening · days off, repeating days off and the status list</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>On the Anaesthetist Mobile App, open Availability &#8594; My calendar. Page to August.</li><li>Add days off: keep On holiday and Both, set From to Fri 14 Aug and To to Sun 16 Aug, then Save and Done.</li><li>Add days off again: choose Unavailable, PM, Every 2 weeks, set Starts to Fri 14 Aug (Friday is already chosen), then Save and Done.</li><li>Tap Fri 28 Aug and select Delete this one.</li><li>Switch to the Admin Web App &#8594; Day view &#8594; Fri 14 Aug, then Fri 11 Sep.</li><li>Open Master data &#8594; Availability statuses. Either rename Unavailable to Blocked, or select Add status and add Public hospital (not open for bookings, the grey colour, hatched). Then show the phone's Add days off choices.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Availability belongs to each session. Anaesthetists mark days off weeks ahead from the phone or the web, set repeating days off, and change or delete one occurrence. The office sees it straight away. The statuses themselves are a list the office maintains: rename, recolour or add one, and every app follows, because the rules read the status, not its name."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The first save reads "6 sessions set to On holiday, 14 Aug to 16 Aug." The series saves with "1 already set left as it is" (Fri 14 Aug, already on holiday), and "Your series" lists "Unavailable, Friday PM, every 2 weeks, no end date". Fri 28 Aug returns to Free. The Day view shows Dr Souter on holiday on Fri 14 Aug and Unavailable on Fri 11 Sep PM. The renamed or added status shows in the table with its fixed ID (<code>unavailable</code>, or <code>ST0001</code>) and reaches the phone's choices at once.</span></div>
+      <div class="row"><span class="k">Note</span><span>Do not mark a session that holds a List unavailable in this moment. Until the return-or-assign choice is built (Phase 32) it only flags the List on the office's Day view. Dr Souter has recurring Lists Monday to Thursday, so keep days off to Fridays and weekends. Reset before Beat 1 (Reset &#8594; Confirm reset).</span></div>
+    </div>
+    <div class="beat">
       <h4>Beat 1 · read the day</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Day view &#8594; Tue 21 Jul.</li><li>Pause on the day grid.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every active anaesthetist has an AM and a PM session every day, four months ahead, from their start date, whether or not anything is booked. A session is free until the anaesthetist marks it otherwise, and when the office puts a List in it, the List shows instead."</span></div>
-      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label. The dashed Free blocks are empty sessions; the coloured blocks are Lists.</span></div>
+      <div class="row"><span class="k">Expect</span><span>A legible status-coloured grid; every block carries its label. The dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads the three List types, then the availability statuses from master data (the same six labels as before).</span></div>
     </div>
     <div class="beat">
       <h4>Beat 2 · a phone-advice booking</h4>
@@ -933,7 +944,7 @@
       <div class="row"><span class="k">Say</span><span class="say">"A human sanity check, not an automatic gate. If something needs clarification the office phones and corrects it here. The List is never returned. Authorisation locks every Booking and hands the List to the Billing Engine."</span></div>
       <div class="row"><span class="k">Expect</span><span>The authorisation banner appears, rows lock, and the queue count falls.</span></div>
     </div>
-    <div class="callout warn">Discovery: whether availability/holiday conflicts are hard constraints or warnings (the prototype uses advisory flags); what the vacated session shows after a move (OQ-84: the prototype returns it to Free unless the office marks it otherwise); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only).</div>
+    <div class="callout warn">Discovery: whether availability/holiday conflicts are hard constraints or warnings (the prototype uses advisory flags); settled context rather than a question: availability is a status on each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64 answered), and the status values are a list AA maintains, starting from Free, On holiday and Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state (Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); what the vacated session shows after a move (OQ-84: the prototype returns it to Free unless the office marks it otherwise); whether monitoring belongs in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to Tier 4 as placeholders); and whether a preferred pairing should also lift a candidate within their tier (the prototype marks it only).</div>
   </div></details>
 
   <details class="demo-scenario"><summary>S3 · Money end-to-end</summary><div class="details-body">
@@ -1130,6 +1141,11 @@
       own.</li>
     <li>Find available (Day header): office only; the free anaesthetists for a session in tier order,
       shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen.</li>
+    <li>Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
+      read the status's ID; it is availability only, never a List's state (Active, Submitted or
+      Authorised, or Draft for a Draft List).</li>
+    <li>Availability and cover on mobile and web: mark days off ahead, repeating days off, change or delete
+      one occurrence (My calendar on the phone, My availability on the web, the same form).</li>
     <li>The app never says "slot": it says session, AM or PM.</li>
   </ul>
 
@@ -1181,7 +1197,10 @@
       nothing about billing is recalculated. Open (OQ-84): the vacated session's default; the prototype
       uses Free, with Unavailable or Holiday on request.</p></div>
     <div class="card"><h3>6 · Availability and holiday conflicts</h3><p style="font-size:14px">Hard
-      constraints or warnings is left open. The prototype uses advisory conflict flags.</p></div>
+      constraints or warnings is left open. The prototype uses advisory conflict flags. A bookable status
+      (Free) never conflicts, and clears an earlier availability flag. A closed status on a booked session
+      flags the List on the office's Day view for now. The settled rule (return it to the office or hand it
+      to a colleague, US-01.5.5) is still to be built (Phase 32), so do not demo that path.</p></div>
     <div class="card"><h3>7 · Split-billing invoice count</h3><p style="font-size:14px">Grouping text says
       same-counterparty Procedures share an invoice; split-billing text says two invoices. The prototype
       groups by counterparty, two invoices when funders differ.</p></div>

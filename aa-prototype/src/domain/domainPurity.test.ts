@@ -34,11 +34,11 @@ const FORBIDDEN_RELATIVE = new RegExp(
 const BARE_SIDE_EFFECT = /(?:^|\n)\s*import\s+['"][^'"]+['"]/
 
 /**
- * The ONE sanctioned relative bridge: statusKeyParity.test.ts imports
- * `../theme/statusColours` on purpose, to assert the domain/theme status-key
+ * The ONE sanctioned relative bridge: statusTokenParity.test.ts imports
+ * `../theme/statusColours` on purpose, to assert the domain/theme status-token
  * parity at runtime (see its header). Everything else is forbidden.
  */
-const RELATIVE_BRIDGE_FILES = new Set(['./statusKeyParity.test.ts'])
+const RELATIVE_BRIDGE_FILES = new Set(['./statusTokenParity.test.ts'])
 
 describe('domain purity', () => {
   const files = Object.keys(SOURCES)

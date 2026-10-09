@@ -36,8 +36,9 @@ import {
 } from './selectors'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import type { Actor } from './mutate'
-import { ANAE, HOSP, SEED_LIST_IDS, SURG, generateCanvasForDates, type CanvasMasters } from '../domain/seed'
-import { displayStatusKey, isOpenSlot, slotIdFor } from '../domain/slots'
+import { ANAE, HOSP, SEED_LIST_IDS, SURG, generateCanvasForDates, seedSlotStatusRecords, type CanvasMasters } from '../domain/seed'
+import { displayStatusKey, slotIdFor } from '../domain/slots'
+import { isOpenSlot } from '../domain/slotStatus'
 import { enumerateDatesISO } from '../domain/clock'
 import type { PermanentList, SeedLeaveWindow } from '../domain/types'
 
@@ -81,6 +82,8 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
     ],
     permanentLists: [template({}), template({ id: 'PLY', dayOfWeek: 6 })],
     leave: [],
+    series: [],
+    statuses: seedSlotStatusRecords(),
     holidays: [],
     ...over,
   })
@@ -226,7 +229,7 @@ describe('the displayed status', () => {
     const personal = slotViewsForAnaesthetist(state, ANAE.sharma, TUE21, TUE21).find((v) => v.slot.id === SHARMA_PM)!
     const one = slotView(state, SHARMA_PM)!
     expect(new Set([admin.displayKey, personal.displayKey, one.displayKey])).toEqual(new Set(['private']))
-    expect(isOpenSlot(one.slot, one.list)).toBe(false)
+    expect(isOpenSlot(one.slot, one.list, seedSlotStatusRecords())).toBe(false)
     expect(isOpenSlotView(admin)).toBe(false)
     // The mobile and web finders' "Free only" read isOpenSlotView over these views: it is gone.
     expect(slotViewsForDate(state, TUE21).filter(isOpenSlotView).some((v) => v.slot.id === SHARMA_PM)).toBe(false)

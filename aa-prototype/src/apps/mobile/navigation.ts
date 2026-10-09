@@ -35,6 +35,21 @@ export interface ListsStackLocation {
  * layer mounted and animates by transform — sibling routes would unmount the
  * outgoing screen and kill the pop (Decisions log 2026-07-23, upheld).
  */
+export interface AvailabilityStackLocation {
+  /** `SlideStack` depth: 0 = Find cover, 1 = My calendar. */
+  depth: 0 | 1
+}
+
+/**
+ * The Availability-tab stack position (catch-up Phase 29): Find cover at the
+ * bare `/mobile/availability`, My calendar slid in at
+ * `/mobile/availability/calendar`. One splat route hosts both layers, as the
+ * Lists tab does.
+ */
+export function availabilityStackLocation(pathname: string): AvailabilityStackLocation {
+  return matchPath('/mobile/availability/calendar', pathname) !== null ? { depth: 1 } : { depth: 0 }
+}
+
 export function listsStackLocation(pathname: string): ListsStackLocation {
   const booking = matchPath('/mobile/lists/:listId/bookings/:bookingId', pathname)
   if (booking !== null) return { depth: 2, listId: booking.params.listId ?? null, bookingId: booking.params.bookingId ?? null }

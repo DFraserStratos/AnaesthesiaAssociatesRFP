@@ -8,14 +8,45 @@
       "app": "mobile",
       "caption": "Mobile app, the anaesthetist's primary tool",
       "start": "/mobile/lists",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
     },
     {
       "name": "lists",
       "app": "web",
       "caption": "Web app, the full desktop alternative",
       "start": "/web/lists",
-      "states": [ { "steps": [], "highlight": [] } ]
+      "states": [
+        {
+          "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "add-days-off-sheet",
+      "app": "mobile",
+      "caption": "Availability is set from a bottom sheet with chips, built for one-handed use",
+      "start": "/mobile/availability/calendar",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=mobile-add-days-off]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-availability-sheet]"
+          ]
+        }
+      ]
     }
   ]
 }

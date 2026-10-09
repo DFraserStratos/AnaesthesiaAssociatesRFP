@@ -19,13 +19,19 @@ import {
   horizonFor,
   type DemoClockState,
 } from '../domain/clock'
-import { generateCanvasForDates } from '../domain/seed'
+import { generateCanvasForDates, seriesPaintedCount } from '../domain/seed'
 import { mutate, resetDomainState, type Actor, type MutationMeta } from './mutate'
 import type { AppStoreApi } from './appStore'
 import { emitAppEvent } from './events'
 import { canvasMastersFrom, withGenerated } from './slotActions'
 
 const DEMO_ACTOR: Actor = { who: 'Demo control', role: 'system', source: 'demo' }
+
+/** The sessions repeating days off painted (catch-up Phase 29), written only when there are any. */
+function seriesCount(slots: Parameters<typeof seriesPaintedCount>[0]['slots']): { seriesSessions?: number } {
+  const n = seriesPaintedCount({ slots })
+  return n > 0 ? { seriesSessions: n } : {}
+}
 
 /** Generate and append the Slots and Lists for canvas days gained by a clock change. */
 function rollCanvasForward(api: AppStoreApi, previousTodayISO: string, todayISO: string): void {
@@ -34,7 +40,7 @@ function rollCanvasForward(api: AppStoreApi, previousTodayISO: string, todayISO:
   if (newDates.length === 0) return
 
   const state = api.getState()
-  const generated = generateCanvasForDates(canvasMastersFrom(state), newDates)
+  const generated = generateCanvasForDates(canvasMastersFrom(state, newDates), newDates)
 
   const metas: MutationMeta[] = newDates.map((dateISO) => ({
     entityType: 'canvas',
@@ -43,6 +49,7 @@ function rollCanvasForward(api: AppStoreApi, previousTodayISO: string, todayISO:
     after: {
       slots: generated.slots.filter((s) => s.dateISO === dateISO).length,
       lists: generated.lists.filter((l) => l.dateISO === dateISO).length,
+      ...seriesCount(generated.slots.filter((s) => s.dateISO === dateISO)),
     },
   }))
 

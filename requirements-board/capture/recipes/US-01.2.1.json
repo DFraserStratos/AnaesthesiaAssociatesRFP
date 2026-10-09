@@ -1,67 +1,54 @@
 {
   "id": "US-01.2.1",
-  "status": "partial",
-  "absentReason": "Availability is now the session's own status (one mechanism), but the mobile app still sets each own session to Free or Block only, and the web app cannot change availability: Phase 29 builds the calendar (days off ahead, series, holiday) and the web controls.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "my-availability",
       "app": "mobile",
-      "caption": "My availability",
+      "caption": "My availability on the Find cover screen: today's AM and PM, Change and My calendar",
       "start": "/mobile/availability",
       "states": [
         {
-          "state": "before",
+          "state": "card",
           "steps": [],
           "highlight": [
             "[data-shot=availability-mine]"
-          ],
-          "caption": "My availability, each session can be set free or blocked"
-        },
-        {
-          "state": "pm-blocked",
-          "steps": [
-            {
-              "click": "[data-shot=availability-block-pm]"
-            },
-            {
-              "wait": 600
-            }
-          ],
-          "highlight": [
-            "[data-shot=availability-mine]"
-          ],
-          "caption": "PM blocked while it holds a List: the List stays, and the office sees a conflict flag"
+          ]
         }
       ]
     },
     {
-      "name": "list-session",
-      "app": "admin",
-      "caption": "A session holding a List keeps the List's colour and label when blocked, with the amber flag",
-      "start": "/admin/day/2026-07-21",
-      "setup": [
-        {
-          "goto": "/mobile/availability"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot=availability-block-pm]"
-        },
-        {
-          "wait": 600
-        }
-      ],
+      "name": "calendar",
+      "app": "mobile",
+      "caption": "Anaesthetist marks a session Free, On holiday or Unavailable, with an optional note",
+      "start": "/mobile/availability/calendar",
       "states": [
         {
+          "state": "month",
+          "caption": "My calendar: every session Free by default, the seeded leave on Sat 25 and Sun 26 Jul, Lists in place of the status",
           "steps": [
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-34821-2026-07-21-PM\"]"
+            "[data-shot=mobile-availability-grid]"
+          ]
+        },
+        {
+          "state": "sheet",
+          "caption": "Add days off: Free, On holiday or Unavailable, a session, a day or a range, with an optional note",
+          "steps": [
+            {
+              "click": "[data-shot=mobile-add-days-off]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=mobile-availability-sheet]"
           ]
         }
       ]
@@ -125,6 +112,75 @@
           ],
           "highlight": [
             "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "my-availability",
+      "app": "web",
+      "caption": "The same on the web: a range of days selected, the form in the rail",
+      "start": "/web/availability/mine?date=2026-08-17",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=web-availability-rail] >> role=button[name=\"Change both sessions\"]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=web-availability-rail] input[type=date] >> nth=1",
+              "value": "2026-08-21"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=web-availability-rail]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "day-grid-change",
+      "app": "admin",
+      "caption": "The office's Day view shows the change at once",
+      "start": "/admin/day/2026-08-14",
+      "setup": [
+        {
+          "goto": "/web/availability/mine?date=2026-08-14"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=web-availability-rail] >> role=button[name=\"Change both sessions\"]"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "[data-shot=web-availability-rail] [data-status-choice=holiday]"
+        },
+        {
+          "click": "[data-shot=web-availability-rail] >> role=button[name=\"Save\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "button[data-slot-id=\"S-34821-2026-08-14-AM\"]"
           ]
         }
       ]

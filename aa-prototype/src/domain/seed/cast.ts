@@ -10,7 +10,7 @@ import type {
   ContractHolderOrganisation,
   Hospital,
   Insurer,
-  ListStatus,
+  SlotStatus,
   Surgeon,
   SurgeonGroup,
   SurgeonRoom,
@@ -188,14 +188,46 @@ export const ORGANISATIONS: readonly ContractHolderOrganisation[] = [
 ] as const
 
 // ---------------------------------------------------------------------------
-// List-status master (labels match theme/statusColours.ts)
+// Availability statuses (catch-up Phase 29; US-01.2.1, US-01.2.2, OQ-64): the
+// owner's starting set, keyed by the IDs Phase 28 stores on Slots, with the
+// Design Language colours. The final values are to be agreed with AA's users;
+// an admin adds, renames, recolours or retires them in Master data. The List
+// kinds (private, public, pre-op) are not here: they are a List attribute.
 // ---------------------------------------------------------------------------
 
-export const LIST_STATUSES: readonly ListStatus[] = [
-  { key: 'private', label: 'Private', description: 'Private list booked for a surgeon at a private hospital.' },
-  { key: 'public', label: 'Public', description: 'Public hospital session (Te Whatu Ora).' },
-  { key: 'preop', label: 'Pre-op', description: 'Pre-op assessment clinic at AA rooms.' },
-  { key: 'holiday', label: 'Holiday', description: 'Annual or other approved leave.' },
-  { key: 'unavailable', label: 'Unavailable', description: 'Not available for booking.' },
-  { key: 'free', label: 'Free', description: 'Free and open for booking or cover.' },
-] as const
+export const SEED_SLOT_STATUSES: readonly SlotStatus[] = [
+  {
+    key: 'free',
+    label: 'Free',
+    longLabel: 'Free',
+    description: 'Free by default and open for a List or cover.',
+    colour: 'free',
+    treatment: 'dashed',
+    bookable: true,
+    anaesthetistCanSet: true,
+    isDefault: true,
+    order: 1,
+  },
+  {
+    key: 'holiday',
+    label: 'Holiday',
+    longLabel: 'On holiday',
+    description: 'On holiday. Clearly not bookable, but not an error.',
+    colour: 'holiday',
+    treatment: 'solid',
+    bookable: false,
+    anaesthetistCanSet: true,
+    order: 2,
+  },
+  {
+    key: 'unavailable',
+    label: 'Unavailable',
+    longLabel: 'Unavailable',
+    description: 'Not available for Lists. Add other kinds of unavailable here if they help, with the same effect.',
+    colour: 'unavailable',
+    treatment: 'hatched',
+    bookable: false,
+    anaesthetistCanSet: true,
+    order: 3,
+  },
+]

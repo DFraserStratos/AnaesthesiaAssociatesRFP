@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
-import { statusColours } from '../../../theme/statusColours'
 import { isListBilled, slotViewsForAnaesthetist, useAppStore, type SlotView } from '../../../store'
-import { StatusChip, StatusLegend } from '../../../shared'
+import { emptySessionLine, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
 import { Panel } from '../components'
 
 interface ListsScreenProps {
@@ -43,6 +42,7 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
   const appSettings = useAppStore((s) => s.appSettings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const [fromISO, setFromISO] = useState(todayISO)
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
@@ -50,11 +50,7 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
   const rows = useMemo(() => {
     function describe(v: SlotView): string {
       const l = v.list
-      if (l === undefined) {
-        if (v.slot.status === 'free') return v.slot.note ?? 'Free / open for cover'
-        if (v.slot.status === 'holiday') return v.slot.note ?? 'Annual leave'
-        return v.slot.note ?? 'Not available'
-      }
+      if (l === undefined) return emptySessionLine(v.slot, v.open, slotStatuses)
       if (l.kind === 'preop') return l.notes ?? 'Pre-op assessment clinic · AA rooms'
       const hospital = l.hospitalId !== undefined ? (hospitals[l.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
       const surgeon = l.surgeonId !== undefined ? surgeons[l.surgeonId] : undefined
@@ -63,14 +59,14 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
     }
     // A cleared date input is unbounded (empty string), not "matches nothing".
     return slotViewsForAnaesthetist(
-      { schedule: { slots: slotsRecord, lists: listsRecord }, appSettings },
+      { schedule: { slots: slotsRecord, lists: listsRecord }, appSettings, masters: { slotStatuses } },
       anaesthetistId,
       fromISO === '' ? '0000-01-01' : fromISO,
       toISO === '' ? '9999-12-31' : toISO,
     )
       .filter((v) => v.list === undefined || !isListBilled(v.list))
       .map((view): Row => ({ view, description: describe(view), clickable: view.list !== undefined }))
-  }, [listsRecord, slotsRecord, appSettings, hospitals, surgeons, anaesthetistId, fromISO, toISO])
+  }, [listsRecord, slotsRecord, appSettings, slotStatuses, hospitals, surgeons, anaesthetistId, fromISO, toISO])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -118,7 +114,7 @@ export function ListsScreen({ anaesthetistId, todayISO, onOpenList }: ListsScree
               )}
               {rows.map((r) => {
                 const { slot, list, displayKey, times } = r.view
-                const c = statusColours[displayKey]
+                const c = resolveDisplayStatus(displayKey, slotStatuses).visual
                 const showTimes = list !== undefined || times.overridden
                 return (
                   <tr

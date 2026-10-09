@@ -50,7 +50,8 @@ view respectively.
 | Forward Lists | `/mobile/lists` |
 | List detail | `/mobile/lists/<listId>` |
 | Booking detail | `/mobile/lists/<listId>/bookings/<bookingId>` |
-| Availability | `/mobile/availability` |
+| Availability (Find cover) | `/mobile/availability` |
+| My calendar | `/mobile/availability/calendar` |
 | Balances | `/mobile/balances` |
 | More | `/mobile/more` |
 
@@ -60,7 +61,8 @@ view respectively.
 | Lists table | `/web/lists` |
 | List detail | `/web/lists/<listId>` |
 | Booking detail | `/web/lists/<listId>/bookings/<bookingId>` |
-| Availability grid | `/web/availability` |
+| Availability grid (Find cover) | `/web/availability` |
+| My availability | `/web/availability/mine` (one day: `?date=2026-08-14`) |
 | Accounts, outstanding | `/web/accounts/overdue` |
 | Accounts, GST activity | `/web/accounts/gst` |
 
@@ -75,6 +77,7 @@ view respectively.
 | Billing monitor | `/admin/billing` |
 | Integration monitor | `/admin/integrations` |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=surgeonRooms`, `?view=anaesthetists`) |
+| Availability statuses | `/admin/masters?view=availability-statuses` |
 | Surgeon profile | `/admin/masters/surgeons/<surgeonId>` (Ms A. Reid: `S-REID`) |
 | Anaesthetist record | `/admin/masters/anaesthetists/<anaesthetistId>` (Dr Priya Sharma: `41267`) |
 | Audit | `/admin/audit` |
@@ -176,6 +179,33 @@ authorisation model. **Time:** 6 to 8 minutes.
 **Stage it:** use **Reset → Confirm reset**, then go directly to the Admin app. The day's data is
 already seeded.
 
+### Optional opening: days off, repeating days off and the status list
+
+- **Click:**
+  - On the **Anaesthetist Mobile App**, open **Availability → My calendar**. Page to **August**.
+  - Select **Add days off**: keep **On holiday** and **Both**, set **From** to **Fri 14 Aug** and **To**
+    to **Sun 16 Aug**, then **Save** and **Done**.
+  - Select **Add days off** again: choose **Unavailable**, **PM**, **Every 2 weeks**, set **Starts** to
+    **Fri 14 Aug** (Friday is already chosen), then **Save** and **Done**.
+  - Tap **Fri 28 Aug** and select **Delete this one**.
+  - Switch to the **Admin Web App → Day view → Fri 14 Aug**, then **Fri 11 Sep**.
+  - Open **Master data → Availability statuses**. Either rename **Unavailable** to **Blocked**, or select
+    **Add status** and add **Public hospital** (not open for bookings, the grey colour, hatched). Then
+    show the phone's **Add days off** choices.
+- **Say:** "Availability belongs to each session. Anaesthetists mark days off weeks ahead from the phone
+  or the web, set repeating days off, and change or delete one occurrence. The office sees it straight
+  away. The statuses themselves are a list the office maintains: rename, recolour or add one, and every
+  app follows, because the rules read the status, not its name."
+- **Expected:** the first save reads "6 sessions set to On holiday, 14 Aug to 16 Aug." The series saves
+  with "1 already set left as it is" (Fri 14 Aug, already on holiday), and "Your series" lists
+  "Unavailable, Friday PM, every 2 weeks, no end date". Fri 28 Aug returns to Free. The Day view shows
+  Dr Souter on holiday on Fri 14 Aug and Unavailable on Fri 11 Sep PM. The renamed or added status shows
+  in the table with its fixed ID (`unavailable`, or `ST0001`) and reaches the phone's choices at once.
+- **Presenter note:** do not mark a session that holds a List unavailable in this moment. Until the
+  return-or-assign choice is built (Phase 32) it only flags the List on the office's Day view. Dr Souter
+  has recurring Lists Monday to Thursday, so keep days off to Fridays and weekends.
+- **Reset** before Beat 1 (**Reset → Confirm reset**).
+
 ### Beat 1: read the day
 
 - **Click:**
@@ -185,7 +215,8 @@ already seeded.
   their start date, whether or not anything is booked. A session is free until the anaesthetist marks
   it otherwise, and when the office puts a List in it, the List shows instead."
 - **Expected:** a legible status-coloured grid; every block carries its label, never colour alone. The
-  dashed Free blocks are empty sessions; the coloured blocks are Lists.
+  dashed Free blocks are empty sessions; the coloured blocks are Lists. The legend reads the three List
+  types, then the availability statuses from master data (the same six labels as before).
 
 ### Beat 2: a phone-advice booking
 
@@ -260,7 +291,11 @@ already seeded.
 - **Expected:** the authorisation banner appears, rows lock, and the Review queue count falls.
 
 **Discovery points:** whether availability/holiday conflicts are hard constraints or warnings (the
-prototype uses advisory flags); what the vacated session shows after a move (OQ-84: the prototype
+prototype uses advisory flags); settled context rather than a question: availability is a status on
+each session, kept from the anaesthetist's own calendar (one mechanism; OQ-17, OQ-27 and OQ-64
+answered), and the status values are a list AA maintains, starting from Free, On holiday and
+Unavailable, with the final values to be agreed with AA's users and kept apart from a List's state
+(Active, Submitted, Authorised; Draft for Draft Lists from Phase 31; US-01.2.2); what the vacated session shows after a move (OQ-84: the prototype
 returns it to Free unless the office marks it otherwise); whether monitoring belongs
 in Admin Web or a separate surface (the prototype places it in Admin Web); the names for the pairing
 preferences and the priority tiers (OQ-102: the prototype shows Not preferred, Preferred and Tier 1 to

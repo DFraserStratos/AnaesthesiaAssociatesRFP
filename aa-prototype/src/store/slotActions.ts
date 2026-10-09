@@ -17,17 +17,19 @@ import type {
   ListKind,
   Session,
   Slot,
-  SlotStatus,
+  SlotStatusKey,
   WallTime,
 } from '../domain/types'
-import { LIST_KINDS, SLOT_STATUSES } from '../domain/types'
+import { LIST_KINDS } from '../domain/types'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
-import { displayStatusLabel, effectiveSlotTimes, isOpenSlot, isWallTime, slotDatesFor } from '../domain/slots'
+import { effectiveSlotTimes, isWallTime, slotDatesFor } from '../domain/slots'
+import { defaultSlotStatusKey, displayStatusLabel, isClosedKey, isOpenSlot, statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
   canvasAnaesthetists,
   closedHospitalConflict,
   generateCanvasForDates,
+  seriesPaintedCount,
   SEED_LEAVE,
   type CanvasMasters,
   type GeneratedCanvas,
@@ -37,19 +39,30 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi } from './appStore'
 import { editRefusal } from './lifecycle'
 import { listInSlot, scheduleHorizon, slotFor } from './selectors'
+import { seriesCalendarFor, setOneSessionAvailability } from './availabilityActions'
+import { instanceKey } from '../domain/availabilitySeries'
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-/** The generator's masters from live state: start dates, active flags, recurring bookings, the seed calendar, holidays. */
-export function canvasMastersFrom(state: Pick<AppState, 'masters'>): CanvasMasters {
+/**
+ * The generator's masters from live state for the dates being generated:
+ * start dates, active flags, recurring bookings, the calendar (the seed's leave
+ * and the active availability series, through the one helper
+ * `seriesCalendarFor`), the status master and holidays. Every generating path
+ * (roll-forward, horizon extension, a new or reactivated anaesthetist, an
+ * earlier start date) comes through here.
+ */
+export function canvasMastersFrom(state: Pick<AppState, 'masters' | 'schedule'>, datesISO: readonly string[]): CanvasMasters {
   return {
     anaesthetists: canvasAnaesthetists(state.masters.anaesthetists),
     permanentLists: Object.values(state.masters.permanentLists),
     // Leave set at runtime already lives on the Slots it covers; the seed's
     // calendar is the generator's input for days it has not generated yet.
     leave: SEED_LEAVE,
+    series: seriesCalendarFor(state, datesISO),
+    statuses: state.masters.slotStatuses,
     holidays: Object.values(state.masters.holidays),
   }
 }
@@ -161,8 +174,8 @@ export interface AssignListFields {
  * the office the same commit records 17's `list.pairingAcknowledged`
  * (US-01.3.5 "every office path", OQ-43); a preferred pairing writes nothing.
  *
- * INTERIM until Phase 30: an unavailable or holiday session is refused
- * (`slotNotAvailable`); Phase 30 makes it accept-and-flag (US-01.5.2).
+ * INTERIM until Phase 30: a closed session (any status not open for bookings)
+ * is refused (`slotNotAvailable`); Phase 30 makes it accept-and-flag (US-01.5.2).
  */
 export function assignListToSlot(
   api: AppStoreApi,
@@ -175,10 +188,10 @@ export function assignListToSlot(
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return refuse('notFound', 'Session not found.')
   if (listInSlot(state, slotId) !== undefined) return refuse('slotOccupied', 'This session already holds a List.')
-  if (slot.status !== 'free') {
+  if (isClosedKey(state.masters.slotStatuses, slot.status)) {
     return refuse(
       'slotNotAvailable',
-      `This session is marked ${displayStatusLabel(slot.status).toLowerCase()}, so it is not open for a List in this build.`,
+      `This session is marked ${displayStatusLabel(slot.status, state.masters.slotStatuses).toLowerCase()}, so it is not open for a List in this build.`,
     )
   }
   if (fields.hospitalId === '') return refuse('hospitalRequired', 'Choose the hospital.')
@@ -230,8 +243,8 @@ export function assignListToSlot(
  * for a prepaid Booking on a move (OQ-80, D38) hangs here, after the commit.
  */
 export interface MoveListOptions {
-  /** What the vacated session becomes: Free by default (OQ-84's recommendation), or Unavailable or Holiday. */
-  vacatedStatus?: SlotStatus
+  /** What the vacated session becomes: the default status (Free) unless another active status is chosen (OQ-84's recommendation). */
+  vacatedStatus?: SlotStatusKey
   /** The office's pairing acknowledgement, recorded in the same commit (`reassignList` only; never an anaesthetist's move). */
   pairingAcknowledgement?: MutationMeta
 }
@@ -243,8 +256,8 @@ export function moveListToSlot(
   toSlotId: string,
   options: MoveListOptions = {},
 ): Outcome<{ listId: string; vacatedSlotId: string }> {
-  const vacatedStatus = options.vacatedStatus ?? 'free'
   const state = api.getState()
+  const vacatedStatus = options.vacatedStatus ?? defaultSlotStatusKey(state.masters.slotStatuses)
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
   if (actor.source === 'integration') return refuse('integrationForbidden', 'A feed cannot move a List.')
@@ -262,9 +275,10 @@ export function moveListToSlot(
     return refuse('differentSession', 'A List moves to the same day and session.')
   }
   if (listInSlot(state, to.id) !== undefined) return refuse('slotOccupied', 'That session already holds a List.')
-  if (to.status !== 'free') return refuse('targetNotOpen', 'That session is not free, so it cannot take the List.')
-  if (!(SLOT_STATUSES as readonly string[]).includes(vacatedStatus)) {
-    return refuse('invalidVacatedStatus', 'The vacated session can only become free, unavailable or holiday.')
+  if (isClosedKey(state.masters.slotStatuses, to.status)) return refuse('targetNotOpen', 'That session is not free, so it cannot take the List.')
+  const vacatedRecord = statusFor(state.masters.slotStatuses, vacatedStatus)
+  if (vacatedRecord === undefined || vacatedRecord.retiredAtISO !== undefined) {
+    return refuse('invalidVacatedStatus', 'Choose an availability status in use for the vacated session.')
   }
 
   const retainedConflicts = list.conflicts.filter((c) => c.kind !== 'availability')
@@ -277,6 +291,10 @@ export function moveListToSlot(
   const vacated: Slot = { ...from, status: vacatedStatus }
   delete vacated.startTime
   delete vacated.endTime
+  // A vacated series instance leaves its series (catch-up Phase 29), recorded
+  // as an edited instance so no later generation repaints it.
+  const vacatedSeries = from.seriesId !== undefined ? state.schedule.availabilitySeries[from.seriesId] : undefined
+  delete vacated.seriesId
 
   const metas: MutationMeta[] = [
     {
@@ -304,6 +322,17 @@ export function moveListToSlot(
       ...s.schedule,
       slots: { ...s.schedule.slots, [from.id]: vacated, [to.id]: target },
       lists: { ...s.schedule.lists, [list.id]: moved },
+      ...(vacatedSeries !== undefined
+        ? {
+            availabilitySeries: {
+              ...s.schedule.availabilitySeries,
+              [vacatedSeries.id]: {
+                ...vacatedSeries,
+                exceptions: { ...vacatedSeries.exceptions, [instanceKey(from.dateISO, from.session)]: { kind: 'edited' as const, statusKey: vacatedStatus } },
+              },
+            },
+          }
+        : {}),
     },
   }))
   return ok({ listId: list.id, vacatedSlotId: from.id })
@@ -322,7 +351,7 @@ export function reassignList(
   actor: Actor,
   listId: string,
   toAnaesthetistId: string,
-  vacatedStatus: SlotStatus = 'free',
+  vacatedStatus?: SlotStatusKey,
 ): Outcome<{ listId: string; vacatedSlotId: string }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can reassign a List.')
   const state = api.getState()
@@ -335,7 +364,7 @@ export function reassignList(
   if (to === undefined) return refuse('noTargetSession', `${colleague.name} has no session then.`)
   const ack = pairingAcknowledgement(state.officePrivate.pairingPreferences, toAnaesthetistId, list.surgeonId)
   return moveListToSlot(api, actor, listId, to.id, {
-    vacatedStatus,
+    ...(vacatedStatus !== undefined ? { vacatedStatus } : {}),
     ...(ack !== null
       ? { pairingAcknowledgement: { entityType: 'list', entityId: list.id, action: 'list.pairingAcknowledged', after: ack, stampBookingId: null } }
       : {}),
@@ -350,12 +379,16 @@ export function reassignList(
  * Set a session's availability: writes `Slot.status` and `Slot.note` directly
  * (FT-01.2, OQ-27: one mechanism, no second record, nothing reconciled). It
  * never touches the List's kind and reads nothing about Bookings (US-01.2.3).
+ * The status is any in-use status of the master (an anaesthetist only one they
+ * may set). The write and the clash rule are the range action's
+ * (`setOneSessionAvailability`, `availabilityClash`):
  *   - an empty session is simply updated;
- *   - a session holding a List, marked unavailable or holiday, keeps its List
- *     and kind, and the List gets an availability conflict ("replace, never
+ *   - a session holding a List marked with a closed status keeps its List and
+ *     kind, and the List gets one availability conflict ("replace, never
  *     stack"). INTERIM until Phase 32 offers return to the office or assign to
  *     a colleague (US-01.5.5, the OQ-64 answer);
- *   - marking a session holding a List free writes no conflict.
+ *   - a bookable status on a session holding a List writes no conflict and
+ *     clears an earlier one (catch-up Phase 29).
  */
 export function setAvailability(
   api: AppStoreApi,
@@ -363,53 +396,10 @@ export function setAvailability(
   anaesthetistId: string,
   dateISO: string,
   session: Session,
-  status: SlotStatus,
+  status: SlotStatusKey,
   note?: string,
 ): Outcome<{ result: 'updated' | 'conflictFlagged' | 'noChange' }> {
-  const state = api.getState()
-  if (state.masters.anaesthetists[anaesthetistId] === undefined) return refuse('notFound', 'Anaesthetist not found.')
-  if (actor.source === 'integration') {
-    return refuse('integrationForbidden', 'Availability comes from the anaesthetist or the office, never a feed.')
-  }
-  if (actor.role === 'anaesthetist' && actor.anaesthetistId !== undefined && actor.anaesthetistId !== anaesthetistId) {
-    return refuse('notOwnAvailability', 'Anaesthetists can only set their own availability.')
-  }
-  if (!(SLOT_STATUSES as readonly string[]).includes(status)) return refuse('invalidStatus', 'Choose free, unavailable or holiday.')
-  const slot = slotFor(state, anaesthetistId, dateISO, session)
-  if (slot === undefined) return refuse('noSlot', 'There is no session on that day: it is before the start date or outside the schedule horizon.')
-  const list = listInSlot(state, slot.id)
-  const trimmed = note?.trim() ?? ''
-  if (slot.status === status && (slot.note ?? '') === trimmed) return ok({ result: 'noChange' })
-
-  const next: Slot = { ...slot, status }
-  if (trimmed !== '') next.note = trimmed
-  else delete next.note
-  if (status !== 'free') delete next.coverRequest
-
-  const metas: MutationMeta[] = [
-    {
-      entityType: 'session',
-      entityId: slot.id,
-      action: 'session.status',
-      before: { status: slot.status, ...(slot.note !== undefined ? { note: slot.note } : {}) },
-      after: { status, ...(next.note !== undefined ? { note: next.note } : {}) },
-      stampBookingId: null,
-    },
-  ]
-  let flagged: List | undefined
-  if (list !== undefined && status !== 'free') {
-    const message = `Marked ${displayStatusLabel(status).toLowerCase()}, but this session holds a List. Rebook or reassign it.`
-    flagged = { ...list, conflicts: [...list.conflicts.filter((c) => c.kind !== 'availability'), { kind: 'availability', message }] }
-    metas.push({ entityType: 'list', entityId: list.id, action: 'list.conflict', after: { kind: 'availability', message }, stampBookingId: null })
-  }
-  mutate(api, actor, metas, (s) => ({
-    schedule: {
-      ...s.schedule,
-      slots: { ...s.schedule.slots, [slot.id]: next },
-      ...(flagged !== undefined ? { lists: { ...s.schedule.lists, [flagged.id]: flagged } } : {}),
-    },
-  }))
-  return ok({ result: flagged !== undefined ? 'conflictFlagged' : 'updated' })
+  return setOneSessionAvailability(api, actor, anaesthetistId, dateISO, session, status, note)
 }
 
 // ---------------------------------------------------------------------------
@@ -562,13 +552,16 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
 
   let slotsChanged = 0
   let listsChanged = 0
+  let seriesSessions = 0
   const droppedListIds: string[] = []
   const metas: MutationMeta[] = []
   mutate(api, actor, metas, (s) => {
     let schedule = s.schedule
     if (preview.direction === 'extend') {
-      const generated = generateCanvasForDates(canvasMastersFrom(s), horizonDatesBetween(preview.fromEndISO, preview.toEndISO))
+      const extendDates = horizonDatesBetween(preview.fromEndISO, preview.toEndISO)
+      const generated = generateCanvasForDates(canvasMastersFrom(s, extendDates), extendDates)
       const added = withGenerated(schedule, generated)
+      seriesSessions = seriesPaintedCount(generated)
       schedule = added.schedule
       slotsChanged = added.slots
       listsChanged = added.lists
@@ -602,6 +595,7 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
         toEndISO: preview.toEndISO,
         slots: preview.direction === 'shorten' ? -slotsChanged : slotsChanged,
         lists: preview.direction === 'shorten' ? -listsChanged : listsChanged,
+        ...(seriesSessions > 0 ? { seriesSessions } : {}),
         ...(droppedListIds.length > 0 ? { droppedListIds: droppedListIds.sort() } : {}),
       },
       stampBookingId: null,
@@ -634,7 +628,7 @@ export function requestCover(
   const slot = state.schedule.slots[slotId]
   if (slot === undefined) return refuse('notFound', 'Session not found.')
   if (actor.role !== 'anaesthetist') return refuse('anaesthetistOnly', 'Cover offers and requests come from an anaesthetist.')
-  if (!isOpenSlot(slot, listInSlot(state, slotId))) {
+  if (!isOpenSlot(slot, listInSlot(state, slotId), state.masters.slotStatuses)) {
     return refuse('notFree', 'Cover can only be offered or requested on a free session.')
   }
   if (kind === 'offer') {
@@ -688,7 +682,7 @@ export function anaesthetistCanvasDelta(
   const have = new Set(existing.map((s) => s.dateISO))
   const removeSlotIds = existing.filter((s) => !want.has(s.dateISO)).map((s) => s.id)
   const missing = [...want].filter((d) => !have.has(d)).sort()
-  const masters = canvasMastersFrom(state)
+  const masters = canvasMastersFrom(state, missing)
   const add = generateCanvasForDates(
     {
       ...masters,

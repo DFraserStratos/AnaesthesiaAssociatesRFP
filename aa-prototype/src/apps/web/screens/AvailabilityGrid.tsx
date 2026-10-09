@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { accent, brand, neutral } from '../../../theme/tokens'
-import { freeDashedBorder, statusColours, unavailableHatchTint } from '../../../theme/statusColours'
 import type { Session } from '../../../domain/types'
 import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, type SlotView } from '../../../store'
-import { StatusChip } from '../../../shared'
+import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../shared'
 import { initialsOf } from '../../../shared/format'
-import { Panel } from '../components'
+import { AvailabilityPageSwitch, Panel } from '../components'
+import { useNavigate } from 'react-router-dom'
 import type { CoverTarget } from '../types'
 
 interface AvailabilityGridProps {
@@ -46,14 +46,16 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
   const [selectedDate, setSelectedDate] = useState(todayISO)
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<'all' | 'free'>('all')
   const [query, setQuery] = useState('')
 
   const { rows, freeCount } = useMemo(() => {
     const schedule = { slots: slotsRecord, lists: listsRecord }
-    const views = slotViewsForDate({ schedule, appSettings }, selectedDate)
+    const views = slotViewsForDate({ schedule, appSettings, masters: { slotStatuses } }, selectedDate)
     function slot(aid: string, session: Session): SlotView | undefined {
       return views.find((v) => v.slot.anaesthetistId === aid && v.slot.session === session)
     }
@@ -74,7 +76,7 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
       .sort((x, y) => x.name.localeCompare(y.name))
     const count = all.reduce((n, r) => n + (open(r.am) ? 1 : 0) + (open(r.pm) ? 1 : 0), 0)
     return { rows: all, freeCount: count }
-  }, [listsRecord, slotsRecord, appSettings, anaesthetists, selectedDate])
+  }, [listsRecord, slotsRecord, appSettings, slotStatuses, anaesthetists, selectedDate])
 
   const q = query.trim().toLowerCase()
   const visible = rows
@@ -87,9 +89,9 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
     if (view === undefined) return { l1: 'No session', l2: '' }
     const list = view.list
     if (list === undefined) {
-      if (view.slot.status === 'free') return { l1: view.slot.coverRequest !== undefined ? 'Cover requested' : 'Free', l2: 'Open for booking' }
-      if (view.slot.status === 'holiday') return { l1: 'Annual leave', l2: view.slot.note ?? '' }
-      return { l1: 'Not available', l2: view.slot.note ?? '' }
+      const status = resolveDisplayStatus(view.slot.status, slotStatuses)
+      if (view.open) return { l1: view.slot.coverRequest !== undefined ? 'Cover requested' : status.label, l2: 'Open for booking' }
+      return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: 'AA rooms' }
     const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Hospital') : 'AA rooms'
@@ -116,9 +118,12 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Availability</h1>
-          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Find cover fast. Free sessions are clickable.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Availability</h1>
+            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Find cover fast. Free sessions are clickable.</div>
+          </div>
+          <AvailabilityPageSwitch current="find" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconBtn label="Previous day" onClick={() => shiftDay(-1)}><ChevronLeft size={16} aria-hidden /></IconBtn>
@@ -171,6 +176,16 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
                     {row.name}
                     {row.anaesthetistId === anaesthetistId && <span style={{ marginLeft: 6, fontSize: 11, color: neutral.mist }}>(you)</span>}
                   </span>
+                  {row.anaesthetistId === anaesthetistId && (
+                    <button
+                      type="button"
+                      data-shot="availability-change-mine"
+                      onClick={() => navigate(`/web/availability/mine?date=${selectedDate}`)}
+                      style={{ flex: 'none', border: 'none', background: 'none', padding: 0, color: accent.base, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Change
+                    </button>
+                  )}
                 </span>
                 <Cell view={row.am} labels={cellLabels(row.am)} onClick={() => clickCell(row, row.am, 'AM')} />
                 <Cell view={row.pm} labels={cellLabels(row.pm)} onClick={() => clickCell(row, row.pm, 'PM')} />
@@ -184,16 +199,16 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
 }
 
 function Cell({ view, labels, onClick }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick: () => void }) {
+  const resolved = useDisplayStatus(view?.displayKey ?? '')
   if (view === undefined) {
     return <div style={{ height: 52, borderRadius: 9, background: neutral.sunken, display: 'flex', alignItems: 'center', padding: '0 10px', fontSize: 12, color: neutral.mist }}>No session</div>
   }
-  const c = statusColours[view.displayKey]
+  const c = resolved.visual
   const isFree = isOpenSlotView(view)
   const requested = view.slot.coverRequest !== undefined
-  const isUnavailable = view.displayKey === 'unavailable'
-  const bg = isUnavailable ? unavailableHatchTint : isFree && requested ? statusColours.free.solid : c.tint
+  const bg = isFree && requested ? c.solid : c.blockBackground
   const tc = isFree && requested ? neutral.surface : c.onTint
-  const border = isFree ? (requested ? `1.5px solid ${statusColours.free.solid}` : freeDashedBorder) : '1.5px solid transparent'
+  const border = isFree ? (requested ? `1.5px solid ${c.solid}` : (c.border ?? '1.5px solid transparent')) : '1.5px solid transparent'
   return (
     <button
       type="button"
@@ -261,11 +276,5 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 }
 
 function StatusChipsLegend() {
-  return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {(['private', 'public', 'preop', 'holiday', 'unavailable', 'free'] as const).map((k) => (
-        <StatusChip key={k} status={k} />
-      ))}
-    </div>
-  )
+  return <StatusLegend variant="chips" />
 }

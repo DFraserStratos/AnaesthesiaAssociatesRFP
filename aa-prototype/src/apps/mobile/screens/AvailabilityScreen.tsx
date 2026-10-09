@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, brand, neutral, radius } from '../../../theme/tokens'
-import { freeDashedBorder, statusColours, unavailableHatchTint, type StatusKey } from '../../../theme/statusColours'
-import type { Session, SlotStatus } from '../../../domain/types'
-import { isOpenSlotView, rosterForDate, setAvailability, slotViewsForDate, useAppStore, useToday, type Actor, type SlotView } from '../../../store'
+import type { DisplayKey, Session } from '../../../domain/types'
+import type { SlotStatusRecords } from '../../../domain/slotStatus'
+import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type Actor, type SlotView } from '../../../store'
+import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
-import { Avatar, DockSpacer } from '../../../shared'
+import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { RequestCoverSheet } from '../../../shared/flows'
 import { initialsOf } from '../../../shared/format'
@@ -14,6 +15,10 @@ interface AvailabilityScreenProps {
   actor: Actor
   anaesthetistId: string
   initials: string
+  /** Open the selected day's bottom sheet (its sessions, then the form). */
+  onChangeDay: (dateISO: string) => void
+  /** Slide in My calendar. */
+  onOpenCalendar: () => void
 }
 
 interface CoverTarget {
@@ -25,33 +30,37 @@ interface CoverTarget {
   targetAnaesthetistId?: string
 }
 
-/** Cell visual per status (colleague cells show status only, never patient detail — A8). */
-function cellStyle(statusKey: StatusKey): { bg: string; border: string; color: string } {
-  const c = statusColours[statusKey]
-  if (statusKey === 'free') return { bg: c.tint, border: freeDashedBorder, color: c.onTint }
-  if (statusKey === 'unavailable') return { bg: unavailableHatchTint, border: `1px solid ${neutral.line}`, color: c.onTint }
+/** Cell visual per status, from the status master (colleague cells show status only, never patient detail, A8). */
+function cellStyle(key: DisplayKey, statuses: SlotStatusRecords): { bg: string; border: string; color: string } {
+  const c = resolveDisplayStatus(key, statuses).visual
+  if (c.border !== undefined) return { bg: c.blockBackground, border: c.border, color: c.onTint }
+  if (c.treatment === 'hatched') return { bg: c.blockBackground, border: `1px solid ${neutral.line}`, color: c.onTint }
   return { bg: c.tint, border: '1px solid transparent', color: c.onTint }
 }
 
-export function AvailabilityScreen({ actor, anaesthetistId, initials }: AvailabilityScreenProps) {
+export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDay, onOpenCalendar }: AvailabilityScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
+  const { visual: openVisual, label: openLabel } = useDefaultStatus()
   const todayISO = useToday()
 
   const [selectedDate, setSelectedDate] = useState(todayISO)
   const [mode, setMode] = useState<'everyone' | 'free'>('everyone')
   const [cover, setCover] = useState<CoverTarget | null>(null)
-  const [availResult, setAvailResult] = useState<string | null>(null)
 
   // The same Slot views every app and finder reads (catch-up Phase 28,
   // US-01.4.2): "free" is an open session (free, holding no List), so a
   // session the office has assigned is never offered here. Name order, no
   // tiers (the office's ranking is Admin only, US-01.3.6).
-  const slotState = useMemo(() => ({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings }), [slotsRecord, listsRecord, appSettings])
+  const slotState = useMemo(
+    () => ({ schedule: { slots: slotsRecord, lists: listsRecord }, appSettings, masters: { slotStatuses } }),
+    [slotsRecord, listsRecord, appSettings, slotStatuses],
+  )
 
   const days = useMemo(() => {
     const out: { dateISO: string; dow: string; date: string; hasFree: boolean }[] = []
@@ -82,10 +91,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
   function cellSubtitle(view: SlotView | undefined): string {
     if (view === undefined) return ''
     const list = view.list
-    if (list === undefined) {
-      if (view.slot.status === 'free') return 'Tap to ask'
-      return view.slot.status === 'holiday' ? 'Leave' : 'Unavailable'
-    }
+    if (list === undefined) return view.open ? 'Tap to ask' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
     const hospital = list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? '') : 'AA rooms'
     const surgeon = list.surgeonId !== undefined ? (surgeons[list.surgeonId]?.name ?? '') : ''
     return [hospital, surgeon].filter(Boolean).join(' · ')
@@ -94,10 +100,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
   function cellTitle(view: SlotView | undefined): string {
     if (view === undefined) return 'No session'
     const list = view.list
-    if (list === undefined) {
-      if (view.slot.status === 'free') return 'Free'
-      return view.slot.status === 'holiday' ? 'Leave' : 'Unavailable'
-    }
+    if (list === undefined) return resolveDisplayStatus(view.slot.status, slotStatuses).label
     return list.hospitalId !== undefined ? (hospitals[list.hospitalId]?.name ?? 'Booked') : 'Pre-op'
   }
 
@@ -109,22 +112,6 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
       kind: 'request',
       targetAnaesthetistId: view.slot.anaesthetistId,
     })
-  }
-
-  function setMine(session: Session, status: SlotStatus) {
-    const outcome = setAvailability(useAppStore, actor, anaesthetistId, selectedDate, session, status)
-    if (!outcome.ok) {
-      setAvailResult(outcome.message)
-      return
-    }
-    const r = outcome.value.result
-    setAvailResult(
-      r === 'updated'
-        ? `${session} session updated.`
-        : r === 'conflictFlagged'
-          ? `${session} holds a List; the office sees a conflict flag on it.`
-          : `${session} unchanged.`,
-    )
   }
 
   const isFreeView = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
@@ -144,7 +131,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
             return (
               <button
                 key={d.dateISO}
-                onClick={() => { setSelectedDate(d.dateISO); setAvailResult(null) }}
+                onClick={() => setSelectedDate(d.dateISO)}
                 style={{
                   flex: 1,
                   display: 'flex',
@@ -161,7 +148,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
               >
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', color: active ? 'rgba(255,255,255,0.7)' : neutral.mist }}>{d.dow}</span>
                 <span className="mono" style={{ fontSize: 17, fontWeight: 700, color: active ? neutral.surface : neutral.ink }}>{d.date}</span>
-                <span style={{ width: 5, height: 5, borderRadius: 99, background: d.hasFree ? (active ? '#8FE3B4' : statusColours.free.solid) : 'transparent' }} />
+                <span style={{ width: 5, height: 5, borderRadius: 99, background: d.hasFree ? (active ? '#8FE3B4' : openVisual.solid) : 'transparent' }} />
               </button>
             )
           })}
@@ -185,9 +172,9 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
 
       {/* Summary */}
       <div style={{ padding: '6px 20px 2px', display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: statusColours.free.solid }} />
+        <span style={{ width: 8, height: 8, borderRadius: 99, background: openVisual.solid }} />
         <span style={{ fontSize: 13, color: neutral.slate }}>
-          <span style={{ fontWeight: 700, color: statusColours.free.onTint }}>{model.freeCount} free sessions</span> on {selLong}
+          <span style={{ fontWeight: 700, color: openVisual.onTint }}>{model.freeCount} free sessions</span> on {selLong}
         </span>
       </div>
 
@@ -201,19 +188,30 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
           </div>
           {(['AM', 'PM'] as const).map((session) => {
             const view = session === 'AM' ? model.mine.am : model.mine.pm
-            const cs = view !== undefined ? cellStyle(view.displayKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
             return (
-              <div key={session} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="mono" style={{ width: 28, fontSize: 11, fontWeight: 600, color: neutral.mist }}>{session}</span>
-                <span style={{ flex: 1, minWidth: 0, borderRadius: 10, padding: '8px 10px', background: cs.bg, border: cs.border, color: cs.color, fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {cellTitle(view)}
-                </span>
-                <button onClick={() => setMine(session, 'free')} style={miniBtn(statusColours.free.solid)}>Free</button>
-                <button data-shot={`availability-block-${session.toLowerCase()}`} onClick={() => setMine(session, 'unavailable')} style={miniBtn(neutral.slate)}>Block</button>
+              <div key={session} data-shot={`availability-mine-${session.toLowerCase()}`} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 32 }}>
+                <span className="mono" style={{ width: 28, fontSize: 11, fontWeight: 600, color: neutral.mist, flex: 'none' }}>{session}</span>
+                {view === undefined ? (
+                  <span style={{ fontSize: 12.5, color: neutral.mist }}>No session</span>
+                ) : (
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <StatusChip status={view.displayKey} style={{ flex: 'none' }} />
+                    <span style={{ fontSize: 12.5, color: neutral.slate, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {view.list !== undefined ? cellTitle(view) : (view.slot.note ?? '')}
+                    </span>
+                  </span>
+                )}
               </div>
             )
           })}
-          {availResult !== null && <div style={{ fontSize: 12, color: accent.pressed }}>{availResult}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" data-shot="availability-change" onClick={() => onChangeDay(selectedDate)} disabled={model.mine.am === undefined && model.mine.pm === undefined} style={{ ...miniBtn(accent.base), flex: 1, minHeight: 40 }}>
+              Change {selLong}
+            </button>
+            <button type="button" data-shot="availability-open-calendar" onClick={onOpenCalendar} style={{ ...miniBtn(accent.base), flex: 1, minHeight: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              My calendar <ChevronRight size={15} strokeWidth={2.4} aria-hidden />
+            </button>
+          </div>
         </div>
 
         {rowsToShow.map((r) => {
@@ -225,13 +223,13 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials }: Availabi
                   {initialsOf(r.anaesthetist.name)}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.anaesthetist.name}</span>
-                {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: statusColours.free.onTint, background: statusColours.free.tint, borderRadius: 999, padding: '3px 9px' }}>Free</span>}
+                {anyFree && <span style={{ fontSize: 11, fontWeight: 600, color: openVisual.onTint, background: openVisual.tint, borderRadius: 999, padding: '3px 9px' }}>{openLabel}</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['AM', 'PM'] as const).map((session) => {
                   const view = session === 'AM' ? r.am : r.pm
                   const isFree = isFreeView(view)
-                  const cs = view !== undefined ? cellStyle(view.displayKey) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
+                  const cs = view !== undefined ? cellStyle(view.displayKey, slotStatuses) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
                   const pending = view?.slot.coverRequest !== undefined
                   return (
                     <button

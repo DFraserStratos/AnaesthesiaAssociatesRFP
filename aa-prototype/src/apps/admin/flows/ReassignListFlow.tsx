@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
-import type { List, SlotStatus } from '../../../domain/types'
+import type { List, SlotStatusKey } from '../../../domain/types'
+import { defaultSlotStatus } from '../../../domain/slotStatus'
 import { openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
 import { Button } from '../../../shared/ui'
+import { useSlotStatuses } from '../../../shared/status/useSlotStatuses'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { useSurface } from '../../../shared/surface'
 import { surnameFirst } from '../util'
@@ -16,20 +18,15 @@ interface ReassignListFlowProps {
   onReassigned: () => void
 }
 
-const VACATED_OPTIONS: { value: SlotStatus; label: string }[] = [
-  { value: 'free', label: 'Free (default)' },
-  { value: 'unavailable', label: 'Unavailable' },
-  { value: 'holiday', label: 'Holiday' },
-]
-
 const SUCCESS_DURATION_MS = 1050
 
 /**
  * List reassignment (illness cover; US-01.4.1, catch-up Phase 28). The List
  * moves into a colleague's open session on the same day and session (free,
  * holding no List: `isOpenSlot`), keeping its id, Bookings and history. The
- * vacated session returns to Free unless the office marks it Unavailable or
- * Holiday (OQ-84's recommendation, provisional in the Decisions log). Nothing
+ * vacated session returns to the default status (Free) unless the office marks
+ * it with another status in use (OQ-84's recommendation, provisional in the
+ * Decisions log; catch-up Phase 29 reads the choices from the status master). Nothing
  * about billing is recalculated (US-06.3.5: an honour system).
  *
  * Catch-up Phase 17 (US-01.3.5, US-01.3.6, the office's move): the free
@@ -44,7 +41,9 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   const anaesthetists = state.masters.anaesthetists
 
   const [targetId, setTargetId] = useState<string | null>(null)
-  const [vacatedStatus, setVacatedStatus] = useState<SlotStatus>('free')
+  const statusOptions = useSlotStatuses()
+  const defaultStatus = defaultSlotStatus(state.masters.slotStatuses)
+  const [vacatedStatus, setVacatedStatus] = useState<SlotStatusKey>(defaultStatus.key)
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const requestKey = useSuggestionKey(list.id, open)
@@ -53,10 +52,10 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   useEffect(() => {
     if (open) {
       setTargetId(null)
-      setVacatedStatus('free')
+      setVacatedStatus(defaultStatus.key)
       setError(null)
     }
-  }, [open])
+  }, [open, defaultStatus.key])
 
   useEffect(() => {
     if (!showSuccess) return undefined
@@ -112,13 +111,13 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
           <>
             <div style={{ background: accent.tint, borderRadius: radius.card, padding: 12, fontSize: 13, color: accent.pressed }}>
               The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {list.session} session.
-              {' '}{surnameFirst(sourceName)}'s session returns to Free unless you mark it otherwise.
+              {' '}{surnameFirst(sourceName)}'s session returns to {defaultStatus.label} unless you mark it otherwise.
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>Vacated session becomes</span>
-              <select data-shot="reassign-vacated" value={vacatedStatus} onChange={(e) => setVacatedStatus(e.target.value as SlotStatus)} style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14 }}>
-                {VACATED_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+              <select data-shot="reassign-vacated" value={vacatedStatus} onChange={(e) => setVacatedStatus(e.target.value)} style={{ minHeight: 44, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg, padding: '0 12px', fontFamily: 'inherit', fontSize: 14 }}>
+                {statusOptions.map((o) => (
+                  <option key={o.key} value={o.key}>{o.isDefault === true ? `${o.longLabel} (default)` : o.longLabel}</option>
                 ))}
               </select>
             </label>

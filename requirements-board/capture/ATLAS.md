@@ -165,7 +165,7 @@ rule below still applies.
 - Form: `data-shot="<area>-<thing>"`, in kebab case.
 - The value must be unique on its screen, for example `availability-mine`, `integrations-raw-hl7`
   or `review-authorise`.
-- For per-row or per-item values, add a stable suffix, for example `availability-block-am`, or
+- For per-row or per-item values, add a stable suffix, for example `availability-mine-am`, or
   set the attribute only on the row that matters:
   `data-shot={isMine ? 'availability-row-mine' : undefined}`.
 - Before adding one, grep for an existing `data-shot` or `data-testid` you can reuse.
@@ -175,8 +175,12 @@ Hooks already added:
 | Hook | Where |
 |---|---|
 | `integrations-raw-hl7`, `integrations-fhir`, `integrations-schedule-change`, `integrations-replay` | `/demo/integrations` |
-| `availability-row-mine` | `/web/availability` |
-| `availability-mine`, `availability-block-am`, `availability-block-pm` | `/mobile/availability` |
+| `availability-row-mine`, `availability-change-mine` (its "Change" link) | `/web/availability` |
+| `availability-mine`, `availability-mine-am`, `availability-mine-pm`, `availability-change`, `availability-open-calendar` | `/mobile/availability` (Find cover's My availability card; the Free and Block buttons and `availability-block-*` were removed in catch-up Phase 29) |
+| `mobile-availability-calendar`, `mobile-availability-grid` (the month), `mobile-add-days-off`, `mobile-availability-series`; day cells `button[data-date=YYYY-MM-DD]`, half-blocks `[data-slot-id]` with `title="AM Holiday"` | `/mobile/availability/calendar` (catch-up Phase 29) |
+| `mobile-availability-sheet` (the bottom sheet), inside it `availability-session-panel`, `availability-series-line`, `availability-series-confirm`, `availability-form`, `availability-result`, status chips `[data-status-choice=<id>]`, weekday chips `[data-weekday=1..7]` | The availability sheet (mobile) |
+| `web-availability-mine`, `web-availability-rail`, `web-availability-rail-empty`, `web-availability-series`; day cells `button[data-date=…]` | `/web/availability/mine` (catch-up Phase 29) |
+| `admin-availability-statuses` (table, rows `tr[data-status-row=<id>]`), `availability-statuses-list-types`, `admin-availability-status-sheet` (`status-sheet-id`, `status-sheet-preview`, swatches `[data-swatch=<token>]`), `admin-availability-status-retire` | `/admin/masters?view=availability-statuses` (catch-up Phase 29) |
 | `scenario-s1` to `scenario-s5`, `scenario-confirm` | `/demo/control`, used by the `scenario` step |
 | `demo-actions` | The harness bar's "Demo actions" pill (only on screens with entries), used by the `trigger` step |
 | `demo-action-<id>` | One row of that menu, with its Run button and `role=status` result line |
@@ -259,7 +263,8 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/lists` | Table of Souter's lists. |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". |
-| `/web/availability` | Practice availability grid. Free cells read "Free · Open for booking" and can be clicked for cover. |
+| `/web/availability` | Find cover: the practice availability grid. Free cells read "Free · Open for booking" and can be clicked for cover. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
+| `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 
 **Admin app** (`src/apps/admin/`)
@@ -277,7 +282,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin/billing/aa-fees` | AA fee invoices: month picker, the run preview (`aa-fee-preview-<anaesthetistId>` rows), the teal "Run monthly fee invoices" button and every fee invoice (`aa-fee-row-<number>`, expand for `aa-fee-detail-<number>`). |
 | `/admin/billing/aa-fees/settings` | AA fee settings: fixed items, the charge per BCTI and the worked example (`aa-fee-example`). |
 | `/admin/integrations` | Tabs: Messages, Feed config, Surgeon PDFs, Data quality, Validators. The message log is empty until a message is replayed. |
-| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `permanentLists`, `hospitals`, `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `listStatuses`, `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
+| `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `permanentLists`, `hospitals`, `surgeons`, `surgeonRooms`, `surgeonGroups`, `insurers`, `organisations`, `rvgCodes`, `modifierCodes`, `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `xeroArchiving`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name: "Surgeons" also matches "Surgeons' rooms"). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip, Identifiers, Surgeons' room and Groups cards, Pairing preferences. "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. |
 | `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Details, Pairing preferences. Office only. |
 | `/admin/audit` | Audit viewer. |
@@ -292,13 +297,14 @@ Audit.
 | `/mobile/lists` | Forward lists. Segments Week, Month, To-Do, Done. Free rows read "Open for bookings or cover". |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
 | `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. |
-| `/mobile/availability` | "My availability" (Free and Block per session), the everyone / free-only grid, and "Tap to ask" for cover. |
+| `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), the everyone / free-only grid, and "Tap to ask" for cover. |
+| `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
-- The slide layers are `[data-testid=slide-home|slide-list|slide-booking]`. All stay mounted, so
+- The slide layers are `[data-testid=slide-home|slide-list|slide-booking]` on Lists and `[data-testid=slide-availability|slide-calendar]` on Availability. All stay mounted, so
   scope selectors to the top layer, for example `[data-testid=slide-booking] >> text="ASA status"`.
 
 **Simulators** (`src/apps/demo/`)
@@ -326,6 +332,19 @@ Audit.
   every session is Free unless leave or a recurring booking painted it (for example
   `/admin/day/2026-09-07`).
 - Schedule settings: four months (to Sat 21 Nov 2026), AM 07:30 to 12:30, PM 13:00 to 17:30.
+
+**Availability** (catch-up Phase 29)
+
+- The availability statuses are a master list (`/admin/masters?view=availability-statuses`), seeded
+  with three fixed IDs: `free` (Free, the default, dashed), `holiday` (Holiday, long label "On
+  holiday") and `unavailable` (Unavailable, hatched). An added status gets `ST0001`, `ST0002` and so
+  on. No series is seeded.
+- Dr Souter's seeded leave is **Sat 25 and Sun 26 Jul** (Holiday, "Annual leave / back Monday"); her
+  Fri 24 holds Lists (Phase 28 freed it). She has recurring Lists Monday to Thursday every week, so a
+  week of days off flags those Lists on the office's Day view (the interim until Phase 32): for a
+  clean days-off shot use a Friday to Sunday, or her Fridays (free beyond the recorded window).
+- Mobile and web shots are on different origins: stage availability for an admin shot with web
+  steps in `setup` (`/web/availability/mine?date=…`), never mobile ones.
 
 **Pairing preferences and tiers** (catch-up Phase 17; office only, never on mobile, web or the PWA)
 
@@ -443,6 +462,13 @@ the next run raises his $700.00 before GST ($805.00 with GST).
 - **Complete booking:** "Finish now", then "Mark complete".
   - `[data-testid=completion-overlay]` appears for about 1s. Shoot it with `{ "wait": 350 }`.
   - Pressing "Mark complete" on an incomplete booking marks `[data-validation-focus=true]`.
+- **Availability sheet** (catch-up Phase 29): on `/mobile/availability`, `[data-shot=availability-change]`
+  opens the selected day's sheet; on `/mobile/availability/calendar`, a day `button[data-date=…]` opens
+  it on the session panel ("Change", "Remove"; on a series instance "Change this one", "Delete this
+  one", "Delete the series"), and `[data-shot=mobile-add-days-off]` opens it on the form (On holiday,
+  both sessions, "1 week" ready). Status chips `[data-status-choice=<id>]`; Sessions and Repeat are
+  `[role=group][aria-label="Sessions"|"Repeat"]`; the first date input is From (or Starts). After
+  "Save", "Done" closes it.
 - **Cover:**
   - Mobile availability: `text="Tap to ask" >> nth=0`.
   - Web availability: `button:has-text("Open for booking") >> nth=0`.
@@ -468,10 +494,16 @@ the next run raises his $700.00 before GST ($805.00 with GST).
   "Edit horizon" (`[data-shot=admin-horizon-months]`, "Months ahead", preview
   `[data-shot=horizon-preview]`, shortening asks "Confirm and remove N days") and "Edit session times"
   (`[data-shot=admin-session-times-edit]`).
+- **Availability statuses** (catch-up Phase 29): `/admin/masters?view=availability-statuses`. "Add
+  status" or a row's `role=button[name="Edit <label>"]` opens `[data-shot=admin-availability-status-sheet]`
+  (the first input is Label, then Long label and Description; swatches `[data-swatch=<token>]`; Fill is
+  `[role=group][aria-label="Fill"]`; "Save changes" or "Add status", disabled while the draft has an
+  issue, the issues listed inline). "Retire <label>" opens `[data-shot=admin-availability-status-retire]`
+  ("Retire status", "Cancel"); a retired row offers "Restore <label>".
 - **Edit times** on an empty session: `[data-shot=admin-edit-session-times]`; times in either sheet
   sit in `[data-shot=session-times]` with "Use default".
 - **Reassign:** "Reassign list", pick a target like "Sharma, Priya · Free AM", then (the vacated
-  session `select[data-shot=reassign-vacated]` defaults to Free) "Confirm reassignment".
+  session `select[data-shot=reassign-vacated]` defaults to Free and lists the availability statuses in use) "Confirm reassignment".
   `[data-testid=list-reassignment-overlay]` appears.
 - **Admin booking:** "Edit billing setup", "Price override" (placeholders `-10` and "Why the price
   differs") and "Funder allocation".

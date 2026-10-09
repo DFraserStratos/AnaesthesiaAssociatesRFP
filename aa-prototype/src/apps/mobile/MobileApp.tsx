@@ -6,7 +6,7 @@ import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
-import { listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
+import { availabilityStackLocation, listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
 import type { MobileOutletContext } from './outlet'
 
 interface TabDef {
@@ -127,9 +127,10 @@ export function MobileApp({
     [actor, anaesthetistId, persona, moreExtra],
   )
 
-  // The List and Booking layers are full-bleed (the mockup): the tab bar only shows
-  // at the base of the Lists stack and on the other three tabs.
-  const showTabBar = listsStackLocation(pathname).depth === 0
+  // The List and Booking layers and My calendar are full-bleed (the mockup): the
+  // tab bar only shows at the base of the Lists and Availability stacks and on
+  // the other two tabs.
+  const showTabBar = listsStackLocation(pathname).depth === 0 && availabilityStackLocation(pathname).depth === 0
 
   return (
     <SurfaceProvider variant="mobile">

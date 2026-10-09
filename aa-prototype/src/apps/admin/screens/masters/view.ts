@@ -17,7 +17,7 @@ export type MastersView =
   | 'rvgCodes'
   | 'modifierCodes'
   | 'scheduleSettings'
-  | 'listStatuses'
+  | 'availability-statuses'
   | 'xeroArchiving'
 
 /** Sub-nav order (the phase doc's). "Permanent lists" keeps its label until Phase 30. */
@@ -34,7 +34,8 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = [
   { view: 'rvgCodes', label: 'RVG codes' },
   { view: 'modifierCodes', label: 'Modifier codes' },
   { view: 'scheduleSettings', label: 'Schedule settings' },
-  { view: 'listStatuses', label: 'List statuses' },
+  // Catch-up Phase 29 (US-01.2.2): the user-maintained availability statuses; never "slot" in the UI (OQ-64).
+  { view: 'availability-statuses', label: 'Availability statuses' },
   { view: 'xeroArchiving', label: 'Xero & archiving' },
 ]
 
@@ -42,5 +43,7 @@ export const DEFAULT_MASTERS_VIEW: MastersView = 'anaesthetists'
 
 /** The view a `?view=` value names; a missing or unknown value falls back to Anaesthetists. */
 export function parseMastersView(param: string | null): MastersView {
+  // The pre-Phase 29 view id still opens the same page.
+  if (param === 'listStatuses') return 'availability-statuses'
   return MASTERS_NAV.find((n) => n.view === param)?.view ?? DEFAULT_MASTERS_VIEW
 }

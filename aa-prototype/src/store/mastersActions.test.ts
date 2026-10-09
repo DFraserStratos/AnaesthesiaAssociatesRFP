@@ -115,7 +115,7 @@ describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1
     expect(Object.values(state.schedule.lists).some((l) => l.anaesthetistId === '99001')).toBe(false)
 
     const fresh = generateCanvasForDates(
-      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], permanentLists: Object.values(state.masters.permanentLists), leave: SEED_LEAVE, holidays: Object.values(state.masters.holidays) },
+      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], permanentLists: Object.values(state.masters.permanentLists), leave: SEED_LEAVE, series: [], statuses: state.masters.slotStatuses, holidays: Object.values(state.masters.holidays) },
       dates,
     )
     const stored = new Map(slots.map((s) => [s.id, s]))

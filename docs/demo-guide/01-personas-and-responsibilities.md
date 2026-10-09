@@ -44,7 +44,7 @@ Bookings and capture the data AA needs for billing.
 5. Review the calculated units and fee at her personal dollar-per-unit value.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
-8. Use Availability to offer a Free session or request cover.
+8. Use Availability to mark days off weeks ahead, including repeating days off, or to request cover.
 9. Create a missing Booking manually.
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
@@ -117,7 +117,9 @@ functionality.
   Billing Engine's mirror (outstanding payables, received and paid-out invoices, receivables aging,
   GST transaction list), over seeded historical rows plus anything a demo payment adds. They never
   query Xero directly.
-- The Leave panel is read-only planning context; submitting leave requests is outside this prototype.
+- Days off are kept in the availability calendar (My calendar on mobile, My availability on the web),
+  which sets each session's status directly. The web dashboard's seeded Leave panel is read-only
+  planning context and stays until Phase 38.
 
 ## Primary persona 3: Kirsty W., AA scheduling coordinator
 

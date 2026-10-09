@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { CircleDollarSign } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { neutral, semantic } from '../../../theme/tokens'
-import { statusColours } from '../../../theme/statusColours'
+import { STATUS_PALETTE } from '../../../theme/statusColours'
 import {
   gstActivityFor,
   outstandingAccpayInvoicesFor,
@@ -142,7 +142,7 @@ function AgeChip({ days, accRelated }: { days: number; accRelated: boolean }) {
   return (
     <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
       {accRelated && (
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: statusColours.preop.onTint, background: statusColours.preop.tint, borderRadius: 999, padding: '2px 8px' }}>ACC</span>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: STATUS_PALETTE.preop.onTint, background: STATUS_PALETTE.preop.tint, borderRadius: 999, padding: '2px 8px' }}>ACC</span>
       )}
       <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: '2px 9px', background: overdue ? semantic.warning.tint : neutral.sunken, color: overdue ? semantic.warning.onTint : neutral.slate }}>
         {days}d

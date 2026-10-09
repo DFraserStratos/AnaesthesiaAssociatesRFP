@@ -38,6 +38,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
   const slots = useAppStore((s) => s.schedule.slots)
   const lists = useAppStore((s) => s.schedule.lists)
   const appSettings = useAppStore((s) => s.appSettings)
+  const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const [session, setSession] = useState<Session>(initialSession)
   const [surgeonId, setSurgeonId] = useState('')
@@ -54,8 +55,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
 
   const candidates = useMemo(
     () =>
-      openSlotViews({ schedule: { slots, lists }, appSettings }, dateISO, session).map((v) => v.slot.anaesthetistId),
-    [slots, lists, appSettings, dateISO, session],
+      openSlotViews({ schedule: { slots, lists }, appSettings, masters: { slotStatuses } }, dateISO, session).map((v) => v.slot.anaesthetistId),
+    [slots, lists, appSettings, slotStatuses, dateISO, session],
   )
   const surgeonOptions = useMemo(() => Object.values(surgeons).sort((a, b) => a.name.localeCompare(b.name)), [surgeons])
   const count = candidates.length

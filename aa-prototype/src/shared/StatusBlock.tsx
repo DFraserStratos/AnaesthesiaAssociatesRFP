@@ -1,13 +1,11 @@
 import type { CSSProperties } from 'react'
-import {
-  statusColours,
-  freeDashedBorder,
-  unavailableHatchTint,
-  type StatusKey,
-} from '../theme/statusColours'
+import type { DisplayKey } from '../domain/types'
+import type { StatusVisual } from '../theme/statusColours'
+import { useDisplayStatus } from './status/useSlotStatuses'
 
 interface StatusBlockProps {
-  status: StatusKey
+  /** A List kind or an availability status ID. */
+  status: DisplayKey
   /** Primary line (e.g. hospital / session name). */
   title: string
   /** Secondary line (e.g. surgeon · specialty). */
@@ -16,32 +14,24 @@ interface StatusBlockProps {
 }
 
 /**
- * A small session block honouring each status' fill treatment (Design Language
- * §02): solid statuses get a tinted body with a coloured left bar, Unavailable
- * is hatched, Free is a dashed outline. The demonstration counterpart to
- * {@link StatusChip}; the day grids in later phases reuse this shape.
+ * The block fill for a resolved status (Design Language §02): solid statuses
+ * get a tinted body with a coloured left bar, hatched ones the hatch over the
+ * tint with the bar, dashed ones a dashed outline. One home for the rule, so
+ * the day grid, the calendars and the legend draw a status the same way.
+ */
+export function blockFill(visual: StatusVisual): CSSProperties {
+  if (visual.treatment === 'dashed') return { background: visual.blockBackground, border: visual.border }
+  return { background: visual.blockBackground, borderLeft: `3px solid ${visual.leftBar ?? visual.solid}` }
+}
+
+/**
+ * A small session block honouring each status's fill treatment. The
+ * demonstration counterpart to {@link StatusChip}.
  */
 export function StatusBlock({ status, title, detail, style }: StatusBlockProps) {
-  const c = statusColours[status]
-
-  const base: CSSProperties = {
-    display: 'block',
-    borderRadius: 6,
-    padding: '6px 9px',
-    minWidth: 110,
-  }
-
-  let treatment: CSSProperties
-  if (c.treatment === 'hatched') {
-    treatment = { background: unavailableHatchTint, borderLeft: `3px solid ${c.solid}` }
-  } else if (c.treatment === 'dashed') {
-    treatment = { background: c.tint, border: freeDashedBorder }
-  } else {
-    treatment = { background: c.tint, borderLeft: `3px solid ${c.solid}` }
-  }
-
+  const c = useDisplayStatus(status).visual
   return (
-    <span style={{ ...base, ...treatment, ...style }}>
+    <span style={{ display: 'block', borderRadius: 6, padding: '6px 9px', minWidth: 110, ...blockFill(c), ...style }}>
       <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: c.onTint }}>
         {title}
       </span>

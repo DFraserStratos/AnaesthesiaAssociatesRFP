@@ -75,7 +75,10 @@ There is no `RETURNED` state.
 
 1. The system ensures every active anaesthetist has an AM and a PM session for every day from their
    start date to the end of the rolling horizon. Every new session starts Free.
-2. The anaesthetist's calendar (leave, unavailability) is painted onto the session's status.
+2. The anaesthetist's calendar (leave, unavailability and their repeating days off) is painted onto
+   the session's status; nothing is reconciled, because the calendar sets the session's status directly.
+   The statuses are a list in master data (Free, On holiday, Unavailable to start), next to the fixed
+   List types.
 3. Permanent Lists (the surgeons' recurring bookings) then project standing hospital and surgeon
    arrangements as Lists into free sessions; one that meets leave is traced for the office.
 4. The displayed status is the List's kind when a List is in the session, the session's status
@@ -203,8 +206,11 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 
 ### Steps
 
-1. Dr Souter maintains her personal availability or offers a Free session for cover.
-2. Her availability is the status on her session; a session holding a List gets a conflict flag.
+1. Dr Souter keeps her availability in her calendar (mobile or web): days off ahead, repeating days
+   off, one occurrence changed or deleted. Or she offers a Free session for cover.
+2. Her availability is the status on her session, set directly; a session holding a List marked
+   unavailable keeps its List and gets a conflict flag on the office's Day view (until Phase 32's
+   return-or-assign choice).
 3. Kirsty sees the conflict or receives the phone call.
 4. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
    not-preferred pairing grouped apart and warned (never blocked).

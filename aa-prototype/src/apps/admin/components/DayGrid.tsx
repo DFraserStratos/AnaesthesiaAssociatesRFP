@@ -1,16 +1,11 @@
 import { useMemo, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic } from '../../../theme/tokens'
-import {
-  STATUS_ORDER,
-  statusColours,
-  unavailableHatchTint,
-  freeDashedBorder,
-  type StatusKey,
-} from '../../../theme/statusColours'
+import type { DisplayKey } from '../../../domain/types'
+import { isClosedKey } from '../../../domain/slotStatus'
 import type { Anaesthetist } from '../../../domain/types'
 import type { AppState, ListWarningSummary, SlotView } from '../../../store'
-import { StatusLegend } from '../../../shared'
+import { resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
 import { attentionReasons, blockGeometry, slotSpan, surnameFirst } from '../util'
 
 interface DayGridProps {
@@ -42,7 +37,7 @@ interface Segment {
 type FocusFilter = 'attention' | 'note' | 'warnings'
 
 interface DisplaySegment extends Segment {
-  displayKey: StatusKey
+  displayKey: DisplayKey
   /** List-level attention (conflicts, surgeon TBC; `attentionReasons`): the amber `!` corner. */
   listAttention: boolean
   /** List-level attention or an open warning on one of its Bookings: the outline. */
@@ -51,8 +46,8 @@ interface DisplaySegment extends Segment {
   warnings?: ListWarningSummary
 }
 
-/** Merge a both-sessions holiday/unavailable pair (no List in either) into one full-day block (display only). */
-function segmentsFor(views: SlotView[]): Segment[] {
+/** Merge a both-sessions pair under one closed status (no List in either) into one full-day block (display only). */
+function segmentsFor(views: SlotView[], statuses: AppState['masters']['slotStatuses']): Segment[] {
   const am = views.find((v) => v.slot.session === 'AM')
   const pm = views.find((v) => v.slot.session === 'PM')
   if (
@@ -61,7 +56,7 @@ function segmentsFor(views: SlotView[]): Segment[] {
     am.list === undefined &&
     pm.list === undefined &&
     am.slot.status === pm.slot.status &&
-    (am.slot.status === 'holiday' || am.slot.status === 'unavailable')
+    isClosedKey(statuses, am.slot.status)
   ) {
     return [{ view: am, start: 7, end: 18 }]
   }
@@ -76,14 +71,16 @@ function hasNoteSignal(view: SlotView): boolean {
 }
 
 export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot }: DayGridProps) {
-  const [hiddenStatuses, setHiddenStatuses] = useState<Set<StatusKey>>(() => new Set())
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<DisplayKey>>(() => new Set())
+  const slotStatuses = useSlotStatusRecords()
+  const legendKeys = useLegendKeys()
   const [focusFilters, setFocusFilters] = useState<Set<FocusFilter>>(() => new Set())
 
   const rows = useMemo(
     () =>
       anaesthetists.map((anaesthetist) => ({
         anaesthetist,
-        segments: segmentsFor(viewsByAnaesthetist[anaesthetist.registrationNumber] ?? []).map(
+        segments: segmentsFor(viewsByAnaesthetist[anaesthetist.registrationNumber] ?? [], slotStatuses).map(
           (segment): DisplaySegment => {
             const list = segment.view.list
             const listAttention = list !== undefined && attentionReasons(list).length > 0
@@ -99,7 +96,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           },
         ),
       })),
-    [anaesthetists, viewsByAnaesthetist, warningFlags],
+    [anaesthetists, viewsByAnaesthetist, warningFlags, slotStatuses],
   )
 
   const filteredRows = useMemo(
@@ -120,8 +117,8 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   )
 
   const activeStatuses = useMemo(
-    () => new Set(STATUS_ORDER.filter((status) => !hiddenStatuses.has(status))),
-    [hiddenStatuses],
+    () => new Set(legendKeys.filter((status) => !hiddenStatuses.has(status))),
+    [hiddenStatuses, legendKeys],
   )
   const totalBlocks = rows.reduce((total, row) => total + row.segments.length, 0)
   const matchingAnaesthetists = filteredRows.filter((row) => row.segments.length > 0).length
@@ -138,7 +135,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     return [...matching, ...inactive]
   }, [filtered, filteredRows])
 
-  function toggleStatus(status: StatusKey) {
+  function toggleStatus(status: DisplayKey) {
     setHiddenStatuses((current) => {
       const next = new Set(current)
       if (next.has(status)) next.delete(status)
@@ -288,17 +285,19 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
 function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: AppState['masters']; onClick: () => void }) {
   const { slot, list } = seg.view
   const { displayKey, listAttention, needsAttention, hasNote: hasNoteSignal, warnings } = seg
-  const colour = statusColours[displayKey]
+  const resolved = resolveDisplayStatus(displayKey, masters.slotStatuses)
+  const colour = resolved.visual
+  const isOpenEmpty = list === undefined && seg.view.open
   const reasons = list !== undefined ? attentionReasons(list) : []
   // The block's note: the List's when a List is in the session, else the session's own.
   const note = list !== undefined ? list.notes : slot.note
   const geo = blockGeometry(seg.start, seg.end)
 
-  const bg = displayKey === 'unavailable' ? unavailableHatchTint : colour.tint
+  const bg = colour.blockBackground
   // A strong open warning outlines the block in the error red; otherwise any
   // attention (List-level, or a mild warning) is the amber outline (US-13.7.3).
   const outline = warnings?.strongest === 'strong' ? semantic.error.solid : ATTENTION
-  const border = displayKey === 'free' ? freeDashedBorder : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
+  const border = colour.border !== undefined ? colour.border : needsAttention ? `1.5px solid ${outline}` : '1px solid rgba(0,0,0,0)'
 
   const hospitalName = list?.hospitalId !== undefined ? masters.hospitals[list.hospitalId]?.name : undefined
   const surgeon = list?.surgeonId !== undefined ? masters.surgeons[list.surgeonId] : undefined
@@ -306,15 +305,15 @@ function GridBlock({ seg, masters, onClick }: { seg: DisplaySegment; masters: Ap
   let l1: string
   let l2: string
   if (list !== undefined) {
-    l1 = hospitalName ?? colour.longLabel
+    l1 = hospitalName ?? resolved.longLabel
     if (surgeon !== undefined) l2 = surgeon.name + (surgeon.specialty !== undefined ? ` · ${surgeon.specialty}` : '')
     else if (note !== undefined && note.trim() !== '') l2 = note
     else l2 = displayKey === 'private' ? 'Surgeon TBC' : ''
-  } else if (displayKey === 'free') {
-    l1 = 'Free'
+  } else if (isOpenEmpty) {
+    l1 = resolved.label
     l2 = (note ?? '').replace(/^Free\s*\/\s*/i, '') || 'open for cover'
   } else {
-    l1 = colour.longLabel
+    l1 = resolved.label
     l2 = note ?? ''
   }
 

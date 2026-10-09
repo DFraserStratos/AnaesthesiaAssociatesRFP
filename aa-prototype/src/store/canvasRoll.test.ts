@@ -22,7 +22,7 @@ import { addDayNote } from './dayNoteActions'
 import { wireBillingRun } from './billingRun'
 import type { Actor } from './mutate'
 import { canvasAnaesthetists, generateCanvasForDates, SEED_LEAVE, SEED_MARKERS, ANAE, type CanvasMasters } from '../domain/seed'
-import { HOSP, SURG } from '../domain/seed'
+import { HOSP, SURG, seedSlotStatusRecords } from '../domain/seed'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
 import type { PermanentList, Slot } from '../domain/types'
 import { projectedListId } from '../domain/slots'
@@ -79,6 +79,8 @@ describe('clock roll-forward', () => {
       anaesthetists: canvasAnaesthetists(state.masters.anaesthetists),
       permanentLists: Object.values(state.masters.permanentLists),
       leave: SEED_LEAVE,
+      series: [],
+      statuses: state.masters.slotStatuses,
       holidays: Object.values(state.masters.holidays),
     }
     const fresh = generateCanvasForDates(masters, newDates)
@@ -221,6 +223,8 @@ describe('canvas generator scale (the RFP production scale)', () => {
       anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-01-06', active: true })),
       permanentLists,
       leave: [],
+      series: [],
+      statuses: seedSlotStatusRecords(),
       holidays: [],
     }
     const horizon = horizonFor('2026-07-21', MONTHS)

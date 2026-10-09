@@ -12,7 +12,7 @@
 
 import { addDays, differenceInYears, format, parseISO, startOfWeek } from 'date-fns'
 import { validateNhi } from '../domain/nhi'
-import type { BillingRoute, BookingSource, ListState } from '../domain/types'
+import type { BillingRoute, BookingSource } from '../domain/types'
 
 /** "TUE 21 JUL" — the micro-cap day header used on the Lists home. */
 export function dayMicroCap(dateISO: string): string {
@@ -175,17 +175,8 @@ export function initialsOf(name: string): string {
     .join('')
 }
 
-/**
- * A List's lifecycle state as the screens print it: the catalogue's names
- * (EP-07, FT-07.1), upper case. One home, so Phase 31 adds DRAFT (a Draft List)
- * in one place. An empty session is a Slot with no List, so it has no state to
- * print (catch-up Phase 28).
- */
-export const LIST_STATE_LABELS: Record<ListState, string> = {
-  ACTIVE: 'ACTIVE',
-  SUBMITTED: 'SUBMITTED',
-  AUTHORISED: 'AUTHORISED',
-}
+/** A List's lifecycle state as the screens print it (its home is `domain/types.ts`). */
+export { LIST_STATE_LABELS } from '../domain/types'
 
 /**
  * How a Booking entered the system, as shown on the Booking (DM-39; catch-up

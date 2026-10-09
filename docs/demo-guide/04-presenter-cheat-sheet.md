@@ -150,14 +150,16 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Complete Booking and submit List
 - Add a missing Booking
 - Photo of the booking card: Future Work (Demo actions, badged)
-- Availability and cover
+- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
+  (My calendar, a bottom sheet)
 - Later: balances
 
 ### Anaesthetist Web
 
 - Wider dashboard and date ranges
 - Same List/Booking detail and capture functions
-- Availability and cover
+- Availability and cover: mark days off ahead, repeating days off, change or delete one occurrence
+  (My availability, the same form as the phone)
 - Accounts and GST activity
 
 ### Admin Web
@@ -181,6 +183,9 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Find available (Day header): office only; the free anaesthetists for a session in tier order,
   shuffled within a tier, with not-preferred pairings apart once a surgeon is chosen; picking one opens
   Assign List
+- Availability statuses (Master data): rename, recolour or add a status and every app follows; rules
+  read the status's ID; it is availability only, never a List's state (Active, Submitted or
+  Authorised, or Draft for a Draft List)
 - The app never says "slot": it says session, AM or PM
 - Later: billing and integration monitoring
 
@@ -295,6 +300,10 @@ Say:
 
 - The RFP asks whether these are hard constraints or warnings.
 - The prototype uses advisory conflict flags.
+- A bookable status (Free) never conflicts, and clears an earlier availability flag.
+- A closed status on a booked session flags the List on the office's Day view for now. The settled
+  rule (return it to the office or hand it to a colleague, US-01.5.5) is still to be built (Phase 32),
+  so do not demo that path.
 
 ### 7. Split-billing invoice count
 
