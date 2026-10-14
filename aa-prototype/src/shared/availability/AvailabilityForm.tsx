@@ -9,6 +9,7 @@ import { Button, FieldLabel, FormError, Segmented, SlidingSegmentedControl, Text
 import { StatusChip } from '../StatusChip'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
 import { useAvailabilityBounds } from './useAvailability'
+import { useMoveListPrompt } from '../flows/MoveListPrompt'
 
 type RepeatChoice = 'none' | '1' | '2' | 'more'
 
@@ -68,6 +69,32 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
   const [note, setNote] = useState(initial.note ?? '')
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // US-01.5.5 (catch-up Phase 32): a closed status over her List asks where the List goes first.
+  const prompt = useMoveListPrompt()
+
+  /** A `holdsList` refusal: prompt for each List, then save again; any other refusal shows inline. */
+  function refused(out: { code: string; message: string; details?: unknown }) {
+    const listIds = (out.details as { listIds?: string[] } | undefined)?.listIds
+    if (out.code === 'holdsList' && prompt !== null && listIds !== undefined && listIds.length > 0) {
+      setError(null)
+      // Where each List is now: once moved, a series takes these sessions as its own.
+      const lists = useAppStore.getState().schedule.lists
+      const slotIds = listIds.flatMap((id) => {
+        const slotId = lists[id]?.slotId
+        return slotId !== undefined ? [slotId] : []
+      })
+      prompt.promptUnavailable({
+        listIds,
+        statusKey,
+        onDone: (allMoved) => {
+          if (allMoved) save(listIds.length, slotIds)
+          else setError('Not saved. Sessions whose List you moved are already marked; the others are unchanged.')
+        },
+      })
+      return
+    }
+    setError(out.message)
+  }
 
   const repeating = allowRepeat && repeat !== 'none'
   const everyWeeks = (repeat === 'more' ? moreWeeks : Number(repeat)) as 1 | 2 | 3 | 4
@@ -97,9 +124,11 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
     setWeekdays((cur) => (cur.includes(day) ? cur.filter((d) => d !== day) : [...cur, day].sort((a, b) => a - b)))
   }
 
-  function save() {
+  /** `movedLists`: the Lists the unavailable prompt moved first (catch-up Phase 32), for the result line. */
+  function save(movedLists = 0, movedSlotIds: readonly string[] = []) {
     const label = statusFor(records, statusKey)?.longLabel ?? 'that status'
     const trimmed = note.trim()
+    const movedFirst = movedLists > 0 ? { movedFirst: { lists: movedLists, sessionsAlreadySet: trimmed === '' ? movedLists : 0 } } : {}
     if (repeating) {
       const draft = {
         anaesthetistId,
@@ -111,22 +140,22 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
         ...(untilISO !== null ? { untilISO } : {}),
         ...(trimmed !== '' ? { note: trimmed } : {}),
       }
-      const out = createAvailabilitySeries(useAppStore, actor, draft)
+      const out = createAvailabilitySeries(useAppStore, actor, draft, movedSlotIds.length > 0 ? { adoptSlotIds: movedSlotIds } : {})
       if (!out.ok) {
-        setError(out.message)
+        refused(out)
         return
       }
-      const line = describeAvailabilityOutcome(out.value, { kind: 'series', statusLabel: label, seriesLine: seriesLine(draft, records) })
+      const line = describeAvailabilityOutcome(out.value, { kind: 'series', statusLabel: label, seriesLine: seriesLine(draft, records), ...movedFirst })
       setResult(line)
       onSaved?.(line)
       return
     }
     const out = setAvailabilityRange(useAppStore, actor, { anaesthetistId, fromISO, toISO, sessions, statusKey, note: trimmed })
     if (!out.ok) {
-      setError(out.message)
+      refused(out)
       return
     }
-    const line = describeAvailabilityOutcome(out.value, { kind: 'range', statusLabel: label, fromISO, toISO })
+    const line = describeAvailabilityOutcome(out.value, { kind: 'range', statusLabel: label, fromISO, toISO, ...movedFirst })
     setResult(line)
     onSaved?.(line)
   }
@@ -249,7 +278,7 @@ export function AvailabilityForm({ actor, anaesthetistId, initial, allowRepeat =
 
       <FormError message={error} />
       <ResultLine line={result} />
-      <Button variant="primary" block onClick={save}>Save</Button>
+      <Button variant="primary" block onClick={() => save()}>Save</Button>
     </div>
   )
 }

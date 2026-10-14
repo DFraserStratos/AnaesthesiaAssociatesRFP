@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
 import { useAppStore } from '../../store'
-import { AddBookingFlow, RequestCoverSheet, type AddBookingMode } from '../../shared/flows'
+import { AddBookingFlow, type AddBookingMode } from '../../shared/flows'
 import { useDemoTriggerMemory } from '../../shared/demoTriggers/memory'
 import { SlideStack, type SlideLayer } from './components'
 import {
@@ -27,12 +26,6 @@ import { useMobileOutlet } from './outlet'
  * ids read off the URL.
  */
 
-interface OfferTarget {
-  /** The open session offered (a Slot id). */
-  slotId: string
-  slotLabel: string
-}
-
 // ---------------------------------------------------------------------------
 // Lists — `/mobile/lists/*` (the slide stack)
 // ---------------------------------------------------------------------------
@@ -46,7 +39,6 @@ export function MobileListsRoute() {
   const [addOpen, setAddOpen] = useState(false)
   const [addMode, setAddMode] = useState<AddBookingMode>('manual')
   const [addResetKey, setAddResetKey] = useState(0)
-  const [offer, setOffer] = useState<OfferTarget | null>(null)
 
   // "Photo capture (Future scope)" (catch-up Phase 15b): the demo action leaves
   // a UI-only request for the List in the URL; this opens the Add a booking
@@ -72,7 +64,12 @@ export function MobileListsRoute() {
   }, [urlListId, urlBookingId])
 
   // Stale ids fall back a layer rather than blanking (URLs outlive the seed).
-  const listMissing = useAppStore((s) => urlListId !== null && s.schedule.lists[urlListId] === undefined)
+  // A List she has moved on (catch-up Phase 32) has left her schedule: back to Lists, like a stale id.
+  const listMissing = useAppStore((s) => {
+    if (urlListId === null) return false
+    const l = s.schedule.lists[urlListId]
+    return l === undefined || l.state === 'DRAFT' || l.anaesthetistId !== anaesthetistId
+  })
   const bookingMissing = useAppStore((s) => urlBookingId !== null && s.schedule.bookings[urlBookingId] === undefined)
   // A pre-Phase-15 `/cards/` link: hand it to the `/bookings/` URL first.
   if (legacyBookingPath(pathname) !== null) return <LegacyBookingRedirect />
@@ -105,13 +102,6 @@ export function MobileListsRoute() {
   // link wipes, which is the same unreliability, just hidden.
   const popLayer = depth === 2 ? backToList : depth === 1 ? backToLists : undefined
 
-  function offerCover(slotId: string) {
-    const slot = useAppStore.getState().schedule.slots[slotId]
-    const slotLabel =
-      slot !== undefined ? `${format(parseISO(slot.dateISO), 'EEE d MMM')} · ${slot.session}` : 'Free session'
-    setOffer({ slotId, slotLabel })
-  }
-
   const listsLayers: SlideLayer[] = [
     {
       key: 'home',
@@ -122,7 +112,6 @@ export function MobileListsRoute() {
           personaName={personaName}
           initials={initials}
           onOpenList={(id) => navigate(`/mobile/lists/${id}`)}
-          onOfferCover={offerCover}
         />
       ),
     },
@@ -171,19 +160,6 @@ export function MobileListsRoute() {
           onCreated={() => undefined}
         />
       )}
-
-      {offer !== null && (
-        <RequestCoverSheet
-          open
-          slotId={offer.slotId}
-          actor={actor}
-          kind="offer"
-          personName={personaName}
-          slotLabel={offer.slotLabel}
-          onClose={() => setOffer(null)}
-          onSent={() => undefined}
-        />
-      )}
     </>
   )
 }
@@ -226,7 +202,6 @@ export function MobileAvailabilityRoute() {
       mounted: true,
       node: (
         <AvailabilityScreen
-          actor={actor}
           anaesthetistId={anaesthetistId}
           initials={initials}
           onChangeDay={(dateISO) => setSheet({ fromISO: dateISO })}

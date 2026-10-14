@@ -1,21 +1,50 @@
 {
   "id": "US-01.4.3",
-  "status": "partial",
-  "absentReason": "From the availability view an anaesthetist can ask a colleague to cover a free session, or offer their own free session. Requesting that one of their own booked Lists be swapped to a colleague, and the office confirming that reassignment, are not in the prototype.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "cover-request",
+      "name": "move-list",
       "app": "web",
-      "caption": "Ask a colleague to cover a free session",
-      "start": "/web/availability",
+      "caption": "Move your own List to the office or into a colleague's free session, with no acceptance and no confirmation",
+      "start": "/web/availability?date=2026-07-27",
       "states": [
         {
+          "state": "sheet",
+          "caption": "Move from her own List on the availability view: the colleagues free that session",
           "steps": [
             {
-              "click": "button:has-text(\"Open for booking\") >> nth=0"
+              "click": "[data-shot=\"availability-move-mine-pm\"]"
             },
             {
-              "wait": 400
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-colleagues\"]"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "done",
+          "caption": "Moved at once: the colleague and the office can see it now",
+          "steps": [
+            {
+              "click": "[data-shot=\"availability-move-mine-pm\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "click": "[data-shot=\"move-colleague-45178\"]"
+            },
+            {
+              "click": "button:has-text(\"Move List\")"
+            },
+            {
+              "wait": "[data-shot=\"move-done\"]"
             }
           ],
           "highlight": [
@@ -25,22 +54,63 @@
       ]
     },
     {
-      "name": "cover-request",
+      "name": "move-list",
       "app": "mobile",
-      "caption": "Ask a colleague to cover a free session",
+      "caption": "Move your own List to the office or into a colleague's free session, with no acceptance and no confirmation",
       "start": "/mobile/availability",
       "states": [
         {
+          "state": "sheet",
+          "caption": "Move from her own List on Find cover: back to the office or to a colleague",
           "steps": [
             {
-              "click": "text=\"Tap to ask\" >> nth=0"
+              "click": "button[data-date=\"2026-07-23\"]"
             },
             {
-              "wait": 400
+              "click": "[data-shot=\"availability-move-am\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-where\"]"
             }
           ],
           "highlight": [
             "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "to-office",
+          "caption": "Return to the office: she chooses what her session becomes, Free by default",
+          "steps": [
+            {
+              "click": "button[data-date=\"2026-07-23\"]"
+            },
+            {
+              "click": "[data-shot=\"availability-move-am\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-office\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-vacated\"]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        },
+        {
+          "state": "moved-to-you",
+          "caption": "The colleague who receives a List sees it with a notice",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-me"
+            },
+            {
+              "wait": "[data-shot=\"moved-to-you\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"moved-to-you\"]"
           ]
         }
       ]

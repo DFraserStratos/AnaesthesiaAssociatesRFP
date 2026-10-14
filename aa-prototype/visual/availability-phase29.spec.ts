@@ -36,22 +36,24 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   await page.screenshot({ path: 'visual/shots/p29-01-mobile-calendar.png' })
   await noSlot(page, 'mobile calendar')
 
-  // Days off ahead: On holiday, both sessions, 1 week from Mon 10 Aug.
+  // Days off ahead: On holiday, both sessions, Fri 14 to Sun 16 Aug. (A week
+  // from Mon 10 Aug now meets her recurring Lists, which the move prompt asks
+  // about first: catch-up Phase 32, US-01.5.5, in list-moves-phase32.spec.ts.)
   await page.locator('[data-shot="mobile-add-days-off"]').click()
   const sheet = page.locator('[data-shot="mobile-availability-sheet"]')
   await expect(sheet).toBeVisible()
   await expect(sheet.locator('[data-status-choice]')).toHaveCount(3)
   await expect(sheet.locator('[data-status-choice="holiday"]')).toHaveAttribute('aria-pressed', 'true')
-  await sheet.getByLabel('From').fill('2026-08-10')
-  await sheet.getByRole('button', { name: '1 week' }).click()
+  await sheet.getByLabel('From').fill('2026-08-14')
+  await sheet.getByLabel('To').fill('2026-08-16')
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p29-02-mobile-sheet-week.png' })
   await noSlot(page, 'mobile sheet')
   await sheet.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(sheet.locator('[data-shot="availability-result"]')).toContainText('14 sessions set to On holiday, 10 Aug to 16 Aug.')
+  await expect(sheet.locator('[data-shot="availability-result"]')).toContainText('6 sessions set to On holiday, 14 Aug to 16 Aug.')
   await sheet.getByRole('button', { name: 'Done', exact: true }).click()
   await page.locator('[data-shot="mobile-availability-calendar"]').getByRole('button', { name: 'Next month' }).click()
-  await expect(calendar.locator('[data-slot-id="S-34821-2026-08-12-PM"]')).toHaveAttribute('title', 'PM Holiday')
+  await expect(calendar.locator('[data-slot-id="S-34821-2026-08-15-PM"]')).toHaveAttribute('title', 'PM Holiday')
 
   // A series: Unavailable, PM, every 2 weeks, Friday, no end date.
   await page.locator('[data-shot="mobile-add-days-off"]').click()

@@ -40,6 +40,7 @@ import type { BookingBillingContext } from '../domain/billing/validateBookingFor
 import { ANAESTHETISTS, deriveDashboardFigures, type DashboardFigures } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
+import type { ListMoveInput } from '../domain/listMoves'
 import { conflictFromCause, describeConflict, isBackdropList, type ConflictLookups, type ConflictReason } from '../domain/conflicts'
 import { projectAllRecurringBookings, projectRecurringBookingChange, type ProjectionInputs, type ProjectionPlan } from '../domain/recurringBookingProjection'
 import { conflictLookups } from './conflictReconcile'
@@ -1757,4 +1758,9 @@ export function bookingCountsByList(bookings: Readonly<Record<string, Booking>>)
   for (const b of Object.values(bookings)) if (b.cancellation === undefined) counts.set(b.listId, (counts.get(b.listId) ?? 0) + 1)
   bookingCountCache.set(bookings, counts)
   return counts
+}
+
+/** The slices a List move reads (catch-up Phase 32; `domain/listMoves.ts`): the one builder. */
+export function moveInputOf(state: Pick<AppState, 'schedule' | 'masters'>): ListMoveInput {
+  return { lists: state.schedule.lists, slots: state.schedule.slots, anaesthetists: state.masters.anaesthetists, slotStatuses: state.masters.slotStatuses }
 }

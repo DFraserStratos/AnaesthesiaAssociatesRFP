@@ -466,20 +466,42 @@ export interface ConflictClear {
   note?: string
 }
 
+/** Where an anaesthetist's own move sends a List (catch-up Phase 32; US-01.4.3, D7). */
+export type OwnMoveRoute = 'office' | 'colleague'
+
+/** Why: a plain move, or the hand-on from marking the session not available (US-01.5.5). */
+export type OwnMoveCause = 'move' | 'unavailable'
+
+/** What a notification is about. One member today; OQ-79's later sources (and 32a's single Booking) add members. */
+export type NotificationKind = 'listMoved'
+
 /**
- * A cover marker recorded on an open Slot (Phase 03 mobile request-cover flow;
- * Decisions log 2026-07-21 "New interactions"). `offer` = the owner offers
- * their own free session for cover; `request` = a colleague is asked to cover a
- * free session. Simulated only — no real notification; the audit entry and this
- * marker are the demonstration.
+ * One record in the Admin App's shared notification pool (catch-up Phase 32;
+ * FT-13.8, US-13.8.1, US-13.8.2, DM-41). Append-only: written once, inside
+ * the move's own commit, by `postNotification` alone; nothing updates or
+ * deletes one. It has no per-user, read or actioned state, so every admin
+ * sees the same pool (D15; OQ-79's recommendation). The date, session,
+ * hospital and surgeon are a snapshot at the move, so the notice stays true
+ * after the List moves again or is re-dated. It carries no pairing preference.
  */
-export interface CoverRequest {
-  by: string
-  kind: 'offer' | 'request'
-  targetAnaesthetistId?: AnaesthetistId
-  message?: string
+export interface Notification {
+  id: string
   atISO: IsoDateTime
-  status: 'pending'
+  kind: NotificationKind
+  /** The actor's `who` (the anaesthetist who moved the List). */
+  byActor: string
+  listId: ListId
+  route: OwnMoveRoute
+  cause: OwnMoveCause
+  fromAnaesthetistId: AnaesthetistId
+  /** Route `colleague` only. */
+  toAnaesthetistId?: AnaesthetistId
+  dateISO: IsoDate
+  session: Session
+  hospitalId: string
+  surgeonId: string
+  /** The message the anaesthetist typed, for the office and the colleague. */
+  message?: string
 }
 
 /**
@@ -524,8 +546,6 @@ export interface Slot {
    */
   startTime?: WallTime
   endTime?: WallTime
-  /** A pending cover offer/request on an open Slot (Phase 03). Phase 32 removes it. */
-  coverRequest?: CoverRequest
   /**
    * The availability series that set this Slot's status (catch-up Phase 29;
    * US-01.5.3). A pointer, not a second status: the Slot's own `status` is the

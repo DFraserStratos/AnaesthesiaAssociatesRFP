@@ -31,7 +31,7 @@ Bookings and capture the data AA needs for billing.
 - Capture accurate Base, Time and Modifier data with minimal typing.
 - Add a missing Booking when the hospital and device disagree.
 - Complete work and hand the whole List to the AA office.
-- See availability for possible cover or reassignment.
+- See availability, and move one of her Lists to a free colleague or back to the office.
 - Later, see outstanding amounts and GST-period activity.
 
 ### Core actions
@@ -44,7 +44,8 @@ Bookings and capture the data AA needs for billing.
 5. Review the calculated units and fee at her personal dollar-per-unit value.
 6. Mark each active Booking complete.
 7. Submit the whole List to the office.
-8. Use Availability to mark days off weeks ahead, including repeating days off, or to request cover.
+8. Use Availability to mark days off weeks ahead, including repeating days off, and to move one of
+   her Lists to a free colleague or back to the office.
 9. Create a missing Booking manually.
 10. Record an additional procedure inside a Booking with **Add another procedure**, which charges time
     units only.
@@ -102,7 +103,7 @@ underlying List, Booking and BTM actions.
 - Browse a date-ranged view of Lists.
 - Drill into the same List and Booking detail available on mobile.
 - Create a Booking, add another procedure, and capture BTM data when a desktop is more convenient.
-- Find Free anaesthetists and request cover.
+- Find Free colleagues and move one of her Lists to a free colleague or back to the office.
 - Review accounts outstanding and GST-period activity.
 
 ### Demo distinction
@@ -155,6 +156,8 @@ short-notice cover.
 10. Review the audit history when a change needs explanation.
 11. Work the to-do list on the dashboard: open each warning's Booking and clear it once dealt with.
 12. Assign Draft Lists: Lists with no anaesthetist yet, picked from a grouped, tier-ordered list.
+13. See the team's notifications of Lists anaesthetists have moved, and assign the Draft Lists they
+    return.
 
 ### Permissions
 

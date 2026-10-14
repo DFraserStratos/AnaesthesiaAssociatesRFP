@@ -115,6 +115,11 @@ export function horizonDatesBetween(oldEndISO: string, newEndISO: string): strin
   return enumerateDatesISO(oldEndISO, newEndISO).filter((d) => d > oldEndISO)
 }
 
+/** The ISO date `days` after (or, negative, before) `dateISO`. */
+export function addDaysISO(dateISO: string, days: number): string {
+  return toISODate(addDays(parseISO(dateISO), days))
+}
+
 /** Every ISO date from `startISO` to `endISO`, inclusive of both ends. */
 export function enumerateDatesISO(startISO: string, endISO: string): string[] {
   const out: string[] = []

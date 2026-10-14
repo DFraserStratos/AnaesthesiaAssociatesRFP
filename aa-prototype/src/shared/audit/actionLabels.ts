@@ -65,13 +65,14 @@ export const ACTION_LABELS: Record<string, string> = {
   'draftList.fromRecurringClash': `${DRAFT_LIST} created from a recurring booking (anaesthetist unavailable)`,
   'draftList.detach': `List returned to the office as a ${DRAFT_LIST}`,
   'list.phoneNote': 'Phone note logged',
+  // Catch-up Phase 32: an anaesthetist moves her own List (to the office or a colleague).
+  'list.ownerMove': 'List moved by its anaesthetist',
   'list.pairingAcknowledged': `${PAIRING_LABELS.kind.NOT_PREFERRED} pairing assigned (warning acknowledged)`,
 
   // --- Sessions (catch-up Phase 28). A Slot's audit codes say "session", as
   // the Audit viewer prints the raw code and entity type beside the label. --
   'session.status': 'Availability set',
   'session.times': 'Session times changed',
-  'session.coverRequest': 'Cover requested',
 
   // --- Availability (catch-up Phase 29): days off, repeating days off and the
   // availability status master. No code or label says "slot" (OQ-64). --------

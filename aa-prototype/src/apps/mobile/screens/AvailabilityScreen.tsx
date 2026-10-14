@@ -3,31 +3,22 @@ import { addDays, format, parseISO } from 'date-fns'
 import { accent, brand, neutral, radius } from '../../../theme/tokens'
 import type { DisplayKey, Session } from '../../../domain/types'
 import type { SlotStatusRecords } from '../../../domain/slotStatus'
-import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type Actor, type SlotView } from '../../../store'
+import { isOpenSlotView, rosterForDate, slotViewsForDate, useAppStore, useToday, type SlotView } from '../../../store'
 import { ChevronRight } from 'lucide-react'
 import { MobileHeader } from '../components'
 import { Avatar, DockSpacer, resolveDisplayStatus, StatusChip, useDefaultStatus } from '../../../shared'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
-import { RequestCoverSheet } from '../../../shared/flows'
 import { initialsOf, locationName } from '../../../shared/format'
+import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
+import { useNavigate } from 'react-router-dom'
 
 interface AvailabilityScreenProps {
-  actor: Actor
   anaesthetistId: string
   initials: string
   /** Open the selected day's bottom sheet (its sessions, then the form). */
   onChangeDay: (dateISO: string) => void
   /** Slide in My calendar. */
   onOpenCalendar: () => void
-}
-
-interface CoverTarget {
-  /** The open session asked about (a Slot id). */
-  slotId: string
-  personName: string
-  slotLabel: string
-  kind: 'offer' | 'request'
-  targetAnaesthetistId?: string
 }
 
 /** Cell visual per status, from the status master (colleague cells show status only, never patient detail, A8). */
@@ -38,7 +29,7 @@ function cellStyle(key: DisplayKey, statuses: SlotStatusRecords): { bg: string; 
   return { bg: c.tint, border: '1px solid transparent', color: c.onTint }
 }
 
-export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDay, onOpenCalendar }: AvailabilityScreenProps) {
+export function AvailabilityScreen({ anaesthetistId, initials, onChangeDay, onOpenCalendar }: AvailabilityScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
@@ -51,7 +42,10 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
 
   const [selectedDate, setSelectedDate] = useState(todayISO)
   const [mode, setMode] = useState<'everyone' | 'free'>('everyone')
-  const [cover, setCover] = useState<CoverTarget | null>(null)
+  // Catch-up Phase 32: her movable Lists that day, and the colleagues' sessions each could move into.
+  const movable = useMovableSessions(anaesthetistId, selectedDate)
+  const movePrompt = useMoveListPrompt()
+  const navigate = useNavigate()
 
   // The same Slot views every app and finder reads (catch-up Phase 28,
   // US-01.4.2): "free" is an open session (free, holding no List), so a
@@ -91,7 +85,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
   function cellSubtitle(view: SlotView | undefined): string {
     if (view === undefined) return ''
     const list = view.list
-    if (list === undefined) return view.open ? 'Tap to ask' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
+    if (list === undefined) return view.open ? 'Open for bookings' : (view.slot.note ?? resolveDisplayStatus(view.slot.status, slotStatuses).longLabel)
     const hospital = locationName(list.hospitalId, hospitals)
     const surgeon = surgeons[list.surgeonId]?.name ?? ''
     return [hospital, surgeon].filter(Boolean).join(' · ')
@@ -102,16 +96,6 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
     const list = view.list
     if (list === undefined) return resolveDisplayStatus(view.slot.status, slotStatuses).label
     return list.kind === 'preop' ? 'Pre-op' : locationName(list.hospitalId, hospitals)
-  }
-
-  function openRequest(view: SlotView, personName: string, session: Session) {
-    setCover({
-      slotId: view.slot.id,
-      personName,
-      slotLabel: `${selLong} · ${session}`,
-      kind: 'request',
-      targetAnaesthetistId: view.slot.anaesthetistId,
-    })
   }
 
   const isFreeView = (v: SlotView | undefined) => v !== undefined && isOpenSlotView(v)
@@ -131,6 +115,8 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
             return (
               <button
                 key={d.dateISO}
+                data-date={d.dateISO}
+                aria-pressed={active}
                 onClick={() => setSelectedDate(d.dateISO)}
                 style={{
                   flex: 1,
@@ -180,6 +166,7 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
 
       {/* Tab bar clearance is the `DockSpacer` at the tail, not padding here. */}
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <MovedToYouPanel anaesthetistId={anaesthetistId} onOpenList={(id) => navigate(`/mobile/lists/${id}`)} />
         {/* My availability */}
         <div data-shot="availability-mine" style={{ background: neutral.surface, border: `1px solid ${accent.base}`, borderRadius: radius.card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -196,9 +183,19 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
                 ) : (
                   <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <StatusChip status={view.displayKey} style={{ flex: 'none' }} />
-                    <span style={{ fontSize: 12.5, color: neutral.slate, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: neutral.slate, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {view.list !== undefined ? cellTitle(view) : (view.slot.note ?? '')}
                     </span>
+                    {movable[session] !== undefined && movePrompt !== null && (
+                      <button
+                        type="button"
+                        data-shot={`availability-move-${session.toLowerCase()}`}
+                        onClick={() => movePrompt.openMove(movable[session]!.list.id)}
+                        style={{ ...miniBtn(accent.base), flex: 'none' }}
+                      >
+                        Move
+                      </button>
+                    )}
                   </span>
                 )}
               </div>
@@ -228,21 +225,23 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['AM', 'PM'] as const).map((session) => {
                   const view = session === 'AM' ? r.am : r.pm
-                  const isFree = isFreeView(view)
                   const cs = view !== undefined ? cellStyle(view.displayKey, slotStatuses) : { bg: neutral.sunken, border: `1px solid ${neutral.line}`, color: neutral.mist }
-                  const pending = view?.slot.coverRequest !== undefined
+                  // The mockup's gesture, kept where it means something: her List that session can move into this free session.
+                  const mine = movable[session]
+                  const canReceive = view !== undefined && mine !== undefined && mine.targetSlotIds.has(view.slot.id) && movePrompt !== null
+                  const Tag = canReceive ? 'button' : 'div'
                   return (
-                    <button
+                    <Tag
                       key={session}
-                      onClick={isFree && view !== undefined && !pending ? () => openRequest(view, r.anaesthetist.name, session) : undefined}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: isFree && !pending ? 'pointer' : 'default', background: cs.bg, border: cs.border }}
+                      {...(canReceive ? { type: 'button' as const, onClick: () => movePrompt.openMove(mine.list.id, { toSlotId: view.slot.id }), 'data-shot': `availability-move-to-${view.slot.anaesthetistId}-${session.toLowerCase()}` } : {})}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 52, borderRadius: 10, padding: '8px 10px', textAlign: 'left', fontFamily: 'inherit', cursor: canReceive ? 'pointer' : 'default', background: cs.bg, border: cs.border }}
                     >
                       <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: cs.color, opacity: 0.7, flex: 'none' }}>{session}</span>
                       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: 12.5, fontWeight: 600, color: cs.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cellTitle(view)}</span>
-                        <span style={{ fontSize: 10.5, color: cs.color, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pending ? 'Cover requested' : cellSubtitle(view)}</span>
+                        <span style={{ fontSize: 10.5, color: cs.color, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{canReceive ? 'Tap to move your List here' : cellSubtitle(view)}</span>
                       </span>
-                    </button>
+                    </Tag>
                   )
                 })}
               </div>
@@ -255,20 +254,6 @@ export function AvailabilityScreen({ actor, anaesthetistId, initials, onChangeDa
         {/* 82 - 8 for the column gap, so the reserved space is unchanged. */}
         <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 74px)" />
       </div>
-
-      {cover !== null && (
-        <RequestCoverSheet
-          open
-          slotId={cover.slotId}
-          actor={actor}
-          kind={cover.kind}
-          personName={cover.personName}
-          slotLabel={cover.slotLabel}
-          targetAnaesthetistId={cover.targetAnaesthetistId}
-          onClose={() => setCover(null)}
-          onSent={() => undefined}
-        />
-      )}
     </div>
   )
 }

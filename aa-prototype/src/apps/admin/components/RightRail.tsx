@@ -5,6 +5,8 @@ import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
 import { WarningsToDo } from './WarningsToDo'
 import { DraftListsCard } from './draftLists/DraftListsCard'
+import { NotificationsCard } from './NotificationsCard'
+import type { NotificationTarget } from '../../../store'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 
 interface ReviewRow {
@@ -32,20 +34,24 @@ interface RightRailProps {
   /** Catch-up Phase 31: open a Draft List's drawer, and the Draft Lists page. */
   onOpenDraftList?: (listId: string) => void
   onSeeAllDraftLists?: () => void
+  /** Catch-up Phase 32: open a notification's List or Draft List, and the Notifications page. */
+  onOpenNotification?: (target: NotificationTarget) => void
+  onSeeAllNotifications?: () => void
 }
 
 export function RightRail(props: RightRailProps) {
   return (
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
-      {/* The to-do list sits directly under the calendar, then the Draft Lists
-          (catch-up Phase 31); Phase 32's shared notification pool takes the
-          next place, under the Draft Lists, without moving either. */}
+      {/* Rail order (Decisions log 2026-10-10): calendar, To-do (15a), Draft
+          Lists (31), the shared notification pool (32), notes, Awaiting review. */}
       <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
       {props.onOpenDraftList !== undefined && props.onSeeAllDraftLists !== undefined && (
         <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />
       )}
-      {/* Phase 32: the shared notification pool goes here. */}
+      {props.onOpenNotification !== undefined && props.onSeeAllNotifications !== undefined && (
+        <NotificationsCard onOpen={props.onOpenNotification} onSeeAll={props.onSeeAllNotifications} />
+      )}
       <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
       <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />
     </div>

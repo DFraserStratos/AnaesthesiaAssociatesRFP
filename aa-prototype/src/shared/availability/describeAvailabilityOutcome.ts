@@ -19,28 +19,38 @@ function when(fromISO?: string, toISO?: string): string {
   return `, ${format(parseISO(fromISO), 'd MMM')} to ${format(parseISO(toISO), 'd MMM')}`
 }
 
-function listLines(outcome: Pick<AvailabilityOutcome, 'flagged' | 'cleared' | 'holdingLists'>): string[] {
+function listLines(outcome: Pick<AvailabilityOutcome, 'cleared' | 'holdingLists'>): string[] {
   const lines: string[] = []
-  const f = outcome.flagged.length
-  // Catch-up Phase 30: the conflict comes from the one rule; nothing notifies
-  // anyone (Phase 32's return-or-assign and notification pool replace this line).
-  if (f > 0) lines.push(f === 1 ? 'The session has a List; a conflict was flagged for the office.' : `${f} sessions have Lists; a conflict was flagged for the office on each.`)
   const c = outcome.cleared.length
   if (c > 0) lines.push(`${c} ${plural(c, "List's conflict was", "Lists' conflicts were")} resolved.`)
-  if (f === 0 && c === 0 && outcome.holdingLists > 0) {
-    lines.push(`${plural(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place, with nothing flagged.`)
+  if (c === 0 && outcome.holdingLists > 0) {
+    lines.push(`${plural(outcome.holdingLists, 'The List stays', 'The Lists stay')} in place.`)
   }
   return lines
 }
 
 export function describeAvailabilityOutcome(
   outcome: AvailabilityOutcome,
-  ctx: { kind: AvailabilityOutcomeKind; statusLabel: string; seriesLine?: string; fromISO?: string; toISO?: string },
+  ctx: {
+    kind: AvailabilityOutcomeKind
+    statusLabel: string
+    seriesLine?: string
+    fromISO?: string
+    toISO?: string
+    /**
+     * Catch-up Phase 32: Lists she moved first, from the unavailable prompt
+     * (each move already set its session), and how many of those sessions this
+     * save did not write again (it rewrites them only to add a note).
+     */
+    movedFirst?: { lists: number; sessionsAlreadySet: number }
+  },
 ): string {
   const parts: string[] = []
+  const moved = ctx.movedFirst
   if (ctx.kind === 'range') {
-    if (outcome.set === 0) parts.push(`Already ${ctx.statusLabel}. Nothing changed.`)
-    else parts.push(`${sessions(outcome.set)} set to ${ctx.statusLabel}${when(ctx.fromISO, ctx.toISO)}.`)
+    const set = outcome.set + (moved?.sessionsAlreadySet ?? 0)
+    if (set === 0) parts.push(`Already ${ctx.statusLabel}. Nothing changed.`)
+    else parts.push(`${sessions(set)} set to ${ctx.statusLabel}${when(ctx.fromISO, ctx.toISO)}.`)
     if (outcome.seriesEdited > 0) {
       parts.push(`${outcome.seriesEdited} repeating ${plural(outcome.seriesEdited, 'day', 'days')} changed on ${plural(outcome.seriesEdited, 'its', 'their')} own.`)
     }
@@ -56,5 +66,6 @@ export function describeAvailabilityOutcome(
     const keptText = kept > 0 ? `, ${kept} changed ${plural(kept, 'day', 'days')} kept` : ''
     parts.push(`Series deleted. ${sessions(outcome.set)} back to ${ctx.statusLabel}${keptText}.`)
   }
+  if (moved !== undefined && moved.lists > 0) parts.push(moved.lists === 1 ? 'Its List went first, where you chose.' : `${moved.lists} Lists went first, where you chose.`)
   return [...parts, ...listLines(outcome)].join(' ')
 }

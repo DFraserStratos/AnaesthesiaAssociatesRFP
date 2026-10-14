@@ -68,6 +68,12 @@ import {
   stagedAlready,
   type AppState,
   type AppStoreApi,
+  BUSY_MORNING_MOVES,
+  colleagueMoveRefusal,
+  moveToPersonaRefusal,
+  stageBusyMorning,
+  stageColleagueMoveToOffice,
+  stageColleagueMoveToPersona,
 } from '../../store'
 import { CANNED_MESSAGES, SURGEON_PDFS } from '../../domain/integrations'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, CONTRACT, SEED_LIST_IDS } from '../../domain/seed'
@@ -101,6 +107,10 @@ const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:
 const ADMIN_DAY = '/admin/day/:dateISO'
 const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
 const ADMIN_MASTERS = '/admin/masters'
+const ADMIN_NOTIFICATIONS = '/admin/notifications'
+const MOBILE_AVAILABILITY = '/mobile/availability'
+/** A date route param, or undefined. */
+const isoParam = (v: string | undefined) => (v !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 /** "St George's · Mr S. Tan" from the masters. */
@@ -771,6 +781,61 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       }
     },
     indexPath: () => '/admin/day/2026-07-22',
+  },
+  // ── Admin · Day and Notifications: a colleague's own move (catch-up Phase 32) ──
+  {
+    id: 'colleague-moves-list-to-office',
+    label: 'Colleague moves a List to the office',
+    description: `An anaesthetist returns one of their own Lists to the office, as themselves, at once: it becomes a ${DRAFT_LIST} and its notification tops the shared pool. The busy morning stages eight moves, alternating returns and hand-ons to free colleagues, so the Notifications page runs to two pages. Never a scripted beat's List.`,
+    screen: 'Admin · Day view and Notifications',
+    routes: [ADMIN_DAY, ADMIN_NOTIFICATIONS],
+    surfaces: ['bar'],
+    choices: () => [
+      { id: 'one', label: 'One move' },
+      { id: 'busy', label: `A busy morning (${BUSY_MORNING_MOVES} moves)` },
+    ],
+    disabledReason: (state, ctx, choiceId) => colleagueMoveRefusal(state, isoParam(ctx.params['dateISO']), choiceId === 'busy' ? BUSY_MORNING_MOVES : 1),
+    run: (api, ctx, choiceId) => {
+      const dateISO = isoParam(ctx.params['dateISO'])
+      if (choiceId === 'busy') {
+        const res = stageBusyMorning(api, dateISO)
+        if (!res.ok) return { ok: false, message: res.message }
+        const handedOn = res.value.moves.filter((m) => m.route === 'colleague').length
+        return { ok: true, message: `${res.value.moves.length} Lists moved by their anaesthetists: ${res.value.moves.length - handedOn} returned to the office, ${handedOn} handed on. See them on the Notifications page.` }
+      }
+      const res = stageColleagueMoveToOffice(api, dateISO)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const list = state.schedule.lists[res.value.listId]
+      const who = drSurname(state.masters.anaesthetists[res.value.anaesthetistId]?.name ?? res.value.anaesthetistId)
+      const where = list !== undefined ? state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId : ''
+      return { ok: true, message: `${who} returned ${dayLabel(res.value.dateISO)} ${list?.session ?? ''} (${where}) to the office. It is now a ${DRAFT_LIST}.` }
+    },
+    indexPath: () => '/admin/day/2026-07-21',
+  },
+  // ── Mobile · Availability: a colleague moves a List to the persona (catch-up Phase 32; PWA parity) ──
+  {
+    id: 'colleague-moves-list-to-me',
+    label: 'Colleague moves a List into my free session',
+    description:
+      "Stands in for a colleague on the phone: they hand one of their Lists on into Dr Souter's free session, as themselves, at once, so she sees the Moved to you notice and the List on her schedule. Nobody accepts or confirms.",
+    screen: 'Mobile · Availability',
+    routes: [MOBILE_AVAILABILITY],
+    surfaces: ['pwa'],
+    badge: 'colleague-stand-in',
+    disabledReason: (state) => moveToPersonaRefusal(state, ANAE.souter),
+    run: (api) => {
+      const res = stageColleagueMoveToPersona(api, ANAE.souter)
+      if (!res.ok) return { ok: false, message: res.message }
+      const state = api.getState()
+      const list = state.schedule.lists[res.value.listId]
+      const who = drSurname(state.masters.anaesthetists[res.value.fromAnaesthetistId]?.name ?? res.value.fromAnaesthetistId)
+      const where = list !== undefined ? state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId : ''
+      // Never names a preference, a tier, a Draft List or a slot (D44, OQ-64).
+      return { ok: true, message: `${who} moved ${dayLabel(res.value.dateISO)} ${list?.session ?? ''} (${where}) into your free session.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: in the framed build, move a List as Dr Souter on Web Availability and see the notice as the office.',
   },
   // ── Admin · Draft Lists: a request arrives from a surgeon's room (catch-up Phase 31) ──
   {

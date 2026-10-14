@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test'
 
 /**
  * Phase 05 web walkthrough — dashboard, lists table, list detail, booking detail
- * (shared BTM capture), availability grid + request-cover, and the accounts
+ * (shared BTM capture), availability grid + the move sheet (catch-up Phase 32;
+ * the cover request is retired), and the accounts
  * (overdue + GST) surfaces. Working artifacts for eyeballing, plus a few
  * assertions that the shared flows actually reach the web app.
  */
@@ -45,15 +46,17 @@ test('web phase 05 walkthrough', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Availability' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/w-06-availability.png', fullPage: true })
 
-  // Request cover on a free cell → shared RequestCover as a web dialog.
-  await page.locator('button', { hasText: 'Open for booking' }).first().click()
+  // Move one of her own Lists (catch-up Phase 32): her List cell → Move → a colleague → Move List.
+  await page.locator('[data-shot^="availability-move-mine-"]').first().click()
   await page.waitForTimeout(300)
-  await expect(page.getByRole('button', { name: 'Send cover request' })).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/w-07-cover-dialog.png', fullPage: true })
-  await page.getByRole('button', { name: 'Send cover request' }).click()
+  await page.locator('[data-shot="move-choice-colleague"]').click()
+  await page.locator('[data-shot="move-colleagues"] button').first().click()
+  await expect(page.getByRole('button', { name: 'Move List' })).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/w-07-move-sheet.png', fullPage: true })
+  await page.getByRole('button', { name: 'Move List' }).click()
   await page.waitForTimeout(300)
-  await expect(page.getByText('Request sent')).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/w-08-cover-sent.png', fullPage: true })
+  await expect(page.locator('[data-shot="move-done"]')).toContainText('Moved to')
+  await page.screenshot({ path: 'visual/shots/w-08-move-done.png', fullPage: true })
   await page.getByRole('button', { name: 'Done' }).click()
 
   // Accounts → Overdue.

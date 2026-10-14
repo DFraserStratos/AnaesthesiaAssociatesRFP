@@ -28,7 +28,8 @@ interface MyAvailabilityCalendarScreenProps {
  * anaesthetist's own AM and PM sessions as a month, weeks ahead to the
  * schedule horizon. Each day is a pair of half-blocks, AM over PM, in the
  * session's status (or the List in its place); a repeat glyph marks a series
- * instance and the amber "!" a List flagged on the office's Day view. Tapping
+ * instance and the amber "!" a List with a conflict for the office (a sickness
+ * the office recorded, a hospital closure). Tapping
  * a day opens its bottom sheet; "Add days off" is the sticky thumb action.
  */
 export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, onOpenDay, onAddDaysOff }: MyAvailabilityCalendarScreenProps) {

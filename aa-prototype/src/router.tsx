@@ -35,6 +35,7 @@ import {
   AdminReviewQueueRoute,
   AdminConflictsRoute,
   AdminDraftListsRoute,
+  AdminNotificationsRoute,
   AdminReviewRoute,
 } from './apps/admin/routes'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
@@ -106,6 +107,7 @@ export function AppRouter() {
             </Route>
             <Route path="conflicts" element={<AdminConflictsRoute />} />
             <Route path="draft-lists" element={<AdminDraftListsRoute />} />
+            <Route path="notifications" element={<AdminNotificationsRoute />} />
             <Route path="review">
               <Route index element={<AdminReviewQueueRoute />} />
               <Route path=":listId" element={<AdminReviewRoute />} />

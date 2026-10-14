@@ -147,6 +147,12 @@ function DraftBody({
                     {from !== undefined ? ` · ${unavailableDetail(drSurname(from.name))}` : ''}
                   </div>
                 )}
+                {/* Catch-up Phase 32: the anaesthetist's own return (US-13.8.2). */}
+                {(trail.origin === 'movedToOffice' || trail.origin === 'unavailableReturn') && from !== undefined && (
+                  <div data-shot="draft-list-returned-by" style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+                    Returned to the office by {drSurname(from.name)}
+                  </div>
+                )}
               </Row>
             )}
             {trail !== undefined && (

@@ -51,9 +51,14 @@ const fridayPm = (over: Partial<AvailabilitySeriesDraft> = {}): AvailabilitySeri
 })
 
 describe('setAvailabilityRange (days off ahead)', () => {
-  it('a two-week holiday writes 28 sessions in one audit entry, plus one per List flagged', () => {
+  it('a two-week holiday writes 28 sessions in one audit entry, plus one per List flagged (the office; catch-up Phase 32 refuses it for the anaesthetist while it holds Lists)', () => {
     const api = store()
-    const out = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-17', toISO: '2026-08-30', sessions: 'both', statusKey: 'holiday', note: 'Away' })
+    const range = { anaesthetistId: ANAE.souter, fromISO: '2026-08-17', toISO: '2026-08-30', sessions: 'both' as const, statusKey: 'holiday', note: 'Away' }
+    const refused = setAvailabilityRange(api, SOUTER, range)
+    expect(refused.ok ? '' : refused.code).toBe('holdsList')
+    expect(refused.ok ? [] : (refused.details as { listIds: string[] }).listIds.length).toBeGreaterThan(1)
+    expect(audit(api, 'availability.setRange')).toHaveLength(0)
+    const out = setAvailabilityRange(api, OFFICE, range)
     expect(out.ok).toBe(true)
     if (!out.ok) return
     expect(out.value.set).toBe(28)
@@ -66,13 +71,13 @@ describe('setAvailabilityRange (days off ahead)', () => {
     }
   })
 
-  it('over a booked session flags exactly that List, leaving it otherwise identical, once', () => {
+  it('over a booked session the office flags exactly that List, leaving it otherwise identical, once', () => {
     const api = store()
     const listId = SEED_LIST_IDS.souterAm21
     const before = api.getState().schedule.lists[listId]!
-    const out = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'unavailable' })
+    const out = setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'unavailable' })
     expect(out.ok && out.value.flagged).toEqual([listId])
-    setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'holiday' })
+    setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'holiday' })
     const after = api.getState().schedule.lists[listId]!
     expect(after.conflicts.filter((c) => c.kind === 'availability')).toHaveLength(1)
     expect(after.conflicts.find((c) => c.kind === 'availability')).toMatchObject({ statusKey: 'holiday', cause: `availability:${after.slotId}:holiday` })
@@ -89,7 +94,7 @@ describe('setAvailabilityRange (days off ahead)', () => {
   it('Free over a booked session flags nothing and clears an earlier availability flag', () => {
     const api = store()
     const listId = SEED_LIST_IDS.souterAm21
-    expect(setAvailability(api, SOUTER, ANAE.souter, '2026-07-21', 'AM', 'unavailable').ok).toBe(true)
+    expect(setAvailability(api, OFFICE, ANAE.souter, '2026-07-21', 'AM', 'unavailable').ok).toBe(true)
     expect(api.getState().schedule.lists[listId]!.conflicts.some((c) => c.kind === 'availability')).toBe(true)
     const out = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'free' })
     expect(out.ok && out.value.flagged).toEqual([])
@@ -170,10 +175,15 @@ describe('series (US-01.5.3)', () => {
     expect(souterSlot(api, '2026-07-25', 'AM')).toMatchObject({ status: 'holiday', note: 'Annual leave / back Monday' })
   })
 
-  it('a series over booked sessions flags each List once', () => {
+  it('a series over booked sessions: refused for the anaesthetist with each List, and the office\'s flags each List once', () => {
     const api = store()
     // Souter's Monday PM recurring List (St George's): every Monday PM holds one.
-    const out = createAvailabilitySeries(api, SOUTER, { ...fridayPm(), weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-09-07' })
+    const draft: AvailabilitySeriesDraft = { ...fridayPm(), weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-09-07' }
+    const refused = createAvailabilitySeries(api, SOUTER, draft)
+    expect(refused.ok ? '' : refused.code).toBe('holdsList')
+    expect(refused.ok ? [] : (refused.details as { listIds: string[] }).listIds).toHaveLength(3)
+    expect(Object.keys(api.getState().schedule.availabilitySeries)).toHaveLength(0)
+    const out = createAvailabilitySeries(api, OFFICE, draft)
     expect(out.ok && out.value.flagged.length).toBe(3)
     for (const id of out.ok ? out.value.flagged : []) {
       expect(api.getState().schedule.lists[id]!.conflicts.filter((c) => c.kind === 'availability')).toHaveLength(1)
@@ -302,7 +312,7 @@ describe('review fixes (catch-up Phase 29 review pass)', () => {
   it('reassigning a List out of a series instance takes that session out of the series for good', () => {
     const api = store()
     // Souter's Monday PM recurring List, flagged by a Monday PM series, then reassigned to a free colleague.
-    createAvailabilitySeries(api, SOUTER, { ...fridayPm(), weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-08-24' })
+    createAvailabilitySeries(api, OFFICE, { ...fridayPm(), weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-08-24' })
     const slotId = slotIdFor(ANAE.souter, '2026-08-24', 'PM')
     const list = listInSlot(api.getState(), slotId)!
     const colleague = Object.values(api.getState().schedule.slots).find(

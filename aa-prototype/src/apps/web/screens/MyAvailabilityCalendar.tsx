@@ -186,7 +186,7 @@ function DayCell({ session }: { session: CalendarSession | undefined }) {
       </span>
       {line2 !== '' && <span style={{ fontSize: 10, color: v.onTint, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{line2}</span>}
       {session.conflict && (
-        <span title="Flagged on the office's Day view" style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: 99, background: semantic.warning.solid, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+        <span title="This List has a conflict for the office to resolve" style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: 99, background: semantic.warning.solid, color: neutral.surface, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
       )}
     </span>
   )

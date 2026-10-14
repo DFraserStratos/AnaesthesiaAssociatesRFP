@@ -1,6 +1,101 @@
 {
   "id": "US-01.4.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 32 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "move-no-warning",
+      "app": "web",
+      "caption": "An anaesthetist moving their own List sees colleagues by availability alone, with no preference warning",
+      "start": "/web/availability?date=2026-07-27",
+      "states": [
+        {
+          "state": "colleagues",
+          "caption": "One plain list in surname order: Dr Ropata, who has a not-preferred pairing with Ms Lim, is offered like anyone else",
+          "steps": [
+            {
+              "click": "[data-shot=\"availability-move-mine-pm\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-colleague-39560\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-colleagues\"]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "Dr Ropata chosen: no warning or prompt, just Move List",
+          "steps": [
+            {
+              "click": "[data-shot=\"availability-move-mine-pm\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "click": "[data-shot=\"move-colleague-39560\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-confirm\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-confirm\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "move-no-warning",
+      "app": "mobile",
+      "caption": "An anaesthetist moving their own List sees colleagues by availability alone, with no preference warning",
+      "start": "/mobile/lists/L-34821-2026-07-27-PM",
+      "states": [
+        {
+          "state": "colleagues",
+          "caption": "The colleagues free that session, by availability alone",
+          "steps": [
+            {
+              "click": "[data-shot=\"list-move\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-colleague-39560\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"move-colleagues\"]"
+          ]
+        },
+        {
+          "state": "confirm",
+          "caption": "The confirm step: no warning, prompt or caution of any kind",
+          "steps": [
+            {
+              "click": "[data-shot=\"list-move\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-colleague\"]"
+            },
+            {
+              "click": "[data-shot=\"move-colleague-39560\"]"
+            },
+            {
+              "wait": "[data-shot=\"move-confirm\"]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -8,13 +8,13 @@ import { resolveDisplayStatus, StatusLegend, useDisplayStatus } from '../../../s
 import { initialsOf, locationName } from '../../../shared/format'
 import { AvailabilityPageSwitch, Panel } from '../components'
 import { useNavigate } from 'react-router-dom'
-import type { CoverTarget } from '../types'
+import { MovedToYouPanel, useMovableSessions, useMoveListPrompt } from '../../../shared/flows'
 
 interface AvailabilityGridProps {
   anaesthetistId: string
-  personaName: string
   todayISO: string
-  onCover: (target: CoverTarget) => void
+  /** `?date=` (catch-up Phase 32): open on a day, for links and capture recipes. */
+  initialDateISO?: string
 }
 
 interface GridRow {
@@ -30,16 +30,15 @@ interface GridRow {
  * The all-anaesthetists availability grid (Web Availability mockup is
  * authoritative; W3) — the locum finder. Day nav + All / Free-only filters
  * (Free shows the count) + name search + inline six-status legend; a 220px name
- * column and AM/PM cell buttons (status bar + two lines). Free cells are dashed
- * with a "Book" affordance that flips to a solid green "Cover requested ✓" once
- * a request is sent (driven by the session's cover marker). Every read is
+ * column and AM/PM cells (status bar + two lines); free cells are dashed. Catch-up
+ * Phase 32 retired the cover marker: the persona moves her own Lists. Every read is
  * session status only (A8) — no booking / patient detail leaks. Catch-up Phase
  * 28: rows are the day's roster from the same Slot views every app reads, and
  * "Free" means an open session (`isOpenSlot`), so a session holding a List is
  * never offered. Name order, no tiers (US-01.3.6: the office's ranking is
  * Admin only).
  */
-export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCover }: AvailabilityGridProps) {
+export function AvailabilityGrid({ anaesthetistId, todayISO, initialDateISO }: AvailabilityGridProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
@@ -48,10 +47,13 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
 
-  const [selectedDate, setSelectedDate] = useState(todayISO)
+  const [selectedDate, setSelectedDate] = useState(initialDateISO !== undefined && initialDateISO >= todayISO ? initialDateISO : todayISO)
   const navigate = useNavigate()
   const [filter, setFilter] = useState<'all' | 'free'>('all')
   const [query, setQuery] = useState('')
+  // Catch-up Phase 32: her movable Lists that day, and the colleagues' sessions each could move into.
+  const movable = useMovableSessions(anaesthetistId, selectedDate)
+  const movePrompt = useMoveListPrompt()
 
   const { rows, freeCount } = useMemo(() => {
     const schedule = { slots: slotsRecord, lists: listsRecord }
@@ -90,25 +92,13 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
     const list = view.list
     if (list === undefined) {
       const status = resolveDisplayStatus(view.slot.status, slotStatuses)
-      if (view.open) return { l1: view.slot.coverRequest !== undefined ? 'Cover requested' : status.label, l2: 'Open for booking' }
+      if (view.open) return { l1: status.label, l2: 'Open for booking' }
       return { l1: status.longLabel, l2: view.slot.note ?? '' }
     }
     if (list.kind === 'preop') return { l1: 'Pre-op clinic', l2: locationName(list.hospitalId, hospitals) }
     // A public List keeps its template label ("Acute theatre"); a private one names its surgeon.
     const l2 = list.kind !== 'private' && list.notes !== undefined ? list.notes : (surgeons[list.surgeonId]?.name ?? '')
     return { l1: locationName(list.hospitalId, hospitals), l2 }
-  }
-
-  function clickCell(row: GridRow, view: SlotView | undefined, session: Session) {
-    if (view === undefined || !isOpenSlotView(view) || view.slot.coverRequest !== undefined) return
-    const isMine = view.slot.anaesthetistId === anaesthetistId
-    onCover({
-      slotId: view.slot.id,
-      personName: isMine ? personaName : row.name,
-      slotLabel: `${format(parseISO(selectedDate), 'EEE d MMM')} · ${session}`,
-      kind: isMine ? 'offer' : 'request',
-      ...(isMine ? {} : { targetAnaesthetistId: view.slot.anaesthetistId }),
-    })
   }
 
   function shiftDay(delta: number) {
@@ -121,7 +111,7 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.015em' }}>Availability</h1>
-            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Find cover fast. Free sessions are clickable.</div>
+            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>Find cover fast. Move one of your Lists into a colleague's free session.</div>
           </div>
           <AvailabilityPageSwitch current="find" />
         </div>
@@ -138,6 +128,8 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
           </button>
         </div>
       </div>
+
+      <MovedToYouPanel anaesthetistId={anaesthetistId} onOpenList={(id) => navigate(`/web/lists/${id}`)} />
 
       {/* Filters + search + legend */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -187,8 +179,29 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
                     </button>
                   )}
                 </span>
-                <Cell view={row.am} labels={cellLabels(row.am)} onClick={() => clickCell(row, row.am, 'AM')} />
-                <Cell view={row.pm} labels={cellLabels(row.pm)} onClick={() => clickCell(row, row.pm, 'PM')} />
+                {(['AM', 'PM'] as const).map((session) => {
+                  const view = session === 'AM' ? row.am : row.pm
+                  const mine = movable[session]
+                  // Her own List: Move. A colleague's free session her List could go into: Move here (the mockup's gesture, where it means something).
+                  const own = row.anaesthetistId === anaesthetistId && mine !== undefined && view?.list?.id === mine.list.id
+                  const receive = row.anaesthetistId !== anaesthetistId && mine !== undefined && view !== undefined && mine.targetSlotIds.has(view.slot.id)
+                  const act = movePrompt !== null && (own || receive) && mine !== undefined && view !== undefined
+                  return (
+                    <Cell
+                      key={session}
+                      view={view}
+                      labels={cellLabels(view)}
+                      {...(act
+                        ? {
+                            onClick: () => movePrompt.openMove(mine.list.id, own ? undefined : { toSlotId: view.slot.id }),
+                            action: own ? 'Move' : 'Move here',
+                            shot: own ? `availability-move-mine-${session.toLowerCase()}` : `availability-move-to-${row.anaesthetistId}-${session.toLowerCase()}`,
+                            title: own ? 'Move this List' : `Move your ${session} List to ${row.name}`,
+                          }
+                        : {})}
+                    />
+                  )
+                })}
               </div>
             ))}
           </div>
@@ -198,23 +211,24 @@ export function AvailabilityGrid({ anaesthetistId, personaName, todayISO, onCove
   )
 }
 
-function Cell({ view, labels, onClick }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick: () => void }) {
+function Cell({ view, labels, onClick, action, shot, title }: { view: SlotView | undefined; labels: { l1: string; l2: string }; onClick?: () => void; action?: string; shot?: string; title?: string }) {
   const resolved = useDisplayStatus(view?.displayKey ?? '')
   if (view === undefined) {
     return <div style={{ height: 52, borderRadius: 9, background: neutral.sunken, display: 'flex', alignItems: 'center', padding: '0 10px', fontSize: 12, color: neutral.mist }}>No session</div>
   }
   const c = resolved.visual
   const isFree = isOpenSlotView(view)
-  const requested = view.slot.coverRequest !== undefined
-  const bg = isFree && requested ? c.solid : c.blockBackground
-  const tc = isFree && requested ? neutral.surface : c.onTint
-  const border = isFree ? (requested ? `1.5px solid ${c.solid}` : (c.border ?? '1.5px solid transparent')) : '1.5px solid transparent'
+  const bg = c.blockBackground
+  const tc = c.onTint
+  const border = isFree ? (c.border ?? '1.5px solid transparent') : '1.5px solid transparent'
   return (
     <button
       type="button"
       onClick={onClick}
       data-slot-id={view.slot.id}
-      disabled={!isFree || requested}
+      data-shot={shot}
+      title={title}
+      disabled={onClick === undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -224,7 +238,7 @@ function Cell({ view, labels, onClick }: { view: SlotView | undefined; labels: {
         padding: '0 10px',
         textAlign: 'left',
         fontFamily: 'inherit',
-        cursor: isFree && !requested ? 'pointer' : 'default',
+        cursor: onClick !== undefined ? 'pointer' : 'default',
         background: bg,
         border,
         width: '100%',
@@ -235,7 +249,7 @@ function Cell({ view, labels, onClick }: { view: SlotView | undefined; labels: {
         <span style={{ fontSize: 12, fontWeight: 600, color: tc, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.l1}</span>
         <span style={{ fontSize: 11, color: tc, opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.l2}</span>
       </span>
-      {isFree && <span style={{ fontSize: 12, fontWeight: 600, color: tc, flex: 'none' }}>{requested ? '✓' : 'Book'}</span>}
+      {action !== undefined && <span style={{ fontSize: 12, fontWeight: 600, color: tc, flex: 'none' }}>{action}</span>}
     </button>
   )
 }

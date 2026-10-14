@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral } from '../../theme/tokens'
 import { useToday, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
-import { RequestCoverSheet } from '../../shared/flows'
+import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
 import { WebNav, type WebTab } from './components'
 import type { WebOutletContext } from './outlet'
-import type { CoverTarget } from './types'
 
 /** Nav-tab ↔ route mapping (the URL is the source of truth for the active tab). */
 const TAB_PATH: Record<WebTab, string> = {
@@ -34,9 +33,6 @@ function tabForPath(pathname: string): WebTab {
  * Wrapped in `<SurfaceProvider variant="web">` so every shared flow / capture
  * sheet / booking body renders as a centred dialog. Every read is view-scoped to
  * Souter (A8); there are no authorise controls anywhere.
- *
- * The cover dialog stays local state: a sheet in the URL would make Back close
- * the sheet instead of going back a screen.
  */
 export function WebApp() {
   const persona = APP_CONFIG.web.persona
@@ -49,10 +45,8 @@ export function WebApp() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  const [cover, setCover] = useState<CoverTarget | null>(null)
-
   const context: WebOutletContext = useMemo(
-    () => ({ anaesthetistId, personaName: persona.name, actor, todayISO, onCover: setCover }),
+    () => ({ anaesthetistId, personaName: persona.name, actor, todayISO }),
     [anaesthetistId, persona.name, actor, todayISO],
   )
 
@@ -66,23 +60,11 @@ export function WebApp() {
           initials={persona.initials}
         />
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '28px 32px 48px' }}>
-          <Outlet context={context} />
+          <MoveListPromptProvider actor={actor}>
+            <Outlet context={context} />
+          </MoveListPromptProvider>
         </div>
       </div>
-
-      {cover !== null && (
-        <RequestCoverSheet
-          open
-          slotId={cover.slotId}
-          actor={actor}
-          kind={cover.kind}
-          personName={cover.personName}
-          slotLabel={cover.slotLabel}
-          {...(cover.targetAnaesthetistId !== undefined ? { targetAnaesthetistId: cover.targetAnaesthetistId } : {})}
-          onClose={() => setCover(null)}
-          onSent={() => undefined}
-        />
-      )}
     </SurfaceProvider>
   )
 }

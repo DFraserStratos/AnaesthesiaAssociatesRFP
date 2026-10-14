@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { elevation, neutral, radius, semantic } from '../../theme/tokens'
 import { STATUS_PALETTE } from '../../theme/statusColours'
 import type { DisplayKey } from '../../domain/types'
-import { useDefaultStatus, useDisplayStatus } from '../status/useSlotStatuses'
+import { useDisplayStatus } from '../status/useSlotStatuses'
 import { TickBadge } from '../ui/TickBadge'
 
 /** The right-hand state cluster of a list row (mockup screen 1). */
@@ -11,7 +11,6 @@ export type ListRowRight =
   | { kind: 'doneUnbilled' }
   | { kind: 'toFinish'; count: number }
   | { kind: 'count'; count: number; statusKey: DisplayKey }
-  | { kind: 'offerCover' }
   | { kind: 'chip'; statusKey: DisplayKey; label: string }
   | { kind: 'custom'; node: ReactNode }
 
@@ -35,6 +34,8 @@ interface ListRowProps {
   slotId?: string
   /** The List the row opens, if any. */
   listId?: string
+  /** A small neutral pill after the title, e.g. "New" on a List a colleague moved to her (catch-up Phase 32). */
+  badge?: string
 }
 
 function Chevron() {
@@ -71,27 +72,7 @@ function RightCluster({ right }: { right: ListRowRight }) {
     )
   }
   if (right.kind === 'count') return <CountPill count={right.count} statusKey={right.statusKey} />
-  if (right.kind === 'chip') return <ChipPill statusKey={right.statusKey} label={right.label} />
-  return <OfferCoverPill />
-}
-
-/** "Offer cover" in the default status's colour (an open session's cue). */
-function OfferCoverPill() {
-  const solid = useDefaultStatus().visual.solid
-  return (
-    <span
-      style={{
-        padding: '8px 14px',
-        borderRadius: 999,
-        background: solid,
-        fontSize: 12,
-        fontWeight: 600,
-        color: neutral.surface,
-      }}
-    >
-      Offer cover
-    </span>
-  )
+  return <ChipPill statusKey={right.statusKey} label={right.label} />
 }
 
 function CountPill({ count, statusKey }: { count: number; statusKey: DisplayKey }) {
@@ -118,8 +99,8 @@ function ChipPill({ statusKey, label }: { statusKey: DisplayKey; label: string }
 /**
  * The Forward-Lists row (mockup screen 1): a status rail, the AM/PM + mono-time
  * column, the hospital/surgeon/count line, and a right-side state. An open
- * session's row takes its status's own fill (dashed green for Free) with an
- * "Offer cover" pill; a closed status's row its tint (holiday pink for On
+ * session's row takes its status's own fill (dashed green for Free); a closed
+ * status's row its tint (holiday pink for On
  * holiday). Colours come from the status master (catch-up Phase 29). The load-bearing list primitive; moved to `src/shared/schedule` in
  * Phase 05 so the web app reuses it (mobile Forward Lists + web Lists / booking
  * rows).
@@ -135,6 +116,7 @@ export function ListRow({
   variant = 'default',
   slotId,
   listId,
+  badge,
 }: ListRowProps) {
   const resolved = useDisplayStatus(statusKey)
   const c = resolved.visual
@@ -185,7 +167,14 @@ export function ListRow({
         </span>
       )}
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 16, fontWeight: 600, color: titleColor }}>{title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: titleColor }}>{title}</span>
+          {badge !== undefined && (
+            <span data-shot="list-row-badge" style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: neutral.sunken, color: neutral.ink, fontSize: 11, fontWeight: 700 }}>
+              {badge}
+            </span>
+          )}
+        </span>
         {subtitle !== undefined && (
           <span style={{ fontSize: 12, color: subColor, opacity: isOpen || isClosed ? 0.85 : 1 }}>{subtitle}</span>
         )}

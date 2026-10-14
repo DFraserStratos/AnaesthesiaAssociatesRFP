@@ -109,7 +109,10 @@ export type BoundAppStore = UseBoundStore<StoreApi<AppStore>>
 // ---------------------------------------------------------------------------
 
 export const PERSIST_KEY = 'aa-demo'
-/** v24: catch-up Phase 31: the DRAFT state; Draft Lists are Lists with no
+/** v25: catch-up Phase 32: the shared notification pool (`notifications`, seeds
+ *  empty; `NT` ids); the cover marker (`Slot.coverRequest`) is gone (a v24
+ *  store, which may carry one, reseeds).
+ * v24: catch-up Phase 31: the DRAFT state; Draft Lists are Lists with no
  *  anaesthetist (requests and recurring clashes); every List carries a hospital
  *  and a surgeon; AA rooms is a location (a v23 store reseeds).
  * v23: 2026-10-09 · catch-up Phase 30: conflicts derived from facts (a cause,
@@ -185,7 +188,7 @@ export const PERSIST_KEY = 'aa-demo'
  *  Lists. v3: Phase 05 — seeded anaesthetist-dashboard figures added to
  *  SeedState (`dashboards`; W1/W4). v2: Phase 04 — Ellison handover unseeded
  *  (live Finish-now demo) + the Souter rate x time capture booking + patient. */
-export const PERSIST_VERSION = 24
+export const PERSIST_VERSION = 25
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, cases: {}, receipts: {}, contactIdCache: {}, aaFeeInvoices: {} }

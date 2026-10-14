@@ -283,7 +283,7 @@ describe('session 2 entries', () => {
   })
 
   it('every office stand-in declares the PWA surface only', () => {
-    for (const t of DEMO_TRIGGERS.filter((x) => x.badge === 'office-stand-in')) expect(t.surfaces).toEqual(['pwa'])
+    for (const t of DEMO_TRIGGERS.filter((x) => x.badge === 'office-stand-in' || x.badge === 'colleague-stand-in')) expect(t.surfaces).toEqual(['pwa'])
   })
 
   it('PWA Balances offers Dr Souter\'s open invoices as choices and pays the chosen one', () => {
@@ -308,10 +308,62 @@ describe('session 2 entries', () => {
     expect(pay?.amountAuthorised).toBe(received)
   })
 
-  it('the PWA chip is absent on More and Availability', () => {
+  it('the PWA chip is absent on More; Availability has only the colleague-move stand-in (catch-up Phase 32)', () => {
     const api = createAppStore()
     expect(ids(api, '/mobile/more', 'pwa')).toEqual([])
-    expect(ids(api, '/mobile/availability', 'pwa')).toEqual([])
+    expect(ids(api, '/mobile/availability', 'pwa')).toEqual(['colleague-moves-list-to-me'])
+  })
+})
+
+describe('an anaesthetist moves her own List (catch-up Phase 32)', () => {
+  const ADMIN = 'colleague-moves-list-to-office'
+  const PWA = 'colleague-moves-list-to-me'
+
+  it('shows the Admin entry in the bar on Admin Day and Notifications, never on the PWA', () => {
+    const api = createAppStore()
+    expect(ids(api, '/admin/day/2026-07-21')).toContain(ADMIN)
+    expect(ids(api, '/admin/notifications')).toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-07-21', 'pwa')).not.toContain(ADMIN)
+    expect(ids(api, '/mobile/availability', 'pwa')).not.toContain(ADMIN)
+  })
+
+  it('shows the stand-in on the PWA on Mobile Availability only, never in the bar', () => {
+    const api = createAppStore()
+    expect(ids(api, '/mobile/availability', 'pwa')).toContain(PWA)
+    expect(ids(api, '/mobile/availability')).not.toContain(PWA)
+    expect(ids(api, '/mobile/lists', 'pwa')).not.toContain(PWA)
+    expect(byId(PWA).badge).toBe('colleague-stand-in')
+  })
+
+  it('"One move" makes one move and one notification; the busy morning makes eight, two pages', () => {
+    const api = createAppStore()
+    const t = byId(ADMIN)
+    const ctx = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    expect(t.disabledReason(api.getState(), ctx, 'one')).toBeNull()
+    expect(t.run(api, ctx, 'one').ok).toBe(true)
+    expect(Object.keys(api.getState().notifications)).toHaveLength(1)
+    expect(api.getState().audit.filter((a) => a.action === 'list.ownerMove')).toHaveLength(1)
+    const busy = createAppStore()
+    const out = t.run(busy, ctx, 'busy')
+    expect(out.ok).toBe(true)
+    expect(out.message).not.toMatch(/[–—]/)
+    expect(Object.keys(busy.getState().notifications)).toHaveLength(8)
+  })
+
+  it('the stand-in moves a colleague List into her free session, with a message that names no preference', () => {
+    const api = createAppStore()
+    const out = byId(PWA).run(api, ctxFor('/mobile/availability'))
+    expect(out.ok).toBe(true)
+    expect(out.message).toMatch(/into your free session\.$/)
+    expect(out.message).not.toMatch(/Draft List|slot|prefer|tier|[–—]/i)
+  })
+
+  it('reads its disabled reasons when nothing fits', () => {
+    const api = createAppStore()
+    const state = api.getState()
+    const empty = { ...state, schedule: { ...state.schedule, lists: {} } }
+    expect(byId(ADMIN).disabledReason(empty, ctxFor('/admin/notifications'), 'one')).toBe('No List on the schedule fits')
+    expect(byId(PWA).disabledReason(empty, ctxFor('/mobile/availability'))).toBe('No colleague List fits one of your free sessions')
   })
 })
 

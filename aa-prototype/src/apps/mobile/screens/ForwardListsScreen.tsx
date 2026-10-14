@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../../theme/tokens'
+import { useMovedToMe } from '../../../shared/flows'
 import type { Booking, DisplayKey, List } from '../../../domain/types'
 import { isListBilled, slotViewsForAnaesthetist, timesForList, useAppStore, useToday, type SlotView } from '../../../store'
 import { ListRow, MobileHeader, type ListRowRight } from '../components'
@@ -32,6 +33,8 @@ interface Row {
   subtitle?: string
   right: ListRowRight
   onClick?: () => void
+  /** "New" on a List a colleague moved to her this week (catch-up Phase 32). */
+  badge?: string
 }
 
 interface ForwardListsScreenProps {
@@ -39,15 +42,15 @@ interface ForwardListsScreenProps {
   personaName: string
   initials: string
   onOpenList: (listId: string) => void
-  /** Offer an open session (a Slot id) for cover. */
-  onOfferCover: (slotId: string) => void
 }
 
-export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList, onOfferCover }: ForwardListsScreenProps) {
+export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOpenList }: ForwardListsScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const appSettings = useAppStore((s) => s.appSettings)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
+  const movedToMeList = useMovedToMe(anaesthetistId)
+  const movedToMeIds = useMemo(() => new Set(movedToMeList.map((n) => n.listId)), [movedToMeList])
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -122,19 +125,17 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
           right: { kind: 'chip', statusKey: v.slot.status, label: status.label },
         }
       }
-      // An open session: offer cover (or a pending marker).
-      const pending = v.slot.coverRequest !== undefined
+      // An open session: status only (the office fills it; catch-up Phase 32
+      // retired the cover marker: an anaesthetist moves her own Lists instead).
+      const status = resolveDisplayStatus(v.slot.status, slotStatuses)
       return {
         ...base,
         variant: 'open',
         session: v.slot.session,
         ...(v.times.overridden ? { time: v.times.startTime } : {}),
-        title: `${resolveDisplayStatus(v.slot.status, slotStatuses).label} session`,
-        subtitle: pending ? 'Cover request sent' : 'Open for bookings or cover',
-        right: pending
-          ? { kind: 'custom', node: <span style={{ fontSize: 12, fontWeight: 600, color: accent.pressed }}>Requested</span> }
-          : { kind: 'offerCover' },
-        onClick: pending ? undefined : () => onOfferCover(v.slot.id),
+        title: `${status.label} session`,
+        subtitle: 'Open for bookings',
+        right: { kind: 'chip', statusKey: v.slot.status, label: status.label },
       }
     }
 
@@ -190,7 +191,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
         date,
         rows: dayRows.sort((a, b) => a.sessionOrder.localeCompare(b.sessionOrder)),
       }))
-  }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList, onOfferCover])
+  }, [listsRecord, slotsRecord, appSettings, slotStatuses, bookingsRecord, hospitals, surgeons, todayISO, filter, anaesthetistId, onOpenList])
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -267,6 +268,7 @@ export function ForwardListsScreen({ anaesthetistId, personaName, initials, onOp
                   onClick={r.onClick}
                   {...(r.slotId !== undefined ? { slotId: r.slotId } : {})}
                   {...(r.listId !== undefined ? { listId: r.listId } : {})}
+                  {...(r.listId !== undefined && movedToMeIds.has(r.listId) ? { badge: 'New' } : {})}
                 />
               ))}
             </div>

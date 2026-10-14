@@ -4,13 +4,13 @@ import { X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius, scrim, semantic } from '../../../theme/tokens'
 import { bookingCountLabel } from '../../../shared/scheduleTerms'
-import { listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
+import { latestNotificationForList, listInSlot, useAppStore, useSlotView, type Actor } from '../../../store'
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey } from '../../../domain/slotStatus'
 import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
 import { HistorySheet } from '../../../shared/booking'
-import { LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
+import { drSurname, LIST_STATE_LABELS, locationName, slotTimeRange } from '../../../shared/format'
 import { AttachmentStrip } from '../../../shared/attachments'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
@@ -144,6 +144,7 @@ function ListBody({
         {/* Body */}
         <div style={{ flex: 1, overflow: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <ConflictPanel list={list} actor={actor} />
+          <MovedHereLine listId={list.id} anaesthetistId={list.anaesthetistId} />
 
           <Section label="Session">
             <Row label="Times">
@@ -259,7 +260,6 @@ function EmptySessionDrawer({
   const anae = useAppStore((s) => s.masters.anaesthetists[slot.anaesthetistId])
   const statuses = useAppStore((s) => s.masters.slotStatuses)
   const open = !isClosedKey(statuses, slot.status)
-  const cover = slot.coverRequest
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: scrim, zIndex: 40 }} />
@@ -283,7 +283,6 @@ function EmptySessionDrawer({
               <span style={{ marginLeft: 8, fontSize: 12, color: neutral.mist }}>{times.overridden ? 'Own times' : 'Default'}</span>
             </Row>
             {slot.note !== undefined && slot.note.trim() !== '' && <Row label="Note">{slot.note}</Row>}
-            {cover !== undefined && <Row label="Cover">{cover.kind === 'offer' ? 'Offered for cover' : 'Cover requested'} by {cover.by}</Row>}
           </Section>
           {open ? (
             <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
@@ -350,5 +349,22 @@ function ActionBtn({ onClick, children, primary }: { onClick: () => void; childr
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * The drawer's line for a List an anaesthetist moved herself into this session
+ * (catch-up Phase 32; US-13.8.2), read from the shared pool's latest record for
+ * the List. Neutral: it needs no action. Nothing about pairing preferences.
+ */
+function MovedHereLine({ listId, anaesthetistId }: { listId: string; anaesthetistId: string }) {
+  const n = useAppStore((s) => latestNotificationForList(s, listId))
+  const from = useAppStore((s) => (n !== undefined ? s.masters.anaesthetists[n.fromAnaesthetistId]?.name : undefined))
+  if (n === undefined || n.route !== 'colleague' || n.toAnaesthetistId !== anaesthetistId) return null
+  return (
+    <div data-shot="drawer-moved-here" style={{ background: neutral.bg, borderRadius: radius.card, padding: '10px 12px', fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
+      Moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move · <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(n.atISO), 'EEE d MMM HH:mm')}</span>
+      {n.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{n.message}"</div>}
+    </div>
   )
 }

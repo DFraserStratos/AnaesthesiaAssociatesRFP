@@ -7,6 +7,7 @@ import { clearAvailability, deleteAvailabilitySeries, useAppStore, type Actor, t
 import { StatusChip } from '../StatusChip'
 import { FormError } from '../ui'
 import { describeAvailabilityOutcome } from './describeAvailabilityOutcome'
+import { useMoveListPrompt } from '../flows/MoveListPrompt'
 
 /** What the panel asks its host to open: the form for one session (or both), prefilled. */
 export interface ChangeRequest {
@@ -26,9 +27,11 @@ interface AvailabilitySlotPanelProps {
   onResult: (line: string) => void
 }
 
-/** The honest interim on a session holding a List, until Phase 32's return-or-assign (US-01.5.5). */
-export const LIST_INTERIM_LINE =
-  "This session holds a List. If you mark it unavailable, the List stays in place and is flagged on the office's Day view."
+/**
+ * On a session holding her List (catch-up Phase 32; US-01.5.5): marking it not
+ * available asks where the List goes first, so no List is left with her.
+ */
+export const LIST_SESSION_LINE = 'This session holds a List. Marking it not available asks whether the List goes back to the office or to a colleague.'
 
 /**
  * What a tapped day shows before the form (catch-up Phase 29; US-01.5.3; the
@@ -36,7 +39,8 @@ export const LIST_INTERIM_LINE =
  * in its place, with what can be done. A one-off day off offers Change and
  * Remove; a series instance offers Change this one, Delete this one and Delete
  * the series; a session holding a List still lets the anaesthetist change the
- * status, with the honest interim line. A past session is read only.
+ * status, and marking it not available asks where the List goes (the move
+ * sheet's unavailable mode, catch-up Phase 32). A past session is read only.
  */
 export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult }: AvailabilitySlotPanelProps) {
   const records = useAppStore((s) => s.masters.slotStatuses)
@@ -45,6 +49,8 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
   const past = day.dateISO < todayISO
   const [confirmSeries, setConfirmSeries] = useState<CalendarSession | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Catch-up Phase 32 (Phase 29's handoff): a movable List offers "Move this List" here.
+  const movePrompt = useMoveListPrompt()
   const sessions = (['AM', 'PM'] as const).map((s) => day[s]).filter((s): s is CalendarSession => s !== undefined)
 
   function remove(session: CalendarSession) {
@@ -101,14 +107,21 @@ export function AvailabilitySlotPanel({ actor, day, todayISO, onChange, onResult
                   </span>
                 )}
                 {s.conflict && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint }}>Flagged on the office's Day view</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: semantic.warning.onTint }}>This List has a conflict for the office to resolve</span>
                 )}
               </span>
             </div>
             {s.list !== undefined && !past && (
-              <div style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint, background: semantic.warning.tint, borderRadius: radius.ctl, padding: '8px 10px' }}>
-                {LIST_INTERIM_LINE}
+              <div style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate, background: neutral.sunken, borderRadius: radius.ctl, padding: '8px 10px' }}>
+                {LIST_SESSION_LINE}
               </div>
+            )}
+            {!past && s.list !== undefined && s.list.state === 'ACTIVE' && actor.role === 'anaesthetist' && movePrompt !== null && (
+              <Actions>
+                <span data-shot="availability-panel-move" style={{ display: 'contents' }}>
+                  <PanelAction primary onClick={() => movePrompt.openMove(s.list!.id)}>Move this List</PanelAction>
+                </span>
+              </Actions>
             )}
             {past ? (
               <div style={{ fontSize: 12, color: neutral.mist }}>Past sessions cannot be changed.</div>

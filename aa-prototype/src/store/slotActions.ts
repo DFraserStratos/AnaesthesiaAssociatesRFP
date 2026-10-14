@@ -13,7 +13,6 @@
 
 import type {
   AssignedList,
-  CoverRequest,
   DraftList,
   DraftOrigin,
   List,
@@ -27,7 +26,7 @@ import type {
 import { LIST_KINDS } from '../domain/types'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
 import { effectiveSlotTimes, isWallTime, slotDatesFor } from '../domain/slots'
-import { defaultSlotStatusKey, isOpenSlot, statusFor } from '../domain/slotStatus'
+import { defaultSlotStatusKey, statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
   canvasAnaesthetists,
@@ -38,13 +37,13 @@ import {
   type GeneratedCanvas,
 } from '../domain/seed'
 import { pairingAcknowledgement } from '../domain/pairingPreferences'
+import { receiveRefusal } from '../domain/listMoves'
 import { pairingIssues } from '../domain/listPairing'
 import { answeringLists, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
 import { answeredKey } from '../domain/recurringBookingProjection'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { editRefusal } from './lifecycle'
-import { listInSlot, scheduleHorizon, slotFor } from './selectors'
+import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { seriesCalendarFor, setOneSessionAvailability } from './availabilityActions'
 import { instanceKey } from '../domain/availabilitySeries'
 
@@ -206,14 +205,6 @@ export function placeListOnSlot(
       stampBookingId: null,
     },
   }
-}
-
-/** An open Slot loses any cover marker once a List is in it (it is no longer open). */
-export function withoutCoverRequest(slot: Slot): Slot {
-  if (slot.coverRequest === undefined) return slot
-  const next = { ...slot }
-  delete next.coverRequest
-  return next
 }
 
 // ---------------------------------------------------------------------------
@@ -434,7 +425,6 @@ export function assignListToSlot(
     return {
       schedule: {
         ...s.schedule,
-        slots: { ...s.schedule.slots, [slot.id]: withoutCoverRequest(slot) },
         lists: { ...s.schedule.lists, [listId]: placed.list },
       },
       counters: placed.counters,
@@ -461,12 +451,13 @@ export function assignListToSlot(
  * is still refused). The Slot's own times travel to the target and are cleared
  * from the vacated one, which takes `vacatedStatus`.
  *
- * It reads, checks and logs NO pairing preference: Phases 32 and 32a reuse it
- * for the anaesthetist's own move, which shows no warning (US-01.4.5). The
- * office's acknowledgement is passed in by `reassignList` (`pairingAcknowledgement`).
+ * It reads, checks and logs NO pairing preference: Phases 32 and 32a reuse
+ * its core for the anaesthetist's own move, which shows no warning
+ * (US-01.4.5). The office's acknowledgement is passed in by `reassignList`.
  * A move re-checks no prepayment and recalculates no invoice (US-06.3.5,
  * US-06.5.4: an honour system). PHASE 41 SEAM: the payable's payee repoint
- * for a prepaid Booking on a move (OQ-80, D38) hangs here, after the commit.
+ * for a prepaid Booking on a move (OQ-80, D38) hangs on the move's audit event
+ * (`list.reassign` here, `list.ownerMove` on an anaesthetist's own move).
  */
 export interface MoveListOptions {
   /** What the vacated session becomes: the default status (Free) unless another active status is chosen (OQ-84's recommendation). */
@@ -475,35 +466,80 @@ export interface MoveListOptions {
   pairingAcknowledgement?: MutationMeta
 }
 
-export function moveListToSlot(
-  api: AppStoreApi,
-  actor: Actor,
+/**
+ * The vacated session after a List leaves it (both moves share this): it takes
+ * `status`, loses its own times, and, if it was a series instance, leaves the
+ * series as an edited instance so no later generation repaints it (catch-up
+ * Phase 29). Returns the Slot, the series patch and the `session.status` meta
+ * (when the status changes). Pure.
+ */
+export function vacateSlot(
+  schedule: Pick<AppState['schedule'], 'availabilitySeries'>,
+  from: Slot,
+  status: SlotStatusKey,
+): { slot: Slot; availabilitySeries?: AppState['schedule']['availabilitySeries']; meta?: MutationMeta } {
+  const slot: Slot = { ...from, status }
+  delete slot.startTime
+  delete slot.endTime
+  delete slot.seriesId
+  const series = from.seriesId !== undefined ? schedule.availabilitySeries[from.seriesId] : undefined
+  return {
+    slot,
+    ...(series !== undefined
+      ? {
+          availabilitySeries: {
+            ...schedule.availabilitySeries,
+            [series.id]: {
+              ...series,
+              exceptions: { ...series.exceptions, [instanceKey(from.dateISO, from.session)]: { kind: 'edited' as const, statusKey: status } },
+            },
+          },
+        }
+      : {}),
+    ...(status !== from.status
+      ? { meta: { entityType: 'session', entityId: from.id, action: 'session.status', before: { status: from.status }, after: { status }, stampBookingId: null } }
+      : {}),
+  }
+}
+
+export interface MoveCoreOptions {
+  vacatedStatus: SlotStatusKey
+  /** An anaesthetist's own move: the receiver must be active and the session open (`receiveRefusal`'s `requireOpen`). */
+  requireOpen: boolean
+}
+
+export interface MoveCoreResult {
+  schedule: AppState['schedule']
+  list: AssignedList
+  from: Slot
+  to: Slot
+  /** The vacated session's `session.status` meta, when its status changed. */
+  vacatedMeta?: MutationMeta
+}
+
+/**
+ * The one List-into-another-session move, draft level (no commit, no audit
+ * action of its own): the office's `moveListToSlot` and the anaesthetist's own
+ * move (`listMoveActions.ts`) both run it inside their single `mutate()` and
+ * write their own event. Reads no pairing preference and touches no money.
+ */
+export function moveListToSlotCore(
+  state: Pick<AppState, 'schedule' | 'masters'>,
   listId: string,
   toSlotId: string,
-  options: MoveListOptions = {},
-): Outcome<{ listId: string; vacatedSlotId: string }> {
-  const state = api.getState()
-  const vacatedStatus = options.vacatedStatus ?? defaultSlotStatusKey(state.masters.slotStatuses)
+  options: MoveCoreOptions,
+): Outcome<MoveCoreResult> {
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
-  if (actor.source === 'integration') return refuse('integrationForbidden', 'A feed cannot move a List.')
   // A Draft List has no session to move from: the office assigns it (`assignDraftList`).
   if (list.state === 'DRAFT') return refuse('notAssigned', 'This List has no anaesthetist yet. Assign it instead.')
   if (list.state === 'AUTHORISED') return refuse('listAuthorised', 'An authorised List is locked and cannot be moved.')
-  if (actor.role === 'anaesthetist') {
-    const rights = editRefusal(actor, list)
-    if (rights !== null) return rights
-  }
   const from = state.schedule.slots[list.slotId]
   if (from === undefined) return refuse('notFound', "This List's session is outside the schedule.")
-  const to = state.schedule.slots[toSlotId]
-  if (to === undefined) return refuse('notFound', 'That session does not exist.')
-  if (to.id === from.id) return refuse('sameSlot', 'The List is already in that session.')
-  if (to.dateISO !== from.dateISO || to.session !== from.session) {
-    return refuse('differentSession', 'A List moves to the same day and session.')
-  }
-  if (listInSlot(state, to.id) !== undefined) return refuse('slotOccupied', 'That session already holds a List.')
-  const vacatedRecord = statusFor(state.masters.slotStatuses, vacatedStatus)
+  const receive = receiveRefusal(moveInputOf(state), from, toSlotId, { requireOpen: options.requireOpen })
+  if (receive !== null) return refuse(receive.code, receive.message)
+  const to = state.schedule.slots[toSlotId] as Slot
+  const vacatedRecord = statusFor(state.masters.slotStatuses, options.vacatedStatus)
   if (vacatedRecord === undefined || vacatedRecord.retiredAtISO !== undefined) {
     return refuse('invalidVacatedStatus', 'Choose an availability status in use for the vacated session.')
   }
@@ -513,58 +549,63 @@ export function moveListToSlot(
     moved.recurringOrigin = { recurringBookingId: list.recurringBookingId, slotId: from.id }
   }
   delete moved.recurringBookingId
-  const target: Slot = withoutCoverRequest({ ...to })
+  const target: Slot = { ...to }
   delete target.startTime
   delete target.endTime
   if (from.startTime !== undefined) target.startTime = from.startTime
   if (from.endTime !== undefined) target.endTime = from.endTime
-  const vacated: Slot = { ...from, status: vacatedStatus }
-  delete vacated.startTime
-  delete vacated.endTime
-  // A vacated series instance leaves its series (catch-up Phase 29), recorded
-  // as an edited instance so no later generation repaints it.
-  const vacatedSeries = from.seriesId !== undefined ? state.schedule.availabilitySeries[from.seriesId] : undefined
-  delete vacated.seriesId
+  const vacated = vacateSlot(state.schedule, from, options.vacatedStatus)
+  return ok({
+    schedule: {
+      ...state.schedule,
+      slots: { ...state.schedule.slots, [from.id]: vacated.slot, [to.id]: target },
+      lists: { ...state.schedule.lists, [list.id]: moved },
+      ...(vacated.availabilitySeries !== undefined ? { availabilitySeries: vacated.availabilitySeries } : {}),
+    },
+    list: moved,
+    from,
+    to,
+    ...(vacated.meta !== undefined ? { vacatedMeta: vacated.meta } : {}),
+  })
+}
 
+/**
+ * The office moves a List into another session on the same day (the core
+ * plus one `list.reassign` event). Office only: an anaesthetist moves her own
+ * List through `pushListToSlot` (catch-up Phase 32), which runs the same core.
+ */
+export function moveListToSlot(
+  api: AppStoreApi,
+  actor: Actor,
+  listId: string,
+  toSlotId: string,
+  options: MoveListOptions = {},
+): Outcome<{ listId: string; vacatedSlotId: string }> {
+  if (actor.source === 'integration') return refuse('integrationForbidden', 'A feed cannot move a List.')
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can reassign a List.')
+  const state = api.getState()
+  const vacatedStatus = options.vacatedStatus ?? defaultSlotStatusKey(state.masters.slotStatuses)
+  const core = moveListToSlotCore(state, listId, toSlotId, { vacatedStatus, requireOpen: false })
+  if (!core.ok) return core
+  const { list, from, to } = core.value
   const metas: MutationMeta[] = [
     {
       entityType: 'list',
       entityId: list.id,
       action: 'list.reassign',
-      before: { slotId: from.id, anaesthetistId: list.anaesthetistId },
+      before: { slotId: from.id, anaesthetistId: from.anaesthetistId },
       after: { slotId: to.id, anaesthetistId: to.anaesthetistId },
       stampBookingId: null,
     },
     ...(options.pairingAcknowledgement !== undefined ? [options.pairingAcknowledgement] : []),
+    ...(core.value.vacatedMeta !== undefined ? [core.value.vacatedMeta] : []),
   ]
-  if (vacatedStatus !== from.status) {
-    metas.push({
-      entityType: 'session',
-      entityId: from.id,
-      action: 'session.status',
-      before: { status: from.status },
-      after: { status: vacatedStatus },
-      stampBookingId: null,
-    })
-  }
-  mutate(api, actor, metas, (s) => ({
-    schedule: {
-      ...s.schedule,
-      slots: { ...s.schedule.slots, [from.id]: vacated, [to.id]: target },
-      lists: { ...s.schedule.lists, [list.id]: moved },
-      ...(vacatedSeries !== undefined
-        ? {
-            availabilitySeries: {
-              ...s.schedule.availabilitySeries,
-              [vacatedSeries.id]: {
-                ...vacatedSeries,
-                exceptions: { ...vacatedSeries.exceptions, [instanceKey(from.dateISO, from.session)]: { kind: 'edited' as const, statusKey: vacatedStatus } },
-              },
-            },
-          }
-        : {}),
-    },
-  }))
+  // Re-run the core on the state the recipe sees (the same state: nothing commits in between).
+  mutate(api, actor, metas, (s) => {
+    const again = moveListToSlotCore(s, listId, toSlotId, { vacatedStatus, requireOpen: false })
+    if (!again.ok) throw new Error(`moveListToSlot: ${again.message}`)
+    return { schedule: again.value.schedule }
+  })
   return ok({ listId: list.id, vacatedSlotId: from.id })
 }
 
@@ -613,12 +654,11 @@ export function reassignList(
  * may set). The write is the range action's (`setOneSessionAvailability`,
  * through the shared per-session write `applySessionWrites`):
  *   - an empty session is simply updated;
- *   - a session holding a List marked with a closed status keeps its List and
- *     kind, and the one rule in `mutate()` flags it (catch-up Phase 30). For an
- *     anaesthetist this is the INTERIM until Phase 32 offers return to the
- *     office or assign to a colleague (US-01.5.5, the OQ-64 answer); for the
- *     office (a sickness phoned in) it is the built reading (OQ-81 part 3,
- *     provisional);
+ *   - a session holding a List marked with a closed status: for the office (a
+ *     sickness phoned in) it keeps its List and kind, and the one rule in
+ *     `mutate()` flags it (catch-up Phase 30; OQ-81 part 3, provisional); for an
+ *     anaesthetist it is refused with `holdsList` (catch-up Phase 32, US-01.5.5):
+ *     she says where the List goes first (`markUnavailableAndMoveList`);
  *   - a bookable status resolves that conflict.
  */
 export function setAvailability(
@@ -848,60 +888,6 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
     return { schedule, counters, appSettings: { ...s.appSettings, schedule: { ...s.appSettings.schedule, horizonMonths: months } } }
   })
   return ok({ ...preview, slots: slotsChanged, lists: listsChanged })
-}
-
-// ---------------------------------------------------------------------------
-// requestCover (Phase 03's marker, on the Slot until Phase 32 removes it)
-// ---------------------------------------------------------------------------
-
-/**
- * Record a cover offer or request on an open session (Phase 03 mobile flow).
- * `offer`: the owner offers their own free session; `request`: a colleague is
- * asked to cover someone else's. Simulated only. Refused unless the session is
- * open (free, no List). Phase 32 removes it: the anaesthetist then moves their
- * own List instead.
- */
-export function requestCover(
-  api: AppStoreApi,
-  actor: Actor,
-  slotId: string,
-  kind: 'offer' | 'request',
-  message?: string,
-  targetAnaesthetistId?: string,
-): Outcome {
-  const state = api.getState()
-  const slot = state.schedule.slots[slotId]
-  if (slot === undefined) return refuse('notFound', 'Session not found.')
-  if (actor.role !== 'anaesthetist') return refuse('anaesthetistOnly', 'Cover offers and requests come from an anaesthetist.')
-  if (!isOpenSlot(slot, listInSlot(state, slotId), state.masters.slotStatuses)) {
-    return refuse('notFree', 'Cover can only be offered or requested on a free session.')
-  }
-  if (kind === 'offer') {
-    if (actor.anaesthetistId !== undefined && actor.anaesthetistId !== slot.anaesthetistId) {
-      return refuse('notOwnList', 'You can only offer cover on your own free session.')
-    }
-  } else if (actor.anaesthetistId !== undefined && actor.anaesthetistId === slot.anaesthetistId) {
-    return refuse('ownList', 'This is your own session, use Offer cover instead.')
-  }
-  if (slot.coverRequest !== undefined) return refuse('alreadyRequested', 'A cover request is already pending on this session.')
-
-  const coverRequest: CoverRequest = { by: actor.who, kind, atISO: clockISO(state.clock), status: 'pending' }
-  if (message !== undefined && message.trim() !== '') coverRequest.message = message.trim()
-  if (targetAnaesthetistId !== undefined) coverRequest.targetAnaesthetistId = targetAnaesthetistId
-
-  mutate(
-    api,
-    actor,
-    {
-      entityType: 'session',
-      entityId: slotId,
-      action: 'session.coverRequest',
-      after: { kind, ...(targetAnaesthetistId !== undefined ? { targetAnaesthetistId } : {}) },
-      stampBookingId: null,
-    },
-    (s) => ({ schedule: { ...s.schedule, slots: { ...s.schedule.slots, [slotId]: { ...slot, coverRequest } } } }),
-  )
-  return ok(undefined)
 }
 
 // ---------------------------------------------------------------------------

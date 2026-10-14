@@ -272,7 +272,7 @@ describe('cancelBooking', () => {
   })
 })
 
-// reassignList, setAvailability and requestCover moved to slotActions.ts with
+// reassignList and setAvailability moved to slotActions.ts with
 // the Slot and List split (catch-up Phase 28): see slotActions.test.ts.
 
 describe('reassignBooking', () => {

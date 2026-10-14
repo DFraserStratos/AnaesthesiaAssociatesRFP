@@ -70,6 +70,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   patient: { prefix: 'PT', pad: 4 },
   billableParty: { prefix: 'BP', pad: 4 },
   dayNote: { prefix: 'DN', pad: 4 },
+  // The shared notification pool (catch-up Phase 32; DM-41).
+  notification: { prefix: 'NT', pad: 4 },
   // Lists created at runtime (assignment, phone advice, the post-op addendum);
   // projected and seeded Lists keep their `L-<reg>-<date>-<session>` ids.
   list: { prefix: 'LG', pad: 4 },
@@ -158,6 +160,7 @@ export type DomainPatch = Partial<
     | 'integrations'
     | 'dayNotes'
     | 'officePrivate'
+    | 'notifications'
   >
 >
 
@@ -268,6 +271,7 @@ export function resetDomainState(api: AppStoreApi): void {
     appSettings: seed.appSettings,
     dayNotes: seed.dayNotes,
     officePrivate: seed.officePrivate,
+    notifications: seed.notifications,
     counters: seedBilling.counters,
     billing: {
       invoices: seedBilling.invoices,

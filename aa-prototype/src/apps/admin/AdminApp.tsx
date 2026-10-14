@@ -39,6 +39,7 @@ import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 function sectionForPath(pathname: string): NavSection {
   const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
   if (head === 'draft-lists') return 'draftLists'
+  if (head === 'notifications') return 'notifications'
   switch (head) {
     case 'conflicts':
     case 'review':
@@ -270,6 +271,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
     draftLists: '/admin/draft-lists',
     conflicts: '/admin/conflicts',
+    notifications: '/admin/notifications',
     review: '/admin/review',
     invoices: '/admin/invoices',
     billing: '/admin/billing',

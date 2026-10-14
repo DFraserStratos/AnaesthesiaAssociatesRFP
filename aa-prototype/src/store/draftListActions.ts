@@ -28,7 +28,7 @@ import { drName } from './conflictReconcile'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, scheduleHorizon, slotFor } from './selectors'
-import { attachListToSlot, insertDraftList, pairingRefusal, withoutCoverRequest } from './slotActions'
+import { attachListToSlot, insertDraftList, pairingRefusal } from './slotActions'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUEST_SOURCES: readonly RequestSource[] = ['phone', 'email', 'pdf', 'other']
@@ -235,7 +235,6 @@ export function assignDraftList(
     return {
       schedule: {
         ...s.schedule,
-        slots: { ...s.schedule.slots, [slot.id]: withoutCoverRequest(slot) },
         lists: { ...s.schedule.lists, [listId]: assigned },
       },
     }

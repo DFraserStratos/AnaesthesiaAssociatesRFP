@@ -1,15 +1,16 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { accent, neutral, semantic } from '../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Session, Slot } from '../../../domain/types'
 import { type AgingBucketKey } from '../../../domain/seed'
-import { isOpenSlotView, openSlotViews, receivablesAgingFor, scheduleHorizon, slotViewsForAnaesthetist, useAppStore } from '../../../store'
+import { openSlotViews, receivablesAgingFor, useAppStore } from '../../../store'
 import { drSurname, formatCurrency } from '../../../shared/format'
-import { useDefaultStatus } from '../../../shared'
+import { useDefaultStatus, useSurface } from '../../../shared'
+import { sessionKey, useMovableLists, useMoveListPrompt, useMoveTargets } from '../../../shared/flows'
+import { locationName } from '../../../shared/format'
 import { Panel, WeekStrip } from '../components'
 import { useDashboardFigures } from '../useDashboardFigures'
-import type { CoverTarget } from '../types'
 
 interface DashboardScreenProps {
   anaesthetistId: string
@@ -21,7 +22,6 @@ interface DashboardScreenProps {
   onOpenList: (listId: string) => void
   onViewOverdue: () => void
   onOpenAvailability: () => void
-  onCover: (target: CoverTarget) => void
 }
 
 const AGING_ROWS: { key: AgingBucketKey; label: string; color: string; opacity: number }[] = [
@@ -33,8 +33,8 @@ const AGING_ROWS: { key: AgingBucketKey; label: string; color: string; opacity: 
 
 /**
  * The anaesthetist web dashboard (Web Dashboard mockup is authoritative; W1).
- * Five panels over seeded figures + live schedule: welcome + day summary +
- * Offer cover, the week strip, receivables aging, productivity, leave, and the
+ * Five panels over seeded figures + live schedule: welcome + day summary,
+ * the week strip, receivables aging, productivity, leave, and the
  * live "who's free" locum panel. Receivables + productivity + leave are seeded
  * demo figures (Phase 10 replaces receivables); "who's free" is live so the
  * names can differ from the mockup (Discovered-for-later note).
@@ -49,7 +49,6 @@ export function DashboardScreen({
   onOpenList,
   onViewOverdue,
   onOpenAvailability,
-  onCover,
 }: DashboardScreenProps) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
@@ -58,11 +57,19 @@ export function DashboardScreen({
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const appSettings = useAppStore((s) => s.appSettings)
-  const clock = useAppStore((s) => s.clock)
   // The same Slot views every app and finder reads (catch-up Phase 28).
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const openVisual = useDefaultStatus().visual
   const slotState = useMemo(() => ({ schedule, appSettings, masters: { slotStatuses } }), [schedule, appSettings, slotStatuses])
+
+  // Catch-up Phase 32: "Move a List" (her movable Lists in the next six days) and the Who's free gesture.
+  const movableLists = useMovableLists(anaesthetistId, 6)
+  const movePrompt = useMoveListPrompt()
+  const { Overlay } = useSurface()
+  const [picking, setPicking] = useState(false)
+  const canMove = movableLists.length > 0 && movePrompt !== null
+  // Who's free spans five days from today: her movable Lists there, and the colleagues each could go to.
+  const moveTargets = useMoveTargets(anaesthetistId, todayISO, format(addDays(parseISO(todayISO), 4), 'yyyy-MM-dd'))
 
   const figures = useDashboardFigures(anaesthetistId)
   // Receivables aging now derives from the billing mirror (Phase 10; W1/W4).
@@ -90,15 +97,6 @@ export function DashboardScreen({
     return { lists: booked.length, bookings, awaiting }
   }, [listsRecord, bookingsRecord, anaesthetistId, todayISO])
 
-  // Souter's own next open session, for the Offer cover button.
-  const myFreeSlot = useMemo(
-    () =>
-      slotViewsForAnaesthetist(slotState, anaesthetistId, todayISO, scheduleHorizon({ clock, appSettings }).endISO).find(
-        (v) => isOpenSlotView(v) && v.slot.coverRequest === undefined,
-      )?.slot,
-    [slotState, clock, appSettings, anaesthetistId, todayISO],
-  )
-
   // Who's free, next 5 days (live open sessions, name order, no tiers).
   const locumRows = useMemo(() => {
     const rows: { key: string; label: string; entries: { name: string; phone: string; slot: Slot }[] }[] = []
@@ -120,29 +118,6 @@ export function DashboardScreen({
     return rows
   }, [slotState, anaesthetists, anaesthetistId, todayISO])
 
-  function offerCover() {
-    if (myFreeSlot === undefined) return
-    onCover({
-      slotId: myFreeSlot.id,
-      personName: personaName,
-      slotLabel: `${format(parseISO(myFreeSlot.dateISO), 'EEE d MMM')} · ${myFreeSlot.session}`,
-      kind: 'offer',
-    })
-  }
-
-  function askCover(name: string, slot: Slot) {
-    // A pending request already exists — the chip/link is disabled, but guard
-    // here too so this can never dead-end in the store's duplicate refusal.
-    if (slot.coverRequest !== undefined) return
-    onCover({
-      slotId: slot.id,
-      personName: name,
-      slotLabel: `${format(parseISO(slot.dateISO), 'EEE d MMM')} · ${slot.session}`,
-      kind: 'request',
-      targetAnaesthetistId: slot.anaesthetistId,
-    })
-  }
-
   const summaryLine = `${format(parseISO(todayISO), 'EEEE d MMMM')} · ${daySummary.lists} ${daySummary.lists === 1 ? 'list' : 'lists'} today · ${daySummary.bookings} ${daySummary.bookings === 1 ? 'booking' : 'bookings'}${daySummary.awaiting > 0 ? ` · ${daySummary.awaiting} awaiting submission` : ''}`
 
   return (
@@ -157,25 +132,53 @@ export function DashboardScreen({
         </div>
         <button
           type="button"
-          onClick={offerCover}
-          disabled={myFreeSlot === undefined}
-          title={myFreeSlot === undefined ? 'No free session to offer' : undefined}
+          data-shot="dashboard-move-list"
+          onClick={() => setPicking(true)}
+          disabled={!canMove}
+          title={movableLists.length === 0 ? 'No upcoming Lists to move' : undefined}
           style={{
             height: 42,
             padding: '0 20px',
             borderRadius: 12,
             border: 'none',
-            background: myFreeSlot === undefined ? neutral.line : accent.base,
-            color: myFreeSlot === undefined ? neutral.mist : neutral.surface,
+            background: canMove ? accent.base : neutral.line,
+            color: canMove ? neutral.surface : neutral.mist,
             fontFamily: 'inherit',
             fontSize: 14,
             fontWeight: 600,
-            cursor: myFreeSlot === undefined ? 'default' : 'pointer',
+            cursor: canMove ? 'pointer' : 'default',
           }}
         >
-          Offer cover
+          Move a List
         </button>
       </div>
+
+      <Overlay open={picking} onClose={() => setPicking(false)}>
+        <div data-shot="dashboard-move-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 460, maxWidth: '100%' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Which List?</div>
+            <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Your Lists in the next six days. Choose one to move it back to the office or to a colleague.</div>
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', border: `1px solid ${neutral.line}`, borderRadius: 14, overflow: 'hidden' }}>
+            {movableLists.map((l, i) => (
+              <li key={l.id} style={{ display: 'flex' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setPicking(false)
+                  movePrompt?.openMove(l.id)
+                }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${neutral.sunken}`, background: neutral.surface, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              >
+                <span className="mono" style={{ width: 92, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{format(parseISO(l.dateISO), 'EEE d MMM')} {l.session}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: neutral.ink }}>{locationName(l.hospitalId, masters.hospitals)}</span>
+                <span style={{ fontSize: 13, color: neutral.slate }}>{masters.surgeons[l.surgeonId]?.name ?? ''}</span>
+              </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Overlay>
 
       <WeekStrip
         anaesthetistId={anaesthetistId}
@@ -305,43 +308,37 @@ export function DashboardScreen({
                 <span className="mono" style={{ width: 84, fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>{row.label}</span>
                 <span style={{ flex: 1, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {row.entries.map((e) => {
-                    const requested = e.slot.coverRequest !== undefined
-                    return (
+                    // Her List that session can move straight into this colleague's free session.
+                    const mine = moveTargets.get(sessionKey(e.slot.dateISO, e.slot.session))
+                    const canMove = mine !== undefined && mine.targetSlotIds.has(e.slot.id) && movePrompt !== null
+                    const chip = {
+                      padding: '5px 11px',
+                      borderRadius: 999,
+                      border: 'none',
+                      background: openVisual.tint,
+                      fontFamily: 'inherit',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: openVisual.onTint,
+                    } as const
+                    return canMove ? (
                       <button
                         key={e.slot.id}
                         type="button"
-                        disabled={requested}
-                        onClick={() => askCover(e.name, e.slot)}
-                        title={requested ? 'Cover already requested' : `Ask ${e.name} to cover${e.phone !== '' ? ` · ${e.phone}` : ''}`}
-                        style={{
-                          padding: '5px 11px',
-                          borderRadius: 999,
-                          border: 'none',
-                          background: openVisual.tint,
-                          fontFamily: 'inherit',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: openVisual.onTint,
-                          cursor: requested ? 'default' : 'pointer',
-                          opacity: requested ? 0.7 : 1,
-                        }}
+                        data-shot={`dashboard-move-to-${e.slot.anaesthetistId}`}
+                        onClick={() => movePrompt.openMove(mine.list.id, { toSlotId: e.slot.id })}
+                        title={`Move your ${e.slot.session} List to ${e.name}${e.phone !== '' ? ` · ${e.phone}` : ''}`}
+                        style={{ ...chip, cursor: 'pointer' }}
                       >
                         {drSurname(e.name)}
-                        {requested ? ' ✓' : ''}
                       </button>
+                    ) : (
+                      <span key={e.slot.id} title="You have no List in this session" style={chip}>
+                        {drSurname(e.name)}
+                      </span>
                     )
                   })}
                 </span>
-                {row.entries.some((e) => e.slot.coverRequest === undefined) && (
-                  <LinkButton
-                    onClick={() => {
-                      const first = row.entries.find((e) => e.slot.coverRequest === undefined)
-                      if (first !== undefined) askCover(first.name, first.slot)
-                    }}
-                  >
-                    Ask to cover
-                  </LinkButton>
-                )}
               </div>
             ))}
           </div>

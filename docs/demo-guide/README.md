@@ -61,7 +61,7 @@ The field user is an **anaesthetist**. The scheduling unit is a half-day **List*
 
 - maintain their availability;
 - see their assigned Lists;
-- find Free sessions and request or offer cover; and
+- find Free colleagues and move a List to them; and
 - help arrange locum cover.
 
 The RFP does not say an anaesthetist browses open shifts and claims one. Office staff coordinate

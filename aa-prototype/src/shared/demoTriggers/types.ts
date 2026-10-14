@@ -41,7 +41,8 @@ export interface DemoTrigger {
   /** react-router `matchPath` patterns, matched against the full pathname. */
   routes: readonly string[]
   surfaces: readonly DemoTriggerSurface[]
-  badge?: 'future-scope' | 'office-stand-in'
+  /** `colleague-stand-in` (catch-up Phase 32): plays another anaesthetist on the PWA, where the app runs only as Dr Souter. */
+  badge?: 'future-scope' | 'office-stand-in' | 'colleague-stand-in'
   /** Visibility on a matched route (a seed-scoped entry gates itself here). */
   when?: (state: AppState, ctx: DemoTriggerCtx) => boolean
   /** Options the presenter picks between before running. */

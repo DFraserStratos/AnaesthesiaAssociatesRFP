@@ -89,7 +89,7 @@ export function PwaDemoActions() {
             {officeAuto && <DemoBadge label="Office auto" style={{ padding: '3px 8px', fontSize: 10 }} />}
           </div>
           <div style={{ fontSize: 13, color: neutral.mist, lineHeight: '18px', marginTop: 6 }}>
-            Demo actions for this screen. They stand in for the office and the hospital systems, which are not on the phone.
+            Demo actions for this screen. They stand in for the office, colleagues and the hospital systems, which are not on this phone.
           </div>
 
           {rows.map(({ trigger, options, chosen, reason, result, choose, run }) => {

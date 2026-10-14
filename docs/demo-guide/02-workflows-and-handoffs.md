@@ -202,11 +202,12 @@ Show a single Booking move and explain that it is different from reassigning an 
 - RFP: `Key Design Principles`
 - Prototype: `A1`, `A2`, `D3`
 
-## Workflow 3: find cover and reassign a whole List
+## Workflow 3: find cover: the anaesthetist's own move, or the office's reassignment
 
 **Primary actors:** Anaesthetist and AA scheduling coordinator
 
-**Prototype readiness:** Ready (US-01.4.1: the List moves between sessions)
+**Prototype readiness:** Ready (US-01.4.3: the anaesthetist's own move; US-01.4.1: the office's
+reassignment; the single-Booking move is Phase 32a)
 
 ### Trigger
 
@@ -215,26 +216,28 @@ An anaesthetist becomes unavailable or needs cover at short notice.
 ### Steps
 
 1. Dr Souter keeps her availability in her calendar (mobile or web): days off ahead, repeating days
-   off, one occurrence changed or deleted. Or she offers a Free session for cover.
-2. Her availability is the status on her session, set directly; a session holding a List marked
-   unavailable keeps its List and gets a conflict flag on the office's Day view (until Phase 32's
-   return-or-assign choice).
-3. Kirsty sees the conflict on the Conflicts screen, or receives the phone call and records the
-   sickness.
-4. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
-   not-preferred pairing grouped apart and warned (never blocked).
-5. She selects a colleague whose session on the same day and session is free (Find available on the
-   Day view, or the Reassign list picker).
-6. The List moves into that session with every Booking and its history; it keeps its id, and nothing
-   about billing is recalculated.
-7. The vacated session returns to Free, unless she marks it Unavailable or Holiday (OQ-84's
-   recommendation, still open).
-8. No List is absorbed or regenerated.
-9. The reassignment is audited.
+   off, one occurrence changed or deleted.
+2. She moves one of her Lists to a free colleague or returns it to the office, also when she marks a
+   booked session off: the app asks "Return to the office" or "Hand on to a colleague" first, so no
+   List is left with her. It happens at once: nobody accepts and the office does not confirm.
+3. The colleagues offered are those free that session, in name order, by availability alone. She
+   sees no preference, tier or warning.
+4. A List she returns goes back to the office as a Draft List with its hospital, surgeon and Bookings;
+   one she hands on moves with every Booking and its history, exactly as the office's reassignment.
+   Nothing about billing or prepayment is recalculated.
+5. When nobody has arranged cover, Kirsty sees the conflict on the Conflicts screen, or receives the
+   phone call and records the sickness.
+6. She views Free anaesthetists at the required AM/PM granularity, in priority-tier order, with any
+   not-preferred pairing grouped apart and warned (never blocked), and reassigns the List.
+7. The vacated session returns to Free, unless the anaesthetist (on her own move) or the office
+   marks it Unavailable or Holiday (OQ-84's recommendation, still open).
+8. Every move and reassignment is audited.
 
 ### Handoff
 
-The replacement anaesthetist sees the List in their schedule.
+Each anaesthetist's own move posts to the office's shared notifications (Admin Day's rail and the
+Notifications page), the same for the whole office; the colleague sees the List with a "Moved to
+you" notice. The office then assigns any Draft List returned to it.
 
 ### Requirement
 
@@ -244,8 +247,8 @@ What the vacated session shows by default is OQ-84, still open; the prototype us
 
 ### What not to say
 
-Do not describe this as a clinician claiming an open shift. The prototype demonstrates availability,
-cover requests and an office-managed reassignment.
+There is no claiming of open shifts, no acceptance step, no preference warning for the anaesthetist,
+no prepayment recalculation on a move, and notifications are not tasks.
 
 ### Source
 
@@ -541,7 +544,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Fixed canvas and recurring bookings | Yes | Phase 02 |
 | Manual phone booking and office changes | Yes | Phase 06 |
 | Mobile/web manual Booking creation | Yes | Phases 03 to 05 |
-| Cover request and office List reassignment | Yes | Phases 03, 06 |
+| Anaesthetist's own List move, the notification pool, and office List reassignment | Yes | Phases 28, 32 (32a adds the single-Booking move) |
 | BTM capture, completion and submit | Yes | Phase 04 |
 | Office review and authorisation | Yes | Phase 07 |
 | Invoice calculation and documents | Yes | Phase 08 |

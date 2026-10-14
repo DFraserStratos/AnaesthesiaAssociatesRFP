@@ -128,9 +128,9 @@ const prefersReducedMotion = (): boolean =>
  * 3. **Never under an open sheet.** Most of the app's mobile sheets are rendered
  *    by the screen itself, which makes them DESCENDANTS of this layer: their
  *    `pointerdown` bubbles straight into these handlers, and `zIndex: 70`
- *    changes paint order, not propagation. (Only the two the Lists route renders
- *    as siblings of the stack, `AddBookingFlow` and `RequestCoverSheet`, are
- *    genuinely outside it.) Unguarded, a drag on a sheet or its scrim took the
+ *    changes paint order, not propagation. (Only the one the Lists route renders
+ *    as a sibling of the stack, `AddBookingFlow`, is genuinely outside it.)
+ *    Unguarded, a drag on a sheet or its scrim took the
  *    whole layer with it and popped, and because a screen does not reset its own
  *    `sheet` state on the way out, re-entering showed the stale sheet still
  *    open. So an open modal dialog anywhere inside the layer refuses the arm.

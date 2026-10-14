@@ -65,7 +65,7 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
       assertNoStaleFlag(api, name)
     }
     assertNoStaleFlag(api, 'seed')
-    step('block a booked session (anaesthetist, interim)', () => setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable'))
+    step('the office blocks a booked session (a sickness phoned in)', () => setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable'))
     let phoneList = ''
     step('phone-book onto an unavailable session', () => {
       const out = assignListToSlot(api, OFFICE, slotIdFor(ANAE.ngata, DEMO_TODAY, 'AM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
@@ -101,8 +101,8 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
       return addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.hughes, dayOfWeek: 6, session: 'AM', kind: 'private', hospitalId: HOSP.cph, surgeonId: SURG.hale })
     })
     step('office records a sickness over a booked session', () => setAvailability(api, OFFICE, ANAE.ngata, WED22, 'PM', 'unavailable', 'Unwell'))
-    step('a series over booked sessions', () =>
-      createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [1], everyWeeks: 2, startISO: '2026-08-03' }),
+    step('a series over booked sessions (the office)', () =>
+      createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [1], everyWeeks: 2, startISO: '2026-08-03' }),
     )
     const instance = Object.values(api.getState().schedule.slots).find((s) => s.anaesthetistId === ANAE.souter && s.seriesId !== undefined)!
     step('clear one instance', () => clearAvailability(api, SOUTER, instance.id))
@@ -120,11 +120,13 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
 })
 
 describe('each path raises once and resolves the right conflict', () => {
-  it('blocking a booked session raises one availability conflict, never stacking; un-blocking resolves it with no new one', () => {
+  it('the office blocking a booked session raises one availability conflict, never stacking; un-blocking resolves it with no new one', () => {
     const api = store()
     const id = SEED_LIST_IDS.souterAm21
-    setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')
-    setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable', 'still away')
+    // The anaesthetist herself is asked where the List goes instead (catch-up Phase 32, US-01.5.5).
+    expect(setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
+    setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable')
+    setAvailability(api, OFFICE, ANAE.souter, DEMO_TODAY, 'AM', 'unavailable', 'still away')
     expect(api.getState().schedule.lists[id]!.conflicts).toHaveLength(1)
     expect(audit(api, 'list.conflict', id)).toHaveLength(1)
     setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'free')

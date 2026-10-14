@@ -56,12 +56,14 @@ test('mobile: manual booking form', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/m-06-manual.png', fullPage: true })
 })
 
-test('mobile: request cover sheet', async ({ page }) => {
+test('mobile: move List sheet', async ({ page }) => {
+  // Catch-up Phase 32: the cover request is retired; she moves her own List from Find cover.
   await page.goto('/mobile')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Availability' }).click()
   await page.waitForTimeout(400)
-  await page.getByText('Tap to ask', { exact: false }).first().click()
+  await page.locator('[data-shot^="availability-move-"]').first().click()
   await page.waitForTimeout(500)
-  await page.screenshot({ path: 'visual/shots/m-07-cover.png', fullPage: true })
+  await expect(page.locator('[data-shot="move-where"]')).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/m-07-move.png', fullPage: true })
 })

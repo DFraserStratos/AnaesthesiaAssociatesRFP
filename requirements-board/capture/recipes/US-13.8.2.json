@@ -1,0 +1,50 @@
+{
+  "id": "US-13.8.2",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "move-notification",
+      "app": "admin",
+      "caption": "Every List an anaesthetist moves posts a notification naming who moved it and to whom",
+      "start": "/admin/notifications",
+      "states": [
+        {
+          "state": "to-colleague",
+          "caption": "Moved to a colleague: the notification names both anaesthetists",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "busy"
+            },
+            {
+              "wait": "[data-notification-row=\"NT0008\"]"
+            }
+          ],
+          "highlight": [
+            "[data-notification-row=\"NT0008\"]"
+          ]
+        },
+        {
+          "state": "to-office",
+          "caption": "Returned to the office: its link opens the Draft List",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "one"
+            },
+            {
+              "click": "[data-notification-row=\"NT0001\"] button:has-text(\"Open Draft List\")"
+            },
+            {
+              "wait": "[data-shot=\"draft-list-returned-by\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"draft-list-returned-by\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

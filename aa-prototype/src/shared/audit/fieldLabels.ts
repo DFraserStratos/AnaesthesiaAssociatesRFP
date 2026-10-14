@@ -104,7 +104,9 @@ export const FIELD_LABELS: Record<string, string> = {
   draftListsUpdated: `${DRAFT_LISTS} updated`,
   draftListsRemoved: `${DRAFT_LISTS} removed`,
 
-  coverRequest: 'Cover request',
+  // Catch-up Phase 32: an anaesthetist's own move.
+  route: 'Moved to',
+  notificationId: 'Notification',
   phoneNotes: 'Phone notes',
   billedAtISO: 'Billed at',
   lists: 'Lists',

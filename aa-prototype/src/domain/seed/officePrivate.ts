@@ -14,6 +14,10 @@
  *   reassign (Dr Rutherford's Wed 22 AM, Whitford's) shows Sharma's pill.
  * - Dr Tom Ngata with Ms H. Cameron, preferred, anaesthetist side, so both
  *   kinds show both sides.
+ * - Dr Hannah Ropata with Ms G. Lim, not preferred, anaesthetist side
+ *   (catch-up Phase 32): the privacy case. Ropata is free on Mon 27 Jul PM
+ *   and is offered, like any colleague, when Dr Souter hands on her St
+ *   George's List with Ms Lim (US-01.4.5: no warning, nothing revealed).
  *
  * Tiers: the five directors in Tier 1 (the 2026-10-07 meeting), a spread
  * below, and Ropata, Whitaker and Ngatai left with no entry at the Tier 4
@@ -67,6 +71,21 @@ export const PAIRING_PREFERENCES: readonly PairingPreference[] = [
     surgeonId: SURG.cameron,
     reason: 'Works well together on gynaecology lists',
     addedAtISO: '2026-04-07T15:45:00',
+    addedBy: OFFICE,
+  },
+  // Catch-up Phase 32: the privacy case for an anaesthetist's own move
+  // (US-01.4.5). Dr Ropata is free on Mon 27 Jul PM, so she is one of the
+  // colleagues Dr Souter can hand her St George's List with Ms Lim on to, and
+  // she is offered like any other, with no warning. The canvas never pairs
+  // them. A pairing seed entry only: no List changed (Phase 17's rule).
+  {
+    id: 'PP-005',
+    kind: 'NOT_PREFERRED',
+    raisedBy: 'ANAESTHETIST',
+    anaesthetistId: ANAE.ropata,
+    surgeonId: SURG.lim,
+    reason: 'Prefers not to do long plastics lists',
+    addedAtISO: '2026-06-02T09:10:00',
     addedBy: OFFICE,
   },
 ] as const

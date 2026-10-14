@@ -1,6 +1,195 @@
 {
   "id": "US-01.5.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 32 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "unavailable-prompt",
+      "app": "mobile",
+      "caption": "Marking a booked session not available asks whether its List returns to the office or goes to a colleague",
+      "start": "/mobile/availability",
+      "states": [
+        {
+          "state": "prompt",
+          "caption": "Unavailable on her Thu 23 PM session, which holds a List: Return to the office or Hand on to a colleague",
+          "steps": [
+            {
+              "click": "button[data-date=\"2026-07-23\"]"
+            },
+            {
+              "click": "[data-shot=\"availability-change\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-status-choice=\"unavailable\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] button:has-text(\"Save\")"
+            },
+            {
+              "wait": "[data-shot=\"move-unavailable-line\"]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=\"move-sheet\"]"
+          ]
+        },
+        {
+          "state": "returned",
+          "caption": "Returned to the office first, then the session saved as Unavailable",
+          "steps": [
+            {
+              "click": "button[data-date=\"2026-07-23\"]"
+            },
+            {
+              "click": "[data-shot=\"availability-change\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-status-choice=\"unavailable\"]"
+            },
+            {
+              "click": "[data-shot=\"mobile-availability-sheet\"] button:has-text(\"Save\")"
+            },
+            {
+              "wait": "[data-shot=\"move-unavailable-line\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-office\"]"
+            },
+            {
+              "click": "button:has-text(\"Move List\")"
+            },
+            {
+              "click": "[data-shot=\"move-done\"] button:has-text(\"Done\")"
+            },
+            {
+              "wait": "[data-shot=\"availability-result\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"availability-result\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unavailable-prompt",
+      "app": "web",
+      "caption": "Marking a booked session not available asks whether its List returns to the office or goes to a colleague",
+      "start": "/web/availability/mine?date=2026-07-23",
+      "states": [
+        {
+          "state": "prompt",
+          "caption": "My availability: Unavailable on a session holding a List asks where the List goes",
+          "steps": [
+            {
+              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+            },
+            {
+              "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
+            },
+            {
+              "click": "[data-shot=\"web-availability-rail\"] button:has-text(\"Save\")"
+            },
+            {
+              "wait": "[data-shot=\"move-unavailable-line\"]"
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        },
+        {
+          "state": "returned",
+          "caption": "Returned to the office first, then the session saved as Unavailable",
+          "steps": [
+            {
+              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+            },
+            {
+              "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
+            },
+            {
+              "click": "[data-shot=\"web-availability-rail\"] button:has-text(\"Save\")"
+            },
+            {
+              "wait": "[data-shot=\"move-unavailable-line\"]"
+            },
+            {
+              "click": "[data-shot=\"move-choice-office\"]"
+            },
+            {
+              "click": "button:has-text(\"Move List\")"
+            },
+            {
+              "click": "[data-shot=\"move-done\"] button:has-text(\"Done\")"
+            },
+            {
+              "wait": "[data-shot=\"availability-result\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"availability-result\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unavailable-prompt",
+      "app": "admin",
+      "caption": "The returned List waits for the office with its hospital, surgeon and Bookings",
+      "start": "/admin/day/2026-07-23",
+      "setup": [
+        {
+          "goto": "/web/availability/mine?date=2026-07-23"
+        },
+        {
+          "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+        },
+        {
+          "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
+        },
+        {
+          "click": "[data-shot=\"web-availability-rail\"] button:has-text(\"Save\")"
+        },
+        {
+          "wait": "[data-shot=\"move-unavailable-line\"]"
+        },
+        {
+          "click": "[data-shot=\"move-choice-office\"]"
+        },
+        {
+          "click": "button:has-text(\"Move List\")"
+        },
+        {
+          "click": "[data-shot=\"move-done\"] button:has-text(\"Done\")"
+        },
+        {
+          "wait": "[data-shot=\"availability-result\"]"
+        },
+        {
+          "goto": "/admin/day/2026-07-23"
+        }
+      ],
+      "states": [
+        {
+          "state": "admin",
+          "caption": "Admin Day: the returned List as a Draft List, with its Bookings",
+          "steps": [
+            {
+              "wait": "[data-shot=\"daygrid-draft-band\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"daygrid-draft-band\"]"
+          ]
+        }
+      ]
+    }
+  ]
 }

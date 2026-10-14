@@ -6,7 +6,7 @@ import type { Booking, Procedure } from '../../../domain/types'
 import { removeAttachment, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
 import { bookingFee } from '../../../shared/capture'
-import { AddBookingFlow, SubmitListSheet } from '../../../shared/flows'
+import { AddBookingFlow, SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { formatCurrency, slotTimeRange, locationName } from '../../../shared/format'
 import { Panel } from '../components'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
@@ -53,6 +53,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const [addOpen, setAddOpen] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
   const [submitSheet, setSubmitSheet] = useState<'none' | 'blockers' | 'confirm'>('none')
+  // Catch-up Phase 32: her own move, and the notice when a colleague moved it to her.
+  const movable = useIsMovable(listId, actor.anaesthetistId)
+  const movePrompt = useMoveListPrompt()
+  const moved = useMovedToMeNotice(listId, actor.anaesthetistId)
 
   const model = useMemo(() => {
     // A Draft List never reaches an anaesthetist surface (OQ-86 answered no, D46).
@@ -128,13 +132,30 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
             <StatusChip status={list.kind} />
           </div>
           <div style={{ fontSize: 14, color: neutral.slate, marginTop: 4 }}>{subline}</div>
+          {moved !== undefined && (
+            <div data-shot="list-moved-to-you" style={{ fontSize: 13, color: neutral.slate, marginTop: 6 }}>
+              {movedToYouByLine(moved.notification, moved.fromName)}
+            </div>
+          )}
         </div>
-        <SubmitAction
-          state={list.state}
-          incomplete={incomplete}
-          onBlockers={() => setSubmitSheet('blockers')}
-          onConfirm={() => setSubmitSheet('confirm')}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {movable && movePrompt !== null && (
+            <button
+              type="button"
+              data-shot="list-move"
+              onClick={() => movePrompt.openMove(listId)}
+              style={{ height: 42, padding: '0 18px', borderRadius: 12, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Move this List
+            </button>
+          )}
+          <SubmitAction
+            state={list.state}
+            incomplete={incomplete}
+            onBlockers={() => setSubmitSheet('blockers')}
+            onConfirm={() => setSubmitSheet('confirm')}
+          />
+        </div>
       </div>
 
       <Panel
@@ -270,8 +291,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
 }
 
 /**
- * The page's primary action, in the header slot the dashboard uses for "Offer
- * cover". Three states, all of them the same object: already submitted (a
+ * The page's primary action, in the header slot the dashboard uses for "Move a
+ * List". Three states, all of them the same object: already submitted (a
  * static confirmation), blocked (the count of what is left, still clickable so
  * the blockers sheet can say which bookings), or ready.
  */

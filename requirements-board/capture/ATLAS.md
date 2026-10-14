@@ -264,7 +264,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/web/lists` | Table of Souter's lists. |
 | `/web/lists/:listId` | List detail: header, bookings table, "Add a booking", submit action. |
 | `/web/lists/:listId/bookings/:bookingId` | Booking detail with capture: ASA, procedure code, times, booking total, "Mark complete". |
-| `/web/availability` | Find cover: the practice availability grid. Free cells read "Free · Open for booking" and can be clicked for cover. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
+| `/web/availability` | Find cover: the practice availability grid. `?date=YYYY-MM-DD` opens a day (catch-up Phase 32). Free cells read "Free · Open for booking". Dr Souter's own movable List cells show "Move" (`availability-move-mine-am`/`-pm`), and a colleague's free cell in a session where she has a movable List shows "Move here" (`availability-move-to-<registration>-am`/`-pm`); every other cell is inert. A "Moved to you" panel (`moved-to-you`) shows above the filters when a colleague moved a List to her this week. The "Find cover · My availability" switch is `role=group[name="Availability page"]`; the "(you)" row's "Change" link opens My availability on that date. |
 | `/web/availability/mine` | My availability (catch-up Phase 29): Dr Souter's month (AM and PM per day), click a day and shift-click to a range; the right rail holds the session panel and the form, then "Your series" and the legend. `?date=YYYY-MM-DD` opens a day in the rail (the capture runner has no shift-click: open `?date=`, click "Change both sessions" and fill the To date for a range). |
 | `/web/accounts/overdue`, `/web/accounts/payments`, `/web/accounts/gst`, `/web/accounts/fees` | Accounts tabs. Add `?invoice=AA-2026-0005` to focus a payment, which exists only after S3 billing. AA fees (catch-up Phase 16) lists Dr Souter's AA fee invoices; `?invoice=AA-FEE-2026-H02` focuses one. |
 
@@ -275,6 +275,7 @@ redirects, with replace, to `…/bookings/BK0009`, but recipes should use the ne
 | `/admin` | Redirects to `/admin/day/2026-07-21`. |
 | `/admin/day/:date` | Day grid of anaesthetists by time. The right rail has the mini calendar, "Internal notes" and "Awaiting review". Add `?sort=az` for A to Z order. |
 | `/admin/day/:date/bookings/:bookingId` | Admin booking detail with "Office billing setup". |
+| `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List" or "Open Draft List", the pager `admin-notifications-pager` (Newer / Older), the provisional caption `admin-notifications-provisional`. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Filters in the URL: `?reason=closed|unavailable`, `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". |
@@ -301,7 +302,7 @@ badge carries `data-shot=nav-badge-<section>`.
 | `/mobile/lists` | Forward lists. Segments Week, Month, To-Do, Done. Free rows read "Open for bookings or cover". |
 | `/mobile/lists/:listId` | List detail, with an "Add a booking" and "Mark list completed" footer. The tab bar is hidden. |
 | `/mobile/lists/:listId/bookings/:bookingId` | Booking detail. The tab bar is hidden. |
-| `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), the everyone / free-only grid, and "Tap to ask" for cover. |
+| `/mobile/availability` | Find cover: "My availability" (the day's AM and PM chips, a "Move" button on a movable List, `availability-move-am`/`-pm`; "Change" opens the day's bottom sheet, "My calendar" slides the calendar in), and the everyone / free-only grid. The six-day strip's days are `button[data-date=YYYY-MM-DD]` (Tue 21 to Sun 26). A colleague's free cell is tappable only where Dr Souter has a movable List that session (`availability-move-to-<registration>-am`/`-pm`, "Tap to move your List here"). "Moved to you" (`moved-to-you`) tops the screen when a colleague moved a List to her (catch-up Phase 32; the cover request and "Tap to ask" are retired). |
 | `/mobile/availability/calendar` | My calendar (catch-up Phase 29): a month of Dr Souter's sessions, AM over PM, July to the horizon month; the tab bar is hidden; the sticky teal "Add days off" opens the sheet on the form. |
 | `/mobile/balances` | "Your account": Outstanding and GST this month. |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
@@ -448,6 +449,16 @@ the next run raises his $700.00 before GST ($805.00 with GST).
 
 **NHIs:** Ellison ZAA0067, Tane ZBC1123, Chen ZAE0310, Prentice ZAC3326, Holt ZAF4434.
 
+**Anaesthetist's own List move** (catch-up Phase 32; `LIST_MOVE_DEMO` in the seed, pinned by
+`domain/seed/listMoveSeed.test.ts`). Dr Souter's St George's Mon 27 Jul PM List `L-34821-2026-07-27-PM`
+(Ms G. Lim, 1 Booking) is the movable one: on `/web/availability?date=2026-07-27` her PM cell's Move lists
+seven free colleagues, among them Dr Hannah Ropata (`39560`), who has a not-preferred pairing with Ms Lim
+(PP-005) and is offered like anyone else (the privacy case). Her Thu 23 Jul AM List
+`L-34821-2026-07-23-AM` is the one to return to the office from List detail; her Thu 23 Jul PM session
+`S-34821-2026-07-23-PM` (AA rooms, Ms K. Patel, 6 Bookings) is the unavailable prompt's (inside mobile's
+six-day strip). Colleagues' triggers never pick a List or session in `SCRIPTED_BEAT_SCHEDULE` or a List
+with a conflict. The notification pool seeds empty; ids are `NT0001` on.
+
 ## Overlays that need clicks
 
 **Anaesthetist app** (web and mobile: a sheet on mobile, a dialog on web)
@@ -483,11 +494,16 @@ the next run raises his $700.00 before GST ($805.00 with GST).
   both sessions, "1 week" ready). Status chips `[data-status-choice=<id>]`; Sessions and Repeat are
   `[role=group][aria-label="Sessions"|"Repeat"]`; the first date input is From (or Starts). After
   "Save", "Done" closes it.
-- **Cover:**
-  - Mobile availability: `text="Tap to ask" >> nth=0`.
-  - Web availability: `button:has-text("Open for booking") >> nth=0`.
-  - Web dashboard: "Offer cover".
-  - The sheet then shows "Send cover request", then "Request sent".
+- **Move a List** (catch-up Phase 32; the cover request is retired):
+  - Web availability: `/web/availability?date=2026-07-27`, then `[data-shot="availability-move-mine-pm"]`.
+  - Mobile availability: `button[data-date="2026-07-23"]`, then `[data-shot="availability-move-am"]`.
+  - List detail (mobile or web): `[data-shot="list-move"]`. Web dashboard: "Move a List".
+  - Then `[data-shot="move-choice-office"]` or `[data-shot="move-choice-colleague"]` and a
+    `[data-shot="move-colleague-<registration>"]`, then `button:has-text("Move List")`, then the done
+    state `[data-shot="move-done"]` with "Done".
+  - The unavailable prompt: open a session holding her List in the availability sheet (or web rail),
+    `Change`, `[data-status-choice="unavailable"]`, Save: the move sheet opens in its unavailable mode
+    (`move-unavailable-line`); after the move and Done, the form saves (`availability-result`).
 
 **Admin**
 
@@ -548,6 +564,19 @@ the exception: use the `trigger` step)
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
 
 ## Existing hooks
+
+- Move sheet (catch-up Phase 32; one sheet: a bottom sheet on mobile, a dialog on web):
+  `move-sheet`, `move-list-header` (with "1 of 2" in a range), `move-unavailable-line` (its unavailable
+  mode), `move-where`, `move-choice-office`, `move-choice-colleague`, `move-colleagues` (rows
+  `move-colleague-<registration>`), `move-confirm`, `move-vacated` (chips `move-vacated-free`,
+  `move-vacated-unavailable`, `aria-checked`), `move-submit` (the "Move List" button), `move-done`;
+  `move-lists-intro` before a range or series over several Lists ("Choose where they go"). Entry points:
+  `list-move` (List detail "Move this List", mobile and web), `availability-panel-move` (My calendar
+  panel), `dashboard-move-list` and `dashboard-move-picker` (web dashboard "Move a List"),
+  `dashboard-move-to-<registration>` (Who's free chips). Notices: `moved-to-you`, `moved-to-you-row`,
+  `list-moved-to-you`, `list-row-badge` ("New" on Forward Lists). Admin: `admin-notifications-rail`
+  (Day rail card, under Draft Lists; scroll it into view), `admin-notifications-see-all`,
+  `drawer-moved-here` (List drawer), `draft-list-returned-by` (Draft List drawer).
 
 These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
@@ -695,6 +724,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/mobile/lists[...]`, `/admin/integrations`, `/demo/integrations` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope |
 | `/mobile/lists/<listId>` | `photo-capture-future` | Badged Future scope. Opens the Add a booking sheet on the simulated photo of a paper card (sample cards) for the List in the URL; disabled unless the List is ACTIVE. Also in the PWA Demo sheet. A saved Booking reads "Added by anaesthetist" |
 | `/admin/audit` | `simulate-sign-in` | Five simulated sign-in audit rows |
+| `/admin/day/<date>`, `/admin/notifications` | `colleague-moves-list-to-office` (choice `one` or `busy`) | Catch-up Phase 32. A colleague returns one of their Lists to the office as themselves (the date in the URL, or the next with a candidate; vacated Unavailable): a Draft List and `NT0001`. `busy` stages eight moves from today, alternating returns and hand-ons, so the Notifications page has two pages (`NT0008` is a hand-on naming both). Bar only |
+| `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |
 | `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: a List id) | Catch-up Phase 30. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)"); the List keeps its Bookings and is flagged. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>`, `/mobile/lists/<listId>/bookings/<bookingId>` | `raise-sample-warnings`, `clear-sample-warnings` | On the Day view they stage (or undo) every rule's sample on Dr Rutherford's Tue 21 Jul Bookings (`BK0119`, `BK0121`); on a Booking, on that Booking (seeded Bookings only). One rule today, so each shows one warning. Also in the PWA Demo sheet on a mobile Booking |
 

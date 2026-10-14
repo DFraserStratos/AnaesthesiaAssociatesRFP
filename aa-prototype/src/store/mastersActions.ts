@@ -23,7 +23,7 @@ import type {
 import { LIST_KINDS } from '../domain/types'
 import { isWallTime } from '../domain/slots'
 import { seriesPaintedCount } from '../domain/seed'
-import { anaesthetistCanvasDelta, applyGenerated, clashDraftsInto, pairingRefusal, placeListOnSlot, withoutCoverRequest } from './slotActions'
+import { anaesthetistCanvasDelta, applyGenerated, clashDraftsInto, pairingRefusal, placeListOnSlot } from './slotActions'
 import { RECURRING_BOOKING_CHANGED } from '../domain/draftLists'
 import { previewApplyAllRecurringBookings, previewRecurringBookingChange, previewRetireRecurringBooking } from './selectors'
 import { holidayCause } from '../domain/conflicts'
@@ -666,7 +666,7 @@ function applyPlan(
   const lists = { ...s.schedule.lists }
   const atISO = clockISO(s.clock)
   const withTimes = (slot: Slot, f: ProjectedFields): Slot => {
-    const next = withoutCoverRequest({ ...slot })
+    const next = { ...slot }
     if (f.startTime !== undefined) next.startTime = f.startTime
     if (f.endTime !== undefined) next.endTime = f.endTime
     return next

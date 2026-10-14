@@ -164,7 +164,7 @@ describe('conflicts from facts and recurring bookings (catch-up Phase 30)', () =
 
 describe('Draft Lists and the pairing rule (catch-up Phase 31)', () => {
   it('discards a v23 store (Lists with no hospital or surgeon, the Surgeon TBC List) and reseeds with every List paired', () => {
-    expect(PERSIST_VERSION).toBe(24)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(24)
     const fresh = freshAppState()
     for (const l of Object.values(fresh.schedule.lists)) {
       expect(l.hospitalId, l.id).toBeTruthy()
@@ -172,5 +172,35 @@ describe('Draft Lists and the pairing rule (catch-up Phase 31)', () => {
     }
     expect(Object.values(fresh.schedule.lists).filter((l) => l.state === 'DRAFT')).toHaveLength(15)
     expect(fresh.masters.hospitals['H-AAROOMS']).toMatchObject({ locationType: 'aaRooms' })
+  })
+})
+
+describe('the notification pool and the cover marker gone (catch-up Phase 32)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v24 store carrying a cover marker and no pool, and reseeds with an empty pool', () => {
+    expect(PERSIST_VERSION).toBe(25)
+    const fresh = freshAppState()
+    const slotId = Object.keys(fresh.schedule.slots)[0]!
+    const stale = {
+      ...fresh,
+      schedule: {
+        ...fresh.schedule,
+        slots: { ...fresh.schedule.slots, [slotId]: { ...fresh.schedule.slots[slotId], coverRequest: { by: 'Dr Melanie Souter', kind: 'offer', atISO: '2026-07-21T08:00:00', status: 'pending' } } },
+      },
+    } as Record<string, unknown>
+    delete stale['notifications']
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 24 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.notifications).toEqual({})
+    expect(Object.values(s.schedule.slots).some((slot) => 'coverRequest' in slot)).toBe(false)
+  })
+
+  it('seeds an empty pool', () => {
+    expect(freshAppState().notifications).toEqual({})
   })
 })

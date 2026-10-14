@@ -13,7 +13,6 @@ import {
   moveListToSlot,
   previewHorizonChange,
   reassignList,
-  requestCover,
   setAvailability,
   setHorizonMonths,
   setSlotDefaultTimes,
@@ -22,6 +21,7 @@ import {
 import { authoriseList, cancelBooking, completeBooking, reassignBooking, submitList } from './lifecycle'
 import { addPostOpAddendum, createBooking } from './bookingActions'
 import { addAttachment } from './attachmentActions'
+import { pushListToSlot } from './listMoveActions'
 import { advanceClockDays } from './clockActions'
 import { endPairingPreference, selectPairingPreferences } from './officePrivate'
 import {
@@ -229,7 +229,8 @@ describe('the displayed status', () => {
     expect(setAvailability(api, OFFICE, ANAE.strand, TUE21, 'PM', 'holiday').ok).toBe(true)
     expect(slotView(api.getState(), STRAND_PM)?.displayKey).toBe('holiday')
     const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
-    const out = setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')
+    expect(setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'holiday')).toMatchObject({ ok: false, code: 'holdsList' })
+    const out = setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'holiday')
     expect(out.ok && out.value.result).toBe('conflictFlagged')
     expect(slotView(api.getState(), souterAm.slotId)?.displayKey).toBe(souterAm.kind)
     expect(api.getState().schedule.lists[souterAm.id]?.kind).toBe(souterAm.kind)
@@ -277,9 +278,9 @@ describe('setAvailability', () => {
     const conflicts = () => assigned(api.getState().schedule.lists[list.id]).conflicts.filter((c) => c.kind === 'availability')
     expect(setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'free').ok).toBe(true)
     expect(conflicts()).toHaveLength(0)
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'unavailable')
+    setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable')
     setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'free')
-    setAvailability(api, SOUTER, ANAE.souter, TUE21, 'AM', 'unavailable', 'Again')
+    setAvailability(api, OFFICE, ANAE.souter, TUE21, 'AM', 'unavailable', 'Again')
     expect(conflicts()).toHaveLength(1)
   })
 
@@ -368,7 +369,9 @@ describe('reassignList: the List moves between sessions', () => {
 
     const api2 = store()
     const chen: Actor = { who: 'Dr Alistair Chen', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.chen }
-    expect(moveListToSlot(api2, chen, chenPm.id, SHARMA_PM).ok).toBe(true)
+    // moveListToSlot is office only (catch-up Phase 32); her own move is pushListToSlot, over the same core.
+    expect(moveListToSlot(api2, chen, chenPm.id, SHARMA_PM)).toMatchObject({ ok: false, code: 'officeOnly' })
+    expect(pushListToSlot(api2, chen, chenPm.id, SHARMA_PM).ok).toBe(true)
     expect(api2.getState().audit.some((a) => a.action === 'list.pairingAcknowledged')).toBe(false)
   })
 
@@ -503,23 +506,8 @@ describe('the horizon setting', () => {
 })
 
 // ---------------------------------------------------------------------------
-// requestCover and the roster
+// The roster
 // ---------------------------------------------------------------------------
-
-describe('requestCover on a session', () => {
-  it('records a pending offer on an open session and refuses one holding a List', () => {
-    const api = store()
-    const souterPmWed = slotIdFor(ANAE.souter, WED22, 'PM')
-    expect(requestCover(api, SOUTER, souterPmWed, 'offer', 'Happy to hand this over').ok).toBe(true)
-    expect(api.getState().schedule.slots[souterPmWed]?.coverRequest).toMatchObject({ kind: 'offer', status: 'pending', message: 'Happy to hand this over' })
-    expect(api.getState().audit.at(-1)?.action).toBe('session.coverRequest')
-    const souterAm = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
-    expect(requestCover(api, SOUTER, souterAm.slotId, 'offer')).toMatchObject({ ok: false, code: 'notFree' })
-    // An assignment closes the session for cover and clears its marker.
-    expect(assign(api, souterPmWed).ok).toBe(true)
-    expect(api.getState().schedule.slots[souterPmWed]?.coverRequest).toBeUndefined()
-  })
-})
 
 describe('rosterForDate', () => {
   it('lists every anaesthetist with a session that day, cast order first, then added ones', () => {
@@ -533,10 +521,8 @@ describe('rosterForDate', () => {
 })
 
 describe('the post-op addendum fills an open session (interim until 38b)', () => {
-  it('creates its List there and clears the session\'s cover marker', () => {
+  it('creates its List there', () => {
     const api = store()
-    const sharma: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-    expect(requestCover(api, sharma, SHARMA_PM, 'offer').ok).toBe(true)
     const original = `L-${ANAE.sharma}-2026-07-14-AM`
     const booking = bookingsForList(api.getState(), original)[0]!
     expect(submitList(api, OFFICE, original).ok).toBe(true)
@@ -545,6 +531,5 @@ describe('the post-op addendum fills an open session (interim until 38b)', () =>
     expect(out.ok).toBe(true)
     if (!out.ok) return
     expect(api.getState().schedule.lists[out.value.listId]?.slotId).toBe(SHARMA_PM)
-    expect(api.getState().schedule.slots[SHARMA_PM]?.coverRequest).toBeUndefined()
   })
 })

@@ -487,7 +487,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     expect(Object.values(api.getState().schedule.lists).some((l) => l.draft?.origin === 'recurringClash' && l.dateISO < TUE21)).toBe(false)
   })
 
-  it('marking a booked session unavailable still gives Phase 30\'s conflict (Phase 32 adds the choice)', () => {
+  it('the office marking a booked session unavailable still gives Phase 30\'s conflict (an anaesthetist is asked where the List goes, Phase 32)', () => {
     const api = store()
     const booked = slotViewsForDate(api.getState(), THU23).find((v) => v.list !== undefined && v.list.state === 'ACTIVE')!
     setAvailability(api, OFFICE, booked.slot.anaesthetistId, THU23, booked.slot.session, 'unavailable')

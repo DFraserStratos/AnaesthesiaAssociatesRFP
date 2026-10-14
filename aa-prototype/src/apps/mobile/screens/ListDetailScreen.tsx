@@ -8,7 +8,7 @@ import { removeAttachment, useAppStore, useToday, type Actor, useListTimes } fro
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { TickBadge } from '../components'
-import { SubmitListSheet } from '../../../shared/flows'
+import { SubmitListSheet, movedToYouByLine, useIsMovable, useMovedToMeNotice, useMoveListPrompt } from '../../../shared/flows'
 import { slotTimeRange, locationName } from '../../../shared/format'
 import { AddAttachmentButton, AddAttachmentSheet, AttachmentStrip } from '../../../shared/attachments'
 
@@ -37,6 +37,10 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
+  // Catch-up Phase 32: her own move, and the notice when a colleague moved it to her.
+  const movable = useIsMovable(listId, actor.anaesthetistId)
+  const movePrompt = useMoveListPrompt()
+  const moved = useMovedToMeNotice(listId, actor.anaesthetistId)
   const [sheet, setSheet] = useState<'none' | 'blockers' | 'confirm' | 'attachment'>('none')
   const [showSubmitted, setShowSubmitted] = useState(false)
 
@@ -144,6 +148,25 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           </div>
           <StatusChip status={list.kind} style={{ marginTop: 4, flex: 'none' }} />
         </div>
+        {(moved !== undefined || (movable && movePrompt !== null)) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+            {moved !== undefined && (
+              <span data-shot="list-moved-to-you" style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: neutral.slate }}>
+                {movedToYouByLine(moved.notification, moved.fromName)}
+              </span>
+            )}
+            {movable && movePrompt !== null && (
+              <button
+                type="button"
+                data-shot="list-move"
+                onClick={() => movePrompt.openMove(listId)}
+                style={{ marginLeft: 'auto', minHeight: 36, padding: '0 14px', borderRadius: 999, border: `1px solid ${accent.base}`, background: neutral.surface, color: accent.base, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Move this List
+              </button>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>

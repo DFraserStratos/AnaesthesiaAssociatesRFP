@@ -1,0 +1,73 @@
+{
+  "id": "US-13.8.1",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "notification-pool",
+      "app": "admin",
+      "caption": "One shared pool of notifications for the admin team, newest first, separate from the to-do list",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "state": "card",
+          "caption": "Admin Day: the Notifications card under the To-do and Draft Lists cards",
+          "steps": [
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "one"
+            },
+            {
+              "scroll": "[data-shot=\"admin-notifications-rail\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"admin-notifications-rail\"]"
+          ]
+        },
+        {
+          "state": "page-1",
+          "caption": "The Notifications page after a busy morning: newest first, the same for every admin",
+          "steps": [
+            {
+              "goto": "/admin/notifications"
+            },
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "busy"
+            },
+            {
+              "wait": "[data-shot=\"admin-notifications-table\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"admin-notifications-table\"]"
+          ]
+        },
+        {
+          "state": "page-2",
+          "caption": "Older: the second page",
+          "steps": [
+            {
+              "goto": "/admin/notifications"
+            },
+            {
+              "trigger": "colleague-moves-list-to-office",
+              "choice": "busy"
+            },
+            {
+              "click": "button:has-text(\"Older\")"
+            },
+            {
+              "wait": "[data-shot=\"admin-notifications-table\"]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"admin-notifications-table\"]",
+            "[data-shot=\"admin-notifications-pager\"]"
+          ]
+        }
+      ]
+    }
+  ]
+}

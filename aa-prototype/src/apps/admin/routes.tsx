@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { accent, neutral } from '../../theme/tokens'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
-import { listInSlot, useAppStore, useToday } from '../../store'
+import { listInSlot, useAppStore, useToday, type NotificationTarget } from '../../store'
 import { DayNav } from './components/DayNav'
 import { AvailabilityFinderSheet } from './flows/AvailabilityFinderSheet'
 import { DayGrid } from './components/DayGrid'
@@ -21,8 +21,9 @@ import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
 import { ConflictsScreen } from './screens/ConflictsScreen'
 import { DraftListsScreen } from './screens/DraftListsScreen'
+import { NotificationsScreen } from './screens/NotificationsScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
-import { useAdminOutlet } from './outlet'
+import { useAdminOutlet, type AdminOutletContext } from './outlet'
 
 /**
  * The admin app's route elements — one thin wrapper per screen that reads the
@@ -127,6 +128,8 @@ export function AdminDayRoute() {
           onOpenConflicts={() => navigate('/admin/conflicts')}
           onOpenDraftList={ctx.onOpenDraftList}
           onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
+          onOpenNotification={(target) => openNotificationTarget(target, ctx)}
+          onSeeAllNotifications={() => navigate('/admin/notifications')}
         />
       </div>
     </>
@@ -248,6 +251,18 @@ export function AdminConflictsRoute() {
 export function AdminDraftListsRoute() {
   const { actor, onOpenDraftList, onOpenList } = useAdminOutlet()
   return <DraftListsScreen actor={actor} onOpenDraftList={onOpenDraftList} onOpenList={onOpenList} />
+}
+
+/** A notification opens its List in the Day drawer, or its Draft List's drawer (catch-up Phase 32). */
+function openNotificationTarget(target: NotificationTarget, ctx: Pick<AdminOutletContext, 'onOpenList' | 'onOpenDraftList'>) {
+  if (target.kind === 'list') ctx.onOpenList(target.listId)
+  else if (target.kind === 'draftList') ctx.onOpenDraftList(target.listId)
+}
+
+/** The shared notification pool (catch-up Phase 32; US-13.8.1) — `/admin/notifications` (`?page=`). */
+export function AdminNotificationsRoute() {
+  const ctx = useAdminOutlet()
+  return <NotificationsScreen onOpen={(target) => openNotificationTarget(target, ctx)} />
 }
 
 export function AdminBillingRoute() {

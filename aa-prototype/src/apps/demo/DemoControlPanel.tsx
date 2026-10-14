@@ -270,13 +270,13 @@ const SCENARIOS: readonly Scenario[] = [
   {
     id: 'S2',
     title: 'S2 · Office day',
-    blurb: 'An optional opening on days off, repeating days off and the availability status list, then day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, Find available, and an authorisation.',
+    blurb: 'An optional opening on days off, repeating days off and the availability status list, then day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, an anaesthetist moving her own List and the office\'s notifications, Find available, and an authorisation.',
     run: () => {
       resetDemo(useAppStore)
       return {
         ok: true,
         message:
-          `Reset to the pristine day. In Admin: assign the St George's ${DRAFT_LIST} to Dr Fitzgerald; optionally show Dr Beaumont's recurring Lists waiting as ${DRAFT_LISTS} while she is on leave, open Forte Health to show Bookings on a ${DRAFT_LIST}, or simulate an incoming request to show the not-preferred group and the tier order. Then open Dr Sharma's Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; from Conflicts, reassign Dr Rutherford's Wed 22 AM Christchurch Eye Surgery List (he phoned in sick) to Dr Sharma (vacated session kept Unavailable); optionally use Find available in the Day header; then authorise Dr Morrison's Mon 20 Jul List from the Review queue.`,
+          `Reset to the pristine day. In Admin: assign the St George's ${DRAFT_LIST} to Dr Fitzgerald; optionally show Dr Beaumont's recurring Lists waiting as ${DRAFT_LISTS} while she is on leave, open Forte Health to show Bookings on a ${DRAFT_LIST}, or simulate an incoming request to show the not-preferred group and the tier order. Then open Dr Sharma's Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; from Conflicts, reassign Dr Rutherford's Wed 22 AM Christchurch Eye Surgery List (he phoned in sick) to Dr Sharma (vacated session kept Unavailable); then, as Dr Souter on Web Availability, move a List to a colleague and see it on Admin Day's notifications; optionally use Find available in the Day header; then authorise Dr Morrison's Mon 20 Jul List from the Review queue.`,
         nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
       }
     },

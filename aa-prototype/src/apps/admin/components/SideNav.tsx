@@ -3,7 +3,7 @@ import { brand, neutral, semantic } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'draftLists' | 'conflicts' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
+export type NavSection = 'day' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'billing' | 'integrations' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -37,6 +37,8 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, integrationBadg
     { section: 'day', label: 'Day view' },
     { section: 'draftLists', label: DRAFT_LISTS, badge: draftListBadge, badgeTone: 'warn' },
     { section: 'conflicts', label: 'Conflicts', badge: conflictBadge, badgeTone: 'warn' },
+    // The shared notification pool (catch-up Phase 32): no badge, it has no read state (OQ-79).
+    { section: 'notifications', label: 'Notifications' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },

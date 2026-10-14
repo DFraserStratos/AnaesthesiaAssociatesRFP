@@ -8,6 +8,7 @@
 
 import { ANAE } from '../domain/seed'
 import type { Actor } from './mutate'
+import type { AppState } from './appStore'
 
 /** The office persona, Kirsty W., exactly as the Admin Web App acts. */
 export const OFFICE_ACTOR: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -43,3 +44,14 @@ export const DEMO_TRIGGER_ACTOR: Actor = { who: 'Demo actions', role: 'system', 
  * fixed id of their own.
  */
 export const OFFICE_ACCOUNT_ID = 'office-kirsty'
+
+/**
+ * Any anaesthetist as herself (catch-up Phase 32), from the master record, so
+ * a demo trigger that stages a colleague's own move audits and notifies
+ * truthfully ("Dr Rawiri Hughes moved ..."). Phase 32a reuses it. Undefined for
+ * an unknown id.
+ */
+export function anaesthetistActor(state: Pick<AppState, 'masters'>, anaesthetistId: string): Actor | undefined {
+  const a = state.masters.anaesthetists[anaesthetistId]
+  return a === undefined ? undefined : { who: a.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: a.registrationNumber }
+}

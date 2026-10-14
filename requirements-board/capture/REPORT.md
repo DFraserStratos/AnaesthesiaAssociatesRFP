@@ -6,24 +6,22 @@ Scope: every story plus every feature with no stories (266 items, 266 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 140 | 127 |
-| Partial | 56 | 56 |
-| Absent from the prototype | 66 | 66 |
+| Captured | 146 | 133 |
+| Partial | 54 | 54 |
+| Absent from the prototype | 64 | 64 |
 | Failed recipe | 0 | 0 |
-| No recipe | 17 | 17 |
+| No recipe | 15 | 15 |
 
-494 screenshots. Items per app: admin 129, web 60, mobile 54, simulator 36.
+511 screenshots. Items per app: admin 132, web 62, mobile 56, simulator 36.
 
 ## Failed recipes (0)
 
 None.
 
-## Absent from the prototype (66)
+## Absent from the prototype (64)
 
-- **US-01.4.5** No preference warning when an anaesthetist moves their own List · Not built yet: catch-up Phase 32 builds this.
-- **US-01.4.6** The List's anaesthetist did its procedures · Not built yet: catch-up Phase 32 builds this.
+- **US-01.4.6** The List's anaesthetist did its procedures · Not built yet: catch-up Phase 32a builds this.
 - **US-01.4.7** Anaesthetist moves a single Booking · Not built yet: catch-up Phase 32a builds this.
-- **US-01.5.5** Mark unavailable while holding a List · Not built yet: catch-up Phase 32 builds this.
 - **US-02.1.3** Show differences on match · No field-level difference view. When a surgeon PDF row or HL7 message matches an existing Booking, the prototype only notes "Already booked on this List · will update, not duplicate" and applies the update; time, patient and procedure differences are never shown side by side before applying. Searched the Integrations screen (Surgeon PDFs, Messages), ingestPdfRow and the integration apply path for a diff or compare view.
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Not built yet: catch-up Phase 34 builds this.
 - **US-02.3.2** Save Booking changes explicitly · Not built yet: catch-up Phase 35 builds this.
@@ -87,11 +85,9 @@ None.
 - **US-15.0.4** Volumes · Not demonstrated. The prototype runs on a small seeded in-browser data set (14 anaesthetists, a few weeks of lists); scale is only narrated in copy on the admin day grid and the Xero simulation, never simulated or load tested.
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, route and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
-## Partial (56)
+## Partial (54)
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
-- **US-01.4.3** Anaesthetist moves their own List · From the availability view an anaesthetist can ask a colleague to cover a free session, or offer their own free session. Requesting that one of their own booked Lists be swapped to a colleague, and the office confirming that reassignment, are not in the prototype.
-- **US-01.5.2** Conflict flagging · An anaesthetist marking a booked session unavailable is still flagged on the List until Phase 32's return-or-assign.
 - **US-02.1.1** Import hospital bookings · No hospital booking file import. The nearest analogue is surgeon-emailed PDF operating lists, whose extracted rows are reviewed beside the document and ingested.
 - **US-02.1.2** Match rows to Lists and Bookings · No hospital download matching screen. The nearest analogue is the surgeon PDF review: the office picks the target List, and a row whose NHI is already booked on that List updates the existing Booking instead of duplicating it. There is no option to create a new List or to reject a row.
 - **US-02.1.4** Unmatched queue · There are no hospital download rows, so there is no unmatched-row queue. The analogue shown is the integration message log: messages that cannot be applied (dead-letter, or manual intervention when the target List is already submitted) are retained for the office to fix and reprocess, never dropped.
@@ -146,7 +142,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
 - **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
 
-## No recipe (17)
+## No recipe (15)
 
 - **US-02.3.4** Update email templates per kind of change
 - **US-02.3.5** Send booking change emails automatically
@@ -163,10 +159,8 @@ None.
 - **US-08.6.5** Credit note option on additional invoices
 - **US-08.6.6** Start a rebill from a copy of the original lines
 - **US-13.5.3** Sign in to the anaesthetist app
-- **US-13.8.1** See the team's notifications
-- **US-13.8.2** Notify the team when an anaesthetist moves a List
 
-## Captured (140)
+## Captured (146)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -195,9 +189,13 @@ None.
 - **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · admin
 - **US-01.3.6** Anaesthetist priority tiers for assignment · admin
 - **US-01.4.2** Availability finder · admin, web, mobile
+- **US-01.4.3** Anaesthetist moves their own List · web, mobile
+- **US-01.4.5** No preference warning when an anaesthetist moves their own List · web, mobile
 - **US-01.5.1** Hospital holiday calendar · admin
+- **US-01.5.2** Conflict flagging · admin
 - **US-01.5.3** Anaesthetist availability calendar · mobile, web
 - **US-01.5.4** Availability conflict dashboard · admin
+- **US-01.5.5** Mark unavailable while holding a List · mobile, web, admin
 - **US-01.6.1** Create a Draft List · admin
 - **US-01.6.2** See Draft Lists flagged in the Admin App · admin
 - **US-01.6.3** Assign a Draft List to an anaesthetist · admin
@@ -301,6 +299,8 @@ None.
 - **US-13.6.4** Preferred pairings · admin
 - **US-13.7.2** Warnings on the dashboard to-do list · admin
 - **US-13.7.3** Warning flag on a Booking · mobile, web, admin
+- **US-13.8.1** See the team's notifications · admin
+- **US-13.8.2** Notify the team when an anaesthetist moves a List · admin
 - **US-14.1.1** Parse SIU messages · simulator, admin
 - **US-14.2.1** FHIR-native internal model · simulator
 - **US-14.3.1** Real-time processing · simulator

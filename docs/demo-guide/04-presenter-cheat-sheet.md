@@ -25,7 +25,7 @@
 |---|---|---|
 | SSA | Anaesthetist | SSA does not appear in the RFP |
 | Shift | List or AM/PM session | List is the RFP's scheduling unit |
-| Claim/sign up for a shift | Request/offer cover; office reassigns the List | Self-service claiming is not specified |
+| Claim/sign up for a shift | Move your own List to a colleague's free session or back to the office, at once; office reassigns the List | Self-service claiming is not specified |
 | Delete Booking | Soft-cancel Booking | History and audit must be retained |
 | Send back to anaesthetist | Resolve by phone; office corrects | There is no Returned state |
 | Surgeon TBC List | Draft List | A List with no anaesthetist yet has a name and a state |
@@ -248,6 +248,11 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   this List** is badged "Office stand-in": the phone has no Admin app, so it plays the office for one
   submitted List. On Lists, **Office assigns a List to my next free session** (also an office
   stand-in) assigns a List to Dr Souter's earliest free session, which then shows as a booked List.
+  On Availability, **Colleague moves a List into my free session** (badged "Colleague stand-in")
+  plays a colleague handing one of their Lists on to her, so the Moved to you notice shows.
+- On **Admin Day** and **Notifications**, **Demo actions → Colleague moves a List to the office**
+  stages another anaesthetist's own return (One move), or **A busy morning (8 moves)** to show the
+  Notifications page paging. Nothing waits for the office, so there is no office stand-in for it.
 - **Future scope** badges (grey, telescope icon) mark the HL7 v2 and FHIR tooling: the Integrations
   simulator, the Admin Integrations Messages and Feed config tabs, and the hospital-message demo
   actions. Say so plainly: in scope today is the St George's and Southern Cross download into a
@@ -303,7 +308,15 @@ Say:
   history; nothing about billing is recalculated.
 - Open (OQ-84): what the vacated session shows. The prototype returns it to Free, and the office can
   mark it Unavailable or Holiday instead. From a session already marked unavailable (a recorded
-  sickness) it keeps that status by default ("Keep as is").
+  sickness) it keeps that status by default ("Keep as is"). On her own move the anaesthetist chooses,
+  Free by default.
+- Answered (D7, OQ-39): an anaesthetist moves her own List at once, back to the office (a Draft List)
+  or into a colleague's free session. Nobody accepts and the office does not confirm.
+- Answered (D15, OQ-65): every such move posts to one shared notification pool in the Admin App, the
+  same for every admin, separate from the to-do list. What else posts there, and for how long, is
+  open (OQ-79).
+- Answered (D44, OQ-43): no warning on the anaesthetist's own move. She sees colleagues by
+  availability alone; pairing preferences are the office's alone and warn only on the office's paths.
 
 ### 6. Availability and holiday conflicts
 
@@ -317,8 +330,8 @@ Say:
   reassigned to an available anaesthetist) or when the office clears it, with an optional note and
   "Flag again".
 - Not conflicts: a recurring booking landing on an unavailable session becomes a Draft List (Phase 31),
-  and an anaesthetist who marks a booked session unavailable returns the List or hands it on
-  (US-01.5.5, Phase 32). Until 32 that path still flags the List, so do not demo it.
+  and an anaesthetist who marks a booked session unavailable is asked first whether the List returns
+  to the office or goes to a colleague (US-01.5.5).
 
 ### 7. Split-billing invoice count
 

@@ -54,7 +54,11 @@ export interface AvailabilityOutcome {
   set: number
   /** Sessions already as asked. */
   unchanged: number
-  /** Lists now flagged on the office's Day view (Phase 32's return-or-assign acts on these, List by List). */
+  /**
+   * Lists the write flagged with a conflict. Only the office's writes can flag
+   * one (an anaesthetist's closed status over a List is refused, catch-up
+   * Phase 32); no screen reads it today, the store's tests do.
+   */
   flagged: string[]
   /** Lists whose availability flag was cleared. */
   cleared: string[]
@@ -95,7 +99,7 @@ function actorRefusal<T>(state: GuardState, actor: Actor, anaesthetistId: string
  * An anaesthetist may not change or remove a status only the office may set
  * (for example an office hold): the refusal names it.
  */
-function replacedStatusRefusal<T>(statuses: SlotStatusRecords, actor: Actor, slots: readonly Slot[]): Outcome<T> | null {
+export function replacedStatusRefusal<T>(statuses: SlotStatusRecords, actor: Actor, slots: readonly Slot[]): Outcome<T> | null {
   if (actor.role !== 'anaesthetist') return null
   const locked = slots.find((slot) => statusFor(statuses, slot.status)?.anaesthetistCanSet === false)
   if (locked === undefined) return null
@@ -104,7 +108,7 @@ function replacedStatusRefusal<T>(statuses: SlotStatusRecords, actor: Actor, slo
 }
 
 /** The status must exist, be in use, and (for an anaesthetist) be one they may set. */
-function statusRefusal<T>(statuses: SlotStatusRecords, actor: Actor, statusKey: SlotStatusKey): Outcome<T> | null {
+export function statusRefusal<T>(statuses: SlotStatusRecords, actor: Actor, statusKey: SlotStatusKey): Outcome<T> | null {
   const status = statusFor(statuses, statusKey)
   if (status === undefined) return refuse('statusNotFound', 'Choose an availability status.')
   if (status.retiredAtISO !== undefined) return refuse('statusRetired', `${status.label} is no longer in use. Choose another status.`)
@@ -132,6 +136,42 @@ export interface SessionWriteResult {
   changedSlotIds: string[]
   unchanged: number
   holdingLists: number
+  /**
+   * Lists an ANAESTHETIST's write would leave in a session she is newly marking
+   * closed (catch-up Phase 32; US-01.5.5, RV-30). Every caller refuses with
+   * `holdsList` before it writes when this is non-empty, so the move sheet's
+   * unavailable prompt ("Return to the office" or "Hand on to a colleague") is
+   * the only way through. Always empty for the office.
+   */
+  heldListIds: string[]
+  /**
+   * Her SUBMITTED or AUTHORISED Lists such a write would strand: only the
+   * office can move those, so the write is refused outright (no prompt to open).
+   */
+  lockedLists: { id: string; dateISO: string; session: string; state: string }[]
+}
+
+/**
+ * The return-or-assign guard (US-01.5.5): refused, before any write, when an
+ * anaesthetist would mark closed a session that holds a List. The refusal
+ * carries every affected List (`details.listIds`, in date order) so the UI can
+ * prompt for each in turn. The office's paths (a sickness phoned in, a
+ * hospital closure) keep the derived conflict (US-01.5.2, OQ-81 part 3).
+ */
+export function holdsListRefusal<T>(result: Pick<SessionWriteResult, 'heldListIds'> & Partial<Pick<SessionWriteResult, 'lockedLists'>>): Outcome<T> | null {
+  const locked = result.lockedLists?.[0]
+  if (locked !== undefined) {
+    const when = `${shortDateLabel(locked.dateISO)} ${locked.session}`
+    const what = locked.state === 'AUTHORISED' ? 'authorised' : 'submitted'
+    return refuse('holdsLockedList', `Your ${when} List has been ${what}, so only the office can move it. Ask the office to change this session.`, { listIds: [locked.id] })
+  }
+  const listIds = result.heldListIds
+  if (listIds.length === 0) return null
+  const message =
+    listIds.length === 1
+      ? 'This session has a List. Choose whether it goes back to the office or to a colleague first.'
+      : `${listIds.length} of these sessions have Lists. Choose where each one goes first.`
+  return refuse('holdsList', message, { listIds: [...listIds] })
 }
 
 
@@ -139,22 +179,23 @@ export interface SessionWriteResult {
  * Apply session writes inside a mutate recipe: write each Slot's status and
  * note directly. This is the one place every Slot-status write passes through
  * (one-off, range, series create or delete, instance edits, the office's
- * sickness record), so Phase 32 puts its return-or-assign guard here, for an
- * anaesthetist actor only. It never touches a List: the List in a session
- * keeps its surgeon, hospital, Bookings, times and kind, and the one conflict
- * rule in `mutate()` flags it when the status is closed and resolves the flag
- * when it is bookable again (catch-up Phase 30; the interim for an
- * anaesthetist until Phase 32, the built reading for the office).
+ * sickness record), so the return-or-assign guard lives here (catch-up Phase
+ * 32): for an anaesthetist actor it reports, in `heldListIds`, every List a
+ * closed status would strand, and each caller refuses (`holdsListRefusal`)
+ * before writing. It never touches a List: for the office the List in a
+ * session keeps its surgeon, hospital, Bookings, times and kind, and the one
+ * conflict rule in `mutate()` flags it when the status is closed and resolves
+ * the flag when it is bookable again (catch-up Phase 30; OQ-81 part 3).
  */
 export function applySessionWrites(
   state: Pick<AppState, 'schedule' | 'masters'>,
-  _actor: Actor,
+  actor: Actor,
   writes: readonly SessionWrite[],
 ): SessionWriteResult {
   const statuses = state.masters.slotStatuses
   const slots = { ...state.schedule.slots }
   const listBySlot = listIndexBySlot(state.schedule.lists)
-  const result: SessionWriteResult = { slots, changedSlotIds: [], unchanged: 0, holdingLists: 0 }
+  const result: SessionWriteResult = { slots, changedSlotIds: [], unchanged: 0, holdingLists: 0, heldListIds: [], lockedLists: [] }
 
   for (const write of writes) {
     const current = slots[write.slot.id] ?? write.slot
@@ -172,11 +213,22 @@ export function applySessionWrites(
     else delete next.note
     if (nextSeries !== undefined) next.seriesId = nextSeries
     else delete next.seriesId
-    if (!isOpenForBooking(status)) delete next.coverRequest
     slots[next.id] = next
     result.changedSlotIds.push(next.id)
-    if (listBySlot.has(current.id)) result.holdingLists += 1
+    const held = listBySlot.get(current.id)
+    if (held !== undefined) {
+      result.holdingLists += 1
+      if (actor.role === 'anaesthetist' && statusChanged && !isOpenForBooking(status)) {
+        if (held.state === 'ACTIVE') result.heldListIds.push(held.id)
+        else result.lockedLists.push({ id: held.id, dateISO: held.dateISO, session: held.session, state: held.state })
+      }
+    }
   }
+  result.heldListIds.sort((a, b) => {
+    const la = state.schedule.lists[a]
+    const lb = state.schedule.lists[b]
+    return (la?.dateISO ?? '').localeCompare(lb?.dateISO ?? '') || (la?.session ?? '').localeCompare(lb?.session ?? '') || a.localeCompare(b)
+  })
   return result
 }
 
@@ -247,6 +299,8 @@ export function setOneSessionAvailability(
   if (locked !== null) return locked
   const writes: SessionWrite[] = [{ slot, statusKey, ...(note !== undefined ? { note } : {}) }]
   const preview = applySessionWrites(state, actor, writes)
+  const held = holdsListRefusal<{ result: 'updated' | 'conflictFlagged' | 'noChange' }>(preview)
+  if (held !== null) return held
   if (preview.changedSlotIds.length === 0) return ok({ result: 'noChange' })
 
   const metas: MutationMeta[] = []
@@ -327,6 +381,8 @@ export function setAvailabilityRange(api: AppStoreApi, actor: Actor, input: Avai
 
   const outcome = emptyOutcome(input.statusKey)
   const preview = applySessionWrites(state, actor, writes)
+  const held = holdsListRefusal<AvailabilityOutcome>(preview)
+  if (held !== null) return held
   if (preview.changedSlotIds.length === 0) return ok({ ...outcome, unchanged: preview.unchanged })
 
   const metas: MutationMeta[] = []
@@ -434,6 +490,52 @@ export function clearAvailability(api: AppStoreApi, actor: Actor, slotId: string
 // Series (US-01.5.3)
 // ---------------------------------------------------------------------------
 
+/** A series record from the form's draft (the one build: the guard's preview and the write agree). */
+function seriesFromDraft(draft: AvailabilitySeriesDraft, id: string, createdAtISO: string): AvailabilitySeries {
+  const note = draft.note?.trim() ?? ''
+  return {
+    id,
+    anaesthetistId: draft.anaesthetistId,
+    statusKey: draft.statusKey,
+    sessions: draft.sessions,
+    ...(note !== '' ? { note } : {}),
+    weekdays: [...draft.weekdays].sort((a, b) => a - b),
+    everyWeeks: draft.everyWeeks,
+    startISO: draft.startISO,
+    ...(draft.untilISO !== undefined ? { untilISO: draft.untilISO } : {}),
+    exceptions: {},
+    createdAtISO,
+  }
+}
+
+/**
+ * The session writes a series makes from its start to the horizon end.
+ * `adoptSlotIds` (catch-up Phase 32): sessions the unavailable prompt already
+ * set to the series' status when their Lists moved first; the series takes them
+ * as its own instances rather than leaving them "as they are".
+ */
+function seriesWrites(
+  series: AvailabilitySeries,
+  slots: Readonly<Record<string, Slot>>,
+  horizonEndISO: string,
+  statuses: SlotStatusRecords,
+  adoptSlotIds: ReadonlySet<string> = new Set(),
+): { writes: SessionWrite[]; leftAsIs: number } {
+  const plan = planSeriesWrite(series, slots, { fromISO: series.startISO, toISO: horizonEndISO }, statuses)
+  const writes: SessionWrite[] = plan.set.flatMap((p) => {
+    const slot = slots[p.slotId]
+    return slot === undefined ? [] : [{ slot, statusKey: p.statusKey, ...(p.note !== undefined ? { note: p.note } : {}), seriesId: series.id }]
+  })
+  let adopted = 0
+  for (const slotId of plan.leftAsIs) {
+    const slot = slots[slotId]
+    if (slot === undefined || !adoptSlotIds.has(slotId) || slot.seriesId !== undefined || slot.status !== series.statusKey) continue
+    writes.push({ slot, statusKey: series.statusKey, ...(series.note !== undefined ? { note: series.note } : {}), seriesId: series.id })
+    adopted += 1
+  }
+  return { writes, leftAsIs: plan.leftAsIs.length - adopted }
+}
+
 /**
  * Create repeating days off: store the rule, then write it onto the existing
  * Slots from its start to the horizon end, filling only sessions at the default
@@ -450,7 +552,11 @@ export function createAvailabilitySeries(
    * the horizon's far end, which no screen offers; "Stage recurring clash"
    * uses it so the roll forward paints the day. Office only.
    */
-  options: { beyondHorizon?: boolean } = {},
+  options: {
+    beyondHorizon?: boolean
+    /** Catch-up Phase 32: sessions her Lists left first, from the unavailable prompt, for the series to take as its own. */
+    adoptSlotIds?: readonly string[]
+  } = {},
 ): Outcome<AvailabilityOutcome> {
   const state = api.getState()
   const guard = actorRefusal<AvailabilityOutcome>(state, actor, draft.anaesthetistId)
@@ -466,34 +572,23 @@ export function createAvailabilitySeries(
   })
   if (issues.length > 0) return refuse('invalidSeries', issues.join(' '))
 
+  // The return-or-assign guard (US-01.5.5): plan the series on today's Slots first.
+  const preview = seriesFromDraft(draft, 'preview', clockISO(state.clock))
+  const adopt = new Set(options.adoptSlotIds ?? [])
+  const held = holdsListRefusal<AvailabilityOutcome>(applySessionWrites(state, actor, seriesWrites(preview, state.schedule.slots, horizonEndISO, state.masters.slotStatuses, adopt).writes))
+  if (held !== null) return held
+
   const outcome = emptyOutcome(draft.statusKey)
   const metas: MutationMeta[] = []
   const mutation = mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'availabilitySeries')
-    const note = draft.note?.trim() ?? ''
-    const series: AvailabilitySeries = {
-      id: alloc.id,
-      anaesthetistId: draft.anaesthetistId,
-      statusKey: draft.statusKey,
-      sessions: draft.sessions,
-      ...(note !== '' ? { note } : {}),
-      weekdays: [...draft.weekdays].sort((a, b) => a - b),
-      everyWeeks: draft.everyWeeks,
-      startISO: draft.startISO,
-      ...(draft.untilISO !== undefined ? { untilISO: draft.untilISO } : {}),
-      exceptions: {},
-      createdAtISO: clockISO(s.clock),
-    }
-    const plan = planSeriesWrite(series, s.schedule.slots, { fromISO: draft.startISO, toISO: horizonEndISO }, s.masters.slotStatuses)
-    const writes: SessionWrite[] = plan.set.flatMap((p) => {
-      const slot = s.schedule.slots[p.slotId]
-      return slot === undefined ? [] : [{ slot, statusKey: p.statusKey, ...(p.note !== undefined ? { note: p.note } : {}), seriesId: series.id }]
-    })
+    const series = seriesFromDraft(draft, alloc.id, clockISO(s.clock))
+    const { writes, leftAsIs } = seriesWrites(series, s.schedule.slots, horizonEndISO, s.masters.slotStatuses, adopt)
     const applied = applySessionWrites(s, actor, writes)
     outcome.seriesId = series.id
     outcome.set = applied.changedSlotIds.length
     outcome.unchanged = applied.unchanged
-    outcome.leftAsIs = plan.leftAsIs.length
+    outcome.leftAsIs = leftAsIs
     outcome.holdingLists = applied.holdingLists
     metas.push({
       entityType: 'anaesthetist',

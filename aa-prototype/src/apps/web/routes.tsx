@@ -30,7 +30,7 @@ import { useWebOutlet } from './outlet'
 const ACCOUNTS_SUB_TABS: readonly AccountsSubTab[] = ['overdue', 'payments', 'gst', 'fees']
 
 export function WebDashboardRoute() {
-  const { anaesthetistId, personaName, todayISO, onCover } = useWebOutlet()
+  const { anaesthetistId, personaName, todayISO } = useWebOutlet()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
@@ -58,7 +58,6 @@ export function WebDashboardRoute() {
       onOpenList={(listId) => navigate(`/web/lists/${listId}`)}
       onViewOverdue={() => navigate('/web/accounts/overdue')}
       onOpenAvailability={() => navigate('/web/availability')}
-      onCover={onCover}
     />
   )
 }
@@ -81,10 +80,14 @@ export function WebListsRoute() {
 
 export function WebListDetailRoute() {
   const { listId = '' } = useParams()
-  const { actor, todayISO } = useWebOutlet()
+  const { actor, todayISO, anaesthetistId } = useWebOutlet()
   const navigate = useNavigate()
-  // A Draft List is office only (OQ-86): not found here.
-  const exists = useAppStore((s) => isAssignedList(s.schedule.lists[listId]))
+  // A Draft List is office only (OQ-86): not found here. Nor is a List she has
+  // moved on (catch-up Phase 32): it is the office's or a colleague's now.
+  const exists = useAppStore((s) => {
+    const l = s.schedule.lists[listId]
+    return isAssignedList(l) && l.anaesthetistId === anaesthetistId
+  })
 
   return (
     <RequireEntity exists={exists}>
@@ -121,13 +124,15 @@ export function WebBookingDetailRoute() {
 // ---------------------------------------------------------------------------
 
 export function WebAvailabilityRoute() {
-  const { anaesthetistId, personaName, todayISO, onCover } = useWebOutlet()
+  const { anaesthetistId, todayISO } = useWebOutlet()
+  const [params] = useSearchParams()
+  const date = params.get('date')
   return (
     <AvailabilityGrid
+      key={date ?? ''}
       anaesthetistId={anaesthetistId}
-      personaName={personaName}
       todayISO={todayISO}
-      onCover={onCover}
+      {...(isISODate(date) ? { initialDateISO: date } : {})}
     />
   )
 }

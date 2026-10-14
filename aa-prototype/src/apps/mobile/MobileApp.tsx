@@ -6,6 +6,7 @@ import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent } from '../../theme/tokens'
 import { type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
+import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
 import { availabilityStackLocation, listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
 import type { MobileOutletContext } from './outlet'
 
@@ -141,11 +142,14 @@ export function MobileApp({
         data-aa-mobile-product
         style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}
       >
-        <Outlet context={context} />
+        {/* The one move sheet (catch-up Phase 32) renders after the screens and the tab bar, above both. */}
+        <MoveListPromptProvider actor={actor}>
+          <Outlet context={context} />
 
-        {showTabBar && (
-          <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
-        )}
+          {showTabBar && (
+            <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
+          )}
+        </MoveListPromptProvider>
       </div>
       </Host>
     </SurfaceProvider>

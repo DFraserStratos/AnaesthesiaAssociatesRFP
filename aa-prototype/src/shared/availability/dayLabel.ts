@@ -17,7 +17,7 @@ export function describeDayForScreenReaders(
     const s = day?.[session]
     if (s === undefined) continue
     const what = s.list !== undefined ? `${labelOf(s.displayKey)} List${s.list.hospitalName !== undefined ? ` at ${s.list.hospitalName}` : ''}` : labelOf(s.statusKey)
-    parts.push(`${session} ${what}${s.series !== undefined ? ', repeating' : ''}${s.conflict ? ", flagged on the office's Day view" : ''}`)
+    parts.push(`${session} ${what}${s.series !== undefined ? ', repeating' : ''}${s.conflict ? ', with a conflict for the office to resolve' : ''}`)
   }
   if (past) parts.push('past')
   return parts.join(', ')

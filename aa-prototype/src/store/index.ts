@@ -65,7 +65,6 @@ export {
   setSlotDefaultTimes,
   setHorizonMonths,
   previewHorizonChange,
-  requestCover,
   HORIZON_MONTHS_MIN,
   HORIZON_MONTHS_MAX,
   type AssignListFields,
@@ -84,6 +83,37 @@ export {
   type NewDraftListInput,
   type AssignDraftListResult,
 } from './draftListActions'
+// An anaesthetist moves her own List, and the shared notification pool
+// (catch-up Phase 32). `postNotification` stays internal: the moves are its only callers.
+export {
+  moveListToOffice,
+  pushListToSlot,
+  markUnavailableAndMoveList,
+  type OwnMoveResult,
+  type OwnMoveInput,
+  type UnavailableChoice,
+} from './listMoveActions'
+export {
+  colleagueMoveCandidates,
+  colleagueMoveRefusal,
+  stageColleagueMoveToOffice,
+  stageBusyMorning,
+  moveToPersonaCandidate,
+  moveToPersonaRefusal,
+  stageColleagueMoveToPersona,
+  BUSY_MORNING_MOVES,
+  LIST_MOVE_DEMO_PERSONA,
+} from './listMoveDemo'
+export {
+  notificationPool,
+  latestNotifications,
+  latestNotificationForList,
+  movedToMe,
+  movedToMeForList,
+  type NotificationRow,
+  type NotificationTarget,
+  type PoolState,
+} from './notifications'
 // Availability: days off, repeating days off and the status master (catch-up Phase 29).
 export {
   setAvailabilityRange,
@@ -200,7 +230,7 @@ export {
 } from './billingRun'
 export { handoffCase, handoffCasesForBooking, type HandoffResult } from './xeroHandoff'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
-export { OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
+export { anaesthetistActor, OFFICE_ACTOR, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, OFFICE_ACCOUNT_ID } from './demoActors'
 export {
   WARNING_SAMPLES,
   WARNING_RULE_COUNT,

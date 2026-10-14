@@ -75,7 +75,7 @@ test('Assign List on Dr Souter\'s free Wed 22 PM shows as a booked List in Admin
   const row = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
   await expect(row).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await expect(row).toContainText("St George's")
-  await expect(row).not.toContainText('Offer cover')
+  await expect(row).not.toContainText('Open for bookings')
   await page.screenshot({ path: 'visual/shots/p28-06-mobile-assigned.png' })
 
   await page.goto('/web/lists')

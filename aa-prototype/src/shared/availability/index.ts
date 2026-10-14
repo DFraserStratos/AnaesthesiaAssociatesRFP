@@ -1,6 +1,6 @@
 /** The availability calendar's shared pieces (catch-up Phase 29): one form, one session panel, one editor, the same store actions on mobile and web. PWA-safe. */
 export { AvailabilityForm, type AvailabilityFormInitial } from './AvailabilityForm'
-export { AvailabilitySlotPanel, LIST_INTERIM_LINE, type ChangeRequest } from './AvailabilitySlotPanel'
+export { AvailabilitySlotPanel, LIST_SESSION_LINE, type ChangeRequest } from './AvailabilitySlotPanel'
 export { AvailabilityEditor } from './AvailabilityEditor'
 export { describeAvailabilityOutcome, type AvailabilityOutcomeKind } from './describeAvailabilityOutcome'
 export { monthCells, monthOf, shiftMonth, WEEKDAY_INITIALS, WEEKDAY_SHORT_NAMES } from './monthCells'

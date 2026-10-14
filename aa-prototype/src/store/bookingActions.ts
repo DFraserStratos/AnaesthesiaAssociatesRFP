@@ -32,7 +32,7 @@ import { newAttachment } from './attachmentActions'
 import { upsertPatient, type PatientIntakeDetails } from './intake'
 import { listInSlot, proceduresForBooking, slotFor } from './selectors'
 import { isOpenSlot } from '../domain/slotStatus'
-import { placeListOnSlot, withoutCoverRequest } from './slotActions'
+import { placeListOnSlot } from './slotActions'
 
 // ---------------------------------------------------------------------------
 // createBooking
@@ -307,8 +307,6 @@ export function addPostOpAddendum(
       schedule: {
         ...s.schedule,
         lists: { ...s.schedule.lists, [listId]: placed.list },
-        // The session is no longer open: any cover marker on it goes, as on assignment.
-        ...(target.coverRequest !== undefined ? { slots: { ...s.schedule.slots, [target.id]: withoutCoverRequest(target) } } : {}),
         bookings: { ...s.schedule.bookings, [bookingId]: booking },
         procedures: { ...s.schedule.procedures, [procedureId]: procedure },
       },

@@ -33,6 +33,7 @@ import type {
   RecurringBooking,
   Procedure,
   RvgCode,
+  Notification,
   OfficePrivateSlice,
   Slot,
   Surgeon,
@@ -184,6 +185,12 @@ export interface SeedState {
    * slice, not inside `masters`, so `masters` stays safe for any screen.
    */
   officePrivate: OfficePrivateSlice
+  /**
+   * The Admin App's shared notification pool (catch-up Phase 32; FT-13.8,
+   * DM-41): append-only, one record per List an anaesthetist moves, the same
+   * for every admin. Seeds empty.
+   */
+  notifications: Record<string, Notification>
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -494,6 +501,7 @@ function buildSeedInternal(): SeedBuild {
     dashboards: ANAESTHETIST_DASHBOARD,
     dayNotes: DAY_NOTES,
     officePrivate: buildOfficePrivate(),
+    notifications: {},
     counters: {
       audit: audit.length + 1,
       booking: draftBookings.next.booking,
@@ -538,6 +546,82 @@ export const SEED_LIST_IDS = {
   integrationMoveSourceStgList: projectedListId(ANAE.souter, '2026-08-03', 'PM'),
   integrationSxList: projectedListId(ANAE.souter, '2026-07-28', 'PM'),
   integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
+} as const
+
+/**
+ * The Lists and sessions the S1 to S5 run sheet scripts (catch-up Phase 32).
+ * Demo triggers that move Lists (Phase 32's "Colleague moves a List ..." and
+ * Phase 32a's single Booking) never pick one of these, as the List moved or as
+ * the session it moves into, so a trigger run before a beat cannot break it.
+ * Seed tests protect it. Extend it when a beat scripts a new List or session.
+ */
+export const SCRIPTED_BEAT_SCHEDULE = {
+  listIds: [
+    // S1: the St George's Tue 28 AM List and the integration targets.
+    SEED_LIST_IDS.integrationStgList,
+    SEED_LIST_IDS.integrationSxList,
+    SEED_LIST_IDS.integrationCphList,
+    SEED_LIST_IDS.integrationModifyStgList,
+    SEED_LIST_IDS.integrationMoveSourceStgList,
+    SEED_LIST_IDS.integrationLocked,
+    // S2: Beat 3's sick Rutherford Wed 22 AM List, Beat 3a's Sharma Wed 22 PM
+    // (Simulate sickness), the optional pointer on Chen's Tue 21 PM (Ms Reid),
+    // Beat 3b's Rutherford Monday AM recurring Lists, Beat 4's Morrison Mon 20.
+    projectedListId(ANAE.rutherford, '2026-07-22', 'AM'),
+    projectedListId(ANAE.sharma, '2026-07-22', 'PM'),
+    projectedListId(ANAE.chen, DEMO_TODAY, 'PM'),
+    projectedListId(ANAE.rutherford, '2026-07-27', 'AM'),
+    // S2 Beat 3a: the Wed 22 Southern Cross Lists under the theatre maintenance
+    // closure, and the Thu 23 Southern Cross Lists the closure moves onto.
+    projectedListId(ANAE.hughes, '2026-07-22', 'AM'),
+    projectedListId(ANAE.morrison, '2026-07-22', 'PM'),
+    projectedListId(ANAE.ngata, '2026-07-22', 'PM'),
+    projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM'),
+    projectedListId(ANAE.ngata, '2026-07-23', 'PM'),
+    projectedListId(ANAE.rutherford, '2026-08-03', 'AM'),
+    SEED_LIST_IDS.morrisonMon20,
+    // S3: Souter's Mon 20 Lists.
+    SEED_LIST_IDS.souterMon20Am,
+    SEED_LIST_IDS.souterMon20Pm,
+    // S4: Beat 1's Fri 24 AM (prepayment warning) and Fri 24 PM (paid), Beat 2's
+    // Sharma Tue 14 AM (post-op addendum), Beat 3's billing failure.
+    SEED_LIST_IDS.prepaymentUnpaidList,
+    SEED_LIST_IDS.prepaymentPaidList,
+    projectedListId(ANAE.sharma, '2026-07-14', 'AM'),
+    SEED_LIST_IDS.billingFailure,
+    // S5: Souter Tue 21 PM and Whitaker Fri 17.
+    SEED_LIST_IDS.souterPm21,
+    SEED_LIST_IDS.whitakerFri17,
+  ],
+  slotIds: [
+    // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
+    // PM; Beat 2 books Sharma's Tue 21 PM (and S4 Beat 2's addendum lands
+    // there); Beat 3 reassigns into Sharma's Wed 22 AM.
+    slotIdFor(ANAE.fitzgerald, DEMO_TODAY, 'PM'),
+    slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'),
+    slotIdFor(ANAE.sharma, '2026-07-22', 'AM'),
+    // S2's optional availability opening: Souter's Fri 14 Aug, Fri 28 Aug PM and Fri 11 Sep PM.
+    slotIdFor(ANAE.souter, '2026-08-14', 'AM'),
+    slotIdFor(ANAE.souter, '2026-08-14', 'PM'),
+    slotIdFor(ANAE.souter, '2026-08-28', 'PM'),
+    slotIdFor(ANAE.souter, '2026-09-11', 'PM'),
+  ],
+} as const
+
+/**
+ * The Lists the anaesthetist-move demo uses (catch-up Phase 32; seed tests pin
+ * each): Dr Souter's movable St George's Mon 27 Jul PM List (Ms G. Lim), the
+ * privacy case, whose colleagues include Dr Ropata, who has a not-preferred
+ * pairing with Ms Lim (PP-005) and is offered like anyone else; her Thu 23 Jul
+ * AM Christchurch Public List for a return to the office from List detail; and
+ * her Thu 23 Jul PM session (AA rooms, Ms K. Patel), inside mobile Find cover's
+ * six-day strip, for the unavailable prompt. None is scripted.
+ */
+export const LIST_MOVE_DEMO = {
+  movableListId: projectedListId(ANAE.souter, '2026-07-27', 'PM'),
+  privacyColleagueId: ANAE.ropata,
+  returnListId: projectedListId(ANAE.souter, '2026-07-23', 'AM'),
+  unavailableSlotId: slotIdFor(ANAE.souter, '2026-07-23', 'PM'),
 } as const
 
 /**

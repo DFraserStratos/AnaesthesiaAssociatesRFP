@@ -300,3 +300,43 @@ test('the office stand-in assigns a waiting request to Dr Souter, from the Lists
   expect(/Draft List|Unassigned/.test(await page.locator('body').innerText())).toBe(false)
   await page.screenshot({ path: 'visual/shots/pwa-10-draft-assigned-row.png' })
 })
+
+test('a colleague moves a List into my free session, then I return one of mine to the office (catch-up Phase 32)', async ({ page }) => {
+  await page.goto('/mobile/availability')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/availability')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-colleague-moves-list-to-me"]')
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: 'Run' }).click()
+  const status = row.getByRole('status')
+  await expect(status).toContainText('into your free session.')
+  expect(/Draft List|slot|prefer|tier/i.test((await status.textContent()) ?? '')).toBe(false)
+  await page.screenshot({ path: 'visual/shots/pwa-11a-colleague-stand-in.png' })
+  // Close the Demo sheet (tap its scrim), then the notice shows on Find cover.
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  const notice = page.locator('[data-shot="moved-to-you"]')
+  await expect(notice).toContainText('to you.')
+  await page.screenshot({ path: 'visual/shots/pwa-11-moved-to-you.png' })
+
+  // The List is on Forward Lists with "New".
+  await page.goto('/mobile/lists')
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-shot="list-row-badge"]').first()).toHaveText('New')
+  await page.screenshot({ path: 'visual/shots/pwa-12-new-on-lists.png' })
+
+  // Return one of her own Lists to the office from List detail: it leaves Forward Lists.
+  await page.goto('/mobile/lists/L-34821-2026-07-23-AM')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="list-move"]').click()
+  const sheet = page.locator('[data-shot="move-sheet"]')
+  await sheet.locator('[data-shot="move-choice-office"]').click()
+  await sheet.getByRole('button', { name: 'Move List' }).click()
+  await expect(sheet.locator('[data-shot="move-done"]')).toContainText('Returned to the office')
+  await page.screenshot({ path: 'visual/shots/pwa-13-returned.png' })
+  await sheet.getByRole('button', { name: 'Done' }).click()
+  await expect(page).toHaveURL(/\/mobile\/lists$/)
+  await expect(page.locator('[data-list-id="L-34821-2026-07-23-AM"]')).toHaveCount(0)
+})

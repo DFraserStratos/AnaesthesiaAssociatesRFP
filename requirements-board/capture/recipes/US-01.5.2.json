@@ -1,7 +1,7 @@
 {
   "id": "US-01.5.2",
-  "status": "partial",
-  "absentReason": "An anaesthetist marking a booked session unavailable is still flagged on the List until Phase 32's return-or-assign.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "holiday-conflict",
