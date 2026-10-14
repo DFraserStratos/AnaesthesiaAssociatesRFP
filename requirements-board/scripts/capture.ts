@@ -1,46 +1,58 @@
 /**
- * Take screenshots of the aa-prototype from recipes and link them to the catalogue.
+ * Take screenshots of the project's own app from recipes and link them to the catalogue.
  *
- *   npm run capture                              every recipe, then capture/REPORT.md
+ *   npm run capture                              every recipe, then the report
  *   node scripts/capture.ts --only US-03.2.4,EP-03   those items (an epic or feature takes its descendants)
  *   node scripts/capture.ts --only US-03.2.4 --dry   run every step and selector, write nothing
  *
- * One recipe per item: capture/recipes/<ID>.json (format in capture/ATLAS.md). Every state
- * gets a fresh browser context, so the seed and demo clock are identical each time. Web, admin
- * and simulator shots come from the framed prototype on :5173 with its harness bar hidden;
- * mobile shots come from the PWA dev server on :5174 at phone size. Files are written to
- * requirements/assets/<ID>/<app>-<name>[-<state>].png and listed in the item's `images`; images
- * the runner did not generate are kept. A step or highlight selector that matches nothing
- * fails the recipe: it never writes a silently wrong shot.
+ * Set up in the `capture` section of `board.config.json`: each screenshot app's dev-server URL,
+ * the CSS that hides demo-only chrome, the locale and timezone, and where the recipes and report
+ * live (relative to the requirements folder). One recipe per item: `<recipes>/<ID>.json`. Every
+ * state gets a fresh browser context, so a seeded app looks identical each time. An app with a
+ * mobile viewport is shot at phone size with touch. Files are written to
+ * `assets/<ID>/<app>-<name>[-<state>].png` and listed in the item's `images`; images the runner
+ * did not generate are kept. A step or highlight selector that matches nothing fails the recipe:
+ * it never writes a silently wrong shot.
+ *
+ * Built-in steps are plain browser actions (click, fill, press, wait, goto ...). A project adds its
+ * own (jumping to a demo scenario, running a demo action) in the module `capture.steps` names:
+ * its default export maps a step key to `run(page, step, ctx)`, with an optional `check(step)`.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test'
-import { REQUIREMENTS_DIR, itemPath, loadCatalogue, readItemFile, writeItem } from '../server/catalogueFs.ts'
+import { dirname, join, relative, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { chromium, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test'
+import { REQUIREMENTS_DIR, itemPath, loadCatalogue, readConfig, readItemFile, writeItem } from '../server/catalogueFs.ts'
+import { CONFIG_FILE, type CaptureApp, type CaptureConfig, type ScreenshotApp } from '../shared/config.ts'
 import { serialiseItem } from '../shared/files.ts'
 import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
-import { IMAGE_APPS, type ImageApp, type ImageRef, type Item } from '../shared/types.ts'
+import type { ImageRef, Item } from '../shared/types.ts'
 import { fileFor, isGenerated, pruneGenerated } from './captureFiles.ts'
 
-const here = dirname(fileURLToPath(import.meta.url))
-const CAPTURE_DIR = resolve(here, '../capture')
-const RECIPES_DIR = join(CAPTURE_DIR, 'recipes')
-const REPORT_PATH = join(CAPTURE_DIR, 'REPORT.md')
+const { config, problems: configProblems } = readConfig()
+if (configProblems.length) {
+  console.error(`${CONFIG_FILE} has problems:\n    ${configProblems.join('\n    ')}`)
+  process.exit(1)
+}
+if (!config.capture) {
+  console.error(`No capture section in ${join(REQUIREMENTS_DIR, CONFIG_FILE)}: nothing to capture. See the board README, "Capturing screenshots".`)
+  process.exit(1)
+}
+const CAPTURE: CaptureConfig = config.capture
+const RECIPES_DIR = resolve(REQUIREMENTS_DIR, CAPTURE.recipes)
+const REPORT_PATH = resolve(REQUIREMENTS_DIR, CAPTURE.report)
+/** The apps the runner can open: a screenshot app with a URL in `capture.apps`. */
+const APPS = new Map<string, ScreenshotApp & CaptureApp>(config.screenshotApps.filter((a) => CAPTURE.apps[a.key]).map((a) => [a.key, { ...a, ...CAPTURE.apps[a.key]! }]))
+const APP_KEYS = config.screenshotApps.map((a) => a.key)
+/** A path as the user would type it: relative when it is under the working folder, else absolute. */
+const shown = (abs: string) => {
+  const rel = relative(process.cwd(), abs)
+  return rel && !rel.startsWith('..') ? rel : abs
+}
 
-const PROTOTYPE = 'http://localhost:5173'
-const PWA = 'http://localhost:5174'
-/**
- * Hides the prototype's demo harness bar (the first child of the AppShell), so the app fills
- * the window as it would in production. Hiding beats clipping: fixed overlays such as the
- * admin list drawer are pinned to top:0 and would lose their header under a clip.
- */
-const HIDE_HARNESS = '#root > div > header:first-child { display: none !important; }'
-/** The PWA's equivalent: its amber "Demo" chip floats over product screens, so mobile shots hide it. */
-const HIDE_PWA_DEMO = '[data-shot="pwa-demo-actions"] { display: none !important; }'
-/** The id of the injected hide style, so a `trigger` step can lift it while it opens the demo menu or sheet. */
-const HIDE_HARNESS_ID = 'capture-hide-harness'
+/** The id of the injected hide style, so a plugin step can lift it for a moment (`ctx.setHidden(false)`). */
+const HIDE_STYLE_ID = 'capture-hide'
 const DESKTOP = { width: 1440, height: 900, dpr: 2 }
 const MOBILE = { width: 390, height: 844, dpr: 3 }
 const ACTION_TIMEOUT = 6000
@@ -50,7 +62,7 @@ const WORKERS = 4
 
 // ── Recipe types ─────────────────────────────────────────────────────────────
 
-type Step =
+type BuiltInStep =
   | { click: string; force?: boolean }
   | { dblclick: string }
   | { fill: string; value: string }
@@ -60,13 +72,30 @@ type Step =
   | { wait: number | string }
   | { scroll: string; by?: number }
   | { goto: string }
-  | { scenario: string }
-  /**
-   * Run a harness-bar demo action (`[data-shot=demo-action-<id>]`), picking `choice` in its select
-   * first. `open: true` leaves the bar shown and the menu open, so a state step can shoot the
-   * menu and its result line (each shot has a fresh page, so nothing leaks to the next).
-   */
-  | { trigger: string; choice?: string; open?: boolean }
+
+/** A built-in step, or one from the project's step module (keyed by its own step name). */
+type Step = BuiltInStep | Record<string, unknown>
+
+/** What a project step gets besides the page and its own step object. */
+export interface StepContext {
+  /** The screenshot app this shot is from, with its capture settings. */
+  app: ScreenshotApp & CaptureApp
+  /** Names the step in error messages. */
+  what: string
+  /** Show (false) or hide (true) the app's demo chrome again; see `hideCss`. */
+  setHidden: (hidden: boolean) => Promise<void>
+  /** The first visible match for a selector, or a loud failure naming `what`. */
+  mustFind: (selector: string) => Promise<Locator>
+  /** Wait for the network, fonts and `ms` more. */
+  settle: (ms?: number) => Promise<void>
+  timeout: number
+}
+
+export interface StepHandler {
+  run: (page: Page, step: Record<string, unknown>, ctx: StepContext) => Promise<void>
+  /** A problem with the step's fields, found before anything runs. */
+  check?: (step: Record<string, unknown>) => string | null
+}
 
 interface State {
   state?: string
@@ -78,7 +107,7 @@ interface State {
 
 interface Shot {
   name: string
-  app: ImageApp
+  app: string
   caption: string
   start: string
   setup?: Step[]
@@ -119,7 +148,23 @@ const fullRun = !only
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const DASHES = /[–—]/
 
-const STEP_KEYS = ['click', 'dblclick', 'fill', 'press', 'hover', 'select', 'wait', 'scroll', 'goto', 'scenario', 'trigger'] as const
+const BUILT_IN_STEPS = ['click', 'dblclick', 'fill', 'press', 'hover', 'select', 'wait', 'scroll', 'goto'] as const
+
+/** The project's own steps, from the module `capture.steps` names. */
+async function loadPluginSteps(): Promise<Map<string, StepHandler>> {
+  const out = new Map<string, StepHandler>()
+  if (!CAPTURE.steps) return out
+  const file = resolve(REQUIREMENTS_DIR, CAPTURE.steps)
+  if (!existsSync(file)) throw new Error(`capture.steps names ${CAPTURE.steps}, which does not exist`)
+  const mod = (await import(pathToFileURL(file).href)) as { default?: Record<string, StepHandler | StepHandler['run']> }
+  for (const [key, h] of Object.entries(mod.default ?? {})) {
+    if ((BUILT_IN_STEPS as readonly string[]).includes(key)) throw new Error(`${CAPTURE.steps}: step "${key}" would replace a built-in step`)
+    out.set(key, typeof h === 'function' ? { run: h } : h)
+  }
+  return out
+}
+const PLUGIN_STEPS = await loadPluginSteps()
+const stepKey = (step: Step) => [...BUILT_IN_STEPS, ...PLUGIN_STEPS.keys()].find((k) => k in step)
 
 function validate(r: Recipe, fileId: string): string[] {
   const out: string[] = []
@@ -132,7 +177,8 @@ function validate(r: Recipe, fileId: string): string[] {
   for (const s of r.shots ?? []) {
     const where = `shot "${s.name}"`
     if (!SLUG.test(s.name ?? '')) out.push(`${where}: name must be a kebab-case slug`)
-    if (!IMAGE_APPS.includes(s.app)) out.push(`${where}: app "${s.app}" is not one of ${IMAGE_APPS.join(', ')}`)
+    if (!APP_KEYS.includes(s.app)) out.push(`${where}: app "${s.app}" is not one of ${APP_KEYS.join(', ')}`)
+    else if (!APPS.has(s.app)) out.push(`${where}: app "${s.app}" has no url under capture.apps`)
     if (!s.caption?.trim()) out.push(`${where}: caption is empty`)
     if (DASHES.test(s.caption ?? '')) out.push(`${where}: caption has an en or em dash`)
     if (!s.start?.startsWith('/')) out.push(`${where}: start must be a path starting with /`)
@@ -149,10 +195,10 @@ function validate(r: Recipe, fileId: string): string[] {
   for (const s of r.shots ?? []) {
     const steps = [...(s.setup ?? []), ...(s.states ?? []).flatMap((st) => st.steps ?? [])]
     for (const step of steps) {
-      if (!STEP_KEYS.some((k) => k in step)) out.push(`shot "${s.name}": unknown step ${JSON.stringify(step)}`)
-      if ('trigger' in step) {
-        if (!SLUG.test(step.trigger)) out.push(`shot "${s.name}": trigger "${step.trigger}" must be a demo action id (kebab-case)`)
-      }
+      const key = stepKey(step)
+      if (!key) out.push(`shot "${s.name}": unknown step ${JSON.stringify(step)}`)
+      const problem = key && PLUGIN_STEPS.get(key)?.check?.(step as Record<string, unknown>)
+      if (problem) out.push(`shot "${s.name}": ${problem}`)
     }
   }
   return out
@@ -188,22 +234,22 @@ async function serverUp(url: string): Promise<boolean> {
   }
 }
 
-async function newContext(browser: Browser, app: ImageApp): Promise<BrowserContext> {
-  const mobile = app === 'mobile'
+async function newContext(browser: Browser, app: ScreenshotApp & CaptureApp): Promise<BrowserContext> {
+  const mobile = app.viewport === 'mobile'
   const v = mobile ? MOBILE : DESKTOP
   const ctx = await browser.newContext({
-    baseURL: mobile ? PWA : PROTOTYPE,
+    baseURL: app.url,
     viewport: { width: v.width, height: v.height },
     deviceScaleFactor: v.dpr,
     isMobile: mobile,
     hasTouch: mobile,
     reducedMotion: 'reduce',
-    locale: 'en-NZ',
-    timezoneId: 'Pacific/Auckland',
+    ...(CAPTURE.locale ? { locale: CAPTURE.locale } : {}),
+    ...(CAPTURE.timezone ? { timezoneId: CAPTURE.timezone } : {}),
     serviceWorkers: 'block',
   })
   ctx.setDefaultTimeout(ACTION_TIMEOUT)
-  {
+  if (app.hideCss) {
     await ctx.addInitScript(({ css, id }) => {
       const d = (globalThis as any).document
       const add = () => {
@@ -214,7 +260,7 @@ async function newContext(browser: Browser, app: ImageApp): Promise<BrowserConte
       }
       if (d.head) add()
       else d.addEventListener('DOMContentLoaded', add)
-    }, { css: mobile ? HIDE_PWA_DEMO : HIDE_HARNESS, id: HIDE_HARNESS_ID })
+    }, { css: app.hideCss, id: HIDE_STYLE_ID })
   }
   return ctx
 }
@@ -246,101 +292,51 @@ async function mustFind(page: Page, selector: string, what: string) {
   return loc
 }
 
-async function runStep(page: Page, step: Step, i: number) {
+async function runStep(page: Page, step: Step, i: number, app: ScreenshotApp & CaptureApp) {
   const what = `step ${i + 1} ${JSON.stringify(step)}`
-  if ('goto' in step) {
-    await page.goto(step.goto)
+  const plugin = PLUGIN_STEPS.get(stepKey(step) ?? '')
+  if (plugin) {
+    await plugin.run(page, step as Record<string, unknown>, {
+      app,
+      what,
+      setHidden: (hidden) =>
+        page.evaluate(({ id, hidden: h }) => {
+          const el = (globalThis as any).document.getElementById(id)
+          if (el) el.disabled = !h
+        }, { id: HIDE_STYLE_ID, hidden }),
+      mustFind: (selector) => mustFind(page, selector, what),
+      settle: (ms) => settle(page, ms),
+      timeout: ACTION_TIMEOUT,
+    })
+    return
+  }
+  const s = step as BuiltInStep
+  if ('goto' in s) {
+    await page.goto(s.goto)
     await settle(page, 200)
-  } else if ('scenario' in step) {
-    await runScenario(page, step.scenario, what)
-  } else if ('trigger' in step) {
-    await runTrigger(page, step.trigger, step.choice, step.open === true, what)
-  } else if ('click' in step) {
-    await (await mustFind(page, step.click, what)).click({ force: step.force })
-  } else if ('dblclick' in step) {
-    await (await mustFind(page, step.dblclick, what)).dblclick()
-  } else if ('fill' in step) {
-    await (await mustFind(page, step.fill, what)).fill(step.value)
-  } else if ('press' in step) {
-    if (step.on) await (await mustFind(page, step.on, what)).press(step.press)
-    else await page.keyboard.press(step.press)
-  } else if ('hover' in step) {
-    await (await mustFind(page, step.hover, what)).hover()
-  } else if ('select' in step) {
-    await (await mustFind(page, step.select, what)).selectOption(step.value)
-  } else if ('wait' in step) {
-    if (typeof step.wait === 'number') await page.waitForTimeout(step.wait)
-    else await mustFind(page, step.wait, what)
-  } else if ('scroll' in step) {
-    const loc = await mustFind(page, step.scroll, what)
-    if (step.by) await loc.evaluate((el, by) => (el as any).scrollBy(0, by), step.by)
+  } else if ('click' in s) {
+    await (await mustFind(page, s.click, what)).click({ force: s.force })
+  } else if ('dblclick' in s) {
+    await (await mustFind(page, s.dblclick, what)).dblclick()
+  } else if ('fill' in s) {
+    await (await mustFind(page, s.fill, what)).fill(s.value)
+  } else if ('press' in s) {
+    if (s.on) await (await mustFind(page, s.on, what)).press(s.press)
+    else await page.keyboard.press(s.press)
+  } else if ('hover' in s) {
+    await (await mustFind(page, s.hover, what)).hover()
+  } else if ('select' in s) {
+    await (await mustFind(page, s.select, what)).selectOption(s.value)
+  } else if ('wait' in s) {
+    if (typeof s.wait === 'number') await page.waitForTimeout(s.wait)
+    else await mustFind(page, s.wait, what)
+  } else if ('scroll' in s) {
+    const loc = await mustFind(page, s.scroll, what)
+    if (s.by) await loc.evaluate((el, by) => (el as any).scrollBy(0, by), s.by)
     else await loc.scrollIntoViewIfNeeded()
   } else {
     throw new Error(`${what}: unknown step`)
   }
-}
-
-/**
- * Run a demo action from the harness bar's "Demo actions" menu on the current screen (:5173).
- * Shots hide the bar, so this lifts the hide style, opens `[data-shot=demo-actions]`, sets the
- * row's select when `choice` is given, clicks the row's Run, waits for its `role="status"` line,
- * closes the popover with Escape and restores the hide (unless `keepOpen`). Fails when the row is
- * missing or disabled.
- * On the PWA (:5174) the same step opens the amber Demo chip's bottom sheet instead
- * (`[data-shot=pwa-demo-actions]`, rows `[data-shot=pwa-demo-action-<id>]`, choices as radio rows)
- * and closes it by tapping the scrim.
- */
-async function runTrigger(page: Page, id: string, choice: string | undefined, keepOpen: boolean, what: string) {
-  const pwa = page.url().startsWith(PWA)
-  const pillSel = pwa ? '[data-shot="pwa-demo-actions"]' : '[data-shot="demo-actions"]'
-  const rowSel = pwa ? `[data-shot="pwa-demo-action-${id}"]` : `[data-shot="demo-action-${id}"]`
-  const setHidden = (hidden: boolean) =>
-    page.evaluate(({ id: styleId, hidden: h }) => {
-      const el = (globalThis as any).document.getElementById(styleId)
-      if (el) el.disabled = !h
-    }, { id: HIDE_HARNESS_ID, hidden })
-  await setHidden(false)
-  try {
-    const pill = page.locator(pillSel)
-    if (!(await pill.count())) throw new Error(`${what}: no Demo actions menu on ${page.url()} (this screen registers no entries)`)
-    const row = page.locator(rowSel)
-    if (!(await row.isVisible())) await pill.first().click()
-    await row.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT }).catch(() => undefined)
-    if (!(await row.count())) throw new Error(`${what}: no demo action ${rowSel} on ${page.url()}`)
-    if (choice !== undefined) {
-      if (pwa) await row.locator(`[role=radio]`).filter({ hasText: choice }).first().click()
-      else await row.locator('select').selectOption(choice)
-    }
-    const run = row.getByRole('button', { name: 'Run' })
-    if (await run.isDisabled()) {
-      const reason = (await row.innerText()).split('\n').slice(-2).join(' ')
-      throw new Error(`${what}: demo action ${id} is disabled (${reason})`)
-    }
-    await run.click()
-    await row.getByRole('status').filter({ hasText: /\S/ }).waitFor({ state: 'visible', timeout: ACTION_TIMEOUT })
-    if (!keepOpen) {
-      if (pwa) {
-        // Tap the scrim above the sheet, then let the sheet-out motion finish.
-        await page.mouse.click(12, 12)
-        await page.waitForTimeout(400)
-      } else await page.keyboard.press('Escape')
-    }
-  } finally {
-    if (!keepOpen) await setHidden(true)
-  }
-  await settle(page, 200)
-}
-
-/** Jump to a demo scenario (S1 to S5) from the demo control panel on :5173. */
-async function runScenario(page: Page, id: string, what: string) {
-  if (!page.url().startsWith(PROTOTYPE)) throw new Error(`${what}: scenario jumps live on the framed prototype (:5173) and cannot set up a mobile (:5174) shot`)
-  await page.goto('/demo/control')
-  await settle(page, 200)
-  const btn = page.locator(`[data-shot="scenario-${id.toLowerCase()}"]`)
-  if (!(await btn.count())) throw new Error(`${what}: no scenario button [data-shot=scenario-${id.toLowerCase()}] on /demo/control`)
-  await btn.first().click()
-  await page.locator('[data-shot="scenario-confirm"]').first().click()
-  await settle(page, 300)
 }
 
 interface Box {
@@ -412,21 +408,22 @@ async function drawHighlight(page: Page, box: Box) {
 
 async function capture(browser: Browser, job: Job): Promise<Buffer> {
   const { shot, state } = job
-  const ctx = await newContext(browser, shot.app)
+  const app = APPS.get(shot.app)!
+  const ctx = await newContext(browser, app)
   const page = await ctx.newPage()
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   try {
     if (shot.setup?.length) {
-      await page.goto(shot.app === 'mobile' ? '/mobile/lists' : '/')
+      await page.goto(app.setupRoute)
       await settle(page, 200)
-      for (const [i, s] of shot.setup.entries()) await runStep(page, s, i)
+      for (const [i, s] of shot.setup.entries()) await runStep(page, s, i, app)
       await softGoto(page, shot.start)
     } else {
       await page.goto(shot.start)
     }
     await settle(page)
-    for (const [i, s] of (state.steps ?? []).entries()) await runStep(page, s, i)
+    for (const [i, s] of (state.steps ?? []).entries()) await runStep(page, s, i, app)
     await settle(page)
     const box = await highlightBox(page, state.highlight ?? [])
     if (box) await drawHighlight(page, box)
@@ -451,7 +448,7 @@ async function capture(browser: Browser, job: Job): Promise<Buffer> {
 function imagesFor(recipe: Recipe): ImageRef[] {
   return (recipe.shots ?? []).flatMap((s) =>
     s.states.map((st) => {
-      const img: ImageRef = { src: fileFor(recipe.id, s, st), viewport: s.app === 'mobile' ? 'mobile' : 'desktop', app: s.app }
+      const img: ImageRef = { src: fileFor(recipe.id, s, st), viewport: APPS.get(s.app)?.viewport ?? 'desktop', app: s.app }
       img.caption = st.caption ?? (st.state && s.states.length > 1 ? `${s.caption} · ${st.state.replace(/-/g, ' ')}` : s.caption)
       return img
     }),
@@ -463,7 +460,7 @@ function linkItem(recipe: Recipe): boolean {
   const loaded = readItemFile(itemPath(recipe.id))
   if (!loaded.record) throw new Error(`catalogue item ${recipe.id} could not be read: ${loaded.error}`)
   const item: Item = loaded.record.data
-  const kept = item.images.filter((i) => !isGenerated(recipe.id, i.src))
+  const kept = item.images.filter((i) => !isGenerated(recipe.id, i.src, APP_KEYS))
   const next: Item = { ...item, images: [...kept, ...imagesFor(recipe)] }
   const before = readFileSync(itemPath(recipe.id), 'utf8')
   if (serialiseItem(next) === before) return false
@@ -474,7 +471,7 @@ function linkItem(recipe: Recipe): boolean {
 /** Delete generated files for this item that the recipe no longer produces. */
 function pruneAssets(recipe: Recipe): string[] {
   const wanted = new Set(imagesFor(recipe).map((i) => i.src.split('/').pop()!))
-  return pruneGenerated(join(REQUIREMENTS_DIR, 'assets', recipe.id), wanted)
+  return pruneGenerated(join(REQUIREMENTS_DIR, 'assets', recipe.id), wanted, APP_KEYS)
 }
 
 // ── Report ───────────────────────────────────────────────────────────────────
@@ -499,9 +496,9 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
   const storyCount = (list: { id: string }[]) => list.filter((r) => storyIds.has(r.id)).length
 
   const out = [
-    '# Prototype screenshot report',
+    '# Screenshot report',
     '',
-    'Written by `npm run capture` (requirements-board/scripts/capture.ts) on a full run. Do not edit by hand.',
+    'Written by `npm run capture` (the board\'s scripts/capture.ts) on a full run. Do not edit by hand.',
     '',
     `Scope: every story plus every feature with no stories (${inScope.length} items, ${stories.length} stories). Features with stories are captured only when they have an overview screen.`,
     '',
@@ -509,11 +506,11 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
     '|---|---:|---:|',
     `| Captured | ${captured.length} | ${storyCount(captured)} |`,
     `| Partial | ${partial.length} | ${storyCount(partial)} |`,
-    `| Absent from the prototype | ${absent.length} | ${storyCount(absent)} |`,
+    `| Absent from the app | ${absent.length} | ${storyCount(absent)} |`,
     `| Failed recipe | ${failed.size + broken.size} | ${storyCount([...failed.keys(), ...broken.keys()].map((id) => ({ id })))} |`,
     `| No recipe | ${missing.length} | ${storyCount(missing.map((id) => ({ id })))} |`,
     '',
-    `${shots} screenshots. Items per app: ${IMAGE_APPS.map((a) => `${a} ${appCount.get(a) ?? 0}`).join(', ')}.`,
+    `${shots} screenshots. Items per app: ${APP_KEYS.map((a) => `${a} ${appCount.get(a) ?? 0}`).join(', ')}.`,
     '',
   ]
   const section = (heading: string, lines: string[]) => {
@@ -524,13 +521,14 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
     ...[...broken].sort(([a], [b]) => compareIds(a, b)).map(([id, p]) => line(id, p.join('; '))),
     ...[...failed].sort(([a], [b]) => compareIds(a, b)).map(([id, e]) => line(id, e)),
   ])
-  section('Absent from the prototype', absent.map((r) => line(r.id, r.absentReason)))
+  section('Absent from the app', absent.map((r) => line(r.id, r.absentReason)))
   section('Partial', partial.map((r) => line(r.id, r.absentReason)))
   section('No recipe', missing.sort(compareIds).map((id) => line(id)))
   section(
     'Captured',
     captured.map((r) => line(r.id, [...new Set((r.shots ?? []).map((s) => s.app))].join(', '))),
   )
+  mkdirSync(dirname(REPORT_PATH), { recursive: true })
   writeFileSync(REPORT_PATH, out.join('\n'))
 }
 
@@ -561,17 +559,17 @@ async function main() {
   for (const id of recipes.keys()) if (!byId.has(id)) console.error(`✗ ${id}.json: no catalogue item with that ID`)
   const selected = [...recipes.values()].filter((r) => scope.has(r.id) && byId.has(r.id)).sort((a, b) => compareIds(a.id, b.id))
   if (only && !selected.length && ![...broken.keys()].some((id) => scope.has(id))) {
-    console.error(`No recipes for ${only.join(', ')} in capture/recipes/.`)
+    console.error(`No recipes for ${only.join(', ')} in ${shown(RECIPES_DIR)}/.`)
     process.exit(1)
   }
 
   const jobs: Job[] = selected.flatMap((recipe) => (recipe.shots ?? []).flatMap((shot) => shot.states.map((state) => ({ recipe, shot, state, file: fileFor(recipe.id, shot, state) }))))
-  const needs = new Set(jobs.map((j) => (j.shot.app === 'mobile' ? PWA : PROTOTYPE)))
+  const needs = new Set(jobs.map((j) => APPS.get(j.shot.app)!.url))
   const down: string[] = []
   for (const url of needs) if (!(await serverUp(url))) down.push(url)
   if (down.length) {
     console.error(`Dev server not running: ${down.join(', ')}.`)
-    console.error('Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174).')
+    console.error(CAPTURE.startHint ?? 'Start the app\'s dev server, then run again.')
     process.exit(2)
   }
 
@@ -627,7 +625,7 @@ async function main() {
     if (errors.length > mine.length) console.error(`(${errors.length - mine.length} other catalogue error(s) outside this run; see npm run check)`)
     if (fullRun) {
       writeReport(Object.values(after.items).map((r) => r.data), recipes, broken, failed)
-      console.log(`Report: ${REPORT_PATH}`)
+      console.log(`Report: ${shown(REPORT_PATH)}`)
     }
   }
   const brokenInScope = [...broken.keys()].filter((id) => scope.has(id)).length

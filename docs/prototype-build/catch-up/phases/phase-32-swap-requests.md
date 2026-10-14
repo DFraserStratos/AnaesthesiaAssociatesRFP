@@ -244,7 +244,7 @@ are Phase 32a.
      `badge`), `demoTriggersFor(state, pathname, surface, published)`, `src/pwa/PwaDemoActions.tsx`,
      and the actors in `src/store/demoActors.ts` (`OFFICE_ACTOR`, `SOUTER_ACTOR`,
      `OFFICE_SIMULATION_ACTOR`).
-   - Run `grep -rn "coverRequest\|requestCover\|RequestCoverSheet\|CoverTarget\|onCover\|offerCover\|onOfferCover\|askCover\|myFreeList\|Tap to ask\|Offer cover\|Ask to cover\|Cover requested\|Cover request sent\|someone accepts\|office notified\|when they respond" aa-prototype/src aa-prototype/visual requirements-board/capture/recipes`
+   - Run `grep -rn "coverRequest\|requestCover\|RequestCoverSheet\|CoverTarget\|onCover\|offerCover\|onOfferCover\|askCover\|myFreeList\|Tap to ask\|Offer cover\|Ask to cover\|Cover requested\|Cover request sent\|someone accepts\|office notified\|when they respond" aa-prototype/src aa-prototype/visual requirements-board/requirements/capture/recipes`
      to see every place the cover marker and the false "office notified" copy reach after 28 to 31.
    - Read the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 after Phase 15a session 1;
      later phases will have bumped it) and bump it by one from whatever it is now.
@@ -371,7 +371,7 @@ session 2 and 15b to 31 will have renamed or moved some):**
   `apps/web/components/WeekStrip.tsx` and `apps/web/screens/ListsScreen.tsx`. They describe an open
   session the office can fill. The capture recipes `US-01.3.3.json` and `US-02.3.1.json` click them.
   Also keep "Find cover" as the finder's name.
-- Outside the app: `requirements-board/capture/recipes/US-01.4.3.json` (captures the old cover sheet
+- Outside the app: `requirements-board/requirements/capture/recipes/US-01.4.3.json` (captures the old cover sheet
   on web, "Open for booking", and on mobile, "Tap to ask"; its `absentReason` describes swaps),
   `US-01.4.2.json` (clicks free cells), and `US-01.5.2.json` (Phase 30's partial reason names this
   phase's return-or-assign). Phase 29 drops `US-01.2.1`'s `pm-blocked` and `US-01.5.3`'s `blocked`
@@ -989,7 +989,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 changed these recipes since this plan was written. Work item 15 only re-points the Playwright specs
 and makes sure the `data-shot` hooks exist. The recipes and the capture run belong to this step.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

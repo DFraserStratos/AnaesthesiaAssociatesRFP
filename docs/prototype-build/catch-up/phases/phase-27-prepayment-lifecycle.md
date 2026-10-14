@@ -892,7 +892,7 @@ on a :5174 shot the step opens the PWA Demo sheet). The Control Panel has no pay
 click it for one. Replace every stale caption (an estimated fee, a deposit, a balance invoice, a
 payment category) with the new behaviour's words.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

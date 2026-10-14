@@ -1018,7 +1018,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 39b` first: earlier phases (24 and 38b
 above all) may have changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1040,7 +1040,7 @@ be re-pointed; reconcile with it as follows. Found at plan time:
 - Any recipe that relied on `stage-post-op` building only Dr Sharma's List: the trigger now also stages
   Dr Souter's Thu 16 Jul List, which adds a Booking to Dr Souter's Lists, archive and search, and a
   List to Admin Review's queue; check list, archive and review recipes by the `--dry` run.
-- Re-grep before capture: `grep -lE 'Add billing line|What this line charges|Ancillary|capture-billing-lines|post-op|stage-post|procedure-events|office-reviews' requirements-board/capture/recipes/*.json`.
+- Re-grep before capture: `grep -lE 'Add billing line|What this line charges|Ancillary|capture-billing-lines|post-op|stage-post|procedure-events|office-reviews' requirements-board/requirements/capture/recipes/*.json`.
 
 **ATLAS.md.** Personas and IDs / Seed data: the staged Bennett Booking (Thu 16 Jul AM, St George's,
 ACC, staged submitted), the seeded `CT-ACC-PREOP` Contract with its three event fees and the
@@ -1133,7 +1133,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
 - **Catalogue screenshots result:** recipes created or changed (US-03.7.1, US-03.7.2, US-03.7.3,
-  US-05.5.2, US-03.3.6, plus any re-pointed 38b recipe), the `capture/REPORT.md` counts (captured,
+  US-05.5.2, US-03.3.6, plus any re-pointed 38b recipe), the `requirements-board/requirements/capture/REPORT.md` counts (captured,
   partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** Phase 38b's withdrawal of the anaesthetist's post-op flow: besides 38b's free-form

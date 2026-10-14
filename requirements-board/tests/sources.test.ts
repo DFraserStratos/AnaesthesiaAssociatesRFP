@@ -71,9 +71,9 @@ function catalogue() {
   const arts = [
     artifact({ id: 'AR-15', title: 'RFP', citedAs: [cite('RFP', { pageOffset: 1 }), cite('RFP, July 2026')] }),
     artifact({ id: 'AR-36', title: 'RFP response', citedAs: [cite('RFP response')] }),
-    artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-aa-meeting-with-greg.md' }),
+    artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md' }),
     artifact({ id: 'AR-09', kind: 'note', file: 'notes/2026-09-24-source-notes.md', citedAs: [cite('Q&A 2026-09-24', { within: 'qa-with-donald-2026-09-24' }), cite('Meeting notes 2026-09', { within: 'future-state-diagrams-supplied' })] }),
-    artifact({ id: 'AR-04', kind: 'transcript', file: 'artifacts/files/t.md', sources: ['Recording 2026-10-01 · AA meeting with Greg (A)'], citedAs: [cite('Recording 2026-10-01 · AA meeting with Greg (A)'), cite('Transcript 2026-10-01 · AA meeting with Greg (A)')] }),
+    artifact({ id: 'AR-04', kind: 'transcript', file: 'artifacts/files/t.md', sources: ['Recording 2026-10-01 · Client meeting with Sam (A)'], citedAs: [cite('Recording 2026-10-01 · Client meeting with Sam (A)'), cite('Transcript 2026-10-01 · Client meeting with Sam (A)')] }),
     artifact({ id: 'AR-20', kind: 'diagram', file: 'artifacts/files/AR-20.svg', status: 'Superseded', supersededBy: 'AR-24', regions: [{ id: 'old-only', name: 'Old', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Billing route', { spot: 'old-only' })] }),
     artifact({ id: 'AR-24', kind: 'diagram', file: 'artifacts/files/AR-24.svg', regions: [{ id: 'setup', name: 'Booking setup', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Setup', { spot: 'setup' })] }),
     artifact({ id: 'AR-16', citedAs: [cite('Data files')] }),
@@ -115,11 +115,11 @@ describe('resolving a source', () => {
   })
 
   it("finds a note by its file name and each point by number, wherever it sits", () => {
-    expect(at('Notes 2026-10-01 · AA meeting with Greg #2')).toMatchObject({ kind: 'artifact', id: 'AR-11', spots: [{ region: 'L14', label: 'Point 2', detail: 'Two, later' }] })
-    const multi = at('Notes 2026-10-01 · AA meeting with Greg #1 #3')
+    expect(at('Notes 2026-10-01 · Client meeting with Sam #2')).toMatchObject({ kind: 'artifact', id: 'AR-11', spots: [{ region: 'L14', label: 'Point 2', detail: 'Two, later' }] })
+    const multi = at('Notes 2026-10-01 · Client meeting with Sam #1 #3')
     expect(multi).toMatchObject({ id: 'AR-11', spots: [{ region: 'L5-6', label: 'Point 1' }, { region: 'L8-10', label: 'Point 3' }] })
-    expect(at('Notes 2026-10-01 · AA meeting with Greg')).toMatchObject({ id: 'AR-11', spots: [{ region: null }] })
-    expect(at('Notes 2026-10-01 · AA meeting with Greg #9')).toMatchObject({ spots: [{ problem: 'AR-11 has no point 9' }] })
+    expect(at('Notes 2026-10-01 · Client meeting with Sam')).toMatchObject({ id: 'AR-11', spots: [{ region: null }] })
+    expect(at('Notes 2026-10-01 · Client meeting with Sam #9')).toMatchObject({ spots: [{ problem: 'AR-11 has no point 9' }] })
     expect(at('Notes 2026-10-05 · A meeting that never was #1')).toEqual({ kind: 'unresolved', reason: 'no note notes/2026-10-05-a-meeting-that-never-was.md' })
   })
 
@@ -130,9 +130,9 @@ describe('resolving a source', () => {
   })
 
   it('takes the longest prefix, line ranges, a named spot, and words for the reader after it', () => {
-    expect(at('Transcript 2026-10-01 · AA meeting with Greg (A) L27-33')).toMatchObject({ id: 'AR-04', spots: [{ region: 'L27-33', label: 'Lines 27 to 33' }] })
+    expect(at('Transcript 2026-10-01 · Client meeting with Sam (A) L27-33')).toMatchObject({ id: 'AR-04', spots: [{ region: 'L27-33', label: 'Lines 27 to 33' }] })
     expect(at('Diagram: Setup')).toMatchObject({ id: 'AR-24', spots: [{ region: 'setup', label: 'Booking setup' }] })
-    expect(at('Data files (fee schedules, NZSA RVG 2021) (Merivale terms)')).toMatchObject({ id: 'AR-16', spots: [{ region: null }] })
+    expect(at('Data files (price lists, 2021 edition) (supplier terms)')).toMatchObject({ id: 'AR-16', spots: [{ region: null }] })
     expect(at('RFP responses are great').kind).toBe('unresolved')
   })
 
@@ -141,8 +141,8 @@ describe('resolving a source', () => {
   })
 
   it("shows an artifact's own origin plain, a question as a question, and a non-citation plain", () => {
-    expect(at('Recording 2026-10-01 · AA meeting with Greg (A)', 'AR-04')).toEqual({ kind: 'plain' })
-    expect(at('Recording 2026-10-01 · AA meeting with Greg (A)')).toMatchObject({ id: 'AR-04' })
+    expect(at('Recording 2026-10-01 · Client meeting with Sam (A)', 'AR-04')).toEqual({ kind: 'plain' })
+    expect(at('Recording 2026-10-01 · Client meeting with Sam (A)')).toMatchObject({ id: 'AR-04' })
     expect(at('OQ-62')).toEqual({ kind: 'question', id: 'OQ-62' })
     expect(at('Typed decision 2026-10-05 · Donald (product owner)')).toEqual({ kind: 'plain' })
     expect(at('Audit 2026-09-24 #5')).toEqual({ kind: 'plain' })
@@ -160,15 +160,15 @@ describe('the check on sources', () => {
       .map((i) => `${i.severity} ${i.id}: ${i.message}`)
 
   it('warns on sources that cite nothing or a spot that is not there, on items, questions and artifacts', () => {
-    const arts = [artifact({ id: 'AR-15', citedAs: [cite('RFP', { pageOffset: 1 })] }), artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-aa-meeting-with-greg.md', sources: ['Notes 2026-10-01 · AA meeting with Greg'] })]
-    const items = [item({ id: 'US-01.1.1', sources: ['RFP p.27 · Fine', 'RFP p.80 · Past the end', 'Notes 2026-10-01 · AA meeting with Greg #2 #9', 'Notes 2026-10-04 · Nothing', 'Typed decision 2026-10-05 · Donald', 'OQ-99'] })]
-    const questions = [question({ id: 'OQ-01', affects: ['US-01.1.1'], sources: ['Notes 2026-10-01 · AA meeting with Greg #12'] })]
+    const arts = [artifact({ id: 'AR-15', citedAs: [cite('RFP', { pageOffset: 1 })] }), artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md', sources: ['Notes 2026-10-01 · Client meeting with Sam'] })]
+    const items = [item({ id: 'US-01.1.1', sources: ['RFP p.27 · Fine', 'RFP p.80 · Past the end', 'Notes 2026-10-01 · Client meeting with Sam #2 #9', 'Notes 2026-10-04 · Nothing', 'Typed decision 2026-10-05 · Donald', 'OQ-99'] })]
+    const questions = [question({ id: 'OQ-01', affects: ['US-01.1.1'], sources: ['Notes 2026-10-01 · Client meeting with Sam #12'] })]
     expect(run(arts, items, questions)).toEqual([
       'warning US-01.1.1: source "RFP p.80 · Past the end": AR-15 has no page 81',
-      'warning US-01.1.1: source "Notes 2026-10-01 · AA meeting with Greg #2 #9": AR-11 has no point 9',
+      'warning US-01.1.1: source "Notes 2026-10-01 · Client meeting with Sam #2 #9": AR-11 has no point 9',
       'warning US-01.1.1: source "Notes 2026-10-04 · Nothing" no note notes/2026-10-04-nothing.md',
       'warning US-01.1.1: source OQ-99 names a question that does not exist',
-      'warning OQ-01: source "Notes 2026-10-01 · AA meeting with Greg #12": AR-11 has no point 12',
+      'warning OQ-01: source "Notes 2026-10-01 · Client meeting with Sam #12": AR-11 has no point 12',
     ])
   })
 
@@ -176,12 +176,12 @@ describe('the check on sources', () => {
     const arts = [
       artifact({ id: 'AR-01', citedAs: [cite(''), cite('Spec', { pageOffset: 1.5 })] }),
       artifact({ id: 'AR-02', citedAs: [cite('Spec')] }),
-      artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-aa-meeting-with-greg.md', citedAs: [cite('Notes 2026-10-01 · AA meeting with Greg'), cite('Old', { within: 'nope', pageOffset: 1 })] }),
+      artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md', citedAs: [cite('Notes 2026-10-01 · Client meeting with Sam'), cite('Old', { within: 'nope', pageOffset: 1 })] }),
     ]
     expect(run(arts)).toEqual([
       'error AR-01: a cited_as entry has no "as"',
       'error AR-01: cited_as "Spec": page_offset is a whole number, for a PDF',
-      'error AR-11: cited_as "Notes 2026-10-01 · AA meeting with Greg": a note is cited by its file name already; drop the entry',
+      'error AR-11: cited_as "Notes 2026-10-01 · Client meeting with Sam": a note is cited by its file name already; drop the entry',
       'error AR-11: cited_as "Old": page_offset is a whole number, for a PDF',
       'error AR-11: cited_as "Old": within "nope" is not a heading in AR-11',
       'error AR-01: cited_as "Spec" is also claimed by AR-02',
@@ -227,7 +227,7 @@ describe("a card's Diagrams and Sources", () => {
   it('puts pictures under Diagrams and evidence under Sources, in the order cited, each once', () => {
     const card = item({
       id: 'US-01.1.1',
-      sources: ['RFP p.27 · Billing', 'Diagram: Billing route', 'Notes 2026-10-01 · AA meeting with Greg #1 #3', 'Typed decision 2026-10-05 · Donald', 'OQ-62', 'Diagram: Nothing'],
+      sources: ['RFP p.27 · Billing', 'Diagram: Billing route', 'Notes 2026-10-01 · Client meeting with Sam #1 #3', 'Typed decision 2026-10-05 · Donald', 'OQ-62', 'Diagram: Nothing'],
       artifacts: ['AR-24#setup', 'AR-15#p28', 'AR-16', 'AR-99'],
     })
     const { diagrams, sources } = sheetArtifacts(card, index, recs)

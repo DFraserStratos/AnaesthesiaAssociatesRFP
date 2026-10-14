@@ -136,7 +136,7 @@ images (a web and a mobile "Add photo") show today's UI.
   `prototype-map-domain.md` (section 2, Card, Procedure, Invoice and BillingCase, and section 5,
   the billing modules), `prototype-map-shared.md` (sections 2, 3 and 5) and
   `prototype-map-shell-demo-pwa.md` (sections 1, 5 and 7).
-- `requirements-board/capture/ATLAS.md`: the catalogue's screenshot recipes hard-code this app's
+- `requirements-board/requirements/capture/ATLAS.md`: the catalogue's screenshot recipes hard-code this app's
   routes, ids, button text and test hooks (work item 16).
 
 **Code entry points** (paths under `aa-prototype/src/`):
@@ -586,7 +586,7 @@ images (a web and a mobile "Add photo") show today's UI.
       maps.
 
 16. **Keep the catalogue's screenshot tooling working.**
-    - `requirements-board/capture/recipes/*.json` (about 96 files) and `capture/ATLAS.md`
+    - `requirements-board/requirements/capture/recipes/*.json` (about 96 files) and `requirements-board/requirements/capture/ATLAS.md`
       hard-code `/cards/C0009`-style routes, `C####` and `HC##` ids, "Add a card", "Cancel card", "Card
       history", `slide-card`, `mobile-card-*`, `card-calculation` and `data-shot=card-*`.
       Update them with a scripted, reviewed replace to the new routes, ids, text and hooks.
@@ -706,7 +706,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 15` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

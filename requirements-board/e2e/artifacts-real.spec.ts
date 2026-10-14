@@ -3,6 +3,7 @@
  * Every highlight of every real artifact finds its spot in the board (read-only, port 5181):
  * `npm run check` holds anchors to account without a browser; this covers what it can't (a CSS
  * selector's real match, a mermaid diagram's drawing, a passage in a PDF's text layer).
+ * Project-specific: its second test names this project's artifacts. Runs only with BOARD_E2E_REAL=1.
  */
 import { expect, test } from '@playwright/test'
 import type { CatalogueSnapshot } from '../shared/types.ts'

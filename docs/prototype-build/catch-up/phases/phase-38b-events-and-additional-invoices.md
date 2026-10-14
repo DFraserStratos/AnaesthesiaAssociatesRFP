@@ -113,7 +113,7 @@ One seeded event, an additional invoice that Dr Souter raised on a billed Proced
    - from **37**: the restyled processing monitor (grouping, filters, "Open in Review") and its outage queue, which `handoffPair` for an event invoice passes through like any handoff;
    - from **38**: that Outstanding and the financial position read the ledger, so an invoiced additional invoice joins them with no screen change.
 6. **The seeded Procedures.** Confirm Dr Souter's history account `oa03` (David Chen, Hip hemiarthroplasty, St George's, Mon 22 Jun 2026, unpaid; List `L-HIST-03`, Booking `HBK03`, Procedure `HP03` at plan time, unless 28 re-keyed the List) is still in `src/domain/seed/history.ts`, billed, with its invoice, its ledger pair and its lock, reachable for Dr Souter through 38a's calendar (Mon 22 Jun) and search ("Chen"), and that no S1 to S5 beat or capture recipe opens it (S5 Beat 1 opens a different David Chen Booking, Dr Souter's Tue 21 Jul PM, which this phase leaves alone). If not, pick another billed, unpaid Souter history Procedure no beat uses and name it in the PROGRESS entry. Also confirm 27's prepaid Booking (Nair, Souter Fri 24 Jul PM, `SEED_PREPAID_BOOKING_ID`) and what authorising it leaves (a prepaid Procedure with nothing to bill): the "After a fixed price" test uses it.
-7. Run `grep -rn "addPostOpAddendum\|postOpAddendum\|addendumOf\|bookingType\|Add post-op event\|stage-post-op" aa-prototype/src aa-prototype/visual requirements-board/capture/recipes` to list every user of the addendum and the trigger.
+7. Run `grep -rn "addPostOpAddendum\|postOpAddendum\|addendumOf\|bookingType\|Add post-op event\|stage-post-op" aa-prototype/src aa-prototype/visual requirements-board/requirements/capture/recipes` to list every user of the addendum and the trigger.
 8. Note the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 after Phase 15a session 1; later phases bump it).
 
 ## Reference
@@ -306,7 +306,7 @@ S4 Beat 2 is rewritten here (ROADMAP.md "Demo guide": "38b S4 Beat 2's post-op a
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 38b` first: earlier phases (36, 37, 38a) may have changed these recipes since this plan was written. At plan time it lists the three covered stories US-08.6.1, US-08.6.3 and US-03.7.3.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/` matches what was built:
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/` matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|
@@ -369,7 +369,7 @@ Once the manual test checklist and `npm run build`, `npm run build:pwa`, `npx vi
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - the checklist item by item with evidence; the tests added and the before and after Vitest and Playwright counts;
   - the review pass;
-  - the Catalogue screenshots result: recipes created or changed (US-08.6.1, US-08.6.3, US-03.7.3 and every recipe the addendum removal and the new button broke), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after.
+  - the Catalogue screenshots result: recipes created or changed (US-08.6.1, US-08.6.3, US-03.7.3 and every recipe the addendum removal and the new button broke), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed) before and after.
 - **Decisions log:**
   1. **Superseded:** 2026-07-24 "Phase 09, the four open-question readings", reading (3), and the Phase 09 build decision (5): the post-op addendum as a new linked Card on today's free session with its own capture, submit, authorise and bill cycle. Late charges are events on the Procedure: the free-form additional invoice now, raised by the office or by the anaesthetist on their own Procedure (D10, D13, D22; US-08.6.3 as changed on 2026-10-07), the anaesthetist's pre-op and post-op events in 39b (RV-10). The 2026-10-02 `Booking.source` entry's addendum interim ends here.
   2. **New:** an event is one thin element on the Procedure (D13): kinds, an invoice tick, a "same as" party, one review step in Admin Review's Events tab whoever raised it, invoiced in the next billing run; status derived. The label "event" lives in one copy map.

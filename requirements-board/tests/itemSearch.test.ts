@@ -95,7 +95,7 @@ describe('matchContext', () => {
   })
 
   it('quotes the matching source whole', () => {
-    const src = item({ id: 'US-8', title: 'Pairs', sources: ['RFP p.12 · Scheduling', 'RFP p.33 · Xero Integration › Open items'] })
-    expect(matchContext(index, src, 'xero')).toEqual({ label: 'Source', text: 'RFP p.33 · Xero Integration › Open items' })
+    const src = item({ id: 'US-8', title: 'Pairs', sources: ['RFP p.12 · Scheduling', 'RFP p.33 · Payments Integration › Open items'] })
+    expect(matchContext(index, src, 'payments')).toEqual({ label: 'Source', text: 'RFP p.33 · Payments Integration › Open items' })
   })
 })

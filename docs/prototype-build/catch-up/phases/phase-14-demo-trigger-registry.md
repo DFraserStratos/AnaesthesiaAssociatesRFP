@@ -114,10 +114,10 @@ contract right; do not build their triggers here.
   `screens.spec.ts` screenshots the page. The PWA project matches only `visual/pwa-device.spec.ts`
   (`playwright.config.ts`).
 - Outside the app, consumers of the Control Panel triggers: 18 capture recipes in
-  `requirements-board/capture/recipes/` (for example US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4 and
+  `requirements-board/requirements/capture/recipes/` (for example US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4 and
   US-14.5.1 use `[data-shot=control-payment-webhook]`, `control-scheduled-jobs`,
   `control-integration-message`; others click "Trigger failure", "Stage scenario" or "Record payment")
-  and the "Demo control panel" section of `requirements-board/capture/ATLAS.md`.
+  and the "Demo control panel" section of `requirements-board/requirements/capture/ATLAS.md`.
 
 ## Work items
 
@@ -277,12 +277,12 @@ contract right; do not build their triggers here.
      Esc and restores the hide style, failing the recipe if the row is missing or disabled. Document it
      in ATLAS.md's recipe format and add it to `validate()`. Recipes then stage every per-screen trigger
      with this step, never with a `/demo/control` click.
-   - Capture recipes: update each of the 18 `requirements-board/capture/recipes/*.json` that clicks a
+   - Capture recipes: update each of the 18 `requirements-board/requirements/capture/recipes/*.json` that clicks a
      Control Panel trigger (scenario jumps, clock and reset steps stay as they are): `goto` the
      trigger's screen, then a `trigger` step for the entry; move `highlight` selectors to the new hooks. A recipe that clicked
      the Control Panel's "Run payables" clicks the Billing monitor's own button
      (`[data-shot=billing-payables-run]`) instead. Rewrite the "Demo
-     control panel" section of `requirements-board/capture/ATLAS.md` to describe the index and the
+     control panel" section of `requirements-board/requirements/capture/ATLAS.md` to describe the index and the
      per-screen menu. The catalogue images are re-captured in the Catalogue screenshots step. Run `npm run verify:board`.
    - `npm run build`, `npm run build:pwa`, `npx vitest run`, `npm run shots` green before session 2.
 
@@ -457,7 +457,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 14` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -468,7 +468,7 @@ matches what was built:
 **Baseline sweep (Phase 14 only).** This is the first catch-up phase, so it also brings the whole
 capture set to a clean baseline, whatever the stories it covers:
 
-1. **Fix the 4 recipes that fail today** (`requirements-board/capture/REPORT.md`, "Failed recipes":
+1. **Fix the 4 recipes that fail today** (`requirements-board/requirements/capture/REPORT.md`, "Failed recipes":
    US-03.5.2, US-05.2.1, US-05.3.5 and US-05.4.1). All four highlight
    `[data-testid=card-calculation]`, which the 2026-09-28 decision removed from the anaesthetist
    Booking (PROGRESS Decisions log, "Anaesthetist Card shows no calculation"). Each is re-pointed to

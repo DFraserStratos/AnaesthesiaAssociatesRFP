@@ -145,7 +145,7 @@ describe('reading files without a DOM', () => {
   })
 
   it("reads a Markdown document's headings (slugged as GitHub does) and lines, ignoring code", () => {
-    const md = '# Title\n\nSetext heading\n--------------\n\n## Prepayment, *cancellation* and [reassignment](x)\n\n```\n# not a heading\n```\n\n## Title\n\n**Greg:** We wear it.\n'
+    const md = '# Title\n\nSetext heading\n--------------\n\n## Prepayment, *cancellation* and [reassignment](x)\n\n```\n# not a heading\n```\n\n## Title\n\n**Sam:** We cover it.\n'
     const f = markdownFacts(md)
     expect(f.headings.map((h) => [h.depth, h.slug])).toEqual([
       [1, 'title'],
@@ -154,7 +154,7 @@ describe('reading files without a DOM', () => {
       [2, 'title-1'],
     ])
     expect(f.lines).toBe(14)
-    expect(f.loose.includes(looseText('Greg: We wear it.'))).toBe(true)
+    expect(f.loose.includes(looseText('Sam: We cover it.'))).toBe(true)
     expect(slugify('Fees, BCTIs & GST: 2026')).toBe('fees-bctis--gst-2026')
   })
 })

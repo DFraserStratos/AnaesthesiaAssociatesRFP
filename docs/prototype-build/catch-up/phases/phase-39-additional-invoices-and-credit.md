@@ -1112,7 +1112,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 may have changed these recipes since this plan was written. FT-08.6 is covered, so the tool lists
 every story under it, 38b's included.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1246,7 +1246,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
 - **Catalogue screenshots result:** recipes created or changed (US-08.6.2, US-08.6.4, US-08.6.5,
-  US-08.6.6, US-13.5.2, plus any recipe this phase broke), the `capture/REPORT.md` counts (captured,
+  US-08.6.6, US-13.5.2, plus any recipe this phase broke), the `requirements-board/requirements/capture/REPORT.md` counts (captured,
   partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** the Phase 08 and 09 rulings that "a negative invoice is never raised; a real

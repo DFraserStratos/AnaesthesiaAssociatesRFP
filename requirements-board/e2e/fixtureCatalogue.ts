@@ -9,16 +9,25 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { crc32, deflateSync } from 'node:zlib'
-import { writeItem, writeLayout } from '../server/catalogueFs.ts'
+import { configPath, writeItem, writeLayout } from '../server/catalogueFs.ts'
 import { serialiseArtifact } from '../shared/files.ts'
 import type { Artifact, Item } from '../shared/types.ts'
 
 export const FIXTURE_DIR = join(tmpdir(), 'requirements-board-e2e')
 export const FIXTURE_LANES = ['MVP', 'Phase 2']
+/** The fixture project's vocabulary (`board.config.json`). */
+export const FIXTURE_CONFIG = {
+  project: { name: 'Fixture project' },
+  components: [{ name: 'Core', code: 'COR' }, { name: 'Admin Console' }],
+  screenshotApps: [
+    { key: 'web', label: 'Web', viewport: 'desktop' },
+    { key: 'phone', label: 'Phone', viewport: 'mobile' },
+  ],
+}
 
 /** 2 epics x 4 features x 3 stories; each feature's first story is in MVP. */
 export function fixtureItems(): Item[] {
-  const base = { status: 'Proposed', components: ['Scheduling Engine'], sources: ['Fixture'], images: [], description: '', acceptance: '', technical: '', notes: '', extra: {}, swimlane: null } as const
+  const base = { status: 'Proposed', components: ['Core'], sources: ['Fixture'], images: [], description: '', acceptance: '', technical: '', notes: '', extra: {}, swimlane: null } as const
   const out: Item[] = []
   for (let e = 1; e <= 2; e++) {
     const ep = `EP-0${e}`
@@ -40,6 +49,7 @@ export function writeFixture(dir = FIXTURE_DIR) {
   mkdirSync(join(dir, 'questions'), { recursive: true })
   for (const it of fixtureItems()) writeItem(it, dir)
   writeLayout({ positions: {}, lanes: FIXTURE_LANES }, dir)
+  writeFileSync(configPath(dir), JSON.stringify(FIXTURE_CONFIG, null, 2) + '\n')
   writeFixtureArtifacts(dir)
 }
 
@@ -134,7 +144,7 @@ const artifact = (a: Partial<Artifact> & Pick<Artifact, 'id' | 'title' | 'kind'>
   citedAs: [],
   date: null,
   author: 'Fixture',
-  components: ['Scheduling Engine'],
+  components: ['Core'],
   sources: ['Fixture'],
   file: null,
   regions: [],

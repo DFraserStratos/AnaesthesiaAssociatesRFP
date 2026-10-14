@@ -13,7 +13,7 @@ import {
 import { Filter, LayoutGrid, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { applyMove, planMove, type Move } from '../../shared/move.ts'
-import { COMPONENTS, ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
+import { ITEM_STATUSES, ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/types.ts'
 import { BoardMinimap } from '../board/BoardMinimap.tsx'
 import { BoardSearch } from '../board/BoardSearch.tsx'
 import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
@@ -31,7 +31,7 @@ import { PanelResizer, readPanel, writePanel } from '../components/PanelResizer.
 import { ItemModal } from '../components/ItemModal.tsx'
 import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useIndex, useView, type BoardMode, type Index } from '../store.ts'
+import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
@@ -482,7 +482,7 @@ function Board({ mode }: { mode: BoardMode }) {
           onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
         >
-          {/* The anaesthetic chart's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
+          {/* The chart paper's ruling: one faint grid (--grid), quiet enough to read cards over. Mapped has no ruling. */}
           {!mapped && <Background variant={BackgroundVariant.Lines} gap={80} color="#e3eae7" lineWidth={1} />}
           <PanLimits bounds={bounds} dock={dockPx} limit={limit} />
           <BoardMinimap
@@ -684,6 +684,7 @@ function TidyAsk({ moved, onConfirm, onCancel }: { moved: number; onConfirm: () 
 
 function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
   const view = useView()
+  const components = useComponents()
   const ref = useDismiss<HTMLDivElement>(onClose, anchor)
   const toggle = <T extends string>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   return (
@@ -693,7 +694,7 @@ function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElemen
         {/* Retired is offered only while retired cards are on show (or still picked, so it can be cleared). */}
         {ITEM_STATUSES.filter((s) => s !== 'Retired' || view.showRetired || view.statuses.includes(s)).map((s) => (
           <button key={s} className="status-toggle" aria-pressed={view.statuses.includes(s)} onClick={() => view.set({ statuses: toggle(view.statuses, s) })}>
-            <StatusLabel status={s} />
+            <StatusLabel item status={s} />
           </button>
         ))}
       </div>
@@ -707,7 +708,7 @@ function FilterPopover({ anchor, onClose }: { anchor: RefObject<HTMLButtonElemen
       </div>
       <h4>Component</h4>
       <div className="chip-row">
-        {COMPONENTS.map((c) => (
+        {components.map((c) => (
           <button key={c} className="chip toggle" aria-pressed={view.components.includes(c)} onClick={() => view.set({ components: toggle(view.components, c) })}>
             <Glyph component={c} /> {c}
           </button>

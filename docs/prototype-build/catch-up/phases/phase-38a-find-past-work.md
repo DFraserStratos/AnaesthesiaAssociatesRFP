@@ -705,7 +705,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 38a` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -800,7 +800,7 @@ re-raise anything settled in the Decisions log.
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
 - **Catalogue screenshots result:** recipes created (US-07.4.2, FT-07.4, US-03.1.6, US-03.1.7) or
-  changed (US-07.4.1, US-07.2.1, any re-pointed), the `capture/REPORT.md` counts (captured, partial,
+  changed (US-07.4.1, US-07.2.1, any re-pointed), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial,
   absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the Phase 08 build reading and the 2026-07-22 third external plan review #12

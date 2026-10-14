@@ -697,7 +697,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 changed these recipes since this plan was written. Stale captions describing the ASA seed, absorbed
 positioning or the demo modifier set are replaced here, by the phase that rebuilds the screen.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -789,7 +789,7 @@ and records the pass. Do not re-raise anything settled in the Decisions log.
   (Ellison's capture, the Spine Booking, the picker, the Admin Modifiers tab).
 - **Catalogue screenshots result:** the recipe created (US-03.3.8), re-pointed (US-05.1.4), changed
   (US-03.3.4, US-05.1.5) and the broken ones fixed (US-03.3.5, US-05.2.3, US-13.4.1, and any US-05.1.1
-  caption), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed)
+  caption), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed)
   before and after, and any partial reason handed on.
 - Status row for catch-up Phase 19b, and a phase entry: what was built, the parity result with the
   moved figures, the review pass (findings confirmed and fixed, anything not treated as a defect and

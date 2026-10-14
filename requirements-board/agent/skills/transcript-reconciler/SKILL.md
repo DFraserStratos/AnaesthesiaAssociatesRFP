@@ -10,7 +10,9 @@ Reconstructs the best-supported transcript from several imperfect transcriptions
 recording. It is still a transcript: it keeps the conversation, it does not summarise it.
 
 Output: one Markdown file, by default
-`requirements-board/requirements/artifacts/files/<meeting name> Reconciled Transcript.md`.
+`REQ/artifacts/files/<meeting name> Reconciled Transcript.md`, where `REQ` is the requirements folder
+(in this repo `requirements-board/requirements`; the only repo-specific fact here, so rewrite it when
+the board moves).
 
 ## Ground rules
 
@@ -136,7 +138,7 @@ back gets a second heading later.
 - Follow any copy rules the project sets for its documents.
 
 Save to the default path above unless the user names another. If the project has no
-`requirements-board/requirements/artifacts/files/`, save beside the first source and say where. If
+`REQ/artifacts/files/`, save beside the first source and say where. If
 the file already exists, ask before overwriting it.
 
 ## 5. Check

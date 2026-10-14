@@ -748,7 +748,7 @@ page, 19a's price list) may have changed these recipes since this plan was writt
 captions and absent reasons describe the old model (prepaid "RVG codes or groups", an office-only
 unit value, "HPI"); each one below is replaced when its recipe is updated.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

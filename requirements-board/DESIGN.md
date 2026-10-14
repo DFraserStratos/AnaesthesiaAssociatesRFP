@@ -1,8 +1,9 @@
 # Requirements Board: design north star
 
-Read this before changing anything visual in `requirements-board/`. These are settled decisions
-from working with the product owner; extend them, don't relitigate them. (The prototype's own
-design rules in `docs/design/` govern `aa-prototype/`, not this tool.)
+Read this before changing anything visual in the board. These are settled decisions from working
+with the product owner; extend them, don't relitigate them. The board carries no project's
+branding: a project's own design rules govern its own app, not this tool, and its name appears
+only as quiet text beside the board's name (`project.name` in `board.config.json`).
 
 ## Philosophy
 
@@ -42,10 +43,11 @@ amber and Confirmed's green. Where an item came from is its sources, never its s
 **Sizes carry level.** Epics are wide bars spanning their features; features are taller cards
 (168px); stories are compact (112px). Keep features visibly taller than stories.
 
-**Other fixed choices:** the Freeform canvas is the faint teal-grey grid of an anaesthetic chart, one 80px
+**Other fixed choices:** the Freeform canvas is the faint teal-grey grid of recorder chart paper, one 80px
 ruling kept low enough in contrast that cards read cleanly over it (Mapped uses the same paper without the ruling: see Board modes); type is
 Hanken Grotesk for everything, JetBrains Mono only for genuine codes; sentence case; teal
-`#0D6E63` is the only action colour; AA crimson only for the wordmark; no en or em dashes in any
+`#0D6E63` is the only action colour; the masthead mark is the board's own card-on-a-grid drawing,
+never a project's logo or colour; no en or em dashes in any
 UI copy (use a middot, a comma or "to").
 
 ## Cards

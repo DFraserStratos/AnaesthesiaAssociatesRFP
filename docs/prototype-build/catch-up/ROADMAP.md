@@ -572,8 +572,8 @@ one. One proper review comes **after all catch-up phases are finished**. So, fro
 ### Catalogue screenshots
 
 The catalogue's stories carry screenshots of the prototype, taken by the Requirements Board's capture
-runner from one recipe per item (`requirements-board/capture/recipes/<ID>.json`; format, routes, hooks
-and selector tips in `requirements-board/capture/ATLAS.md`). When a phase is done, the screenshots on
+runner from one recipe per item (`requirements-board/requirements/capture/recipes/<ID>.json`; format, routes, hooks
+and selector tips in `requirements-board/requirements/capture/ATLAS.md`). When a phase is done, the screenshots on
 its stories must show what it built, and no other story's screenshots may be left showing a screen the
 phase changed. Every phase therefore ends with this step, after the review pass and before the
 PROGRESS.md entry:
@@ -600,7 +600,7 @@ PROGRESS.md entry:
 3. **Capture.** With the prototype on 5173 and the PWA on 5174 (if they are not running, start root
    `npm run dev` in the background and stop it afterwards), run `node scripts/capture.ts --dry` in
    `requirements-board/`, fix what fails, then a full `npm run capture`. The full run rewrites only
-   images that changed, links them into the items' `images`, and rewrites `capture/REPORT.md`. It
+   images that changed, links them into the items' `images`, and rewrites `requirements-board/requirements/capture/REPORT.md`. It
    must end with no failed recipe and no story without a recipe.
 4. **Look at the shots.** Open the new and changed images for the covered items and check that each
    shows the built feature, the highlight lands on it, and the caption is true.

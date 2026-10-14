@@ -294,7 +294,7 @@ Assign List works from any free session on it.
   web Lists, WeekStrip, Availability grid, Dashboard, the "Session model" notes) and
   `prototype-map-shell-demo-pwa.md` (section 7, the PWA, and section 9, extension points). The maps
   predate Phases 14 to 27: Phase 17's and 15b's PROGRESS entries name what they added or renamed.
-- `requirements-board/capture/ATLAS.md` and the recipes for US-01.x: they hard-code List ids,
+- `requirements-board/requirements/capture/ATLAS.md` and the recipes for US-01.x: they hard-code List ids,
   `[data-testid=admin-list-drawer]` and the "open for cover" text (work item 23).
 
 **Code entry points** (paths under `aa-prototype/src/`; names follow Phase 15's Card to Booking rename map, so where a file kept its old name, use that; line numbers are at plan update and drift):
@@ -1013,7 +1013,7 @@ Assign List works from any free session on it.
     that greps the rendered admin, mobile and web screens touched here for `\bslots?\b`
     (case-insensitive) and finds none.
 
-23. **Capture recipes** (`requirements-board/capture/recipes/`): done in the "Catalogue screenshots"
+23. **Capture recipes** (`requirements-board/requirements/capture/recipes/`): done in the "Catalogue screenshots"
     step below, after the review pass. Find the recipes this phase breaks by grepping them for the
     free-session List ids (for example `L-41267-2026-07-21-PM`, `L-47733-2026-07-21-PM`,
     `L-34821-2026-07-22-PM`), "open for cover", "Offer cover", "Book (phone advice)", "Reassign",
@@ -1216,7 +1216,7 @@ changed these recipes since this plan was written. This replaces work item 23's 
 re-pointing described there is part of this step, and the captures are re-run. No recipe caption
 says "slot"; say session.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built (FT-01.1 brings US-01.1.1 to US-01.1.4; FT-01.2 brings US-01.2.1 to US-01.2.3):
 
 | Item | Recipe at plan time | When this phase is done |

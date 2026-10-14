@@ -1,6 +1,6 @@
 # Screen atlas for capture recipes
 
-Shared knowledge for writing `capture/recipes/<ID>.json`, so each agent does not work out the
+Shared knowledge for writing `requirements-board/requirements/capture/recipes/<ID>.json`, so each agent does not work out the
 prototype again. The prototype is `aa-prototype/` (React over a seeded in-browser fake backend).
 The demo clock starts at **Tue 21 Jul 2026, 08:00**. It never ticks by itself.
 
@@ -22,7 +22,7 @@ The demo clock starts at **Tue 21 Jul 2026, 08:00**. It never ticks by itself.
 
 ## Recipe format
 
-Write one file per catalogue item, at `requirements-board/capture/recipes/<ID>.json`.
+Write one file per catalogue item, at `requirements-board/requirements/capture/recipes/<ID>.json`.
 
 ```json
 {
@@ -109,7 +109,7 @@ The runner is `requirements-board/scripts/capture.ts`:
 ```
 node scripts/capture.ts --only US-03.2.4        # one item (an epic/feature ID takes its descendants)
 node scripts/capture.ts --only US-03.2.4 --dry  # run steps and selectors, write nothing
-npm run capture                                 # everything, and writes capture/REPORT.md
+npm run capture                                 # everything, and writes requirements-board/requirements/capture/REPORT.md
 ```
 
 Run these from `requirements-board/`.

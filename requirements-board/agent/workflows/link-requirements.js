@@ -2,7 +2,7 @@ export const meta = {
   name: 'link-requirements',
   description: 'Sonnet agents propose and adversarially verify links between requirements (text links + related), batch by batch',
   whenToUse:
-    'After requirements are added or reworded, to link each live item to the items that define what its text names. Run `npm --prefix requirements-board run links:index` first (writes requirements-board/.links/index.md); apply the result with `npm --prefix requirements-board run links:apply -- --dry-run`, then without --dry-run.',
+    'After requirements are added or reworded, to link each live item to the items that define what its text names. Run `npm --prefix <board> run links:index` first (writes <board>/.links/index.md and <board>/.links/batches.json) and pass `batches` (the epics touched, or the whole of batches.json); apply the result with `npm --prefix <board> run links:apply -- --dry-run`, then without --dry-run. <board> is the board folder, `requirements-board` unless args.board says otherwise.',
   phases: [
     { title: 'Propose', detail: 'one Sonnet agent per batch of epics reads its items and proposes links', model: 'sonnet' },
     { title: 'Verify', detail: 'one Sonnet agent per batch re-reads source and target and rejects weak links', model: 'sonnet' },
@@ -10,32 +10,31 @@ export const meta = {
 }
 
 /*
- * args (all optional; paths relative to the repo root):
- *   indexPath  the catalogue index from `links:index` (default requirements-board/.links/index.md)
- *   outDir     where the proposal files go (default requirements-board/.links, gitignored; links:apply
+ * args (paths relative to the repo root):
+ *   batches    required: epic groups, e.g. [["EP-06"]] to try one epic first, or the whole of
+ *              <board>/.links/batches.json (written by `links:index`) for a full run
+ *   board      the board's folder (default requirements-board); the catalogue is its requirements/
+ *   indexPath  the catalogue index from `links:index` (default <board>/.links/index.md)
+ *   outDir     where the proposal files go (default <board>/.links, gitignored; links:apply
  *              reads this folder by default, so pass it the same path if you change it)
- *   batches    epic groups, e.g. [["EP-06"]] to try one epic first
  *
  * Nothing here edits the catalogue: agents write <outDir>/<batch>.proposed.json and
  * <batch>.verified.json, and `scripts/apply-links.ts` applies the verified ones deterministically.
  */
 const A = args || {}
-const INDEX = A.indexPath || 'requirements-board/.links/index.md'
-const OUT = A.outDir || 'requirements-board/.links'
-const BATCHES = A.batches || [
-  ['EP-01', 'EP-02'],
-  ['EP-03', 'EP-12'],
-  ['EP-04', 'EP-06'],
-  ['EP-05', 'EP-10'],
-  ['EP-07', 'EP-08'],
-  ['EP-09', 'EP-11'],
-  ['EP-13', 'EP-14', 'EP-15'],
-]
-const REQUIREMENTS = 'requirements-board/requirements'
+const BOARD = A.board || 'requirements-board'
+const INDEX = A.indexPath || `${BOARD}/.links/index.md`
+const OUT = A.outDir || `${BOARD}/.links`
+const BATCHES = Array.isArray(A.batches) ? A.batches : []
+const REQUIREMENTS = `${BOARD}/requirements`
+if (!BATCHES.length) {
+  log(`No batches given. Run \`npm --prefix ${BOARD} run links:index\`, then pass batches: the touched epics, or the contents of ${OUT}/batches.json.`)
+  return { batches: [], missing: [] }
+}
 
 const SHAPES = `Proposal shapes (JSON):
-  {"kind":"inline","item":"US-06.2.1","field":"description","anchor":"anaesthetist's prepaid set","occurrence":1,"target":"US-06.1.1","reason":"US-06.1.1 is where the anaesthetist ticks the codes in their prepaid set"}
-  {"kind":"related","from":"US-06.1.1","to":"US-06.2.1","reason":"the prepaid setting and the rule that reads it"}
+  {"kind":"inline","item":"US-03.2.1","field":"description","anchor":"customer's approval limit","occurrence":1,"target":"US-03.1.4","reason":"US-03.1.4 is where the customer's approval limit is set"}
+  {"kind":"related","from":"US-03.1.4","to":"US-03.2.1","reason":"the approval-limit setting and the rule that reads it"}
 - field: one of description, acceptance, technical, notes (the body before any "## " heading is the description; "## Acceptance criteria", "## Technical discussion" and "## Notes" are the others).
 - anchor: copied character for character from that field (same case, punctuation and apostrophe style), whole words, not inside an existing [text](ID) link or backticks.
 - occurrence: which occurrence of that exact anchor in the field to link, counting only occurrences outside links and code (1 = the first).
@@ -46,7 +45,7 @@ const RULES = `The linking rules are the "## Links" section of ${REQUIREMENTS}/S
 - Inline link: a phrase naming a rule, concept or behaviour that another item DEFINES. Link the shortest natural phrase; never propose rewording.
 - Target the most specific item (story over feature over epic). Never the item itself, its own parent or epic, or its own children. Never a Retired item (the index lists only live items).
 - First mention per field only; one link per target per field; about four text links per item at most. An item with nothing worth linking gets nothing.
-- Leave everyday domain nouns (Booking, List, Procedure, Contract, anaesthetist) unlinked unless the sentence relies on the specific rule one item states.
+- Leave everyday domain nouns (the project's core records and roles, as named in its domain model) unlinked unless the sentence relies on the specific rule one item states.
 - related: items coupled in a way the text does not name (a setting and the rule that reads it, a UI story and its engine story, one step and the next). About four per item at most; siblings are not related just for being siblings. Skip it when either item's text already links the other.
 - Bare IDs already in the text (like "(OQ-25)") already render as links; leave them alone.`
 
@@ -78,7 +77,7 @@ const propose = (epics) =>
 Read, in this order:
 1. ${INDEX}: one line per live item in the WHOLE catalogue (ID, type, status, title, first sentence, existing related and links), then the open questions. This is how you find targets outside your batch.
 2. ${REQUIREMENTS}/SCHEMA.md, the "## Links" section.
-3. The glossary in requirements-board/requirements/domain-model.md (skim, for what terms mean).
+3. The glossary in ${REQUIREMENTS}/domain-model.md, if there is one (skim, for what terms mean).
 4. Every file of your batch: ${filesOf(epics)}. Work only on IDs that appear in the index (retired items and items under them are left out).
 
 ${RULES}
@@ -123,5 +122,5 @@ const missing = BATCHES.map(nameOf).filter((b) => !done.some((r) => r.batch === 
 if (missing.length) log(`No verified file for: ${missing.join(', ')}. Re-run with batches for those.`)
 const total = (k) => done.reduce((n, r) => n + ((r.verified && r.verified[k]) || 0), 0)
 log(`Accepted ${total('inline')} text link(s) and ${total('related')} relation(s); rejected ${total('rejected')}.`)
-log(`Next: npm --prefix requirements-board run links:apply -- --dry-run, read ${OUT}/links-report.md, then run it without --dry-run.`)
+log(`Next: npm --prefix ${BOARD} run links:apply -- --dry-run, read ${OUT}/links-report.md, then run it without --dry-run.`)
 return { batches: done, missing }

@@ -282,10 +282,10 @@ draft design v4: No contract (RVG) first, then holder-fit candidates), for the S
 - Tests and hooks: `aa-prototype/visual/phase11.spec.ts`, `visual/screens.spec.ts`,
   `visual/pwa-device.spec.ts`, `store/integrationActions.test.ts`, `store/demoScenarios.test.ts`,
   `store/persistMigrate.test.ts`, `shared/audit/actionLabels.ts` and `auditNarrative.test.ts`.
-- Outside the app: capture recipes `requirements-board/capture/recipes/*.json` FT-02.2, US-02.1.1 to
+- Outside the app: capture recipes `requirements-board/requirements/capture/recipes/*.json` FT-02.2, US-02.1.1 to
   US-02.1.4, US-02.2.1, US-11.1.2, US-14.1.1, US-14.2.1, US-14.3.1 and US-14.5.1 (at the snapshot they
   open `/admin/integrations` or `/demo/integrations`; Phase 33 points some at `/admin/matching`), and
-  `requirements-board/capture/ATLAS.md`. There is no US-02.1.5 recipe yet.
+  `requirements-board/requirements/capture/ATLAS.md`. There is no US-02.1.5 recipe yet.
 - Visual specs: `visual/phase12.spec.ts` (S1, which Phase 33 routes through the matching screen) and
   Phase 33's `visual/admin-matching.spec.ts`.
 
@@ -780,7 +780,7 @@ re-points the matching shots this phase moves). The harness bar is hidden in sho
 `/admin/intake/matching` (for example `{ "trigger": "simulate-hospital-sync", "choice": "St George's" }`;
 ATLAS.md, "Recipe format" and "Demo control panel and Demo actions"). The `/demo/control` index has no trigger buttons.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -814,7 +814,7 @@ and the `--dry` run):
 - **S1-related recipes the rebuild changes.** Any recipe that stages Sarah Mitchell's S1 Booking by
   firing MSG-STG-1001 or hand-importing `SAMPLE_STG` (Phase 20a's US-02.5.7 or US-03.1.9 shots of her
   stack, Phase 20's US-04.3.4 `needs-contract` shot, Phase 33's matching shots, whatever the status tool
-  and `grep -l "MSG-STG-1001\|SAMPLE_STG\|Sarah" requirements-board/capture/recipes/*.json` find):
+  and `grep -l "MSG-STG-1001\|SAMPLE_STG\|Sarah" requirements-board/requirements/capture/recipes/*.json` find):
   keep its shot names and re-stage it through the S1 path where the shot is about S1 (the
   `simulate-hospital-sync` trigger, the row's decision, then No contract (RVG)), or leave its own
   setup where it is not. What each must show when done: the wording `lap appy ?conv to open` exactly as

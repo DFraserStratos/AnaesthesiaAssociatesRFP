@@ -154,7 +154,7 @@ function Row({ id, n, item, index, query, active, onPick }: { id: string; n: num
       <span className="search-row-name">
         <Highlight text={item.title} query={query} />
       </span>
-      {item.status !== BASELINE_STATUS ? <StatusLabel status={item.status} /> : <span />}
+      {item.status !== BASELINE_STATUS ? <StatusLabel item status={item.status} /> : <span />}
       {context ? (
         <span className="search-row-where">
           {context.label}: <Highlight text={context.text} query={query} />

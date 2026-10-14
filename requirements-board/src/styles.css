@@ -1,6 +1,6 @@
 /*
- * Requirements Board. Concept: the anaesthetic record chart. The canvas is
- * the chart's faint teal-grey grid; cards are crisp paper tags pinned onto it.
+ * Requirements Board. Concept: a recorder's chart paper. The canvas is the
+ * chart's faint teal-grey grid; cards are crisp paper tags pinned onto it.
  * Everything else stays quiet.
  */
 :root {
@@ -19,7 +19,6 @@
   --teal: #0d6e63;
   --teal-hover: #0a5a51;
   --teal-tint: #e3f1ee;
-  --crimson: #a91e3e;
   --danger: #a33a2a;
   --danger-tint: #fbece8;
   --warn-tint: #fdf4e3;
@@ -128,20 +127,29 @@ button {
 }
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
+  min-width: 0;
   white-space: nowrap;
 }
 .brand-mark {
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: -0.02em;
-  color: var(--crimson);
+  flex: none;
+  border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--rule);
 }
 .brand-name {
   font-weight: 600;
   font-size: 15px;
   color: var(--ink);
+}
+.brand-project {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--ink-3);
+  padding-left: 10px;
+  border-left: 1px solid var(--rule);
 }
 .tabs {
   display: flex;
@@ -3097,6 +3105,14 @@ mark {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+.artifact-tools .kind-toggle {
+  height: 34px;
+}
+/* Not sized to the longest area name, so Grid and List stay on the row; a long one is clipped. */
+.artifact-tools .select[aria-label='Area'] {
+  width: 110px;
+  text-overflow: ellipsis;
 }
 .kind-toggle .kind-count {
   font-size: 11px;

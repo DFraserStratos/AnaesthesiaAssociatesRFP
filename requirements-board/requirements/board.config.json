@@ -1,0 +1,44 @@
+{
+  "project": {
+    "name": "Anaesthesia Associates",
+    "locale": "en-NZ"
+  },
+  "components": [
+    { "name": "Scheduling Engine", "code": "SCH" },
+    { "name": "Billing/Invoice Engine", "code": "BIL" },
+    { "name": "Anaesthetist App (mobile + web)", "code": "ANA" },
+    { "name": "Admin App", "code": "ADM" },
+    { "name": "Xero Integration", "code": "XRO" },
+    { "name": "Health Integration", "code": "HL7" },
+    { "name": "Master Data", "code": "MDM" },
+    { "name": "Cross-cutting", "code": "NFR" }
+  ],
+  "screenshotApps": [
+    { "key": "admin", "label": "Admin", "viewport": "desktop" },
+    { "key": "web", "label": "Web", "viewport": "desktop" },
+    { "key": "mobile", "label": "Mobile", "viewport": "mobile" },
+    { "key": "simulator", "label": "Simulator", "viewport": "desktop" }
+  ],
+  "statuses": {
+    "Proposed": { "help": "Needs sign-off from AA" },
+    "Verify": { "help": "Question answered, the whole item still to check with AA" },
+    "Confirmed": { "help": "Agreed with AA" }
+  },
+  "questionKinds": {
+    "missing-source": { "help": "A requirement with no known origin: add its source (RFP page, a note in notes/, or Q&A) to the item" }
+  },
+  "capture": {
+    "recipes": "capture/recipes",
+    "report": "capture/REPORT.md",
+    "steps": "capture/steps.ts",
+    "locale": "en-NZ",
+    "timezone": "Pacific/Auckland",
+    "apps": {
+      "admin": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "web": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "simulator": { "url": "http://localhost:5173", "setupRoute": "/", "hideCss": "#root > div > header:first-child { display: none !important; }" },
+      "mobile": { "url": "http://localhost:5174", "setupRoute": "/mobile/lists", "hideCss": "[data-shot=\"pwa-demo-actions\"] { display: none !important; }" }
+    },
+    "startHint": "Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174)."
+  }
+}

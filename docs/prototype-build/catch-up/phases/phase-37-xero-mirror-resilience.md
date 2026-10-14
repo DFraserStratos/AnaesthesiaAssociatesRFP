@@ -272,10 +272,10 @@ snapshot; Phase 36 renames most of them (see drift check step 4), so re-read the
   `aa-prototype/visual/` (not under `src/`): `xero-pair.spec.ts`, `admin-phase08.spec.ts` (handoff
   failure), `admin-phase09.spec.ts` (the Billing monitor's pipeline cards and Resolve & retry, which the
   restyle changes), `phase12.spec.ts` and `demo-actions.spec.ts` (both open `/admin/billing`).
-- Outside the app: `requirements-board/capture/recipes/US-09.2.4.json` (its four captures walk the old
+- Outside the app: `requirements-board/requirements/capture/recipes/US-09.2.4.json` (its four captures walk the old
   engine-side payout), `US-13.3.1.json` and `FT-13.3.json` (the whole monitor), and the recipes that
   highlight `[data-shot=billing-pipeline-<listId>]` or rows inside it (`US-08.1.1`, `US-08.3.4`,
-  `US-08.5.1`, `US-08.5.2`, `US-10.1.2`, `US-13.3.2`) and `requirements-board/capture/ATLAS.md` (sections "Existing hooks" and "Demo
+  `US-08.5.1`, `US-08.5.2`, `US-10.1.2`, `US-13.3.2`) and `requirements-board/requirements/capture/ATLAS.md` (sections "Existing hooks" and "Demo
   control panel", as Phase 14 left them).
 
 ## Work items
@@ -679,11 +679,11 @@ only from the demo clock (`clockISO`, `advanceMinutes`); no `Date.now()`, `new D
     with `data-shot` hooks. New `visual/xero-resilience.spec.ts`: outage from the Billing monitor, authorise a
     List, the queue row, `+15 min`, restore, one Xero pair; void from a pair then the poll, the flag;
     amend another then the poll, the flag; the bulk remittance and the unmatched item; with `data-shot`
-    hooks. Re-point `requirements-board/capture/recipes/US-09.2.4.json` to "Pay anaesthetist in Xero
+    hooks. Re-point `requirements-board/requirements/capture/recipes/US-09.2.4.json` to "Pay anaesthetist in Xero
     (payables run)" and the Billing monitor's "Run payables in Xero"; add the new hooks
     (`billing-xero-queue`, `billing-xero-divergence`, `xero-bank-reconciliation`,
     `billing-monitor-filters`, `billing-group-<anaesthetistId>`, `billing-awaiting-<listId>`,
-    `demo-action-<id>` for the six new entries, and the monitor's search params) to `requirements-board/capture/ATLAS.md` "Existing hooks", and in its "Demo
+    `demo-action-<id>` for the six new entries, and the monitor's search params) to `requirements-board/requirements/capture/ATLAS.md` "Existing hooks", and in its "Demo
     control panel" section replace the handoff-failure and payables wording with the queue and the
     Xero-side payables run; run `npm run verify:board`. The full recipe step, with every covered item
     and the recipes this phase breaks, is the Catalogue screenshots section below, run after the
@@ -909,7 +909,7 @@ is hidden in shots, so outage, void, amend, pay-bill and remittance states are s
 actions": since Phase 14 the Control Panel is an index with no trigger buttons), for example
 `{ "goto": "/admin/billing" }` then `{ "trigger": "xero-outage-start" }`.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

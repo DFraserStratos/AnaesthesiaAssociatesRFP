@@ -1,8 +1,9 @@
 import { Check, ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { statusHelpIn } from '../../shared/config.ts'
 import { ITEM_STATUSES, type ItemStatus } from '../../shared/types.ts'
+import { useConfig } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
-import { ITEM_STATUS_HELP } from '../vocab.ts'
 import { StatusLabel } from './bits.tsx'
 
 /**
@@ -11,6 +12,7 @@ import { StatusLabel } from './bits.tsx'
  * opens upward because the pill sits at the foot of the sheet.
  */
 export function StatusPicker({ status, onPick, busy = false }: { status: ItemStatus; onPick: (s: ItemStatus) => void; busy?: boolean }) {
+  const config = useConfig()
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const close = (refocus = true) => {
@@ -60,7 +62,7 @@ export function StatusPicker({ status, onPick, busy = false }: { status: ItemSta
           }
         }}
       >
-        <StatusLabel status={status}>
+        <StatusLabel item status={status}>
           <ChevronDown size={12} strokeWidth={2.4} aria-hidden />
         </StatusLabel>
       </button>
@@ -68,8 +70,8 @@ export function StatusPicker({ status, onPick, busy = false }: { status: ItemSta
         <div ref={menu} className="status-menu" role="menu" aria-label="Status" onKeyDown={onMenuKey}>
           {ITEM_STATUSES.map((s) => (
             <button key={s} type="button" role="menuitemradio" aria-checked={s === status} className={s === 'Retired' ? 'retire' : undefined} onClick={() => pick(s)}>
-              <StatusLabel status={s} />
-              <span className="status-menu-help">{ITEM_STATUS_HELP[s]}</span>
+              <StatusLabel item status={s} />
+              <span className="status-menu-help">{statusHelpIn(config, s)}</span>
               {s === status && <Check size={15} strokeWidth={2.4} className="status-menu-check" aria-hidden />}
             </button>
           ))}

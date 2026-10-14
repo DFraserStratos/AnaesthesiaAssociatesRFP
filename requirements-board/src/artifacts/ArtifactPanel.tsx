@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isArtifactDate } from '../../shared/check.ts'
 import { tidyText } from '../../shared/files.ts'
-import { ARTIFACT_KINDS, ARTIFACT_STATUSES, COMPONENTS, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item } from '../../shared/types.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type Artifact, type ArtifactKind, type ArtifactRec, type ArtifactStatus, type Item } from '../../shared/types.ts'
 import { autoSpots, linkCount, namedSpots, spotName, useArtifactIndex, type ArtifactLink, type Spot } from '../artifactIndex.ts'
 import { ArtifactRowsSection } from '../components/ArtifactRows.tsx'
 import { ArtifactIcon, Glyph, ItemName, StatusLabel } from '../components/bits.tsx'
@@ -20,7 +20,7 @@ import { Prose } from '../components/Prose.tsx'
 import { useEditableRecord } from '../components/useEditableRecord.ts'
 import { artifactUrl, useOpen } from '../nav.ts'
 import { sourceRow, useSourceIndex } from '../sourceRows.ts'
-import { useCatalogue, useView } from '../store.ts'
+import { useCatalogue, useComponents, useView } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate, statusClass } from '../vocab.ts'
 import { ArtifactHistory } from './ArtifactHistory.tsx'
 
@@ -182,6 +182,7 @@ function PanelVeil({ confirm }: { confirm: NonNullable<ReturnType<typeof discard
  * area, sources and description. The file, its highlights and its ID are not here: agents write those.
  */
 function DetailsForm({ draft, set, others }: { draft: Artifact; set: (p: Partial<Artifact>) => void; others: ArtifactRec[] }) {
+  const components = useComponents()
   const date = draft.date?.trim() ?? ''
   const dateOk = !date || isArtifactDate(date)
   const authors = useCatalogue((s) => [...new Set(Object.values(s.artifacts).map((r) => r.data.author).filter(Boolean))].sort().join('\n'))
@@ -246,7 +247,7 @@ function DetailsForm({ draft, set, others }: { draft: Artifact; set: (p: Partial
       <div className="field">
         <span>Area</span>
         <div className="chip-row">
-          {COMPONENTS.map((c) => {
+          {[...new Set([...components, ...draft.components])].map((c) => {
             const on = draft.components.includes(c)
             return (
               <button key={c} type="button" className="chip toggle" aria-pressed={on} onClick={() => set({ components: on ? draft.components.filter((x) => x !== c) : [...draft.components, c] })}>
@@ -363,7 +364,7 @@ function Linked({ rec, links, asked, onSpot }: { rec: ArtifactRec; links: Artifa
       ) : (
         <span />
       )}
-      <StatusLabel status={l.item.status} />
+      <StatusLabel item status={l.item.status} />
     </div>
   )
   return (

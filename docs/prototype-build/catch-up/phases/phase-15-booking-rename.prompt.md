@@ -32,7 +32,7 @@ Before doing anything else, read these in order:
      - 2026-07-27 "Paired capture cards match heights; attachments can be removed" (the component-side attachment id fix);
      - 2026-07-27 "The web card detail and List detail are now DESKTOP layouts";
    - the Phase 14 entry, if 14 has run.
-8. requirements-board/capture/ATLAS.md: the "Personas and IDs", "Routes", "Overlays that need clicks" and "Existing hooks" sections. The catalogue's screenshot recipes hard-code this app's routes, ids, text and test hooks. Also the "Catalogue screenshots" rule in ROADMAP.md.
+8. requirements-board/requirements/capture/ATLAS.md: the "Personas and IDs", "Routes", "Overlays that need clicks" and "Existing hooks" sections. The catalogue's screenshot recipes hard-code this app's routes, ids, text and test hooks. Also the "Catalogue screenshots" rule in ROADMAP.md.
 
 Then do the drift check in the phase doc:
 - git diff 501b0b8 over the covered and read-alongside catalogue files and domain-model.md (the plan's snapshot; the 2026-10-01 update is already folded into the phase doc);
@@ -67,7 +67,7 @@ When done:
 - Run the manual test checklist yourself in the running app (Playwright or the /run skill, screenshots checked by eye; never hand it to me) and report each item pass or fail with its evidence.
 - Confirm npm run build, npm run build:pwa, npx vitest run, npm run shots and npm run verify:board are all green.
 - Run the adversarial review-and-fix pass (convention 18). Fan out Opus review subagents for quality, bugs/correctness, plan adherence and rename completeness. Independently verify each finding, fix the confirmed ones, and re-green all suites.
-- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.1.3 and every recipe this phase broke (all the card-named recipes, notably US-02.4.3, US-03.2.3 and US-07.3.2); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
+- run the catalogue screenshot step (ROADMAP.md "Catalogue screenshots", PROGRESS convention 19): create or update the capture recipes for US-03.1.3 and every recipe this phase broke (all the card-named recipes, notably US-02.4.3, US-03.2.3 and US-07.3.2); in requirements-board/ run node scripts/capture.ts --dry, fix what fails, then a full npm run capture (start root npm run dev in the background if 5173 or 5174 is down) with no failed recipe; look at the covered items' new shots; update requirements-board/requirements/capture/ATLAS.md where routes, ids or hooks changed; npm run verify:board green;
 - Update PROGRESS.md:
   - the status row and phase entry;
   - the drift-check result;

@@ -813,7 +813,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 17` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built (all Admin only: the stories forbid a mobile or web shot of preferences or
 tiers):
 
@@ -914,7 +914,7 @@ re-greens, and records the pass; nothing already settled in the Decisions log is
   Chen Tue 21 PM and Rutherford Wed 22 AM).
 - **Catalogue screenshots result:** the recipes filled in or created (US-13.6.1 to US-13.6.4,
   US-01.3.5, US-01.3.6) and changed (US-13.4.1, US-01.4.1 and any re-pointed), the
-  `requirements-board/capture/REPORT.md` counts before and after, and the partial reasons handed to
+  `requirements-board/requirements/capture/REPORT.md` counts before and after, and the partial reasons handed to
   Phase 31 (US-01.3.5) and Phase 28 (US-01.3.6).
 - **Status row** for catch-up Phase 17, and a phase entry with the drift-check result against
   `60e2d1e` (OQ-43 answered, OQ-102 status), the session split, what was built, the `PERSIST_VERSION`

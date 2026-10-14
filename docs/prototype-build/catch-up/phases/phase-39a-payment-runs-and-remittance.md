@@ -961,7 +961,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 changed these recipes since this plan was written. FT-10.2 has stories, so it has no recipe of its
 own: its children's shots cover it.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -988,7 +988,7 @@ button name `Run payables`:
   click; keep the shot names.
 - Recipes using the PWA or Xero-sim "Simulate payment and payout" are unaffected in effect (the
   one-pair staged run approves first); the `--dry` run is the check.
-- Re-grep before capture: `grep -n 'Run payables\|billing-payables-run' requirements-board/capture/recipes/*.json`.
+- Re-grep before capture: `grep -n 'Run payables\|billing-payables-run' requirements-board/requirements/capture/recipes/*.json`.
 
 **ATLAS.md.** Routes: `/admin/billing/payment-runs/:runId`, `.../remittance/:anaesthetistId` and
 `/web/accounts/remittances`. Existing hooks: `payment-cycle`, `payment-cycle-anomalies`,
@@ -1081,7 +1081,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - which session ended where (the session 1 checkpoint);
   - the review pass.
 - **Catalogue screenshots result:** recipes created or changed (US-10.2.5, US-10.2.6, US-10.2.7, plus
-  the re-pointed US-10.2.1, US-09.2.4, US-10.1.2 and US-08.3.4), the `capture/REPORT.md` counts
+  the re-pointed US-10.2.1, US-09.2.4, US-10.1.2 and US-08.3.4), the `requirements-board/requirements/capture/REPORT.md` counts
   (captured, partial, absent, failed) before and after, and any partial reason handed to a later
   phase.
 - **Decisions log:**

@@ -1,14 +1,12 @@
 /**
  * Catalogue integrity rules. Run by `npm run check`, by the dev server before
- * every write, and shown live in the app. Mirrors (and extends) the checks the
- * old build_requirements.py generator ran.
+ * every write, and shown live in the app. Component and screenshot-app names
+ * are checked against the project's `board.config.json` when it lists them.
  */
 import {
   ARTIFACT_EXTENSIONS,
   ARTIFACT_KINDS,
   ARTIFACT_STATUSES,
-  COMPONENTS,
-  IMAGE_APPS,
   ITEM_STATUSES,
   PARENT_TYPES,
   ITEM_TYPES,
@@ -30,6 +28,7 @@ import {
 } from './types.ts'
 import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
 import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
+import { appKeys, componentNames, DEFAULT_CONFIG, type BoardConfig } from './config.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -67,10 +66,15 @@ export interface CheckInput {
   artifacts?: Artifact[]
   /** What each artifact's file holds. Omit (or return null) to skip the file and region checks. */
   artifactFacts?: (a: Artifact) => ArtifactFacts | null
+  /** The project's vocabulary. Omit (or leave a list empty) to accept any component or screenshot app. */
+  config?: BoardConfig
 }
 
-export function checkCatalogue({ items, questions, fileExists, lanes, artifacts = [], artifactFacts }: CheckInput): Issue[] {
+export function checkCatalogue({ items, questions, fileExists, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
+  const components = componentNames(config)
+  const apps = appKeys(config)
+  const unknownComponent = (c: string) => components.length > 0 && !components.includes(c)
   const err = (id: string, message: string) => issues.push({ severity: 'error', id, message })
   const warn = (id: string, message: string) => issues.push({ severity: 'warning', id, message })
 
@@ -89,7 +93,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!it.title.trim()) err(it.id, 'title is empty')
     if (!ITEM_STATUSES.includes(it.status)) err(it.id, `status "${it.status}" is not one of ${ITEM_STATUSES.join(', ')}`)
     for (const c of it.components) {
-      if (!(COMPONENTS as readonly string[]).includes(c)) err(it.id, `component "${c}" is not in the vocabulary`)
+      if (unknownComponent(c)) err(it.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     }
     if (it.components.length === 0) warn(it.id, 'no component')
     if (it.sources.length === 0 && it.status !== 'Retired') warn(it.id, 'no source')
@@ -117,8 +121,9 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       else if (!img.src.startsWith('assets/')) err(it.id, `image ${img.src} must live under assets/ (the board only serves that folder)`)
       else if (fileExists && !fileExists(img.src)) err(it.id, `image file ${img.src} is missing`)
       if (!VIEWPORTS.includes(img.viewport)) err(it.id, `image viewport "${img.viewport}" is not desktop or mobile`)
-      if (img.app !== undefined && !IMAGE_APPS.includes(img.app)) err(it.id, `image app "${img.app}" is not one of ${IMAGE_APPS.join(', ')}`)
-      else if (img.app === 'mobile' && img.viewport !== 'mobile') warn(it.id, `image ${img.src} is from the mobile app but its viewport is ${img.viewport}`)
+      const app = img.app === undefined ? undefined : config.screenshotApps.find((a) => a.key === img.app)
+      if (img.app !== undefined && apps.length > 0 && !app) err(it.id, `image app "${img.app}" is not one of ${apps.join(', ')}`)
+      else if (app && img.viewport !== app.viewport) warn(it.id, `image ${img.src} is from the ${app.label} app, a ${app.viewport} app, but its viewport is ${img.viewport}`)
     }
   }
 
@@ -177,7 +182,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!a.title.trim()) err(a.id, 'title is empty')
     if (!ARTIFACT_KINDS.includes(a.kind)) err(a.id, `kind "${a.kind}" is not one of ${ARTIFACT_KINDS.join(', ')}`)
     if (!ARTIFACT_STATUSES.includes(a.status)) err(a.id, `status "${a.status}" is not one of ${ARTIFACT_STATUSES.join(', ')}`)
-    for (const c of a.components) if (!(COMPONENTS as readonly string[]).includes(c)) err(a.id, `component "${c}" is not in the vocabulary`)
+    for (const c of a.components) if (unknownComponent(c)) err(a.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     if (a.sources.length === 0 && a.status !== 'Superseded') warn(a.id, 'no source')
     if (a.date === null) warn(a.id, 'no date: when it was made (a meeting, a publication, a drawing)')
     else if (!isArtifactDate(a.date)) err(a.id, `date "${a.date}" is not YYYY-MM-DD, YYYY-MM or YYYY`)

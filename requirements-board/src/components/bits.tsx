@@ -1,8 +1,10 @@
 import { Camera, FileText, MessagesSquare, Monitor, NotebookPen, PanelsTopLeft, Workflow } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { TYPE_LABEL, type Artifact, type ArtifactKind, type Component, type Item, type ItemType } from '../../shared/types.ts'
+import { componentCodeIn, statusLabelIn } from '../../shared/config.ts'
+import { TYPE_LABEL, type Artifact, type ArtifactKind, type Item, type ItemType } from '../../shared/types.ts'
 import { recordUrl } from '../nav.ts'
-import { ARTIFACT_KIND_LABEL, COMPONENT_CODE, statusClass, statusLabel, typeClass } from '../vocab.ts'
+import { useConfig } from '../store.ts'
+import { ARTIFACT_KIND_LABEL, statusClass, typeClass } from '../vocab.ts'
 
 /** The work-item type mark (after Azure DevOps' backlog icon), in the type's colour. */
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
@@ -53,19 +55,22 @@ export function Lineage({ chain, onPick }: { chain: Item[]; onPick?: (id: string
   )
 }
 
-export function StatusLabel({ status, className = '', children }: { status: string; className?: string; children?: ReactNode }) {
+/** A status pill. `item` marks an item status, which the project may reword (`board.config.json`); question and artifact statuses show as stored. */
+export function StatusLabel({ status, item = false, className = '', children }: { status: string; item?: boolean; className?: string; children?: ReactNode }) {
+  const config = useConfig()
   return (
     <span className={`status ${statusClass(status)} ${className}`}>
-      {statusLabel(status)}
+      {item ? statusLabelIn(config, status) : status}
       {children}
     </span>
   )
 }
 
 export function Glyph({ component }: { component: string }) {
+  const config = useConfig()
   return (
     <span className="glyph" title={component}>
-      {COMPONENT_CODE[component as Component] ?? component.slice(0, 3).toUpperCase()}
+      {componentCodeIn(config, component)}
     </span>
   )
 }

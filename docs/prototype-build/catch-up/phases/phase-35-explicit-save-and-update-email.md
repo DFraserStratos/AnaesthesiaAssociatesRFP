@@ -1047,7 +1047,7 @@ List-move notification is staged from the `/demo/control` entry for 32's move tr
 it is runnable there; otherwise from a `setup` that makes the move on mobile in a first browser step
 (ATLAS.md, Shell).
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

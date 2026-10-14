@@ -381,7 +381,7 @@ states (the anaesthetist edits and submits only while ACTIVE).
   helper, the pieces and the privacy boundary), 27 (the prepayment routine), 28, 29 and 30 (their
   handoff notes for 31; 28's `clashes` and 30's `skipped` entries), and 32 (it moves a List to the
   office, and returns one from an unavailable session, through this phase's helper).
-- `requirements-board/capture/ATLAS.md` (it still describes "Fitzgerald PM is at St George's with
+- `requirements-board/requirements/capture/ATLAS.md` (it still describes "Fitzgerald PM is at St George's with
   the surgeon TBC") and the US-01.3.1 and US-13.1.1 recipes.
 
 **Code entry points** (paths under `aa-prototype/src/`; names are as planned by 14, 15, 15a, 15b, 17
@@ -1354,7 +1354,7 @@ and 28 to 30, so check the PROGRESS name maps first):
     - extend `visual/pwa-device.spec.ts`: open the Demo chip on Lists, run "Office assigns a Draft
       List to me", and assert a new booked row on Wed 22 PM showing 2 bookings.
 
-24. **Capture hooks** (`requirements-board/capture/`): the recipes themselves, the re-captures and
+24. **Capture hooks** (`requirements-board/requirements/capture/`): the recipes themselves, the re-captures and
     the ATLAS edits are the standing step in "Catalogue screenshots" below, run after the review
     pass. In this item only make sure the `data-shot` hooks in item 23 exist, and add one on the
     Day grid block that US-13.1.1's `drill-down` clicks, so the recipes can be written without
@@ -1615,7 +1615,7 @@ US-01.6.3's and US-01.3.1's shots). Only the Draft List, lifecycle, Day dashboar
 recurring-clash items change much here. Captions are catalogue text, but keep "slot" and "blacklist"
 out of any app copy a shot shows.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1665,7 +1665,7 @@ matches what was built:
 - `US-01.1.4.json` and `US-01.3.1.json` open a List row and "Edit list": the sheet now requires hospital and surgeon, so check the highlights.
 - `US-01.4.1.json` picks a named anaesthetist in the reassign picker; check it after the seed change.
 - `US-02.5.4.json` still names "DRAFT" (15b's rename re-pointed it): check it never reads DRAFT for an assigned List after this phase adds the state.
-- No recipe names Fitzgerald or "Surgeon TBC". `capture/ATLAS.md` does (see below).
+- No recipe names Fitzgerald or "Surgeon TBC". `requirements-board/requirements/capture/ATLAS.md` does (see below).
 The `--dry` run is the final check.
 
 **ATLAS.md.** Update Seed data worth shooting (Admin day, Tue 21: Fitzgerald PM is free, not "surgeon TBC"; the three request Draft Lists `LD-001` to `LD-003` and the recurring-clash Draft Lists, `LD-<recurring booking>-<date>-<session>`, with Ngata Tue 21 AM and Beaumont and Ngatai on Wed 22; the List states DRAFT, ACTIVE, SUBMITTED, AUTHORISED), Routes (add `/admin/draft-lists`, `?open=`, `?tab=history`), Personas and IDs (Draft List ids `LD-` and runtime `LG####`), and Existing hooks (the new `data-shot` hooks: `admin-draft-lists`, `admin-draft-list-drawer`, `admin-draft-lists-rail`, `admin-assign-draft-list`, `admin-assign-draft-list-not-preferred`, `daygrid-draft-band`, `daygrid-block-count`).

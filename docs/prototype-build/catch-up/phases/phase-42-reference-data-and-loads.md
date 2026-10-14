@@ -1364,7 +1364,7 @@ changed these recipes since this plan was written. Several current captions desc
 advertising a default Type 1 on the direct-claims flag): each is replaced by the recipe update below,
 never left standing.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1495,7 +1495,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - tests added (including the rule-parity, blank-and-zero, US-13.4.1 coverage, AR-34 table and
     repeatable-load tests);
   - the review pass.
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts
   before and after (captured, partial, absent, failed), the stale captions replaced, the recipes this
   phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**

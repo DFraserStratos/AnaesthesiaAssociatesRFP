@@ -4,6 +4,7 @@
  * about two loads in three: a rebuild landing mid-measure left React Flow with sized nodes
  * but no handles, and nothing re-measured them (see `cardHandles` in src/board/cardData.ts).
  * The race is timing-dependent, so each check runs over several fresh loads.
+ * Reads this project's live catalogue, so it runs only with BOARD_E2E_REAL=1.
  */
 import { expect, test, type Page } from '@playwright/test'
 import type { CatalogueSnapshot } from '../shared/types.ts'

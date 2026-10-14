@@ -977,7 +977,7 @@ may have changed these recipes since this plan was written. This step absorbs wo
 capture-recipe work; do it here, not twice. Replace any caption that describes the old model (a
 default Contract, a fallback, Type 1/2/3, the route, "resolve and retry" restoring a Contract).
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/` matches
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/` matches
 what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1134,5 +1134,5 @@ Decisions log.
   - 44: S4 Beat 3 and S5 Beat 4 as rewritten here.
 - **Catalogue screenshots.** The step's result: recipes created (US-04.1.3) and changed (US-04.3.5,
   US-07.3.1, US-08.1.1, US-08.4.4, US-15.0.3, plus US-08.5.1, US-08.5.2, US-13.3.2 and any other recipe
-  the step broke), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after,
+  the step broke), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed) before and after,
   and any partial reason handed to a later phase.

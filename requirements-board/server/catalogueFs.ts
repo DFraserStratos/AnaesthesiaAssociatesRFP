@@ -8,16 +8,18 @@ import { fileURLToPath } from 'node:url'
 import { checkCatalogue } from '../shared/check.ts'
 import { ParseError, lintArtifact, lintFrontmatter, lintItem, lintQuestion, parseArtifact, parseItem, parseQuestion, revOf, serialiseArtifact, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { compareIds } from '../shared/ids.ts'
+import { CONFIG_FILE, DEFAULT_CONFIG, parseConfig, type BoardConfig } from '../shared/config.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Issue, Item, Layout, Question, Rev } from '../shared/types.ts'
 import { artifactInfo } from './artifactFiles.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
-/** The requirements folder, `requirements-board/requirements/`, or `REQUIREMENTS_DIR` from the environment (a fixture). */
+/** The requirements folder: `REQUIREMENTS_DIR` from the environment, else `requirements/` beside the board's code. */
 export const REQUIREMENTS_DIR = process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements')
 
 export const storiesDir = (root = REQUIREMENTS_DIR) => join(root, 'stories')
 export const questionsDir = (root = REQUIREMENTS_DIR) => join(root, 'questions')
 export const layoutPath = (root = REQUIREMENTS_DIR) => join(root, 'board-layout.json')
+export const configPath = (root = REQUIREMENTS_DIR) => join(root, CONFIG_FILE)
 export const itemPath = (id: string, root = REQUIREMENTS_DIR) => join(storiesDir(root), `${id}.md`)
 export const questionPath = (id: string, root = REQUIREMENTS_DIR) => join(questionsDir(root), `${id}.md`)
 /** Artifact sidecars (`AR-nn.md`); the artifact files themselves are in its `files/`. */
@@ -99,6 +101,17 @@ export function readLayout(root = REQUIREMENTS_DIR): { layout: Layout; error?: s
   }
 }
 
+/** The project's vocabulary. No file: the neutral defaults. Problems are reported and their entries left at the default. */
+export function readConfig(root = REQUIREMENTS_DIR): { config: BoardConfig; problems: string[] } {
+  let text: string
+  try {
+    text = readFileSync(configPath(root), 'utf8')
+  } catch {
+    return { config: DEFAULT_CONFIG, problems: [] }
+  }
+  return parseConfig(text)
+}
+
 export function fileExistsIn(root: string) {
   return (rel: string) => {
     const abs = resolve(root, rel)
@@ -114,6 +127,7 @@ export function issuesFor(
   root = REQUIREMENTS_DIR,
   lanes?: string[],
   artifacts: Record<string, Rev<Artifact>> = {},
+  config: BoardConfig = DEFAULT_CONFIG,
 ): Issue[] {
   return [
     ...parseIssues,
@@ -122,6 +136,7 @@ export function issuesFor(
       questions: Object.values(questions).map((r) => r.data),
       fileExists: fileExistsIn(root),
       lanes,
+      config,
       ...artifactCheck(artifacts, root),
     }),
   ]
@@ -171,7 +186,9 @@ export function loadCatalogue(root = REQUIREMENTS_DIR): LoadResult {
   const artifacts = withMeta(collect(listMd(artifactsDir(root)), readArtifactFile, parseIssues), root)
   const { layout, error } = readLayout(root)
   if (error) parseIssues.push({ severity: 'error', id: 'layout', message: error })
-  return { items, questions, artifacts, layout, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts) }
+  const { config, problems } = readConfig(root)
+  for (const message of problems) parseIssues.push({ severity: 'error', id: 'config', message })
+  return { items, questions, artifacts, layout, config, layoutReadable: !error, parseIssues, issues: issuesFor(items, questions, parseIssues, root, layout.lanes, artifacts, config) }
 }
 
 /** Write via a temp file + rename so a reader (or the watcher) never sees half a file. */

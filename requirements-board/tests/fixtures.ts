@@ -1,12 +1,25 @@
 /** A small synthetic catalogue, so tests don't depend on the live requirements content. */
+import { parseConfig } from '../shared/config.ts'
 import type { Item, Question } from '../shared/types.ts'
+
+/** A project vocabulary for checks that need one: two components, a desktop app and a phone app. */
+export const FIXTURE_CONFIG = parseConfig(
+  JSON.stringify({
+    project: { name: 'Fixture project' },
+    components: [{ name: 'Core', code: 'COR' }, { name: 'Admin Console' }],
+    screenshotApps: [
+      { key: 'web', label: 'Web', viewport: 'desktop' },
+      { key: 'phone', label: 'Phone', viewport: 'mobile' },
+    ],
+  }),
+).config
 
 export const item = (over: Partial<Item> & Pick<Item, 'id'>): Item => ({
   type: 'story',
   parent: null,
   title: `Title of ${over.id}`,
   status: 'Proposed',
-  components: ['Scheduling Engine'],
+  components: ['Core'],
   sources: [],
   order: 1,
   swimlane: null,
@@ -25,7 +38,7 @@ export const question = (over: Partial<Question> & Pick<Question, 'id'>): Questi
   kind: 'question',
   title: `Question ${over.id}`,
   status: 'Open',
-  owner: 'AA',
+  owner: 'Client',
   affects: [],
   sources: [],
   question: 'Why?',

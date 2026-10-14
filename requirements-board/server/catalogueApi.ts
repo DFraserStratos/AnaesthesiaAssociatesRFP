@@ -106,13 +106,13 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
   const itemList = () => Object.values(state.items).map((r) => r.data)
   const questionList = () => Object.values(state.questions).map((r) => r.data)
   const refreshIssues = () => {
-    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts)
+    state.issues = issuesFor(state.items, state.questions, state.parseIssues, root, state.layout.lanes, state.artifacts, state.config)
   }
 
   /** Refuse a change that would introduce an integrity error not already present. */
   function guard(items: Item[], questions: Question[], artifacts: Record<string, Rev<Artifact>> = state.artifacts) {
     const before = new Set(state.issues.map(issueKey))
-    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes, ...artifactCheck(artifacts, root) })
+    const after = checkCatalogue({ items, questions, fileExists: fileExistsIn(root), lanes: state.layout.lanes, config: state.config, ...artifactCheck(artifacts, root) })
     const added = after.filter((i) => i.severity === 'error' && !before.has(issueKey(i)))
     if (added.length) throw new HttpError(422, added.map((i) => `${i.id}: ${i.message}`).join('\n'))
   }
@@ -229,7 +229,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     refuseCrossSite(req)
 
     if (path === '/api/catalogue' && method === 'GET') {
-      return { items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, issues: state.issues }
+      return { items: state.items, questions: state.questions, artifacts: state.artifacts, layout: state.layout, config: state.config, issues: state.issues }
     }
 
     const a = /^\/api\/artifacts\/([^/]+)\/history$/.exec(path)
@@ -492,6 +492,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
         if (next.items[id]) journal.position(id, prev.layout.positions[id] ?? null, next.layout.positions[id] ?? null, 'disk')
       }
     }
+    if (JSON.stringify(prev.config) !== JSON.stringify(next.config)) events.push({ kind: 'config', config: next.config })
     const issuesChanged = JSON.stringify(prev.issues) !== JSON.stringify(next.issues)
     state = next
     if (!events.length && !issuesChanged) return

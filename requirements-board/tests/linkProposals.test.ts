@@ -5,7 +5,7 @@ import { item } from './fixtures.ts'
 
 const epic = item({ id: 'EP-06', type: 'epic' })
 const feature = item({ id: 'FT-06.2', type: 'feature', parent: 'EP-06' })
-const detect = item({ id: 'US-06.2.1', parent: 'FT-06.2', description: "Flags a Booking whose RVG code is in the anaesthetist's prepaid set. The prepaid set is per anaesthetist." })
+const detect = item({ id: 'US-06.2.1', parent: 'FT-06.2', description: "Flags a Order whose product code is in the customer's prepaid set. The prepaid set is per customer." })
 const tick = item({ id: 'US-06.1.1', parent: 'EP-06', description: 'Tick codes.' })
 const retired = item({ id: 'US-06.1.9', parent: 'EP-06', status: 'Retired' })
 const q = { id: 'OQ-25', kind: 'question', title: 'Q', affects: [], owner: '', status: 'Open', sources: [], question: '', answer: '', extra: {} } as Question
@@ -23,24 +23,24 @@ describe('applyProposals', () => {
   it('wraps the chosen occurrence and leaves the rest of the text alone', () => {
     const { changed, outcomes } = run([{ kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'prepaid set', occurrence: 2, target: 'US-06.1.1' }])
     expect(outcomes.map((o) => o.skipped)).toEqual([null])
-    expect(changed.get('US-06.2.1')!.description).toBe("Flags a Booking whose RVG code is in the anaesthetist's prepaid set. The [prepaid set](US-06.1.1) is per anaesthetist.")
+    expect(changed.get('US-06.2.1')!.description).toBe("Flags a Order whose product code is in the customer's prepaid set. The [prepaid set](US-06.1.1) is per customer.")
   })
 
   it('applies several links to one field in turn, and skips a second link to the same target', () => {
     const { changed, outcomes } = run([
-      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: "anaesthetist's prepaid set", target: 'US-06.1.1' },
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: "customer's prepaid set", target: 'US-06.1.1' },
       { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'prepaid set', target: 'US-06.1.1' },
-      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Booking', target: 'OQ-25' },
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Order', target: 'OQ-25' },
     ])
     expect(outcomes.map((o) => o.skipped)).toEqual([null, 'the description already links to US-06.1.1', null])
-    expect(changed.get('US-06.2.1')!.description).toBe("Flags a [Booking](OQ-25) whose RVG code is in the [anaesthetist's prepaid set](US-06.1.1). The prepaid set is per anaesthetist.")
+    expect(changed.get('US-06.2.1')!.description).toBe("Flags a [Order](OQ-25) whose product code is in the [customer's prepaid set](US-06.1.1). The prepaid set is per customer.")
   })
 
   it('skips what no longer fits: a missing anchor, a retired or family target, a retired item', () => {
     const { changed, outcomes } = run([
       { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'not there', target: 'US-06.1.1' },
-      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Booking', target: 'US-06.1.9' },
-      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Booking', target: 'FT-06.2' },
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Order', target: 'US-06.1.9' },
+      { kind: 'inline', item: 'US-06.2.1', field: 'description', anchor: 'Order', target: 'FT-06.2' },
       { kind: 'inline', item: 'US-06.1.9', field: 'description', anchor: 'x', target: 'US-06.1.1' },
     ])
     expect(outcomes.every((o) => o.skipped)).toBe(true)

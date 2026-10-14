@@ -739,7 +739,7 @@ lists its modifier stories US-05.1.4 and US-05.1.5: they are Phase 19b's to re-s
 phase only keeps their recipes running (see "Recipes this phase breaks"). US-05.1.1, US-05.1.3 and
 US-05.1.6 are this phase's.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -838,7 +838,7 @@ settled in the Decisions log.
   look, each with its route and persona.
 - **Catalogue screenshots result:** the recipes filled in (US-05.1.6), re-pointed (FT-05.1, US-05.1.1,
   US-05.1.3) and the broken ones fixed (US-05.1.4, US-03.3.1, US-03.3.2, US-13.4.1, US-05.1.2), the
-  `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed) before and after,
+  `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed) before and after,
   and the partial reasons handed on: US-05.1.6 to Phase 19a (the Contract line layer), US-05.1.3 to
   Phase 26 (whole-group prepaid), US-05.1.4 to Phase 19b.
 - Status row for catch-up Phase 19, and a phase entry: what was built, the parity result, the review

@@ -37,7 +37,7 @@ function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
             </span>
           )}
           {/* Proposed is the baseline; a card only carries a pill when its status is worth noticing. */}
-          {item.status !== BASELINE_STATUS && <StatusLabel status={item.status} />}
+          {item.status !== BASELINE_STATUS && <StatusLabel item status={item.status} />}
         </div>
       </div>
     </>

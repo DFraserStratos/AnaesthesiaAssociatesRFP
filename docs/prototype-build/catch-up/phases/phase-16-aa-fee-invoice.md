@@ -870,7 +870,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 16` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -905,7 +905,7 @@ US-10.2.2 on US-10.2.1), so their recipes stay and are updated here, keeping the
   AA-2026-0002; after this phase the ACCPAY card shows exactly the amount received released. Re-shoot;
   the caption already reads "exactly the amount received".
 - Any recipe that finds a Xero contact, row or card by a patient's or guardian's name (check the
-  recipes on `/demo/xero` listed by `grep -l demo/xero requirements-board/capture/recipes/*.json`,
+  recipes on `/demo/xero` listed by `grep -l demo/xero requirements-board/requirements/capture/recipes/*.json`,
   especially US-06.3.x, US-06.4.1, US-08.3.x, FT-09.3 and US-09.3.x): re-point it to the invoice
   number or the hidden ID; captions that name a patient as Xero data are reworded. At plan time
   this includes `US-08.3.3`'s `archived-contacts` ("Annette Riley's Xero contact archived by the

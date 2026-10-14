@@ -789,7 +789,7 @@ especially) will have changed these recipes since this plan was written. Never l
 describes Type 3 price rows, an ordinal, a "fixed fee schedule" with add-ons, or rounding as an
 assumption.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -897,7 +897,7 @@ anything settled in the Decisions log.
   price list, and a Booking's B caption under a line override (office persona).
 - **Catalogue screenshots result:** the recipe created (US-04.2.14) and changed (US-04.2.4,
   US-05.2.2, and the broken ones such as US-05.2.6, US-05.2.5, US-04.2.2, US-05.1.6, US-05.1.1 and
-  US-03.3.1), the `requirements-board/capture/REPORT.md` counts (captured, partial, absent, failed)
+  US-03.3.1), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed)
   before and after, and the partial reasons handed on: US-04.2.4 to Phases 20 and 23, US-04.2.14 to
   20, 24, 26 and 27, US-04.2.2 and US-05.2.5 to 24.
 - Status row for catch-up Phase 19a, and a phase entry: what was built, the parity result, the review

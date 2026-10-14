@@ -803,7 +803,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 22` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -938,6 +938,6 @@ anything settled in the Decisions log, except the rulings this phase explicitly 
   granularity are questions for AA.
 - **Catalogue screenshots.** The step's result: recipes created (US-04.2.8) and changed (US-08.4.2,
   US-08.4.1, US-08.4.3, US-08.4.4, US-08.4.5, US-08.2.3, US-09.1.4, US-04.2.12 to Retired, plus
-  US-11.3.3, US-05.2.7, FT-08.4 and any other recipe the step broke), the `capture/REPORT.md` counts
+  US-11.3.3, US-05.2.7, FT-08.4 and any other recipe the step broke), the `requirements-board/requirements/capture/REPORT.md` counts
   (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase
   (US-08.4.4 stays partial until Phase 25).

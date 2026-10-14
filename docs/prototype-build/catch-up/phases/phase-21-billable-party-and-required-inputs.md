@@ -766,7 +766,7 @@ after the review pass and before the PROGRESS.md entry. Re-run
 above all) may have changed these recipes. Several captions describe the retired override; replace
 each when the recipe is updated.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -865,5 +865,5 @@ in the Decisions log.
   onto the booking procedure, `whoIsBilled.ts` and `setBookingPayer` are the places to change".
 - **Catalogue screenshots:** recipes created (US-11.2.3, US-11.2.4) and changed (US-11.2.1, US-11.2.2,
   US-11.4.2, US-08.2.1, US-03.6.1, US-03.6.2, US-07.2.2, plus any recipe the step broke), the
-  `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, any partial reason
+  `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, any partial reason
   handed on, and US-11.2.2's stale-screenshot note handed to `/update-requirements`.

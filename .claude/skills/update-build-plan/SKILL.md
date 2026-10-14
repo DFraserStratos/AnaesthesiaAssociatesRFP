@@ -42,7 +42,7 @@ Node 24: agent shells default to an older Node, so prefix commands with
 
   Tell any writer or reviewer agent you start the same.
 - The plan edits plan files only. Never create, edit or delete capture recipes
-  (`requirements-board/capture/recipes/`), catalogue images or `capture/REPORT.md` while updating the
+  (`requirements-board/requirements/capture/recipes/`), catalogue images or `requirements-board/requirements/capture/REPORT.md` while updating the
   plan: the build phases do that, and verify it with a capture run. Tell any agent you start the same.
 - Do not commit or push.
 
@@ -256,11 +256,11 @@ Rules of thumb:
 
 The screenshots on catalogue stories come from the Requirements Board's capture runner
 (`requirements-board/scripts/capture.ts`). It works from one recipe per item
-(`requirements-board/capture/recipes/<ID>.json`; the format, routes, seed ids and hooks are in
-`requirements-board/capture/ATLAS.md`). `npm run capture` in `requirements-board/` drives the
+(`requirements-board/requirements/capture/recipes/<ID>.json`; the format, routes, seed ids and hooks are in
+`requirements-board/requirements/capture/ATLAS.md`). `npm run capture` in `requirements-board/` drives the
 prototype (5173) and the PWA (5174), and writes
 `requirements-board/requirements/assets/<ID>/<app>-<name>[-<state>].png`. It links the images into
-each item's `images`, rewrites only the images that changed, and writes `capture/REPORT.md`.
+each item's `images`, rewrites only the images that changed, and writes `requirements-board/requirements/capture/REPORT.md`.
 
 The standing rule is "Catalogue screenshots" in `CU/ROADMAP.md` (PROGRESS convention 19). Keep it in
 `ROADMAP.md` when the architect rewrites it, including the bullet in "Every phase closes the same
@@ -280,7 +280,7 @@ way". Each unbuilt phase must carry it in four places:
 3. **A PROGRESS.md updates bullet**: recipes created or changed, and the REPORT.md counts before and
    after.
 4. **The kick-off prompt**:
-   - `requirements-board/capture/ATLAS.md` and the ROADMAP rule in the read-first list;
+   - `requirements-board/requirements/capture/ATLAS.md` and the ROADMAP rule in the read-first list;
    - a "When done:" bullet after the adversarial review that runs the step. In
      `requirements-board/`, run `node scripts/capture.ts --dry`, then a full `npm run capture`,
      starting root `npm run dev` in the background if a server is down;

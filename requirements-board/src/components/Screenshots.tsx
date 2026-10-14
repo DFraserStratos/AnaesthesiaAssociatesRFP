@@ -1,17 +1,28 @@
 /** An item's screenshots: the gallery and lightbox in its read view, and the list editor in its edit form. */
 import { ImageIcon, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { IMAGE_APPS, type ImageRef, type Item } from '../../shared/types.ts'
+import { appKeys, type BoardConfig } from '../../shared/config.ts'
+import { type ImageRef, type Item } from '../../shared/types.ts'
 import { assetUrl } from '../api.ts'
+import { useConfig } from '../store.ts'
 
-/** Gallery tabs: one per app, in IMAGE_APPS order; images with no app fall back to their viewport. */
-const GALLERY_TABS = [...IMAGE_APPS, 'desktop'] as const
-type GalleryTab = (typeof GALLERY_TABS)[number]
-const TAB_LABEL: Record<GalleryTab, string> = { admin: 'Admin', web: 'Web', mobile: 'Mobile', simulator: 'Simulator', desktop: 'Desktop' }
-const tabOf = (img: ImageRef): GalleryTab => img.app ?? (img.viewport === 'mobile' ? 'mobile' : 'desktop')
+/**
+ * Gallery tabs: one per screenshot app (`board.config.json`), in its order; images with no app
+ * fall back to their viewport, and an app the config does not list still gets a tab, last.
+ */
+type GalleryTab = string
+const VIEWPORT_TAB: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile' }
+const tabOf = (img: ImageRef): GalleryTab => img.app ?? img.viewport
+const tabLabel = (config: BoardConfig, t: GalleryTab) => config.screenshotApps.find((a) => a.key === t)?.label ?? VIEWPORT_TAB[t] ?? t
+function galleryTabs(config: BoardConfig, images: ImageRef[]): GalleryTab[] {
+  const order = [...appKeys(config), ...Object.keys(VIEWPORT_TAB)]
+  const present = [...new Set(images.map(tabOf))]
+  return [...order.filter((t) => present.includes(t)), ...present.filter((t) => !order.includes(t))]
+}
 
 export function Gallery({ item }: { item: Item }) {
-  const tabs = GALLERY_TABS.filter((t) => item.images.some((i) => tabOf(i) === t))
+  const config = useConfig()
+  const tabs = galleryTabs(config, item.images)
   const [picked, setTab] = useState<GalleryTab | null>(null)
   const tab = picked && tabs.includes(picked) ? picked : (tabs[0] ?? 'desktop')
   // The lightbox steps through every screenshot, tab by tab in gallery order, whatever tab it opened from.
@@ -43,7 +54,7 @@ export function Gallery({ item }: { item: Item }) {
           <div className="gallery-tabs" role="group" aria-label="App">
             {tabs.map((t) => (
               <button key={t} aria-pressed={tab === t} className="btn sm" onClick={() => setTab(t)}>
-                {TAB_LABEL[t]} <span className="mono">{count(t)}</span>
+                {tabLabel(config, t)} <span className="mono">{count(t)}</span>
               </button>
             ))}
           </div>
@@ -59,7 +70,7 @@ export function Gallery({ item }: { item: Item }) {
           </div>
         </>
       )}
-      {zoomed && <Lightbox image={zoomed} at={zoomedAt!} total={ordered.length} label={TAB_LABEL[tabOf(zoomed)]} onStep={step} onClose={() => setZoomedAt(null)} />}
+      {zoomed && <Lightbox image={zoomed} at={zoomedAt!} total={ordered.length} label={tabLabel(config, tabOf(zoomed))} onStep={step} onClose={() => setZoomedAt(null)} />}
     </section>
   )
 }
@@ -99,6 +110,7 @@ function Lightbox({ image, at, total, label, onStep, onClose }: { image: ImageRe
 }
 
 export function ImagesEditor({ draft, set }: { draft: Item; set: (p: Partial<Item>) => void }) {
+  const config = useConfig()
   const update = (i: number, patch: Partial<ImageRef>) => set({ images: draft.images.map((img, n) => (n === i ? { ...img, ...patch } : img)) })
   return (
     <div className="field">
@@ -112,9 +124,9 @@ export function ImagesEditor({ draft, set }: { draft: Item; set: (p: Partial<Ite
           </select>
           <select className="select" aria-label="App" value={img.app ?? ''} onChange={(e) => update(i, { app: (e.target.value || undefined) as ImageRef['app'] })}>
             <option value="">No app</option>
-            {IMAGE_APPS.map((a) => (
+            {[...new Set([...appKeys(config), ...draft.images.flatMap((m) => (m.app ? [m.app] : []))])].map((a) => (
               <option key={a} value={a}>
-                {TAB_LABEL[a]}
+                {tabLabel(config, a)}
               </option>
             ))}
           </select>

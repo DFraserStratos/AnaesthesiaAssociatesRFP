@@ -1,7 +1,7 @@
 /**
- * A card's history, read like the anaesthetic chart's time column: times in the gutter, a trace
+ * A card's history, read like a chart recorder's time column: times in the gutter, a trace
  * running down beside them with one mark per change (filled: the board, ring: an edit on disk,
- * square: a git commit), and commits ruled across the page like the chart's hour lines. Changes
+ * square: a git commit), and commits ruled across the page like a chart's hour lines. Changes
  * not committed yet turn the trace amber. Newest first; view only.
  */
 import { ChevronDown, ChevronRight } from 'lucide-react'
@@ -10,7 +10,7 @@ import { TEXT_FIELDS, lineCounts, lineDiff, type DiffLine, type FieldChange, typ
 import { firstLaneName, parseArtifactRef, type ImageRef, type Item } from '../../shared/types.ts'
 import { spotName } from '../artifactIndex.ts'
 import { api, historyBlobUrl } from '../api.ts'
-import { useCatalogue, type Index } from '../store.ts'
+import { useCatalogue, useConfig, type Index } from '../store.ts'
 import { typeClass } from '../vocab.ts'
 import { ArtifactName, ItemName, StatusLabel } from './bits.tsx'
 
@@ -85,19 +85,20 @@ export type ChangeEntry = Extract<TimelineEntry, { type: 'change' }>
  * ruled across, the uncommitted run in amber. `children` draws an entry's changes.
  */
 export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[]; children: (e: ChangeEntry) => ReactNode }) {
+  const { locale } = useConfig().project
   const firstUncommitted = entries.findIndex((e) => e.type === 'change' && e.uncommitted)
   let day = ''
   return (
     <ol className="hist-list">
       {entries.map((e, i) => {
-        const d = dayLabel(e.at)
+        const d = dayLabel(e.at, locale)
         const head = d !== day ? <li className="hist-day" key={`d${i}`}>{(day = d)}</li> : null
         if (e.type === 'commit') {
           return (
             <Fragment key={i}>
               {head}
               <li className="hist-commit" title={`${e.commit.sha.slice(0, 7)} by ${e.commit.author}`}>
-                <time className="hist-time">{timeLabel(e.at)}</time>
+                <time className="hist-time">{timeLabel(e.at, locale)}</time>
                 <span className="hist-commit-label">
                   Committed <q>{e.commit.subject}</q>
                 </span>
@@ -110,8 +111,8 @@ export function HistoryTimeline({ entries, children }: { entries: TimelineEntry[
             {head}
             {i === firstUncommitted && <li className="hist-pending-label">Not committed yet</li>}
             <li className={`hist-entry src-${e.source}${e.uncommitted ? ' uncommitted' : ''}`}>
-              <time className="hist-time" dateTime={e.at} title={new Date(e.at).toLocaleString('en-NZ')}>
-                {timeLabel(e.at)}
+              <time className="hist-time" dateTime={e.at} title={new Date(e.at).toLocaleString(locale)}>
+                {timeLabel(e.at, locale)}
               </time>
               <span className="hist-mark" aria-hidden />
               <div className="hist-body">
@@ -160,7 +161,7 @@ export function ChangeRow({ change: c, index, firstLane }: { change: FieldChange
     case 'status':
       return (
         <p className="hist-row">
-          <span className="hist-field">Status</span> <StatusLabel status={String(c.from)} /> to <StatusLabel status={String(c.to)} />
+          <span className="hist-field">Status</span> <StatusLabel item status={String(c.from)} /> to <StatusLabel item status={String(c.to)} />
         </p>
       )
     case 'parent':
@@ -388,12 +389,12 @@ export function setDiff(from: string[], to: string[]) {
 
 const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 
-function dayLabel(iso: string): string {
+function dayLabel(iso: string, locale: string | undefined): string {
   const d = new Date(iso)
   const now = new Date()
   if (sameDay(d, now)) return 'Today'
   if (sameDay(d, new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))) return 'Yesterday'
-  return d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
+  return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
 }
 
-const timeLabel = (iso: string) => new Date(iso).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit', hour12: false })
+const timeLabel = (iso: string, locale: string | undefined) => new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })

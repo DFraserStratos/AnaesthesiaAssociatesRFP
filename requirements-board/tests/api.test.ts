@@ -85,9 +85,9 @@ describe('creating', () => {
   })
 
   it('defaults a new card: last among its siblings, its parent’s components, Proposed', () => {
-    writeItem(item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2, components: ['Admin App'] }), root)
+    writeItem(item({ id: 'FT-01.2', type: 'feature', parent: 'EP-01', order: 2, components: ['Admin Console'] }), root)
     const rec = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.2', title: 'First' }) as Rev<Item>
-    expect(rec.data).toMatchObject({ id: 'US-01.2.1', order: 1, components: ['Admin App'], status: 'Proposed' })
+    expect(rec.data).toMatchObject({ id: 'US-01.2.1', order: 1, components: ['Admin Console'], status: 'Proposed' })
     const next = call(api(), 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'Third' }) as Rev<Item>
     expect(next.data).toMatchObject({ id: 'US-01.1.3', order: 3 })
   })
@@ -305,7 +305,7 @@ describe('sync', () => {
   })
 
   it('flags frontmatter that parses but loses data', () => {
-    writeFileSync(itemPath('US-01.1.5', root), '---\nid: US-01.1.5\ntype: story\nparent: FT-01.1\ntitle: 1.10\nstatus: RFP\ncomponents:\n  - Admin App\nsources:\n  - Q&A 2026-09-24 #7\norder: 5\nimages: []\n---\n\nText\n')
+    writeFileSync(itemPath('US-01.1.5', root), '---\nid: US-01.1.5\ntype: story\nparent: FT-01.1\ntitle: 1.10\nstatus: RFP\ncomponents:\n  - Admin Console\nsources:\n  - Q&A 2026-09-24 #7\norder: 5\nimages: []\n---\n\nText\n')
     const issues = loadCatalogue(root).issues.filter((i) => i.id === 'US-01.1.5').map((i) => i.message)
     expect(issues.some((m) => m.includes('YAML comment'))).toBe(true)
     expect(issues.some((m) => m.includes('title was read as a number'))).toBe(true)

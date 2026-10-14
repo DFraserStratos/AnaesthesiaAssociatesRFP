@@ -308,9 +308,9 @@ invent a new visual language.
   `apps/admin/reviewFlags.test.ts`, `visual/admin-phase09.spec.ts` (re-pointed at the warning banner
   in session 1).
 - Outside the app: the capture recipes that use `daygrid-block-prepayment`, "Pre-payment flagged",
-  `booking-prepayment`, `card-gate` or "Override gate" (`requirements-board/capture/recipes/`
+  `booking-prepayment`, `card-gate` or "Override gate" (`requirements-board/requirements/capture/recipes/`
   US-06.2.1, US-06.2.2, US-06.3.1 to US-06.3.5, US-06.4.1, US-08.2.2), the absent placeholders
-  US-13.7.1 to US-13.7.3, and `requirements-board/capture/ATLAS.md` (the Fri 24 text ~337-338 and
+  US-13.7.1 to US-13.7.3, and `requirements-board/requirements/capture/ATLAS.md` (the Fri 24 text ~337-338 and
   the hooks list).
 
 ## Work items
@@ -667,7 +667,7 @@ own fixed price, generated at setup, approved and sent), so leave them, and do n
 - `aa-prototype/src/apps/demo/DemoControlPanel.tsx` S4 scenario text (~311): "(1) Mobile, Souter Fri 24 AM, Annette Riley: see
   the triangle, open the Booking and read the warning, Mark complete and submit (no block, no confirm
   step), then clear it from the Admin to-do list".
-- `requirements-board/capture/ATLAS.md` Fri 24 text (~337-338), the hooks list and the "Demo
+- `requirements-board/requirements/capture/ATLAS.md` Fri 24 text (~337-338), the hooks list and the "Demo
   actions by screen" table.
 
 ## Catalogue screenshots
@@ -678,7 +678,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 earlier phases may have changed these recipes since this plan was written. Riley's Booking is
 `BK0038` in today's recipes (US-06.3.2); confirm the id against the seed before pinning it.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

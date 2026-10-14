@@ -59,7 +59,7 @@ const run = (text: string, id = 'US-06.1.1', title = 'Tick codes or groups') => 
 
 describe('linkSelection', () => {
   it('links the selected words and puts the caret after the link', () => {
-    expect(run("the anaesthetist's «prepaid set» here")).toBe("the anaesthetist's [prepaid set](US-06.1.1)«» here")
+    expect(run("the customer's «prepaid set» here")).toBe("the customer's [prepaid set](US-06.1.1)«» here")
   })
 
   it('keeps whitespace at either end outside the link', () => {

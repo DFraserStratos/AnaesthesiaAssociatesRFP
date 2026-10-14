@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -7,6 +7,8 @@ import { depthFirst, parseCsv, questionsCsv, requirementsCsv } from '../shared/c
 import { itemRoundTripProblems, parseItem, parseQuestion, serialiseItem, serialiseQuestion } from '../shared/files.ts'
 import { nextItemId, nextQuestionId } from '../shared/ids.ts'
 import type { Item, Question } from '../shared/types.ts'
+import { DEFAULT_CONFIG } from '../shared/config.ts'
+import { FIXTURE_CONFIG } from './fixtures.ts'
 import { storiesDir, loadCatalogue, questionsDir, serialiseLayout, writeItem } from '../server/catalogueFs.ts'
 
 const item = (over: Partial<Item>): Item => ({
@@ -15,7 +17,7 @@ const item = (over: Partial<Item>): Item => ({
   parent: 'FT-01.1',
   title: 'A story',
   status: 'Proposed',
-  components: ['Scheduling Engine'],
+  components: ['Core'],
   sources: [],
   order: 1,
   swimlane: null,
@@ -32,26 +34,29 @@ const item = (over: Partial<Item>): Item => ({
 const epic = item({ id: 'EP-01', type: 'epic', parent: null })
 const feature = item({ id: 'FT-01.1', type: 'feature', parent: 'EP-01' })
 const question = (over: Partial<Question>): Question => ({
-  id: 'OQ-01', kind: 'question', title: 'Q', status: 'Open', owner: 'AA', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
+  id: 'OQ-01', kind: 'question', title: 'Q', status: 'Open', owner: 'Client', affects: ['US-01.1.1'], sources: [], question: 'Why?', answer: '', extra: {}, ...over,
 })
+
+/** The project's own catalogue, if this copy of the board has one yet (a fresh install may not). */
+const hasLive = existsSync(storiesDir())
 
 describe('catalogue files', () => {
   const real = loadCatalogue()
 
-  // The one test that depends on live content: the committed catalogue must stay valid.
-  it('loads the real catalogue with no errors', () => {
-    expect(Object.keys(real.items).length).toBeGreaterThan(200)
+  // The tests that read live content: the committed catalogue must stay valid and round-trip.
+  it.skipIf(!hasLive)('loads the real catalogue with no errors', () => {
+    expect(Object.keys(real.items).length).toBeGreaterThan(0)
     expect(real.issues.filter((i) => i.severity === 'error')).toEqual([])
   })
 
-  it('round-trips every item file byte for byte', () => {
+  it.skipIf(!hasLive)('round-trips every item file byte for byte', () => {
     for (const f of readdirSync(storiesDir())) {
       const text = readFileSync(join(storiesDir(), f), 'utf8')
       expect(serialiseItem(parseItem(text)), f).toBe(text)
     }
   })
 
-  it('round-trips every question file byte for byte', () => {
+  it.skipIf(!existsSync(questionsDir()))('round-trips every question file byte for byte', () => {
     for (const f of readdirSync(questionsDir())) {
       const text = readFileSync(join(questionsDir(), f), 'utf8')
       expect(serialiseQuestion(parseQuestion(text)), f).toBe(text)
@@ -80,12 +85,14 @@ describe('catalogue files', () => {
     expect(serialiseItem(parseItem(text))).toBe(text)
   })
 
-  it('flags an unknown image app and a mobile-app shot with a desktop viewport', () => {
-    const bad = parseItem(serialiseItem(item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'phone' as never }] })))
-    const odd = item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'mobile' }] })
-    const msgs = (i: typeof bad) => checkCatalogue({ items: [epic, feature, i], questions: [] }).map((x) => x.message)
-    expect(msgs(bad)).toContain('image app "phone" is not one of admin, web, mobile, simulator')
-    expect(msgs(odd)).toContain('image assets/US-01.1.1/a.png is from the mobile app but its viewport is desktop')
+  it('flags an unknown image app and a phone-app shot with a desktop viewport', () => {
+    const bad = parseItem(serialiseItem(item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'tablet' }] })))
+    const odd = item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'phone' }] })
+    const msgs = (i: typeof bad, config = FIXTURE_CONFIG) => checkCatalogue({ items: [epic, feature, i], questions: [], config }).map((x) => x.message)
+    expect(msgs(bad)).toContain('image app "tablet" is not one of web, phone')
+    expect(msgs(odd)).toContain('image assets/US-01.1.1/a.png is from the Phone app, a mobile app, but its viewport is desktop')
+    // With no screenshot apps configured, any app is accepted.
+    expect(msgs(bad, DEFAULT_CONFIG).filter((m) => m.includes('image app'))).toEqual([])
   })
 
   it('round-trips all four body sections, written in a fixed order', () => {
@@ -135,7 +142,7 @@ describe('catalogue files', () => {
     expect(checkCatalogue({ items: [epic, feature, it1], questions: [] }).map((i) => i.message)).toContain('image viewport "moblie" is not desktop or mobile')
   })
 
-  it('exports CSV in the old shape and reads it back', () => {
+  it.skipIf(!hasLive)('exports CSV in the old shape and reads it back', () => {
     const items = Object.values(real.items).map((r) => r.data)
     const rows = parseCsv(requirementsCsv(items))
     expect(rows).toHaveLength(items.length)
@@ -234,6 +241,7 @@ describe('check rules', () => {
   })
   const msgs = (items: Item[], questions: Question[] = [], fileExists?: (p: string) => boolean) =>
     checkCatalogue({ items, questions, fileExists }).filter((i) => i.severity === 'error').map((i) => i.message)
+  const cfgMsgs = (items: Item[]) => checkCatalogue({ items, questions: [], config: FIXTURE_CONFIG }).filter((i) => i.severity === 'error').map((i) => i.message)
 
   it('flags duplicates, missing parents and wrong parent types', () => {
     expect(msgs([...ok, item({})])).toContain('duplicate ID US-01.1.1')
@@ -247,7 +255,8 @@ describe('check rules', () => {
   })
   it('flags vocabulary, ID shape, bad affects and missing images', () => {
     expect(msgs([epic, feature, item({ status: 'Maybe' as never })])[0]).toMatch(/status "Maybe"/)
-    expect(msgs([epic, feature, item({ components: ['Blockchain'] })])[0]).toMatch(/component "Blockchain"/)
+    expect(cfgMsgs([epic, feature, item({ components: ['Blockchain'] })])[0]).toMatch(/component "Blockchain"/)
+    expect(msgs([epic, feature, item({ components: ['Blockchain'] })])).toEqual([]) // no components configured: any is accepted
     expect(msgs([epic, feature, item({ id: 'US-1.1' })])[0]).toMatch(/does not match/)
     expect(msgs(ok, [question({ affects: ['US-99.1.1'] })])).toContain('affects US-99.1.1, which does not exist')
     const withImg = item({ images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop' }] })

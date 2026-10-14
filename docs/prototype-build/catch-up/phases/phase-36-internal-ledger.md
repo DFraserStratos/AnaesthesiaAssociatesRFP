@@ -442,7 +442,7 @@ read the same after the change, and a parity test proves it.
     scan item 8 extends), 16's `aaFeeActions.test.ts`; shots
     `visual/xero-pair.spec.ts`, `admin-phase09.spec.ts`, `web-phase05.spec.ts`,
     `mobile-phase04.spec.ts` (Balances). Capture recipes:
-    `requirements-board/capture/recipes/US-08.3.1.json`, `US-08.3.2`, `US-08.3.4`, `US-08.3.5`,
+    `requirements-board/requirements/capture/recipes/US-08.3.1.json`, `US-08.3.2`, `US-08.3.4`, `US-08.3.5`,
     `US-13.2.1` (status "absent"), `US-13.2.2`, `US-09.1.4` (the simulator ACCPAY record).
   - 16's tests `aaFeeActions.test.ts` and the `bcti.ts` tests, 25's lock tests and 27's
     `prepayment.test.ts` and `prepaymentParity.test.ts`, which this phase's re-pointing must keep
@@ -1348,7 +1348,7 @@ in shots, so "Inject unmatched receipt" and the payment entries are staged from 
 `/demo/control` entries in `setup` (ATLAS.md, Shell). The Xero rows below overlap Phase 37's: that phase
 re-shoots the Xero simulator shots again.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built. Most EP-08 stories belong to other phases; this phase only re-checks them,
 because the ledger changes what the monitor, invoice rail and balance screens read:
 
@@ -1385,7 +1385,7 @@ because the ledger changes what the monitor, invoice rail and balance screens re
 - `US-08.3.4`, `US-09.2.4`, `US-10.2.1` (`billing-payables-run`, "Run payables") and `US-10.1.2`: the payables panel reads `payablesDue(state)` and gains the Open the ledger link; the button and hook are kept, so check only.
 - `US-08.5.2`, `US-13.3.2` ("Resolve & retry"): behaviour as before; check only.
 - Web Accounts and Mobile Balances recipes: `US-07.4.1` (whose stale "List gone on invoice generation" caption is Phase 38a's to replace with the main view and archive; here only re-point a highlight this phase moved), `US-10.3.2`, `US-12.1.2`, `US-12.2.1`, `US-12.2.2` (and `US-10.2.3`): the "Your position" strip sits above the Accounts sub-tabs, the aging panel is re-pointed, and the empty-state wording changes ("from the billing MIRROR" and the ACCPAY captions are removed). Re-shoot and fix captions or highlights that quote the old words. Phase 38 later replaces the aging panel.
-- Any caption that says the Billing Engine is a mirror of Xero or names ACCREC or ACCPAY on an anaesthetist screen: sweep the recipes with `grep -il mirror requirements-board/capture/recipes/*.json`.
+- Any caption that says the Billing Engine is a mirror of Xero or names ACCREC or ACCPAY on an anaesthetist screen: sweep the recipes with `grep -il mirror requirements-board/requirements/capture/recipes/*.json`.
 
 **ATLAS.md.** Update Routes (`/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId`, the Ledger nav item and its amber badge), Existing hooks (`ledger-balance`, `ledger-tiles`, `ledger-anaesthetists-out-of-balance`, `ledger-unmatched`, `ledger-pairs`, `web-accounts-position`, `xero-ledger-pair`, the invoice Ledger card hook), the Xero simulator and Control Panel notes (Inject unmatched receipt and its two choices, the re-pointed payment entries) and Seed data (the seeded ledger is in balance with no anaesthetist out of balance; the $120.00 unmatched receipt and its references).
 

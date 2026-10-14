@@ -1090,7 +1090,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 43` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1194,7 +1194,7 @@ anything settled in the Decisions log.
   `domain/billing` above all), the
   baseline and full-scale timings for each screen, the generated counts, the generation time in Node and in
   the browser, the checklist item by item, test counts, and the review pass.
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   - "Full-scale data is an in-memory demonstration built on the pristine seed; saving pauses and nothing is
     serialised until Reset" (US-15.0.4). The 14 demo anaesthetists are untouched and the 71 generated ones
@@ -1222,7 +1222,7 @@ anything settled in the Decisions log.
   - "Synthetic data only is an environment marker in neutral styling, not a demo badge."
 - **Handoff notes:** the Future-scope message log still shows the patient name on failed rows (US-14.5.1 is
   Future); US-15.0.4's formal performance testing belongs to the Testing milestone;
-  `requirements-board/capture/recipes/US-15.0.4.json` was `absent` with a reason that said scale is only
+  `requirements-board/requirements/capture/recipes/US-15.0.4.json` was `absent` with a reason that said scale is only
   narrated; this phase's Catalogue screenshots step rewrites it (the Load full-scale data banner and the
   paged Day view); Phase 44's parity audit:
   no PWA stand-in required for this phase; the new optional "Full scale" aside and S5 beats for Phase 44's

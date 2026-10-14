@@ -1,6 +1,6 @@
 ---
 name: update-requirements
-description: Record new evidence (meeting transcripts, notes, emails, typed decisions or features) as a catalogue note, fill in question answers the evidence settles, and update the requirements catalogue from the note and from question answers changed in the repo. Use after a client meeting, after answering questions on the Requirements Board, or when the user gives decisions or new features to record. Requirements only; the build plan is updated afterwards by update-build-plan.
+description: Record new evidence (meeting transcripts, notes, emails, typed decisions or features) as a catalogue note, fill in question answers the evidence settles, and update the requirements catalogue from the note and from question answers changed in the repo. Use after a client meeting, after answering questions on the Requirements Board, or when the user gives decisions or new features to record. Requirements only; any follow-on work (such as a build plan) is a separate skill, named under "This repo".
 argument-hint: "[attach or paste transcripts and notes] [optional: since <git ref>, default HEAD]"
 ---
 
@@ -15,25 +15,38 @@ Outputs:
 - requirement items edited, added, retired or moved in `REQ/stories/` (plus `REQ/domain-model.md`
   where the model changed);
 - new questions for anything left unresolved;
-- a change log in `REQ/changes/`, which `update-build-plan` reads next.
+- a change log in `REQ/changes/`, which the follow-on skill (if any) reads next.
 
-Paths below are relative to the repo root. `REQ` = `requirements-board/requirements` (the requirements
-folder: the catalogue, its notes, artifacts and change logs all live there).
+## This repo
+
+The only repo-specific facts this skill uses. When the board moves to another repo, rewrite this
+block (the board's `ADOPTING.md` says how) and leave the rest alone.
+
+- `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements` (the
+  requirements folder: the catalogue, its notes, artifacts and change logs all live there). Paths
+  below are relative to the repo root.
+- Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
+- Who signs requirements off: AA, the client. The project's own wording for each status is in
+  `REQ/board.config.json` (`statuses`).
+- Out of bounds for this skill: the prototype and its build plan (`aa-prototype/`, `docs/prototype-build/`).
+- Follow-on skill: `update-build-plan`, which reads the change log once the user has committed it.
+- Shape precedent for a note: the newest meeting note in `REQ/notes/` (for example
+  `2026-09-29-aa-client-meeting.md`).
 
 ## Ground rules
 
 - Read `REQ/SCHEMA.md` and `REQ/notes/README.md` first: they are binding (item format, sources,
-  statuses, the answering convention, IDs, no deletes). Then read the newest meeting note in `REQ/notes/`
-  (for example `2026-09-29-aa-client-meeting.md`): it is the shape precedent for the note this skill writes.
-- The catalogue is the source of truth. This is requirements work only: do not read or change the
-  prototype or its build plan (in this repo `aa-prototype/` and `docs/prototype-build/`).
+  statuses, the answering convention, IDs, no deletes). Then read the shape precedent named under
+  "This repo": it is the shape the note this skill writes follows.
+- The catalogue is the source of truth. This is requirements work only: do not read or change anything
+  "This repo" lists as out of bounds.
 - Never invent a requirement. Every change traces to a note point (`"Notes <date> · <slug> #n"`) or a
   question answer. Anything the evidence leaves unresolved becomes a new question (OQ), not a guess.
-- Every source you write must resolve: the board opens it at the spot it cites, and `npm run check`
+- Every source you write must resolve: the board opens it at the spot it cites, and the check
   warns on one that resolves to nothing (SCHEMA's `sources` row lists the forms). Use
   `"RFP p.<printed page> · <Section> › <subheading>"`, `"Notes <date> · <the note's title words> #n"`
   (several points as `#2 #16`), `"Transcript <date> · <name> L27-33"` for transcript lines, a bare
-  `OQ-nn`. Check one with `npm --prefix requirements-board run source -- "<source>"`.
+  `OQ-nn`. Check one with `npm --prefix BOARD run source -- "<source>"`.
 - Notes are append only: never edit an existing note, except the one this run creates.
 - Keep the user's own wording when quoting their answers and notes (fix spelling, drop filler).
 - Do not commit or push.
@@ -118,10 +131,10 @@ folder: the catalogue, its notes, artifacts and change logs all live there).
    - puts the decision in the requirement itself (description, acceptance criteria, technical discussion,
      notes), in plain language and the SCHEMA house style;
    - adds the note or question to `sources` in date order, quoted only when it contains `#` or `: `
-     (`- "Notes 2026-10-01 · AA meeting with Greg #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
+     (`- "Notes 2026-10-01 · Client meeting #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - writes each source in a form that resolves (Ground rules), so it opens its spot;
    - moves status per the answering convention (Confirmed where settled, Verify where it still needs
-     checking with AA);
+     checking with whoever signs off, per "This repo");
    - sets `components`;
    - creates stories or features with the next free ID under the right parent;
    - retires superseded items rather than deleting them;
@@ -138,19 +151,21 @@ folder: the catalogue, its notes, artifacts and change logs all live there).
 
 ## Stage 5: finish
 
-1. Run `npm run check` from the repo root until there are no errors, and no new warnings from this run.
-2. Links: run `npm --prefix requirements-board run links:index`, then the `link-requirements` workflow,
-   with `batches` set to the touched epics. Then run `npm --prefix requirements-board run links:apply --
-   --dry-run`, check the output, and apply it without `--dry-run`. Run `npm run check` again.
+1. Run the check ("This repo") until there are no errors, and no new warnings from this run.
+2. Links: run `npm --prefix BOARD run links:index`, then the `link-requirements` workflow, with
+   `batches` set to the touched epics (and `board` set to BOARD if it is not `requirements-board`).
+   Then run `npm --prefix BOARD run links:apply -- --dry-run`, check the output, and apply it without
+   `--dry-run`. Run the check again.
 3. **Completeness critic (fresh):** read the note and the change list against the final catalogue. Is
    every point reflected or justified?
 4. **Change log:** write `REQ/changes/YYYY-MM-DD-<slug>.md`.
    Create the folder if it is new, with a one-paragraph `README.md` explaining that it holds one change
-   log per requirements update, which the build-plan update reads. Sections:
+   log per requirements update, which any follow-on skill reads. Sections:
    - Inputs (links to the note and the raw files);
    - Questions answered;
    - Items changed, added, retired or moved (ID link, title, what changed, sources);
    - New questions;
    - Points with no requirement change, and why.
 5. Report briefly: questions answered, items changed, added and retired, new questions, and anything
-   left for the user to decide. Remind them to commit and push, then run `/update-build-plan <commit>`.
+   left for the user to decide. Remind them to commit and push, then, if "This repo" names a
+   follow-on skill, to run it with the commit (`/<skill> <commit>`).

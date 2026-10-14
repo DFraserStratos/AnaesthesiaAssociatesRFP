@@ -713,7 +713,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 38` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -731,7 +731,7 @@ matches what was built:
 - `/web/accounts/overdue` is the `start` of `US-07.4.1` (shot `invoices-in-balances` only, line ~158), `US-08.3.5` (`web-overdue`) and `US-08.3.2` (`web-accounts`). The route redirects to `/web/accounts/outstanding`, so they still load, but re-point each `start` to the new path. The `US-08.3.5` caption "What is still owed to the anaesthetist, aged" is no longer true: reword to "One row per unpaid payable, oldest first"; its "collected and paid out" shot may now point at the dashboard's Financial position or 36's strip. `US-07.4.1`'s caption "The next day the new invoices appear in the anaesthetist's outstanding balances" stays true; its `list-drops-off` shots and captions are 38a's, so do not touch them.
 - `US-12.2.2` mobile click `GST this month` and `US-12.1.2` highlight `Six-monthly` segmented control, covered in the table above.
 - No List pill or row text changes here, so `US-07.1.1` and `US-07.2.1` (`span:has-text("Submitted to office")`) are not broken by this phase.
-- Re-grep before capture: `grep -lE 'accounts/overdue|GST this month|GST activity|Receivables|Productivity|Overdue' requirements-board/capture/recipes/*.json` (`US-13.2.1`'s absentReason names "Receivables" in prose; that is 36's, not a selector).
+- Re-grep before capture: `grep -lE 'accounts/overdue|GST this month|GST activity|Receivables|Productivity|Overdue' requirements-board/requirements/capture/recipes/*.json` (`US-13.2.1`'s absentReason names "Receivables" in prose; that is 36's, not a selector).
 
 **ATLAS.md.** Routes: `/web/accounts/overdue` becomes `/web/accounts/outstanding` (note the redirect) and the GST tab is the GST schedule; `/mobile/balances` description ("Outstanding and GST this period"). Overlays/Existing hooks: add the new `data-shot` hooks (`web-financial-position`, `web-accounts-outstanding`, `web-gst-period-nav`, `web-gst-schedule`, `web-gst-balance-check`). Seed data: the dashboards seed slice and the Productivity and Leave panels are gone.
 
@@ -804,7 +804,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - the `PERSIST_VERSION` bump (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
-- **Catalogue screenshots result:** recipes created or changed (US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2 and the re-pointed US-07.4.1 `invoices-in-balances`, US-08.3.5, US-08.3.2), the `capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
+- **Catalogue screenshots result:** recipes created or changed (US-12.2.1, US-12.2.2, US-12.2.3, US-12.1.2 and the re-pointed US-07.4.1 `invoices-in-balances`, US-08.3.5, US-08.3.2), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** 2026-07-23 "Seeded anaesthetist-dashboard figures". The Productivity and Leave
      panels and their seed are removed (RV-18); the dashboard is calendar, financial position and cover.

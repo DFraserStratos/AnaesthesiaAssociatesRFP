@@ -425,7 +425,7 @@ what was actually built):
   `playwright.config.ts` (the `pwa-device` project has `testMatch: /pwa-device\.spec\.ts$/` and
   `prototype` the matching `testIgnore`, so a new PWA spec needs both regexes widened).
 - Docs: all of `docs/demo-guide/`; `aa-prototype/README.md` (Control Panel, Demo actions, Office
-  simulation sections); `requirements-board/capture/ATLAS.md` ("Scenario jumps" table, the
+  simulation sections); `requirements-board/requirements/capture/ATLAS.md` ("Scenario jumps" table, the
   `scenario-s1` to `scenario-s5` and `scenario-confirm` hooks) and the capture recipes whose setup is
   `{ "scenario": "Sn" }` (28 uses in 20 recipes at the 2026-10-08 count: 25 `S3`, 3 `S5`; for example
   `US-08.1.1.json`; recount, since later phases add recipes).
@@ -931,7 +931,7 @@ have moved between sessions).
 11. **Docs beside the guide.**
     - `aa-prototype/README.md`: the Control Panel paragraph (index plus scenario jumps with beat links),
       the Demo actions and PWA sheet sections as finally built, and the Office simulation section.
-    - `requirements-board/capture/ATLAS.md`: the "Scenario jumps" table (what each jump stages and its
+    - `requirements-board/requirements/capture/ATLAS.md`: the "Scenario jumps" table (what each jump stages and its
       story; at plan time it still says S1 fires `fire-hospital-message` on Mobile Lists, which 34
       moved to the Future-scope surface) and the "Demo actions by screen" table (Phase 14's name; it
       lists only Phase 14's entries at plan time). Capture recipes whose `{ "scenario": "Sn" }`
@@ -1131,7 +1131,7 @@ This phase **is** the demo guide update. Every file changes:
   `01-personas-and-responsibilities.md`, `README.md`: brought into line (item 9).
 - `docs/demo-guide/master-demo-guide.html`: regenerated in full (item 10).
 - The Control Panel scenario text: now in `demoScenarios.ts` (items 2 and 3).
-- Beside the guide: `aa-prototype/README.md`, `requirements-board/capture/ATLAS.md` (item 11).
+- Beside the guide: `aa-prototype/README.md`, `requirements-board/requirements/capture/ATLAS.md` (item 11).
 
 End with the final consistency read: the master guide against the Markdown, and both against the
 running app.
@@ -1191,8 +1191,8 @@ whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have
   reschedule rules, concurrent edits), US-02.3.5 (automatic change emails), US-04.2.13 (a Contract
   schedule upload) and US-04.3.7 (a procedure off the schedule). A badged Future-scope demo may keep
   `partial` with a reason saying it is Future scope, never `captured`;
-- `capture/REPORT.md` ends with no failed recipe and no story without a recipe;
-- `capture/ATLAS.md` is read end to end against the app: Routes, Personas and IDs, Seed data, Overlays,
+- `requirements-board/requirements/capture/REPORT.md` ends with no failed recipe and no story without a recipe;
+- `requirements-board/requirements/capture/ATLAS.md` is read end to end against the app: Routes, Personas and IDs, Seed data, Overlays,
   Existing hooks, Demo control panel (the index plus Demo actions by screen, and the rebuilt "Scenario
   jumps" table from work item 11) and Gotchas, each corrected where a catch-up phase left it stale;
 - `npm run verify:board` is green, and the REPORT.md counts before and after go in the PROGRESS entry
@@ -1287,7 +1287,7 @@ review-and-fix pass (PROGRESS convention 18)**:
   - `PERSIST_VERSION` (unchanged, or from and to, with why);
   - the before and after Vitest and Playwright counts;
   - the review pass.
-- **Catalogue screenshots (final sweep):** the full-run `capture/REPORT.md` counts before and after
+- **Catalogue screenshots (final sweep):** the full-run `requirements-board/requirements/capture/REPORT.md` counts before and after
   (captured, partial, absent, failed, no recipe), the `absentReason`s rewritten, the stale captions
   corrected, the Retired or Future recipes set to `absent`, the recipes re-pointed for the rebuilt
   scenario jumps, and the ATLAS.md sections corrected; repeat the final counts in the catch-up closing

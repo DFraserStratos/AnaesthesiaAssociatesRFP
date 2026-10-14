@@ -1290,7 +1290,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 in particular) will have changed these recipes since this plan was written. US-06.4.2 has left this
 phase (Retired); Phase 27 marks its recipe "Retired: merged into US-06.4.1": confirm it.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1426,7 +1426,7 @@ readings this phase explicitly supersedes.
     seeded backdrop run, the ledger's held total), and the refund Booking's and the rebook's figures;
   - the handoff for Phase 44: US-08.6.4's prepaid-combination split is still refused (39's handoff,
     not picked up here).
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts
   before and after (captured, partial, absent, failed), the recipes this phase broke and how they were
   re-pointed, the stale US-06.4.1 balance-invoice caption confirmed gone, and any partial reason
   handed to a later phase.

@@ -1162,7 +1162,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 caption that says an additional procedure bills time units only, that base and modifiers "stay on the
 first", or that a second procedure is priced by an ordinal or a Contract rule.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1357,5 +1357,5 @@ run the standard **adversarial review-and-fix pass (PROGRESS convention 18)**:
   - The OQ-90 outcome: the switch, the capture's role selector and the provisional pill.
 - **Catalogue screenshots.** The step's result: recipes created (US-03.2.2, US-04.2.11) and changed
   (US-03.2.1, US-05.3.1, US-05.3.5, the US-03.2.3 and US-05.3.2 shots, the retired US-04.2.5 and
-  US-05.3.4 set absent, plus every recipe the step broke), the `capture/REPORT.md` counts (captured,
+  US-05.3.4 set absent, plus every recipe the step broke), the `requirements-board/requirements/capture/REPORT.md` counts (captured,
   partial, absent, failed) before and after, and any partial reason handed to a later phase.

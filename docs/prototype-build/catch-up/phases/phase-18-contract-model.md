@@ -840,7 +840,7 @@ after the review pass and before the PROGRESS entry. Re-run
 these recipes since this plan was written. All covered shots are Admin (Master data); the mobile and
 web apps get no new screen.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -957,7 +957,7 @@ not re-raise anything settled in the Decisions log.
   screens worth a look (Admin, Master data: Contract holders; Contracts with a search; the Doyle
   versions; Health NZ New version), each with its route and persona.
 - **Catalogue screenshots result:** the recipes created (US-04.1.5) and filled in (US-04.1.4,
-  US-04.2.10), the others changed and the broken ones re-pointed, the `requirements-board/capture/REPORT.md`
+  US-04.2.10), the others changed and the broken ones re-pointed, the `requirements-board/requirements/capture/REPORT.md`
   counts (captured, partial, absent, failed) before and after, and the partial reasons handed on
   (FT-04.1 and US-04.1.4 to 19a; US-04.1.1, US-04.1.5 and US-04.2.1 to 20 and 21).
 - **Status row:** Phase 18 (Contract holders and dated Contracts) DONE with the date, or IN PROGRESS

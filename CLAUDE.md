@@ -62,7 +62,11 @@ Not the place to edit requirements:
   its data folder `requirements/` and its agent skills in `agent/` (`update-requirements`,
   `add-artifact`, `svg-diagram`, `transcript-reconciler`, and the `link-requirements` workflow),
   exposed to Claude Code by symlinks in `.claude/skills/` and `.claude/workflows/`; edit the files in
-  `requirements-board/agent/`. Its README's "Bring the board to another repo" says what to copy. Not
+  `requirements-board/agent/`. The board's code is project-generic: this project's vocabulary
+  (components, screenshot apps, status wording, capture settings) is `REQ/board.config.json`, the
+  screenshot recipes, atlas and report are in `REQ/capture/` (its prototype-specific capture steps in
+  `REQ/capture/steps.ts`), and each skill keeps its repo-specific facts in one "This repo" block.
+  `requirements-board/ADOPTING.md` is the checklist for setting it up in another repo. Not
   part of the prototype, never deployed; its dev server is the file API. The prototype conventions
   below (mock backend, determinism, `PERSIST_VERSION`) do not apply to it. Root `npm run dev` starts
   the prototype, its mobile PWA (5174) and the board (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The

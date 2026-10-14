@@ -1265,7 +1265,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 40` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built. The rows are the seven `recipe-status.mjs 40` lists at `60e2d1e` (unchanged by
 the 2026-10-08 update; DM-23's follow-up part has no recipe of its own and is shot under US-11.3.3).
 Two catalogue captions describe the old behaviour and are replaced when their recipes are updated:
@@ -1411,7 +1411,7 @@ Run the standard review-and-fix pass (PROGRESS convention 18):
       balance" pill;
   - the `PERSIST_VERSION` bump (from and to);
   - the tests added, the before and after Vitest and Playwright counts, and the review pass.
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the 2026-07-22 third external plan review, finding #5 ("`nhi` optional, one
      seeded provisional NHI pending patient; NHI-driven behaviours apply when present"). The patient

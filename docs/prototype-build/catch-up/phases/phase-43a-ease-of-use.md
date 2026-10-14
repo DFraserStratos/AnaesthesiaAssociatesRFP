@@ -986,7 +986,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 43a` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1112,7 +1112,7 @@ Do not re-raise anything settled in the Decisions log.
   - tests added and the before and after Vitest and Playwright counts, and the `demo-ready.json`
     storage preset;
   - the review pass.
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts
   before and after (captured, partial, absent, failed), the recipes this phase broke and how they were
   re-pointed, confirmation that 20a's, 21's, 24's and 27's anaesthetist recipes are unchanged, and any
   partial reason handed to a later phase.

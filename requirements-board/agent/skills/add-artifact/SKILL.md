@@ -10,17 +10,24 @@ An artifact is anything requirements point at: a diagram, a mockup, a screenshot
 transcript, a note, a document. The Requirements Board shows it on its Artifacts tab (agents write
 artifacts as files; the board's Edit details changes only the sidecar's title, kind, status, date,
 author, components, sources and description, never the file or its regions) and draws a red box round any spot a requirement links
-to. The format is under **Artifact file** in `REQ/SCHEMA.md`; read it first. `REQ` =
-`requirements-board/requirements`, the requirements folder: sidecars live in `REQ/artifacts/`, the
-artifact files themselves in `REQ/artifacts/files/` (notes stay in `REQ/notes/`).
+to. The format is under **Artifact file** in `REQ/SCHEMA.md`; read it first. Sidecars live in
+`REQ/artifacts/`, the artifact files themselves in `REQ/artifacts/files/` (notes stay in `REQ/notes/`).
+
+## This repo
+
+The only repo-specific facts this skill uses; rewrite them when the board moves (see its `ADOPTING.md`).
+
+- `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements`.
+- Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
+- The board's dev server: `http://localhost:5180` (`npm --prefix requirements-board run dev`).
 
 ## 1. Register it
 
 From the repo root:
 
 ```
-npm --prefix requirements-board run artifact:new -- <file> --title "<name>" --kind <kind> --date <YYYY-MM-DD> [--author "..."] [--source "..."] [--cited-as "..." [--page-offset n] [--within <heading-slug>]]
-npm --prefix requirements-board run artifact:new -- --mermaid <file.mmd> --title "<name>" --date <YYYY-MM-DD>
+npm --prefix BOARD run artifact:new -- <file> --title "<name>" --kind <kind> --date <YYYY-MM-DD> [--author "..."] [--source "..."] [--cited-as "..." [--page-offset n] [--within <heading-slug>]]
+npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --date <YYYY-MM-DD>
 ```
 
 - `--kind`: `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`.
@@ -30,7 +37,7 @@ npm --prefix requirements-board run artifact:new -- --mermaid <file.mmd> --title
 - `--title`: what it shows, in plain words and sentence case ("How the system works out a price",
   not the file name).
 - `--source`, repeatable: where it came from, in the requirements' sources convention
-  (`"Notes 2026-10-02 · AA meeting with Greg #11"`, `"Q&A 2026-09-24 #2"`, `"Recording 2026-10-01 · ..."`).
+  (`"Notes 2026-10-02 · Client meeting #11"`, `"Q&A 2026-09-24 #2"`, `"Recording 2026-10-01 · ..."`).
 - `--cited-as`, repeatable: how requirements' `sources:` cite it, so each source opens it at the spot
   it names (SCHEMA's `cited_as`). A source that starts with these words resolves here; after them it
   may give `p.27` (a page), `#2 #3` (numbered points) or `L27-33` (lines). Which artifacts need it:
@@ -45,7 +52,7 @@ npm --prefix requirements-board run artifact:new -- --mermaid <file.mmd> --title
     one follow `superseded_by` to the new one by themselves.
   `--within <heading-slug>` makes points count only under that heading (for a note that numbers each
   section from 1). For a cited name that should open one spot, add `spot: <region-id>` to the entry in
-  the sidecar by hand. Then check a few with `npm --prefix requirements-board run source -- "<source>"`.
+  the sidecar by hand. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
 - The file comes into `REQ/artifacts/files/`: an SVG or image is copied in as `AR-nn.<ext>`; a
   transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (`git mv` when
   tracked; fix any links to its old place). A file already in the requirements folder stays put.
@@ -91,13 +98,13 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
 
 ## 4. Check and look
 
-- `npm run check` from the repo root: every anchor must match (it says which don't), every link
+- Run the check ("This repo"): every anchor must match (it says which don't), every link
   must name an artifact and spot that exist, and every `cited_as` entry be well formed and claimed by
   this artifact alone. Sources that now resolve to nothing, or to a point or page that isn't there,
   are warnings. Fix until there are no errors and no new warnings.
-- Optionally open `http://localhost:5180/#/artifacts/AR-nn?region=<spot>` to see the red box land
-  (the dev server must be running: `npm run dev`). For many regions, the read-only spec
-  `requirements-board/e2e/artifacts-real.spec.ts` opens every one.
+- Optionally open `<dev server>/#/artifacts/AR-nn?region=<spot>` to see the red box land (the
+  board's dev server must be running; "This repo"). For many regions, the read-only spec
+  `BOARD/e2e/artifacts-real.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test` in BOARD).
 - Report the new ID, its regions and the items linked, briefly.
 
 ## Replacing or retiring one

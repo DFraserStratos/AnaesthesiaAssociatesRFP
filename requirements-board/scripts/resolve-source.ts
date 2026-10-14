@@ -3,7 +3,7 @@
  * resolved as the board resolves it (shared/sources.ts). For agents that need the reasoning
  * behind a requirement without reading a whole transcript.
  *
- *   npm run source -- "Notes 2026-10-01 · AA meeting with Greg #16"   one source string
+ *   npm run source -- "Notes 2026-10-01 · Client meeting with Sam #16"   one source string
  *   npm run source -- --item US-04.2.3                                 every source of an item, question or artifact
  *   npm run source -- --item US-04.2.3 --text                          ... and print each cited passage
  *   npm run source -- --report                                         the whole catalogue: counts, unresolved, a sample

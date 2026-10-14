@@ -961,7 +961,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 29` first: earlier phases may have
 changed these recipes since this plan was written (Phase 28 re-points several of them).
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built. Name the new `data-shot` hooks from item 16 (suggested:
 `mobile-availability-calendar`, `mobile-availability-sheet`, `web-availability-mine`,
 `admin-availability-statuses`) and use them in the highlights. No caption says "slot" except where it

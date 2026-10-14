@@ -15,7 +15,7 @@ const statuses: Record<string, QuestionStatus> = {
   'OQ-17': 'Open',
   'OQ-20': 'Proposed',
 }
-const qs = Object.entries(statuses).map(([id, status]) => question({ id, status, owner: id === 'OQ-10' ? 'Greg' : 'AA' }))
+const qs = Object.entries(statuses).map(([id, status]) => question({ id, status, owner: id === 'OQ-10' ? 'Sam' : 'Client' }))
 const ids = (f: QuestionFilters, anchor?: { id: string; status: QuestionStatus }) => questionWalk(qs, f, anchor).map((q) => q.id)
 
 describe('questionWalk', () => {
@@ -28,7 +28,7 @@ describe('questionWalk', () => {
   })
 
   it('applies the list filters', () => {
-    expect(ids({ ...all, owner: 'Greg' })).toEqual(['OQ-10'])
+    expect(ids({ ...all, owner: 'Sam' })).toEqual(['OQ-10'])
     expect(ids({ ...all, query: 'oq-1' })).toEqual(['OQ-10', 'OQ-12', 'OQ-17', 'OQ-13'])
   })
 

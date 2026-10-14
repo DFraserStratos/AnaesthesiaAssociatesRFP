@@ -1,38 +1,41 @@
 # Requirements Board
 
-A local dev tool for reading, editing and arranging a requirements catalogue. Not part of the
-prototype and never deployed: its dev server is its file API.
+A local dev tool for reading, editing and arranging a requirements catalogue. Not part of any app
+the catalogue describes, and never deployed: its dev server is its file API.
 
 This folder is a **portable kit**, three parts:
 
-- **the app** (everything below except `requirements/` and `agent/`): generic apart from a few
-  labels listed under "Bring the board to another repo";
+- **the app** (everything below except `requirements/` and `agent/`): generic. A project's own
+  vocabulary (its name, components, screenshot apps, status wording, screenshot capture) is read
+  from `requirements/board.config.json`; with none, the board runs on neutral defaults;
 - **`requirements/`**: this project's requirements catalogue, the only project data. Stories,
-  questions, notes, change logs, artifacts and their files, screenshots, the domain model. Its
-  `README.md` is the folder guide and conventions, its `SCHEMA.md` the file format. The app and any
-  agent edit those same files;
+  questions, notes, change logs, artifacts and their files, screenshots and their capture recipes,
+  the domain model, `board.config.json`. Its `README.md` is the folder guide and conventions, its
+  `SCHEMA.md` the file format. The app and any agent edit those same files;
 - **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
   `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`) and the
   `workflows/link-requirements.js` workflow. Claude Code finds them through relative symlinks in the
-  repo's `.claude/skills/` and `.claude/workflows/`; edit the files here, not through the links.
+  host repo's `.claude/skills/` and `.claude/workflows/`; edit the files here, not through the links.
+  Each skill keeps its few repo-specific facts in one "This repo" block.
 
 ```
 npm install
 npm run dev          # http://localhost:5180
 npm test             # Vitest: file round-trip, check rules, IDs, the file API, store (incl. undo), board graph, both layouts, move planner
-npm run test:e2e     # Playwright: edges on the real catalogue (5181, read-only); Mapped drags on a fixture (5182)
+npm run test:e2e     # Playwright on a fixture catalogue (5182); BOARD_E2E_REAL=1 adds this project's live checks (5181, read-only)
 npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
 npm run verify       # typecheck + unit tests + catalogue check: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
-npm run links:index  # compact catalogue index for the linking agents (.links/index.md)
+npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/)
 npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run first)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
 npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
+npm run capture      # screenshots of the project's app from recipes (optional; see Capturing screenshots)
 ```
 
-From the repo root, `npm run dev` starts this, the prototype and the mobile PWA together.
+A host repo usually adds root scripts that call these (`ADOPTING.md`).
 
 **Design:** `DESIGN.md` is the north star for anything visual (names over IDs, type colours, status
 pills, card and sheet anatomy). Read it before changing the UI.
@@ -49,6 +52,7 @@ via `@fontsource` (offline). Scripts run on Node's built-in TypeScript support (
 ```
 shared/        code shared by server, scripts and browser
   types.ts       record shapes and vocabularies
+  config.ts      the project's vocabulary (board.config.json): parse, defaults, lookups
   files.ts       parse / serialise one catalogue file (deterministic, round-trips byte for byte)
   check.ts       integrity rules
   ids.ts         next-ID assignment, sibling order
@@ -81,9 +85,9 @@ src/
                  from the catalogue, pure), cardData, CardNode, LaneNode (lane rule, add slot, drop bar), LaneHeaders
   components/    ItemModal, QuestionModal, Screenshots (gallery, lightbox, image editor), Sheet,
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
-tests/         Vitest, on a synthetic fixture catalogue (plus one test that the real catalogue is valid)
-requirements/  the project's requirements catalogue (see its README.md and SCHEMA.md)
-agent/         the agent skills and workflow that maintain it (symlinked from the repo's .claude/)
+tests/         Vitest, on a synthetic fixture catalogue (plus a few that the project's catalogue, if any, is valid)
+requirements/  the project's requirements catalogue and board.config.json (see its README.md and SCHEMA.md)
+agent/         the agent skills and workflow that maintain it (symlinked from the host repo's .claude/)
 shots/         local-only Playwright scratch scripts (gitignored; some mutate the real catalogue)
 ```
 
@@ -131,7 +135,7 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   card), but leaves any references to it for `npm run check` to report.
 - Every card has a **History** (sheet footer): a newest-first timeline of its changes. The dev
   server journals every change it sees to a card, its own saves and moves and anyone's edit on
-  disk, to `requirements-board/.history/<ID>.jsonl` (gitignored, per machine; `HISTORY_DIR`
+  disk, to `.history/<ID>.jsonl` in this folder (gitignored, per machine; `HISTORY_DIR`
   overrides; a catalogue other than the real one journals to a temp folder). At start it logs what
   changed while it was off. Commits older than a card's first journal entry fill in its past from
   git (`git log` + `cat-file`, over the file's current path and every earlier one git recorded a
@@ -172,27 +176,54 @@ shots/         local-only Playwright scratch scripts (gitignored; some mutate th
   matches across element and line breaks, counted over a whole PDF from pdf.js's page text.
 
 Screenshots: put files under `requirements/assets/<ID>/` and list them in the item's `images`, each
-with a `viewport` and optionally an `app` (`admin`, `web`, `mobile`, `simulator`). The item sheet's
+with a `viewport` and optionally an `app`, one of the keys in `screenshotApps`. The item sheet's
 gallery has one tab per app present, in that order; untagged images fall back to Desktop / Mobile.
 
-### Capturing prototype screenshots
+### Project config
 
-`npm run capture` takes screenshots of the prototype from recipes and links them to the catalogue:
+`requirements/board.config.json` holds what differs between projects. Every field is optional:
 
-- Recipes: one JSON file per item in `capture/recipes/<ID>.json` (format and screen atlas in
-  `capture/ATLAS.md`). Each recipe lists shots, each with an app, a start route, optional setup,
-  and one or more states (steps plus the selectors to box in red).
-- Needs the prototype on `localhost:5173` and the mobile PWA dev server on `localhost:5174`; root
-  `npm run dev` starts both. The runner stops if either is down. VS Code task: **Screenshot Update**.
-- `node scripts/capture.ts --only US-03.2.4,EP-03` limits the run (an epic or feature ID takes its
-  descendants); `--dry` checks recipes and selectors without writing anything.
-- Output: `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
-  (hand-added images are kept; stale generated files are deleted), and `capture/REPORT.md`.
-  A file counts as generated when its name starts with an app and a dash (`scripts/captureFiles.ts`),
-  so give hand-added screenshots another prefix (`hand-dashboard.png`, not `web-dashboard.png`).
-- Every prototype catch-up phase ends by updating the recipes for the items it covers (and any it
-  broke) and running a full capture, so the stories' screenshots match the app ("Catalogue
-  screenshots" in `docs/prototype-build/catch-up/ROADMAP.md`).
+- `project`: `name` (beside the board's name and in the tab title) and `locale` (dates and times;
+  unset uses the browser's);
+- `components`: `[{ "name", "code" }]`, the areas items belong to, in order; `code` is the card
+  glyph (unset: the name's first three letters). Listed, the check holds items to them; empty, any
+  name goes and the filters offer the ones in use;
+- `screenshotApps`: `[{ "key", "label", "viewport" }]`, the apps screenshots come from. Keys are in
+  file names and item frontmatter, so keep them stable;
+- `statuses` and `questionKinds`: `{ "<value>": { "label", "help" } }`, the wording beside each
+  item status and question kind (who signs off, what a missing source is). The values themselves
+  are fixed: the board's behaviour depends on them;
+- `capture`: see Capturing screenshots.
+
+The server reads it with the catalogue and reloads it live; a malformed entry is reported by the
+check and left at its default.
+
+### Capturing screenshots
+
+`npm run capture` takes screenshots of the project's own app from recipes and links them to the
+catalogue. It is optional: a project with no `capture` section in `board.config.json` skips it.
+
+- **Set up** in `board.config.json`: each screenshot app (`screenshotApps`: key, label, viewport) and,
+  under `capture.apps`, its dev server's `url`, the `setupRoute` a shot with setup steps loads first,
+  and `hideCss` that hides demo-only chrome from every shot. Also `capture.locale`, `timezone`,
+  `startHint` (what to tell the user when a server is down) and where `recipes` and the `report` live,
+  relative to `requirements/`.
+- **Recipes:** one JSON file per item (`<recipes>/<ID>.json`). Each lists shots, each with an app, a
+  start route, optional setup steps, and one or more states (steps plus the selectors to box in red).
+  Built-in steps are plain browser actions: `click`, `dblclick`, `fill`, `press`, `hover`, `select`,
+  `wait`, `scroll`, `goto`.
+- **Project steps:** anything app-specific (jumping to a demo scenario, running a demo action) goes in
+  the module `capture.steps` names, beside the recipes. Its default export maps a step key to a
+  handler, `{ run(page, step, ctx), check?(step) }`; `ctx` gives the app's settings, `setHidden`,
+  `mustFind`, `settle` and the timeout (`StepContext` in `scripts/capture.ts`).
+- The runner stops if an app's dev server is down. `node scripts/capture.ts --only US-03.2.4,EP-03`
+  limits the run (an epic or feature ID takes its descendants); `--dry` runs every step and selector
+  without writing anything.
+- **Output:** `requirements/assets/<ID>/<app>-<name>[-<state>].png`, linked into the item's `images`
+  (hand-added images are kept; stale generated files are deleted), and the report on a full run.
+  A file counts as generated when its name starts with a screenshot app's key and a dash
+  (`scripts/captureFiles.ts`), so give hand-added screenshots another prefix (`hand-dashboard.png`,
+  not `web-dashboard.png`).
 
 ### Adding artifacts
 
@@ -207,7 +238,7 @@ an agent through it; the `svg-diagram` skill saves new diagrams this way.
 
 Each `sources:` string opens the artifact spot it cites, resolved live (`shared/sources.ts`; SCHEMA's
 Sources section): a note by its file name and numbered points (`Notes 2026-10-01 · ... #16`), anything
-else by the `cited_as` prefixes in its sidecar (`artifact:new --cited-as "RFP" --page-offset 1`). Item
+else by the `cited_as` prefixes in its sidecar (`artifact:new --cited-as "Spec" --page-offset 1`). Item
 files never change for it. `npm run check` warns on a source that looks like a citation but resolves to
 nothing. `npm run source -- --item US-04.2.3 --text` prints each source's file, page or lines and the
 cited passage, for an agent that needs the reasoning behind a requirement without reading a whole
@@ -217,15 +248,16 @@ transcript; `-- --report` covers the whole catalogue.
 
 Text links (`[words](US-06.1.1)`), bare IDs and the `related` field are described under Links in
 `requirements/SCHEMA.md`; `shared/links.ts` is the one parser the check, the board and the scripts share.
-To link the whole catalogue with agents, from the repo root:
+To link the whole catalogue with agents:
 
-1. `npm --prefix requirements-board run links:index` writes `requirements-board/.links/index.md`
-   (gitignored): one line per live item, which every agent reads to find targets.
-2. Run the saved workflow **link-requirements** (`.claude/workflows/link-requirements.js`): one
-   Sonnet agent per batch of epics proposes links, and a second Sonnet agent per batch rejects weak ones.
-   They write `<batch>.proposed.json` and `<batch>.verified.json` into `.links/` and edit nothing.
-   Pass `batches: [["EP-06"]]` to try one epic first.
-3. `npm --prefix requirements-board run links:apply -- --dry-run` checks every accepted proposal
+1. `npm run links:index` writes `.links/index.md` (gitignored): one line per live item, which every
+   agent reads to find targets; and `.links/batches.json`, the epics grouped into batches.
+2. Run the workflow **link-requirements** (`agent/workflows/link-requirements.js`) with `batches`:
+   the contents of `batches.json`, or `[["EP-06"]]` to try one epic first (and `board` when this
+   folder is not `requirements-board`). One Sonnet agent per batch proposes links, and a second
+   rejects weak ones. They write `<batch>.proposed.json` and `<batch>.verified.json` into `.links/`
+   and edit nothing.
+3. `npm run links:apply -- --dry-run` checks every accepted proposal
    again against the files and writes `.links/links-report.md`; without `--dry-run` it writes the
    files through the board's serialiser, refusing if that would add a check error. Re-running skips
    what is already applied.
@@ -233,24 +265,6 @@ To link the whole catalogue with agents, from the repo root:
 
 ## Bring the board to another repo
 
-1. Copy `requirements-board/` into the new repo, without `node_modules/`, `.history/`, `.links/`,
-   `test-results/` and `shots/`.
-2. Empty `requirements/` down to a skeleton: keep `SCHEMA.md`, `notes/README.md` and
-   `changes/README.md`; rewrite `README.md`'s **This project** section (and its Component list under
-   Conventions); delete everything else (stories, questions, notes, changes, artifacts and their files,
-   assets, `domain-model.md`, `reference/`, `board-layout.json`). Start `domain-model.md` afresh when
-   there is a model to describe.
-3. Link the skills from the new repo's root:
-   `mkdir -p .claude/skills .claude/workflows`, then for each skill
-   `ln -s ../../requirements-board/agent/skills/<name> .claude/skills/<name>`, and
-   `ln -s ../../requirements-board/agent/workflows/link-requirements.js .claude/workflows/link-requirements.js`.
-4. Give the root `package.json` the scripts this repo's has (`dev:board`, `check`, `verify:board`,
-   `export:csv`), then `npm --prefix requirements-board install` and `npm run check`.
-5. Project-specific bits still in the kit, to change by hand for now:
-   - the app: the brand mark in `src/App.tsx`, the Component vocabulary (`COMPONENTS` in `shared/types.ts`, its
-     short codes in `src/vocab.ts`), the "with AA" status hints in
-     `src/vocab.ts` and `src/components/QuestionModal.tsx`;
-   - `scripts/capture.ts` and `capture/`: screenshots of this repo's prototype (ports 5173 and 5174);
-     drop them, or point them at the new project's app;
-   - the skills: the examples in `agent/skills/svg-diagram/examples/` and the reference diagrams its
-     SKILL.md names, and `update-requirements`' note on which folders are out of bounds.
+`ADOPTING.md` is the checklist, written for an agent to follow in the new repo: what to copy, the
+data-folder skeleton, writing `board.config.json`, the skills' "This repo" blocks, symlinks, root
+scripts and checks.

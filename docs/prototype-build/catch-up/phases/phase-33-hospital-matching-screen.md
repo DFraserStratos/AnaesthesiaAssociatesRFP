@@ -266,7 +266,7 @@ phase's files.
    - Phase 25 if DONE: `editRefusal` after the lock (office on ACTIVE and SUBMITTED, nobody on
      AUTHORISED). At `60e2d1e` `editRefusal` (`store/lifecycle.ts` :48) already refuses
      `listAuthorised`, so the rule holds either way.
-   - Run `grep -rn "processMessage\|applyEffect\|manualIntervention\|resultBookingId\|noTargetList\|pairingIncomplete\|addSourceText" aa-prototype/src aa-prototype/visual requirements-board/capture/recipes`
+   - Run `grep -rn "processMessage\|applyEffect\|manualIntervention\|resultBookingId\|noTargetList\|pairingIncomplete\|addSourceText" aa-prototype/src aa-prototype/visual requirements-board/requirements/capture/recipes`
      to see every consumer of the auto-apply path after 15a to 32a, including the wording appends
      20a added to it.
    - Read the current `PERSIST_VERSION` in `src/store/appStore.ts` (16 at `60e2d1e`, after Phase 15a
@@ -388,7 +388,7 @@ decision; it is not built.
   `store/sourceText.test.ts` (its S12, S13 and MSG-STG-1012 cases assume a message applies),
   `visual/phase11.spec.ts`, `visual/phase12.spec.ts`, `visual/screens.spec.ts`,
   `visual/pwa-device.spec.ts`.
-- Outside the app: `requirements-board/capture/recipes/US-02.1.1.json`, `US-02.1.2.json`,
+- Outside the app: `requirements-board/requirements/capture/recipes/US-02.1.1.json`, `US-02.1.2.json`,
   `US-02.1.3.json`, `US-02.1.4.json`, `US-02.1.5.json`, `US-02.5.1.json`, `US-02.5.2.json`,
   `US-02.5.3.json` and `US-02.5.4.json` (captured from the simulator's auto-apply or the PDF
   analogue), and 20a's `US-02.5.7.json` and `US-03.1.9.json`.
@@ -987,7 +987,7 @@ the guide.
     `matching-import`, `matching-stats`, `matching-table`, `matching-row-<n>`, `matching-received`,
     `matching-diff`, `matching-stack`, `matching-decision`, `matching-apply`, `matching-banner`,
     `matching-unmatched`.
-15. **Capture recipes** (`requirements-board/capture/recipes/`): re-shoot US-02.1.1 (the import
+15. **Capture recipes** (`requirements-board/requirements/capture/recipes/`): re-shoot US-02.1.1 (the import
     dialog and the landed rows), US-02.1.2 (the wording as received, and the decision panel),
     US-02.1.3 (the diff, and the update to an already matched Booking) and US-02.1.4 (the Unmatched
     filter; set `status` to captured and drop the `absentReason`); turn US-02.5.1, US-02.5.2 and
@@ -1292,7 +1292,7 @@ Several current captions describe old behaviour (a surgeon PDF analogue, message
 intervention", a message applied by itself); replace each when its recipe is updated. This section
 is work item 15's full form; work item 15 stays as its short list.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

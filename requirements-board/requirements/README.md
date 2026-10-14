@@ -64,7 +64,8 @@ to `Retired` rather than deleting it.
 | Retired | No longer wanted. Kept for traceability. |
 
 **Component.** Scheduling Engine · Billing/Invoice Engine · Anaesthetist App (mobile + web) ·
-Admin App · Xero Integration · Health Integration · Master Data · Cross-cutting.
+Admin App · Xero Integration · Health Integration · Master Data · Cross-cutting. The list (and each
+one's card code) lives in `board.config.json`; change it there.
 
 **Source.** Where the requirement came from, as an ordered list, oldest first: the RFP page(s)
 (`RFP p.24 · Billing Engine › The three components`), then later notes, Q&A, diagrams or data files.

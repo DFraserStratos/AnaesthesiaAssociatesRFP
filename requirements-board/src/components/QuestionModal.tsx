@@ -1,14 +1,15 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useLocation } from 'react-router-dom'
+import { kindHelpIn, statusHelpIn, statusLabelIn } from '../../shared/config.ts'
 import { tidyText } from '../../shared/files.ts'
 import { QUESTION_KINDS, QUESTION_STATUSES, type Item, type ItemStatus, type Question, type QuestionStatus, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { questionWalk, useQuestionFilters } from '../questionWalk.ts'
 import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useEditOnOpen, useOpen } from '../nav.ts'
-import { useCatalogue, useIndex, type Index } from '../store.ts'
-import { ITEM_STATUS_HELP, KIND_HELP, KIND_LABEL, statusClass } from '../vocab.ts'
+import { useCatalogue, useConfig, useIndex, type Index } from '../store.ts'
+import { KIND_LABEL, statusClass } from '../vocab.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CopyLink, ItemName, StatusLabel } from './bits.tsx'
 import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
@@ -187,6 +188,7 @@ function QuestionStepper({ id, anchorStatus, leave }: { id: string; anchorStatus
 }
 
 function ReadView({ q, index }: { q: Question; index: Index }) {
+  const config = useConfig()
   const open = useOpen()
   return (
     <>
@@ -194,7 +196,7 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
         <CopyLink id={q.id} className="mono">
           {q.id}
         </CopyLink>
-        <span title={KIND_HELP[q.kind]}>{KIND_LABEL[q.kind]}</span>
+        <span title={kindHelpIn(config, q.kind)}>{KIND_LABEL[q.kind]}</span>
       </div>
       <h2>{q.title}</h2>
       <div className="meta-row">
@@ -222,7 +224,7 @@ function ReadView({ q, index }: { q: Question; index: Index }) {
                 <button className="btn ghost" style={{ justifyContent: 'flex-start', height: 'auto', padding: '2px 4px', whiteSpace: 'normal', textAlign: 'left', minWidth: 0 }} onClick={() => open.item(a)} disabled={!it}>
                   {it ? <ItemName item={it} /> : `Missing item ${a}`}
                 </button>
-                {it && <StatusLabel status={it.status} />}
+                {it && <StatusLabel item status={it.status} />}
                 {it && (
                   <button className="btn sm ghost" onClick={() => open.showOnBoard(a)} title="Show on board">
                     <MapIcon size={14} />
@@ -250,6 +252,7 @@ const SETTLE_TARGETS = ['Verify', 'Confirmed'] as const satisfies readonly ItemS
 const choicesFor = (it: Item): ItemStatus[] => ((SETTLE_TARGETS as readonly ItemStatus[]).includes(it.status) ? [...SETTLE_TARGETS] : [it.status, ...SETTLE_TARGETS])
 
 function FlipOffer({ items, question, onDone }: { items: Item[]; question: Question; onDone: () => void }) {
+  const config = useConfig()
   const saveItem = useCatalogue((s) => s.saveItem)
   const records = useCatalogue((s) => s.items)
   // An Open item was waiting on this answer, but an answer rarely settles a whole item, so it starts at
@@ -281,7 +284,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
       <h4>
         <CheckCircle2 size={15} style={{ verticalAlign: -2, color: 'var(--st-confirmed)' }} /> {question.title} is answered
       </h4>
-      <p>Where does the answer leave the items it affects? Verify if an item still needs checking with AA, Confirmed if the answer settles it.</p>
+      <p>Where does the answer leave the items it affects? Verify if an item still needs checking, Confirmed if the answer settles it.</p>
       {items.map((it) => (
         <div key={it.id} className="settle-row">
           <ItemName item={it} />
@@ -292,10 +295,10 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
                 type="button"
                 className="status-toggle"
                 aria-pressed={choice[it.id] === s}
-                title={s === it.status ? `Keep as ${s}` : ITEM_STATUS_HELP[s]}
+                title={s === it.status ? `Keep as ${statusLabelIn(config, s)}` : statusHelpIn(config, s)}
                 onClick={() => setChoice((c) => ({ ...c, [it.id]: s }))}
               >
-                <StatusLabel status={s} />
+                <StatusLabel item status={s} />
               </button>
             ))}
           </div>

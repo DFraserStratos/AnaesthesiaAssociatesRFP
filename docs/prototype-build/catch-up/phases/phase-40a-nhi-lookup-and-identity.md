@@ -683,7 +683,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 40a` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -766,7 +766,7 @@ re-raise anything settled in the Decisions log.
   - the reading of the "delays on the demo clock" risk, and the PWA chip outcome from item 13;
   - `PERSIST_VERSION` (bumped or not, and why);
   - tests added, the before and after Vitest and Playwright counts, and the review pass.
-- **Catalogue screenshots:** the recipes created or changed (by ID), the `capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
+- **Catalogue screenshots:** the recipes created or changed (by ID), the `requirements-board/requirements/capture/REPORT.md` counts before and after (captured, partial, absent, failed), the recipes this phase broke and how they were re-pointed, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Superseded:** the Phase 01 simulated NHI lookup (2nd review #7: six canned patients, "Not found
      in this demo's records", validation only at Save). The lookup validates as the NHI is typed, never

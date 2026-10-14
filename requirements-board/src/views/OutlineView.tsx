@@ -215,7 +215,7 @@ function OutlineRow({
           <Glyph key={c} component={c} />
         ))}
       </span>
-      <StatusLabel status={item.status} />
+      <StatusLabel item status={item.status} />
     </div>
   )
 }

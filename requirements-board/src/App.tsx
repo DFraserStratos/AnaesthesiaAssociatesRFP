@@ -7,7 +7,7 @@ import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
 import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
 import { useOpen } from './nav.ts'
-import { useCatalogue, useIndex, useShownIndex } from './store.ts'
+import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
 import { useDismiss } from './useDismiss.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
 import { ArtifactPage } from './views/ArtifactPage.tsx'
@@ -100,8 +100,12 @@ function Masthead({ connected }: { connected: boolean }) {
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
   const clearMoveError = useCatalogue((s) => s.clearMoveError)
+  const project = useConfig().project.name
   const [showIssues, setShowIssues] = useState(false)
   const checksRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    document.title = project ? `${project} · Requirements board` : 'Requirements board'
+  }, [project])
   const openCount = index.questions.filter(isOpenQuestion).length
   const errors = issues.filter((i) => i.severity === 'error').length
   const warnings = issues.length - errors
@@ -109,10 +113,13 @@ function Masthead({ connected }: { connected: boolean }) {
   return (
     <header className="masthead">
       <div className="brand">
-        <span className="brand-mark" aria-label="Anaesthesia Associates">
-          AA
-        </span>
+        <BrandMark />
         <span className="brand-name">Requirements board</span>
+        {project && (
+          <span className="brand-project" title={project}>
+            {project}
+          </span>
+        )}
       </div>
       <nav className="tabs" aria-label="Views">
         <NavLink className="tab" to="/board">
@@ -173,5 +180,16 @@ function ChecksPanel({ anchor, onClose }: { anchor: RefObject<HTMLButtonElement 
         </ul>
       )}
     </div>
+  )
+}
+
+/** The board's own mark, the same card-on-a-grid drawing as the favicon. */
+function BrandMark() {
+  return (
+    <svg className="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden>
+      <rect width="32" height="32" rx="6" fill="var(--paper)" />
+      <path d="M0 8h32M0 16h32M0 24h32M8 0v32M16 0v32M24 0v32" stroke="var(--rule-strong)" strokeWidth="1" />
+      <rect x="6" y="9" width="20" height="14" rx="2" fill="var(--card)" stroke="var(--teal)" strokeWidth="2.4" />
+    </svg>
   )
 }

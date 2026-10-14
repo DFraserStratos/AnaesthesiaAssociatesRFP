@@ -262,9 +262,9 @@ changes words only: the drawer's header line keeps its type and colour.
   `mobile-insets.spec.ts:65`, `admin-phase06.spec.ts:158`.
 - **Docs in the app folder:** `aa-prototype/README.md` (~91 "Booking creation and Copy", ~378 "a List
   goes DRAFT → SUBMITTED", ~390 "No real camera. `PhotoCaptureFlow` …").
-- **Outside the app:** recipes `requirements-board/capture/recipes/US-02.4.1.json`, `US-02.4.2.json`,
+- **Outside the app:** recipes `requirements-board/requirements/capture/recipes/US-02.4.1.json`, `US-02.4.2.json`,
   `US-02.4.3.json`, `US-03.2.3.json`, `US-11.1.3.json`, `US-14.4.1.json`, `US-02.5.4.json` (its
-  `absentReason` says "DRAFT List") and a new `US-02.4.4.json`; `requirements-board/capture/ATLAS.md`
+  `absentReason` says "DRAFT List") and a new `US-02.4.4.json`; `requirements-board/requirements/capture/ATLAS.md`
   (~157, ~225-226 the seed table's "DRAFT", ~319, ~364-366, ~375); the binding conventions in
   `docs/prototype-build/PROGRESS.md` (convention 6, line ~39).
 
@@ -591,7 +591,7 @@ DRAFT becomes ACTIVE (an assigned List is `ACTIVE`; Xero's "ACCPAY begins in `DR
 - `DemoControlPanel.tsx`: check the `SCENARIOS` text (S2 especially) for "Enter manually", Copy or
   photo wording and patch it to match; "The List itself stays DRAFT" becomes "stays active" (work item
   10).
-- `requirements-board/capture/ATLAS.md`: see Catalogue screenshots.
+- `requirements-board/requirements/capture/ATLAS.md`: see Catalogue screenshots.
 
 Not a milestone phase: no full consistency read is required.
 

@@ -667,7 +667,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 will have changed these recipes since this plan was written. Work item 11 only adds the Playwright
 spec and the `data-shot` hooks. The plan update itself never touches recipes or images.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |

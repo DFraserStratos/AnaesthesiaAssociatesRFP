@@ -8,6 +8,7 @@ import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
 import { UNASSIGNED_LANE, firstLaneName, isOpenQuestion, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
+import { DEFAULT_CONFIG, componentNames, type BoardConfig } from '../shared/config.ts'
 import { ApiError, api } from './api.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -31,6 +32,8 @@ interface CatalogueState {
   /** Agents write artifacts; the board shows them and edits only their details (`saveArtifact`). */
   artifacts: Record<string, ArtifactRec>
   layout: Layout
+  /** The project's vocabulary (`board.config.json`): read it through `useConfig`. */
+  config: BoardConfig
   issues: Issue[]
   /** Set when card moves could not be saved; they are retried on the next move, layout change on disk, or reconnect. */
   layoutError?: string
@@ -89,6 +92,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
   questions: {},
   artifacts: {},
   layout: { positions: {}, lanes: [] },
+  config: DEFAULT_CONFIG,
   issues: [],
   past: [],
   future: [],
@@ -103,7 +107,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         if (p) positions[id] = p
         else delete positions[id]
       }
-      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
+      set({ status: 'ready', error: undefined, ...snap, artifacts: snap.artifacts ?? {}, config: snap.config ?? DEFAULT_CONFIG, layout: withFirst({ positions, lanes: snap.layout.lanes ?? [] }, snap.layout.firstLane) })
     } catch (e) {
       set({ status: 'error', error: (e as Error).message })
     }
@@ -136,6 +140,8 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
       const positions = !layoutTimer && !pending ? e.layout.positions : s.layout.positions
       const next = withFirst({ positions, lanes: e.layout.lanes ?? [] }, e.layout.firstLane)
       if (JSON.stringify(next) !== JSON.stringify(s.layout)) set({ layout: next })
+    } else if (e.kind === 'config') {
+      set({ config: e.config })
     } else {
       set({ issues: e.issues })
     }
@@ -473,6 +479,22 @@ export function relatedFor(index: Index, item: Item): { related: Item[]; mention
   const skip = new Set([item.id, ...related.map((r) => r.id), ...ancestorsOf(index, item.id).map((a) => a.id), ...(index.children.get(item.id) ?? []).map((c) => c.id)])
   const mentionedIn = resolve((index.mentionedBy.get(item.id) ?? []).filter((id) => !skip.has(id)))
   return { related, mentionedIn }
+}
+
+/** The project's vocabulary: components, screenshot apps, status wording. */
+export const useConfig = () => useCatalogue((s) => s.config)
+
+/** The components to offer: the project's list in its order, or, with none configured, every one the catalogue uses. */
+export function useComponents(): string[] {
+  const config = useCatalogue((s) => s.config)
+  const items = useCatalogue((s) => s.items)
+  const artifacts = useCatalogue((s) => s.artifacts)
+  return useMemo(() => {
+    if (config.components.length) return componentNames(config)
+    const used = new Set<string>()
+    for (const r of [...Object.values(items), ...Object.values(artifacts)]) for (const c of r.data.components) used.add(c)
+    return [...used].sort((a, b) => a.localeCompare(b))
+  }, [config, items, artifacts])
 }
 
 export function useIndex(): Index {

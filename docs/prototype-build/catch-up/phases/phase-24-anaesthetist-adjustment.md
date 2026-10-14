@@ -899,7 +899,7 @@ after the review pass and before the PROGRESS.md entry, at the end of each sessi
 changed. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 24` first: 19a renames the
 US-05.2.6 shot and re-points US-04.2.2 and US-05.2.5 before this phase runs.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built, and every caption below replaces a stale one:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1007,7 +1007,7 @@ settles.
   drift-check result against 60e2d1e (OQ-89, OQ-96 and OQ-90 status); `PERSIST_VERSION` from and to;
   the real names (`priceProcedure`, `isAdjustable`, `adjustmentAllowed`, `PriceSource`, the store
   actions, `PriceCard`); the Aria figures before and after; the parity result; the tests added; the
-  review pass; the catalogue screenshot result (`capture/REPORT.md` counts before and after).
+  review pass; the catalogue screenshot result (`requirements-board/requirements/capture/REPORT.md` counts before and after).
 - **Decisions log:** the entries in work item 17.
 - **Handoff notes:**
   - **25:** snapshot per Procedure the price source, `contractPrice`, `afterAdjustment`,

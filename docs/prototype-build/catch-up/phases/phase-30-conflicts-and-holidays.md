@@ -1048,7 +1048,7 @@ run after the review pass and before the PROGRESS.md entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 30` first: earlier phases may have
 changed these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/`
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
 | Item | Recipe at plan time | When this phase is done |
@@ -1061,7 +1061,7 @@ matches what was built:
 | [US-01.3.2](../../../../requirements-board/requirements/stories/US-01.3.2.md) Recurring bookings drive most assignments (Verify) | captured · `permanent-lists` (table, add) | becomes partial, reason: "A recurring booking that lands on a session already marked unavailable is not painted yet; Phase 31 makes it a Draft List. Hospital and surgeon are not yet required (Phase 31's pairing rule)." Keep the shot `name` `permanent-lists`; re-point the clicks to the "Recurring bookings" nav label and "Add recurring booking" button, and rewrite captions ("Recurring bookings: hospital, day, anaesthetist, session and surgeon"). Add an `apply` state (sheet with the live preview line and the "Apply to canvas now" result line, with "Show on day grid") and a `retired` state (a retired row, muted, with its last date). Highlight the table, then the sheet. No shot shows "Permanent", "template" or a "DRAFT" label on a projected List (it is ACTIVE). This recipe also stands for DM-53, which has no recipe of its own |
 
 **Recipes this phase breaks.** Found by grep at plan time:
-- Re-grep first (`grep -li "Permanent\|Hospitals & holidays\|vacated" requirements-board/capture/recipes/*.json`): later phases may have added recipes that click these labels, and the reassign flow's "Vacated session becomes" copy may break a text selector.
+- Re-grep first (`grep -li "Permanent\|Hospitals & holidays\|vacated" requirements-board/requirements/capture/recipes/*.json`): later phases may have added recipes that click these labels, and the reassign flow's "Vacated session becomes" copy may break a text selector.
 - `US-01.1.2.json` and `US-13.4.1.json` click the "Permanent lists" nav label (and `US-13.4.1` the "Permanent Lists" caption and `absentReason`): re-point to "Recurring bookings", keep shot and state names. `US-01.1.2` keeps its partial reason (the roll-forward has no screen).
 - `US-13.4.1.json` and `US-04.4.1.json` click "Hospitals & holidays" (`role=button`): check the label survives the Hospitals view change. US-04.4.1 is Retired at `60e2d1e` (no default Contracts); if Phase 18 or 19a has not already retired its recipe, leave it to the capture's retired-story handling rather than re-pointing it.
 - `US-01.4.1.json` (`reassign`) drives `ReassignListFlow` from `/admin/day/2026-07-21`; the new collapsed "Not available" group sits after the open Slots, so "Hughes, Rawiri" should still resolve. Confirm in the `--dry` run.

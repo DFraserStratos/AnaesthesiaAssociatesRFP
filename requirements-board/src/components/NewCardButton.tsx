@@ -1,10 +1,11 @@
 import { MessageCircleQuestion, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { kindHelpIn } from '../../shared/config.ts'
 import { ITEM_TYPES, PARENT_TYPES, QUESTION_KINDS, TYPE_LABEL, type Item, type ItemType, type QuestionKind } from '../../shared/types.ts'
 import { guarded, useOpen } from '../nav.ts'
-import { ancestorsOf, isRetiredOrUnder, useCatalogue, useIndex, type Index } from '../store.ts'
-import { KIND_HELP, KIND_LABEL, typeClass } from '../vocab.ts'
+import { ancestorsOf, isRetiredOrUnder, useCatalogue, useConfig, useIndex, type Index } from '../store.ts'
+import { KIND_LABEL, typeClass } from '../vocab.ts'
 import { TypeIcon } from './bits.tsx'
 import { ItemsPicker, ParentPicker } from './ItemPicker.tsx'
 
@@ -95,6 +96,7 @@ export function NewCardButton() {
 }
 
 function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraft: (d: Draft) => void; onClose: () => void; index: Index }) {
+  const config = useConfig()
   const open = useOpen()
   const createItem = useCatalogue((s) => s.createItem)
   const createQuestion = useCatalogue((s) => s.createQuestion)
@@ -181,7 +183,7 @@ function NewCardPop({ draft, setDraft, onClose, index }: { draft: Draft; setDraf
             <span>Kind</span>
             <div className="chip-row">
               {QUESTION_KINDS.map((k) => (
-                <button key={k} type="button" className="chip toggle" aria-pressed={draft.questionKind === k} title={KIND_HELP[k]} onClick={() => set({ questionKind: k })}>
+                <button key={k} type="button" className="chip toggle" aria-pressed={draft.questionKind === k} title={kindHelpIn(config, k)} onClick={() => set({ questionKind: k })}>
                   {KIND_LABEL[k]}
                 </button>
               ))}

@@ -6,21 +6,23 @@
  */
 import { Crosshair, LayoutGrid, Link2, Rows3, Search } from 'lucide-react'
 import { useState } from 'react'
-import { ARTIFACT_KINDS, ARTIFACT_STATUSES, COMPONENTS, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
+import { ARTIFACT_KINDS, ARTIFACT_STATUSES, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
 import { artifactMatches, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
 import { Thumb } from '../artifacts/Thumb.tsx'
 import { ArtifactIcon, Highlight, StatusLabel } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
+import { useComponents } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, ARTIFACT_KIND_PLURAL, BASELINE_ARTIFACT_STATUS, artifactDate, excerpt } from '../vocab.ts'
 
 export function ArtifactsView() {
   const ix = useArtifactIndex()
   const view = useArtifactView()
+  const components = useComponents()
   const [query, setQuery] = useState('')
   const shown = ix.list.filter((r) => artifactMatches(r, view, query))
   const groups = ARTIFACT_KINDS.map((kind) => ({ kind, list: shown.filter((r) => r.data.kind === kind) })).filter((g) => g.list.length)
   const kindsPresent = ARTIFACT_KINDS.filter((k) => ix.list.some((r) => r.data.kind === k))
-  const componentsPresent = COMPONENTS.filter((c) => ix.list.some((r) => r.data.components.includes(c)))
+  const componentsPresent = components.filter((c) => ix.list.some((r) => r.data.components.includes(c)))
   const statusesPresent = ARTIFACT_STATUSES.filter((s) => ix.list.some((r) => r.data.status === s))
   const toggleKind = (k: ArtifactKind) => view.set({ kinds: view.kinds.includes(k) ? view.kinds.filter((x) => x !== k) : [...view.kinds, k] })
 

@@ -13,8 +13,20 @@ import { artifactFormat, type Artifact, type ArtifactFormat, type ArtifactMeta }
 import { gitBlobSha } from './historyJournal.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
-/** The repository a `/`-rooted artifact path starts from. */
-export const REPO_ROOT = process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : resolve(here, '../..')
+/**
+ * The repository a `/`-rooted artifact path starts from: `REPO_ROOT` from the environment, else
+ * the git repository the requirements folder is in, else the folder that holds it. Anchored on
+ * the data, not on this code, so it holds wherever the board itself is installed.
+ */
+export const REPO_ROOT = process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : repoOf(process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements'))
+
+function repoOf(data: string): string {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: data, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return dirname(data) // not in git, or the folder is not there yet
+  }
+}
 const PDF_SCRIPT = join(here, 'pdfFacts.ts')
 
 export const ARTIFACT_MIME: Record<string, string> = {

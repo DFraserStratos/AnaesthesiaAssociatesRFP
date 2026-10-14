@@ -818,7 +818,7 @@ after the review pass and before the PROGRESS entry. Re-run
 `node docs/prototype-build/catch-up/tools/recipe-status.mjs 20` first: earlier phases may have changed
 these recipes since this plan was written.
 
-**Covered items.** When the phase is done, each recipe in `requirements-board/capture/recipes/` matches
+**Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/` matches
 what was built. The tool lists every story under EP-04 and FT-03.4 plus US-03.2.3 and US-03.3.1, so the
 table also holds stories whose recipe belongs to another phase; for those the cell says what this phase
 leaves alone. US-03.1.2 left this phase for 20a, and the Retired US-04.2.5, US-04.2.7, US-04.2.12,
@@ -937,7 +937,7 @@ supersedes.
   mobile; the RVG codes route; the "Needs a Contract" card; the phone-advice Contract row; the Morrison
   review flag).
 - **Catalogue screenshots result:** the recipes changed (the covered items re-shot, US-04.2.1's new
-  state, the broken ones), the `requirements-board/capture/REPORT.md` counts (captured, partial,
+  state, the broken ones), the `requirements-board/requirements/capture/REPORT.md` counts (captured, partial,
   absent, failed) before and after, and the reasons handed on (US-11.4.2, US-04.3.3, US-04.1.5 and
   US-04.2.1 to 21, with the Phase 20 halves of 18's reasons dropped; US-04.2.8 to 22,
   US-04.2.11 to 23, US-04.2.2 to 24, US-04.1.3 to 25; US-04.3.6, US-04.3.7 and US-04.2.13 Future Work).

@@ -16,6 +16,8 @@ requirements-board/requirements/
   notes/YYYY-MM-DD-<slug>.md                       meeting notes, Q&A: the evidence sources cite (see notes/README.md)
   changes/YYYY-MM-DD-<slug>.md                     one change log per requirements update (see changes/README.md)
   board-layout.json                                Freeform card positions and the Mapped board's lane list (written by the board)
+  board.config.json                                the project's vocabulary: name, components, screenshot apps, status wording, capture
+  capture/                                         screenshot capture: recipes/<ID>.json, the report, project steps (optional)
   assets/<ID>/<name>.png                           screenshots for an item
   domain-model.md                                  the narrative model: entities, rules, what changed since the source documents
   reference/                                       historical inputs kept for reference (not edited)
@@ -72,13 +74,13 @@ About 85 x 120 x 2 = 20,000 List records at current roster size.
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case. |
 | `status` | `Confirmed`, `Proposed`, `Future`, `Open`, `Verify`, `Retired` (meanings in `README.md`). Where a requirement came from is not a status: that is `sources`. |
-| `components` | Should list one or more of (an empty list is a warning): Scheduling Engine, Billing/Invoice Engine, Anaesthetist App (mobile + web), Admin App, Xero Integration, Health Integration, Master Data, Cross-cutting. |
+| `components` | Should list one or more of the `components` in `board.config.json` (an empty list is a warning; with none configured, any name is accepted). |
 | `sources` | Where it came from, as an **ordered list, oldest origin first**. RFP entries come first, one per page, as `"RFP p.<printed page> · <Section> › <subheading>"` (the page number from the PDF footer, the subheading as the RFP words it). Later inputs follow in date order: `"Notes 2026-10-02 · stakeholder workshop #3"` (a file in `notes/`, at a numbered point), `"Q&A 2026-09-24 #n"`, a diagram, data files. Quote each entry. An empty list means the origin is unknown: `check` warns, and a `missing-source` outstanding item should affect the item. Each source opens the artifact spot it cites (see Sources below); one that looks like a citation but resolves to nothing is a `check` warning. |
 | `order` | Sort position among siblings (1-based). Gaps are fine. The board's Mapped mode rewrites it when a card is dragged: the destination siblings are renumbered 1..n, the ones left behind keep their gaps. |
 | `swimlane` | Stories only, optional: the name of the Mapped board's swim lane the story sits in (MVP, Phase 2, Out of scope, or any label). It must be one of `lanes` in `board-layout.json` (`check` warns otherwise). Omitted means the first lane (Unassigned unless renamed via `firstLane`). Independent of `status` and of the parent: a story keeps its feature whatever lane it is in. Renaming a lane on the board rewrites every story in it. |
 | `related` | Optional: items this one is related to, by ID (epics, features, stories; never an `OQ-nn`). A relation is **stored on one side only** and the board shows it on both cards, so list it on whichever card you are editing and never on both (`check` warns). Omitted when empty. For couplings the text doesn't name (a setting and the rule that reads it, a UI story and its engine story, the step before or after); a card the text already links to needs no entry. See Links below. |
 | `artifacts` | Optional: artifacts this item points at, as `AR-nn` (the whole artifact) or `AR-nn#spot` (a highlighted spot in it: a named region, a PDF page `p27`, a Markdown heading slug, or a line range `L27-33`). Shown on the item's sheet under Artifacts, and on the artifact's Linked tab. Each must exist (`check` errors otherwise); linking to a Superseded artifact warns. Agents add these; the board keeps them on every save. Omitted when empty. See Artifact file below. |
-| `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is `admin`, `web`, `mobile` or `simulator` and groups the board's gallery; a `mobile` app shot should have `viewport: mobile`. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the capture runner (`requirements-board/scripts/capture.ts`) and replaced on each run; any other image is kept. |
+| `images` | Screenshots, each `{src: assets/US-01.1.1/dashboard.png, viewport: desktop, app: web, caption: Dashboard}`. `viewport` is `desktop` or `mobile`; `app` (optional) is one of the `screenshotApps` keys in `board.config.json` and groups the board's gallery; a shot's `viewport` should match its app's. `src` must be under `assets/` and the file must exist. Files named `assets/<ID>/<app>-<name>[-<state>].png` are written by the board's capture runner (`scripts/capture.ts`) and replaced on each run; any other image is kept. |
 
 Body: the description (plain language: who or what acts and what happens, then why in its own
 paragraph, a blank line between paragraphs, bullets instead of long comma chains; not the "As a ...,
@@ -304,10 +306,32 @@ Written by the board; safe to hand-edit while it is closed.
 what it is called, `Unassigned` by default. Renaming it changes no story. All lane names, the first
 lane's included, are unique regardless of case.
 
+## Board config file (`board.config.json`)
+
+The project's own vocabulary, read by the board, the check and the scripts, and reloaded live.
+Every field is optional; with no file the board runs on neutral defaults.
+
+```json
+{
+  "project": { "name": "Acme ordering", "locale": "en-GB" },
+  "components": [{ "name": "Order engine", "code": "ORD" }, { "name": "Customer app" }],
+  "screenshotApps": [{ "key": "web", "label": "Web", "viewport": "desktop" }, { "key": "phone", "label": "Phone", "viewport": "mobile" }],
+  "statuses": { "Proposed": { "help": "Needs sign-off from Acme" }, "Confirmed": { "label": "Agreed", "help": "Agreed with Acme" } },
+  "questionKinds": { "missing-source": { "help": "..." } },
+  "capture": { "recipes": "capture/recipes", "report": "capture/REPORT.md", "steps": "capture/steps.ts", "apps": { "web": { "url": "http://localhost:3000", "setupRoute": "/", "hideCss": "" } } }
+}
+```
+
+`components` and `screenshotApps` are the lists the check holds items to (empty: anything goes).
+`statuses` and `questionKinds` change only the wording beside a value (`label`, `help`), never the
+values themselves. `capture` is described in the board's README. A malformed entry is a `check`
+error and is left at its default.
+
 ## Rules the tools enforce
 
-`npm run check` (from the repo root) and every save in the board run the same checks: unique IDs,
-ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values,
+The check (`npm run check` in the board) and every save in the board run the same checks: unique IDs,
+ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values
+(statuses, and the components and screenshot apps `board.config.json` lists),
 `affects` targets exist, `related` entries are existing items (not the item itself, not a question),
 a text link to an epic, feature or story names one that exists, image files exist under `assets/`,
 every artifact's sidecar is well formed, its file exists and reads as its format, every region's
@@ -327,7 +351,7 @@ over it.
 - **No deletes for artifacts.** Replace one by setting `status: Superseded` and `superseded_by`;
   the ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
-  `npm --prefix requirements-board run artifact:new`).
+  the board's `npm run artifact:new`).
 - **Questions can be deleted** (the board's Delete, or remove the file): no other file changes. A
   text link to the deleted question becomes a `check` warning, and the board shows it as a
   broken link until the text is fixed. Deleting the highest `OQ-nn` frees that number for the next
@@ -336,7 +360,7 @@ over it.
   highest sibling ID and add one.
 - **Answering a question**: set `status: Answered`, add `## Answer`, then move the affected items
   off `Open`: to `Confirmed` where the answer settles them, to `Verify` where the item still needs
-  checking with AA (the board offers this for every item the question affects, whatever its status).
+  checking with whoever signs off (the board offers this for every item the question affects, whatever its status).
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

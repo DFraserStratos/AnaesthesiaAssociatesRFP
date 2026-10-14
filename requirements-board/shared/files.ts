@@ -6,7 +6,7 @@
  * record that `roundTripProblems` passes.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageApp, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
+import type { Artifact, ArtifactKind, ArtifactStatus, Box, Citation, ImageRef, Item, ItemStatus, ItemType, Question, QuestionKind, QuestionStatus, Region, Viewport } from './types.ts'
 
 const FENCE = '---'
 export const ITEM_KEYS = ['id', 'type', 'parent', 'title', 'status', 'components', 'sources', 'order', 'swimlane', 'related', 'artifacts', 'images']
@@ -105,7 +105,7 @@ function images(v: unknown): ImageRef[] {
     if (typeof raw === 'string') return { src: raw, viewport: 'desktop' as const }
     const o = (raw ?? {}) as Record<string, unknown>
     const img: ImageRef = { src: str(o.src), viewport: (o.viewport === undefined ? 'desktop' : str(o.viewport)) as Viewport }
-    if (o.app) img.app = str(o.app) as ImageApp
+    if (o.app) img.app = str(o.app)
     if (o.caption) img.caption = str(o.caption)
     return img
   })

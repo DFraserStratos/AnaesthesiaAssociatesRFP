@@ -3,10 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
-import { COMPONENTS, ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
+import { ITEM_STATUSES, TYPE_LABEL, firstLaneName, type Item, type ItemStatus, type ItemType, type Question, type Rev } from '../../shared/types.ts'
 import { ApiError } from '../api.ts'
 import { setLeaveGuard, useEditOnOpen, useOpen } from '../nav.ts'
-import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useIndex, useShownIndex, useView, type Index } from '../store.ts'
+import { ancestorsOf, openQuestionsFor, readingWalk, relatedFor, useCatalogue, useComponents, useIndex, useShownIndex, useView, type Index } from '../store.ts'
 import { sheetArtifacts, useSourceIndex } from '../sourceRows.ts'
 import { statusClass } from '../vocab.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
@@ -437,7 +437,7 @@ function Related({ item, index }: { item: Item; index: Index }) {
       <span style={r.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
         <ItemName item={r} />
       </span>
-      <StatusLabel status={r.status} />
+      <StatusLabel item status={r.status} />
     </button>
   )
   return (
@@ -552,7 +552,7 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
               <span style={c.status === 'Retired' ? { color: 'var(--ink-3)', textDecoration: 'line-through' } : undefined}>
                 <ItemName item={c} />
               </span>
-              <StatusLabel status={c.status} />
+              <StatusLabel item status={c.status} />
             </button>
           ))}
         </div>
@@ -564,6 +564,7 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
 /* ------------------------------------------------------------------ edit */
 
 function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) => void; index: Index }) {
+  const components = useComponents()
   const lanes = useCatalogue((s) => s.layout.lanes)
   const firstLane = useCatalogue((s) => firstLaneName(s.layout))
   // A name no lane has (a hand edit) stays selectable, so opening Edit never silently drops it.
@@ -608,7 +609,7 @@ function EditForm({ draft, set, index }: { draft: Item; set: (p: Partial<Item>) 
       <div className="field">
         <span>Components</span>
         <div className="chip-row">
-          {COMPONENTS.map((c) => {
+          {[...new Set([...components, ...draft.components])].map((c) => {
             const on = draft.components.includes(c)
             return (
               <button

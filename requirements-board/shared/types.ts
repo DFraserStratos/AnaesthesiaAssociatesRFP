@@ -4,6 +4,8 @@
  * read and write the same thing.
  */
 
+import type { BoardConfig } from './config.ts'
+
 export const ITEM_TYPES = ['epic', 'feature', 'story'] as const
 export type ItemType = (typeof ITEM_TYPES)[number]
 
@@ -15,18 +17,6 @@ export const PARENT_TYPES: Record<ItemType, readonly ItemType[]> = { epic: [], f
 export const ITEM_STATUSES = ['Proposed', 'Open', 'Verify', 'Confirmed', 'Future', 'Retired'] as const
 export type ItemStatus = (typeof ITEM_STATUSES)[number]
 
-export const COMPONENTS = [
-  'Scheduling Engine',
-  'Billing/Invoice Engine',
-  'Anaesthetist App (mobile + web)',
-  'Admin App',
-  'Xero Integration',
-  'Health Integration',
-  'Master Data',
-  'Cross-cutting',
-] as const
-export type Component = (typeof COMPONENTS)[number]
-
 export const QUESTION_STATUSES = ['Open', 'Confirm', 'Proposed', 'Answered'] as const
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number]
 
@@ -37,15 +27,12 @@ export type QuestionKind = (typeof QUESTION_KINDS)[number]
 export const VIEWPORTS = ['desktop', 'mobile'] as const
 export type Viewport = (typeof VIEWPORTS)[number]
 
-/** Which app a screenshot shows. The board groups an item's gallery by it, in this order. */
-export const IMAGE_APPS = ['admin', 'web', 'mobile', 'simulator'] as const
-export type ImageApp = (typeof IMAGE_APPS)[number]
-
 export interface ImageRef {
   /** Path relative to the requirements folder, e.g. `assets/US-01.1.1/dashboard.png`. */
   src: string
   viewport: Viewport
-  app?: ImageApp
+  /** Which app it shows: a `screenshotApps` key from `board.config.json`. The gallery groups by it. */
+  app?: string
   caption?: string
 }
 
@@ -121,6 +108,8 @@ export interface CatalogueSnapshot {
   questions: Record<string, Rev<Question>>
   artifacts: Record<string, ArtifactRec>
   layout: Layout
+  /** The project's vocabulary (`board.config.json`); the defaults when there is none. */
+  config: BoardConfig
   issues: Issue[]
 }
 
@@ -130,6 +119,7 @@ export type CatalogueEvent =
   | { kind: 'question'; id: string; record: Rev<Question> | null }
   | { kind: 'artifact'; id: string; record: ArtifactRec | null }
   | { kind: 'layout'; layout: Layout }
+  | { kind: 'config'; config: BoardConfig }
   | { kind: 'issues'; issues: Issue[] }
 
 export function isOpenQuestion(q: Question): boolean {
