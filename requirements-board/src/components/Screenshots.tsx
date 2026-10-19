@@ -15,7 +15,8 @@ const VIEWPORT_TAB: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobi
 const tabOf = (img: ImageRef): GalleryTab => img.app ?? img.viewport
 const tabLabel = (config: BoardConfig, t: GalleryTab) => config.screenshotApps.find((a) => a.key === t)?.label ?? VIEWPORT_TAB[t] ?? t
 function galleryTabs(config: BoardConfig, images: ImageRef[]): GalleryTab[] {
-  const order = [...appKeys(config), ...Object.keys(VIEWPORT_TAB)]
+  // A Set, since an app key can share a viewport's name (an app called `mobile`): one tab, not two.
+  const order = [...new Set([...appKeys(config), ...Object.keys(VIEWPORT_TAB)])]
   const present = [...new Set(images.map(tabOf))]
   return [...order.filter((t) => present.includes(t)), ...present.filter((t) => !order.includes(t))]
 }
