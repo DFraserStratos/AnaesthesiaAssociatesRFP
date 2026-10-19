@@ -15,7 +15,8 @@ This folder is a **portable kit**, three parts:
 - **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
   `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`) and the
   `workflows/link-requirements.js` workflow. Claude Code finds them through relative symlinks in the
-  host repo's `.claude/skills/` and `.claude/workflows/`; edit the files here, not through the links.
+  host repo's `.claude/skills/` (a real folder per skill, a symlink per file, so the `/` menu lists
+  them) and `.claude/workflows/`; edit the files here, not through the links.
   Each skill keeps its few repo-specific facts in one "This repo" block.
 
 ```

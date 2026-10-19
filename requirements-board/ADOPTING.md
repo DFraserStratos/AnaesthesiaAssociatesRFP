@@ -63,9 +63,15 @@ From the repo root:
 
 ```
 mkdir -p .claude/skills .claude/workflows
-for s in update-requirements add-artifact svg-diagram transcript-reconciler; do ln -s ../../BOARD/agent/skills/$s .claude/skills/$s; done
+for s in update-requirements add-artifact svg-diagram transcript-reconciler; do
+  mkdir .claude/skills/$s
+  for f in BOARD/agent/skills/$s/*; do ln -s ../../../$f .claude/skills/$s/$(basename $f); done
+done
 ln -s ../../BOARD/agent/workflows/link-requirements.js .claude/workflows/link-requirements.js
 ```
+
+Each skill gets a real folder in `.claude/skills/` holding a symlink per file. Don't symlink the skill
+folder itself: Claude Code still loads it, but leaves it out of the `/` menu.
 
 Add root `package.json` scripts that call the board, for example:
 
