@@ -1,19 +1,13 @@
-# Phase 39b · Pre-op and post-op events
+# Phase 39b · Pre-op, post-op and billing events
 
 **Requirements covered:**
-[FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) Events on a Procedure (Verify; unchanged at 60e2d1e; this phase builds its pre-op and post-op kinds, the admin entry, the invoice tick, the "same as" billable party and the before-or-after invoicing rule) ·
-[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Verify; unchanged) ·
-[US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event (Confirmed; unchanged) ·
-[US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes (Open: the codes are OQ-12; the model is settled as a pre-op event; at 60e2d1e only a link to US-03.2.1 was added) ·
-[US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md) Other billing lines (Proposed; **changed at 60e2d1e**: retitled from "Other billing lines (including UNIT X RATE)"; the unit x rate billing line is removed, because a fixed-rate Contract prices the whole Procedure (US-05.2.6, Phase 19a's lines and Phase 24's precedence), and Contract add-on fees are removed, because the add-on flag left Contract lines on 7 October. What remains, and what this phase builds: lines outside BTM (post-op ward or HDU reviews, nerve catheters, pain consults, medical transport), each able to carry its own later date).
+[FT-03.7](../../../../requirements-board/requirements/stories/FT-03.7.md) Events on a Procedure (Agreed; **changed at d4db277**: the former other billing lines merge into it, an event may be added at any time, each event has its own billable party; this phase builds its pre-op, post-op and billing kinds, the admin entry, the invoice tick, the "same as" billable party and the before-or-after invoicing rule) ·
+[US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure (Agreed; **changed**: the billable-party pop-up explained, the ACC codes parked) ·
+[US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event (Agreed; **rewritten at d4db277**: a billing event is a free-form way to invoice on a Procedure and its Contract, a charge with a free-text description or a credit, its own line; the sentence and acceptance criterion about a Contract fixed fee replacing a recorded time left it) ·
+[US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes (Open; unchanged in substance: a pre-op event priced by a fixed-fee Contract, never primary, its own invoice line; the codes are OQ-12, which Donald parked on 16 October) ·
+[DM-46](../analysis/domain-model-delta.md#dm-46) The BillingLine entity removed (**joined from Phase 24 at d4db277**: about 25 non-test files, `chargeBasis`, the add-line sheet and billing-lines card, the seeded lines re-expressed as billing events; Phase 24 removed only the rate x time line and its gate).
 
-**Left this phase on 2026-10-08:** the UNIT x RATE billing line, its `UNIT_RATE_LINE_READING`, the
-Contract add-on fee line, `addOnFeeLine`, the dependency on 24's `unitRateFor` (24 no longer builds
-it) and on 18's `FeeScheduleLine.isAddOn`, `quantityRule` and `addOnLinesInForce` (18 and 19a no
-longer build them). None is built. OQ-89 no longer gates this phase: its questions 1 and 2 are
-answered in effect (no billing line) and its open parts (the time band, a discount on top of a fixed
-discount) are 19a's and 24's (D40). If any add-on or unit x rate code is found in the app, this
-phase removes it (work item 4).
+**Left this phase at d4db277:** [US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md) Other billing lines (**Retired**, merged into FT-03.7; Donald: a billing event is "basically a flexible tool to add another invoicing event to a procedure"). Its work went into billing events (US-03.7.2): no preset line types, no line date, no `addLateBillingLine`, no "late line" event; the Add billing line sheet and the billing-lines card are removed (work item 5), not extended. The UNIT x RATE line and the Contract add-on fee are catalogue-retired (7 October); none is built, and any remnant found is removed.
 
 Read alongside (not closed here):
 [US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md)
@@ -22,41 +16,39 @@ Read alongside (not closed here):
 adds kinds to it),
 [US-08.6.1](../../../../requirements-board/requirements/stories/US-08.6.1.md) and
 [US-08.6.3](../../../../requirements-board/requirements/stories/US-08.6.3.md)
-(the free-form additional invoice, an event kind Phase 38b built, now raised by the office on any
-Procedure or by the anaesthetist on their own; it stays the free-form route for a late charge, and
-the by-hand route when the work on a fixed-price Procedure differed),
+(the free-form additional invoice, an event kind Phase 38b built; it stays the way to invoice several
+lines at once or to any party after the invoice; a billing event is the one-line charge or credit that
+can also ride on the Procedure's invoice),
+[US-08.6.5](../../../../requirements-board/requirements/stories/US-08.6.5.md)
+(the credit note option, Phase 39: a credit billing event raised after the invoice goes through it),
 [US-05.2.6](../../../../requirements-board/requirements/stories/US-05.2.6.md)
-(fixed rate Contracts, Confirmed: the line's fixed rate prices the whole Procedure, not a billing
-line; a timed event reads the same rate, work item 2),
+(fixed rate Contracts: the line's fixed rate prices the whole Procedure; a timed event reads the same
+rate, work item 2),
 [US-05.2.5](../../../../requirements-board/requirements/stories/US-05.2.5.md)
-(fixed fee pricing, Confirmed, changed at 60e2d1e: on a fixed-price Contract the system calculates
-nothing further; 24 refuses a billing line on a fixed-price Procedure, and this phase keeps that rule
-for late lines and refuses to calculate a timed event there),
-[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md)
-(Contract lines, Verify, changed at 60e2d1e: one per procedure, add-on flag and quantity rule
-dropped; Phase 19a builds them),
-[US-05.2.1](../../../../requirements-board/requirements/stories/US-05.2.1.md)
-(the anaesthetist's own unit value, from 26's profile, the rate where no fixed rate applies),
-[FT-11.2](../../../../requirements-board/requirements/stories/FT-11.2.md)
-(who is billed: the Contract's holder's billable party when the holder pays AA, otherwise the payer
-on the Booking; Phase 21's one function),
-[US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md)
-(the Booking is immutable after AUTHORISED: an event never edits it),
+(on a fixed-price Contract the system calculates nothing further and extra work is an ad hoc invoice or
+credit by hand; so a billing event, typed by hand, is allowed on a fixed-price Procedure, and this phase
+refuses only to calculate a timed event there),
+[US-04.2.4](../../../../requirements-board/requirements/stories/US-04.2.4.md) (Contract lines, one per
+procedure, no add-on flag or quantity rule; Phase 19a),
+[US-05.2.1](../../../../requirements-board/requirements/stories/US-05.2.1.md) (the anaesthetist's own
+unit value, from 26's profile),
+[FT-11.2](../../../../requirements-board/requirements/stories/FT-11.2.md) (who is billed; Phase 21's one
+function),
+[US-07.3.2](../../../../requirements-board/requirements/stories/US-07.3.2.md) (the Booking is immutable
+after AUTHORISED: an event never edits it),
 [US-09.1.4](../../../../requirements-board/requirements/stories/US-09.1.4.md) and
 [US-10.3.1](../../../../requirements-board/requirements/stories/US-10.3.1.md)
 (an event's own invoice is its own receivable, so its ACCPAY is one more BCTI in Phase 16's count; an
 event line on the Procedure's invoice adds none),
-[OQ-63](../../../../requirements-board/requirements/questions/OQ-63.md) (Answered,
-owner decision D13: its own element, a line item, "event" for everything, one review step, bundled
-with the Procedure's invoice if possible or else the next run, an invoice tick),
-[OQ-12](../../../../requirements-board/requirements/questions/OQ-12.md) (Open: the ACC
-codes CS250, CS260 and CS70 and the fixed-fee Contract, with AA's accountant),
+[OQ-63](../../../../requirements-board/requirements/questions/OQ-63.md) (Answered, owner decision
+D13, extended 16 October: one name, "event", for everything recorded against a Procedure after setup;
+its own element, a line item, one review step, bundled with the Procedure's invoice if possible or else
+the next run, an invoice tick; other billing lines are events; events at any time),
+[OQ-12](../../../../requirements-board/requirements/questions/OQ-12.md) (Open, **parked** by Donald on
+16 October: the ACC codes CS250, CS260 and CS70 and the fixed-fee Contract, with AA's accountant),
 [OQ-48](../../../../requirements-board/requirements/questions/OQ-48.md) (**Answered**
 2026-10-07, D45: the procedure date decides the price in force; this phase extends it to an event's
 own date, a labelled reading),
-[OQ-89](../../../../requirements-board/requirements/questions/OQ-89.md) (Open only on the
-time band and a discount on top of a fixed discount, 19a's and 24's; it no longer touches this
-phase),
 [OQ-50](../../../../requirements-board/requirements/questions/OQ-50.md) (Answered:
 time units come from the RVG rules only) and
 [OQ-75](../../../../requirements-board/requirements/questions/OQ-75.md) (Answered,
@@ -66,11 +58,9 @@ holds the tiers as data),
 [OQ-60](../../../../requirements-board/requirements/questions/OQ-60.md) (BCTI
 granularity and what the AA fee counts; open, kept in Phase 16's count function), the meeting notes
 `requirements-board/requirements/notes/2026-10-01-aa-meeting-with-greg.md` (#6, #34, #46, #54, #61),
-`requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` (#4, #24, #25, #26, #35, #44),
-`requirements-board/requirements/notes/2026-10-02-aa-booking-and-pricing-review-with-greg.md` (#21, #55),
-`requirements-board/requirements/notes/2026-10-06-aa-directors-meeting.md` (#11) and
-`requirements-board/requirements/notes/2026-10-07-aa-meeting-with-greg.md` (#5) (see Reference),
-and the Procedure section (its events paragraph) and glossary of
+`requirements-board/requirements/notes/2026-10-02-aa-meeting-with-greg.md` (#4, #24, #25, #26, #35, #44) and
+`requirements-board/requirements/notes/2026-10-16-aa-meeting-with-greg.md` (#45, #59, #60, #61, #62)
+(see Reference), and the Procedure section (its events paragraph) and glossary of
 [domain-model.md](../../../../requirements-board/requirements/domain-model.md).
 
 **The pricing model it reads** (a draft: a v5 may change it): an event is priced from the
@@ -94,16 +84,18 @@ has no event: this phase's one addition to the Contract, the **Contract event fe
 beside 19a's lines in the same module, so a design change stays a contained edit.
 
 **Depends on:** 24 (the one price precedence `priceProcedure` in `pricePrecedence.ts`, its calculated
-step's rate (the line's fixed rate or the anaesthetist's unit value) and fixed discount, `PriceSource`,
-the `billingLineOnFixedPrice` rejection, the reduced `ChargeBasis` `'rvg' | 'fixed'` and the
-fixed-amount-only billing line sheet), 38a (the archive (calendar) and search that reach a past
+step's rate (the line's fixed rate or the anaesthetist's unit value) and fixed discount, `PriceSource`;
+24 removed the rate x time line and its gate and left the BillingLine entity, fixed amount only, which
+this phase removes), 38a (the main view, the date lookup and the search that reach a past
 Procedure on mobile and web, since an invoiced List leaves the main view; its handoff names the
 controls a billed Booking may show) and 38b (the event element on the Procedure, its one standard
 review step and next-run invoicing, the events list on every Procedure in all three apps, the one
 user-facing label for "event", `EVENT_RULES.anaesthetistSees`, the additional-invoice kind raised by
 the office or by the anaesthetist on their own Procedure, `procedureOwner` and `mayRaise`, the
 `run-next-billing-run` trigger and the PWA stand-in `office-reviews-additional-invoice`). It needs
-nothing from 39 or 39a, so it may run straight after 38b. By the roadmap order 14 (the demo-trigger
+nothing from 39 or 39a to build, so it may run straight after 38b; by the roadmap number 39 runs
+first, and if it has run, a credit billing event after the invoice reuses its credit note (work item 4).
+By the roadmap order 14 (the demo-trigger
 registry, `useDemoTriggerContext`, the PWA sheet, `OFFICE_ACTOR` and `OFFICE_SIMULATION_ACTOR`,
 "Office authorises this List"), 15 (Booking vocabulary and the `.../bookings/:bookingId` routes),
 15a (the warning triangle; no rule is added here; no submit confirm step), 15b (ACTIVE for an
@@ -118,14 +110,15 @@ stack: an event is not in it), 21 (`billablePartyForProcedure` in `whoIsBilled.t
 Booking, holder references (`claimReference` on St George's ACC) and completion), 22
 (`materialiseInvoices`, `deliveryPlanFor`, `lineage`, `procedureIds`, Contract-driven layout and GST,
 the Split button), 23 (exactly one primary Procedure, `isPrimary`), 25 (the `BookingLock` pricing
-snapshot, the locked billable party and payee, `regenerateInvoiceFromLock`), 26 (the anaesthetist's
-unit value in the profile), 28 (Slots and Lists), 32 and 32a (a moved Booking sits on the doer's
-List) and 36 (`newBookingPair`, `handoffPair`, the ledger, one payable leg per receivable,
+snapshot, whose `billingLines` copy goes with the entity, the locked billable party and payee,
+`regenerateInvoiceFromLock`), 26 (the anaesthetist's unit value in the profile), 28 (Slots and Lists), 32 and 32a (a moved Booking sits on the doer's
+List), 35 (explicit save: its drafted-action table and `BookingSnapshot.billingLines` name the lines
+removed here) and 36 (`newBookingPair`, `handoffPair`, the ledger, one payable leg per receivable,
 `bctiRecordsOf`) have also run.
 **Estimated:** 2 sessions. Session 1 is the model (with the Contract event fee), the pure rules and
-pricing, the store actions with both invoicing branches, the dated and typed billing lines, late
-lines and the seed (work items 1 to 7), ending at a green stop point with every action tested at store
-level. Session 2 is the anaesthetist and admin screens, the event-fee section of the Contract
+pricing, the store actions with both invoicing branches, billing events, the BillingLine removal with the seeded
+lines re-expressed, and the seed (work items 1 to 7), ending at a green stop point with every action tested at store
+level. Session 2 is the anaesthetist and admin screens (the two event sheets), the event-fee section of the Contract
 editor, the review surfaces, the invoice documents, the triggers, the demo guide and the close-out
 (work items 8 to 14).
 
@@ -133,15 +126,16 @@ editor, the review surfaces, the invoice documents, the triggers, the demo guide
 
 Phase 38b built the event element on a Procedure: its own record, its one standard review step,
 next-run invoicing and the events list in all three apps, with the free-form additional invoice as
-its first kind. It also withdrew the anaesthetist's post-op addendum Booking, so today an
-anaesthetist who sees a patient again (a ward review the next day, a pain consult, a nerve catheter
-left in) or before the procedure (an ACC pre-op assessment) can only type a free-form additional
-invoice once the Procedure is invoiced, or ring the office. AA asked for the anaesthetist to record
-this care themselves (FT-03.7), and OQ-63 (D13) settled how. This phase adds the **pre-op and post-op
-kinds** to 38b's element:
+its first kind. It also withdrew the anaesthetist's post-op addendum Booking, so an anaesthetist who
+sees a patient again (a ward review, a pain consult, a nerve catheter) or before the procedure (an ACC
+pre-op assessment) can only type a free-form additional invoice once the Procedure is invoiced, or ring
+the office; and any other charge is still a **billing line**, an older second way to add one. AA asked
+for the anaesthetist to record this care themselves (FT-03.7), OQ-63 (D13) settled how, and on 16
+October billing lines merged into events. This phase adds the **pre-op, post-op and billing kinds** to
+38b's element and removes the BillingLine entity (DM-46):
 
 - **Add a pre-op or post-op event** (US-03.7.1). From a current Procedure, or a past one reached
-  through Phase 38a's archive or search, on mobile and web, the anaesthetist adds an event with its
+  through Phase 38a's main view, date lookup or search, on mobile and web, the anaesthetist adds an event with its
   own date and start time, recording **either a time** (minutes) **or a fixed fee**. An event takes no
   modifiers and no base units. It has an **invoice tick** (cleared means recorded but never
   invoiced) and a **billable party** set by a **"same as" tick** (the Procedure's billable party, our
@@ -149,9 +143,17 @@ kinds** to 38b's element:
   An **admin can add one too** from the Admin Booking detail, for example when someone rings the
   office. The event is never a Procedure and never primary; it lists in the Procedure's events (38b)
   beside additional invoices and credits.
-- **Bill an event** (US-03.7.2, Confirmed). A billable event is **its own line item**, priced from its
-  recorded time or its fixed fee; **the Procedure's Contract can carry a fixed fee for that kind of
-  event, which replaces the time** (a Contract event fee, below). A recorded time is priced as the
+- **Add a billing event** (US-03.7.2, rewritten). A free-form way to invoice on a Procedure and its
+  Contract: a **charge** (a free-text description and an amount ex GST) or a **credit** (the same,
+  reducing what is owed), on any Procedure at any time, by the anaesthetist on their own or the office,
+  with the same invoice tick and "same as" party and its own date (the List date by default). It
+  replaces the billing line: a charge recorded while the List is open travels with the Procedure's
+  invoice as a line did. The amount is typed and prices nothing, so it is allowed on a fixed-price
+  Procedure (US-05.2.5's by-hand route).
+- **How a billable event is invoiced** (US-03.7.2, all kinds). Each is **its own line item**,
+  priced from its recorded time, its fixed fee or its typed amount; **a Contract can carry a fixed fee
+  for a kind of pre-op or post-op event, which replaces the time** (a Contract event fee, below; the
+  swap is kept from OQ-12's answer, though US-03.7.2 no longer states it). A recorded time is priced as the
   catalogue prices time: RVG time units (19a's tiers, rounded up per D25) at the rate 24's calculated
   step would use for the Procedure (the Contract line's fixed rate, else the anaesthetist's own unit
   value), less the line's fixed discount, on the Contract version in force on the event's date. On a
@@ -160,29 +162,25 @@ kinds** to 38b's element:
   invoice:
   - **recorded before the Procedure's invoice is approved** (before its List is authorised) and billed
     to the Procedure's party, it **travels with the Procedure**: the office sees it in the List's
-    review, and the billing run puts it on the Procedure's invoice as its own line;
+    review, and the billing run puts it on the Procedure's invoice as its own line (a credit as a
+    negative line);
   - **recorded after the invoice is raised**, or billed to another party, it is **a separate invoice**,
     traceable to the Procedure, invoiced in **the next run** (38b's `runEventInvoicing`): after the
     invoice, once through 38b's review step; before it, once approved with the List at authorise (an
     invoice to another party cannot carry the Procedure's lines, our reading of "if possible", so
-    D13's "otherwise, next run" applies);
+    D13's "otherwise, next run" applies); a credit after the invoice is issued as a credit note
+    (US-08.6.5) through Phase 39's issue path, which also reverses the linked payable;
   - every event goes through **the one standard review step** (the List's review before approval,
     38b's review step after it), with no separate approval queue; an event whose invoice tick is
     cleared, or that has not been through review, is never invoiced.
 - **The ACC pre-op assessment is a pre-op event** (US-05.5.2). The anaesthetist adds a pre-op event of
-  type "ACC pre-op assessment" and picks a code (CS250, CS260 or CS70, provisional, OQ-12) from a
+  type "ACC pre-op assessment" and picks a code (CS250, CS260 or CS70, provisional, OQ-12 parked) from a
   fixed-fee ACC Contract's event fees. It is priced by that Contract, is never primary and shows as
-  its own line on the invoice. The free-text ACC caption in the add-billing-line sheet goes.
-- **Other billing lines** (US-03.3.6 as it now stands). A billing line gains **a date of its own**
-  (defaulting to the List date) and **preset line types** (post-op ward review, HDU review, nerve
-  catheter, pain consult, medical transport, other) beside its free-text description; it stays 24's
-  fixed-amount line, and 24's rule stands (not offered on a Procedure priced at a Contract fixed
-  price). A line the anaesthetist adds after the List is submitted cannot touch the submitted or
-  locked Booking: it is recorded as an event (a late line) and follows the same before-or-after
-  rule. Choosing "Post-op ward review", "HDU review" or "Pain consult" also offers to add it as a
-  post-op event instead (whether these leave the billing-line list is not stated, so both are
-  offered). There is **no UNIT x RATE line and no Contract add-on fee line**: both left the catalogue
-  on 2026-10-07, and any code that still offers them is removed here.
+  its own line on the invoice.
+- **The BillingLine entity is removed** (DM-46, work item 5): the entity, `chargeBasis`, the Add billing
+  line sheet, the billing-lines card and every read of them go, and each seeded line becomes a billing
+  event with the same figure, so no seeded total moves. There is **no UNIT x RATE line, no Contract
+  add-on fee line and no preset line type**.
 
 **Keep the pricing model in one place.** The Contract event fee, the event's rate and discount, its
 pricing date and its price live in `aa-prototype/src/domain/billing` (beside 19a's lines and
@@ -190,16 +188,16 @@ resolver and 24's precedence) plus the seed, behind types the UI reads. The time
 calculated-step rate and discount through one exported helper, never a second derivation, so a later
 change to the draft design (AR-29, AR-30) or to 24's precedence reaches events without a second edit.
 
-The state gains the pre-op and post-op fields on 38b's event record, two fields on `BillingLine`, an
-event line on the invoice, the Contract event fee collection, one event fee on `CT-STG-ACC` and one
-new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
+The state gains the pre-op, post-op and billing members on 38b's event record, an event line on the
+invoice, the Contract event fee collection, one event fee on `CT-STG-ACC`, one new Contract and the
+seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped. No seeded figure moves.
 
 ## Before you start: drift check
 
-1. Run the drift check against the plan's catalogue snapshot (catalogue commit 60e2d1e):
+1. Run the drift check against the plan's catalogue snapshot (catalogue commit d4db277):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-48,OQ-89,OQ-50,OQ-75,OQ-29,OQ-60
+   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60
    ```
 
    Read the hunks (if any) for FT-03.7, US-03.7.1, US-03.7.2, US-05.5.2, US-03.3.6, the context items
@@ -208,13 +206,11 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
    `npm --prefix requirements-board run source -- --item <ID> --text` and read only the cited
    passages (Node 22.18 or newer). If an item changed, re-read it and adjust the work items. If an
    item is now Retired or Future, drop its work items and record that in the PROGRESS entry. At
-   60e2d1e FT-03.7 and US-03.7.1 are **Verify**, US-03.7.2 **Confirmed**, US-05.5.2 **Open** and
-   US-03.3.6 **Proposed** (titled "Other billing lines", with no unit x rate line and no Contract
-   add-on fees); the screenshots on US-05.5.2 show the earlier flat-fee billing line, and US-03.3.6's
-   image list may still carry US-03.3.7's retired rate x time images unless Phase 24 removed them.
-   This phase's Catalogue screenshots step re-shoots both.
+   d4db277 FT-03.7, US-03.7.1 and US-03.7.2 are **Agreed**, US-05.5.2 is **Open** and US-03.3.6 is
+   **Retired** (nothing of it is built); the screenshots on US-05.5.2 show the earlier flat-fee billing
+   line, which this phase's Catalogue screenshots step re-shoots.
 2. **Owner decisions and questions** (each answer built as stated; each open one kept in one place):
-   - **D13 (OQ-63, answered).** Build the answer, not a default: its own element on the Procedure (38b's
+   - **D13 (OQ-63, answered; extended 16 October).** Build the answer, not a default: its own element on the Procedure (38b's
      record), a line item, "event" as the one name (38b's label), the invoice tick, the "same as"
      party tick, bundling with the Procedure's invoice before approval and the next run after it, one
      standard review step and no separate approval queue. The two readings the catalogue itself calls
@@ -226,8 +222,12 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
      both readings there (work item 2), with the "same as" caption in the copy (work item 8). An
      other-party event recorded before approval is approved with the List and invoiced in the next run
      (`'ownInvoiceNextRun'`, D13's "otherwise, next run"), so one path, 38b's `runEventInvoicing`,
-     raises every event invoice. A refund shown as an event is tentative (OQ-63's answer): not built.
-   - **OQ-12 (the ACC codes), open** (ROADMAP.md "Confirm before building" row for 39b). Seed CS250,
+     raises every event invoice. The 16 October extension (other billing lines merge into events, a
+     billing event is a free-form charge or credit, events at any time) is one more kind, `'billing'`, on
+     the same element and the same path: no second route for "lines". A refund shown as an event
+     (US-03.7.3: web only, a record made outside the system) is not built here.
+   - **OQ-12 (the ACC codes), open and parked** (Donald, 16 October: "we can come back to that
+     another time"; ROADMAP.md "Confirm before building" row for 39b). Seed CS250,
      CS260 and CS70 as provisional event fees with demo prices on the fixed-fee ACC pre-op Contract
      (work item 6), each fee and the event sheet's code rows labelled "Codes and prices to confirm with
      AA's accountant (OQ-12)". If answered, change only the seeded fees and drop the label.
@@ -238,10 +238,6 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
      version in force on **the event's own date**. One helper, `servicePricingDate(...)`, with the
      reading in its comment, logged on the "For the owner's review" list. A dated billing line is a
      typed amount, so its date prices nothing.
-   - **OQ-89, no longer this phase's.** Its questions 1 and 2 are answered in effect (US-03.3.6's note:
-     the fixed rate prices the whole Procedure, so there is no unit x rate line) and the add-on flag
-     is dropped (question 3). Its open parts (the time band, a discount on top of a fixed discount)
-     are D40's defaults in 19a and 24. Nothing to build or label here.
    - **The 2026-09-28 ruling, as 24 and 38b left it.** 24 superseded it in part for the Procedure's
      price section (a third-party price shown read-only, a fixed rate and fixed discount shown locked,
      still no calculated total); 38b superseded it for events (`EVENT_RULES.anaesthetistSees:
@@ -271,20 +267,20 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
      (`procedure-events`, `procedure-event-row`), the Admin Review Events tab and `EventReviewSheet`
      (`admin-events-queue`, `event-review-sheet`), the `run-next-billing-run` trigger, the PWA stand-in
      `office-reviews-additional-invoice`, `procedureEventCopy.ts` (the one label for "event"), whether
-     the shared additional-invoice form's party field is reusable here, where the anaesthetist's
+     the shared additional-invoice form's party field and lines editor are reusable here, where the anaesthetist's
      "Raise additional invoice" button sits on the stack, and `stage-post-op`'s current routes, `when`,
      body and result copy (38b kept it for Dr Sharma's Tue 14 Jul AM List and the additional-invoice
      beat; 39 and 39a beats may depend on it);
    - from **24**: `priceProcedure`, `PriceResult` (`rate` and its origin, `discountPercent` and its
-     origin), `PriceSource`, `adjustmentAllowed`, the `billingLineOnFixedPrice` rejection and its
-     sentence, whether the calculated step's rate and discount are already an exported helper (work
-     item 2 needs one), the reduced `ChargeBasis`, the remaining `BillingLine` fields, and that no
-     `unitRateFor`, `rateTime` or hourly line remains;
+     origin), `PriceSource`, `adjustmentAllowed`, whether the calculated step's rate and discount are already an
+     exported helper (work item 2 needs one), what 24 left of `BillingLine` (a fixed-amount line and
+     its `billingLineOnFixedPrice` rejection; work item 5 removes them), and that no `unitRateFor`,
+     `rateTime` or hourly line remains;
    - from **19a**: `ContractLine`, `lineFor`, the resolver's name and output, `isPlainRvgContract`,
      how 18's new-version action copies lines (event fees copy the same way), the `CT-STG-ACC`
      fixed-rate lines ($25.00 a unit on the orthopaedic, hand and spine sections, from `RATE_LINES`),
      `timeUnitsFromMinutes(minutes, rule)` and `masters.rvgTimeRule`;
-   - from **38a**: `searchBookingsFor`, the archive's `?day=` and the search's `?q=` URL state, which
+   - from **38a**: `searchBookingsFor`, the date lookup's `?day=` and the search's `?q=` URL state, which
      Lists the main view holds (an un-invoiced submitted List stays; an invoiced one leaves), and how a
      billed List's Booking detail renders read only;
    - from **18**: the holder master (`CH-STG`, `billsHolder`, `billablePartyRef`), `CT-STG-ACC`, the
@@ -295,14 +291,16 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
      from **21**: `billablePartyForProcedure`, the payer on the Booking, holder references and the
      party picker; from **22**: `materialiseInvoices`, `deliveryPlanFor`, the `lineage` roles,
      `procedureIds`, `gstTreatment`, the Split button's records and how a split Procedure's invoices
-     are told apart; from **25**: `BookingLock`, the locked billable party and payee,
+     are told apart; from **25**: `BookingLock` (and its `billingLines` member), the locked billable party and payee,
      `regenerateInvoiceFromLock`; from **36**: `newBookingPair`, `handoffPair`; from **16**:
      `bctiRecords`, `bctisFor`; from **26**: where the anaesthetist's unit value lives; from **14**: the
      registry file, `OFFICE_ACTOR`, `OFFICE_SIMULATION_ACTOR`, the PWA sheet, "Office authorises this
      List"; from **15**: `src/shared/booking/BookingDetailBody.tsx` and the Booking routes.
    - If 39 has already run, note whether its credit note and credit-and-rebill accept an invoice that
-     carries event lines and an event invoice (work item 3's corrections bullet).
-4. **Leftovers.** Grep `aa-prototype/src` and `aa-prototype/visual` for `isAddOn|quantityRule|addOnLines|addOns|unitRateFor|UNIT x RATE|unit x rate|rateTime|Rate × time|permitsIndividualArrangement|Ancillary fixed amount`. Expected: none outside history comments (24 removed the rate x time line and its Method 3 gate). Anything found is removed in work item 4 and recorded.
+     carries event lines and an event invoice (work item 3's corrections bullet), and the name of its
+     credit note issue function (work item 4's credit after the invoice). If 35 has run, note its
+     drafted-action table's `addBillingLine` and `removeBillingLine` rows and `BookingSnapshot.billingLines`.
+4. **Leftovers.** Grep `aa-prototype/src` and `aa-prototype/visual` for `BillingLine|billingLines|chargeBasis|ChargeBasis|billingLine\.|isAddOn|quantityRule|addOnLines|addOns|unitRateFor|UNIT x RATE|unit x rate|rateTime|Rate × time|permitsIndividualArrangement|Ancillary fixed amount`. Expected: the BillingLine files of work item 5 (about 25 non-test files at plan time) and nothing else outside history comments. Anything else found is removed in work item 5 and recorded.
 5. **The staging session.** Confirm Dr Souter's Thu 16 Jul 2026 AM session is free in a fresh seed (the
    canvas RNG fills Slots) and that no S1 to S5 beat uses it. If not, use her nearest earlier free
    weekday session inside the canvas and name it in the PROGRESS entry and the trigger copy.
@@ -317,8 +315,7 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
   tabular-nums for every date, time, code and amount, the bottom-sheet and `sheet-in` motion
   patterns, 4pt spacing).
 - `docs/design/Mobile App.dc.html`: the Booking detail and its Procedure cards (38b's events list sits
-  under the Procedure as the billing lines card does), the bottom sheet anatomy for the event and
-  billing-line sheets. Mobile-first: bottom sheets with tappable rows, never desktop forms or dropdowns
+  under the Procedure where the billing lines card was), the bottom sheet anatomy for the event sheets. Mobile-first: bottom sheets with tappable rows, never desktop forms or dropdowns
   (convention 16).
 - `docs/design/Web Dashboard.dc.html`: the web panel anatomy for the same section on the web Booking
   detail (the shared body renders both).
@@ -328,8 +325,7 @@ new Contract, so `PERSIST_VERSION` is bumped. No seeded figure moves.
   rail, and the Invoices table as they stand.
 
 **Catalogue items:** the covered and context files listed above, and the pricing artifacts AR-28,
-AR-29 and AR-30 at the regions named in the header (US-03.3.6 also links
-[AR-24#record-billing](../../../../requirements-board/requirements/artifacts/AR-24.md)). The meeting
+AR-29 and AR-30 at the regions named in the header. The meeting
 notes:
 - 2026-10-01 #6 (the ACC pre-op assessment as a fixed-fee Contract, never primary, recorded as a pre-op
   event; time or fixed price events with no other modifiers; a Contract can replace a recorded time
@@ -346,23 +342,23 @@ notes:
   "wash up" post-ops in the next round; the rule covers both), #35 (for Ben: whether unbilled events
   are recorded today and whether submitting is held back; nothing to build) and #44 (Greg not convinced
   by "events");
-- 2026-10-02 booking and pricing review #21 and #55 (the unit x rate rewording, now history);
-- 2026-10-06 directors #11 and 2026-10-07 Greg #5 (a fixed-rate Contract prices the whole procedure;
-  the add-on flag and quantity rule dropped: why US-03.3.6 lost both lines).
+- 2026-10-16 #45 (other billing lines kept with the procedure; Donald prefers "billing event"), #59 (events
+  are one name for all of them; other billing lines merge into events), #60 (the event's billable
+  party; ACC codes parked), #61 (US-03.7.2 rewritten as a free-form invoice event: a charge with free
+  text or a credit, on the Procedure and its Contract) and #62 (a refund could show as an event, web only).
 
 **Analysis files:**
 
 - `docs/prototype-build/catch-up/GAP-ANALYSIS.md`: theme 5 ("Events, additional invoices, credit and
-  rebill"), the FT-03.7, US-03.7.1, US-03.7.2, US-03.7.3, US-03.3.6 and US-05.5.2 rows (US-03.3.6
-  re-graded at 60e2d1e: Contradicts on the rate x time line, Phase 24's, and Missing on the own date
-  and preset types, this phase's), the DM-17 and DM-46 rows, RV-10 and RV-24, the EP-03 and EP-05
+  rebill"), the FT-03.7, US-03.7.1, US-03.7.2, US-03.7.3 and US-05.5.2 rows (US-03.3.6 is Retired: its
+  row is history), the DM-17 and DM-46 rows, the EP-03 and EP-05
   structural notes (EP-03's names the 'Stage post-op scenario' trigger to retire or re-point), and the
   "Demo-trigger buttons" section.
-- `docs/prototype-build/catch-up/epics/EP-03.md` (FT-03.7, US-03.7.1, US-03.7.2, US-03.3.6) and
+- `docs/prototype-build/catch-up/epics/EP-03.md` (FT-03.7, US-03.7.1, US-03.7.2) and
   `epics/EP-05.md` (US-05.5.2).
 - `analysis/domain-model-delta.md` DM-17 (and DM-18 for the additional invoice it sits beside, DM-22
   for the ledger pair and the invoice kinds, DM-09 for Contract lines, DM-50 for the one precedence
-  whose calculated step a timed event reuses, DM-46 for the removed rate x time line).
+  whose calculated step a timed event reuses, DM-46 for the BillingLine removal).
 - `analysis/prototype-map-shared.md` (the shared Booking detail body, `BtmCaptureBlock`,
   `BillingLinesCard`, `AddBillingLineSheet`), `prototype-map-apps-mobile-web.md` (the mobile and web
   Booking routes), `prototype-map-admin.md` (Review, Invoices, the invoice document, the Contract
@@ -372,18 +368,14 @@ notes:
 **Code entry points** (line numbers are from 3d3a18c; phases 15a to 38b will have moved them: use the
 names from the drift check):
 
-- Billing lines: `src/domain/types.ts` `BillingLine` 528 to 541 (no date, no type), `ChargeBasis` 519
-  (24 dropped `'rateTime'`); `src/store/billingLineActions.ts` (`addBillingLine` 46, guarded by
-  `editRefusal` at 57, which refuses an anaesthetist on a List that is not ACTIVE after 15b; 24's
-  fixed-price refusal; `removeBillingLine`; whatever 22 left of the funder-allocation rule);
-  `src/store/lifecycle.ts` `editRefusal` 48 (unchanged by this phase);
-  `src/shared/capture/AddBillingLineSheet.tsx` (the fixed amount line as 24 left it; the ACC detail at
-  85 and caption at 107, both of which go); `src/shared/capture/BillingLinesCard.tsx` (the list and the
-  "Add billing line" foot, rendered from `BtmCaptureBlock.tsx`).
+- Billing lines (all removed here, work item 5): `src/domain/types.ts` `BillingLine` and `ChargeBasis`;
+  `src/store/billingLineActions.ts`; `src/shared/capture/AddBillingLineSheet.tsx`;
+  `src/shared/capture/BillingLinesCard.tsx` (rendered from `BtmCaptureBlock.tsx`); the other readers are
+  the drift check's step 4 grep. `src/store/lifecycle.ts` `editRefusal` stays exactly as it is.
 - Pricing: 24's `src/domain/billing/pricePrecedence.ts`, 19a's `contractLines.ts` and resolver,
-  `src/domain/billing/timeUnits.ts` (19a's `timeUnitsFromMinutes(minutes, rule)`), `fee.ts` (the
-  captured fixed-amount lines, which pass their date through after this phase),
-  `src/domain/billing/invoiceBuild.ts` (the line snapshot and `describeFeeLine`), `InvoiceLine`.
+  `src/domain/billing/timeUnits.ts` (19a's `timeUnitsFromMinutes(minutes, rule)`), `fee.ts` (loses
+  its line sum),
+  `src/domain/billing/invoiceBuild.ts` (loses the line snapshot, gains event lines), `InvoiceLine`.
 - Booking detail: `src/shared/booking/BookingDetailBody.tsx` (the procedures loop; 38b's events list
   under each Procedure; 20a's stack with 38b's "Raise additional invoice" on its Contract part).
 - Admin: `src/apps/admin/screens/ReviewQueue.tsx` and `ReviewScreen.tsx` (the List review, where a
@@ -398,45 +390,46 @@ names from the drift check):
   `src/domain/seed/cast.ts` (`SURG.hale`, Mr T. Hale, Orthopaedics; `ANAE.souter`),
   `src/domain/seed/patients.ts` (`PAT.bennett`, Coral Bennett, `ZAG5541`), 19's procedure seed (the
   ACL reconstruction procedure), 25's `masters.contractVersions`.
-- Store plumbing: `src/store/mutate.ts` `ID_FORMATS` (`billingLine: { prefix: 'BL', pad: 4 }` 66),
+- Store plumbing: `src/store/mutate.ts` `ID_FORMATS` (`billingLine: { prefix: 'BL', pad: 4 }` 66, which goes),
   `allocateId`, `clockISO`; `src/store/appStore.ts` (`PERSIST_VERSION`, `freshAppState`,
   `resetDomainState`); `src/shared/audit/fieldLabels.ts` and `ACTION_LABELS`
   (`src/shared/audit/actionLabels.ts`).
 - Demo: `src/shared/demoTriggers/registry.ts` (`stage-post-op` and 38b's
   `office-reviews-additional-invoice`), the PWA sheet, `pwaPurity.test.ts`, `demoTriggers.test.ts`.
-- Tests to extend: `store/captureActions.test.ts` (where `addBillingLine` is tested at 3d3a18c),
+- Tests to extend: `store/captureActions.test.ts` (loses its `addBillingLine` tests),
   `domain/billing/fee.test.ts`, `invoiceBuild.test.ts`, `pricePrecedence.test.ts`,
   `contractLines.test.ts`, 38b's event action tests, `store/billingRun.test.ts`, 16's count test,
   `seed.test.ts`, `store/persistMigrate.test.ts`, `shared/demoTriggers/demoTriggers.test.ts`,
-  `pwaPurity.test.ts`, and the Playwright specs that shoot the Booking detail and the add-billing-line
-  sheet.
+  `pwaPurity.test.ts`, and the Playwright specs that shoot the Booking detail (those of the retired
+  add-billing-line sheet go).
 
 ## Work items
 
 ### Session 1: model, pricing, store and seed
 
 1. **Model** (`domain/types.ts`, extending 38b's record; the event-fee type in 19a's billing module).
-   US-03.7.1, US-03.7.2, US-03.3.6.
-   - 38b's kind union gains `'preOp' | 'postOp'`. `PrePostOpEventType` = `'postOpWardReview' |
+   US-03.7.1, US-03.7.2, DM-46.
+   - 38b's kind union gains `'preOp' | 'postOp' | 'billing'`. `PrePostOpEventType` = `'postOpWardReview' |
      'hduReview' | 'painConsult' | 'accPreOpAssessment' | 'otherPreOp' | 'otherPostOp'`.
    - Reuse 38b's record as it stands: `occurredOnISO` is the event's date, `startTime` its start time,
      `billable` the invoice tick, `party: EventParty` (`{ sameAs: true }` or a named party; a person
      entered by name and email goes through 21's payer and party path), `review` (38b's states,
      `approveProcedureEvent` and `declineProcedureEvent`), `invoiceId` (the event's own invoice) and
      `addedBy`. Add only what 38b lacks, as the new members of 38b's `detail` union: `{ kind: 'preOp' |
-     'postOp'; type: PrePostOpEventType; recording: EventRecording; origin: 'event' | 'lateLine' }`.
-     Beside them on the record: `pricing?: EventPricing` (frozen at approval), `invoiceRoute?:
-     'procedureInvoice' | 'ownInvoice'` (frozen at approval from 38b's `eventInvoicing`) and
-     `invoiceLineId?` (a line on the Procedure's invoice).
-   - `EventRecording`, a discriminated union:
+     'postOp'; type: PrePostOpEventType; recording: EventRecording }` and `{ kind: 'billing'; direction:
+     'charge' | 'credit'; description: string; amount: number }` (`amount` ex GST in dollars to the cent,
+     above zero; a credit's sign is its `direction`, never a negative stored amount). Beside them on the
+     record: `pricing?: EventPricing` (frozen at approval), `invoiceRoute?: 'procedureInvoice' |
+     'ownInvoice'` (frozen at approval from 38b's `eventInvoicing`) and `invoiceLineId?` (a line on the
+     Procedure's invoice).
+   - `EventRecording`, a discriminated union for the pre-op and post-op kinds:
      - `{ kind: 'time'; minutes: number }`;
      - `{ kind: 'fixedFee'; source: 'contractEventFee'; contractId; eventFeeId }` (an ACC code, or the
        Contract's fee for this type of event);
      - `{ kind: 'fixedFee'; source: 'typed'; amount }` (no Contract fee exists; the person adding it
-       types it, ex GST);
-     - `{ kind: 'line'; line: LateLineInput }` for a late billing line (work item 5), where
-       `LateLineInput` is the billing line input of work item 4.
-     There is no modifier, base-unit or RVG field anywhere on the record (US-03.7.1 AC 2).
+       types it, ex GST).
+     There is no modifier, base-unit or RVG field anywhere on the record (US-03.7.1 AC 2), and a billing
+     event carries no time, rate or unit.
    - **`ContractEventFee`**, the one addition to the Contract (in 19a's `contractLines.ts` or a
      sibling `contractEventFees.ts` in the same folder, re-exported from the billing index and through
      `types.ts`): `{ id; contractId; eventType: PrePostOpEventType; holderCode?: string;
@@ -444,32 +437,29 @@ names from the drift check):
      is the Contract version, as 19a's lines are. A Contract version holds at most one fee per event
      type, except `accPreOpAssessment`, which may hold several (one per code, told apart by
      `holderCode`). The type comment says: the draft design (AR-29, AR-30) has no event and no
-     event fee; US-03.7.2 AC 3 ("a Contract with a fixed fee for the event") needs one; it is kept
-     beside the lines so a v5 that models it differently is one edit. `allocateId` gains a
+     event fee; the fixed-fee ACC pre-op (US-05.5.2) and a Contract replacing a recorded time with a
+     fixed fee (OQ-12's answer, 1 October notes #6) need one; US-03.7.2 no longer states the swap; it
+     is kept beside the lines so a v5 that models it differently is one edit. `allocateId` gains a
      `contractEventFee` kind (`CEF###`). `SeedMasters` and `AppState['masters']` gain
      `contractEventFees`.
    - `EventPricing`, written at review and frozen with the invoice, so 25's Regenerate can reproduce
-     it: `{ basis: 'time' | 'contractEventFee' | 'typedFixedFee' | 'line' | 'officePrice';
+     it: `{ basis: 'time' | 'contractEventFee' | 'typedFixedFee' | 'billingEvent' | 'officePrice';
      pricingDateISO; minutes?; timeUnits?; rate?; rateOrigin?: 'fixedRate' | 'unitValue';
      discountPercent?; contractId?; contractVersion?; eventFeeId?; holderCode?; replacedMinutes?;
-     amount; officeReason? }`, amounts ex GST in dollars to the cent as every stored price.
-     `contractVersion` is the version the price was read from, so the event is traceable to a
-     Contract version as a lock is.
-   - `BillingLine` gains `serviceDateISO?: IsoDate` (absent means the List date) and `lineType?:
-     BillingLineType`. `BillingLineType` = `'postOpWardReview' | 'hduReview' | 'nerveCatheter' |
-     'painConsult' | 'medicalTransport' | 'other'`. `chargeBasis` stays 24's `'fixed'` for these lines
-     (a typed amount), so nothing that switches on `ChargeBasis` ripples. No add-on, quantity or unit
-     x rate field.
+     amount; officeReason? }`, amounts ex GST in dollars to the cent as every stored price; `amount` is
+     signed, so a credit billing event is negative. `contractVersion` is the version the price was read
+     from, so the event is traceable to a Contract version as a lock is.
    - `InvoiceLine` gains `serviceDateISO?` and `eventId?` (an event line on the Procedure's invoice).
      An event's own invoice uses 38b's event-invoice kind and lineage role; add neither twice.
+   - The BillingLine entity and `ChargeBasis` are not extended: work item 5 removes them.
    - Thread anything new through `AppState`, the empty schedule slice, `freshAppState`,
      `resetDomainState` and the seed builders (38b added the slice; only new fields here).
 2. **Pure rules and pricing.** The routing and party rules stay in 38b's
    `src/domain/billing/procedureEvent.ts`, extended there; the type table, validation and pricing go in
    `src/domain/billing/prePostOpEvent.ts`, re-exported from the billing index, Vitest-covered
    (convention 9). Nowhere else is a pre-op or post-op event validated, priced or routed.
-   - **38b's module, extended** (one rule, no second constant): `EVENT_KINDS` gains `preOp` and
-     `postOp` (`addedBy: ['anaesthetist', 'office']`, `anaesthetistOwnOnly: true`, `tick: 'shown'`,
+   - **38b's module, extended** (one rule, no second constant): `EVENT_KINDS` gains `preOp`, `postOp` and
+     `billing` (`addedBy: ['anaesthetist', 'office']`, `anaesthetistOwnOnly: true`, `tick: 'shown'`,
      `reviewed: true`, `mayBundle: true`, `needsInvoicedProcedure: false`); `validateEventBase`'s date
      rule becomes per kind (a pre-op event may be dated before the List date: item below);
      `eventInvoicing`'s `'withProcedureInvoice'` branch becomes reachable. Comment D13 and the two
@@ -517,7 +507,7 @@ names from the drift check):
        price, so a timed event is not calculated. Set a price in review."; and **refused
        `contractNotInForce`** when no version of the Procedure's Contract is in force on the event's
        date ("{Contract} is not valid on {date}. Set a price in review.");
-     - **a typed or code fixed fee** as recorded; a **late line** at its typed amount;
+     - **a typed or code fixed fee** as recorded;
      - an event whose invoice tick is cleared is refused `notInvoiced` (it is never priced);
      - no modifier or base-unit input exists in `ctx`;
      - the Contract, terms and fees in `ctx` are the live Contract version read on the event's date,
@@ -534,7 +524,9 @@ names from the drift check):
      `EVENT_RULES`).
    - `eventInvoiceLine(event, pricing)`: one line, description such as "Post-op pain consult · 18 Jul
      2026 · 40 min, Contract fee" or "ACC pre-op assessment · CS250 · 13 Jul 2026", with
-     `serviceDateISO`, `eventId`, quantity 1, the amount ex GST (GST at the invoice foot, 22).
+     `serviceDateISO`, `eventId`, quantity 1, the amount ex GST (GST at the invoice foot, 22), for
+     every kind: a billing event reads "Billing event · {description} · {date}", a credit "Credit ·
+     {description} · {date}" with a negative amount (work item 4's `priceBillingEvent` prices them).
    - Tests (worked figures): 45 min on an ACL reconstruction under `CT-STG-ACC` (fixed rate $25.00 a
      unit on its orthopaedic line) is 3 units, $75.00; 121 min enters the second tier (8 + 1 = 9
      units, the part interval rounded up); the same 45 min under No contract (RVG) at a fixture unit
@@ -551,7 +543,7 @@ names from the drift check):
 3. **Store: pre-op and post-op events** (`src/store/prePostOpEventActions.ts`, or 38b's event actions
    file extended; exported from `store/index.ts`). US-03.7.1, US-03.7.2.
    - **The guard.** Extend 38b's event guard (keep `editRefusal` exactly as it is, so a billed Booking
-     stays locked: 38a's handoff): for a pre-op or post-op event the actor is the Procedure's owner
+     stays locked: 38a's handoff): for a pre-op, post-op or billing event the actor is the Procedure's owner
      (38b's `procedureOwner`: the List's anaesthetist, after 32 and 32a the doer, or the locked payee
      once invoiced) or the office (US-03.7.1 AC 5); the Booking and Procedure are not cancelled; the
      List has an anaesthetist (a Draft List, DRAFT since 31, has none: "Assign the List first."). Any
@@ -568,11 +560,11 @@ names from the drift check):
      Refused once approved ("This event is approved. Ask the office to correct its invoice."). Audit
      before and after, and the full record on remove.
    - **Before the Procedure's invoice: it travels with the Procedure.** While the List is not yet
-     authorised, a billable pre-op or post-op event is reviewed in the List's review, and only there:
+     authorised, a billable pre-op, post-op or billing event is reviewed in the List's review, and only there:
      38b's `eventsAwaitingReview` (the Events tab) leaves out events whose List is not yet authorised,
      so no event has two review paths. In the authorise commit (25's lock is written there) and the
-     billing run it triggers (`runBillingForList`), for each ticked pre-op or post-op event awaiting
-     review on the List's Procedures, in event id order: `pricePrePostOpEvent`, freeze `pricing`,
+     billing run it triggers (`runBillingForList`), for each ticked pre-op, post-op or billing event awaiting
+     review on the List's Procedures, in event id order: `pricePrePostOpEvent` or `priceBillingEvent`, freeze `pricing`,
      approve it as the authorising office actor (38b's `review.state: 'approved'`), freeze
      `invoiceRoute` from `eventInvoicing`, then
      - `'procedureInvoice'`: 22's `materialiseInvoices` adds `eventInvoiceLine` to the Procedure's
@@ -587,9 +579,10 @@ names from the drift check):
        to the Procedure and the now-raised original invoice (38b's `additionalTo` lineage), with 36's
        pair to the locked payee, laid out and delivered by 22's rules for the Contract it was priced
        under. The authorise run raises no event invoice.
-     An event refused `noEventRate` or `contractNotInForce` is left out and stays awaiting review, now
-     in 38b's Events tab ("Needs a price: invoiced in the next run once priced"); the List authorises
-     as normal.
+     An event refused `noEventRate` or `contractNotInForce`, or a credit refused `creditExceedsInvoice`
+     (it would take the invoice below $0.00), is left out and stays awaiting review, now in 38b's Events
+     tab ("Needs a price: invoiced in the next run once priced", or "Needs a change: the credit is more than
+     the invoice", which the office fixes by editing the amount or declining); the List authorises as normal.
    - **After the Procedure's invoice: the next run.** An event recorded once the List is authorised
      goes through 38b's review step (the Events tab and `EventReviewSheet`). `approveProcedureEvent`
      prices it for these kinds (item 2; an `officePrice` with a reason replaces the computed price,
@@ -611,7 +604,7 @@ names from the drift check):
    - Regenerate: 25's `regenerateInvoiceFromLock` reproduces an invoice with event lines and an event
      invoice from the lock plus each event's frozen `pricing`; extend it to read them.
    - Selectors: reuse 38b's `eventsForProcedure`, `eventsForBooking`, `eventsAwaitingReview` (filtered
-     as above) and `approvedEventsAwaitingRun`; add `prePostOpEventsAwaitingListReview(listId)` for the
+     as above) and `approvedEventsAwaitingRun`; add `eventsAwaitingListReview(listId)` (all three kinds) for the
      List review, and `eventLinesFor(invoiceId)` (derived, never stored on the invoice).
    - **Contract event fee actions** (office only, for the Contract editor in work item 10):
      `addContractEventFee`, `editContractEventFee` and `removeContractEventFee`, each validated (a
@@ -631,41 +624,65 @@ names from the drift check):
      `eventsAwaitingReview`; an event added after authorise is invoiced only after 38b's review and
      next run, once; authorise twice, the run twice and a replayed handoff raise nothing twice; an
      un-ticked event never invoices; `noEventRate` before approval is left for review and priced there;
-     the BCTI count above; the event fee actions and the version copy; Regenerate reports "identical"
-     on both kinds of invoice.
-4. **Billing lines: a date and a type** (`billingLineActions.ts`, `fee.ts`, `invoiceBuild.ts`).
-   US-03.3.6.
-   - `AddBillingLineInput` gains `serviceDateISO?` and `lineType` (required from the UI; default
-     `'other'` for old callers). The date may not be before the List date, nor after today unless it
-     is the List date (an ACTIVE List can be in the future). The amount stays typed (24's fixed
-     amount line), above zero; 24's refusal on a fixed-price Procedure stands unchanged.
-   - `fee.ts` keeps its shape; a dated line passes its date through to the fee line, and
-     `invoiceBuild.ts` copies it to `InvoiceLine.serviceDateISO` when it differs from the List date.
-     A typed line's fee line reads "{type label} · {description}" with the date where it differs.
-   - **No UNIT x RATE line and no Contract add-on line** (US-03.3.6, 2026-10-07). If drift check
-     step 4 found any add-on, quantity-rule, unit-rate or hourly remnant, remove it (code, tests,
-     copy, `ACTION_LABELS`) and record it; 24's grep test that no second rate derivation exists still
-     passes.
-   - 18's parity fixture and 24's parity must match unchanged (no seeded Procedure has a dated or
-     typed line): run them, never with `-u`.
-   - Tests: a dated line keeps its date onto the invoice line; each preset type round-trips; the date
-     edges; the fixed-price refusal still fires for a typed, dated line; the conservation rule (if 22
-     kept one) still holds with dated lines.
-5. **Late billing lines are events** (`prePostOpEventActions.ts`). US-03.3.6's "days later".
-   - `addLateBillingLine(api, actor, procedureId, input)`: the anaesthetist's line when the List is not
-     ACTIVE (`editRefusal` would refuse `addBillingLine`). It validates the line through item 4
-     (including 24's fixed-price refusal: a fixed price is the whole price, so a late line there is
-     refused with 24's sentence, which points at an additional invoice) and records an event with
-     `origin: 'lateLine'`, `recording: { kind: 'line', line }`, kind from the line's date against the
-     List date, the invoice tick on, the "same as" party. From here it is an event: before authorise
-     it travels with the Procedure's invoice, after it 38b's review and next run; the same BCTI rule.
-     Audit `procedureEvent.add` with `origin`. The Procedure's `billingLines` are never written after
-     submit.
-   - `addBillingLine` itself is unchanged for the office (it may still add lines to a SUBMITTED List)
-     and for the anaesthetist on an ACTIVE List.
-   - Tests: an anaesthetist line on a SUBMITTED List becomes a late-line event and the Booking is
-     deep-equal; authorise puts it on the Procedure's invoice with its date; on a billed List it is
-     invoiced on its own after review; a late line on a fixed-price Procedure is refused.
+     the BCTI count above; a billing charge and a credit ride the Procedure's invoice as dated lines (the
+     credit negative, the total their sum) and a credit over the total is left in review; the event fee
+     actions and the version copy; Regenerate reports "identical" on both kinds of invoice.
+4. **Billing events** (`src/domain/billing/billingEvent.ts`, `src/store/billingEventActions.ts`, replacing
+   `billingLineActions.ts`; exported from the billing index and `store/index.ts`). US-03.7.2, FT-03.7.
+   - `validateBillingEvent(input, { listDateISO, todayISO })`, calling 38b's `validateEventBase`: a
+     description of 1 to 120 characters; an amount above zero and below $100,000.00 ex GST; a
+     direction of `'charge'` or `'credit'`; a date on or after the List date and not after the later of
+     today and the List date; a cleared "same as" tick needs a party.
+   - `priceBillingEvent(event)`: `basis: 'billingEvent'` at the typed amount, negative for a credit;
+     refused `notInvoiced` when the tick is cleared. It reads no Contract, rate, unit or Booking
+     total, so it is never refused on a fixed-price Procedure (US-05.2.5's by-hand route; a
+     labelled reading) and never `noEventRate` or `contractNotInForce`. A credit that would take the
+     Procedure's invoice below $0.00 is refused `creditExceedsInvoice` at authorise (work item 3).
+   - `addBillingEvent(api, actor, procedureId, input)`, a thin wrapper over 38b's `addProcedureEvent`
+     (no second write path) under work item 3's guard and `procedureOwner` rule; edit and remove
+     through 38b's `updateProcedureEvent` and `removeProcedureEvent` under `mayEditEvent`. Audit
+     `procedureEvent.add` with the kind and direction.
+   - **Invoicing is work item 3's, unchanged for this kind**: before approval and the same party, a line
+     on the Procedure's invoice (a credit a negative line) through the List's review; after the
+     invoice, or another party, its own invoice in the next run by `runEventInvoicing` after 38b's
+     review step. A **credit after the invoice** is issued as a credit note for its one line through
+     Phase 39's issue function (US-08.6.5: it reverses the linked payable), never a second path; if 39
+     has not run, the sheet's Credit option is not offered once the Procedure is invoiced ("Credits after
+     invoicing need a credit note.") and the gap goes to 39's handoff.
+   - Tests: a charge and a credit validate and price as typed (+$180.00, -$40.00); every refusal; allowed
+     on the Doyle bariatric Procedure; the Booking, Procedures and lock deep-equal before and after;
+     edit and remove until reviewed; refused for another anaesthetist, a cancelled Booking and a Draft
+     List; an un-ticked billing event never invoices.
+5. **Remove the BillingLine entity (DM-46)** (domain, store, seed and the screens that read it; the
+   billing event sheet is work item 9). The files are the drift check's step 4 grep (about 25 non-test
+   files at plan time).
+   - **Delete:** `BillingLine`, `ChargeBasis`, `schedule.billingLines`, `ID_FORMATS.billingLine` (`BL`),
+     `billingLineActions.ts` (`addBillingLine`, `removeBillingLine`, anything 22 left), the line
+     selectors, `fee.ts`'s line sum and the line members of `FeeLine`, `invoiceBuild.ts`'s line
+     snapshot and `describeFeeLine`'s line branch, the validator's line checks, 24's
+     `billingLineOnFixedPrice` rejection, any `permitsIndividualArrangement` trace, the lock's
+     `billingLines` copy (an event that travels with the invoice carries its own frozen `pricing`,
+     which Regenerate reads), 35's `BookingSnapshot.billingLines` and drafted-table rows if 35 has run,
+     the audit snapshots and `billingLine.*` labels, `AddBillingLineSheet`, `BillingLinesCard` and
+     every reader (`BtmCaptureBlock`, `BookingDetailBody`, `ReviewScreen`, `ListDetailView`,
+     `HistorySheet`, `feeContext` and the rest of the grep). A Booking's total is the Procedure's price;
+     events show on their own lines.
+   - **Re-express the seeded lines as billing events** (grep `addLine(` in `seed/bookings.ts`; at plan
+     time the two-funder Procedure's lines and the prepayment Procedure's fixed line): each becomes
+     `kind: 'billing'`, direction charge, the line's description and amount, the List date, tick on,
+     "same as". On an invoiced List it is `approved` with `invoiceLineId` and `invoiceRoute:
+     'procedureInvoice'` pointing at the line the seeded invoice already carries (invoice, pair and
+     figures untouched); on a List not yet authorised it is `awaitingReview` and rides on authorise. Seed
+     audit entries for the lines become `procedureEvent.add` entries. No seeded total moves: 18's and
+     24's parity fixtures and 25's `phase-25-invoices.json` match unchanged; if a fixture records
+     `billingLines` as input, change the input shape only, record it, never `-u`.
+   - Any add-on, quantity-rule, unit-rate, rate x time or hourly remnant goes too, with its tests, copy
+     and `ACTION_LABELS`.
+   - Tests: every seeded invoice total and Booking figure unchanged; the re-expressed events show with
+     their invoice line; a grep test that no `BillingLine`, `billingLines`, `chargeBasis` or `billingLine.`
+     identifier survives outside history comments (extend 24's "no second rate derivation" test);
+     `fee.test.ts`, `invoiceBuild.test.ts` and the validator tests keep every non-line case; a Booking is
+     billable with a primary Procedure and a price, no line needed.
 6. **Seed: the Contract event fees** (`seed/contracts.ts` and 19a's lines seed; labelled demo prices).
    - **St George's ACC (`CT-STG-ACC`, holder `CH-STG`, fixed-rate lines at $25.00 a unit from 19a)
      gains one event fee** on its current version: `STGACC-PAIN` "Acute pain review, fixed fee"
@@ -686,38 +703,43 @@ names from the drift check):
    - Neither change moves a figure: 18's parity fixture, 24's parity and 25's `phase-25-invoices.json`
      must match unchanged, and every S1 to S5 figure stands. Update the pinned id-to-code table in
      `seed.test.ts`.
-   - Bump `PERSIST_VERSION` by one (the event fields, the line fields, the invoice line fields, the
-     event fee collection and the new Contract) with a comment line ("Phase 39b: pre-op and post-op
-     events"). Extend `persistMigrate.test.ts` (a stale payload is discarded to the fresh seed). Two
+   - Bump `PERSIST_VERSION` by one (the event fields, the invoice line fields, the event fee collection,
+     the new Contract, the seeded billing events and the removed `billingLines`) with a comment line
+     ("Phase 39b: pre-op, post-op and billing events; BillingLine removed"). Extend `persistMigrate.test.ts` (a stale payload is discarded to the fresh seed). Two
      fresh seeds deep-equal.
-7. **Session 1 stop point.** Every action above tested at store level; `npm run build`,
+7. **Session 1 stop point.** Every action above tested at store level, no `BillingLine` identifier left; `npm run build`,
    `npm run build:pwa` and `npx vitest run` green before session 2 starts.
 
 ### Session 2: screens, review, documents, triggers and docs
 
 8. **Copy in one place.** Extend 38b's event copy (`procedureEventCopy.ts`, the one label for
-   "event"; do not define the word again): the kind labels ("Pre-op", "Post-op"), "Add pre-op or
-   post-op event", the type labels ("Post-op ward review", "HDU review", "Pain consult", "ACC pre-op
-   assessment", "Other pre-op", "Other post-op"), the tick captions ("Invoice this event" with
+   "event"; do not define the word again): the kind labels ("Pre-op", "Post-op", "Billing event"),
+   "Add pre-op or post-op event", "Add billing event", "Charge" and "Credit", the description prompt
+   ("What is this for?"), the type labels ("Post-op ward review", "HDU review", "Pain consult", "ACC
+   pre-op assessment", "Other pre-op", "Other post-op"), the tick captions ("Invoice this event" with
    "Cleared: kept on the record, never invoiced." and "Billed to the same party as the procedure" with
    the reading caption "Our reading: the same party as the procedure unless you change it."), the
    routing captions ("Goes on the procedure's invoice when the List is approved." and "Invoiced on its
    own in the next run, after review."), the pricing caption for a timed event ("The office prices the
-   time at review."), and the OQ-12 caption. `BILLING_LINE_TYPE_LABEL` ("Post-op ward review", "HDU
-   review", "Nerve catheter", "Pain consult", "Medical transport", "Other") goes in the same file or
-   beside it, PWA-safe. No en or em dash in any of them.
+   time at review."), the credit captions ("Reduces what is owed." and, once invoiced, "Issued as a
+   credit note in the next run."), and the OQ-12 caption. No en or em dash in any of them (a credit
+   amount reads "-$40.00" with a plain hyphen).
 9. **Anaesthetist side: the events and the sheets** (the shared Booking detail body, so mobile and web
-   render the same; US-03.7.1, US-03.1.4 parity).
-   - 38b's events list under each Procedure shows the new kinds: date and start time (mono), a Pre-op
-     or Post-op pill, the type, what was recorded ("40 min", "Fixed fee", "CS250", or the late line's
-     type and date), "Not invoiced" when the tick is cleared, the party, and the review state on 38b's
+   render the same; US-03.7.1, US-03.7.2, US-03.1.4 parity).
+   - 38b's events list under each Procedure shows the new kinds: date and start time (mono, a start
+     time only on pre-op and post-op), a Pre-op, Post-op or Billing event pill, the type or the
+     description, what was recorded ("40 min", "Fixed fee", "CS250", or "Charge" and "Credit" for a
+     billing event), "Not invoiced" when the tick is cleared, the party, and the review state on 38b's
      pills ("On the procedure's invoice" with the invoice number in mono once billed, or 38b's
      own-invoice state). Amounts follow 38b's `EVENT_RULES.anaesthetistSees` (drift check step 2): a
-     total once one exists, never a calculation. Edit and remove under `mayEditEvent`. The section now
-     shows always on the owner's Procedure so the add button has a home.
-   - The list's foot: a secondary teal **Add pre-op or post-op event**, shown on any List state when the
-     guard allows. On a billed List it sits beside 38b's **Raise additional invoice** as the
-     anaesthetist's controls on the read-only Booking (38a's handoff); the rest stays read only.
+     total once one exists (a billing event's typed amount at once, a credit as "-$40.00"), never a
+     calculation. Edit and remove under `mayEditEvent`. The section now shows always on the owner's
+     Procedure, on a List from ACTIVE on, so the add buttons have a home; it replaces the billing-lines
+     card, and `BtmCaptureBlock` keeps no Add billing line foot.
+   - The list's foot: two secondary teal buttons, **Add pre-op or post-op event** and **Add billing
+     event**, shown on any List state when the guard allows. On a billed List they sit beside 38b's
+     **Raise additional invoice** as the anaesthetist's controls on the read-only Booking (38a's
+     handoff); the rest stays read only.
    - **`AddPrePostOpEventSheet`** (via `useSurface`, a bottom sheet on mobile; or 38b's shared form
      extended): Pre-op or Post-op (segmented), the type as tappable rows, the date (defaulting to the
      List date for pre-op and the day after for post-op, capped at today) and start time, then "Record
@@ -730,29 +752,25 @@ names from the drift check):
      organisation, or a person by name and email). The routing caption under the primary teal **Add
      event** says where it will be invoiced. Refusals inline against the field.
      `data-shot="add-event-sheet"`.
-   - **`AddBillingLineSheet`** (24's fixed amount line) gains a **Type** row set (the preset types)
-     and a **Date** field (defaulting to the List date). The ACC detail and caption go; in their place,
-     on any type: "An ACC pre-op assessment is a pre-op event." with a link button **Add as pre-op
-     event**. Choosing "Post-op ward review", "HDU review" or "Pain consult" shows "Usually added as a
-     post-op event, with its own date and time." and **Add as post-op event instead**, which opens the
-     event sheet with the type carried over. On a List that is not ACTIVE the sheet's banner reads
-     "This List is submitted. This line is recorded as an event and invoiced with the procedure, or on
-     its own if the invoice is already raised." and **Add line** calls `addLateBillingLine`. It is
-     still not offered on a fixed-price Procedure (24). `data-shot="add-billing-line-sheet"`.
-   - `BillingLinesCard` shows each line's type and, when it differs from the List date, its date in
-     mono.
+   - **`AddBillingEventSheet`** (the same surface and a shared fields component for the date, tick and
+     party): **Charge** or **Credit** (segmented), a free-text **What is this for?** field and an
+     **Amount** (ex GST, mono), the date (the List date by default), the invoice tick and the "same as"
+     tick as above, the routing caption, and for a credit "Reduces what is owed." No time, rate, unit,
+     modifier, type or preset list. It is offered on a fixed-price Procedure too. Once the Procedure is
+     invoiced the Credit option follows work item 4. `data-shot="add-billing-event-sheet"`.
    - Mobile and web routes are unchanged: the sheets open over the Booking detail
      (`/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId/bookings/:bookingId`), reached
-     from 38a's main view, archive (`?day=`) and search (`?q=`).
+     from 38a's main view, date lookup (`?day=`) and search (`?q=`).
 10. **Admin: add, review and the Contract's event fees** (US-03.7.1 AC 5, US-03.7.2).
     - **Admin Booking detail:** 38b's events list under each Procedure gains **Add pre-op or post-op
-      event** (office actor, the same sheet as a side sheet), shown on any List state the guard allows.
+      event** and **Add billing event** (office actor, the same sheets as side sheets), shown on any List state the guard allows.
       An office-added event follows the same review as any other.
-    - **The List review** (`ReviewScreen.tsx`): each Procedure with ticked, unreviewed pre-op or
-      post-op events shows them under the Procedure (pill, type, date and time in mono, recorded, party,
+    - **The List review** (`ReviewScreen.tsx`): each Procedure with ticked, unreviewed pre-op, post-op or
+      billing events shows them under the Procedure (pill, type, date and time in mono, recorded, party,
       route, and the price with its calculation: "45 min · 3 time units x $25.00 fixed rate = $75.00" or
-      "Contract fee STGACC-PAIN · $120.00 replaces 40 min"), with **Set a price** (amount and reason)
-      where `noEventRate` or `contractNotInForce`. Authorising the List reviews them (work item 3). The
+      "Contract fee STGACC-PAIN · $120.00 replaces 40 min", or "Charge · $180.00 as entered"), with **Set a price**
+      (amount and reason) where `noEventRate` or `contractNotInForce`, and an editable amount where a credit
+      exceeds the invoice. Authorising the List reviews them (work item 3). The
       review count and authorise button are unchanged. `data-shot="review-list-events"`.
     - **38b's review step** for events after the invoice (the Events tab, `admin-events-queue`, and
       `EventReviewSheet`) shows the new kinds with the same calculation, the party (default, 21's
@@ -767,9 +785,10 @@ names from the drift check):
     - The Admin Day screen is not changed.
 11. **Admin: invoices.**
     - `InvoiceDocument.tsx`: an event line on the Procedure's invoice shows its kind, type and date
-      in mono ("Post-op event · Ward review · 17 Jul 2026"), its own line after the Procedure's lines;
+      in mono ("Post-op event · Ward review · 17 Jul 2026", "Billing event · Nerve catheter · 18 Jul 2026", a
+      credit with a negative amount), its own line after the Procedure's lines;
       any line carrying `serviceDateISO` shows its date. An event invoice uses 38b's relates-to line
-      ("Post-op event · relates to AA-2026-0012 · {Procedure}"; "Pre-op event" for a pre-op one). The
+      ("Post-op event · relates to AA-2026-0012 · {Procedure}"; "Pre-op event" or "Billing event" for those kinds). The
       original invoice's rail lists event invoices beside 38b's additional invoices.
       `data-shot="invoice-event-lines"`.
     - Invoices screen: 38b's kind column covers an event invoice; an invoice with event lines shows
@@ -803,7 +822,7 @@ names from the drift check):
       "Office reviews this event" (Mobile · Booking, `/mobile/lists/:listId/bookings/:bookingId`;
       `surfaces: ['pwa']`, `badge: 'office-stand-in'`), covering every reviewed kind: on the URL's
       Booking, `approveProcedureEvent` as `OFFICE_SIMULATION_ACTOR` on the oldest event awaiting review
-      in 38b's review step (an additional invoice, or a pre-op, post-op or late-line event on an
+      in 38b's review step (an additional invoice, or a pre-op, post-op or billing event on an
       authorised List) with the default party and no office price, or, when none awaits review, the
       oldest approved one awaiting the run (such as an other-party event approved with its List), then
       `runEventInvoicing` for it and `handoffPair`. Result "Reviewed by the office (simulated). Invoice
@@ -822,29 +841,29 @@ names from the drift check):
       gains the event, event fee and line fields, in English ("Acute pain review: fixed fee $120.00").
     - Copy sweep: no en or em dash in any new string; "event", the kinds and the type names come only
       from the copy (item 8); no calculation on any anaesthetist surface; grep `src` for the removed
-      ACC caption ("CS250, CS260, CS70" outside the seed and copy), for "UNIT x RATE", "add-on" and
-      "Ancillary", and for "slot" in new app copy.
+      ACC caption ("CS250, CS260, CS70" outside the seed and copy), for "UNIT x RATE", "add-on",
+      "Ancillary" and "billing line", and for "slot" in new app copy.
     - If session 2 changed the seed again, bump `PERSIST_VERSION` again (or once for the phase if both
       sessions ship as one change; record from and to).
 14. **Tests, shots and docs close-out.** Component tests for the events list's new rows and the two
-    sheets (no calculation shown to the anaesthetist; the add button and 38b's Raise additional invoice
-    are the only controls on a billed Booking; the add-as-event shortcuts carry the type; clearing
-    "same as" requires a party; the billing line sheet has no unit-rate or add-on option) and for the
+    sheets (no calculation shown to the anaesthetist; the two add buttons and 38b's Raise additional invoice
+    are the only controls on a billed Booking; clearing "same as" requires a party; the billing event
+    sheet has a free-text field and an amount and no time, rate, unit, modifier or add-on control; a
+    credit reads negative) and for the
     Contract editor's event-fee section. Playwright: a new `visual/phase39b-events.spec.ts` (mobile
-    Booking detail with pre-op and post-op events, the event sheet, the extended billing line sheet
-    with a type and a date, the web Booking detail, the List review with events, 38b's review step
+    Booking detail with pre-op and post-op events, the event sheet, the billing event sheet with a
+    charge and a credit, the web Booking detail, the List review with events, 38b's review step
     with a post-op event, the Contract event fees, the Procedure's invoice with event lines, and an
-    event invoice) and update any spec that shot the old billing line sheet. The capture recipes,
+    event invoice) and delete or re-point any spec that shot the old billing line sheet or card. The capture recipes,
     ATLAS.md and `npm run verify:board` are the Catalogue screenshots step below. Then the demo guide
     (below) and PROGRESS.
 
 ## Demo triggers
 
-The headline actions are **product UI**, not demo triggers: **Add pre-op or post-op event** on the
-mobile, web and Admin Booking detail, **Add billing line** (with a preset type and a date) on the
-mobile and web Booking detail, **Authorise** in Admin Review (the List's review, which carries its
-events onto the invoice), the Contract editor's **Event fees**, and 38b's review step and next run
-for events after the invoice. What the registry gains or changes:
+The headline actions are **product UI**, not demo triggers: **Add pre-op or post-op event** and **Add billing
+event** on the mobile, web and Admin Booking detail, **Authorise** in Admin Review (the List's review,
+which carries its events onto the invoice), the Contract editor's **Event fees**, and 38b's review step and
+next run for events after the invoice. What the registry gains or changes:
 
 | Label | Screen | Surface | Effect |
 |---|---|---|---|
@@ -859,16 +878,17 @@ rule. Phase 44's audit records the stand-ins.
 
 ## Out of scope
 
-- **The UNIT x RATE billing line and Contract add-on fee lines**: removed from the catalogue on
-  2026-10-07 (US-03.3.6; OQ-89 questions 1 to 3). A fixed-rate Contract prices the whole Procedure
-  (19a, 24).
+- **Billing lines of any kind**: the UNIT x RATE line, Contract add-on fee lines and other billing lines
+  are gone from the catalogue (US-03.3.6 Retired; OQ-89). A fixed-rate Contract prices the whole
+  Procedure (19a, 24); a charge by hand is a billing event.
 - **A separate event approval queue**: D13 is one standard review step for everything (the List's
   review before the invoice, 38b's after it).
 - **An event as a Procedure on the Booking**, events with modifiers or base units, and an event
   changing the original Booking, Procedure or lock (US-07.3.2).
-- **A refund shown as an event** (OQ-63's answer, tentative) and any other event kind beyond pre-op,
-  post-op and the late line; 38b and 39 own additional invoices and credits.
-- **Credit notes over event lines or event invoices**: Phase 39 (handoff).
+- **A refund shown as an event** (US-03.7.3: web only, a record made outside the system) and any other
+  event kind beyond pre-op, post-op and billing; 38b and 39 own additional invoices and credit notes.
+- **Credit notes over event lines or event invoices**: Phase 39 (handoff); a credit billing event after the
+  invoice only calls 39's issue function.
 - **A warning rule for events** (for example an event waiting too long for review): no catalogue item
   asks for one; 15a's routine is the place if AA does.
 - **Prepayment of events**: an event is never in 27's prepaid set and never adds to a prepaid
@@ -876,7 +896,7 @@ rule. Phase 44's audit records the stand-ins.
   invoice raised by hand (US-06.4.1, US-05.2.5), never automatic. Whether 41's payee repoint on a
   moved prepaid Booking carries its event invoices' payables is 41's to decide (handoff note).
 - **The anaesthetist's own adjustment on an event** (24's typed price or % discount applies to the
-  Procedure only), new rate rules beyond 24's calculated step, and editable preset types (the types
+  Procedure only), new rate rules beyond 24's calculated step, and editable event types (the types
   are a constant until Phase 42 says otherwise).
 - **Event fees in the draft design**: the Contract event fee is the prototype's addition; if a v5
   models it, the change is in the billing module only.
@@ -902,7 +922,7 @@ Session 2 (after **Reset → Confirm reset**):
 
 - [ ] Mobile (Dr Souter) · Lists: Demo actions shows **Stage post-op scenario**; run it. Search
       "Bennett": Thursday's Booking and Coral Bennett's backdrop Booking appear. Open Thursday's: it
-      reads submitted, read only, with **Add pre-op or post-op event** under the Procedure.
+      reads submitted, with **Add pre-op or post-op event** and **Add billing event** under the Procedure.
 - [ ] Add a pre-op event: ACC pre-op assessment, Mon 13 Jul, pick CS250 (OQ-12 caption shown, its
       fixed price read-only). It reads Pre-op, "CS250"; the routing caption says it goes on the
       procedure's invoice.
@@ -913,29 +933,35 @@ Session 2 (after **Reset → Confirm reset**):
       caption says it is invoiced on its own.
 - [ ] Try a post-op event dated Wed 15 Jul (before the List date) and one dated tomorrow: both refused
       with their sentences. The sheet offers no modifier or base-unit control.
-- [ ] Add billing line on the same Booking: the banner says the List is submitted and the line is
-      recorded as an event; type "Nerve catheter", date Sat 18 Jul, $180.00: it lists as a late line.
-      The sheet offers no UNIT x RATE or add-on option. Choose "Pain consult": the sheet offers **Add
-      as post-op event instead** and opens the event sheet with the type set.
+- [ ] Add billing event on the same Booking: Charge, "Nerve catheter", Sat 18 Jul, $180.00; then Credit,
+      "Goodwill adjustment", $40.00. Both list as Billing events ("$180.00", "-$40.00"). The sheet has no
+      time, rate, unit, type or UNIT x RATE or add-on control. No Add billing line button or billing-lines
+      card exists anywhere.
 - [ ] Admin · Review, Thursday's List: the Procedure shows the ACC pre-op, the ward review ("45 min · 3
-      time units x $25.00 fixed rate = $75.00"), the other-party event and the nerve catheter line, not
-      the HDU review. **Authorise**: the Procedure's invoice carries the CS250 line, the ward review and
-      the nerve catheter as their own dated lines; the other-party event is approved but raises no
+      time units x $25.00 fixed rate = $75.00"), the other-party event, the nerve catheter charge and the credit, not
+      the HDU review. **Authorise**: the Procedure's invoice carries the CS250 line, the ward review, the
+      nerve catheter and the credit (-$40.00) as their own dated lines, its total their sum; the other-party event is approved but raises no
       invoice yet (the Billing monitor's "Waiting for the next billing run" lists it), and it is not in
       the Events tab; the Booking still has exactly one primary Procedure. Run **Run the next billing
       run** (`run-next-billing-run`): the other-party event is its own invoice, relating to the
       Procedure's; the AA fee run preview (16) counts one more BCTI for the event invoice and none for
       the lines.
 - [ ] Back on the phone (now invoiced: the List has left the main view, so search Bennett): the
-      controls are **Add pre-op or post-op event** and 38b's **Raise additional invoice**. Add a pain
+      controls are **Add pre-op or post-op event**, **Add billing event** and 38b's **Raise additional invoice**. Add a pain
       consult, Sat 18 Jul 10:30, 40 min. Admin: it waits in 38b's review step with "Contract fee
       STGACC-PAIN · $120.00 replaces 40 min"; **Approve for billing**, then **Run the next billing
       run**: its own invoice, one dated line, "Post-op event · relates to AA-2026-..." under the number;
       the original invoice's rail lists it; its own ledger pair and Xero pair (with the `-P` payable).
-      The phone's events list shows its total and party, no calculation.
+      The phone's events list shows its total and party, no calculation. A Credit billing event on the invoiced
+      Booking is offered only if Phase 39 has run, and then issues a credit note in the next run.
 - [ ] A Doyle bariatric (fixed-price) Booking: add a 30 min post-op event; Admin review shows "This
       procedure has a fixed price, so a timed event is not calculated" and **Set a price**; set $60.00
-      with a reason; it invoices at $60.00. Add billing line is not offered on that Procedure.
+      with a reason; it invoices at $60.00. Add billing event there accepts a typed $50.00 charge: nothing is calculated and it
+      rides on the invoice as its own line.
+- [ ] The BillingLine entity is gone: a seeded Booking that carried a billing line (the two-funder or
+      prepayment one) shows it as a Billing event in its events list with the same amount, and its invoice
+      total is unchanged; `grep -rE "BillingLine|billingLines|chargeBasis" aa-prototype/src` finds nothing
+      outside history comments.
 - [ ] Admin · Contracts, St George's ACC: the **Event fees** section lists `STGACC-PAIN`; add a fee for
       "Post-op ward review" at $90.00 and see a new ward review event priced at it; remove it. ACC
       pre-operative assessment, St George's lists CS250, CS260 and CS70 with the OQ-12 caption. In a
@@ -959,8 +985,8 @@ Session 2 (after **Reset → Confirm reset**):
 - [ ] No en or em dash in any new string; no "slot" in app copy; no calculation on any anaesthetist
       surface; teal is the only action colour; crimson unused on the new screens; the "same as" and
       OQ-12 captions shown.
-- [ ] Catalogue screenshots: the recipes for US-03.7.1, US-03.7.2, US-05.5.2 and US-03.3.6 are created
-      or updated, US-03.7.3 is extended, any recipe this phase broke is re-pointed, a full `npm run
+- [ ] Catalogue screenshots: the recipes for US-03.7.1, US-03.7.2 and US-05.5.2 are created or updated,
+      US-03.3.6's recipe is gone with its screen, US-03.7.3 is extended, any recipe this phase broke is re-pointed, a full `npm run
       capture` ends with no failed recipe and no story without a recipe, the covered items' new shots
       are checked by eye, and `npm run verify:board` is green.
 - [ ] `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run shots` green;
@@ -974,8 +1000,8 @@ spot-check the master guide's S4 Beat 2 against the run sheet (the full read is 
 - **`03-demo-script.md`:**
   - **S4 Beat 2** (38b rewrote it around the additional invoice, raised by the office or by the
     anaesthetist) gains a lead-in, "the anaesthetist's own pre-op and post-op care": Stage post-op
-    scenario; on the phone search Bennett, open Thursday's Booking, add the ACC pre-op (CS250) and a
-    post-op ward review (45 min); in Admin · Review the events show under the Procedure; authorise;
+    scenario; on the phone search Bennett, open Thursday's Booking, add the ACC pre-op (CS250), a
+    post-op ward review (45 min) and a billing event (a $180.00 nerve catheter charge); in Admin · Review the events show under the Procedure; authorise;
     the invoice carries them as their own lines. Then on the invoiced Booking (found again by search)
     add a pain consult (40 min); in Admin review it and run the next run; open its own invoice. Say:
     "The anaesthetist records care themselves, before or days after, instead of ringing the office.
@@ -984,27 +1010,24 @@ spot-check the master guide's S4 Beat 2 against the run sheet (the full read is 
     own, traceable to the original, through the same review. The Contract can swap the time for a
     fixed fee." Then 38b's additional invoice, also an event. Expected: one invoice with three event
     lines, one event invoice, the original Booking untouched.
-  - Remove any UNIT x RATE or Contract add-on narration left anywhere in the script (none is expected
-    after 24; check).
+  - Remove any UNIT x RATE or Contract add-on narration, and any "Add billing line" step (it is a billing
+    event now), left anywhere in the script.
   - The **Direct URLs** table gains the List review and 38b's event review route as shipped.
   - The S4 discovery points gain OQ-12 (the ACC codes), one line, and the "same as" reading.
 - **`02-workflows-and-handoffs.md`:** the "Post-operative addition" case (38b rewrote it) gains the
   anaesthetist's event path: add a pre-op or post-op event from the Booking (reached by the main view,
   archive or search), the invoice tick and the "same as" party, on the Procedure's invoice before
-  approval or its own invoice in the next run, one review; an admin can add one too; a late billing
-  line after submit takes the same path. A short "ACC pre-op assessment" case. The capture workflow
-  notes that billing lines carry their own date and a preset type (and are not offered on a fixed
-  price).
+  approval or its own invoice in the next run, one review; an admin can add one too; a billing event (a charge or credit with free text) takes the same path. A short "ACC pre-op assessment"
+  case. The capture workflow's billing-line step becomes billing events.
 - **`04-presenter-cheat-sheet.md`:** discovery point **12 "ACC pre-op flat-fee codes (CS250, CS260,
   CS70)"** says the prototype "captures these as ancillary fixed-amount billing lines with the code
   named in the description": rewrite it to the pre-op event picked from the fixed-fee ACC pre-op
   Contract's code fees, its own invoice line, codes and prices provisional (OQ-12). "Built and clickable" gains pre-op and post-op events, the ACC
-  pre-op event, Contract event fees and dated, typed billing lines; "Strong phrases" gains "One review
+  pre-op event, Contract event fees and billing events (a free-text charge or credit); "Strong phrases" gains "One review
   step for everything recorded against a procedure"; "Statements to avoid" gains "events need a
   separate approval" (D13 says one review step), "these are the ACC codes" (OQ-12 is open) and "a unit
-  x rate line or an add-on fee" (both removed from the requirements).
-- **`01-personas-and-responsibilities.md`:** the anaesthetist adds pre-op and post-op events and late
-  billing lines; the office adds them on request, keeps the Contract event fees and reviews them.
+  x rate line or an add-on fee" (both removed from the requirements), and "billing lines" (they are billing events).
+- **`01-personas-and-responsibilities.md`:** the anaesthetist adds pre-op, post-op and billing events; the office adds them on request, keeps the Contract event fees and reviews them.
 - **`README.md`:** the readiness row for pre-op and post-op work.
 - **`master-demo-guide.html`:** the same sections (S4 Beat 2, the workflow cases, the cheat-sheet
   equivalents including the "12 · ACC pre-op flat-fee codes" card, the personas), then the S4 Beat 2 spot-check.
@@ -1021,35 +1044,38 @@ above all) may have changed these recipes since this plan was written.
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
 matches what was built:
 
-| Item | Recipe at plan time | When this phase is done |
+| Item | Recipe now | When this phase is done |
 |---|---|---|
-| [US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event to a Procedure | absent · stub, no shots | captured. Replace the stub. Run the `stage-post-op` bar action, then reach the Booking from the search (`?q=Bennett`, Phase 38a), since its ids are staged at runtime. Mobile and web: shot `add-event` highlighting `[data-shot=add-event-sheet]` (Post-op, a time stepper, the invoice tick and the "same as" tick), states `sheet`, `added` (the post-op event with its own date in 38b's events list), `not-invoiced` (tick cleared) and `other-party` ("same as" cleared, a party entered). Admin: shot `admin-add-event` on the Admin Booking detail with the office's sheet. Captions in the catalogue's words: "A post-op event is saved against the Procedure with its own date", "No modifiers can be added to an event", "Recorded but not invoiced", "The event carries the billable party entered", "An admin can add an event" |
-| [US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event | absent · stub, no shots | captured. Replace the stub. After staging and adding a ward review: Admin `review-list-events` on the List review (highlight `[data-shot=review-list-events]`, the calculation at the line's fixed rate); `on-invoice` after **Authorise**, the Procedure's invoice highlighting `[data-shot=invoice-event-lines]` (the event as its own dated line); `fixed-fee` for the pain consult in 38b's review step ("Contract fee STGACC-PAIN replaces 40 min"), with an Admin shot `contract-event-fees` of St George's ACC's Event fees section; `separate-invoice` after the next run, the event invoice with its relates-to line. Captions: "Recorded before approval, it is a line on the Procedure's invoice", "Recorded after, a separate invoice in the next run, traceable to the Procedure", "The Contract's fixed fee is charged instead of the time". The PWA stand-in is not shot |
-| [US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md) See a Procedure's events | none at plan time (Phase 38b creates it) | stays whatever 38b left it; add a `pre-post-op` state on the staged Bennett Booking (mobile, web and Admin) showing a pre-op and a post-op event beside an additional invoice in the events list, keeping 38b's shot names. If 38b left no recipe, create one with that state and record it. If 38b's reason said pre-op and post-op events join in 39b, drop that clause (credits stay with 39 unless it has run) |
-| [US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes | partial · web-acc-preop, mobile-acc-preop | stays `partial` unless AA supplies the code rates: reshoot as a pre-op event. Web and mobile (`acc-preop`): on the staged Bennett Booking, Add pre-op or post-op event, Pre-op, type "ACC pre-op assessment", highlight the code rows ("CS250 · ACC pre-op assessment") in `[data-shot=add-event-sheet]` with the OQ-12 caption; add an `on-invoice` state on the Admin invoice showing CS250 as its own line. The old recipe fills the retired "What this line charges" description with the code; replace those steps. Replace the stale reason ("added as an ancillary fixed amount line, with the code typed into the description") with: "CS250, CS260 and CS70 are event fees on a fixed-fee ACC Contract with demo prices; AA's real ACC codes and rates are not confirmed (OQ-12)." Caption: "ACC pre-op assessment is a fixed-fee pre-op event, code picked from a list, its own invoice line" |
-| [US-03.3.6](../../../../requirements-board/requirements/stories/US-03.3.6.md) Other billing lines | partial · web-billing-line[card,sheet], mobile-billing-line[card,sheet] | captured. Keep the shot names and the `card` and `sheet` states; the sheet now has the Type row and a Date field (and no rate x time, UNIT x RATE or add-on option), so highlight `[data-shot=add-billing-line-sheet]`; add a `typed-dated` state (a nerve catheter dated the day after the List) and a `late-line` state on the staged submitted List showing the banner. Replace the stale caption "Add billing line: fixed amount" and any caption naming UNIT x RATE or rate x time with captions in the catalogue's words ("Billing lines outside the base, time and modifier calculation", "A billing line can carry its own later date"). If any retired US-03.3.7 rate x time image is still listed on the item, confirm Phase 24 dropped the steps that make it, so the capture no longer produces it. Drop the partial reason |
+| FT-03.7 Events on a Procedure | no row of its own | its stories' shots show it; no recipe here |
+| [US-03.7.1](../../../../requirements-board/requirements/stories/US-03.7.1.md) Add a pre-op or post-op event | absent · stub | captured. Run `stage-post-op`, reach the Booking by search (`?q=Bennett`, 38a). Mobile and web `add-event`, highlight `[data-shot=add-event-sheet]` (Post-op, time stepper, invoice tick, "same as" tick), states `sheet`, `added` (own date in the events list), `not-invoiced`, `other-party`, `fixed-fee`. Admin `admin-add-event` and `contract-event-fees`. Captions in the catalogue's words ("A post-op event is saved against the Procedure with its own date", "No modifiers can be added to an event", "Recorded but not invoiced", "The event carries the billable party entered", "An admin can add an event") |
+| [US-03.7.2](../../../../requirements-board/requirements/stories/US-03.7.2.md) Bill an event | absent · stub (rewritten: billing events) | captured. Mobile and web `add-billing-event`, highlight `[data-shot=add-billing-event-sheet]`, states `charge` (a nerve catheter), `credit`, `added`. Admin `review-list-events`; `on-invoice` after **Authorise**, highlight `[data-shot=invoice-event-lines]` (the charge its own dated line, the credit negative); `separate-invoice` after the next run. Captions: "A billing event is invoiced as its own line", "A credit reduces what is owed and is traceable to the Procedure", "Recorded before approval, it is a line on the Procedure's invoice", "Recorded after, a separate invoice in the next run". PWA stand-in not shot |
+| [US-03.7.3](../../../../requirements-board/requirements/stories/US-03.7.3.md) See a Procedure's events | none (38b creates it) | stays what 38b left; add a `pre-post-op` state on the staged Bennett Booking (mobile, web, Admin) with pre-op, post-op and billing events beside an additional invoice, keeping 38b's shot names |
+| [US-05.5.2](../../../../requirements-board/requirements/stories/US-05.5.2.md) ACC pre-op flat fee codes | partial · web-acc-preop, mobile-acc-preop | stays `partial` (OQ-12 parked). Reshoot as a pre-op event (`acc-preop`, web and mobile): "ACC pre-op assessment" picked, code rows highlighted in `[data-shot=add-event-sheet]` with the OQ-12 caption; `on-invoice` shows CS250 as its own line. Replace the old "What this line charges" steps and the stale reason with "CS250, CS260 and CS70 are event fees on a fixed-fee ACC Contract with demo prices; AA's real ACC codes and rates are not confirmed (OQ-12)." Caption: "ACC pre-op assessment is a fixed-fee pre-op event, code picked from a list, its own invoice line" |
 
-**Recipes this phase breaks.** Work item 14 already asks for `US-03.3.6.json` and `US-05.5.2.json` to
-be re-pointed; reconcile with it as follows. Found at plan time:
+US-03.3.6 (Retired) has no row: nothing of it is shot.
+
+**Recipes this phase breaks.** Found at plan time:
+- `US-03.3.6.json` drives the Add billing line sheet and billing-lines card this phase removes (DM-46);
+  the build phase removes it (or leaves it only as Retired's no-recipe state) so no recipe shoots a
+  removed screen, and `--dry` proves it. The same for any other recipe that opens either.
 - `US-08.6.1` and `US-08.6.3` (38b's rebuilt shots): a state that shows the anaesthetist's controls on
-  an invoiced Booking now also shows **Add pre-op or post-op event** beside **Raise additional
-  invoice**; re-point by label, keep the names.
+  an invoiced Booking now also shows **Add pre-op or post-op event** and **Add billing event** beside
+  **Raise additional invoice**; re-point by label, keep the names.
 - A recipe that drives 38b's PWA stand-in by its label or id (if the id is renamed, re-point it).
 - 19a's Contract lines grid recipes (US-04.2.4 and any Contract editor shot): the new Event fees
   section must not move their highlighted targets; check by the `--dry` run.
 - Any recipe that relied on `stage-post-op` building only Dr Sharma's List: the trigger now also stages
-  Dr Souter's Thu 16 Jul List, which adds a Booking to Dr Souter's Lists, archive and search, and a
-  List to Admin Review's queue; check list, archive and review recipes by the `--dry` run.
-- Re-grep before capture: `grep -lE 'Add billing line|What this line charges|Ancillary|capture-billing-lines|post-op|stage-post|procedure-events|office-reviews' requirements-board/requirements/capture/recipes/*.json`.
+  Dr Souter's Thu 16 Jul List, which adds a Booking to Dr Souter's Lists and search, and a
+  List to Admin Review's queue; check list, search and review recipes by the `--dry` run.
+- Re-grep before capture: `grep -lE 'Add billing line|billing-line|BillingLines|What this line charges|Ancillary|capture-billing-lines|post-op|stage-post|procedure-events|office-reviews' requirements-board/requirements/capture/recipes/*.json`.
 
 **ATLAS.md.** Personas and IDs / Seed data: the staged Bennett Booking (Thu 16 Jul AM, St George's,
 ACC, staged submitted), the seeded `CT-ACC-PREOP` Contract with its three event fees and the
 `STGACC-PAIN` fee on `CT-STG-ACC`, and how to reach the runtime-generated ids (search `Bennett`).
-Overlays and Existing hooks: `add-event-sheet`, `add-billing-line-sheet`, `review-list-events`,
+Overlays and Existing hooks: `add-event-sheet`, `add-billing-event-sheet`, `review-list-events`,
 `invoice-event-lines`, `contract-event-fees`, and 38b's `admin-events-queue` and `event-review-sheet`
-extended to the new kinds. Demo control panel: the re-pointed `stage-post-op` and the widened PWA-only
-office stand-in. The ATLAS note for the Add billing line sheet (the Type row, the Date field and the
-removed ACC caption) is updated.
+extended to the new kinds; the Add billing line sheet and billing-lines card hooks and notes go. Demo
+control panel: the re-pointed `stage-post-op` and the widened PWA-only office stand-in.
 
 ## Adversarial review (after build)
 
@@ -1068,14 +1094,14 @@ review-and-fix pass (PROGRESS convention 18)**:
 
 **Steer this phase's reviewers at:**
 
-- **The locked Booking stays locked.** No event, late line or review writes the Booking, its
-  Procedures, their billing lines after submit, or the lock. `editRefusal` is unchanged; only the event
+- **The locked Booking stays locked.** No event or review writes the Booking, its
+  Procedures or the lock. `editRefusal` is unchanged; only the event
   guard lets the anaesthetist act on a billed List, and only on their own unreviewed events.
 - **One review step, no second queue.** Before the invoice, events are reviewed with the List (and are
   not in 38b's Events tab); after it, in 38b's review step. No event has two review paths, and no other
   approval path, flag or screen exists.
 - **Each event invoiced once, in the right place.** A same-party event recorded before authorise is a
-  line on the Procedure's invoice (no new invoice, pair or BCTI); another party's, or one recorded
+  line on the Procedure's invoice (a credit a negative line) (no new invoice, pair or BCTI); another party's, or one recorded
   after, is its own invoice, raised only by `runEventInvoicing`. Authorise twice, the run twice, a
   replayed handoff, an event edited between authorise and the run: never a second line, invoice, pair
   or BCTI. An un-ticked or unreviewed event never invoices and never counts.
@@ -1083,12 +1109,16 @@ review-and-fix pass (PROGRESS convention 18)**:
   rate and discount from the one helper `priceProcedure` also calls, on the Contract version in force
   on the event's date; nothing is calculated on a fixed-price Procedure; a Contract event fee
   replaces the time; no modifier or base-unit input reaches the event; no anaesthetist adjustment is
-  applied to an event; 18's and 24's parity hold.
+  applied to an event; a billing event is typed, prices nothing and is never refused on a fixed-price
+  Procedure; a credit after the invoice goes through 39's credit note, not a second path; 18's and 24's
+  parity hold.
 - **The Contract event fee stays contained.** One type, one module beside 19a's lines, copied with a
   new version, never read by the Procedure's price, and a Contract holding only event fees is never a
   plain RVG Contract or a picker candidate.
-- **No removed lines return.** No UNIT x RATE, add-on, quantity or hourly option, field or label
-  anywhere.
+- **The BillingLine entity stays gone.** No `BillingLine`, `billingLines`, `chargeBasis`, Add billing line
+  sheet, billing-lines card or preset line type, and no UNIT x RATE, add-on, quantity or hourly option,
+  field or label anywhere; every seeded line is a billing event with its old figure and every seeded
+  invoice total holds.
 - **What the anaesthetist sees.** 38b's rule: totals and party on their own Procedure's events, never a
   calculation and never a Booking total, on mobile, web and the PWA stand-in's results.
 - **Traceability.** Every event line and event invoice links to its Procedure and, for an event
@@ -1108,32 +1138,36 @@ review-and-fix pass (PROGRESS convention 18)**:
   themselves"): the readings built (the "same as" default; an other-party event on its own invoice in
   the next run even when recorded before approval; an ACC code from another Contract billing that
   Contract's party; an event's line on a split Procedure going to the Procedure's who-is-invoiced; the
-  Contract event fee as a Contract child the draft design lacks; a timed event at the line's fixed
-  rate or the anaesthetist's unit value less the line's fixed discount, without the anaesthetist's
-  own adjustment; nothing calculated for a timed event on a fixed-price Procedure; the event's own
-  date picking the Contract version (OQ-48 extended); a late line refused on a fixed price; an
-  anaesthetist's billing line after submit recorded as an event rather than refused (the Booking is
-  office-only from SUBMITTED); a typed fixed fee allowed on an event under any Contract that has no
-  event fee for its type, priced by the office at review (24's read-only third-party price covers the
-  Procedure's price only); a `noEventRate` event left for review; the staged Booking left submitted so both branches show), the
-  open question built provisionally (OQ-12), anything logged rather than fixed, and the screens worth
-  a look, each with its route and persona.
+  Contract event fee as a Contract child the draft design lacks, kept for the ACC fixed fee and the time
+  swap although US-03.7.2 no longer states the swap; a timed event at the line's fixed rate or the
+  anaesthetist's unit value less the line's fixed discount, without the anaesthetist's own adjustment;
+  nothing calculated for a timed event on a fixed-price Procedure; the event's own date picking the
+  Contract version (OQ-48 extended); a billing event allowed on a fixed-price Procedure (typed by hand,
+  US-05.2.5), with a shown invoice tick, a direction instead of a negative amount and the List date as
+  its default date; a credit before approval a negative line and a credit over the invoice total left in
+  review; a credit after the invoice a one-line credit note through 39's path, or not offered if 39 has
+  not run; the seeded billing lines re-expressed as events with their old figures; a typed fixed fee
+  allowed on an event under any Contract that has no event fee for its type, priced by the office at
+  review; a `noEventRate` event left for review; the staged Booking left submitted so both branches
+  show), the open question built provisionally (OQ-12, parked), anything logged rather than fixed, and
+  the screens worth a look, each with its route and persona.
 - **Status row** for catch-up Phase 39b, and a phase entry with:
-  - the drift-check result (FT-03.7 and US-03.7.1 still Verify or not, US-03.7.2, US-05.5.2 and
-    US-03.3.6 status; OQ-12 status), the leftovers grep (step 4), the session used for the staging,
+  - the drift-check result (FT-03.7, US-03.7.1 and US-03.7.2 still Agreed, US-05.5.2 and OQ-12 still
+    open and parked, US-03.3.6 still Retired), the leftovers grep (step 4), the session used for the staging,
     and, if 39 has run, whether its credit note handles event lines and event invoices;
   - what was built, with the name map for later phases: the kinds and fields added to 38b's record,
     `EventRecording`, `EventPricing`, `ContractEventFee` and its actions, the `EVENT_KINDS` entries,
     `EVENT_TYPES`, `validatePrePostOpEvent`, `servicePricingDate`, `eventFeeFor`, `accPreOpFeesFor`,
     the shared rate helper's name, `pricePrePostOpEvent`, `eventInvoiceLine`, `addPrePostOpEvent`,
-    `addLateBillingLine`, the authorise and run hooks, the `BillingLine` and `InvoiceLine` fields,
+    `addBillingEvent`, `validateBillingEvent`, `priceBillingEvent`, the authorise and run hooks, the
+    `InvoiceLine` fields, the removed BillingLine files,
     the `isPlainRvgContract` change, the selectors, the copy added, the event fee on `CT-STG-ACC`, the
     seeded `CT-ACC-PREOP`, `stagePostOpForSouter`, the trigger ids, routes and audit actions;
   - the `PERSIST_VERSION` bump or bumps (from and to);
   - tests added and the before and after Vitest and Playwright counts;
   - the review pass.
 - **Catalogue screenshots result:** recipes created or changed (US-03.7.1, US-03.7.2, US-03.7.3,
-  US-05.5.2, US-03.3.6, plus any re-pointed 38b recipe), the `requirements-board/requirements/capture/REPORT.md` counts (captured,
+  US-05.5.2, US-03.3.6's recipe removed, plus any re-pointed 38b recipe), the `requirements-board/requirements/capture/REPORT.md` counts (captured,
   partial, absent, failed) before and after, and any partial reason handed to a later phase.
 - **Decisions log:**
   1. **Amended:** Phase 38b's withdrawal of the anaesthetist's post-op flow: besides 38b's free-form
@@ -1154,27 +1188,31 @@ review-and-fix pass (PROGRESS convention 18)**:
      version in force on the event's own date (OQ-48's procedure-date answer extended to a separate
      service), read live, recorded in the frozen pricing, never from the Booking's lock; nothing is
      calculated on a fixed-price Procedure; the office may set a price with a reason.
-  5. **New:** a billing line carries its own date and a preset type; a line the anaesthetist adds after
-     submit is an event, never a write to the submitted or locked Booking.
-  6. **Recorded (2026-10-07, US-03.3.6):** no UNIT x RATE billing line and no Contract add-on fee
-     line; the 2026-10-02 "UNIT X RATE" retitle is superseded.
+  5. **New (16 October):** a billing event, a free-form charge or credit with free text, replaces the
+     billing line (US-03.3.6 Retired, US-03.7.2 rewritten); the BillingLine entity is removed (DM-46);
+     it is allowed on a fixed-price Procedure (typed by hand) and the seeded lines are billing events
+     with their old figures.
+  6. **Recorded (2026-10-07, 16 October):** no UNIT x RATE billing line and no Contract add-on fee line;
+     other billing lines merge into events.
   7. **New (provisional, OQ-29, OQ-60):** each event invoice adds one BCTI to 16's count; event lines on
      the Procedure's invoice, un-ticked and unreviewed events add none.
   8. **Amended:** the `stage-post-op` trigger now stages Dr Souter's submitted Procedure as well as
      38b's Dr Sharma step, and 38b's PWA office stand-in covers every event kind.
 - **Handoff notes:**
   - For **39**: a credit note or credit-and-rebill over an invoice with event lines, or over an event
-    invoice, re-prices event lines from their frozen `pricing`; credits list in the Procedure's events.
-  - For **43a**: the event sheet and the extended billing line sheet are anaesthetist capture screens
+    invoice, re-prices event lines from their frozen `pricing`; credits list in the Procedure's events; a
+    credit billing event after the invoice calls your credit note issue function for one line (name it in
+    your handoff, or add that path if 39b ran first).
+  - For **43a**: the two event sheets (pre-op or post-op, and billing event) are anaesthetist capture screens
     to keep free of office-only Contract complexity (a Contract event fee shows its code, description
     and price only; a time shows no figure).
   - For **40**: the patient view lists event lines and event invoices with their standing.
   - For **41**: a moved prepaid Booking's payee repoint must carry its event invoices' payables with
     it, or say why not; events are never prepaid and never added to a prepaid price automatically.
-  - For **42**: preset line types and event types are constants; Contract event fees are master data
+  - For **42**: event types are constants; Contract event fees are master data
     the loader should accept beside Contract lines (Contract, version, event type, holder code,
     fixed price).
   - For **43**: the List review's events and 38b's review step must stay usable at full scale; the
     generator builds event fees through the same module.
-  - For **44**: S4 Beat 2's lead-in as written here; the OQ-12 line if answered later; "Office reviews
+  - For **44**: S4 Beat 2's lead-in as written here, billing event included; the OQ-12 line if answered later; "Office reviews
     this event" for the PWA parity audit.
