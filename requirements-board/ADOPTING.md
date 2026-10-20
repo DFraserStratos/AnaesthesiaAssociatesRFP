@@ -53,9 +53,13 @@ each block, and change nothing else unless it is plainly wrong:
 - `svg-diagram`: the board folder and the check command. Its reference diagrams and `examples/` are
   another project's. Keep them as style references until this project has its own diagrams.
 - `transcript-reconciler`: the default output path.
+- `consistency-review`: the board folder, `REQ` path and check commands, the run folder (persistent,
+  outside `/tmp`), the people and the source ranking, the follow-on skill, and the JSON arguments for
+  its two workflows (owner, levels, fixed rulings, project rules, protected artifacts, topic groups).
 
 The `link-requirements` workflow takes the board folder as its `board` argument (default
-`requirements-board`), so it needs no edit.
+`requirements-board`), and the `consistency-rulings` and `consistency-changes` workflows take `req`
+(default `requirements-board/requirements`), so none of them needs an edit.
 
 ## 5. Wire it into the repo
 
@@ -63,11 +67,13 @@ From the repo root:
 
 ```
 mkdir -p .claude/skills .claude/workflows
-for s in update-requirements add-artifact svg-diagram transcript-reconciler; do
+for s in update-requirements add-artifact svg-diagram transcript-reconciler consistency-review; do
   mkdir .claude/skills/$s
   for f in BOARD/agent/skills/$s/*; do ln -s ../../../$f .claude/skills/$s/$(basename $f); done
 done
-ln -s ../../BOARD/agent/workflows/link-requirements.js .claude/workflows/link-requirements.js
+for w in link-requirements consistency-rulings consistency-changes; do
+  ln -s ../../BOARD/agent/workflows/$w.js .claude/workflows/$w.js
+done
 ```
 
 Each skill gets a real folder in `.claude/skills/` holding a symlink per file. Don't symlink the skill

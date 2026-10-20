@@ -41,7 +41,7 @@
 <text x="50" y="114.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Office takes a request from a surgeon's room</text>
 <text x="50" y="131.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Anaesthetist moves a List to the office</text>
 <text x="50" y="148.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Recurring booking lands on an unavailable Slot</text>
-<text x="50" y="165.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Reschedule from a hospital feed hits a clash</text>
+<text x="50" y="165.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">• Anaesthetist marks its Slot unavailable</text>
 <rect id="draft-flagged" x="422" y="70" width="200" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="436" y="98.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Shown as unassigned</text>
 <text x="436" y="117.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">in the Admin App</text>
@@ -86,8 +86,8 @@
 <text x="3076" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist</text>
 <text x="3076" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">submits the List</text>
 <rect id="edit-access-removed" x="3310" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
-<text x="3324" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist loses</text>
-<text x="3324" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">edit access</text>
+<text x="3324" y="118.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Anaesthetist can</text>
+<text x="3324" y="137.4" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">still edit</text>
 <rect id="still-visible" x="3534" y="70" width="168" height="110" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="3548" y="107.9" font-size="15.5" font-weight="700" fill="#1B1B1F" text-anchor="start">List stays visible</text>
 <text x="3548" y="131.9" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">Marked 'completed,</text>
@@ -143,7 +143,7 @@
 <path d="M1694 256 H1684 V332 H1694" stroke="#55555E" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="1700" y="278" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">Booking may be amended</text>
 <text x="1700" y="296" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">or moved until the List</text>
-<text x="1700" y="314" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">is submitted</text>
+<text x="1700" y="314" font-size="13.5" font-weight="400" fill="#55555E" text-anchor="start" font-style="italic">is authorised</text>
 <circle cx="394.0" cy="125.0" r="15" fill="#3B8FD6"/>
 <path d="M390.0 118.0 L398.0 125.0 L390.0 132.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="650.0" cy="125.0" r="15" fill="#3B8FD6"/>

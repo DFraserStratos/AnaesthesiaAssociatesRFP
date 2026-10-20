@@ -13,8 +13,9 @@ This folder is a **portable kit**, three parts:
   the domain model, `board.config.json`. Its `README.md` is the folder guide and conventions, its
   `SCHEMA.md` the file format. The app and any agent edit those same files;
 - **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
-  `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`) and the
-  `workflows/link-requirements.js` workflow. Claude Code finds them through relative symlinks in the
+  `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`,
+  `skills/consistency-review`) and the `workflows/link-requirements.js`,
+  `workflows/consistency-rulings.js` and `workflows/consistency-changes.js` workflows. Claude Code finds them through relative symlinks in the
   host repo's `.claude/skills/` (a real folder per skill, a symlink per file, so the `/` menu lists
   them) and `.claude/workflows/`; edit the files here, not through the links.
   Each skill keeps its few repo-specific facts in one "This repo" block.
@@ -88,7 +89,7 @@ src/
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus a few that the project's catalogue, if any, is valid)
 requirements/  the project's requirements catalogue and board.config.json (see its README.md and SCHEMA.md)
-agent/         the agent skills and workflow that maintain it (symlinked from the host repo's .claude/)
+agent/         the agent skills and workflows that maintain it (symlinked from the host repo's .claude/)
 shots/         local-only Playwright scratch scripts (gitignored; some mutate the real catalogue)
 ```
 
@@ -263,6 +264,16 @@ To link the whole catalogue with agents:
    files through the board's serialiser, refusing if that would add a check error. Re-running skips
    what is already applied.
 4. `npm run check`, then review the diff.
+
+### Consistency review
+
+The `consistency-review` skill (`agent/skills/consistency-review/SKILL.md`) checks the whole catalogue
+for drift against what was most recently decided. The `consistency-rulings` workflow builds a
+newest-wins rulings list from the notes, change logs and answered questions; the user settles its
+conflicts; the `consistency-changes` workflow proposes exact edits. The skill's `scripts/` turn the
+result into a local review page where the user accepts or rejects each change, then apply the
+accepted edits. Its run folder lives outside the repo; nothing changes the catalogue before the
+user decides.
 
 ## Bring the board to another repo
 

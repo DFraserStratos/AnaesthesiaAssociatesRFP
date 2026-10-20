@@ -8,19 +8,19 @@
 <g id="hospital-systems">
 <rect x="482" y="176.0" width="156" height="62" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="560.0" y="212.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Hospital Systems</text>
-<text x="362.0" y="187.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Hospital integrations provide</text>
+<text x="362.0" y="187.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Hospital theatre lists provide</text>
 <text x="362.0" y="203.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">booking information and</text>
-<text x="362.0" y="219.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">subsequent changes, reschedules</text>
-<text x="362.0" y="235.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">and cancellations.</text>
+<text x="362.0" y="219.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">changes, shown as differences</text>
+<text x="362.0" y="235.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">for office approval.</text>
 <path d="M466 207.0 H482" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <path d="M638 207.0 H670 Q678 207.0 678 215.0 V341.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <g id="surgeons-rooms">
 <rect x="482" y="257.0" width="156" height="62" rx="9" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="560.0" y="293.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Surgeons' Rooms</text>
-<text x="362.0" y="276.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Email PDFs into the system,</text>
-<text x="362.0" y="292.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">providing booking Lists and</text>
-<text x="362.0" y="308.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">patient and Procedure details.</text>
+<text x="362.0" y="276.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Email PDFs to the office,</text>
+<text x="362.0" y="292.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">entered by hand for now;</text>
+<text x="362.0" y="308.5" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">PDF ingest is future work.</text>
 <path d="M466 288.0 H482" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <path d="M638 288.0 H670 Q678 288.0 678 296.0 V341.0" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -55,7 +55,7 @@
 <text x="121.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">and Lists</text>
 <path d="M121.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="121.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Maintain a rolling</text>
-<text x="121.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">four-month schedule,</text>
+<text x="121.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">schedule over a set horizon,</text>
 <text x="121.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">pre-generating AM and PM</text>
 <text x="121.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Slots even when they do not</text>
 <text x="121.0" y="464" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">yet hold a List.</text>
@@ -104,9 +104,9 @@
 <text x="1521.0" y="337.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Complete Procedure</text>
 <text x="1521.0" y="355.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">and Billing Details</text>
 <path d="M1521.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="1521.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Record actual Procedure</text>
-<text x="1521.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">information, times, BTM data</text>
-<text x="1521.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">and other billable details.</text>
+<text x="1521.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Review the Procedure and</text>
+<text x="1521.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract; record times, BTM</text>
+<text x="1521.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">data and billable details.</text>
 </g>
 <path d="M1606 341.0 H1658" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="1632.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -183,8 +183,8 @@
 <path d="M2917.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="2917.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Read the billable party from</text>
 <text x="2917.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">each Procedure's locked</text>
-<text x="2917.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract: contract holder,</text>
-<text x="2917.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">insurer or patient.</text>
+<text x="2917.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Contract: the holder, or</text>
+<text x="2917.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">the Booking's payer.</text>
 </g>
 <path d="M3002 341.0 H3054" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="3028.0" cy="341.0" r="15" fill="#3B8FD6"/>
@@ -194,7 +194,7 @@
 <text x="3139.0" y="346.04" font-size="14" font-weight="700" fill="#1B1B1F" text-anchor="middle">Calculate Charges</text>
 <path d="M3139.0 372 V386" stroke="#A9C3DA" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="3139.0" y="400" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">Apply the relevant Contract,</text>
-<text x="3139.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">RVG, fixed-price, override</text>
+<text x="3139.0" y="416" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">RVG, fixed-price, discount</text>
 <text x="3139.0" y="432" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">or other permitted billing</text>
 <text x="3139.0" y="448" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="middle">rules.</text>
 </g>

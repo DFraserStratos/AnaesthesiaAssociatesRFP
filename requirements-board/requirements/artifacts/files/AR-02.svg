@@ -61,28 +61,29 @@
 <text x="446" y="60" font-size="28" font-weight="800" fill="#FFFFFF" text-anchor="start">Contracts</text>
 <text x="446" y="86" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">Every Procedure has exactly one Contract: it sets how the procedure is priced and who pays.</text>
 <text x="446" y="104" font-size="14" font-weight="400" fill="#D7D7DE" text-anchor="start">There are no kinds of Contract. A holder, a few settings and the lines make every arrangement.</text>
-<rect id="contract-holder" x="446.0" y="132" width="262.6666666666667" height="128" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
-<text x="460.0" y="160" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract holder</text>
-<text x="460.0" y="184" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">A hospital, an insurer, a surgeon</text>
-<text x="460.0" y="201" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">or surgeon's rooms, or an</text>
-<text x="460.0" y="218" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">anaesthetist. AA holds No</text>
-<text x="460.0" y="235" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">contract (RVG). Holds many Contracts.</text>
-<circle cx="726.6666666666667" cy="196.0" r="15" fill="#3B8FD6"/>
-<path d="M722.6666666666667 189.0 L730.6666666666667 196.0 L722.6666666666667 203.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<rect id="contract-header" x="744.6666666666667" y="132" width="262.6666666666667" height="128" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
-<text x="758.6666666666667" y="160" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract header</text>
-<text x="758.6666666666667" y="184" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Name · valid dates · versions</text>
-<text x="758.6666666666667" y="201" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Is the holder billed?</text>
-<text x="758.6666666666667" y="218" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Can the anaesthetist change</text>
-<text x="758.6666666666667" y="235" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">the pricing? · Is it prepay?</text>
-<circle cx="1025.3333333333335" cy="196.0" r="15" fill="#3B8FD6"/>
-<path d="M1021.3333333333335 189.0 L1029.3333333333335 196.0 L1021.3333333333335 203.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<rect id="contract-lines" x="1043.3333333333335" y="132" width="262.6666666666667" height="128" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
-<text x="1057.3333333333335" y="160" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract lines</text>
-<text x="1057.3333333333335" y="184" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">None, one or many. Each sets a</text>
-<text x="1057.3333333333335" y="201" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">fixed price, a rate, a discount</text>
-<text x="1057.3333333333335" y="218" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">or RVG units, and may carry a</text>
-<text x="1057.3333333333335" y="235" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">default RVG code (agreed in principle).</text>
+<rect id="contract-holder" x="446.0" y="122" width="262.6666666666667" height="146" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
+<text x="460.0" y="150" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract holder</text>
+<text x="460.0" y="174" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">A hospital, an insurer, a surgeon</text>
+<text x="460.0" y="191" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">or surgeon's rooms, or an</text>
+<text x="460.0" y="208" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">anaesthetist. AA holds No</text>
+<text x="460.0" y="225" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">contract (RVG). Holds many Contracts.</text>
+<circle cx="726.6666666666667" cy="195.0" r="15" fill="#3B8FD6"/>
+<path d="M722.6666666666667 188.0 L730.6666666666667 195.0 L722.6666666666667 202.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="contract-header" x="744.6666666666667" y="122" width="262.6666666666667" height="146" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
+<text x="758.6666666666667" y="150" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract header</text>
+<text x="758.6666666666667" y="174" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Name · valid dates · versions</text>
+<text x="758.6666666666667" y="191" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Is the holder billed?</text>
+<text x="758.6666666666667" y="208" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">Can the anaesthetist change</text>
+<text x="758.6666666666667" y="225" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">the pricing? · Is it prepay?</text>
+<text x="758.6666666666667" y="242" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">For one anaesthetist or surgeon only?</text>
+<circle cx="1025.3333333333335" cy="195.0" r="15" fill="#3B8FD6"/>
+<path d="M1021.3333333333335 188.0 L1029.3333333333335 195.0 L1021.3333333333335 202.0" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect id="contract-lines" x="1043.3333333333335" y="122" width="262.6666666666667" height="146" rx="10" fill="#3D3D42" stroke="#55555C" stroke-width="1.4"/>
+<text x="1057.3333333333335" y="150" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="start">Contract lines</text>
+<text x="1057.3333333333335" y="174" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">None, one or many. Each sets a</text>
+<text x="1057.3333333333335" y="191" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">fixed price, a rate, a discount</text>
+<text x="1057.3333333333335" y="208" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">or RVG units, and may carry a</text>
+<text x="1057.3333333333335" y="225" font-size="12.5" font-weight="400" fill="#D7D7DE" text-anchor="start">default RVG code (agreed in principle).</text>
 <rect x="464" y="282" width="822" height="32" rx="8" fill="#3D3D42" stroke="#55555C" stroke-width="1.2"/>
 <text x="478" y="303" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="start">Contract line</text>
 <text x="924.0" y="303" font-size="12.5" font-weight="700" fill="#E4E4EA" text-anchor="middle">Sets</text>
@@ -226,11 +227,11 @@
 <text x="1416" y="261" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">2  The hospital's Contracts</text>
 <text x="1722" y="261" font-size="12" font-weight="400" fill="#55555E" text-anchor="end"></text>
 <rect x="1404" y="276" width="328" height="28" rx="7" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
-<text x="1416" y="295" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">3  The anaesthetist's own price lists</text>
-<text x="1722" y="295" font-size="12" font-weight="400" fill="#55555E" text-anchor="end"></text>
+<text x="1416" y="295" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">3  Any surgeon arrangements</text>
+<text x="1722" y="295" font-size="12" font-weight="400" fill="#55555E" text-anchor="end">how found: open</text>
 <rect x="1404" y="310" width="328" height="28" rx="7" fill="#EEE9FC" stroke="#C7BAF0" stroke-width="1.2"/>
-<text x="1416" y="329" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">4  Any surgeon arrangements</text>
-<text x="1722" y="329" font-size="12" font-weight="400" fill="#55555E" text-anchor="end">how found: open</text>
+<text x="1416" y="329" font-size="13.5" font-weight="600" fill="#1B1B1F" text-anchor="start">4  The anaesthetist's own price lists</text>
+<text x="1722" y="329" font-size="12" font-weight="400" fill="#55555E" text-anchor="end"></text>
 <rect id="choose-contract" x="1358" y="378" width="388" height="125" rx="9" fill="#FFFFFF" stroke="#DCD3F5" stroke-width="1.2"/>
 <circle cx="1382" cy="402" r="12" fill="#3B8FD6"/>
 <text x="1382" y="407.04" font-size="13.200000000000001" font-weight="800" fill="#FFFFFF" text-anchor="middle">2</text>

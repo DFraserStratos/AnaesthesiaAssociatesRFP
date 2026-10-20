@@ -7,9 +7,9 @@
 <rect id="scheduling-engine" x="1882" y="60" width="1534" height="565" rx="12" fill="#E1F0FB" stroke="#A9C3DA" stroke-width="1.2"/>
 <text x="1900" y="89" font-size="17" font-weight="800" fill="#1B1B1F" text-anchor="start">Scheduling Engine</text>
 <rect id="hospital-systems" x="36" y="106.0" width="268" height="80" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
-<text x="50" y="132.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Current hospital integrations</text>
+<text x="50" y="132.0" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Hospital booking imports</text>
 <text x="50" y="154.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">St George's and Southern Cross send</text>
-<text x="50" y="171.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">new and changed Lists and Bookings.</text>
+<text x="50" y="171.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">their theatre Lists, a day ahead.</text>
 <rect id="other-hospitals" x="36" y="202.66666666666669" width="268" height="63" rx="10" fill="#FFFFFF" stroke="#D3DCE6" stroke-width="1.4"/>
 <text x="50" y="228.66666666666669" font-size="16" font-weight="700" fill="#1B1B1F" text-anchor="start">Other hospitals</text>
 <rect x="198.0" y="212.66666666666669" width="92" height="22" rx="11.0" fill="#D9D9E0"/>
@@ -144,8 +144,8 @@
 <text x="2024" y="421.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">The Booking is updated</text>
 <rect x="1912" y="439.0" width="302" height="50" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
 <text x="1922" y="459.0" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Reschedule</text>
-<text x="2024" y="459.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Booking or List moves; a clash</text>
-<text x="2024" y="475.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">makes a Draft List</text>
+<text x="2024" y="459.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Moves day: a removal and</text>
+<text x="2024" y="475.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">a new Booking</text>
 <rect x="1912" y="493.0" width="302" height="50" rx="7" fill="#F3F7FB" stroke="#A9BCD0" stroke-width="1.2"/>
 <text x="1922" y="513.0" font-size="13.5" font-weight="700" fill="#1B1B1F" text-anchor="start">Cancellation</text>
 <text x="2024" y="513.0" font-size="12.5" font-weight="400" fill="#55555E" text-anchor="start">Marked cancelled, stays</text>
@@ -191,8 +191,8 @@
 <text x="3166" y="301.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">The latest Booking details are</text>
 <text x="3166" y="318.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">available. Later changes still</text>
 <text x="3166" y="335.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">go through the matching screen,</text>
-<text x="3166" y="352.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">but none are allowed once the</text>
-<text x="3166" y="369.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">anaesthetist submits the List.</text>
+<text x="3166" y="352.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">until the List is authorised,</text>
+<text x="3166" y="369.0" font-size="13" font-weight="400" fill="#55555E" text-anchor="start">the same rule as staff edits.</text>
 <path d="M3068 318.5 H3152" stroke="#3B8FD6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="3128" cy="318.5" r="15" fill="#3B8FD6"/>
 <path d="M3124 311.5 L3132 318.5 L3124 325.5" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
