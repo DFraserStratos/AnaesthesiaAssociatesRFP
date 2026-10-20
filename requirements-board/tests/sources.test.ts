@@ -39,7 +39,7 @@ const NOTE = [
   '   1. A nested list', // 9
   '   2. stays inside point 3', // 10
   '', // 11
-  '## Donald\'s notes', // 12
+  '## Sam\'s notes', // 12
   '', // 13
   '2. **Two, later.** Numbered once across the note.', // 14
   '', // 15
@@ -55,10 +55,10 @@ const SOURCE_NOTES = [
   '1. High level process.', // 5
   '2. Entity infographic.', // 6
   '', // 7
-  '## Q&A with Donald, 2026-09-24', // 8
+  '## Q&A with Sam, 2026-09-24', // 8
   '', // 9
   '1. **Modifier split.** More than four.', // 10
-  '2. **Contract list.** An idea.', // 11
+  '2. **Price list.** An idea.', // 11
   '', // 12
 ].join('\n')
 
@@ -72,10 +72,10 @@ function catalogue() {
     artifact({ id: 'AR-15', title: 'RFP', citedAs: [cite('RFP', { pageOffset: 1 }), cite('RFP, July 2026')] }),
     artifact({ id: 'AR-36', title: 'RFP response', citedAs: [cite('RFP response')] }),
     artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md' }),
-    artifact({ id: 'AR-09', kind: 'note', file: 'notes/2026-09-24-source-notes.md', citedAs: [cite('Q&A 2026-09-24', { within: 'qa-with-donald-2026-09-24' }), cite('Meeting notes 2026-09', { within: 'future-state-diagrams-supplied' })] }),
+    artifact({ id: 'AR-09', kind: 'note', file: 'notes/2026-09-24-source-notes.md', citedAs: [cite('Q&A 2026-09-24', { within: 'qa-with-sam-2026-09-24' }), cite('Meeting notes 2026-09', { within: 'future-state-diagrams-supplied' })] }),
     artifact({ id: 'AR-04', kind: 'transcript', file: 'artifacts/files/t.md', sources: ['Recording 2026-10-01 · Client meeting with Sam (A)'], citedAs: [cite('Recording 2026-10-01 · Client meeting with Sam (A)'), cite('Transcript 2026-10-01 · Client meeting with Sam (A)')] }),
     artifact({ id: 'AR-20', kind: 'diagram', file: 'artifacts/files/AR-20.svg', status: 'Superseded', supersededBy: 'AR-24', regions: [{ id: 'old-only', name: 'Old', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Billing route', { spot: 'old-only' })] }),
-    artifact({ id: 'AR-24', kind: 'diagram', file: 'artifacts/files/AR-24.svg', regions: [{ id: 'setup', name: 'Booking setup', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Setup', { spot: 'setup' })] }),
+    artifact({ id: 'AR-24', kind: 'diagram', file: 'artifacts/files/AR-24.svg', regions: [{ id: 'setup', name: 'Order setup', around: [], box: [0, 0, 1, 1], page: null, pad: null, note: '' }], citedAs: [cite('Diagram: Setup', { spot: 'setup' })] }),
     artifact({ id: 'AR-16', citedAs: [cite('Data files')] }),
   ]
   const facts: Record<string, SpotFacts> = {
@@ -98,7 +98,7 @@ describe('note points', () => {
     expect(markdownFacts(NOTE).headings.map((h) => [h.slug, h.line])).toEqual([
       ['notes-on-the-meeting-1-october', 1],
       ['questions-answered', 3],
-      ['donalds-notes', 12],
+      ['sams-notes', 12],
     ])
   })
 })
@@ -108,7 +108,7 @@ describe('resolving a source', () => {
   const at = (s: string, self?: string) => resolveSource(index, s, self)
 
   it('opens the RFP at the PDF page, one past the printed page it is named by, and the response at its own page', () => {
-    expect(at('RFP p.27 · Billing Engine › Contract holders')).toEqual({ kind: 'artifact', id: 'AR-15', prefix: 'RFP', spots: [{ region: 'p28', label: 'Page 27', detail: 'PDF page 28', problem: null }] })
+    expect(at('RFP p.27 · Pricing Engine › Price list holders')).toEqual({ kind: 'artifact', id: 'AR-15', prefix: 'RFP', spots: [{ region: 'p28', label: 'Page 27', detail: 'PDF page 28', problem: null }] })
     expect(at('RFP response p.13 · Detailed Solution Design')).toMatchObject({ id: 'AR-36', spots: [{ region: 'p13', label: 'Page 13', detail: null }] })
     expect(at('RFP, July 2026')).toMatchObject({ id: 'AR-15', spots: [{ region: null }] })
     expect(at('RFP p.60 · Nowhere')).toMatchObject({ spots: [{ problem: 'AR-15 has no page 61' }] })
@@ -124,14 +124,14 @@ describe('resolving a source', () => {
   })
 
   it('looks for points only under the cited section, so repeated numbers resolve', () => {
-    expect(at('Q&A 2026-09-24 #2')).toMatchObject({ id: 'AR-09', spots: [{ region: 'L11', label: 'Point 2', detail: 'Contract list' }] })
-    expect(at('Q&A 2026-09-24')).toMatchObject({ id: 'AR-09', spots: [{ region: 'qa-with-donald-2026-09-24', label: 'Q&A with Donald, 2026-09-24' }] })
-    expect(at('Q&A 2026-09-24 #7')).toMatchObject({ spots: [{ problem: 'AR-09 has no point 7 under "Q&A with Donald, 2026-09-24"' }] })
+    expect(at('Q&A 2026-09-24 #2')).toMatchObject({ id: 'AR-09', spots: [{ region: 'L11', label: 'Point 2', detail: 'Price list' }] })
+    expect(at('Q&A 2026-09-24')).toMatchObject({ id: 'AR-09', spots: [{ region: 'qa-with-sam-2026-09-24', label: 'Q&A with Sam, 2026-09-24' }] })
+    expect(at('Q&A 2026-09-24 #7')).toMatchObject({ spots: [{ problem: 'AR-09 has no point 7 under "Q&A with Sam, 2026-09-24"' }] })
   })
 
   it('takes the longest prefix, line ranges, a named spot, and words for the reader after it', () => {
     expect(at('Transcript 2026-10-01 · Client meeting with Sam (A) L27-33')).toMatchObject({ id: 'AR-04', spots: [{ region: 'L27-33', label: 'Lines 27 to 33' }] })
-    expect(at('Diagram: Setup')).toMatchObject({ id: 'AR-24', spots: [{ region: 'setup', label: 'Booking setup' }] })
+    expect(at('Diagram: Setup')).toMatchObject({ id: 'AR-24', spots: [{ region: 'setup', label: 'Order setup' }] })
     expect(at('Data files (price lists, 2021 edition) (supplier terms)')).toMatchObject({ id: 'AR-16', spots: [{ region: null }] })
     expect(at('RFP responses are great').kind).toBe('unresolved')
   })
@@ -144,10 +144,10 @@ describe('resolving a source', () => {
     expect(at('Recording 2026-10-01 · Client meeting with Sam (A)', 'AR-04')).toEqual({ kind: 'plain' })
     expect(at('Recording 2026-10-01 · Client meeting with Sam (A)')).toMatchObject({ id: 'AR-04' })
     expect(at('OQ-62')).toEqual({ kind: 'question', id: 'OQ-62' })
-    expect(at('Typed decision 2026-10-05 · Donald (product owner)')).toEqual({ kind: 'plain' })
+    expect(at('Typed decision 2026-10-05 · Sam (product owner)')).toEqual({ kind: 'plain' })
     expect(at('Audit 2026-09-24 #5')).toEqual({ kind: 'plain' })
     // Starts the way citations do (Diagram, Q&A, Notes) but matches nothing: flagged.
-    expect(at('Diagram authored by Donald')).toEqual({ kind: 'unresolved', reason: 'matches no artifact' })
+    expect(at('Diagram authored by Sam')).toEqual({ kind: 'unresolved', reason: 'matches no artifact' })
   })
 })
 
@@ -161,7 +161,7 @@ describe('the check on sources', () => {
 
   it('warns on sources that cite nothing or a spot that is not there, on items, questions and artifacts', () => {
     const arts = [artifact({ id: 'AR-15', citedAs: [cite('RFP', { pageOffset: 1 })] }), artifact({ id: 'AR-11', kind: 'note', file: 'notes/2026-10-01-client-meeting-with-sam.md', sources: ['Notes 2026-10-01 · Client meeting with Sam'] })]
-    const items = [item({ id: 'US-01.1.1', sources: ['RFP p.27 · Fine', 'RFP p.80 · Past the end', 'Notes 2026-10-01 · Client meeting with Sam #2 #9', 'Notes 2026-10-04 · Nothing', 'Typed decision 2026-10-05 · Donald', 'OQ-99'] })]
+    const items = [item({ id: 'US-01.1.1', sources: ['RFP p.27 · Fine', 'RFP p.80 · Past the end', 'Notes 2026-10-01 · Client meeting with Sam #2 #9', 'Notes 2026-10-04 · Nothing', 'Typed decision 2026-10-05 · Sam', 'OQ-99'] })]
     const questions = [question({ id: 'OQ-01', affects: ['US-01.1.1'], sources: ['Notes 2026-10-01 · Client meeting with Sam #12'] })]
     expect(run(arts, items, questions)).toEqual([
       'warning US-01.1.1: source "RFP p.80 · Past the end": AR-15 has no page 81',
@@ -227,13 +227,13 @@ describe("a card's Diagrams and Sources", () => {
   it('puts pictures under Diagrams and evidence under Sources, in the order cited, each once', () => {
     const card = item({
       id: 'US-01.1.1',
-      sources: ['RFP p.27 · Billing', 'Diagram: Billing route', 'Notes 2026-10-01 · Client meeting with Sam #1 #3', 'Typed decision 2026-10-05 · Donald', 'OQ-62', 'Diagram: Nothing'],
+      sources: ['RFP p.27 · Billing', 'Diagram: Billing route', 'Notes 2026-10-01 · Client meeting with Sam #1 #3', 'Typed decision 2026-10-05 · Sam', 'OQ-62', 'Diagram: Nothing'],
       artifacts: ['AR-24#setup', 'AR-15#p28', 'AR-16', 'AR-99'],
     })
     const { diagrams, sources } = sheetArtifacts(card, index, recs)
     const show = (r: (typeof diagrams)[number]) => (r.kind === 'artifact' ? `${r.id}${r.spots.map((s) => (s.region ? `#${s.region}` : '')).join('')}` : r.kind === 'plain' ? `plain: ${r.source}` : r.kind === 'question' ? r.id : `missing: ${r.text}`)
     // The cited diagram (the whole of AR-24, via its replacement) gives way to the spot the card links.
     expect(diagrams.map(show)).toEqual(['AR-24#setup'])
-    expect(sources.map(show)).toEqual(['AR-15#p28', 'AR-11#L5-6#L8-10', 'plain: Typed decision 2026-10-05 · Donald', 'OQ-62', 'missing: Diagram: Nothing', 'AR-16', 'missing: AR-99'])
+    expect(sources.map(show)).toEqual(['AR-15#p28', 'AR-11#L5-6#L8-10', 'plain: Typed decision 2026-10-05 · Sam', 'OQ-62', 'missing: Diagram: Nothing', 'AR-16', 'missing: AR-99'])
   })
 })

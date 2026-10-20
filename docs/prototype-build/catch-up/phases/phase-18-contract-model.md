@@ -166,7 +166,7 @@ Phases 19a to 25; this phase changes the shape and keeps the numbers.
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-04.1,US-04.1.1,US-04.1.2,US-04.1.4,US-04.1.5,US-04.1.6,US-04.2.1,US-04.2.2,US-04.2.10,US-04.2.14,US-04.3.2,US-04.3.3,US-05.2.5,US-05.2.6,US-05.4.3,US-05.5.1,US-11.2.2,US-11.4.1,OQ-25,OQ-48,OQ-66,OQ-67,OQ-78,OQ-91,OQ-98,OQ-100,OQ-104,OQ-105,OQ-107,OQ-114
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-04.1,US-04.1.1,US-04.1.2,US-04.1.4,US-04.1.5,US-04.1.6,US-04.2.1,US-04.2.2,US-04.2.10,US-04.2.14,US-04.3.2,US-04.3.3,US-05.2.5,US-05.2.6,US-05.4.3,US-05.5.1,US-11.2.2,US-11.4.1,OQ-25,OQ-48,OQ-66,OQ-67,OQ-78,OQ-91,OQ-98,OQ-100,OQ-104,OQ-105,OQ-107,OQ-114
    ```
 
    Read the hunks (if any) for the covered items, US-04.1.6 and US-04.2.10 (25's), US-04.2.14 (the
@@ -872,7 +872,7 @@ Patch these in the same session and mirror each in the same section of
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 18` first: earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 18` first: earlier phases may have changed
 these recipes since this plan was written. All covered shots are Admin (Master data); the mobile and
 web apps get no new screen.
 

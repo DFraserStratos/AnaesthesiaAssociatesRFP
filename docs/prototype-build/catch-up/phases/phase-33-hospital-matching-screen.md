@@ -128,7 +128,7 @@ phase's files.
    `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-02,FT-02.1,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.1.5,FT-02.5,US-02.2.3,US-02.5.1,US-02.5.2,US-02.5.3,US-02.5.4,US-02.5.5,US-02.5.6,US-02.5.7,US-03.1.9,US-14.6.2,US-01.6.1,US-01.6.4,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.3.2,OQ-13,OQ-34,OQ-44,OQ-49,OQ-52,OQ-78,OQ-87,OQ-93,OQ-99,OQ-108,OQ-109
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-02,FT-02.1,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.1.5,FT-02.5,US-02.2.3,US-02.5.1,US-02.5.2,US-02.5.3,US-02.5.4,US-02.5.5,US-02.5.6,US-02.5.7,US-03.1.9,US-14.6.2,US-01.6.1,US-01.6.4,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.3.2,OQ-13,OQ-34,OQ-44,OQ-49,OQ-52,OQ-78,OQ-87,OQ-93,OQ-99,OQ-108,OQ-109
    ```
 
    At plan time (2026-10-20, `60e2d1e..d4db277`) the changes that touch this phase were: FT-02.5 now has
@@ -1288,7 +1288,7 @@ and 19b S1 Beat 3's capture). Phase 34 rebuilds S1 around the sync; this phase m
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 33` first: earlier phases (20a above all)
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 33` first: earlier phases (20a above all)
 may have changed these recipes since this plan was written. The harness bar is hidden in shots, so
 recipes stage rows through the product's Import hospital bookings dialog (the badged sample picker);
 for the bar-only triggers ("Receive tomorrow's theatre list", "Send update for a matched Booking") use

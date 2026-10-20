@@ -138,7 +138,7 @@ billable party (21), so the BCTI count (16's `bctisFor`) does not move.
 
 ## Before you start: drift check
 
-1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,OQ-15,OQ-62,OQ-90,OQ-89`
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.2.1,US-03.2.2,US-03.2.3,FT-05.3,US-05.3.1,US-05.3.5,FT-03.2,US-04.2.5,US-05.3.4,US-03.3.4,US-03.3.8,US-05.1.4,OQ-15,OQ-62,OQ-90,OQ-89`
    (the baseline is `d4db277`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks. Re-read the domain model's "Booking" and "Procedure" sections (the
    `isPrimary` bullet and the Modifiers bullet) and "3. Calculation rules" ("Units within a Booking",
@@ -961,7 +961,7 @@ afterwards; only quoted RFP headings may remain.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 23` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 23` first: earlier phases may have
 changed these recipes. Never leave a caption that says an additional procedure bills time units
 only, that base and modifiers "stay on the first", or that a second procedure is priced by an
 ordinal or a Contract rule. FT-05.3 has a story (US-05.3.1), so it needs no recipe of its own.

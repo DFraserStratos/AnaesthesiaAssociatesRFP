@@ -78,7 +78,7 @@ One seeded event, an additional invoice that Dr Souter raised on a billed Proced
 1. Run the catalogue diff since this plan's baseline, catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-03.7.3,US-08.6.1,US-08.6.3,FT-03.7,FT-08.6,US-03.7.1,US-03.7.2,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-07.3.2,US-06.4.1,US-08.2.3,US-03.1.9,US-07.4.1,US-03.1.6,US-03.1.7,OQ-63,OQ-45,OQ-72,OQ-61,OQ-76,OQ-77,OQ-96,OQ-60,OQ-29
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-03.7.3,US-08.6.1,US-08.6.3,FT-03.7,FT-08.6,US-03.7.1,US-03.7.2,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-07.3.2,US-06.4.1,US-08.2.3,US-03.1.9,US-07.4.1,US-03.1.6,US-03.1.7,OQ-63,OQ-45,OQ-72,OQ-61,OQ-76,OQ-77,OQ-96,OQ-60,OQ-29
    ```
 
    At plan time (`60e2d1e..d4db277`) the changes that touch this phase were: **US-08.6.1** retitled "Additional invoice for late charges" (now status 3): other billing lines merge into events, the anaesthetist may raise one on their own Procedure, and an event raised before approval travels with the invoice while an additional invoice, raised after it has gone, is invoiced in the next run; **US-08.6.3** (status 3): the button is against the Procedure, not its Contract line, with the reason for its own number and a note that an extra after a prepaid price is still open (OQ-96); **US-03.7.3** (status 4): a refund can show as an event, a record of one made outside the system (not built here); **OQ-77** part 3 answered (D41, Phase 39); **OQ-96** open. Entry point: 38a's search, not an archive (D9). **RV-10 left** this phase (the number now names an unrelated item); the addendum reading is **RV-23**. This plan reflects all of it: diff only for anything after `d4db277`. If an item changed since, re-read it and adjust the work items; if a covered story is now Retired or Future, drop its work items and record that in the PROGRESS entry. All three covered stories are open for build (status 3 or 4, not Verify); US-03.7.3 has two acceptance criteria, and US-08.6.3 seven (Button, Linked, Own pair, Review step, Any billable party, After a fixed price, Not a correction): map each to a work item and a test.
@@ -307,7 +307,7 @@ S4 Beat 2 is rewritten here (ROADMAP.md "Demo guide": "38b S4 Beat 2's post-op a
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 38b` first: earlier phases (36, 37, 38a) may have changed these recipes since this plan was written. At plan time it lists the three covered stories US-08.6.1, US-08.6.3 and US-03.7.3.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 38b` first: earlier phases (36, 37, 38a) may have changed these recipes since this plan was written. At plan time it lists the three covered stories US-08.6.1, US-08.6.3 and US-03.7.3.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/` matches what was built:
 

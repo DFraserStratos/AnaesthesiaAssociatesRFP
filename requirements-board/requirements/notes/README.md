@@ -15,8 +15,8 @@ started there; every later input that shaped it follows in date order.
 
 ```yaml
 sources:
-  - "RFP p.24 · Billing Engine › The three components"
-  - "RFP p.25 · Billing Engine › Modifying units in detail"
+  - "RFP p.24 · Invoice Engine › The three components"
+  - "RFP p.25 · Invoice Engine › Adjusting prices in detail"
   - "Notes 2026-10-02 · stakeholder workshop"
 ```
 
@@ -48,10 +48,10 @@ Several at once: `#2 #16`.
 
 | Citation | Opens |
 | --- | --- |
-| `Q&A 2026-09-24 #n` | point n of its "Q&A with Donald, 2026-09-24" section (its numbering restarts there) |
-| `Meeting notes 2026-09 (AA lead administrator)` | its "Meeting notes (AA lead administrator)" section |
+| `Q&A 2026-09-24 #n` | point n of its "Q&A with the product owner, 2026-09-24" section (its numbering restarts there) |
+| `Meeting notes 2026-09 (client lead administrator)` | its "Meeting notes (client lead administrator)" section |
 | `Diagram: <name>` | the current drawing of that diagram (AR-17 to AR-24), not the description here |
-| `Data files (...)` | the NZSA RVG 2021 (AR-16); the fee schedules are in `../../../docs/discovery-reference/Data files/` |
+| `Data files (...)` | the 2021 product code list (AR-16); the price schedules are in `../../../docs/reference/Data files/` |
 | `Audit 2026-09-24 #n` | nothing (no audit file exists): plain text |
 
 ## No known source

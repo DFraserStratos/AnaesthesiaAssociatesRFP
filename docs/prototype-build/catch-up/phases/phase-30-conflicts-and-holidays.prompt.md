@@ -19,7 +19,7 @@ Before doing anything else, read these in order:
 8. requirements-board/requirements/capture/ATLAS.md (the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on) and the "Catalogue screenshots" rule in ROADMAP.md, plus the phase doc's "Catalogue screenshots" section.
 
 Then do the drift check in the phase doc:
-- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> over the covered catalogue files and the context files named above (the exact command is in the phase doc; baseline 60e2d1e; it is rename-aware, so never a plain git diff of the catalogue folder), OQ-09, OQ-17, OQ-27, OQ-43, OQ-64, OQ-81 and domain-model.md;
+- run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> over the covered catalogue files and the context files named above (the exact command is in the phase doc; baseline 60e2d1e; it is rename-aware, so never a plain git diff of the catalogue folder), OQ-09, OQ-17, OQ-27, OQ-43, OQ-64, OQ-81 and domain-model.md;
 - adjust the work items if anything changed, and drop and log anything now Retired or Future;
 - check OQ-09: if it is no longer "soft warning", stop and raise it with me before planning;
 - check OQ-81: if part 3 (sickness) is answered, follow the phase doc's drift-check step 3; if part 2 has been reversed, the projection paints closed sessions and the reconcile flags them;

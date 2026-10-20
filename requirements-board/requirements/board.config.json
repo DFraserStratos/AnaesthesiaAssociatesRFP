@@ -1,5 +1,5 @@
 {
-  "project": { "name": "Anaesthesia Associates", "locale": "en-NZ" },
+  "project": { "name": "AA", "locale": "en-NZ" },
   "components": [
     { "name": "Scheduling Engine", "code": "SCH" },
     { "name": "Billing/Invoice Engine", "code": "BIL" },
@@ -44,5 +44,6 @@
       "mobile": { "url": "http://localhost:5174", "setupRoute": "/mobile/lists", "hideCss": "[data-shot=\"pwa-demo-actions\"] { display: none !important; }" }
     },
     "startHint": "Start both with `npm run dev` at the repo root (prototype on 5173, PWA on 5174)."
-  }
+  },
+  "board": { "name": "Requirements board" }
 }

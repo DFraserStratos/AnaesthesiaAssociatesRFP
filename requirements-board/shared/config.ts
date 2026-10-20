@@ -55,6 +55,10 @@ export interface CaptureConfig {
 }
 
 export interface BoardConfig {
+  board: {
+    /** The board's own name, in the masthead and the browser tab. */
+    name: string
+  }
   project: {
     /** Shown under the board's name and in the browser tab. */
     name: string
@@ -73,7 +77,15 @@ export interface BoardConfig {
   capture: CaptureConfig | null
 }
 
+/** What the Settings page may change: each field sent replaces that field, the rest of the file stays as written. */
+export type ConfigPatch = Partial<Pick<BoardConfig, 'board' | 'project' | 'components' | 'statuses' | 'questionStatuses'>>
+
+export const DEFAULT_BOARD_NAME = 'Requirements board'
+/** The starter catalogue's placeholder project name: while it stands, the masthead points at the guide. */
+export const STARTER_PROJECT_NAME = 'Your project'
+
 export const DEFAULT_CONFIG: BoardConfig = {
+  board: { name: DEFAULT_BOARD_NAME },
   project: { name: '' },
   components: [],
   screenshotApps: [],
@@ -110,7 +122,10 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
     return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} is not valid JSON (${(e as Error).message})`] }
   }
   if (!isObj(raw)) return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} must hold an object`] }
-  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {} }
+  const config: BoardConfig = { ...DEFAULT_CONFIG, board: { name: DEFAULT_BOARD_NAME }, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {} }
+
+  if (isObj(raw.board)) config.board.name = str(raw.board.name) ?? DEFAULT_BOARD_NAME
+  else if (raw.board !== undefined) problems.push('board must be an object')
 
   if (isObj(raw.project)) {
     config.project.name = str(raw.project.name) ?? ''

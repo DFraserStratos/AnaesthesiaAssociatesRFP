@@ -33,7 +33,7 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
 - `--kind`: `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`.
 - `--date`: when the artifact itself was made, not today: the meeting a transcript or note records,
   a document's publication date, the day a diagram was drawn. `YYYY-MM` or `YYYY` when that is all
-  that is known (the RVG guide is `2021`).
+  that is known (a 2021 price guide is `2021`).
 - `--title`: what it shows, in plain words and sentence case ("How the system works out a price",
   not the file name).
 - `--source`, repeatable: where it came from, in the requirements' sources convention

@@ -7,7 +7,7 @@ Import it from a generator script:
 
     d = Diagram(1600, 900)
     d.panel(20, 20, 500, 860, BLUE, BLUE_S)
-    d.heading(38, 58, "Procedure Master List")
+    d.heading(38, 58, "Product Master List")
     ...
     d.save("out.svg")
 
@@ -23,18 +23,18 @@ INK, MUTED, LIGHT = "#1B1B1F", "#55555E", "#D7D7DE"   # body text, secondary tex
 CHAR, CHAR_S = "#2E2E31", "#55555C"   # dark "hero" panel and its inner strokes
 BLUE, BLUE_S = "#E1F0FB", "#A9C3DA"   # list / master-data panel
 SUB, SUB_S = "#F3F7FB", "#A9BCD0"     # nested sub-box inside a panel
-GRN, GRN_S, GRN_T = "#E9F5EC", "#9FD0AE", "#1D6B3B"   # group box; also "RVG-style" / defaults
-PEACH, PEACH_S = "#FFE9C2", "#E9AE45" # the leaf item (a procedure)
-LAV, LAV_S = "#EEE9FC", "#C7BAF0"     # contracts / a side column
+GRN, GRN_S, GRN_T = "#E9F5EC", "#9FD0AE", "#1D6B3B"   # group box; also "standard" / defaults
+PEACH, PEACH_S = "#FFE9C2", "#E9AE45" # the leaf item (an order line)
+LAV, LAV_S = "#EEE9FC", "#C7BAF0"     # price lists / a side column
 YEL, YEL_S = "#FFF5C4", "#EFD46A"     # notes, callouts, the bottom summary bar
 CARD_S = "#D3DCE6"                    # white card outline
 CHIP, CHIP_T = "#E6E5EC", "#3C3C46"   # neutral chip (a value's kind, e.g. "Fixed price")
 GOOD_F, GOOD_T = "#CDE8FA", "#1B5C8A" # positive state pill ("Yes, with reason")
 LOCK_F, LOCK_T = "#D9D9E0", "#3C3C46" # negative / locked state pill
-UNITS_F, UNITS_S, UNITS_T = "#C4EDD2", "#8FCBA2", "#1D6B3B"  # pricing pill: RVG units × rate
-PERSON_F, PERSON_S, PERSON_T = "#FFE1C4", "#F0A868", "#9A4A0B"  # payer pill: a person pays (patient)
-INSURER_F, INSURER_S, INSURER_T = "#DDE3F4", "#9AA9D6", "#2E3F7A"  # payer pill: an insurer pays
-HOSPITAL_F, HOSPITAL_S, HOSPITAL_T = "#D3EFEC", "#7CC6BE", "#0D5F57"  # payer pill: a hospital pays
+UNITS_F, UNITS_S, UNITS_T = "#C4EDD2", "#8FCBA2", "#1D6B3B"  # pricing pill: units × rate
+PERSON_F, PERSON_S, PERSON_T = "#FFE1C4", "#F0A868", "#9A4A0B"  # payer pill: a person pays (the customer)
+INSURER_F, INSURER_S, INSURER_T = "#DDE3F4", "#9AA9D6", "#2E3F7A"  # payer pill: a third party pays (e.g. an insurer)
+HOSPITAL_F, HOSPITAL_S, HOSPITAL_T = "#D3EFEC", "#7CC6BE", "#0D5F57"  # payer pill: an organisation pays
 WIN = "#2E9E5B"                       # highlight: the winning cell, the rule that applied
 ACCENT = "#3B8FD6"                    # numbered step circles, flow chevrons
 TREE = "#2E2E31"                      # tree connector lines

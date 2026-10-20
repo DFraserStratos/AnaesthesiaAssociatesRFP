@@ -96,7 +96,7 @@ on the booking procedure, which `prepaymentForProcedure` hides) in the header co
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-06,FT-06.2,US-06.2.1,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,FT-08.1,US-03.1.8,US-08.2.2,FT-06.3,FT-06.4,FT-06.5,US-06.3.4,US-06.3.6,US-06.4.1,US-06.5.1,US-06.5.4,US-09.1.3,US-04.2.14,US-04.3.4,US-11.2.2,US-13.7.1,US-13.7.3,US-13.7.4,OQ-25,OQ-73,OQ-80,OQ-92,OQ-96,OQ-97,OQ-104,OQ-116,OQ-04,OQ-38,OQ-48,OQ-61,OQ-70,OQ-76,OQ-91
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-06,FT-06.2,US-06.2.1,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,FT-08.1,US-03.1.8,US-08.2.2,FT-06.3,FT-06.4,FT-06.5,US-06.3.4,US-06.3.6,US-06.4.1,US-06.5.1,US-06.5.4,US-09.1.3,US-04.2.14,US-04.3.4,US-11.2.2,US-13.7.1,US-13.7.3,US-13.7.4,OQ-25,OQ-73,OQ-80,OQ-92,OQ-96,OQ-97,OQ-104,OQ-116,OQ-04,OQ-38,OQ-48,OQ-61,OQ-70,OQ-76,OQ-91
    ```
 
    At the 2026-10-20 plan update (`60e2d1e..d4db277`; change logs `2026-10-16-requirements-update.md`
@@ -573,7 +573,7 @@ sections of `master-demo-guide.html`:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 27` first. Stage the strip and the sent
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 27` first. Stage the strip and the sent
 invoice with real clicks (Approve and send is a product control), and a payment or the clock jump
 with the runner's `trigger` step after a `goto` to the entry's screen. The Control Panel has no
 payment buttons. Replace every stale caption (an estimated fee, a deposit, a balance invoice, a

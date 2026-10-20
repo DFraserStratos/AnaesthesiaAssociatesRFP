@@ -1,0 +1,102 @@
+{
+  "name": "requirements catch-up",
+  "title": "Requirements catch-up",
+  "subject": "the Anaesthesia Associates (AA) prototype",
+  "appNoun": "prototype",
+  "app": "aa-prototype",
+  "appCode": ["aa-prototype/src"],
+  "appSummary": "The prototype (aa-prototype/) is a React demo over a fake in-browser backend, shown in live vendor workshops.",
+  "board": "requirements-board",
+  "progress": "docs/prototype-build/PROGRESS.md",
+  "firstPhase": "14",
+  "outOfScopeLanes": ["Future Work"],
+  "settledStatuses": [4, 5],
+  "unsettledStatuses": [2, 3],
+  "olderCatalogues": [
+    { "root": "docs/discovery-reference/Updated Requirements", "items": "catalogue/requirements", "questions": "catalogue/questions", "notes": "catalogue/notes" }
+  ],
+  "capture": true,
+  "standingRules": "The Future Work lane and retired items are excluded; anything not demoable through normal use gets a screen-contextual demo-trigger button; phases are numbered upward, each one focused session (two at most) with one coherent deliverable, leaving the app green; phases run back to back and agents test themselves (ROADMAP.md \"Owner review: agents test themselves\": no plan-approval stop; \"ask the owner\" becomes a built default logged on the phase's \"For the owner's review\" list).",
+  "projectRules": "Project rules (CLAUDE.md, which you already have): mock backend only, store hooks + audited mutate(), determinism (demo clock, seeded RNG), bump PERSIST_VERSION on seed changes, pure billing maths with Vitest tests, design files in docs/design are authoritative (crimson identity only, teal the only action colour), no en/em dashes in app copy, finish green (npm run build, npm run build:pwa, npx vitest run), the demo guide (docs/demo-guide) mirrors scripted beats, agents never commit.",
+  "greenCommands": "npm run build, npm run build:pwa and npx vitest run",
+  "gapAnalysis": {
+    "codeGuide": "Prototype: aa-prototype/ (React demo over a fake in-browser backend: store in src/store, domain types/rules in src/domain, seed in src/domain/seed, three apps in src/apps/{mobile,web,admin}, demo simulators in src/apps/demo, shell/harness in src/shell, PWA build in src/pwa).",
+    "history": "The prototype was built against the ORIGINAL RFP (requirements-board/requirements/reference/RFP.md) in July 2026. Since then the catalogue has changed a lot. Old build docs (docs/prototype-build/PROGRESS.md, REQUIREMENTS.md, prototype-review/) describe what was intended at the time: use them only as leads to find code, never as proof something exists. THE CODE IS THE TRUTH about the prototype.",
+    "sourcesExample": "(\"RFP p.27 · ...\", \"Notes 2026-10-01 · AA meeting with Greg #16\", \"Q&A 2026-09-24 #2\")",
+    "outOfScope": "cannot be meaningfully represented in a front-end demo over a fake backend, even with a demo button (e.g. hosting region, backup RPO, uptime SLA). Use sparingly: if there is ANY user-visible effect or presenter-explainable outcome, it is not OutOfScope.",
+    "outOfScopeShort": "cannot be shown in a front-end demo, even with a demo button",
+    "demoTriggerRule": "Demo-trigger rule (from the product owner): \"If it can't be demoed, then I would expect a button, perhaps in the control panel at the top of the screen, which only shows up on the correct screen, to demo a function.\" So for anything automatic, scheduled, time-driven, external-system-driven or backend-only (jobs, webhooks, reminders, auto-generation, feeds, integrations), set demo_trigger to a concrete proposal: button label, the screen it appears on, and what it does to the visible state. If an existing demo control already covers it, name it. Otherwise leave demo_trigger \"\".",
+    "surfaces": ["mobile", "web", "admin", "pwa", "simulator (src/apps/demo)", "shell (harness/app switcher/control panel)", "domain", "store", "seed", "demo-guide (docs/demo-guide scripted beats would change)"],
+    "maps": [
+      { "key": "apps-mobile-web", "scope": "aa-prototype/src/apps/mobile and aa-prototype/src/apps/web (the Anaesthetist Mobile App and Anaesthetist Web App). Note which src/shared components each screen uses, but do not document src/shared internals (another mapper does)." },
+      { "key": "shared", "scope": "aa-prototype/src/shared (shared components, flows, capture, card, schedule, surface, ui, format) and aa-prototype/src/theme (briefly: tokens only)." },
+      { "key": "admin", "scope": "aa-prototype/src/apps/admin (Admin Web App): every route/screen, flows, review flags, master-data screens, roles." },
+      { "key": "shell-demo-pwa", "scope": "aa-prototype/src/shell, aa-prototype/src/apps/demo, aa-prototype/src/pwa, aa-prototype/pwa, aa-prototype/src/router.tsx, aa-prototype/src/App.tsx. IMPORTANT: document precisely the top harness bar / app switcher / demo control panel and every existing demo action (what triggers exist, where they render, whether any are screen-contextual, how they call the store), and the PWA demo panel. A later plan will add screen-contextual demo-trigger buttons to the top control area, so describe the extension points." },
+      { "key": "domain", "scope": "aa-prototype/src/domain EXCEPT src/domain/seed: every entity type with its fields and enums/statuses, lifecycle definitions, pure rules (billing maths in src/domain/billing, integrations in src/domain/integrations, NHI, clock)." },
+      { "key": "store-seed", "scope": "aa-prototype/src/store and aa-prototype/src/domain/seed: every store action (one line each: name, file, what it does, which guard), lifecycle guards, audit/mutate wrapper, persistence + PERSIST_VERSION, selectors/hooks; and the seed: personas, hospitals, surgeons, contracts, RVG data, demo scenarios S1 to S5, anything time-relative." }
+    ],
+    "modelCode": "aa-prototype/src/domain (types, lifecycle, billing, integrations), the store shape in aa-prototype/src/store/appStore.ts and related slices, and the seed's shape in aa-prototype/src/domain/seed",
+    "decisionsLog": "the Decisions log in docs/prototype-build/PROGRESS.md (the \"## Decisions log\" section, roughly lines 54 to 186) and the \"Discovered for later\" handoff list",
+    "demoScript": "scripted demo beats S1 to S5 (docs/demo-guide/03-demo-script.md)",
+    "themeBullets": [
+      "Demo-trigger buttons: the pattern the product owner asked for (screen-contextual buttons in the top control area), how many items need one, and the main clusters."
+    ]
+  },
+  "planning": {
+    "history": "The prototype (aa-prototype/) is a finished React demo over a fake in-browser backend, built in July 2026 against the original RFP in 14 phases (docs/prototype-build/ROADMAP.md, phases/phase-00..13, index.html, PROGRESS.md). It is used in live vendor workshops.",
+    "ownerRules": [
+      "Bring the prototype up to the current catalogue. The Future Work lane and retired items are excluded (and retired behaviour still in the prototype is removed or reworked, per the RV findings).",
+      "Anything that cannot be demoed through normal use (automatic, scheduled, backend, external-system events) gets a demo-trigger BUTTON in the control area at the top of the screen (the prototype's harness bar), shown ONLY on the screen where it is relevant. The PWA build (dist-pwa, no harness bar) needs an equivalent; check analysis/prototype-map-shell-demo-pwa.md."
+    ],
+    "styleRefs": "docs/prototype-build/ROADMAP.md, two original phase docs (docs/prototype-build/phases/phase-05-anaesthetist-web-app.md and phase-08-billing-run-and-invoices.md) and the Phase 05 kick-off prompt in docs/prototype-build/index.html",
+    "guidance": [
+      "An early foundation phase should build the screen-contextual demo-trigger mechanism in the harness bar (and its PWA equivalent) so later phases just register triggers.",
+      "The demo guide (docs/demo-guide, S1 to S5) must be updated where beats change: either inside each phase or in a closing demo phase that rewrites the run sheet; decide, and say so."
+    ],
+    "research": ["Check the design references in docs/design/ that apply to the screens you touch."],
+    "criticChecks": ["The demo-trigger mechanism, the PWA equivalent, removal of retired behaviour, and demo-guide updates: all planned?"]
+  },
+  "phaseDoc": {
+    "extraSections": {
+      "afterWorkItems": "## Demo triggers: each screen-contextual harness-bar button this phase adds (label, screen, effect), plus the PWA equivalent where the screen is mobile.",
+      "afterChecklist": "## Demo guide updates: which docs/demo-guide files and S1 to S5 beats change, or \"none\".",
+      "afterScreenshots": "## Adversarial review (after build): the standard pass (PROGRESS convention 18), with \"Steer this phase's reviewers at:\" bullets specific to this phase."
+    },
+    "readFirst": "the relevant design files, and the PROGRESS.md sections that matter: binding conventions + any Decisions log entries this phase supersedes",
+    "workItemRules": "Include PERSIST_VERSION bumps, Vitest tests for any domain or billing rule, and removal/rework of retired behaviour where covered.",
+    "promptRules": "If the phase touches UI, the prompt's \"While working:\" list opens with the frontend-design bullet (ROADMAP.md \"Front-end design\"; copy it from a neighbouring prompt). The \"When done:\" list runs the adversarial review pass (PROGRESS convention 18) and the demo guide updates.",
+    "reviewChecks": [
+      "demo triggers are screen-contextual (harness bar, plus the PWA equivalent) and the demo guide beats it changes are named",
+      "a phase that touches UI has the frontend-design bullet in \"While working:\""
+    ]
+  },
+  "index": {
+    "title": "AA Prototype · Requirements Catch-up",
+    "kicker": "AA Prototype · Requirements catch-up",
+    "heading": "The catch-up: <em>from the RFP to the catalogue</em>",
+    "intro": "The prototype was built in July against the original RFP, in fourteen phases. The requirements catalogue has since become the source of truth and moved a long way: Bookings instead of Cards, Slots and Draft Lists, one Contract per Procedure locked at authorise, admin-decided hospital matching, an internal ledger with Xero as its mirror. This plan closes every verified gap in {phases} further phases, numbered {first} to {last}, each one focused session (at most two) with one coherent deliverable, and every automatic or external event given a demo button on the screen where it matters.",
+    "themesHeading": "What changed since the prototype",
+    "footer": "AA prototype requirements catch-up",
+    "howTo": [
+      "<b>Get the owner decisions first.</b> D1 to D11 (the table at the top of <a href=\"ROADMAP.md\">ROADMAP.md</a>) each gate one phase. A phase whose answer has not come in builds the stated default and labels it provisional.",
+      "<b>Pick the next phase</b> from the table below, respecting the order in \"Sequencing and rules\". The Contracts track (17 to 25) and the Schedule track (28 to 32) each run strictly in order.",
+      "<b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt. The agent reads the roadmap, its phase doc, the gap detail for its items, the prototype maps and <code>PROGRESS.md</code> before touching anything.",
+      "<b>Drift check first.</b> The catalogue keeps moving. Each session diffs its items against <code>{commit}</code>, reports what changed, and adapts the plan before building.",
+      "<b>The agent plans and builds straight on.</b> It turns the phase doc into work-sized steps and starts building without waiting for approval, so phases can run back to back (ROADMAP.md \"Owner review: agents test themselves\").",
+      "<b>Every phase ends the same way:</b> <code>npm run build</code>, <code>npm run build:pwa</code>, <code>npx vitest run</code> and (for UI work) <code>npm run shots</code> green; the checklist run and reported item by item; the adversarial review-and-fix pass (PROGRESS convention 18); the demo guide patched for any beat it broke; the catalogue screenshots brought in step with the app (the phase's capture recipes created or updated, then a full <code>npm run capture</code> in <code>requirements-board/</code> with no failed recipe and <code>npm run verify:board</code> green, PROGRESS convention 19); a <code>PROGRESS.md</code> entry. Agents never commit.",
+      "<b>When the catalogue changes,</b> follow <a href=\"README.md\">README.md</a>: re-grade the changed items, merge them into <code>gaps.json</code>, update the affected phase docs, and re-render this page with <code>node requirements-board/agent/skills/update-build-plan/tools/build-index.mjs</code>."
+    ],
+    "callouts": [
+      { "cls": "green", "html": "<strong>Demo buttons live on their screens.</strong> Anything that cannot be shown through normal use (scheduled jobs, backend events, external systems) gets a trigger in the harness bar's \"Demo actions\" menu, listed only on the screen where it matters. The installed PWA has no harness bar, so it gets the same list as a badged demo-actions sheet, plus office stand-ins for beats that wait on the office. Phase 14 builds the mechanism; every later phase registers into it." },
+      { "cls": "", "html": "<strong>The checklists are the contract.</strong> Each phase ends with a short manual test checklist. The agent runs it itself in the running app and reports each item with evidence; nothing is handed to the owner per phase. Each PROGRESS entry ends with a \"For the owner's review\" list, and Phase 44 gathers them into one list for a single review once every catch-up phase is done." }
+    ],
+    "tracks": {
+      "Foundations": "setup", "Demo": "setup",
+      "Contracts": "A", "Billing": "A",
+      "Money": "C",
+      "Schedule": "B", "Intake": "B",
+      "Prepayment": "D", "Patients": "D",
+      "Master data": "E", "NFR": "E"
+    }
+  }
+}

@@ -117,7 +117,7 @@ This is the corrected payables story for the "After 16" milestone.
    catalogue commit `60e2d1e` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-10,FT-10.3,FT-10.2,US-10.2.1,US-10.3.1,US-10.3.2,US-10.3.3,US-09.1.1,US-09.1.4,US-09.3.1,US-15.0.6,US-08.4.3,US-08.3.1,US-10.2.6,US-10.2.7,US-05.2.7,OQ-02,OQ-60,OQ-29,OQ-30,OQ-47
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-10,FT-10.3,FT-10.2,US-10.2.1,US-10.3.1,US-10.3.2,US-10.3.3,US-09.1.1,US-09.1.4,US-09.3.1,US-15.0.6,US-08.4.3,US-08.3.1,US-10.2.6,US-10.2.7,US-05.2.7,OQ-02,OQ-60,OQ-29,OQ-30,OQ-47
    ```
 
    Read the hunks (if any) for EP-10, FT-10.3, FT-10.2, US-10.2.1, US-10.3.1, US-10.3.2, US-10.3.3,
@@ -867,7 +867,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 16` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 16` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

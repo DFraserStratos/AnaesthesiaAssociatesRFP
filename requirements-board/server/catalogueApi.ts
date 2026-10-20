@@ -33,6 +33,7 @@ import { compareSiblings, nextItemId, nextQuestionId } from '../shared/ids.ts'
 import { buildArtifactTimeline, buildTimeline, diffItems } from '../shared/history.ts'
 import { defaultStatus, normaliseStatus, readStatusList, statusLabel, type StatusDef, type StatusKind } from '../shared/statuses.ts'
 import { parseArtifact } from '../shared/files.ts'
+import { parseConfig } from '../shared/config.ts'
 import { laneListProblem } from '../shared/move.ts'
 import { planDelete } from '../shared/remove.ts'
 import { ITEM_TYPES, UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type Layout, type CatalogueEvent, type Item, type ItemType, type Question, type Rev } from '../shared/types.ts'
@@ -442,7 +443,7 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
     }
 
     if (path === '/api/config' && method === 'PUT') {
-      // Patch the file as it is on disk now: only the status lists change, every other setting stays as written.
+      // Patch the file as it is on disk now: only the fields sent change, every other setting stays as written.
       let raw: Record<string, unknown> = {}
       try {
         raw = JSON.parse(readFileSync(configPath(root), 'utf8')) as Record<string, unknown>
@@ -468,6 +469,27 @@ export function createCatalogueApi(root: string, emit: (e: CatalogueEvent) => vo
           if (was) problems.push(`${field}: ${statusLabel(state.config, kind, code)} is still used by ${n} ${kind === 'item' ? 'item' : 'question'}${n === 1 ? '' : 's'}`)
         }
         next[field] = list.map(clean)
+      }
+      for (const field of ['board', 'project'] as const) {
+        if (body[field] === undefined) continue
+        const v = body[field] as Record<string, unknown> | null
+        const name = typeof v?.name === 'string' ? v.name.trim() : ''
+        if (field === 'board' && !name) problems.push('board: the board needs a name')
+        const locale = typeof v?.locale === 'string' ? v.locale.trim() : ''
+        const was = (raw[field] ?? {}) as Record<string, unknown>
+        next[field] = field === 'project' ? { ...was, name, ...(locale ? { locale } : {}) } : { ...was, name }
+        if (field === 'project' && !locale) delete (next.project as Record<string, unknown>).locale
+      }
+      if (body.components !== undefined) {
+        const { config: parsed, problems: bad } = parseConfig(JSON.stringify({ components: body.components }))
+        problems.push(...bad)
+        // A component still on a card can't go: its files would name an area the board no longer knows.
+        const kept = new Set(parsed.components.map((c) => c.name))
+        const dropped = new Map<string, number>()
+        for (const it of [...itemList(), ...Object.values(state.artifacts).map((r) => r.data)]) for (const c of it.components) if (!kept.has(c)) dropped.set(c, (dropped.get(c) ?? 0) + 1)
+        for (const [name, n] of dropped)
+          if (state.config.components.some((c) => c.name === name)) problems.push(`components: ${name} is still used by ${n} card${n === 1 ? '' : 's'} or artifact${n === 1 ? '' : 's'}`)
+        next.components = parsed.components
       }
       if (problems.length) throw new HttpError(422, problems.join('\n'))
       writeAtomic(configPath(root), formatJson(next))

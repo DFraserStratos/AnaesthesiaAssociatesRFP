@@ -1,5 +1,7 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { componentCodeIn, type ComponentDef, type ConfigPatch } from '../../shared/config.ts'
 import {
   ITEM_ROLES,
   QUESTION_ROLES,
@@ -16,9 +18,10 @@ import {
 import { useCatalogue, useConfig, useIndex } from '../store.ts'
 
 /**
- * The project's settings that live in `board.config.json` and are safe to edit here: the item and
- * question statuses. Files store a status's code, so renaming, rewording, recolouring or
- * reordering a status touches no file; only the config is rewritten.
+ * The project's settings that live in `board.config.json` and are safe to edit here: the board's
+ * and project's names, the components, and the item and question statuses. Files store a status's
+ * code, so renaming, rewording, recolouring or reordering a status touches no file; only the
+ * config is rewritten.
  */
 export function SettingsView() {
   return (
@@ -27,13 +30,174 @@ export function SettingsView() {
         <div className="page-head">
           <div>
             <h1>Settings</h1>
-            <p>What each status is called, what it means and how it looks. Cards store only the number, so renaming a status here changes no card.</p>
+            <p>What this board is called, the areas of the system, and what each status is called, means and looks like. Cards store only a status's number, so renaming a status here changes no card.</p>
           </div>
         </div>
+        <BoardSection />
+        <ComponentSection />
         <StatusSection kind="item" title="Item statuses" />
         <StatusSection kind="question" title="Question statuses" />
+        <p className="settings-version">
+          Requirements board <span className="mono">v{__BOARD_VERSION__}</span> · <Link to="/about">How to use this board</Link>
+        </p>
       </div>
     </div>
+  )
+}
+
+/** Save one patch with the busy and error state every section shares. */
+function useSave() {
+  const saveConfig = useCatalogue((s) => s.saveConfig)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const save = async (patch: ConfigPatch) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await saveConfig(patch)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return { busy, error, setError, save }
+}
+
+function SaveBar({ dirty, blocked, busy, onDiscard, onSave, children }: { dirty: boolean; blocked?: boolean; busy: boolean; onDiscard: () => void; onSave: () => void; children?: ReactNode }) {
+  return (
+    <div className="settings-actions">
+      {children}
+      <span className="spacer" />
+      {dirty && (
+        <button type="button" className="btn ghost" disabled={busy} onClick={onDiscard}>
+          Discard changes
+        </button>
+      )}
+      <button type="button" className="btn primary" disabled={!dirty || blocked || busy} onClick={onSave}>
+        {busy ? 'Saving…' : 'Save'}
+      </button>
+    </div>
+  )
+}
+
+/** The board's own name (masthead and browser tab) and the project it is for. */
+function BoardSection() {
+  const config = useConfig()
+  const saved = { board: config.board.name, project: config.project.name, locale: config.project.locale ?? '' }
+  const [form, setForm] = useState(saved)
+  const { busy, error, setError, save } = useSave()
+  const dirty = JSON.stringify(form) !== JSON.stringify(saved)
+  useEffect(() => {
+    if (!dirty) setForm(saved)
+  }, [config.board, config.project])
+  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
+  return (
+    <section className="settings-section" aria-label="Board">
+      <h2 className="group-head">Board</h2>
+      <div className="settings-fields">
+        <label>
+          <span>Board name</span>
+          <input className="input status-name" value={form.board} placeholder="Requirements board" onChange={(e) => set({ board: e.target.value })} />
+          <small>In the masthead and the browser tab.</small>
+        </label>
+        <label>
+          <span>Project</span>
+          <input className="input status-name" value={form.project} placeholder="Project name" onChange={(e) => set({ project: e.target.value })} />
+          <small>Shown beside the board's name.</small>
+        </label>
+        <label>
+          <span>Locale</span>
+          <input className="input status-help" value={form.locale} placeholder="Browser's own" onChange={(e) => set({ locale: e.target.value })} />
+          <small>For dates, e.g. en-GB or en-US.</small>
+        </label>
+      </div>
+      {error && <div className="banner error">{error}</div>}
+      <SaveBar
+        dirty={dirty}
+        blocked={!form.board.trim()}
+        busy={busy}
+        onDiscard={() => (setForm(saved), setError(null))}
+        onSave={() => void save({ board: { name: form.board.trim() }, project: { name: form.project.trim(), ...(form.locale.trim() ? { locale: form.locale.trim() } : {}) } })}
+      />
+    </section>
+  )
+}
+
+/** The system's areas: what a card's component glyph shows. Empty accepts any component. */
+function ComponentSection() {
+  const config = useConfig()
+  const index = useIndex()
+  const saved = config.components
+  const [rows, setRows] = useState<ComponentDef[]>(saved)
+  const { busy, error, setError, save } = useSave()
+  const list = rows.map((r) => (r.code?.trim() ? { name: r.name.trim(), code: r.code.trim().toUpperCase() } : { name: r.name.trim() }))
+  const dirty = JSON.stringify(list) !== JSON.stringify(saved)
+  useEffect(() => {
+    if (!dirty) setRows(saved)
+  }, [saved])
+  const usage = useMemo(() => {
+    const n = new Map<string, number>()
+    for (const it of index.items) for (const c of it.components) n.set(c, (n.get(c) ?? 0) + 1)
+    return n
+  }, [index])
+  const names = list.map((r) => r.name)
+  const problems = [...(names.some((n) => !n) ? ['Every component needs a name'] : []), ...names.filter((n, i) => n && names.indexOf(n) !== i).map((n) => `"${n}" is listed twice`)]
+  const set = (i: number, patch: Partial<ComponentDef>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
+  return (
+    <section className="settings-section" aria-label="Components">
+      <h2 className="group-head">
+        Components <span className="mono">{rows.length}</span>
+      </h2>
+      <p className="settings-intro">The areas of the system a requirement belongs to. Leave the list empty to accept any component. One still on a card can't be removed.</p>
+      {rows.length > 0 && (
+        <div className="status-table component-table" role="table" aria-label="Components">
+          <div className="status-tr status-th" role="row">
+            <span role="columnheader">Code</span>
+            <span role="columnheader">Name</span>
+            <span role="columnheader">Used by</span>
+            <span role="columnheader" className="sr-only">
+              Remove
+            </span>
+          </div>
+          {rows.map((r, i) => {
+            const was = saved.find((c) => c.name === r.name)
+            const used = was ? usage.get(r.name) ?? 0 : 0
+            return (
+              <div key={i} className="status-tr" role="row">
+                <span role="cell">
+                  <input className="input mono" value={r.code ?? ''} maxLength={3} placeholder={r.name ? componentCodeIn({ ...config, components: [] }, r.name) : 'ABC'} aria-label={`Code of ${r.name || 'new component'}`} onChange={(e) => set(i, { code: e.target.value })} />
+                </span>
+                <span role="cell">
+                  <input className="input status-name" value={r.name} placeholder="Name" aria-label={`Name of ${r.name || 'new component'}`} autoFocus={!r.name} disabled={used > 0} title={used > 0 ? 'Used by cards: rename it in their files first' : undefined} onChange={(e) => set(i, { name: e.target.value })} />
+                </span>
+                <span role="cell" className="status-used">
+                  {used ? `${used} card${used === 1 ? '' : 's'}` : 'None'}
+                </span>
+                <span role="cell" className="status-tools">
+                  <button type="button" className="btn icon ghost sm danger" disabled={used > 0} title={used ? `Used by ${used} card${used === 1 ? '' : 's'}` : 'Remove this component'} onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))} aria-label="Remove">
+                    <Trash2 size={14} />
+                  </button>
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {dirty && problems.length > 0 && (
+        <ul className="banner error settings-problems">
+          {[...new Set(problems)].map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+      )}
+      {error && <div className="banner error">{error}</div>}
+      <SaveBar dirty={dirty} blocked={problems.length > 0} busy={busy} onDiscard={() => (setRows(saved), setError(null))} onSave={() => void save({ components: list })}>
+        <button type="button" className="btn ghost" onClick={() => setRows((rs) => [...rs, { name: '' }])}>
+          <Plus size={15} /> Add component
+        </button>
+      </SaveBar>
+    </section>
   )
 }
 
@@ -55,7 +219,7 @@ function stored({ fresh: _f, ...d }: Row): StatusDef {
 function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
   const config = useConfig()
   const index = useIndex()
-  const saveStatuses = useCatalogue((s) => s.saveStatuses)
+  const saveConfig = useCatalogue((s) => s.saveConfig)
   const saved = statusesOf(config, kind)
   const [rows, setRows] = useState<Row[]>(saved)
   const [busy, setBusy] = useState(false)
@@ -102,7 +266,7 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
     setBusy(true)
     setError(null)
     try {
-      await saveStatuses({ [field]: list })
+      await saveConfig({ [field]: list })
     } catch (e) {
       setError((e as Error).message)
     } finally {

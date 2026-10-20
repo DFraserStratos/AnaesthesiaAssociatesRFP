@@ -131,7 +131,7 @@ unchanged.
 1. Run the catalogue diff since this plan's baseline (`d4db277`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-02.5.7,US-03.1.9,US-03.1.2,US-02.4.1,US-08.4.6,US-03.1.3,US-02.3.1,US-02.1.2,US-07.2.2,US-15.0.1,US-04.2.4,FT-03.1,FT-02.5,OQ-103,OQ-13
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.5.7,US-03.1.9,US-03.1.2,US-02.4.1,US-08.4.6,US-03.1.3,US-02.3.1,US-02.1.2,US-07.2.2,US-15.0.1,US-04.2.4,FT-03.1,FT-02.5,OQ-103,OQ-13
    ```
 
    Read the hunks for those items and the domain-model's Procedure bullets on the descriptions and the
@@ -744,7 +744,7 @@ Not a milestone phase: no full consistency read is required.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 20a` first. Recipes and images are never
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 20a` first. Recipes and images are never
 touched while the plan is updated; this phase's build does it.
 
 **Covered items.**

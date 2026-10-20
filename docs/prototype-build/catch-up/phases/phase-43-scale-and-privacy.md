@@ -137,7 +137,7 @@ Two claims the prototype has so far only narrated become things a presenter can 
    a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-15.0.4,US-15.0.6,US-13.3.1,FT-01.1,US-09.3.1,US-09.3.3,US-11.1.1,US-02.1.4,US-13.5.1,US-13.5.2,US-14.5.1,OQ-30,OQ-49
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.4,US-15.0.6,US-13.3.1,FT-01.1,US-09.3.1,US-09.3.3,US-11.1.1,US-02.1.4,US-13.5.1,US-13.5.2,US-14.5.1,OQ-30,OQ-49
    ```
 
    Read the hunks (if any), and the domain-model lines on Slots, the horizon, the List states,
@@ -994,7 +994,7 @@ running app.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 43` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 43` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

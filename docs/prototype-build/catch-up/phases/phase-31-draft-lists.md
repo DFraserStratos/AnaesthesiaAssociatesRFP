@@ -162,7 +162,7 @@ and planning word, so this doc still says Slot for the record. "Not preferred" a
 1. Diff the covered and read-alongside items against the plan's snapshot (baseline `60e2d1e`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-07,FT-07.1,FT-01.6,US-01.6.1,US-01.6.2,US-01.6.3,US-01.6.4,US-13.1.1,US-01.3.1,FT-01.3,EP-01,US-01.3.2,US-01.5.2,US-01.5.3,US-01.5.4,US-01.5.5,US-01.1.1,US-01.3.5,US-01.3.6,US-01.3.3,US-01.4.2,US-01.4.3,US-01.4.5,US-01.4.7,US-02.1.2,US-02.5.2,US-13.6.3,US-13.6.4,US-13.5.2,US-06.3.5,US-06.5.4,OQ-44,OQ-64,OQ-81,OQ-86,OQ-84,OQ-27,OQ-17,OQ-43,OQ-102
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-07,FT-07.1,FT-01.6,US-01.6.1,US-01.6.2,US-01.6.3,US-01.6.4,US-13.1.1,US-01.3.1,FT-01.3,EP-01,US-01.3.2,US-01.5.2,US-01.5.3,US-01.5.4,US-01.5.5,US-01.1.1,US-01.3.5,US-01.3.6,US-01.3.3,US-01.4.2,US-01.4.3,US-01.4.5,US-01.4.7,US-02.1.2,US-02.5.2,US-13.6.3,US-13.6.4,US-13.5.2,US-06.3.5,US-06.5.4,OQ-44,OQ-64,OQ-81,OQ-86,OQ-84,OQ-27,OQ-17,OQ-43,OQ-102
    ```
 
    Also run the whole-catalogue diff from ROADMAP.md "When the catalogue changes" and scan it for new
@@ -1606,7 +1606,7 @@ same session:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 31` first: earlier phases (17, 28, 29, 30)
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 31` first: earlier phases (17, 28, 29, 30)
 change several of these recipes before this one runs. This phase covers all of EP-01 and EP-07 (the
 List lifecycle), so the table lists every EP-01 and EP-07 story the tool lists (EP-07's are owned by
 later phases or already match, and only need the ACTIVE wording checked), plus FT-07.1 and FT-01.6 (features the tool does not list;

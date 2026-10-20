@@ -18,8 +18,8 @@ export const meta = {
  *   answered     answered question IDs (index.json "answeredQuestions")
  *   repo         repo root, absolute (default: paths stay relative to the agents' working directory, the repo root)
  *   req          catalogue folder relative to the repo (default requirements-board/requirements)
- *   project      one line naming the system, e.g. "the Acme booking and billing system"
- *   owner        who outranks everything, e.g. "Donald (product owner)" (default "the product owner")
+ *   project      one line naming the system, e.g. "the Acme order management system"
+ *   owner        who outranks everything, e.g. "Sam (product owner)" (default "the product owner")
  *   levels       [{id, desc}] highest authority first (default: owner, meeting, doc, catalogue, original)
  *   fixedRulings strings: settled rulings that must appear as F-1, F-2 ... (never re-litigated)
  *   topics       suggested topic names (optional; the extractors invent short ones when absent)

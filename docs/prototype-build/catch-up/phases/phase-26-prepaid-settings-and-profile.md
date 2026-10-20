@@ -48,7 +48,7 @@ No S1 to S5 figure moves.
 1. Run the catalogue diff against the plan's baseline, catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-12.1,US-12.1.1,US-12.1.2,US-12.1.4,US-12.2.2,US-08.4.5,FT-06.1,OQ-14,OQ-52
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-12.1,US-12.1.1,US-12.1.2,US-12.1.4,US-12.2.2,US-08.4.5,FT-06.1,OQ-14,OQ-52
    ```
 
    If an item changed after `d4db277`, re-read it whole and adjust the work items. If one is now Retired or Future, drop its work and say so in
@@ -237,7 +237,7 @@ No scripted figure changes. Patch in the same session, and the matching sections
 ## Catalogue screenshots
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after the review pass and before the PROGRESS entry.
-Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 26` first.
+Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 26` first.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|

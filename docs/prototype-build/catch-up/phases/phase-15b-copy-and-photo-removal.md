@@ -103,7 +103,7 @@ List as superseded.
 1. Run the catalogue diff since this plan's baseline (`60e2d1e`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-02.4.1,US-02.4.2,US-02.4.3,US-02.4.4,FT-02.4,US-03.2.3,FT-03.2,EP-07,FT-07.1,FT-01.6,US-01.6.1,US-01.6.2
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.4.1,US-02.4.2,US-02.4.3,US-02.4.4,FT-02.4,US-03.2.3,FT-03.2,EP-07,FT-07.1,FT-01.6,US-01.6.1,US-01.6.2
    ```
 
    Read the hunks for those items and the domain-model's Booking section (its Sources bullet), the
@@ -599,7 +599,7 @@ Not a milestone phase: no full consistency read is required.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 15b` first.
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 15b` first.
 
 **Covered items.** None: `recipe-status.mjs 15b` prints "no stories covered", because the phase covers
 two reverse-check findings (RV-25, RV-36) and only removes Retired and Future surfaces and renames a

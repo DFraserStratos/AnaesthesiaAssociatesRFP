@@ -208,7 +208,7 @@ here is mobile, so there is no PWA stand-in.
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-13.4.1,US-11.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.4.1,US-11.4.1,US-13.4.2,US-13.4.3,FT-13.4,US-05.1.1,US-05.1.5,US-04.1.5,US-04.2.4,US-04.2.14,US-04.2.13,US-05.2.2,US-01.5.1,US-01.3.2,US-04.1.6,OQ-100,OQ-114,OQ-98,OQ-88,OQ-101,OQ-93
    ```
 
    At the 2026-10-20 update (`60e2d1e..d4db277`) these moved, and the plan already reflects them:
@@ -1303,7 +1303,7 @@ phase; it adds one optional beat and refreshes the master-data lines:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 42` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 42` first: earlier phases may have
 changed these recipes. The catalogue has already refreshed US-13.4.1's captions (priority tier,
 recurring bookings, contact email, availability statuses); the one stale shot is US-11.4.1's, whose
 screen advertises a default Type 1 on the direct-claims flag.

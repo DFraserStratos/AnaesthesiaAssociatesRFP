@@ -454,7 +454,7 @@ Patch the beats this phase moves, in the same session, in `docs/demo-guide/` and
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 14` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 14` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
@@ -482,7 +482,7 @@ capture set to a clean baseline, whatever the stories it covers:
    plan time: "Not built yet: catch-up Phase NN builds this" for the phase that builds the story, and
    "Not planned: ..." for US-04.3.6, US-14.6.1 and US-14.6.2 (Future Work, in no phase). The phase that
    builds a story upgrades its placeholder. If the catalogue gained live stories since, add the same
-   kind of placeholder (find them with `node docs/prototype-build/catch-up/tools/recipe-status.mjs`
+   kind of placeholder (find them with `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs`
    for every phase and look for "none (create it)").
 3. **Then the full capture run**, so `REPORT.md` is a true baseline: record its counts (captured,
    partial, absent, failed, no recipe) in the PROGRESS entry as the "before" figures that later phases

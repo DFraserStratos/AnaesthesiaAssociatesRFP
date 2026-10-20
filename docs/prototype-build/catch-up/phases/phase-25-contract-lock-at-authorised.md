@@ -203,7 +203,7 @@ it for the owner.
    never a plain `git diff` of the catalogue folder), and read it for this phase's items:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-04.1.6,US-04.1.3,US-04.1.2,US-04.2.10,US-04.2.13,US-04.3.5,US-07.3.1,US-08.1.1,US-08.4.4,US-15.0.3,US-07.3.2,US-05.3.5,US-05.2.6,US-12.1.1,US-08.5.1,US-08.5.2,US-13.3.2,US-04.2.2,US-04.2.8,US-01.4.6,US-06.5.4,OQ-05,OQ-48,OQ-78,OQ-80,OQ-89,OQ-90,OQ-100,OQ-104
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.1.6,US-04.1.3,US-04.1.2,US-04.2.10,US-04.2.13,US-04.3.5,US-07.3.1,US-08.1.1,US-08.4.4,US-15.0.3,US-07.3.2,US-05.3.5,US-05.2.6,US-12.1.1,US-08.5.1,US-08.5.2,US-13.3.2,US-04.2.2,US-04.2.8,US-01.4.6,US-06.5.4,OQ-05,OQ-48,OQ-78,OQ-80,OQ-89,OQ-90,OQ-100,OQ-104
    ```
 
    - Check the covered items, and the ones this phase leans on: `US-07.3.2`, `US-05.3.5`, `US-05.2.6`
@@ -1115,7 +1115,7 @@ scenario text:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 25` first: earlier phases (18 above all)
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 25` first: earlier phases (18 above all)
 may have changed these recipes since this plan was written. This step absorbs work item 16's
 capture-recipe work; do it here, not twice. Replace any caption that describes the old model (a
 default Contract, a fallback, Type 1/2/3, the route, "resolve and retry" restoring a Contract).

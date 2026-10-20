@@ -77,7 +77,7 @@ one place in `aa-prototype/src/domain/billing` as the earlier phases left it.
    Node 22.18 or newer):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-02.1.5,FT-14.6,US-02.2.1,FT-02.1,FT-02.2,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.5.7,US-03.1.9,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.1.2,FT-14.1,FT-14.2,FT-14.3,FT-14.5,US-14.5.1,OQ-13,OQ-34,OQ-78,OQ-99,OQ-108,OQ-109
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-02.1.5,FT-14.6,US-02.2.1,FT-02.1,FT-02.2,US-02.1.1,US-02.1.2,US-02.1.3,US-02.1.4,US-02.5.7,US-03.1.9,US-04.3.3,US-04.3.4,US-04.3.6,US-11.2.2,US-11.1.2,FT-14.1,FT-14.2,FT-14.3,FT-14.5,US-14.5.1,OQ-13,OQ-34,OQ-78,OQ-99,OQ-108,OQ-109
    ```
 
    This doc reflects the catalogue at `d4db277` (2026-10-20): US-02.1.5 gained the cadence note (one
@@ -679,7 +679,7 @@ block, the workflows, the personas, the readiness snapshot and the Direct URLs):
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 34` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 34` first: earlier phases may have
 changed these recipes since this plan was written (Phase 33 may leave a partial US-02.1.5 recipe, and
 re-points the matching shots this phase moves). The harness bar is hidden in shots, so the bar-only state
 (Simulate sync) is staged with the runner's `trigger` step on

@@ -102,7 +102,7 @@ written) and [AR-29#billable-party](../../../../requirements-board/requirements/
    folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-04.2.8,FT-08.4,US-08.4.1,US-08.4.2,US-08.4.5,US-08.2.3,US-09.1.4,US-04.2.12,US-08.4.6,US-05.2.7,US-11.4.1,US-11.2.2,US-08.4.3,FT-08.2,US-08.2.1,FT-09.1,US-08.6.3,US-08.6.4,OQ-29,OQ-42,OQ-60,OQ-68,OQ-23,OQ-67,OQ-73,OQ-78
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-04.2.8,FT-08.4,US-08.4.1,US-08.4.2,US-08.4.5,US-08.2.3,US-09.1.4,US-04.2.12,US-08.4.6,US-05.2.7,US-11.4.1,US-11.2.2,US-08.4.3,FT-08.2,US-08.2.1,FT-09.1,US-08.6.3,US-08.6.4,OQ-29,OQ-42,OQ-60,OQ-68,OQ-23,OQ-67,OQ-73,OQ-78
    ```
 
    The plan already reflects the catalogue at d4db277: US-04.2.12 Retired and US-08.2.3 rewritten
@@ -811,7 +811,7 @@ sheet's Split billing and money sections) and the S3 scenario text in `DemoContr
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 22` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 22` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

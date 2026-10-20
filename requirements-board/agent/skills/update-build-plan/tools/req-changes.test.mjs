@@ -1,0 +1,144 @@
+// node --test <tools>/req-changes.test.mjs
+// A scratch git repository: the catalogue in an older layout, then moved to the board's layout with a
+// small edit. Only the edited files may come back as changed.
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { requirementChanges as changesIn, layoutsOf } from './req-changes.mjs'
+
+const OLD = 'docs/old requirements'
+const NEW = 'requirements-board/requirements'
+// The plan config's view: the board's folder, then the older layout it moved from.
+const LAYOUTS = layoutsOf({ requirements: NEW, olderCatalogues: [{ root: OLD, items: 'catalogue/requirements', questions: 'catalogue/questions', notes: 'catalogue/notes' }] })
+const requirementChanges = opts => changesIn({ ...opts, layouts: LAYOUTS })
+const body = (id, extra = '') => `---\nid: ${id}\nstatus: Confirmed\n---\n\n${Array.from({ length: 12 }, (_, i) => `Line ${i + 1} of ${id}.`).join('\n')}\n${extra}`
+
+function scratch() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'req-changes-'))
+  const git = (...a) => execFileSync('git', a, { cwd: dir, encoding: 'utf8' })
+  const write = (rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text) }
+  const commit = msg => { git('add', '-A'); git('-c', 'user.name=T', '-c', 'user.email=t@x', 'commit', '-q', '-m', msg); return git('rev-parse', 'HEAD').trim() }
+  git('init', '-q')
+  for (const id of ['EP-01', 'FT-01.1', 'US-01.1.1']) write(`${OLD}/catalogue/requirements/${id}.md`, body(id))
+  write(`${OLD}/catalogue/questions/OQ-01.md`, body('OQ-01'))
+  write(`${OLD}/catalogue/notes/2026-10-01-meeting.md`, body('note', '[t](<../../../Meeting Recordings/T.md>)\n'))
+  write(`${OLD}/changes/2026-10-01-update.md`, body('log', '[US](../catalogue/requirements/US-01.1.1.md)\n'))
+  write(`${OLD}/domain-model.md`, body('dm'))
+  const baseline = commit('baseline')
+  // The move: one commit, every file renamed, link paths fixed, and one real edit.
+  fs.mkdirSync(path.join(dir, 'requirements-board'), { recursive: true })
+  git('mv', `${OLD}/catalogue`, NEW)
+  git('mv', `${NEW}/requirements`, `${NEW}/stories`)
+  git('mv', `${OLD}/changes`, `${NEW}/changes`)
+  git('mv', `${OLD}/domain-model.md`, `${NEW}/domain-model.md`)
+  write(`${NEW}/notes/2026-10-01-meeting.md`, body('note', '[t](<../artifacts/files/T.md>)\n'))
+  write(`${NEW}/changes/2026-10-01-update.md`, body('log', '[US](../stories/US-01.1.1.md)\n'))
+  write(`${NEW}/stories/FT-01.1.md`, body('FT-01.1', 'A real edit.\n'))
+  return { dir, git, write, commit, baseline }
+}
+
+test('a move counts nothing as changed but the edited item, before and after it is committed', () => {
+  const s = scratch()
+  for (const to of [null, s.commit('move')]) {
+    const c = requirementChanges({ cwd: s.dir, from: s.baseline, to })
+    assert.deepEqual(c.items.map(i => [i.id, i.change]), [['FT-01.1', 'M']], `to ${to}`)
+    assert.equal(c.items[0].file, `${NEW}/stories/FT-01.1.md`)
+    assert.equal(c.items[0].was, `${OLD}/catalogue/requirements/FT-01.1.md`)
+    assert.deepEqual(c.questions, [])
+    assert.deepEqual(c.notesAdded, [])
+    assert.deepEqual(c.changeLogsAdded, [])
+    assert.deepEqual(c.domainModel, [])
+  }
+})
+
+test('a log rewritten past git\'s similarity threshold is still not new', () => {
+  const s = scratch()
+  s.write(`${NEW}/changes/2026-10-01-update.md`, 'entirely different\n')
+  const c = requirementChanges({ cwd: s.dir, from: s.baseline, to: s.commit('move') })
+  assert.deepEqual(c.changeLogsAdded, [])
+})
+
+test('deletions, new items, new notes and logs, and domain-model edits show, in either layout', () => {
+  const s = scratch()
+  const moved = s.commit('move')
+  s.git('rm', '-q', `${NEW}/stories/US-01.1.1.md`)
+  s.write(`${NEW}/stories/US-01.1.2.md`, body('US-01.1.2'))
+  s.write(`${NEW}/questions/OQ-02.md`, body('OQ-02'))
+  s.write(`${NEW}/notes/2026-10-09-new.md`, body('new note'))
+  s.write(`${NEW}/changes/2026-10-09-update.md`, body('new log'))
+  s.write(`${NEW}/domain-model.md`, body('dm', 'Changed.\n'))
+  const working = requirementChanges({ cwd: s.dir, from: s.baseline })
+  const ids = c => c.items.map(i => `${i.id}:${i.change}`).sort()
+  assert.deepEqual(ids(working), ['FT-01.1:M', 'US-01.1.1:D', 'US-01.1.2:A'])
+  assert.deepEqual(working.questions.map(q => `${q.id}:${q.change}`), ['OQ-02:A'])
+  assert.deepEqual(working.notesAdded, [`${NEW}/notes/2026-10-09-new.md`])
+  assert.deepEqual(working.changeLogsAdded, [`${NEW}/changes/2026-10-09-update.md`])
+  assert.equal(working.domainModel.length, 1)
+  // The deleted item is reported at its baseline (old-layout) path.
+  assert.equal(working.items.find(i => i.id === 'US-01.1.1').file, `${OLD}/catalogue/requirements/US-01.1.1.md`)
+  // A range that starts after the move reads the new layout alone.
+  const after = requirementChanges({ cwd: s.dir, from: moved, to: s.commit('more') })
+  assert.deepEqual(ids(after), ['US-01.1.1:D', 'US-01.1.2:A'])
+})
+
+test('substance ignores evidence links, order, lanes, images and link markup, but not status or text', async () => {
+  const { substance } = await import('./req-changes.mjs')
+  const a = '---\nid: US-1\nstatus: Verify\nsources:\n  - "Notes #1"\norder: 2\n---\n\nSee [the Contract](US-04.1.1) for detail.\n'
+  const b = '---\nid: US-1\nstatus: Verify\nsources:\n  - "Notes #1"\n  - OQ-04\norder: 3\nartifacts:\n  - AR-28#x\nimages:\n  - src: a.png\n---\n\nSee the Contract for detail.\n'
+  assert.equal(substance(a), substance(b))
+  assert.notEqual(substance(a), substance(a.replace('Verify', 'Confirmed')))
+  assert.notEqual(substance(a), substance(a.replace('for detail', 'for the detail')))
+})
+
+test('substance reads a recoded status as today\'s code: a relabel is no change, a real move is', async () => {
+  const { substance } = await import('./req-changes.mjs')
+  const recodes = [{ date: '2026-10-20', items: { Confirmed: '4', Future: '1', Proposed: '1' }, questions: { Answered: '4' } }]
+  const old = '---\nid: US-1\nstatus: Confirmed\n---\nText.\n'
+  assert.equal(substance(old, recodes), substance(old.replace('Confirmed', '4'), recodes))
+  assert.equal(substance(old.replace('Confirmed', 'Future'), recodes), substance(old.replace('Confirmed', '1'), recodes))
+  assert.notEqual(substance(old.replace('Confirmed', 'Proposed'), recodes), substance(old.replace('Confirmed', '4'), recodes))
+  const q = '---\nid: OQ-1\nstatus: Answered\n---\nWhy?\n'
+  assert.equal(substance(q, recodes, 'question'), substance(q.replace('Answered', '4'), recodes, 'question'))
+})
+
+test('the scope rule drops retired items, out-of-scope lanes and features whose live stories are all there', async () => {
+  const { outOfScopeRule } = await import('./scope.mjs')
+  const recodes = [{ date: 'd', items: { Retired: '6' }, questions: {} }]
+  const items = {
+    'EP-01': { id: 'EP-01', parent: null, status: '1' },
+    'FT-01.1': { id: 'FT-01.1', parent: 'EP-01', status: '1' },
+    'US-01.1.1': { id: 'US-01.1.1', parent: 'FT-01.1', status: '1', swimlane: 'Future Work' },
+    'US-01.1.2': { id: 'US-01.1.2', parent: 'FT-01.1', status: 'Retired' },
+    'FT-01.2': { id: 'FT-01.2', parent: 'EP-01', status: '4' },
+    'US-01.2.1': { id: 'US-01.2.1', parent: 'FT-01.2', status: '4' },
+    'EP-02': { id: 'EP-02', parent: null, status: '6' },
+    'US-02.0.1': { id: 'US-02.0.1', parent: 'EP-02', status: '4' },
+  }
+  const out = outOfScopeRule(items, recodes, '6', ['Future Work'])
+  assert.deepEqual(Object.keys(items).filter(out), ['FT-01.1', 'US-01.1.1', 'US-01.1.2', 'EP-02', 'US-02.0.1'])
+})
+
+test('with no out-of-scope lanes, only retired items drop', async () => {
+  const { outOfScopeRule } = await import('./scope.mjs')
+  const items = {
+    'FT-01.1': { id: 'FT-01.1', parent: null, status: '1' },
+    'US-01.1.1': { id: 'US-01.1.1', parent: 'FT-01.1', status: '1', swimlane: 'Future Work' },
+  }
+  assert.deepEqual(Object.keys(items).filter(outOfScopeRule(items, [], '6')), [])
+})
+
+test('phase status: the progress file wins; without one, status.json lists done and in-progress phases', async () => {
+  const { phaseStatus } = await import('./config.mjs')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'plan-status-'))
+  fs.mkdirSync(path.join(dir, 'plan'))
+  fs.writeFileSync(path.join(dir, 'plan/status.json'), JSON.stringify({ done: ['01'], in_progress: ['02'] }))
+  const bare = phaseStatus({ plan: 'plan', progress: null, firstPhase: '01' }, dir)
+  assert.deepEqual([bare.built, bare.inProgress, bare.keepBaseline], [['01'], ['02'], ['01', '02']])
+  fs.writeFileSync(path.join(dir, 'PROGRESS.md'), '| 05 | Old | DONE | 2026-07-01 |\n| 14 | New | DONE | 2026-10-02 |\n| 15 | Next | IN PROGRESS | |\n### Catch-up Phase 16 · Built\n')
+  const s = phaseStatus({ plan: 'plan', progress: 'PROGRESS.md', firstPhase: '14' }, dir)
+  assert.deepEqual([s.built, s.inProgress, s.builtByEntry, s.keepBaseline], [['14', '16'], ['15'], ['16'], ['14', '15']])
+  assert.equal(s.doneDate.get('14'), '2026-10-02')
+})

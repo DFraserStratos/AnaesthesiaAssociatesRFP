@@ -8,8 +8,8 @@ import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { applyChanges, canParent, driftFrom, invertChanges, laneListProblem, type Change } from '../shared/move.ts'
 import { isArtifactId, itemLinkTargets } from '../shared/links.ts'
 import { UNASSIGNED_LANE, firstLaneName, type Artifact, type ArtifactRec, type CatalogueEvent, type Issue, type Item, type ItemStatus, type ItemType, type Layout, type Question, type Rev } from '../shared/types.ts'
-import { DEFAULT_CONFIG, componentNames, type BoardConfig } from '../shared/config.ts'
-import { isOpenQuestion, isRetired, statusCodes, type StatusDef } from '../shared/statuses.ts'
+import { DEFAULT_CONFIG, componentNames, type BoardConfig, type ConfigPatch } from '../shared/config.ts'
+import { isOpenQuestion, isRetired, statusCodes } from '../shared/statuses.ts'
 import { ApiError, api } from './api.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
@@ -42,7 +42,7 @@ interface CatalogueState {
   applyEvent: (e: CatalogueEvent) => void
   saveItem: (item: Item, baseRev?: string) => Promise<Rev<Item>>
   /** Replace the item and/or question status lists in board.config.json (the Settings page). */
-  saveStatuses: (patch: { statuses?: StatusDef[]; questionStatuses?: StatusDef[] }) => Promise<void>
+  saveConfig: (patch: ConfigPatch) => Promise<void>
   createItem: (partial: Partial<Item> & Pick<Item, 'type'>) => Promise<Rev<Item>>
   saveQuestion: (q: Question, baseRev?: string) => Promise<Rev<Question>>
   createQuestion: (partial: Partial<Question>) => Promise<Rev<Question>>
@@ -157,7 +157,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     set({ items: { ...get().items, [rec.data.id]: rec } })
     return rec
   },
-  async saveStatuses(patch) {
+  async saveConfig(patch) {
     const config = await api.putConfig(patch)
     set({ config })
     dropUnknownStatuses(config)

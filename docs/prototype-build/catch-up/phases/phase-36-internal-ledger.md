@@ -222,7 +222,7 @@ read the same after the change, and a parity test proves it.
    folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-08,FT-08.3,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-08.3.1,US-08.3.3,US-08.4.3,US-09.1.1,US-09.1.3,US-09.1.4,US-09.2.1,US-10.1.2,US-10.2.1,US-10.2.5,US-10.2.6,US-10.2.7,FT-10.2,FT-10.3,US-10.3.1,US-10.3.2,US-10.3.3,FT-13.2,US-13.2.2,US-11.3.1,US-11.3.2,US-11.3.3,US-05.3.5,FT-06.3,US-06.2.2,US-06.3.1,US-06.4.1,US-06.5.4,FT-06.5,US-06.5.1,FT-09.1,US-01.4.7,US-06.3.5,US-08.2.2,US-13.5.2,US-13.2.3,OQ-111,OQ-115,OQ-70,OQ-73,OQ-60,OQ-61,OQ-71,OQ-76,OQ-02,OQ-03,OQ-05,OQ-30,OQ-40,OQ-42,OQ-29,OQ-47,OQ-80
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-08,FT-08.3,US-08.3.2,US-08.3.4,US-08.3.5,US-13.2.1,US-08.3.1,US-08.3.3,US-08.4.3,US-09.1.1,US-09.1.3,US-09.1.4,US-09.2.1,US-10.1.2,US-10.2.1,US-10.2.5,US-10.2.6,US-10.2.7,FT-10.2,FT-10.3,US-10.3.1,US-10.3.2,US-10.3.3,FT-13.2,US-13.2.2,US-11.3.1,US-11.3.2,US-11.3.3,US-05.3.5,FT-06.3,US-06.2.2,US-06.3.1,US-06.4.1,US-06.5.4,FT-06.5,US-06.5.1,FT-09.1,US-01.4.7,US-06.3.5,US-08.2.2,US-13.5.2,US-13.2.3,OQ-111,OQ-115,OQ-70,OQ-73,OQ-60,OQ-61,OQ-71,OQ-76,OQ-02,OQ-03,OQ-05,OQ-30,OQ-40,OQ-42,OQ-29,OQ-47,OQ-80
    ```
 
    Look for changes to EP-08, FT-08.3, US-08.3.1, US-08.3.2, US-08.3.4, US-08.3.5 and US-13.2.1, and to the items
@@ -1383,7 +1383,7 @@ Patch these in the same session, in `docs/demo-guide/` and the matching sections
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 36` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 36` first: earlier phases may have
 changed these recipes since this plan was written (Phases 22, 25 and 27 change several of the
 invoice and billing shots below, and other agents may have left placeholder `absent` recipes). Work item 19 holds the
 short list; this section is its full form and replaces its "do not edit" wording. The harness bar is hidden

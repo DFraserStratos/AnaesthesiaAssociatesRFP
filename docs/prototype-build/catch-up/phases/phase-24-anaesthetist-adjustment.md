@@ -100,7 +100,7 @@ source).
 1. **Diff the catalogue** against the plan's baseline, catalogue commit `d4db277`:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.2,US-05.2.5,US-05.2.6,US-05.4.3,US-04.2.2,FT-03.5,US-03.5.1,US-03.5.2,FT-05.4,US-05.4.1,US-05.4.2,US-05.2.1,US-05.2.7,OQ-107,OQ-16,OQ-89,OQ-96
    ```
 
    The plan already reflects d4db277: the one rule on Procedure values (FT-05.2), the per-Contract
@@ -498,7 +498,7 @@ Phase 44 re-scripts these asides into the rewritten run sheet.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry, at the end of each session for what it changed.
-Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 24` first: 19a renames the US-05.2.6
+Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 24` first: 19a renames the US-05.2.6
 shot and re-points US-04.2.2 and US-05.2.5 before this phase runs.
 
 | Item | Recipe at plan time | When this phase is done |

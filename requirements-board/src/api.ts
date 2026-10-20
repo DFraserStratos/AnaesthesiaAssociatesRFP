@@ -1,7 +1,6 @@
 /** Thin client for the dev-server file API (server/cataloguePlugin.ts). */
-import type { BoardConfig } from '../shared/config.ts'
+import type { BoardConfig, ConfigPatch } from '../shared/config.ts'
 import type { TimelineEntry } from '../shared/history.ts'
-import type { StatusDef } from '../shared/statuses.ts'
 import type { Artifact, ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
 
 export interface BatchChange {
@@ -55,7 +54,7 @@ export const api = {
   /** All or nothing: every record must still be at its baseRev (a Mapped board move). */
   batchItems: (changes: BatchChange[]) => call<{ records: Rev<Item>[] }>('POST', '/api/items/batch', { changes }),
   /** Positions are a patch (null puts a card back in its story-map place); lanes, when sent, replace the list. */
-  putConfig: (patch: { statuses?: StatusDef[]; questionStatuses?: StatusDef[] }) => call<BoardConfig>('PUT', '/api/config', patch),
+  putConfig: (patch: ConfigPatch) => call<BoardConfig>('PUT', '/api/config', patch),
   putLayout: (patch: { positions?: Record<string, { x: number; y: number } | null>; lanes?: string[]; firstLane?: string | null }) => call<Layout>('PUT', '/api/layout', patch),
 }
 

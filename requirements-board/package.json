@@ -1,7 +1,7 @@
 {
   "name": "requirements-board",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
@@ -20,7 +20,9 @@
     "links:apply": "node scripts/apply-links.ts",
     "artifact:new": "node scripts/new-artifact.ts",
     "source": "node scripts/resolve-source.ts",
-    "statuses:recode": "node scripts/recode-statuses.ts"
+    "statuses:recode": "node scripts/recode-statuses.ts",
+    "install-skills": "node scripts/install-skills.ts",
+    "kit:export": "node scripts/export-kit.ts"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",

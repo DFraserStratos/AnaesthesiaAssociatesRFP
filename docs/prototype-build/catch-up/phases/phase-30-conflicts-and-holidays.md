@@ -124,7 +124,7 @@ This phase:
 1. Diff the catalogue for this phase's items against the plan's snapshot (baseline `60e2d1e`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-01.5,US-01.5.1,US-01.5.2,US-01.5.4,US-01.3.2,US-01.5.3,US-01.5.5,US-01.1.1,US-01.1.2,FT-01.1,US-01.4.1,FT-01.3,US-01.3.1,FT-01.6,US-01.6.1,EP-07,FT-07.1,US-13.4.1,OQ-09,OQ-17,OQ-27,OQ-43,OQ-64,OQ-81
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-01.5,US-01.5.1,US-01.5.2,US-01.5.4,US-01.3.2,US-01.5.3,US-01.5.5,US-01.1.1,US-01.1.2,FT-01.1,US-01.4.1,FT-01.3,US-01.3.1,FT-01.6,US-01.6.1,EP-07,FT-07.1,US-13.4.1,OQ-09,OQ-17,OQ-27,OQ-43,OQ-64,OQ-81
    ```
 
    It is rename-aware (the catalogue moved to `requirements-board/requirements/` after earlier
@@ -1045,7 +1045,7 @@ In the same session (each phase patches the beats it touches):
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 30` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 30` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

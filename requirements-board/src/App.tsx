@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, Settings } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Info, Settings } from 'lucide-react'
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { STARTER_PROJECT_NAME } from '../shared/config.ts'
 import { isOpenQuestion } from '../shared/statuses.ts'
 import type { CatalogueEvent } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
@@ -11,6 +12,7 @@ import { useOpen } from './nav.ts'
 import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
 import { useDismiss } from './useDismiss.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
+import { AboutView } from './views/AboutView.tsx'
 import { ArtifactPage } from './views/ArtifactPage.tsx'
 import { ArtifactsView } from './views/ArtifactsView.tsx'
 import { BoardView } from './views/BoardView.tsx'
@@ -82,6 +84,7 @@ export function App() {
             <Route path="/questions" element={<QuestionsView />} />
             <Route path="/outline" element={<OutlineView />} />
             <Route path="/settings" element={<SettingsView />} />
+            <Route path="/about" element={<AboutView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
         )}
@@ -103,12 +106,14 @@ function Masthead({ connected }: { connected: boolean }) {
   const layoutError = useCatalogue((s) => s.layoutError)
   const moveError = useCatalogue((s) => s.moveError)
   const clearMoveError = useCatalogue((s) => s.clearMoveError)
-  const project = useConfig().project.name
+  const config = useConfig()
+  const project = config.project.name
+  const board = config.board.name
   const [showIssues, setShowIssues] = useState(false)
   const checksRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
-    document.title = project ? `${project} · Requirements board` : 'Requirements board'
-  }, [project])
+    document.title = project ? `${project} · ${board}` : board
+  }, [project, board])
   const openCount = index.questions.filter((q) => isOpenQuestion(index.config, q)).length
   const errors = issues.filter((i) => i.severity === 'error').length
   const warnings = issues.length - errors
@@ -117,7 +122,7 @@ function Masthead({ connected }: { connected: boolean }) {
     <header className="masthead">
       <div className="brand">
         <BrandMark />
-        <span className="brand-name">Requirements board</span>
+        <span className="brand-name">{board}</span>
         {project && (
           <span className="brand-project" title={project}>
             {project}
@@ -159,6 +164,15 @@ function Masthead({ connected }: { connected: boolean }) {
           {errors ? `${errors} error${errors > 1 ? 's' : ''}` : 'Checks pass'}
           {warnings > 0 && <span className="mono">· {warnings} note{warnings > 1 ? 's' : ''}</span>}
         </button>
+        {/* Until the project is named, a new team is pointed at the guide. */}
+        {(!project || project === STARTER_PROJECT_NAME) && (
+          <NavLink className="btn ghost sm start-here" to="/about">
+            Start here
+          </NavLink>
+        )}
+        <NavLink className="btn icon ghost settings-link" to="/about" title="How to use this board" aria-label="About this board">
+          <Info size={16} />
+        </NavLink>
         <NavLink className="btn icon ghost settings-link" to="/settings" title="Settings" aria-label="Settings">
           <Settings size={16} />
         </NavLink>

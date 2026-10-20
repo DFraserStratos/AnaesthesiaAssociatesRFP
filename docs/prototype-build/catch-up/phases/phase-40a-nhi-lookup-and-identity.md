@@ -108,7 +108,7 @@ external system, so it is built from the seed by a pure function and never persi
    the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,US-11.2.2,US-02.4.1,FT-07.1,OQ-52,OQ-30,OQ-49
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-14.4,US-14.4.1,US-11.1.2,US-11.1.1,US-11.1.5,US-12.1.4,US-13.6.2,US-11.2.2,US-02.4.1,FT-07.1,OQ-52,OQ-30,OQ-49
    ```
 
    Read the hunks, and the domain-model lines on the NHI, the register refresh, the payer on the
@@ -685,7 +685,7 @@ not re-narrate the payer or the type-ahead.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 40a` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 40a` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

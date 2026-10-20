@@ -13,12 +13,16 @@ This folder is a **portable kit**, three parts:
   the domain model, `board.config.json`. Its `README.md` is the folder guide and conventions, its
   `SCHEMA.md` the file format. The app and any agent edit those same files;
 - **`agent/`**: the agent skills that maintain the catalogue (`skills/update-requirements`,
-  `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`,
+  `skills/update-build-plan`, `skills/add-artifact`, `skills/svg-diagram`, `skills/transcript-reconciler`,
   `skills/consistency-review`) and the `workflows/link-requirements.js`,
-  `workflows/consistency-rulings.js` and `workflows/consistency-changes.js` workflows. Claude Code finds them through relative symlinks in the
-  host repo's `.claude/skills/` (a real folder per skill, a symlink per file, so the `/` menu lists
-  them) and `.claude/workflows/`; edit the files here, not through the links.
-  Each skill keeps its few repo-specific facts in one "This repo" block.
+  `workflows/consistency-rulings.js` and `workflows/consistency-changes.js` workflows. Claude Code finds them in the
+  host repo's `.claude/skills/` and `.claude/workflows/`, put there by `npm run install-skills`: copies
+  by default (they work on any OS, zip or cloud drive), or with `-- --link` relative symlinks (a real
+  folder per skill, a symlink per file, so the `/` menu lists them). Edit the files here, never in
+  `.claude/`. This repo uses links; a shared kit uses copies.
+  Each skill keeps its few repo-specific facts in one "This repo" block. `update-build-plan` also
+  carries its scripts and workflows in `skills/update-build-plan/tools/`; a plan's own settings live
+  in its folder's `plan.config.json`, not in the kit.
 
 ```
 npm install
@@ -35,7 +39,12 @@ npm run links:apply  # apply verified link proposals from .links/ (-- --dry-run 
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
 npm run source       # where a source string points: artifact, file, page or lines (-- --item <ID> --text, -- --report)
 npm run capture      # screenshots of the project's app from recipes (optional; see Capturing screenshots)
+npm run install-skills # copy the skills and workflows into the repo root's .claude/ (merges with others; -- --link to symlink)
+npm run kit:export   # export the clean, shareable kit (-- --to "<folder>" [--dry-run]); see Sharing the board
 ```
+
+The board's About page (`/about`, the ⓘ in the masthead) explains the requirements loop and every
+skill for a new user; Settings (`/settings`) names the board and edits components and statuses.
 
 A host repo usually adds root scripts that call these (`ADOPTING.md`).
 
@@ -89,7 +98,7 @@ src/
                  useEditableRecord (edit/conflict/draft logic) + EditChrome (its banners, footer, orphaned draft), bits
 tests/         Vitest, on a synthetic fixture catalogue (plus a few that the project's catalogue, if any, is valid)
 requirements/  the project's requirements catalogue and board.config.json (see its README.md and SCHEMA.md)
-agent/         the agent skills and workflows that maintain it (symlinked from the host repo's .claude/)
+agent/         the agent skills and workflows that maintain it (installed into the host repo's .claude/)
 shots/         local-only Playwright scratch scripts (gitignored; some mutate the real catalogue)
 ```
 
@@ -185,6 +194,7 @@ gallery has one tab per app present, in that order; untagged images fall back to
 
 `requirements/board.config.json` holds what differs between projects. Every field is optional:
 
+- `board`: `name`, the board's own name in the masthead and the tab title (default "Requirements board");
 - `project`: `name` (beside the board's name and in the tab title) and `locale` (dates and times;
   unset uses the browser's);
 - `components`: `[{ "name", "code" }]`, the areas items belong to, in order; `code` is the card
@@ -192,13 +202,14 @@ gallery has one tab per app present, in that order; untagged images fall back to
   name goes and the filters offer the ones in use;
 - `screenshotApps`: `[{ "key", "label", "viewport" }]`, the apps screenshots come from. Keys are in
   file names and item frontmatter, so keep them stable;
-- `statuses` and `questionKinds`: `{ "<value>": { "label", "help" } }`, the wording beside each
-  item status and question kind (who signs off, what a missing source is). The values themselves
-  are fixed: the board's behaviour depends on them;
+- `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
+  (format in `SCHEMA.md`); files store only the number;
+- `questionKinds`: `{ "<kind>": { "label", "help" } }`, the wording beside each question kind;
 - `capture`: see Capturing screenshots.
 
 The server reads it with the catalogue and reloads it live; a malformed entry is reported by the
-check and left at its default.
+check and left at its default. The Settings page edits `board`, `project`, `components` and the two
+status lists, and leaves every other field as written.
 
 ### Capturing screenshots
 
@@ -274,6 +285,26 @@ conflicts; the `consistency-changes` workflow proposes exact edits. The skill's 
 result into a local review page where the user accepts or rejects each change, then apply the
 accepted edits. Its run folder lives outside the repo; nothing changes the catalogue before the
 user decides.
+
+## Sharing the board (the kit)
+
+`npm run kit:export -- --to "<folder>"` writes a clean copy for other teams, one folder,
+`<folder>/requirements-board/`: the board's code and skills, `START-HERE.html`, and the **starter
+catalogue** from `starter/requirements/`
+(cards that explain the board, a question and the loop diagram) in place of this project's. Each
+skill's "This repo" section is swapped for `starter/this-repo/<skill>.md`; this project's shared
+format files (`SCHEMA.md`, `notes/README.md`, `changes/README.md`) are copied as they are, so keep
+them project-neutral. The kit is built in a scratch folder and refused if any word in
+`starter/deny.txt` appears in it; only `requirements-board/` in the target is replaced (its
+`node_modules` is kept). `START-HERE.html` (from `starter/START-HERE.html`, the version and the
+loop diagram filled in) is a static page the recipient opens before anything runs: where the
+folder goes, one prompt that has Claude Code do the whole setup (install, `install-skills`, the
+CLAUDE.md section, the skills' `<TODO: ...>` placeholders, start the board), the same by hand, and
+troubleshooting. Starter "This repo" sections mark every fill-in as `<TODO: ...>`. `tests/starter.test.ts` keeps the starter valid and
+fails when a skill gains a "This repo" section with no starter version.
+
+Anything new for the board is built here first, then exported. Before each export, bump `version`
+in `package.json` (shown on the About and Settings pages) and add a line to `CHANGELOG.md`.
 
 ## Bring the board to another repo
 

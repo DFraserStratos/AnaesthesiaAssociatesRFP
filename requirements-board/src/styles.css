@@ -4219,3 +4219,445 @@ mark {
 .settings-link.active {
   color: var(--teal);
 }
+.start-here {
+  color: var(--teal);
+  font-weight: 600;
+}
+.settings-intro {
+  margin: -4px 2px 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.settings-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.settings-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-fields label > span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.settings-fields small {
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.status-table.component-table .status-tr {
+  grid-template-columns: 72px minmax(200px, 1fr) 120px 40px;
+}
+.status-table.component-table .input.mono {
+  width: 100%;
+  text-transform: uppercase;
+}
+.settings-version {
+  margin: 8px 2px 24px;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+.settings-version a {
+  color: var(--teal);
+}
+
+/* About: how to use the board. Calm tiles on the paper, the loop drawn as six cards round the
+   catalogue (the same layout as the starter's loop diagram), skill cards in a grid. */
+.page-inner.about {
+  max-width: 1120px;
+}
+.about-version {
+  font-size: 12px;
+  color: var(--ink-4);
+}
+.about-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: -8px 0 28px;
+  font-size: 13px;
+}
+.about-toc a,
+.about a {
+  color: var(--teal);
+}
+.about-section {
+  margin-bottom: 48px;
+  scroll-margin-top: 16px;
+}
+.about-section h2 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+.about-lede,
+.about-note {
+  margin: 0 0 16px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.about-note {
+  margin-top: 14px;
+}
+.about code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+}
+.about-three,
+.about-two {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.about-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.about-tile {
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.about-tile h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.about-tile p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.about-tile h3 + p {
+  margin-top: 0;
+}
+
+.loop {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    'sa . sb'
+    's1 s2 s3'
+    'hub hub hub'
+    's6 s5 s4';
+  gap: 22px 44px;
+  padding: 8px 0;
+}
+.loop-side-a { grid-area: sa; }
+.loop-side-b { grid-area: sb; }
+.loop-step-1 { grid-area: s1; }
+.loop-step-2 { grid-area: s2; }
+.loop-step-3 { grid-area: s3; }
+.loop-step-4 { grid-area: s4; }
+.loop-step-5 { grid-area: s5; }
+.loop-step-6 { grid-area: s6; }
+.loop-hub { grid-area: hub; }
+.loop-side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1.5px dashed var(--rule-strong);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.loop-side small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.loop-side strong {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+/* A side input points down into its step. */
+.loop-side::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  height: 22px;
+  border-left: 1.5px dashed var(--rule-strong);
+}
+.loop-step {
+  position: relative;
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow-tag);
+}
+.loop-step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.loop-step-head a {
+  font-family: var(--mono);
+  font-size: 14.5px;
+  text-decoration: none;
+}
+.loop-n {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-size: 13px;
+}
+.loop-step p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.loop-arrow {
+  position: absolute;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+}
+.loop-arrow-right { left: calc(100% + 10px); top: 50%; translate: 0 -50%; }
+.loop-arrow-left { right: calc(100% + 10px); top: 50%; translate: 0 -50%; }
+/* A side of the ring: a line in the catalogue's row, under step 3 (right) or step 6 (left), reaching
+   across the row gaps to the cards above and below. */
+.loop-rail {
+  grid-row: 3;
+  justify-self: center;
+  position: relative;
+  width: 2px;
+  margin: -22px 0;
+  background: var(--teal);
+}
+.loop-rail-right { grid-column: 3; }
+.loop-rail-left { grid-column: 1; }
+.loop-rail .loop-arrow {
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+.loop-hub {
+  /* Inside the ring: clear of the two sides, which run down the outer columns' middles. */
+  margin: 0 calc(100% / 6 + 28px);
+  padding: 18px 22px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+}
+.loop-hub h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.loop-hub p {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.loop-hub-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.loop-hub-pills span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  font-weight: 600;
+}
+.loop-return {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 72px;
+  translate: 0 -50%;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--ink-3);
+  text-align: right;
+}
+.about-now-and-then {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--rule-strong);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.about-now-and-then strong {
+  flex: none;
+  color: var(--ink);
+}
+
+.skill-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+.skill-card {
+  scroll-margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.skill-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.skill-card h3 {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--teal);
+}
+.skill-role {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.skill-card dl {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 8px 10px;
+  margin: 0;
+  font-size: 13px;
+}
+.skill-card dt {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  padding-top: 1px;
+}
+.skill-card dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+.skill-say {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.about-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.about-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 3px solid var(--ty);
+  border-radius: 4px;
+  background: var(--ty-tint);
+  font-size: 13px;
+}
+.about-tree-row strong {
+  color: var(--ty-ink);
+}
+.about-tree-row span {
+  color: var(--ink-2);
+}
+.about-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.about-lanes span {
+  padding: 8px 10px;
+  border: 1px dashed var(--rule-strong);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.about-statuses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.about-statuses li {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+.about-statuses .status {
+  justify-self: start;
+}
+.about-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+}
+.about-files dt {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.about-files dd {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+}
+.about-changelog {
+  max-width: 720px;
+}
+.about-changelog h2 {
+  font-size: 15px;
+}
+
+/* Narrow: the loop becomes a numbered list, the tiles a single column. */
+@media (max-width: 900px) {
+  .about-three,
+  .about-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .loop {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'sa' 's1' 's2' 'sb' 's3' 's4' 's5' 's6' 'hub';
+    gap: 12px;
+    padding: 0;
+  }
+  .loop-arrow,
+  .loop-rail,
+  .loop-side::after {
+    display: none;
+  }
+  .loop-hub {
+    margin: 0;
+  }
+  .about-now-and-then {
+    margin: 12px 0 0;
+  }
+}

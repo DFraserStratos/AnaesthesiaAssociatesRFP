@@ -185,7 +185,7 @@ documentation and a web-app sign-in stay presenter-narrated.
 1. Run the catalogue diff since the plan's baseline:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,FT-13.5,OQ-83,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-15.0.1,US-13.5.3,FT-13.5,OQ-83,US-15.0.2,US-03.1.2,US-03.1.9,US-03.1.8,FT-03.5,US-03.5.1,FT-03.4,US-03.4.1,FT-04.3,US-04.3.2,FT-03.3,US-03.3.4,US-03.3.8,US-11.2.2,US-04.2.2,US-08.2.3,US-13.6.3,US-01.3.6,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,FT-13.8,US-13.8.1,US-13.1.1,FT-01.6,US-07.2.2,EP-13,EP-15,OQ-49,OQ-60,OQ-78,OQ-79,OQ-86,OQ-89,OQ-90,OQ-93,OQ-95,OQ-96,OQ-102,OQ-103
    ```
 
    (it diffs from the baseline, `d4db277`, to the working tree; add `--to <ref>` to stop at a commit;
@@ -989,7 +989,7 @@ phases have rewritten these beats, so locate each passage by text):
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 43a` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 43a` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

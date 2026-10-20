@@ -106,7 +106,7 @@ are Phase 32a.
    `60e2d1e`; the tool is rename-aware, so never a plain git diff of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-01.4.3,US-01.4.5,US-01.5.5,FT-13.8,US-13.8.1,US-13.8.2,FT-01.4,US-01.4.1,US-01.4.2,US-01.4.7,US-01.5.2,US-01.3.5,US-01.3.6,US-13.6.3,US-13.6.4,FT-01.6,US-01.6.1,FT-07.1,US-02.3.3,US-06.3.5,US-06.5.4,FT-13.7,US-13.7.2,OQ-39,OQ-43,OQ-64,OQ-65,OQ-70,OQ-79,OQ-80,OQ-81,OQ-84,OQ-85,OQ-86,OQ-08
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-01.4.3,US-01.4.5,US-01.5.5,FT-13.8,US-13.8.1,US-13.8.2,FT-01.4,US-01.4.1,US-01.4.2,US-01.4.7,US-01.5.2,US-01.3.5,US-01.3.6,US-13.6.3,US-13.6.4,FT-01.6,US-01.6.1,FT-07.1,US-02.3.3,US-06.3.5,US-06.5.4,FT-13.7,US-13.7.2,OQ-39,OQ-43,OQ-64,OQ-65,OQ-70,OQ-79,OQ-80,OQ-81,OQ-84,OQ-85,OQ-86,OQ-08
    ```
 
    If an item changed, re-read it
@@ -985,7 +985,7 @@ consistency read are Phase 32a's; this phase patches its own beats:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 32` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 32` first: earlier phases may have
 changed these recipes since this plan was written. Work item 15 only re-points the Playwright specs
 and makes sure the `data-shot` hooks exist. The recipes and the capture run belong to this step.
 

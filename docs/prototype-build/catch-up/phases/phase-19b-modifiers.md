@@ -129,7 +129,7 @@ updates). Ellison's pinned $344.50 does not move: her A1 is now the pre-applied 
 
 ## Before you start: drift check
 
-1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.3,US-03.3.4,US-03.3.8,US-05.1.4,US-05.1.5,US-05.1.1,US-03.6.1,US-03.3.6,OQ-94,OQ-95`
    (the baseline is `d4db277`; the tool is rename-aware, so never a plain `git diff` of the catalogue
    folder) and read the hunks, plus the "Procedure" (Modifiers bullet) and "RVG groups, procedure
    list and modifier master" sections of `requirements-board/requirements/domain-model.md`. If an item
@@ -726,7 +726,7 @@ Patch these beats and lines, and the same sections of `master-demo-guide.html`, 
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 19b` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 19b` first: earlier phases may have
 changed these recipes since this plan was written. Stale captions describing the ASA seed, absorbed
 positioning or the demo modifier set are replaced here, by the phase that rebuilds the screen.
 

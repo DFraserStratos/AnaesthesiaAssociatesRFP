@@ -65,3 +65,32 @@ test('a status in use, or holding a required role, cannot be removed; the rules 
   await items(page).getByRole('button', { name: 'Discard changes' }).click()
   await expect(items(page).locator('.settings-problems')).toHaveCount(0)
 })
+
+test('naming the board and the project changes the masthead and the tab title, and nothing else', async ({ page }) => {
+  const board = page.locator('section[aria-label="Board"]')
+  await board.getByLabel('Board name').fill('Delivery board')
+  await board.getByLabel('Project').fill('Orders')
+  await board.getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('.brand-name')).toHaveText('Delivery board')
+  await expect(page.locator('.brand-project')).toHaveText('Orders')
+  await expect(page).toHaveTitle('Orders · Delivery board')
+  const saved = config() as unknown as { board: unknown; project: unknown; statuses?: unknown }
+  expect(saved.board).toEqual({ name: 'Delivery board' })
+  expect(saved.project).toEqual({ name: 'Orders' })
+})
+
+test('a component in use cannot be removed or renamed; a new one is saved', async ({ page }) => {
+  const comps = page.locator('section[aria-label="Components"]')
+  await expect(comps.getByRole('button', { name: 'Remove' }).first()).toBeDisabled()
+  await comps.getByRole('button', { name: 'Add component' }).click()
+  await comps.getByRole('textbox', { name: 'Name of new component' }).fill('Reporting')
+  await comps.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => (config() as unknown as { components: { name: string }[] }).components.map((c) => c.name)).toContain('Reporting')
+})
+
+test('the About page explains the loop and lists the live statuses', async ({ page }) => {
+  await page.goto('/#/about')
+  await expect(page.locator('.loop-step')).toHaveCount(6)
+  await expect(page.locator('.skill-card')).toHaveCount(7)
+  await expect(page.locator('#about-board .about-statuses').first().locator('.status')).toHaveCount(DEFAULT_ITEM_STATUSES.length)
+})

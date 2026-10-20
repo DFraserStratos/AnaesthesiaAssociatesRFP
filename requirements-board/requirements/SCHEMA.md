@@ -36,12 +36,12 @@ moves a file.
 id: US-01.1.1
 type: story
 parent: FT-01.1
-title: Two Lists per anaesthetist per day
+title: Two Pick Lists per warehouse per day
 status: 4
 components:
   - Scheduling Engine
 sources:
-  - "RFP p.14 · Schedule Management › List"
+  - "RFP p.14 · Fulfilment › Pick List"
   - "Q&A 2026-09-24 #7"
 order: 1
 swimlane: MVP
@@ -50,21 +50,21 @@ related:
 images: []
 ---
 
-The Scheduling Engine creates exactly two Lists, an AM and a PM List, for every active anaesthetist ...
+The Scheduling Engine creates exactly two Pick Lists, an AM and a PM Pick List, for every active warehouse ...
 
-This is so the admin team always have somewhere to make bookings.
+This is so the order team always have somewhere to place orders.
 
 ## Acceptance criteria
 
-- Given an active anaesthetist, when a day is generated, then they have one AM and one PM List.
+- Given an active warehouse, when a day is generated, then it has one AM and one PM Pick List.
 
 ## Technical discussion
 
-Lists are generated ahead by the Scheduling Engine, not on first view.
+Pick Lists are generated ahead by the Scheduling Engine, not on first view.
 
 ## Notes
 
-About 85 x 120 x 2 = 20,000 List records at current roster size.
+About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 ```
 
 | Field | Rule |
@@ -105,7 +105,7 @@ Any other frontmatter key is kept as-is by the board, so you can add fields with
 Any Markdown text (an item's description and sections, a question and its answer) can link to
 another record:
 
-- **A text link**: `[the anaesthetist's prepaid set](US-06.1.1)`, standard Markdown whose target
+- **A text link**: `[the customer's prepaid set](US-06.1.1)`, standard Markdown whose target
   is a record ID. The words stay as written; the board makes them open that card. Link the words
   that name the thing, not a whole sentence, and don't reword the text to fit a link.
 - **A bare ID** in running text, `(OQ-25)`, is a link too: the board shows it as the record's
@@ -123,12 +123,12 @@ in"), leaving out its own lineage and children, which the card already shows.
 When adding links (by hand or by an agent):
 
 - Link a phrase when another item **defines** the rule, concept or behaviour it names. US-06.2.1's
-  "RVG code in the anaesthetist's prepaid set" is defined by US-06.1.1, so it links there.
+  "product code in the customer's prepaid set" is defined by US-06.1.1, so it links there.
 - Link the most specific item (a story over its feature over its epic). Don't link an item to
   itself, its own parent or epic, or its own children. Don't link to a retired item, and don't edit
   retired items.
 - Link the first mention in each section only, and keep it to about four text links per item.
-- Leave everyday domain nouns (Booking, List, Procedure, Contract, anaesthetist) unlinked unless
+- Leave everyday domain nouns (Order, Pick List, Order line, Price list, customer) unlinked unless
   the sentence relies on the specific rule a particular item states.
 - Use `related` for items that are coupled but not named in the text: a setting and the rule that
   reads it (US-06.1.1 and US-06.2.1), a UI story and its engine story, one step and the step after it.
@@ -145,14 +145,14 @@ reader** after ` · ` or in brackets:
 
 | Source | Opens |
 | --- | --- |
-| `"RFP p.27 · Billing Engine › Contract holders"` | AR-15 at PDF page 28 (the RFP's `cited_as` adds `page_offset: 1`: its printed page runs one behind) |
+| `"RFP p.27 · Pricing Engine › Price list holders"` | AR-15 at PDF page 28 (the RFP's `cited_as` adds `page_offset: 1`: its printed page runs one behind) |
 | `"RFP response p.13 · Detailed Solution Design › ..."` | AR-36, page 13 |
-| `"Notes 2026-10-01 · AA meeting with Greg #16"` | the note `notes/2026-10-01-aa-meeting-with-greg.md` (its artifact) at point 16 |
+| `"Notes 2026-10-01 · Client meeting #16"` | the note `notes/2026-10-01-client-meeting.md` (its artifact) at point 16 |
 | `"Q&A 2026-09-24 #2 #3"` | AR-09, points 2 and 3 of its Q&A section (several points: one row, a link per point) |
-| `"Transcript 2026-10-01 · AA meeting with Greg (A) L27-33"` | that transcript, lines 27 to 33 |
-| `"Diagram: Billing route"` | the current drawing of it, AR-24 |
+| `"Transcript 2026-10-01 · Client meeting (A) L27-33"` | that transcript, lines 27 to 33 |
+| `"Diagram: Order route"` | the current drawing of it, AR-24 |
 | `OQ-62` | the question |
-| `"Typed decision 2026-10-05 · Donald (product owner)"` | nothing: plain text, as is `Audit ...`, a sketch, a decision |
+| `"Typed decision 2026-10-05 · Sam (product owner)"` | nothing: plain text, as is `Audit ...`, a sketch, a decision |
 
 - **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
   (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
@@ -176,9 +176,9 @@ reader** after ` · ` or in brackets:
 ---
 id: OQ-06
 kind: question
-title: Base units on RVG code or on Contract
+title: Base price on product code or on Price list
 status: 1
-owner: Donald
+owner: Sam
 affects:
   - US-04.2.3
   - US-05.1.1
@@ -186,7 +186,7 @@ sources:
   - "Q&A 2026-09-24 #2 #3"
 ---
 
-Recommendation: base units live on the RVG code master ...
+Recommendation: base prices live on the product code master ...
 
 ## Answer
 
@@ -216,9 +216,9 @@ title: How the system works out a price
 kind: diagram
 status: Current
 date: 2026-10-06
-author: Donald Fraser, drawn with the svg-diagram skill
+author: Sam Lee, drawn with the svg-diagram skill
 components:
-  - Billing/Invoice Engine
+  - Pricing/Invoice Engine
 sources:
   - "Q&A 2026-09-24 #2"
 cited_as:
@@ -235,11 +235,11 @@ regions:
     name: Rejected, never guessed
     around:
       - text=Rejected, never guessed
-      - text=• the contract is not valid on the procedure date
+      - text=• the price list is not valid on the order date
     pad: 10
 ---
 
-The four steps from a Procedure's inputs to a priced, invoiced line ...
+The four steps from an Order line's inputs to a priced, invoiced line ...
 ```
 
 | Field | Rule |
@@ -254,7 +254,7 @@ The four steps from a Procedure's inputs to a priced, invoiced line ...
 | `components` | Optional: the same vocabulary as an item's. |
 | `sources` | Where it came from, as for an item (`check` warns when empty). |
 | `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the region a source with no spot of its own opens). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already). See Sources above. |
-| `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-aa-meeting-with-greg.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
+| `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 
 Body: the description (Markdown, links work), then for a mermaid diagram a `## Source` section
@@ -280,7 +280,7 @@ holding one fenced ` ```mermaid ` block, which the board draws.
 
 Prefer anchors to boxes: they follow the drawing when it is redrawn, and `check` says when one stops
 matching. Documents also have spots of their own, which need no region: each PDF page (`p27`), each
-Markdown heading (its GitHub slug, `prepayment-cancellation-and-anaesthetist-reassignment`) and any
+Markdown heading (its GitHub slug, `prepayment-cancellation-and-order-reassignment`) and any
 range of lines (`L27-33`, or `L27` for one). A named region's id can't take one of those.
 
 ## Board layout file (`board-layout.json`)
@@ -313,25 +313,28 @@ Every field is optional; with no file the board runs on neutral defaults.
 
 ```json
 {
+  "board": { "name": "Requirements board" },
   "project": { "name": "Acme ordering", "locale": "en-GB" },
   "components": [{ "name": "Order engine", "code": "ORD" }, { "name": "Customer app" }],
   "screenshotApps": [{ "key": "web", "label": "Web", "viewport": "desktop" }, { "key": "phone", "label": "Phone", "viewport": "mobile" }],
   "statuses": [
-    { "code": "proposed", "label": "Proposed", "help": "Needs sign-off from Acme", "tone": "neutral", "role": "default" },
-    { "code": "open", "label": "Open", "help": "Waiting on an open question", "tone": "amber", "role": "waiting" },
-    { "code": "agreed", "label": "Agreed", "help": "Agreed with Acme", "tone": "green", "settle": true },
-    { "code": "retired", "label": "Retired", "help": "No longer wanted", "tone": "hatched", "role": "retired" }
+    { "code": 1, "label": "Proposed", "help": "Needs sign-off from Acme", "tone": "neutral", "role": "default" },
+    { "code": 2, "label": "Open", "help": "Waiting on an open question", "tone": "amber", "role": "waiting" },
+    { "code": 3, "label": "Agreed", "help": "Agreed with Acme", "tone": "green", "settle": true },
+    { "code": 4, "label": "Retired", "help": "No longer wanted", "tone": "hatched", "role": "retired" }
   ],
   "questionStatuses": [
-    { "code": "open", "label": "Open", "heading": "Open", "help": "Waiting for an answer", "tone": "amber", "role": "default" },
-    { "code": "answered", "label": "Answered", "heading": "Answered", "help": "Settled", "tone": "green", "role": "answered" }
+    { "code": 1, "label": "Open", "heading": "Open", "help": "Waiting for an answer", "tone": "amber", "role": "default" },
+    { "code": 2, "label": "Answered", "heading": "Answered", "help": "Settled", "tone": "green", "role": "answered" }
   ],
   "questionKinds": { "missing-source": { "help": "..." } },
   "capture": { "recipes": "capture/recipes", "report": "capture/REPORT.md", "steps": "capture/steps.ts", "apps": { "web": { "url": "http://localhost:3000", "setupRoute": "/", "hideCss": "" } } }
 }
 ```
 
-`components` and `screenshotApps` are the lists the check holds items to (empty: anything goes).
+`board.name` is the board's own name, in the masthead and the browser tab (default "Requirements
+board"); `project.name` shows beside it. `components` and `screenshotApps` are the lists the check
+holds items to (empty: anything goes).
 `statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
 `{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,
 colour (`tone`: neutral, amber, olive, green, forest, sand or hatched) and order are config, so
@@ -384,7 +387,7 @@ over it.
   highest sibling ID and add one.
 - **Answering a question**: set the question to the status with role `answered` (4 here), add `## Answer`, then move the affected items
   off the `waiting` status: to a `settle` status where the answer settles them (Agreed 4 here), or to Verify (3 here) where the item still needs
-  checking with whoever signs off. Never the final sign-off status (Confirmed 5 here: that is AA's sign-off, set only on explicit say-so) (the board offers this for every item the question affects, whatever its status).
+  checking with whoever signs off. Never the final sign-off status (Confirmed 5 here: that is the client's sign-off, set only on explicit say-so) (the board offers this for every item the question affects, whatever its status).
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

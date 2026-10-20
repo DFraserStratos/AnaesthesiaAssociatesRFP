@@ -18,7 +18,7 @@ export const meta = {
  *   diagrams     index.json "diagrams" ({id, title, svg}); [] to skip the diagram pass
  *   repo         repo root, absolute (default: paths relative to the agents' working directory, the repo root)
  *   req          catalogue folder relative to the repo (default requirements-board/requirements)
- *   owner        who decides, e.g. "Donald" (default "the product owner")
+ *   owner        who decides, e.g. "Sam" (default "the product owner")
  *   houseRules   strings: project rules every finder, verifier and consolidator obeys (e.g. what a fixed
  *                ruling forbids writing, a Technical discussion line it requires and finders must not flag)
  *   protectedArtifacts [{id, reason}]: diagrams nobody may edit (a client's own document); only flagged
@@ -248,7 +248,7 @@ const CONSOLIDATE_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          title: { type: 'string', description: 'Plain-language name of the change, e.g. "Prepaid is set on the Contract, not the profile"' },
+          title: { type: 'string', description: 'Plain-language name of the change, e.g. "Prepaid is set on the Price list, not the profile"' },
           size: { type: 'string', enum: ['small', 'medium', 'large'] },
           topic: { type: 'string' },
           why: { type: 'string', description: `Two or three plain sentences for ${OWNER}: what was wrong, what changes, which ruling` },

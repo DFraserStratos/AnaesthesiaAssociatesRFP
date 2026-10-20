@@ -1,6 +1,6 @@
 /**
  * Sources to artifact spots. An item, question or artifact cites its evidence in `sources:` as a
- * plain string ("RFP p.27 · Billing Engine › Contract holders", "Notes 2026-10-01 · Client meeting with
+ * plain string ("RFP p.27 · Pricing Engine › Price list holders", "Notes 2026-10-01 · Client meeting with
  * Sam #16", "Q&A 2026-09-24 #2 #3"). This works out, live, which artifact and which spot in it a
  * string means, so the board can open it and `check` can say when one points at nothing. Nothing is
  * written into the files: the mapping lives in the artifacts themselves.

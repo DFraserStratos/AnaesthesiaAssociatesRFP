@@ -27,7 +27,7 @@ A moved prepaid Booking needs no change: the payable is the account, so no code 
 1. Diff the phase's items and questions against the plan baseline `d4db277`:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-06.5,US-06.5.1,US-06.5.2,US-06.5.3,US-06.5.4,US-09.1.3,FT-09.1,US-09.1.1,US-06.3.1,FT-06.4,US-08.1.1,US-01.4.6,US-01.4.7,OQ-80,OQ-70,OQ-96,OQ-111,OQ-115,OQ-116
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-06.5,US-06.5.1,US-06.5.2,US-06.5.3,US-06.5.4,US-09.1.3,FT-09.1,US-09.1.1,US-06.3.1,FT-06.4,US-08.1.1,US-01.4.6,US-01.4.7,OQ-80,OQ-70,OQ-96,OQ-111,OQ-115,OQ-116
    ```
 
    The plan already reflects the catalogue at `d4db277`; diff only for anything after it. If one of the six covered items is now Retired or Future, drop it and record that.
@@ -127,7 +127,7 @@ Patch in the same session, locating passages by text (`docs/demo-guide/`).
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 27a` first (27 may have changed these recipes), then the board's `node scripts/capture.ts --dry`, fix what fails, then a full `npm run capture` with no failed recipe. Stage the pairs with real clicks in `setup` (Authorise on `/admin/review/<Souter Fri 24 PM List>`, take the id from the built seed) and, for a payment, 27's registry entry via the runner's `trigger` step; the Control Panel has no payment buttons.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS entry. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 27a` first (27 may have changed these recipes), then the board's `node scripts/capture.ts --dry`, fix what fails, then a full `npm run capture` with no failed recipe. Stage the pairs with real clicks in `setup` (Authorise on `/admin/review/<Souter Fri 24 PM List>`, take the id from the built seed) and, for a payment, 27's registry entry via the runner's `trigger` step; the Control Panel has no payment buttons.
 
 | Item | Recipe now | When this phase is done |
 |---|---|---|

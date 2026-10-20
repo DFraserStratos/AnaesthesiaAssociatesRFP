@@ -82,7 +82,7 @@ admin's own changes onto the real Booking as it is at Save time.
    folder:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-02.3,US-02.3.1,US-02.3.2,US-02.3.3,US-02.3.4,US-02.3.5,US-02.5.5,US-02.5.6,US-02.5.7,US-01.4.1,US-01.4.3,US-13.8.1,US-13.8.2,US-13.5.2,US-01.4.7,US-07.3.2,OQ-43,OQ-46,OQ-49,OQ-65,OQ-69,OQ-79,OQ-82,OQ-85,OQ-99,OQ-07
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-02.3,US-02.3.1,US-02.3.2,US-02.3.3,US-02.3.4,US-02.3.5,US-02.5.5,US-02.5.6,US-02.5.7,US-01.4.1,US-01.4.3,US-13.8.1,US-13.8.2,US-13.5.2,US-01.4.7,US-07.3.2,OQ-43,OQ-46,OQ-49,OQ-65,OQ-69,OQ-79,OQ-82,OQ-85,OQ-99,OQ-07
    ```
 
    What the move to `d4db277` changed, and this plan already reflects: US-02.3.1 now says every field
@@ -1057,7 +1057,7 @@ to the owner (ROADMAP.md "Owner review: agents test themselves").
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 35` first: earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 35` first: earlier phases may have changed
 these recipes (Phase 33 left `absent` placeholders for US-02.3.2 and US-02.3.3; Phases 28 and 31 moved
 the drawer and the Booking routes; 20a re-shot the phone-advice form with its Procedure description).
 FT-02.3 has no recipe of its own; US-02.3.5 (Future) and US-02.5.6 (Future Work) get none and keep what

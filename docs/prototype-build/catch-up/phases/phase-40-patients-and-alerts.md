@@ -108,7 +108,7 @@ who was billed.
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-11,FT-11.1,FT-11.3,US-11.1.1,US-11.1.4,US-11.1.5,US-11.3.1,US-11.3.2,US-11.3.3,US-13.2.2,US-03.1.5,US-02.1.2,US-02.1.4,US-11.2.2,US-11.1.2,FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,US-15.0.6,OQ-49,OQ-41,OQ-74,OQ-30,OQ-33,OQ-67
    ```
 
    Already folded into this plan (the `d4db277` to `d4db277` changes, so not drift):
@@ -784,7 +784,7 @@ this phase adds lines, it does not re-script them, and Phase 44 rewrites S1 to S
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 40` first: earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 40` first: earlier phases may have changed
 these recipes. Every Booking shot is on an ACTIVE List (15b), with 20a's stack as it renders, and the
 record route is keyed by NHI. EP-11 and FT-11.3 have no recipe row (their shots are the stories'); confirm
 with `recipe-status.mjs`. Two old captions are replaced: US-11.1.4's "shown as NHI pending" and US-11.3.2's

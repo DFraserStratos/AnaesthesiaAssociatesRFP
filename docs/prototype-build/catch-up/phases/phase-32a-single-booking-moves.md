@@ -53,7 +53,7 @@ FT-01.4 then holds in full: a List (Phases 28 and 32) or a single Booking from i
 1. Run the catalogue diff since this plan's baseline (catalogue commit `d4db277`, the 2026-10-20 plan update):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-01.4.7,US-01.4.6,FT-01.4,US-01.4.3,US-01.4.5,US-13.8.1,US-13.8.2,US-06.3.5,US-06.5.4,US-06.5.1,OQ-85,OQ-80,OQ-43,OQ-79,OQ-113,OQ-39,OQ-65,OQ-82
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-01.4.7,US-01.4.6,FT-01.4,US-01.4.3,US-01.4.5,US-13.8.1,US-13.8.2,US-06.3.5,US-06.5.4,US-06.5.1,OQ-85,OQ-80,OQ-43,OQ-79,OQ-113,OQ-39,OQ-65,OQ-82
    ```
 
    Read the hunks, and the "Slot, List and Draft List" section of `domain-model.md`.
@@ -224,7 +224,7 @@ Patch these in the same session (ROADMAP rule). This is a **milestone** phase:
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 32a` first: earlier phases will have changed these recipes. Work item 12 only adds the Playwright spec and the hooks. The plan update itself never touches recipes or images.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 32a` first: earlier phases will have changed these recipes. Work item 12 only adds the Playwright spec and the hooks. The plan update itself never touches recipes or images.
 
 | Item | Recipe at plan time | When this phase is done |
 |---|---|---|

@@ -23,7 +23,7 @@ Before doing anything else, read these in order:
 8. requirements-board/requirements/capture/ATLAS.md: the recipe format, routes, ids and hooks the catalogue's screenshot recipes depend on.
 
 Then do the drift check in the phase doc:
-- run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> (baseline d4db277; the tool is rename-aware, so never a plain git diff of the catalogue folder) over the IDs the doc lists and read the hunks and the domain-model sections it names; re-read anything changed, and drop and log anything now Retired or Future;
+- run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> (baseline d4db277; the tool is rename-aware, so never a plain git diff of the catalogue folder) over the IDs the doc lists and read the hunks and the domain-model sections it names; re-read anything changed, and drop and log anything now Retired or Future;
 - check whether AR-29 has moved to a v5; if its price precedence or booking procedure fields changed, follow v5 inside the same one place and log it;
 - OQ-90 (D26) is answered (2026-10-19): build the RVG default rule for calculated Procedures as the one system-wide rule, unlabelled: no switch, no MULTI_PROCEDURE_RULE_APPLIES, no "price each Procedure alone" branch, no provisional pill. Which Procedure is primary is not settled (Vanessa: the most expensive; Greg: the first in the list), so the first stays primary until someone changes it; log that and the participant reading for the owner;
 - OQ-15, OQ-62 and OQ-90 are answered: build the answers with no provisional label;

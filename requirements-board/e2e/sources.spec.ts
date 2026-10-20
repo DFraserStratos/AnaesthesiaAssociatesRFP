@@ -12,7 +12,7 @@ import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
-const SOURCES = ['Test spec p.1 · Introduction', 'Notes 2026-01-02 · Fixture meeting #2 #3', 'Typed decision 2026-01-03 · Donald']
+const SOURCES = ['Test spec p.1 · Introduction', 'Notes 2026-01-02 · Fixture meeting #2 #3', 'Typed decision 2026-01-03 · Sam']
 const question: Question = { id: 'OQ-01', kind: 'question', title: 'Which totals?', status: '1', owner: '', question: 'Which totals count?', answer: '', affects: ['US-01.1.1'], sources: ['Notes 2026-01-02 · Fixture meeting #1'], extra: {} }
 
 test.beforeEach(async ({ page, request }) => {
@@ -38,7 +38,7 @@ test('a card shows Diagrams then Sources, in the order cited, and no Sources in 
   await expect(sheet.locator('.artifacts-section .section-head')).toHaveText([/^Diagrams\s*1/, /^Sources\s*3/])
   await expect(sheet.locator('.artifacts-section').first().locator('.link-row')).toHaveText([/Fixture drawing\s*·?\s*Totals/])
   const rows = sheet.locator('.sources-section .link-row')
-  await expect(rows).toHaveText([/Fixture document\s*·?\s*Page 1/, /Fixture note.*Point 2.*Point 3/, /Typed decision 2026-01-03 · Donald/])
+  await expect(rows).toHaveText([/Fixture document\s*·?\s*Page 1/, /Fixture note.*Point 2.*Point 3/, /Typed decision 2026-01-03 · Sam/])
   // The note linked whole by `artifacts:` gives way to the points the sources open in it.
   await expect(rows.filter({ hasText: 'Fixture note' })).toHaveCount(1)
   // The plain one is text, not a button; the original wording is the tooltip of the others.

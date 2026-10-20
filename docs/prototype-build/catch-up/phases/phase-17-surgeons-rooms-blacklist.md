@@ -84,7 +84,7 @@ until Phase 28's finder.
    `60e2d1e`, the 2026-10-07 client meeting and the 2026-10-08 plan update):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-13.6,US-13.6.1,US-13.6.2,US-13.6.3,US-13.6.4,US-01.3.5,US-01.3.6,US-13.4.1,US-12.1.4,US-01.4.1,US-01.4.2,US-01.4.5,US-01.4.7,US-01.6.3,OQ-52,OQ-43,OQ-102
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-13.6,US-13.6.1,US-13.6.2,US-13.6.3,US-13.6.4,US-01.3.5,US-01.3.6,US-13.4.1,US-12.1.4,US-01.4.1,US-01.4.2,US-01.4.5,US-01.4.7,US-01.6.3,OQ-52,OQ-43,OQ-102
    ```
 
    If an item changed, re-read it and adjust the work items below before planning. If a covered item
@@ -810,7 +810,7 @@ In the same session, following the ROADMAP's rule that each phase patches the be
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 17` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 17` first: earlier phases may have
 changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

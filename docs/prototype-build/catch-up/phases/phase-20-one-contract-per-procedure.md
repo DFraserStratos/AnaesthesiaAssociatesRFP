@@ -154,7 +154,7 @@ The S3, S4 and S5 figures do not move, and the interim who-is-billed reproduces 
    catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-04,FT-04.3,US-04.3.1,US-04.3.2,US-04.3.3,US-04.3.4,FT-03.4,US-03.4.1,US-03.2.3,US-03.3.1,US-04.1.4,US-04.1.5,US-04.2.1,US-04.2.4,US-04.2.10,US-04.2.11,US-04.2.14,US-05.1.1,US-07.2.1,US-07.2.2,US-11.2.2,US-11.4.3,US-03.5.1,US-03.6.1,US-15.0.1,FT-06.2,OQ-26,OQ-48,OQ-55,OQ-66,OQ-67,OQ-73,OQ-78,OQ-91,OQ-93,OQ-98,OQ-99,OQ-105,OQ-106
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-04,FT-04.3,US-04.3.1,US-04.3.2,US-04.3.3,US-04.3.4,FT-03.4,US-03.4.1,US-03.2.3,US-03.3.1,US-04.1.4,US-04.1.5,US-04.2.1,US-04.2.4,US-04.2.10,US-04.2.11,US-04.2.14,US-05.1.1,US-07.2.1,US-07.2.2,US-11.2.2,US-11.4.3,US-03.5.1,US-03.6.1,US-15.0.1,FT-06.2,OQ-26,OQ-48,OQ-55,OQ-66,OQ-67,OQ-73,OQ-78,OQ-91,OQ-93,OQ-98,OQ-99,OQ-105,OQ-106
    ```
 
    At the plan update (2026-10-20, `60e2d1e..d4db277`) the changes that touch this phase were: the
@@ -697,7 +697,7 @@ main-view wording), so locate each passage by its text:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 20` first: earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 20` first: earlier phases may have changed
 these recipes. The tool lists every story under EP-04 and FT-03.4 plus US-03.2.3 and US-03.3.1; rows
 owned elsewhere say so. Shots are Admin unless an app is named.
 

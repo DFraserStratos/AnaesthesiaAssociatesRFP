@@ -143,7 +143,7 @@ No seeded figure moves. FT-08.6 closes here.
    what changed after `d4db277`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-08.6,US-08.6.2,US-08.6.4,US-08.6.5,US-08.6.6,US-13.5.2,US-08.6.1,US-08.6.3,FT-03.7,US-03.7.3,US-07.3.2,US-07.4.1,US-07.4.2,US-08.3.1,US-08.4.3,US-09.1.1,US-04.2.11,US-10.2.5,US-10.2.7,US-06.4.1,OQ-19,OQ-28,OQ-42,OQ-45,OQ-53,OQ-60,OQ-61,OQ-63,OQ-71,OQ-72,OQ-76,OQ-77,OQ-97
    ```
 
    (Add `--to <ref>` to stop at a commit instead of the working tree; the tool is rename-aware, so
@@ -1119,7 +1119,7 @@ patch the sections below and spot-check that the master guide's S4 matches the r
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39` first: earlier phases (38b above all)
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 39` first: earlier phases (38b above all)
 may have changed these recipes since this plan was written. FT-08.6 is covered, so the tool lists
 every story under it, 38b's included.
 

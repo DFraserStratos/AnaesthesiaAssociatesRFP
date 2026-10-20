@@ -7,6 +7,15 @@ one project lives in its `requirements/` folder, and in the "This repo" block of
 Below, `BOARD` is where the board's folder lands in the new repo, `requirements-board/` unless
 there is a reason to choose another name.
 
+**The usual route is the kit.** `npm --prefix requirements-board run kit:export -- --to "<folder>"`
+(from a repo that has the full board, with its `starter/` folder) writes a `requirements-board/`
+folder that has steps 1 to 3 done already: the code without generated folders, a starter catalogue
+and `board.config.json`, starter "This repo" sections (fill-ins marked `<TODO: ...>`), and
+`START-HERE.html`. With a kit, open `START-HERE.html` and follow it: put the folder at the repo
+root and paste its prompt into Claude Code, which does step 5, adds the CLAUDE.md section and fills
+in step 4 with you. Then run the checks in step 7. The steps below are the
+whole account, for copying the board by hand.
+
 ## 1. Copy the kit
 
 Copy the board's folder into the new repo as `BOARD/`, leaving out what is generated or local:
@@ -33,7 +42,8 @@ is a model to describe.
 The project's vocabulary. The format is in `SCHEMA.md` ("Board config file") and the board's
 README ("Project config"). Ask the user for anything you can't infer:
 
-- `project.name`: shown beside the board's name and in the browser tab. `project.locale` is optional.
+- `board.name` (default "Requirements board") and `project.name`: the masthead and the browser tab. `project.locale` is optional.
+  The Settings page edits these, `components` and the status lists.
 - `components`: the system's areas, each with a three-letter `code`. Leave the list empty to accept
   any component until the areas are settled.
 - `statuses` and `questionStatuses`: ordered lists of `{ code, label, help, tone, role?, settle? }`
@@ -62,6 +72,11 @@ each block, and change nothing else unless it is plainly wrong:
 - `svg-diagram`: the board folder and the check command. Its reference diagrams and `examples/` are
   another project's. Keep them as style references until this project has its own diagrams.
 - `transcript-reconciler`: the default output path.
+- `update-build-plan`: the plan folder (created on the first run when there is none), the app's
+  folder, any progress file, whether screenshots are captured, and the Node note. Everything else
+  project-specific (the app's description and rules for its agents, out-of-scope lanes, the plan
+  page's words) goes in the plan folder's `plan.config.json`, which the first run writes; its keys are
+  in the skill's "The tools and the plan's config". Its tools are in the skill's `tools/` folder.
 - `consistency-review`: the board folder, `REQ` path and check commands, the run folder (persistent,
   outside `/tmp`), the people and the source ranking, the follow-on skill, and the JSON arguments for
   its two workflows (owner, levels, fixed rulings, project rules, protected artifacts, topic groups).
@@ -75,18 +90,15 @@ The `link-requirements` workflow takes the board folder as its `board` argument 
 From the repo root:
 
 ```
-mkdir -p .claude/skills .claude/workflows
-for s in update-requirements add-artifact svg-diagram transcript-reconciler consistency-review; do
-  mkdir .claude/skills/$s
-  for f in BOARD/agent/skills/$s/*; do ln -s ../../../$f .claude/skills/$s/$(basename $f); done
-done
-for w in link-requirements consistency-rulings consistency-changes; do
-  ln -s ../../BOARD/agent/workflows/$w.js .claude/workflows/$w.js
-done
+npm --prefix BOARD run install-skills
 ```
 
-Each skill gets a real folder in `.claude/skills/` holding a symlink per file. Don't symlink the skill
-folder itself: Claude Code still loads it, but leaves it out of the `/` menu.
+It copies the skills and workflows into `.claude/`, merging with any skills the repo already has
+(it never touches a skill folder that is not the board's; `.claude/requirements-board.json` lists
+what it installed), and is safe to run again: run it after editing a skill in `BOARD/agent/`.
+Copies work on any OS, zip or cloud drive. In a repo where the skills are edited often on a Mac or
+Linux, `-- --link` makes symlinks instead: a real folder per skill holding a symlink per file (a
+symlinked skill folder still loads, but is left out of the `/` menu).
 
 Add root `package.json` scripts that call the board, for example:
 
@@ -125,4 +137,4 @@ Set this up only if the project has a web app whose screens should illustrate it
 - `npm --prefix BOARD run dev` opens the board on http://localhost:5180 with the project's name in
   the masthead. Create one epic to prove that saving works.
 - Search the copy for the old project's name, outside `requirements/` and the svg-diagram examples.
-  Nothing should turn up.
+  Nothing should turn up (a kit export checks this itself, against its `starter/deny.txt`).

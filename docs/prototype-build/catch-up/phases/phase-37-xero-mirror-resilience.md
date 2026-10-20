@@ -121,7 +121,7 @@ record.
 1. Run:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff EP-09,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,OQ-47,OQ-111,US-09.1.1,US-09.3.1
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff EP-09,FT-09.2,US-09.2.1,US-09.2.2,US-09.2.3,US-09.2.4,US-10.1.2,US-10.2.1,US-10.2.3,US-10.2.4,US-08.3.2,FT-13.3,US-13.3.1,US-13.3.2,US-13.5.2,OQ-47,OQ-111,US-09.1.1,US-09.3.1
    ```
 
    Read the hunks for EP-09, FT-09.2, US-09.2.1, US-09.2.2, US-09.2.3, US-09.2.4, US-10.1.2,
@@ -924,7 +924,7 @@ the running app.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 37` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 37` first: earlier phases may have
 changed these recipes since this plan was written (Phase 36 re-points the Xero pair callout and the
 invoice rail, and Phase 22 changes the ACCPAY wording). Work item 16 holds the short list; this
 section is its full form and replaces the old "re-capturing is out of scope" advice. The harness bar

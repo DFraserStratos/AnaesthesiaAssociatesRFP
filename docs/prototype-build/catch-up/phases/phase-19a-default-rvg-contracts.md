@@ -119,7 +119,7 @@ hernia Procedure (item 1).
 
 ## Before you start: drift check
 
-1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs>` (baseline `d4db277`) for
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs>` (baseline `d4db277`) for
    FT-04.2, US-04.2.4, US-04.2.11, US-04.2.14, US-05.2.2, US-04.2.2, US-04.2.10, US-04.3.2, US-03.3.1,
    US-05.1.1, US-05.2.1, US-05.2.5, US-05.2.6, US-05.2.7, US-05.4.3, US-08.4.6, FT-06.2, OQ-48, OQ-53,
    OQ-75, OQ-89, OQ-90, OQ-91, OQ-96, OQ-98, OQ-101, OQ-103, OQ-105, OQ-106 and OQ-107. Re-read
@@ -434,7 +434,7 @@ Patch these, and the same sections of `master-demo-guide.html`:
 ## Catalogue screenshots
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after
-the review pass. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 19a` first. No
+the review pass. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 19a` first. No
 caption may describe price rows, an ordinal, a time band, first or third party, or rounding as an
 assumption.
 

@@ -700,7 +700,7 @@ PROGRESS.md entry:
      states for the change the story describes (before and after, closed and open, warning and
      cleared), and the highlight on this story's area;
    - captions in the catalogue's current words (Booking, not Card), with no en or em dashes.
-   `node docs/prototype-build/catch-up/tools/recipe-status.mjs <phase>` lists the covered items and
+   `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs <phase>` lists the covered items and
    their current recipes.
 2. **Recipes the phase broke.** Any other recipe whose route, id, text or selector the phase changed
    is updated to the new screen, keeping its shot `name`s (rename a shot only when the old name
@@ -890,7 +890,7 @@ baselines their docs name).
    been answered:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <covered IDs and OQs, comma separated>
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <covered IDs and OQs, comma separated>
    ```
 
    It diffs each of those IDs that changed since the snapshot (`plan.json` "commit"), and

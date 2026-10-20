@@ -1,0 +1,18 @@
+# Words of the project the kit was exported from. The export fails if any appears in the kit.
+# One JavaScript regular expression per line, case-insensitive; start a line with = for case-sensitive.
+anaesth
+anesth
+=\bAA\b
+\bGreg\b
+peritia
+\bRVG\b
+\bxero\b
+christchurch
+stratos
+\bdonald\b
+d\.fraser
+\bNZSA\b
+aa-prototype
+\bNHI\b
+hl7
+southern cross

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Requirements Board setup</title>
+<style>
+  :root {
+    --paper: #edf2f0; --card: #ffffff; --card-soft: #f7faf9; --ink: #1f2b30; --ink-2: #44535a; --ink-3: #5f6e74; --ink-4: #98a5aa;
+    --rule: #d7e0dd; --teal: #0d6e63; --teal-tint: #e3f1ee; --amber-tint: #fdf4e3; --amber: #c0851b;
+    --mono: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 40px 20px 80px; }
+  .kicker { margin: 0; font-size: 13px; font-weight: 600; color: var(--teal); }
+  h1 { margin: 4px 0 8px; font-size: 32px; line-height: 1.15; }
+  .lede { margin: 0 0 8px; font-size: 17px; color: var(--ink-2); }
+  .version { font-family: var(--mono); font-size: 12px; color: var(--ink-4); }
+  h2 { margin: 44px 0 6px; font-size: 21px; }
+  h2 .n { display: inline-grid; place-items: center; width: 28px; height: 28px; margin-right: 10px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 15px; vertical-align: 2px; }
+  h3 { margin: 0 0 6px; font-size: 15px; }
+  p { margin: 8px 0; }
+  .sub { color: var(--ink-2); }
+  code { font-family: var(--mono); font-size: 0.88em; }
+  .card { margin: 14px 0; padding: 16px 18px; border: 1px solid var(--rule); border-radius: 10px; background: var(--card); }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .grid .card { margin: 0; }
+  .grid p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .tree { margin: 0; padding: 14px 18px; border-radius: 8px; background: var(--card-soft); border: 1px solid var(--rule); font-family: var(--mono); font-size: 13px; line-height: 1.7; white-space: pre; overflow-x: auto; }
+  .tree b { color: var(--teal); }
+  .block { position: relative; margin: 10px 0; }
+  .block pre { margin: 0; padding: 14px 16px; padding-right: 96px; border-radius: 8px; background: #1f2b30; color: #e8efed; font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .block.prompt pre { background: var(--teal-tint); color: var(--ink); border-left: 3px solid var(--teal); font-family: inherit; font-size: 14px; }
+  .copy { position: absolute; top: 8px; right: 8px; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; background: rgba(255,255,255,0.1); color: #fff; font: 600 12px/1 system-ui, sans-serif; cursor: pointer; }
+  .prompt .copy { border-color: var(--teal); background: var(--teal); }
+  .copy:hover { filter: brightness(1.1); }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--teal-tint); color: var(--teal); font-size: 11.5px; font-weight: 700; vertical-align: 2px; }
+  .facts { margin: 8px 0 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
+  .facts li { margin: 3px 0; }
+  .note { padding: 10px 14px; border-radius: 8px; background: var(--amber-tint); border-left: 3px solid var(--amber); font-size: 14px; }
+  details { margin: 12px 0; padding: 10px 16px; border: 1px solid var(--rule); border-radius: 10px; background: var(--card); }
+  summary { cursor: pointer; font-weight: 600; }
+  ol.steps { margin: 8px 0; padding-left: 22px; }
+  ol.steps li { margin: 10px 0; }
+  .loop svg { display: block; width: 100%; height: auto; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 8px 10px; border-top: 1px solid var(--rule); vertical-align: top; }
+  td:first-child { white-space: nowrap; font-family: var(--mono); font-size: 13px; color: var(--teal); }
+  footer { margin-top: 56px; font-size: 12.5px; color: var(--ink-4); }
+  @media (max-width: 720px) { .grid, .choice { grid-template-columns: 1fr; } h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Start here</p>
+  <h1>Set up the Requirements Board</h1>
+  <p class="lede">A requirements catalogue kept as Markdown files in git, a local board to read and arrange it, and Claude Code skills that keep it up to date from your meetings and decisions.</p>
+  <p class="version">Kit {{version}}</p>
+
+  <div class="grid" style="margin-top:24px">
+    <div class="card"><h3>Files in git</h3><p>Every epic, feature, story and question is a Markdown file. A commit is a version of the requirements.</p></div>
+    <div class="card"><h3>A local board</h3><p>Runs on your machine and edits the same files: arrange cards, set statuses, answer questions, open diagrams.</p></div>
+    <div class="card"><h3>Claude's skills</h3><p>Turn transcripts, notes and decisions into changes to those files, and keep a build plan in step.</p></div>
+  </div>
+
+  <h2><span class="n">1</span>Check what you need</h2>
+  <ul class="facts">
+    <li><b>Node 22.18 or newer.</b> Check with <code>node -v</code>; get it from nodejs.org or nvm.</li>
+    <li><b>Claude Code</b>, for the skills.</li>
+    <li><b>git</b> (recommended): the build plan skill works from commits, and git keeps the requirements' history.</li>
+  </ul>
+
+  <h2><span class="n">2</span>Put this folder in a repo</h2>
+  <p class="sub">The <code>requirements-board</code> folder goes at the root of a repo: beside your app or prototype, or on its own in a new repo. It never touches your app.</p>
+  <div class="tree">your-repo/
+├── <b>requirements-board/</b>     ← this folder
+├── your-app/                (if you have one)
+├── .claude/skills/          (the board's skills are copied in here, next to any you have)
+└── CLAUDE.md</div>
+  <p class="sub">Starting fresh? Make a new folder, put <code>requirements-board</code> in it, and run <code>git init</code> there.</p>
+
+  <h2><span class="n">3</span>Set it up</h2>
+  <div class="choice">
+    <div class="card">
+      <h3>With Claude Code <span class="badge">easiest</span></h3>
+      <p class="sub">Open Claude Code at the repo root and paste the prompt below. It installs everything, copies the skills in, adds a section to your CLAUDE.md, asks you a few questions about your project, and starts the board.</p>
+    </div>
+    <div class="card">
+      <h3>By hand</h3>
+      <p class="sub">Run the commands yourself: open "Set it up by hand" below the prompt.</p>
+    </div>
+  </div>
+
+  <div class="block prompt"><pre id="prompt">Set up the Requirements Board in this repo. Its folder, requirements-board/, is at the repo root.
+
+1. Check that Node is 22.18 or newer (node -v). If it isn't, tell me how to upgrade and stop.
+2. Run `npm --prefix requirements-board install`, then `npm --prefix requirements-board run install-skills`.
+3. Add the "Requirements" section from requirements-board/START-HERE.html to the CLAUDE.md at the repo root. Create the file if there is none, and don't add the section twice.
+4. Fill in every &lt;TODO: ...&gt; placeholder in the "This repo" section of each skill in requirements-board/agent/skills/ (requirements-board/ADOPTING.md, step 4, says what each one needs). Look in this repo first, then ask me for whatever you can't find, all in one go. Afterwards run `npm --prefix requirements-board run install-skills` again.
+5. Run `npm --prefix requirements-board run check`, then start the board with `npm --prefix requirements-board run dev` in the background and give me its URL.</pre><button class="copy" data-copy="prompt">Copy</button></div>
+
+  <p class="sub">Claude Code will ask you for:</p>
+  <ul class="facts">
+    <li>who signs the requirements off (your client, product owner, sponsor);</li>
+    <li>where your app lives, and where the build plan should go;</li>
+    <li>the people involved and which documents count for most when sources disagree;</li>
+    <li>a folder outside the repo for consistency review runs.</li>
+  </ul>
+
+  <details>
+    <summary>Set it up by hand</summary>
+    <ol class="steps">
+      <li>From the repo root, install the board and copy its skills into <code>.claude/</code>:
+        <div class="block"><pre id="cmd-install">npm --prefix requirements-board install
+npm --prefix requirements-board run install-skills</pre><button class="copy" data-copy="cmd-install">Copy</button></div>
+      </li>
+      <li>Add this section to <code>CLAUDE.md</code> at the repo root (make the file if there is none):
+        <div class="block"><pre id="claude-md">## Requirements
+
+The requirements live in `requirements-board/requirements/` (format: its `SCHEMA.md`). Edit them as files or on
+the Requirements Board (`npm --prefix requirements-board run dev`, http://localhost:5180), then run
+`npm --prefix requirements-board run check`, which must pass. Record meetings and decisions with
+`/update-requirements`; after a commit, `/update-build-plan` keeps the build plan in step. The skills'
+source is `requirements-board/agent/`: edit them there, then run `npm --prefix requirements-board run install-skills`.</pre><button class="copy" data-copy="claude-md">Copy</button></div>
+      </li>
+      <li>In each <code>requirements-board/agent/skills/*/SKILL.md</code>, fill in the <code>&lt;TODO: ...&gt;</code> placeholders in its "This repo" section (<code>ADOPTING.md</code>, step 4, says what each needs). Then run <code>install-skills</code> again.</li>
+      <li>Start the board:
+        <div class="block"><pre id="cmd-dev">npm --prefix requirements-board run dev</pre><button class="copy" data-copy="cmd-dev">Copy</button></div>
+      </li>
+    </ol>
+  </details>
+
+  <h2><span class="n">4</span>Open the board</h2>
+  <p class="sub">Go to <b>http://localhost:5180</b>. It starts with a few cards, a question and a diagram that explain how it works.</p>
+  <ul class="facts">
+    <li><b>Start here</b> (top right) opens the About page: the requirements loop, every skill, and what is on the board.</li>
+    <li><b>Settings</b> (the cog): name the board and the project, and set your components and statuses.</li>
+    <li>Start a <b>new Claude Code session</b> so it picks up the skills: type <code>/</code> to see them.</li>
+    <li>When you're ready, delete the starter cards (the "Delete these examples" card says how).</li>
+  </ul>
+
+  <h2><span class="n">5</span>Go round the loop</h2>
+  <p class="sub">After each meeting or decision, hand Claude Code the evidence with <code>/update-requirements</code>, review the result on the board, commit, then keep the build plan in step with <code>/update-build-plan</code>.</p>
+  <div class="loop">{{loop-svg}}</div>
+
+  <table style="margin-top:18px">
+    <tr><td>/update-requirements</td><td>Turn a meeting, transcript, email or decision into requirement changes, with a note and a change log.</td></tr>
+    <tr><td>/update-build-plan</td><td>Bring the build plan up to date after requirements changes are committed; makes the first plan too.</td></tr>
+    <tr><td>/add-artifact</td><td>Register a diagram, mockup, transcript or document that requirements link to.</td></tr>
+    <tr><td>/svg-diagram</td><td>Draw an explainer diagram in the board's house style, saved as an artifact.</td></tr>
+    <tr><td>/transcript-reconciler</td><td>Merge two or more transcripts of the same meeting into one.</td></tr>
+    <tr><td>/consistency-review</td><td>Find and fix drift across the whole catalogue, with a review page before any edit.</td></tr>
+    <tr><td>link-requirements</td><td>A workflow that links items to the items their text names.</td></tr>
+  </table>
+
+  <h2>If something goes wrong</h2>
+  <details><summary>The skills don't show when I type <code>/</code></summary>
+    <p>Start a new Claude Code session at the repo root. Still missing? Run <code>npm --prefix requirements-board run install-skills</code> from the repo root: it copies them into <code>.claude/skills/</code>, and says if it skipped any because your repo already has a skill of the same name.</p></details>
+  <details><summary>I edited a skill and nothing changed</summary>
+    <p>The skills' source is <code>requirements-board/agent/skills/</code>; <code>.claude/skills/</code> holds copies. Edit the source, then run <code>install-skills</code> again. Edits made in <code>.claude/</code> are overwritten.</p></details>
+  <details><summary>"Port 5180 is in use"</summary>
+    <p>The board is probably already running in another terminal: open http://localhost:5180. Otherwise stop whatever holds the port.</p></details>
+  <details><summary>Errors about Node or TypeScript files</summary>
+    <p>The board's scripts need Node 22.18 or newer (<code>node -v</code>). Upgrade, then run the install again.</p></details>
+  <details><summary>Checks show an error</summary>
+    <p>Click <b>Checks</b> in the board's masthead to see which file and why, or run <code>npm --prefix requirements-board run check</code>. Ask Claude Code to fix it if it isn't obvious.</p></details>
+
+  <footer>This page is <code>requirements-board/START-HERE.html</code>. More detail: <code>README.md</code> (the board) and <code>ADOPTING.md</code> (moving it into a repo by hand).</footer>
+</main>
+<script>
+  for (const b of document.querySelectorAll('[data-copy]')) {
+    b.addEventListener('click', async () => {
+      const text = document.getElementById(b.dataset.copy).innerText
+      try {
+        await navigator.clipboard.writeText(text)
+      } catch {
+        const t = document.createElement('textarea')
+        t.value = text
+        document.body.append(t)
+        t.select()
+        document.execCommand('copy')
+        t.remove()
+      }
+      b.textContent = 'Copied'
+      setTimeout(() => (b.textContent = 'Copy'), 1500)
+    })
+  }
+</script>
+</body>
+</html>

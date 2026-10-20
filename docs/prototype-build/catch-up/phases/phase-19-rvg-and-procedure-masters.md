@@ -89,7 +89,7 @@ figure (item 5).
    never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.4,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-05.1,US-05.1.1,US-05.1.3,US-05.1.6,US-03.3.1,FT-04.3,US-04.2.4,US-05.1.4,US-13.7.1,OQ-56,OQ-62,OQ-88,OQ-99,OQ-101,OQ-106
    ```
 
    At plan time (2026-10-20, `60e2d1e..d4db277`) these moved: FT-05.1 retitled "RVG groups and
@@ -494,7 +494,7 @@ No scripted figure changes. Patch the wording these beats carry, and the same se
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 19` first (earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 19` first (earlier phases may have changed
 these recipes). Every current caption about the flat RVG code master ("RVG codes with ... absorbed
 modifiers", "grouped by anatomical site") is replaced, never left standing. FT-05.1's modifier half
 (US-05.1.4, US-05.1.5) is Phase 19b's; this phase only keeps their recipes running. US-05.1.6 is

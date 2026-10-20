@@ -38,7 +38,7 @@ and above all the red highlight box, which must stay the one red mark on an arti
 status is a small tinted pill (`StatusLabel`). No status colour may share a hue with a type.
 Colour is a status's `tone` from `board.config.json`: neutral, amber, olive, green, forest, sand or
 hatched. The default-role status (Proposed here), the baseline, takes the calm neutral grey. Verify
-(answered, still to check) takes olive, between Open's amber and Agreed's green; Confirmed (AA's
+(answered, still to check) takes olive, between Open's amber and Agreed's green; Confirmed (the client's
 final sign-off) takes the deeper forest green, so Agreed and Confirmed read as steps of one family.
 Where an item came from is its sources, never its status. Scope is a swim lane, not a status.
 

@@ -119,7 +119,7 @@ describe('reading files without a DOM', () => {
   })
 
   it("reads a flowchart's node IDs, and leaves other diagram types unread", () => {
-    const ids = mermaidNodeIds('flowchart LR\n  A[Booking] -->|then| B(Contract)\n  B -- yes --> C{Price?}\n  C ==> D:::hot\n  style A fill:#fff\n  %% a comment')
+    const ids = mermaidNodeIds('flowchart LR\n  A[Order] -->|then| B(Pricing)\n  B -- yes --> C{Price?}\n  C ==> D:::hot\n  style A fill:#fff\n  %% a comment')
     expect([...ids!].sort()).toEqual(['A', 'B', 'C', 'D'])
     expect(mermaidNodeIds('sequenceDiagram\n  A->>B: hi')).toBeNull()
   })
@@ -421,9 +421,9 @@ describe('the API', () => {
     const events: { kind: string }[] = []
     const a = createCatalogueApi(root, (e) => events.push(e))
     const rec = a.getState().artifacts['AR-01']!
-    const record = { ...rec.data, title: '  Renamed  ', date: '2021', author: 'Peritia', status: 'Draft', supersededBy: 'AR-01', file: 'artifacts/AR-09.svg', regions: [], source: 'flowchart LR\n A', extra: { hack: 1 } }
+    const record = { ...rec.data, title: '  Renamed  ', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: 'AR-01', file: 'artifacts/AR-09.svg', regions: [], source: 'flowchart LR\n A', extra: { hack: 1 } }
     const saved = a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { record, baseRev: rec.rev }, headers: HEADERS }) as ArtifactRec
-    expect(saved.data).toMatchObject({ title: 'Renamed', date: '2021', author: 'Peritia', status: 'Draft', supersededBy: null, file: 'artifacts/AR-01.svg', source: '', extra: {} })
+    expect(saved.data).toMatchObject({ title: 'Renamed', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: null, file: 'artifacts/AR-01.svg', source: '', extra: {} })
     expect(saved.data.regions.map((r) => r.id)).toEqual(['panel'])
     expect(saved.meta.format).toBe('svg')
     expect(loadCatalogue(root).artifacts['AR-01']!.data.title).toBe('Renamed')

@@ -100,7 +100,7 @@ so `PERSIST_VERSION` is bumped.
 1. Run the drift check against the plan's catalogue snapshot (d4db277):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-12.2.3,FT-12.2,US-12.2.1,US-12.2.2,US-12.1.2,US-08.3.5,US-08.3.1,US-10.1.2,US-05.2.7,US-07.4.1,US-10.2.7,US-11.3.2,OQ-31,OQ-29,OQ-59,OQ-60,OQ-33,FT-10.3
    ```
 
    (It diffs the plan's baseline, d4db277, to the working tree; the tool is rename-aware, so never
@@ -672,7 +672,7 @@ disappearance" line) are **38a's**; leave them.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 38` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 38` first: earlier phases may have
 changed these recipes. Recipes live in `requirements-board/requirements/capture/recipes/`; this
 phase's session edits them, this doc only says what each must show.
 

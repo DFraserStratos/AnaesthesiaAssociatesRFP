@@ -91,7 +91,7 @@ new stored entity. The seed grows, so `PERSIST_VERSION` is bumped.
 1. Diff the covered and read-alongside items against the plan's baseline (catalogue commit `d4db277`):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-07.2,US-07.2.1,US-07.2.3,US-07.3.2,US-07.4.1,US-07.4.2,FT-07.4,US-03.1.6,US-03.1.7,EP-07,FT-03.1,US-03.1.1,US-03.1.4,US-12.2.1,US-02.5.5,FT-03.4,OQ-26,OQ-17,OQ-31,OQ-86
    ```
 
    (This doc is current at `d4db277`. What changed since `60e2d1e`, already reflected: the edit window
@@ -616,7 +616,7 @@ Patch in the same session (`docs/demo-guide/`, the same sections of `master-demo
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 38a` first: earlier phases may have changed
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 38a` first: earlier phases may have changed
 these recipes. DM-55 and RV-19 have no catalogue images.
 
 | Item | Recipe now | When this phase is done |

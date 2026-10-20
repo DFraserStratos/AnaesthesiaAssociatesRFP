@@ -139,7 +139,7 @@ true as written.
    catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-11.2,US-11.2.1,US-11.2.2,US-11.2.3,US-11.2.4,FT-11.4,US-11.4.1,US-11.4.2,US-11.4.3,US-08.2.1,FT-08.2,FT-03.6,US-03.6.1,US-03.6.3,US-07.2.2,US-04.2.1,US-04.2.2,US-04.1.5,US-04.3.3,US-03.4.1,US-03.3.3,US-03.3.4,US-03.1.9,US-13.7.2,US-04.3.2,OQ-26,OQ-54,OQ-55,OQ-67,OQ-78,OQ-93,OQ-99,OQ-114
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-11.2,US-11.2.1,US-11.2.2,US-11.2.3,US-11.2.4,FT-11.4,US-11.4.1,US-11.4.2,US-11.4.3,US-08.2.1,FT-08.2,FT-03.6,US-03.6.1,US-03.6.3,US-07.2.2,US-04.2.1,US-04.2.2,US-04.1.5,US-04.3.3,US-03.4.1,US-03.3.3,US-03.3.4,US-03.1.9,US-13.7.2,US-04.3.2,OQ-26,OQ-54,OQ-55,OQ-67,OQ-78,OQ-93,OQ-99,OQ-114
    ```
 
    Read the hunks (if any) for the covered items, the context items US-04.2.1 (who is billed by
@@ -851,7 +851,7 @@ In the same session, patch `docs/demo-guide/03-demo-script.md`, `04-presenter-ch
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run
 after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 21` first: earlier phases (20 and 20a
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 21` first: earlier phases (20 and 20a
 above all) may have changed these recipes. Several captions describe the retired override; replace
 each when the recipe is updated. FT-11.2, FT-11.4 and FT-03.6 are features and show their
 stories' shots.

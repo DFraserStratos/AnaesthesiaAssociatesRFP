@@ -60,13 +60,20 @@ Not the place to edit requirements:
   5180) for reading, editing and arranging the future-state requirements catalogue in
   `requirements-board/requirements/` (format: `REQ/SCHEMA.md`). It is a **portable kit**: the app,
   its data folder `requirements/` and its agent skills in `agent/` (`update-requirements`,
-  `add-artifact`, `svg-diagram`, `transcript-reconciler`, and the `link-requirements` workflow),
-  exposed to Claude Code by symlinks in `.claude/skills/` and `.claude/workflows/`; edit the files in
+  `update-build-plan` (its tools in `agent/skills/update-build-plan/tools/`; the catch-up plan's
+  settings in `docs/prototype-build/catch-up/plan.config.json`), `add-artifact`, `svg-diagram`,
+  `transcript-reconciler`, `consistency-review`, and the `link-requirements` workflow),
+  exposed to Claude Code by symlinks in `.claude/skills/` and `.claude/workflows/` (`npm --prefix
+  requirements-board run install-skills -- --link`; a shared kit gets copies instead); edit the files in
   `requirements-board/agent/`. The board's code is project-generic: this project's vocabulary
   (components, screenshot apps, status wording, capture settings) is `REQ/board.config.json`, the
   screenshot recipes, atlas and report are in `REQ/capture/` (its prototype-specific capture steps in
   `REQ/capture/steps.ts`), and each skill keeps its repo-specific facts in one "This repo" block.
-  `requirements-board/ADOPTING.md` is the checklist for setting it up in another repo. Not
+  `requirements-board/ADOPTING.md` is the checklist for setting it up in another repo. **To share it**,
+  `npm --prefix requirements-board run kit:export -- --to "<folder>"` writes a clean kit (starter
+  catalogue from `requirements-board/starter/`, starter "This repo" sections, leak check against
+  `starter/deny.txt`); build anything new for the board here first, bump its `package.json` version and
+  `CHANGELOG.md`, then export. Its About page (`/about`) is the user guide: keep it in step with the skills. Not
   part of the prototype, never deployed; its dev server is the file API. The prototype conventions
   below (mock backend, determinism, `PERSIST_VERSION`) do not apply to it. Root `npm run dev` starts
   the prototype, its mobile PWA (5174) and the board (`npm run setup` installs all three folders); `npm run check` validates the catalogue. The

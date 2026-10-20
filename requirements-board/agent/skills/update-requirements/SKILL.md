@@ -137,7 +137,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
      (`- "Notes 2026-10-01 · Client meeting #31"`, but `- OQ-73` bare: SCHEMA's quoting rule);
    - writes each source in a form that resolves (Ground rules), so it opens its spot;
    - moves status per the answering convention (Agreed (4) where settled, Verify (3) where it still needs
-     checking with whoever signs off, per "This repo"; never Confirmed (5) without AA's explicit sign-off);
+     checking with whoever signs off, per "This repo"; never Confirmed (5) without the client's explicit sign-off);
    - sets `components`;
    - creates stories or features with the next free ID under the right parent;
    - retires superseded items rather than deleting them;

@@ -134,7 +134,7 @@ structural and leaves `DRAFT` free for Phase 31's Draft Lists. `PERSIST_VERSION`
    `60e2d1e`, the 2026-10-07 meetings and the 2026-10-08 plan update):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-01.1,US-01.1.1,FT-01.2,US-01.2.3,US-01.3.3,US-01.1.4,US-01.1.3,US-01.4.2,US-01.1.2,EP-01,EP-07,FT-07.1,FT-01.3,US-01.3.1,US-01.3.2,US-01.3.5,US-01.3.6,US-01.4.1,US-01.4.5,US-01.2.1,US-01.2.2,US-01.5.3,US-01.5.5,FT-01.6,US-06.3.5,US-06.5.4,OQ-17,OQ-27,OQ-43,OQ-44,OQ-64,OQ-80,OQ-81,OQ-84,OQ-86,OQ-102
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-01.1,US-01.1.1,FT-01.2,US-01.2.3,US-01.3.3,US-01.1.4,US-01.1.3,US-01.4.2,US-01.1.2,EP-01,EP-07,FT-07.1,FT-01.3,US-01.3.1,US-01.3.2,US-01.3.5,US-01.3.6,US-01.4.1,US-01.4.5,US-01.2.1,US-01.2.2,US-01.5.3,US-01.5.5,FT-01.6,US-06.3.5,US-06.5.4,OQ-17,OQ-27,OQ-43,OQ-44,OQ-64,OQ-80,OQ-81,OQ-84,OQ-86,OQ-102
    ```
 
    Also run the whole-catalogue diff from ROADMAP.md "When the catalogue changes" and scan it for new
@@ -1211,7 +1211,7 @@ use "session", not "slot", as the app does (OQ-64):
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 28` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 28` first: earlier phases may have
 changed these recipes since this plan was written. This replaces work item 23's capture note: the
 re-pointing described there is part of this step, and the captures are re-run. No recipe caption
 says "slot"; say session.

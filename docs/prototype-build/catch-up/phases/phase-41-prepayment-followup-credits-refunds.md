@@ -45,7 +45,7 @@ Finish the prepayment story on 27 and 27a. Most of it is Verify, so keep it thin
 1. Run the catalogue diff for this phase's items, its context and its open questions against the plan's baseline, catalogue commit `d4db277` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-06.3.6,FT-06.4,US-06.4.1,US-06.5.2,US-06.5.3,US-06.5.4,FT-06.5,US-06.5.1,US-06.4.2,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,US-03.1.8,US-08.2.2,US-08.6.2,US-08.6.3,US-08.6.5,US-04.2.14,US-09.1.3,FT-09.1,US-01.4.6,US-01.4.7,US-02.5.3,OQ-61,OQ-76,OQ-80,OQ-96,OQ-97,OQ-104,OQ-115,OQ-116
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-06.3.6,FT-06.4,US-06.4.1,US-06.5.2,US-06.5.3,US-06.5.4,FT-06.5,US-06.5.1,US-06.4.2,US-06.2.2,US-06.3.1,US-06.3.2,US-06.3.5,US-03.1.8,US-08.2.2,US-08.6.2,US-08.6.3,US-08.6.5,US-04.2.14,US-09.1.3,FT-09.1,US-01.4.6,US-01.4.7,US-02.5.3,OQ-61,OQ-76,OQ-80,OQ-96,OQ-97,OQ-104,OQ-115,OQ-116
    ```
 
    At plan time (2026-10-20, `60e2d1e..d4db277`) the changes that touch this phase were: FT-06.5 and US-06.5.1 became the prepay holding account (27a's), the prepayment's payable is the account, so US-06.5.4 lost its payee repoint and gained the optional patient email; US-06.5.2 reverses the receivable and the holding-account payable; US-06.5.3 reads the replacement's own price list; US-06.3.6's templates state the anaesthetist's own fixed price; FT-06.4 and US-06.4.1 gained OQ-80's second step and the OQ-96 and OQ-97 notes (v6 differs: an editable prepaid price and a refund for a lowered one, not adopted). OQ-80 is answered (D38); OQ-115 and OQ-116 are new and open; OQ-96 widened; OQ-104 is new. The plan already reflects all of this; diff only for anything after `d4db277`.
@@ -435,7 +435,7 @@ Patch these in the same session, in `docs/demo-guide/` and the matching sections
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 41` first: earlier phases (27, 27a, 38b and 39 in particular) will have changed these recipes since this plan was written. US-06.4.2 has left this phase (Retired); Phase 27 marks its recipe "Retired: merged into US-06.4.1": confirm it. FT-06.5 and US-06.5.1 are Phase 27a's.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), run after the review pass and before the PROGRESS.md entry. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 41` first: earlier phases (27, 27a, 38b and 39 in particular) will have changed these recipes since this plan was written. US-06.4.2 has left this phase (Retired); Phase 27 marks its recipe "Retired: merged into US-06.4.1": confirm it. FT-06.5 and US-06.5.1 are Phase 27a's.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/` matches what was built:
 

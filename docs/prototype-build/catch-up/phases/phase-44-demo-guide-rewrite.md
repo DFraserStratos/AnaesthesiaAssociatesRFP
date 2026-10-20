@@ -200,7 +200,7 @@ This phase:
    the whole diff, not only RV-17's references:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-05.2.2,FT-13.3,OQ-08,OQ-50,OQ-75,OQ-74,OQ-30,US-09.3.1,US-07.3.2,FT-08.2,US-05.2.7,OQ-84,US-06.4.1,OQ-61,OQ-76,US-11.1.2,FT-13.7,US-13.7.3,US-10.3.3,US-01.4.3,US-01.4.5,US-01.5.5,FT-13.8,US-13.8.1,US-13.8.2,US-01.4.7,US-01.4.6,US-01.3.2,US-01.3.6,US-13.6.3,US-13.6.4,US-02.3.4,EP-07,FT-07.1,US-07.4.1,US-07.4.2,US-03.1.6,US-03.1.7,FT-02.1,US-02.1.3,US-02.5.7,US-03.1.9,US-03.1.2,US-05.1.1,US-05.1.6,US-04.1.5,US-04.2.10,US-04.2.14,FT-04.3,US-04.3.2,US-04.3.3,US-03.3.4,US-03.3.8,US-05.1.4,US-11.2.2,US-07.2.2,US-08.2.3,US-05.2.5,US-05.2.6,US-05.4.3,US-06.1.1,US-06.2.2,US-03.1.8,US-08.2.2,US-06.3.1,US-06.3.5,US-06.5.4,FT-03.7,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.4,US-08.6.5,US-08.6.6,US-10.2.5,US-10.2.6,US-10.2.7,US-14.4.1,US-13.5.3,US-15.0.1,OQ-12,OQ-13,OQ-29,OQ-31,OQ-47,OQ-49,OQ-60,OQ-77,OQ-79,OQ-80,OQ-81,OQ-83,OQ-85,OQ-88,OQ-89,OQ-90,OQ-92,OQ-93,OQ-95,OQ-96,OQ-97,OQ-98,OQ-99,OQ-100,OQ-101,OQ-102,OQ-103,OQ-87,OQ-15,OQ-38,OQ-43,OQ-48,OQ-78,OQ-82,OQ-86,OQ-91,OQ-94,OQ-49,OQ-77,OQ-79,OQ-84,OQ-85,OQ-87,OQ-107,OQ-104,OQ-105,OQ-106,OQ-108,OQ-109,OQ-111,OQ-113,OQ-114,OQ-115,OQ-116,US-05.1.6,US-06.1.1,US-06.1.2,US-12.1.3,US-02.2.3,US-11.4.3,US-01.5.2,US-01.5.4
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-05.2.2,FT-13.3,OQ-08,OQ-50,OQ-75,OQ-74,OQ-30,US-09.3.1,US-07.3.2,FT-08.2,US-05.2.7,OQ-84,US-06.4.1,OQ-61,OQ-76,US-11.1.2,FT-13.7,US-13.7.3,US-10.3.3,US-01.4.3,US-01.4.5,US-01.5.5,FT-13.8,US-13.8.1,US-13.8.2,US-01.4.7,US-01.4.6,US-01.3.2,US-01.3.6,US-13.6.3,US-13.6.4,US-02.3.4,EP-07,FT-07.1,US-07.4.1,US-07.4.2,US-03.1.6,US-03.1.7,FT-02.1,US-02.1.3,US-02.5.7,US-03.1.9,US-03.1.2,US-05.1.1,US-05.1.6,US-04.1.5,US-04.2.10,US-04.2.14,FT-04.3,US-04.3.2,US-04.3.3,US-03.3.4,US-03.3.8,US-05.1.4,US-11.2.2,US-07.2.2,US-08.2.3,US-05.2.5,US-05.2.6,US-05.4.3,US-06.1.1,US-06.2.2,US-03.1.8,US-08.2.2,US-06.3.1,US-06.3.5,US-06.5.4,FT-03.7,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.4,US-08.6.5,US-08.6.6,US-10.2.5,US-10.2.6,US-10.2.7,US-14.4.1,US-13.5.3,US-15.0.1,OQ-12,OQ-13,OQ-29,OQ-31,OQ-47,OQ-49,OQ-60,OQ-77,OQ-79,OQ-80,OQ-81,OQ-83,OQ-85,OQ-88,OQ-89,OQ-90,OQ-92,OQ-93,OQ-95,OQ-96,OQ-97,OQ-98,OQ-99,OQ-100,OQ-101,OQ-102,OQ-103,OQ-87,OQ-15,OQ-38,OQ-43,OQ-48,OQ-78,OQ-82,OQ-86,OQ-91,OQ-94,OQ-49,OQ-77,OQ-79,OQ-84,OQ-85,OQ-87,OQ-107,OQ-104,OQ-105,OQ-106,OQ-108,OQ-109,OQ-111,OQ-113,OQ-114,OQ-115,OQ-116,US-05.1.6,US-06.1.1,US-06.1.2,US-12.1.3,US-02.2.3,US-11.4.3,US-01.5.2,US-01.5.4
 
    ```
 
@@ -1148,7 +1148,7 @@ running app.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 44` first: it lists no covered stories (none at plan time, 2026-10-20), so this section has no per-item rows.
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 44` first: it lists no covered stories (none at plan time, 2026-10-20), so this section has no per-item rows.
 
 **Final sweep.** This phase covers no stories of its own, so the step is the closing sweep over the
 whole catalogue, run in Session 2 after the guide, ATLAS.md and the QA pass have settled the app:

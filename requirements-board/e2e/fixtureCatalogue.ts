@@ -159,7 +159,7 @@ export function fixtureArtifacts(): Artifact[] {
   return [
     artifact({ id: 'AR-01', title: 'Fixture drawing', kind: 'diagram', date: '2026-10-06', file: 'artifacts/files/AR-01.svg', regions: [region('totals', 'Totals', ['text=Totals panel', 'text=Copy this sentence please']), region('panel-a', 'Panel A', ['#panel-a'])] }),
     artifact({ id: 'AR-02', title: 'Fixture picture', kind: 'screenshot', date: '2026-09-30', file: 'artifacts/files/AR-02.png', regions: [region('corner', 'Corner', [], { box: [0, 0, 120, 80] })] }),
-    artifact({ id: 'AR-03', title: 'Fixture flow', kind: 'diagram', date: '2026-10', source: 'flowchart LR\n  A[Booking] --> B[Contract]\n  B --> C[Invoice]', regions: [region('contract', 'The contract step', ['node=B'])] }),
+    artifact({ id: 'AR-03', title: 'Fixture flow', kind: 'diagram', date: '2026-10', source: 'flowchart LR\n  A[Order] --> B[Pricing]\n  B --> C[Invoice]', regions: [region('pricing', 'The pricing step', ['node=B'])] }),
     artifact({ id: 'AR-04', title: 'Fixture note', kind: 'note', date: '2026-10-01', file: 'notes/2026-01-02-fixture-meeting.md', regions: [region('fox', 'The fox', ['quote=The quick brown fox jumps over the lazy dog.'])] }),
     artifact({ id: 'AR-05', title: 'Fixture document', kind: 'document', date: '2021', file: 'artifacts/files/AR-05.pdf', citedAs: [{ as: 'Test spec', pageOffset: 1, within: null, spot: null }], regions: [region('time-table', 'Time table', ['quote=Time units table'], { page: 2 })] }),
   ]

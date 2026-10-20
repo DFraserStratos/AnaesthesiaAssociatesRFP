@@ -34,7 +34,7 @@ Follow up the built Schedule track (28 to 32) for the 19 October answers (D58, D
 
 Baseline `d4db277`.
 
-1. Run `node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102,OQ-113`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
+1. Run `node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-13.8.3,US-03.6.3,US-01.5.2,US-01.5.4,US-01.5.5,US-01.6.3,US-01.4.1,US-01.4.3,US-13.6.4,US-13.8.1,US-13.8.2,US-13.7.2,OQ-79,OQ-81,OQ-84,OQ-102,OQ-113`, re-read what changed, adjust the work items, and drop and log anything now Retired or Future (if US-13.8.3 or US-03.6.3 went, stop and tell the owner).
 2. Confirm Phases 14 to 32a are DONE; read what 32 and 32a delivered, because this doc names some planned code: the `Notification` kind union and `postNotification` (32a adds `'bookingMoved'`), `notificationText`, `NOTIFICATION_POOL_RULE`, `moveListToOffice`, `pushListToSlot`, `markUnavailableAndMoveList`, `MoveListSheet`, `anaesthetistActor`, and 32a's pinned Souter Booking (reuse it for the alert shots).
 3. Run `grep -rn "'availability'\|availabilityCause\|VACATED_SESSION_DEFAULT\|requireOpen\|closedSession\|OQ-81\|OQ-84\|OQ-79" aa-prototype/src aa-prototype/visual` for every site to change. Read the current `PERSIST_VERSION` (25 at `d4db277` before 32a; bump by one from whatever it is now).
 4. Open questions and the defaults built (each goes on the PROGRESS owner list):
@@ -140,7 +140,7 @@ The agent runs every item itself in the running app and reports it with evidence
 
 ## Catalogue screenshots
 
-The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after the review pass and before the PROGRESS entry. Re-run `node docs/prototype-build/catch-up/tools/recipe-status.mjs 32b` first. The plan update never touches recipes or images.
+The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19), after the review pass and before the PROGRESS entry. Re-run `node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 32b` first. The plan update never touches recipes or images.
 
 | Item | Recipe now | When done |
 |---|---|---|

@@ -156,7 +156,7 @@ cycles, so `PERSIST_VERSION` is bumped. No seeded money figure moves.
    the baseline in plan.json to the working tree, so it shows only what changed after d4db277):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-10.2.7,US-10.2.6,US-10.2.5,FT-10.2,OQ-111,US-06.5.1,US-10.2.1,US-09.1.4,US-08.6.2,US-08.6.4,US-08.6.5,US-10.3.1,US-10.2.4,OQ-47,OQ-71,OQ-42,OQ-60,OQ-29,OQ-77,FT-10.3
    ```
 
    (The tool is rename-aware; never use a plain git diff of the catalogue folder.) Read the hunks (if any) for US-10.2.7, US-10.2.6, US-10.2.5,
@@ -992,7 +992,7 @@ reset run of the built app.
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39a` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 39a` first: earlier phases may have
 changed these recipes since this plan was written. FT-10.2 left this phase (Matches): no row.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

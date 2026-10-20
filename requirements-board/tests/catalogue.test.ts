@@ -70,7 +70,7 @@ describe('catalogue files', () => {
       description: 'Line one.\n\nLine two with *markdown*.',
       notes: 'A note.',
       images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'mobile', caption: 'Home' }],
-      extra: { owner: 'Donald', tags: ['x'] },
+      extra: { owner: 'Sam', tags: ['x'] },
     })
     expect(parseItem(serialiseItem(it1))).toEqual(it1)
     const q = question({ answer: 'Yes, always.' })

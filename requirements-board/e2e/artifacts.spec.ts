@@ -160,11 +160,11 @@ test('a picture pans with a plain drag, and its region is a box in pixels', asyn
 })
 
 test('a mermaid diagram draws as real text, and a node is a spot', async ({ page }) => {
-  await page.goto('/#/artifacts/AR-03?region=contract')
-  await expect(page.locator('.canvas-host svg text', { hasText: 'Contract' })).toBeVisible()
+  await page.goto('/#/artifacts/AR-03?region=pricing')
+  await expect(page.locator('.canvas-host svg text', { hasText: 'Pricing' })).toBeVisible()
   expect(await page.locator('.canvas-host').evaluate((h) => h.shadowRoot!.querySelectorAll('foreignObject').length)).toBe(0)
   const box = await boxOf(page, '.region-box')
-  const node = (await page.locator('.canvas-host svg text', { hasText: 'Contract' }).boundingBox())!
+  const node = (await page.locator('.canvas-host svg text', { hasText: 'Pricing' }).boundingBox())!
   expect(node.x).toBeGreaterThan(box.x)
   expect(node.x + node.width).toBeLessThan(box.x + box.width)
 })

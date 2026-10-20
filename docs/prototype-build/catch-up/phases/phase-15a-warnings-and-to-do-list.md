@@ -153,7 +153,7 @@ is already read for you: it is the dated section "Requirements changed since ses
    dated section:
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,FT-13.8,US-13.8.1,US-01.6.2,US-06.3.2,US-06.2.1,US-06.2.2,US-11.2.4,US-07.2.2,US-03.3.1,US-11.3.2,US-13.1.1,US-08.2.2,OQ-57,OQ-74,OQ-79,OQ-92,OQ-93
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-13.7,US-13.7.1,US-13.7.2,US-13.7.3,US-13.7.4,FT-13.8,US-13.8.1,US-01.6.2,US-06.3.2,US-06.2.1,US-06.2.2,US-11.2.4,US-07.2.2,US-03.3.1,US-11.3.2,US-13.1.1,US-08.2.2,OQ-57,OQ-74,OQ-79,OQ-92,OQ-93
    ```
 
    Read the hunks for FT-13.7, US-13.7.1 to US-13.7.4, FT-13.8, US-13.8.1, US-01.6.2, US-06.3.2,
@@ -674,7 +674,7 @@ own fixed price, generated at setup, approved and sent), so leave them, and do n
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 15a` first (from the repo root):
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 15a` first (from the repo root):
 earlier phases may have changed these recipes since this plan was written. Riley's Booking is
 `BK0038` in today's recipes (US-06.3.2); confirm the id against the seed before pinning it.
 

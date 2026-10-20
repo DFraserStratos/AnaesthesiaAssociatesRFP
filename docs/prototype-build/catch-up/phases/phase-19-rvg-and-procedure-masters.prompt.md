@@ -20,7 +20,7 @@ Before doing anything else, read these in order:
    - the PROGRESS entries for catch-up Phases 15, 15a, 15b, 17 and 18. From 15a: how a warning rule is registered (rule file, WARNING_RULES entry, WarningRuleId, WarningFacts, the appSettings default), the Warning shape, when after-procedure warnings surface and re-raise, and the WARNING_SAMPLES entry shape and pinned sample Bookings (including multiWarning). From 18: the feeParity.test.ts harness and its __parity__ fixture, where 18 put the pricing model's types (join its module if it made one), and the shape of the Type 3 price rows.
 
 Then do the drift check in the phase doc (baseline catalogue commit d4db277):
-- Run node docs/prototype-build/catch-up/tools/plan-state.mjs --diff <IDs> for the IDs the doc lists, re-read anything changed after d4db277, and drop anything now Retired or Future (noting it for PROGRESS.md).
+- Run node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff <IDs> for the IDs the doc lists, re-read anything changed after d4db277, and drop anything now Retired or Future (noting it for PROGRESS.md).
 - D3 (OQ-56), D39 (OQ-88) and OQ-62 are answered: build them with no label. D35 (OQ-101) is open: build the gate table's default with its one provisional note on the Admin RVG groups tab, and log it for the owner. If it has been answered, build the answer as the gate table describes; do not stop.
 - Check docs/discovery-reference/Data files for anything that helps the demo-sized seed (there is no procedure list to load).
 

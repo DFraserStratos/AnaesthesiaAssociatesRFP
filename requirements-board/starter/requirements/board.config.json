@@ -1,0 +1,88 @@
+{
+  "board": {
+    "name": "Requirements board"
+  },
+  "project": {
+    "name": "Your project"
+  },
+  "components": [
+    {
+      "name": "Example area",
+      "code": "EXA"
+    }
+  ],
+  "statuses": [
+    {
+      "code": 1,
+      "label": "Proposed",
+      "help": "Written down, not yet agreed with the client",
+      "tone": "neutral",
+      "role": "default"
+    },
+    {
+      "code": 2,
+      "label": "Open",
+      "help": "Waiting on an open question",
+      "tone": "amber",
+      "role": "waiting"
+    },
+    {
+      "code": 3,
+      "label": "Verify",
+      "help": "Its question is answered; check the whole item with the client",
+      "tone": "olive",
+      "settle": true
+    },
+    {
+      "code": 4,
+      "label": "Confirmed",
+      "help": "Signed off by the client",
+      "tone": "green",
+      "settle": true
+    },
+    {
+      "code": 5,
+      "label": "Retired",
+      "help": "No longer wanted, kept for traceability",
+      "tone": "hatched",
+      "role": "retired"
+    }
+  ],
+  "questionStatuses": [
+    {
+      "code": 1,
+      "label": "Open",
+      "heading": "Open",
+      "help": "Waiting for an answer",
+      "tone": "amber",
+      "role": "default"
+    },
+    {
+      "code": 2,
+      "label": "Confirm",
+      "heading": "Awaiting confirmation",
+      "help": "An answer is written, waiting for the owner to confirm it",
+      "tone": "amber"
+    },
+    {
+      "code": 3,
+      "label": "Proposed",
+      "heading": "Recommendation proposed",
+      "help": "A recommendation is written, waiting for a decision",
+      "tone": "neutral"
+    },
+    {
+      "code": 4,
+      "label": "Answered",
+      "heading": "Answered",
+      "help": "Settled: the answer stands",
+      "tone": "green",
+      "role": "answered"
+    }
+  ],
+  "questionKinds": {
+    "missing-source": {
+      "help": "A requirement with no known origin: add its source (a document page, a note in notes/, or Q&A) to the item"
+    }
+  }
+}

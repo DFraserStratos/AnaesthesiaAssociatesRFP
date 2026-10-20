@@ -101,7 +101,7 @@ statuses, not the palette.
    catalogue commit `60e2d1e` (rename-aware; never a plain `git diff` of the catalogue folder):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff US-01.2.1,US-01.2.2,US-01.5.3,US-03.1.4,US-15.0.2,FT-01.1,FT-01.2,US-01.2.3,US-01.5.2,US-01.5.4,US-01.5.5,FT-01.6,EP-07,FT-07.1,OQ-64,OQ-81,OQ-84,OQ-86,OQ-17,OQ-27
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff US-01.2.1,US-01.2.2,US-01.5.3,US-03.1.4,US-15.0.2,FT-01.1,FT-01.2,US-01.2.3,US-01.5.2,US-01.5.4,US-01.5.5,FT-01.6,EP-07,FT-07.1,OQ-64,OQ-81,OQ-84,OQ-86,OQ-17,OQ-27
    ```
 
    At plan time (2026-10-08, `3d3a18c..60e2d1e`), the changes that touch this phase were: US-01.2.2
@@ -958,7 +958,7 @@ after Phase 32, so keep these edits small:
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 29` first: earlier phases may have
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 29` first: earlier phases may have
 changed these recipes since this plan was written (Phase 28 re-points several of them).
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`

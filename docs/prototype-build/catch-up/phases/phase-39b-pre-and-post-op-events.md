@@ -197,7 +197,7 @@ seeded billing events, and loses `billingLines`, so `PERSIST_VERSION` is bumped.
 1. Run the drift check against the plan's catalogue snapshot (catalogue commit d4db277):
 
    ```
-   node docs/prototype-build/catch-up/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60
+   node requirements-board/agent/skills/update-build-plan/tools/plan-state.mjs --diff FT-03.7,US-03.7.1,US-03.7.2,US-05.5.2,US-03.3.6,US-03.7.3,US-08.6.1,US-08.6.3,US-08.6.5,US-05.2.6,US-05.2.5,US-04.2.4,US-05.2.1,FT-11.2,US-07.3.2,US-09.1.4,US-10.3.1,OQ-63,OQ-12,OQ-48,OQ-50,OQ-75,OQ-29,OQ-60
    ```
 
    Read the hunks (if any) for FT-03.7, US-03.7.1, US-03.7.2, US-05.5.2, US-03.3.6, the context items
@@ -1038,7 +1038,7 @@ spot-check the master guide's S4 Beat 2 against the run sheet (the full read is 
 
 The standing step in [ROADMAP.md](../ROADMAP.md#catalogue-screenshots) (PROGRESS convention 19),
 run after the review pass and before the PROGRESS.md entry. Re-run
-`node docs/prototype-build/catch-up/tools/recipe-status.mjs 39b` first: earlier phases (24 and 38b
+`node requirements-board/agent/skills/update-build-plan/tools/recipe-status.mjs 39b` first: earlier phases (24 and 38b
 above all) may have changed these recipes since this plan was written.
 
 **Covered items.** When the phase is done, each recipe in `requirements-board/requirements/capture/recipes/`
